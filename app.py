@@ -2,7 +2,14 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-from data import get_dgs10, get_dfii10
+from data import (
+    get_sofr,
+    get_iorb,
+    get_effr,
+    get_rrp,
+    get_dgs10,
+    get_dfii10
+)
 
 
 # =========================
@@ -20,7 +27,17 @@ st.caption("US Rates & Macro Market Monitor")
 
 
 # =========================
-# 获取数据
+# 获取 Funding 数据
+# =========================
+
+sofr = get_sofr()
+iorb = get_iorb()
+effr = get_effr()
+rrp = get_rrp()
+
+
+# =========================
+# 获取 Yield 数据
 # =========================
 
 dgs10 = get_dgs10()
@@ -28,11 +45,50 @@ dfii10 = get_dfii10()
 
 
 # =========================
-# 数据清洗
+# Funding 数据清洗
 # =========================
 
-dgs10 = dgs10.dropna(subset=["DGS10"]).copy()
-dfii10 = dfii10.dropna(subset=["DFII10"]).copy()
+funding = sofr.merge(
+    iorb,
+    on="observation_date",
+    how="outer"
+)
+
+funding = funding.merge(
+    effr,
+    on="observation_date",
+    how="outer"
+)
+
+funding = funding.merge(
+    rrp,
+    on="observation_date",
+    how="outer"
+)
+
+funding = funding.sort_values(
+    "observation_date"
+)
+
+
+for col in ["SOFR", "IORB", "EFFR", "RRPONTSYAWARD"]:
+    funding[col] = pd.to_numeric(
+        funding[col],
+        errors="coerce"
+    )
+
+
+# =========================
+# Yield 数据清洗
+# =========================
+
+dgs10 = dgs10.dropna(
+    subset=["DGS10"]
+).copy()
+
+dfii10 = dfii10.dropna(
+    subset=["DFII10"]
+).copy()
 
 dgs10["observation_date"] = pd.to_datetime(
     dgs10["observation_date"]
@@ -44,95 +100,45 @@ dfii10["observation_date"] = pd.to_datetime(
 
 
 # =========================
-# 合并数据
+# Yield 合并
 # =========================
 
-data = pd.merge(
-    dgs10[["observation_date", "DGS10"]],
-    dfii10[["observation_date", "DFII10"]],
+yield_data = pd.merge(
+    dgs10[
+        ["observation_date", "DGS10"]
+    ],
+    dfii10[
+        ["observation_date", "DFII10"]
+    ],
     on="observation_date",
     how="inner"
 )
 
-data = data.sort_values("observation_date")
+yield_data = yield_data.sort_values(
+    "observation_date"
+)
 
-# 真实相减关系
-data["BREAKEVEN10"] = (
-    data["DGS10"] - data["DFII10"]
+yield_data["BREAKEVEN10"] = (
+    yield_data["DGS10"]
+    - yield_data["DFII10"]
 )
 
 
-# =========================
-# 最新数据
-# =========================
+# =========================================================
+# ① FUNDING / LIQUIDITY
+# =========================================================
 
-latest = data.iloc[-1]
-previous = data.iloc[-2]
+st.subheader("Funding / Liquidity")
 
-dgs10_change = (
-    latest["DGS10"] - previous["DGS10"]
-)
-
-dfii10_change = (
-    latest["DFII10"] - previous["DFII10"]
-)
-
-breakeven_change = (
-    latest["BREAKEVEN10"]
-    - previous["BREAKEVEN10"]
-)
-
-
-# =========================
-# 指标卡
-# =========================
-
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    st.metric(
-        "10Y Treasury",
-        f"{latest['DGS10']:.2f}%",
-        f"{dgs10_change:+.2f} pp"
-    )
-
-with col2:
-    st.metric(
-        "10Y TIPS Real Yield",
-        f"{latest['DFII10']:.2f}%",
-        f"{dfii10_change:+.2f} pp"
-    )
-
-with col3:
-    st.metric(
-        "10Y Treasury − 10Y TIPS",
-        f"{latest['BREAKEVEN10']:.2f}%",
-        f"{breakeven_change:+.2f} pp"
-    )
-
-with col4:
-    st.metric(
-        "Bitcoin",
-        "—",
-        "Coming soon"
-    )
-
-
-st.divider()
-
-
-# =========================
-# 时间范围
-# =========================
-
-st.subheader("10Y Yield Structure")
 
 period = st.radio(
     "Time Range",
     ["5Y", "1Y", "6M", "3M", "1M"],
     index=1,
-    horizontal=True
+    horizontal=True,
+    key="funding_period"
 )
+
 
 period_days = {
     "5Y": 1825,
@@ -142,55 +148,268 @@ period_days = {
     "1M": 31
 }
 
+
 days = period_days[period]
 
 
-# =========================
-# 筛选数据
-# =========================
+latest_funding_date = funding[
+    "observation_date"
+].max()
 
-latest_date = data["observation_date"].max()
 
-start_date = (
-    latest_date
+funding_start_date = (
+    latest_funding_date
     - pd.Timedelta(days=days)
 )
 
-chart = data[
-    data["observation_date"] >= start_date
+
+funding_chart = funding[
+    funding["observation_date"]
+    >= funding_start_date
 ].copy()
 
-chart = chart.sort_values("observation_date")
 
-
-# =========================
-# 交易日索引
-# =========================
-
-chart["day_index"] = range(len(chart))
-
-chart["date_label"] = chart[
+funding_chart = funding_chart.sort_values(
     "observation_date"
-].dt.strftime("%m/%d/%y")
+)
+
+
+funding_chart["day_index"] = range(
+    len(funding_chart)
+)
+
+
+funding_chart["date_label"] = (
+    funding_chart["observation_date"]
+    .dt.strftime("%m/%d/%y")
+)
 
 
 # =========================
-# 组合图
+# Funding 图
 # =========================
 
-fig = go.Figure()
+fig_funding = go.Figure()
 
 
-# Breakeven 柱状图
-fig.add_trace(
+# SOFR
+fig_funding.add_trace(
+    go.Scatter(
+        x=funding_chart["day_index"],
+        y=funding_chart["SOFR"],
+        mode="lines",
+        name="SOFR",
+        line=dict(width=2),
+        customdata=funding_chart["date_label"],
+        hovertemplate=(
+            "Date: %{customdata}"
+            "<br>SOFR: %{y:.2f}%"
+            "<extra></extra>"
+        )
+    )
+)
+
+
+# IORB
+fig_funding.add_trace(
+    go.Scatter(
+        x=funding_chart["day_index"],
+        y=funding_chart["IORB"],
+        mode="lines",
+        name="IORB",
+        line=dict(width=2),
+        customdata=funding_chart["date_label"],
+        hovertemplate=(
+            "Date: %{customdata}"
+            "<br>IORB: %{y:.2f}%"
+            "<extra></extra>"
+        )
+    )
+)
+
+
+# EFFR
+fig_funding.add_trace(
+    go.Scatter(
+        x=funding_chart["day_index"],
+        y=funding_chart["EFFR"],
+        mode="lines",
+        name="EFFR",
+        line=dict(width=2),
+        customdata=funding_chart["date_label"],
+        hovertemplate=(
+            "Date: %{customdata}"
+            "<br>EFFR: %{y:.2f}%"
+            "<extra></extra>"
+        )
+    )
+)
+
+
+# RRP rate
+fig_funding.add_trace(
+    go.Scatter(
+        x=funding_chart["day_index"],
+        y=funding_chart["RRPONTSYAWARD"],
+        mode="lines",
+        name="ON RRP Rate",
+        line=dict(width=2, dash="dot"),
+        customdata=funding_chart["date_label"],
+        hovertemplate=(
+            "Date: %{customdata}"
+            "<br>ON RRP Rate: %{y:.2f}%"
+            "<extra></extra>"
+        )
+    )
+)
+
+
+# =========================
+# X 轴
+# =========================
+
+if period == "1M":
+    step = 2
+elif period == "3M":
+    step = 7
+elif period == "6M":
+    step = 15
+elif period == "1Y":
+    step = 30
+else:
+    step = 90
+
+
+tick_positions = (
+    funding_chart["day_index"][::step]
+)
+
+tick_labels = (
+    funding_chart["date_label"][::step]
+)
+
+
+# =========================
+# Funding 图样式
+# =========================
+
+fig_funding.update_layout(
+    height=500,
+
+    margin=dict(
+        l=20,
+        r=20,
+        t=30,
+        b=50
+    ),
+
+    hovermode="x unified",
+
+    xaxis=dict(
+        title="Trading Day",
+        type="linear",
+        tickmode="array",
+        tickvals=tick_positions,
+        ticktext=tick_labels,
+        showgrid=True,
+        gridcolor="rgba(0,0,0,0.08)"
+    ),
+
+    yaxis=dict(
+        title="Rate (%)",
+        ticksuffix="%",
+        showgrid=True,
+        zeroline=False
+    ),
+
+    legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="left",
+        x=0
+    ),
+
+    plot_bgcolor="white",
+    paper_bgcolor="white"
+)
+
+
+st.plotly_chart(
+    fig_funding,
+    use_container_width=True
+)
+
+
+# =========================================================
+# ② 10Y YIELD STRUCTURE
+# =========================================================
+
+st.subheader("10Y Yield Structure")
+
+
+yield_period = st.radio(
+    "Time Range",
+    ["5Y", "1Y", "6M", "3M", "1M"],
+    index=1,
+    horizontal=True,
+    key="yield_period"
+)
+
+
+yield_days = period_days[
+    yield_period
+]
+
+
+latest_yield_date = yield_data[
+    "observation_date"
+].max()
+
+
+yield_start_date = (
+    latest_yield_date
+    - pd.Timedelta(days=yield_days)
+)
+
+
+yield_chart = yield_data[
+    yield_data["observation_date"]
+    >= yield_start_date
+].copy()
+
+
+yield_chart = yield_chart.sort_values(
+    "observation_date"
+)
+
+
+yield_chart["day_index"] = range(
+    len(yield_chart)
+)
+
+
+yield_chart["date_label"] = (
+    yield_chart["observation_date"]
+    .dt.strftime("%m/%d/%y")
+)
+
+
+# =========================
+# Yield 图
+# =========================
+
+fig_yield = go.Figure()
+
+
+# Breakeven
+fig_yield.add_trace(
     go.Bar(
-        x=chart["day_index"],
-        y=chart["BREAKEVEN10"],
+        x=yield_chart["day_index"],
+        y=yield_chart["BREAKEVEN10"],
         name="10Y Treasury − 10Y TIPS",
         opacity=0.30,
-
-        customdata=chart["date_label"],
-
+        customdata=yield_chart["date_label"],
         hovertemplate=(
             "Date: %{customdata}"
             "<br>10Y Treasury − 10Y TIPS: "
@@ -202,18 +421,15 @@ fig.add_trace(
 
 
 # 10Y Treasury
-fig.add_trace(
+fig_yield.add_trace(
     go.Scatter(
-        x=chart["day_index"],
-        y=chart["DGS10"],
+        x=yield_chart["day_index"],
+        y=yield_chart["DGS10"],
         mode="lines+markers",
         name="10Y Treasury",
-
         line=dict(width=2),
         marker=dict(size=4),
-
-        customdata=chart["date_label"],
-
+        customdata=yield_chart["date_label"],
         hovertemplate=(
             "Date: %{customdata}"
             "<br>10Y Treasury: "
@@ -225,18 +441,15 @@ fig.add_trace(
 
 
 # 10Y TIPS
-fig.add_trace(
+fig_yield.add_trace(
     go.Scatter(
-        x=chart["day_index"],
-        y=chart["DFII10"],
+        x=yield_chart["day_index"],
+        y=yield_chart["DFII10"],
         mode="lines+markers",
         name="10Y TIPS Real Yield",
-
         line=dict(width=2),
         marker=dict(size=4),
-
-        customdata=chart["date_label"],
-
+        customdata=yield_chart["date_label"],
         hovertemplate=(
             "Date: %{customdata}"
             "<br>10Y TIPS Real Yield: "
@@ -248,35 +461,35 @@ fig.add_trace(
 
 
 # =========================
-# X 轴标签频率
+# X 轴
 # =========================
 
-if period == "1M":
+if yield_period == "1M":
     step = 2
-
-elif period == "3M":
+elif yield_period == "3M":
     step = 7
-
-elif period == "6M":
+elif yield_period == "6M":
     step = 15
-
-elif period == "1Y":
+elif yield_period == "1Y":
     step = 30
-
 else:
-    # 5Y
     step = 90
 
 
-tick_positions = chart["day_index"][::step]
-tick_labels = chart["date_label"][::step]
+tick_positions = (
+    yield_chart["day_index"][::step]
+)
+
+tick_labels = (
+    yield_chart["date_label"][::step]
+)
 
 
 # =========================
-# 图表样式
+# Yield 图样式
 # =========================
 
-fig.update_layout(
+fig_yield.update_layout(
     height=560,
 
     margin=dict(
@@ -290,17 +503,12 @@ fig.update_layout(
 
     xaxis=dict(
         title="Trading Day",
-
         type="linear",
-
         tickmode="array",
         tickvals=tick_positions,
         ticktext=tick_labels,
-
         showgrid=True,
-        gridcolor="rgba(0,0,0,0.08)",
-
-        tickangle=0
+        gridcolor="rgba(0,0,0,0.08)"
     ),
 
     yaxis=dict(
@@ -325,12 +533,8 @@ fig.update_layout(
 )
 
 
-# =========================
-# 显示图表
-# =========================
-
 st.plotly_chart(
-    fig,
+    fig_yield,
     use_container_width=True
 )
 
@@ -343,14 +547,18 @@ st.markdown("### Data Sources")
 
 st.markdown(
     """
-- **10Y Treasury (DGS10)** — 
-[FRED: 10-Year Treasury Constant Maturity Rate](https://fred.stlouisfed.org/series/DGS10)
+**Funding / Liquidity**
 
-- **10Y TIPS Real Yield (DFII10)** — 
-[FRED: 10-Year Treasury Inflation-Indexed Security](https://fred.stlouisfed.org/series/DFII10)
+- SOFR — FRED / Federal Reserve Bank of New York
+- IORB — FRED / Board of Governors of the Federal Reserve System
+- EFFR — FRED / Federal Reserve Bank of New York
+- ON RRP — FRED
 
-- **10Y Treasury − 10Y TIPS** — 
-Calculated directly from the two FRED series above.
+**Yield**
+
+- 10Y Treasury (DGS10) — FRED
+- 10Y TIPS Real Yield (DFII10) — FRED
+- 10Y Treasury − 10Y TIPS — Calculated directly
 """
 )
 
@@ -360,8 +568,9 @@ Calculated directly from the two FRED series above.
 # =========================
 
 st.caption(
-    f"Latest available data: "
-    f"{latest_date.strftime('%Y-%m-%d')}  |  "
-    f"Source: FRED  |  "
-    f"Daily trading-day data"
+    f"Funding latest available data: "
+    f"{latest_funding_date.strftime('%Y-%m-%d')}  |  "
+    f"Yield latest available data: "
+    f"{latest_yield_date.strftime('%Y-%m-%d')}  |  "
+    f"Source: FRED"
 )
