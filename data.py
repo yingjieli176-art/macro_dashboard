@@ -1,40 +1,74 @@
+import streamlit as st
 import pandas as pd
 import requests
-from io import StringIO
+
+
+# =========================
+# FRED API
+# =========================
+
+FRED_API_URL = "https://api.stlouisfed.org/fred/series/observations"
 
 
 def get_fred_series(series_id):
-    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+    """
+    从 FRED API 获取指定经济指标
+    """
 
-    response = requests.get(url, timeout=10)
-    response.raise_for_status()
+    api_key = st.secrets["FRED_API_KEY"]
 
-    df = pd.read_csv(StringIO(response.text))
-    df["observation_date"] = pd.to_datetime(df["observation_date"])
-    df = df.tail(600)
+    params = {
+        "series_id": series_id,
+        "api_key": api_key,
+        "file_type": "json",
+        "sort_order": "asc"
+    }
 
-    return df
-
-
-def get_dgs10():
-    return get_fred_series("DGS10")
-
-
-def get_dfii10():
-    return get_fred_series("DFII10")
-
-
-def get_breakeven10():
-    nominal = get_dgs10()
-    real = get_dfii10()
-
-    df = pd.merge(
-        nominal,
-        real,
-        on="observation_date",
-        how="inner"
+    response = requests.get(
+        FRED_API_URL,
+        params=params,
+        timeout=30
     )
 
-    df["BREAKEVEN10"] = df["DGS10"] - df["DFII10"]
+    response.raise_for_status()
 
-    return df
+    data = response.json()
+
+    df = pd.DataFrame(data["observations"])
+
+    df["observation_date"] = pd.to_datetime(
+        df["date"]
+    )
+
+    df[series_id] = pd.to_numeric(
+        df["value"],
+        errors="coerce"
+    )
+
+    return df[
+        ["observation_date", series_id]
+    ]
+
+
+# =========================
+# 10Y Treasury
+# =========================
+
+@st.cache_data(ttl=3600)
+def get_dgs10():
+
+    return get_fred_series(
+        "DGS10"
+    )
+
+
+# =========================
+# 10Y TIPS Real Yield
+# =========================
+
+@st.cache_data(ttl=3600)
+def get_dfii10():
+
+    return get_fred_series(
+        "DFII10"
+    )
