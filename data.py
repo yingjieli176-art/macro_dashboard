@@ -43,6 +43,20 @@ def get_fred_series(series_id):
 
 
 # =========================
+# 10Y Yield
+# =========================
+
+@st.cache_data(ttl=3600)
+def get_dgs10():
+    return get_fred_series("DGS10")
+
+
+@st.cache_data(ttl=3600)
+def get_dfii10():
+    return get_fred_series("DFII10")
+
+
+# =========================
 # Funding / Liquidity
 # =========================
 
@@ -63,18 +77,4 @@ def get_effr():
 
 @st.cache_data(ttl=3600)
 def get_rrp():
-    return get_fred_series("RRPONTSYAWARD")
-
-
-# =========================
-# Yield
-# =========================
-
-@st.cache_data(ttl=3600)
-def get_dgs10():
-    return get_fred_series("DGS10")
-
-
-@st.cache_data(ttl=3600)
-def get_dfii10():
-    return get_fred_series("DFII10")
+    return get_fred_series("RRPONTSYD")
