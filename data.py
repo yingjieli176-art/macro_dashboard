@@ -3,18 +3,10 @@ import pandas as pd
 import requests
 
 
-# =========================
-# FRED API
-# =========================
-
 FRED_API_URL = "https://api.stlouisfed.org/fred/series/observations"
 
 
 def get_fred_series(series_id):
-    """
-    从 FRED API 获取指定经济指标
-    """
-
     api_key = st.secrets["FRED_API_KEY"]
 
     params = {
@@ -51,24 +43,38 @@ def get_fred_series(series_id):
 
 
 # =========================
-# 10Y Treasury
+# Funding / Liquidity
+# =========================
+
+@st.cache_data(ttl=3600)
+def get_sofr():
+    return get_fred_series("SOFR")
+
+
+@st.cache_data(ttl=3600)
+def get_iorb():
+    return get_fred_series("IORB")
+
+
+@st.cache_data(ttl=3600)
+def get_effr():
+    return get_fred_series("EFFR")
+
+
+@st.cache_data(ttl=3600)
+def get_rrp():
+    return get_fred_series("RRPONTSYAWARD")
+
+
+# =========================
+# Yield
 # =========================
 
 @st.cache_data(ttl=3600)
 def get_dgs10():
+    return get_fred_series("DGS10")
 
-    return get_fred_series(
-        "DGS10"
-    )
-
-
-# =========================
-# 10Y TIPS Real Yield
-# =========================
 
 @st.cache_data(ttl=3600)
 def get_dfii10():
-
-    return get_fred_series(
-        "DFII10"
-    )
+    return get_fred_series("DFII10")
