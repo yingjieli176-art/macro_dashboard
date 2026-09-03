@@ -2,6 +2,7 @@ import html
 
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import streamlit as st
 
 from data import (
@@ -18,13 +19,14 @@ from data import (
 
 
 # =========================================================
-# PAGE
+# PAGE CONFIG
 # =========================================================
 
 st.set_page_config(
-    page_title="Macro Dashboard",
+    page_title="Macro & Market Dashboard",
     page_icon="📊",
     layout="wide",
+    initial_sidebar_state="collapsed",
 )
 
 
@@ -32,8 +34,24 @@ st.set_page_config(
 # CONSTANTS
 # =========================================================
 
-# 新浪财经 7×24 官方页面
-SINA_7X24_URL = "https://finance.sina.com.cn/7x24/"
+FRED_URLS = {
+    "IORB": "https://fred.stlouisfed.org/series/IORB",
+    "ON RRP": "https://fred.stlouisfed.org/series/RRPONTSYAWARD",
+    "EFFR": "https://fred.stlouisfed.org/series/EFFR",
+    "SOFR": "https://fred.stlouisfed.org/series/SOFR",
+    "10Y Nominal": "https://fred.stlouisfed.org/series/DGS10",
+    "10Y Real": "https://fred.stlouisfed.org/series/DFII10",
+    "10Y Breakeven": "https://fred.stlouisfed.org/series/T10YIE",
+    "3M": "https://fred.stlouisfed.org/series/DGS3MO",
+    "2Y": "https://fred.stlouisfed.org/series/DGS2",
+    "10Y": "https://fred.stlouisfed.org/series/DGS10",
+    "10Y-2Y": "https://fred.stlouisfed.org/series/T10Y2Y",
+    "10Y-3M": "https://fred.stlouisfed.org/series/T10Y3M",
+}
+
+EASTMONEY_URL = (
+    "https://kuaixun.eastmoney.com/"
+)
 
 
 # =========================================================
@@ -44,159 +62,110 @@ st.markdown(
     """
     <style>
 
+    /* =====================================================
+       GLOBAL
+       ===================================================== */
+
     .block-container {
-        padding-top: 1.5rem;
-        padding-bottom: 3rem;
-        max-width: 1400px;
+        padding-top: 1.2rem;
+        padding-bottom: 2rem;
+        max-width: 1500px;
     }
 
-    html,
-    body,
-    [class*="css"] {
-        font-family:
-            "Noto Sans TC",
-            "Noto Sans CJK TC",
-            "Microsoft JhengHei",
-            "PingFang TC",
-            "Segoe UI",
-            sans-serif;
+    h1 {
+        margin-bottom: 0.2rem !important;
     }
 
-    .dashboard-title {
-        font-size: 2rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        margin-bottom: 0.15rem;
+    h2 {
+        margin-top: 1.2rem !important;
+        margin-bottom: 0.4rem !important;
     }
 
-    .dashboard-subtitle {
-        color: #6b7280;
-        font-size: 0.95rem;
-        margin-bottom: 0.8rem;
+    h3 {
+        margin-top: 0.8rem !important;
+        margin-bottom: 0.3rem !important;
     }
 
-    .section-title {
-        font-size: 1.35rem;
-        font-weight: 650;
-        letter-spacing: -0.01em;
-        margin-top: 0.8rem;
-        margin-bottom: 0.15rem;
-    }
 
-    .section-description {
-        color: #6b7280;
-        font-size: 0.88rem;
-        margin-bottom: 0.4rem;
-    }
+    /* =====================================================
+       SOURCE LINKS
+       ===================================================== */
 
-    .mini-description {
-        color: #6b7280;
+    .source-row {
         font-size: 0.78rem;
         line-height: 1.5;
-        margin: 2px 0 8px;
+        margin-top: -0.25rem;
+        margin-bottom: 0.7rem;
+        color: #777;
     }
 
-    .source-text {
-        color: #6b7280;
-        font-size: 0.76rem;
-        margin: 3px 0 12px;
-        line-height: 1.5;
-    }
-
-    .source-text a {
-        color: #6b7280;
+    .source-row a {
+        color: #777 !important;
         text-decoration: none !important;
-        white-space: nowrap;
+        margin-right: 12px;
     }
 
-    .source-text a:hover {
-        color: #374151;
-        text-decoration: underline !important;
+    .source-row a:hover {
+        color: #444 !important;
+        text-decoration: none !important;
     }
 
-    .source-sep {
-        color: #d1d5db;
-        margin: 0 5px;
-    }
 
-    .chart-divider {
-        margin: 1rem 0 1.5rem;
-        border-top: 1px solid #e5e7eb;
-    }
+    /* =====================================================
+       NEWS
+       ===================================================== */
 
-    .compact-title {
-        font-size: 1rem;
-        font-weight: 650;
-        margin-bottom: 0.2rem;
-    }
-
-    .compact-description {
-        color: #6b7280;
-        font-size: 0.75rem;
-        line-height: 1.4;
-        margin-bottom: 0.25rem;
-    }
-
-    .news-status {
-        color: #6b7280;
-        font-size: 0.75rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .news-box {
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 6px 10px;
-        background: #ffffff;
-        max-height: 650px;
-        overflow-y: auto;
+    .news-container {
+        border-top: 1px solid rgba(128, 128, 128, 0.22);
     }
 
     .news-item {
-        display: flex;
-        align-items: flex-start;
-        padding: 8px 3px;
-        border-bottom: 1px solid #eeeeee;
-        line-height: 1.5;
-        font-size: 0.84rem;
-    }
-
-    .news-item:last-child {
-        border-bottom: none;
-    }
-
-    .news-index {
-        flex: 0 0 32px;
-        width: 32px;
-        color: #9ca3af;
-        font-size: 0.72rem;
-        font-family: "Segoe UI", sans-serif;
-        padding-top: 2px;
+        padding: 9px 4px 10px 4px;
+        border-bottom: 1px solid rgba(128, 128, 128, 0.16);
     }
 
     .news-time {
-        flex: 0 0 72px;
-        width: 72px;
-        color: #6b7280;
-        font-size: 0.72rem;
-        white-space: nowrap;
-        padding-top: 2px;
-        margin-right: 6px;
+        display: inline-block;
+        width: 70px;
+        color: #888;
+        font-size: 0.78rem;
+        vertical-align: top;
+        padding-top: 1px;
+    }
+
+    .news-title {
+        color: inherit;
+        font-size: 0.91rem;
+        line-height: 1.5;
+        text-decoration: none !important;
+    }
+
+    .news-title:hover {
+        text-decoration: none !important;
     }
 
     .news-content {
-        flex: 1;
-        min-width: 0;
+        margin-left: 70px;
+        margin-top: 3px;
+        color: #777;
+        font-size: 0.79rem;
+        line-height: 1.45;
     }
 
-    .news-content a {
-        color: #374151;
-        text-decoration: none !important;
+    .news-meta {
+        color: #888;
+        font-size: 0.75rem;
+        margin-top: 4px;
     }
 
-    .news-content a:hover {
-        color: #111827;
-        text-decoration: none !important;
+
+    /* =====================================================
+       SMALL TEXT
+       ===================================================== */
+
+    .muted {
+        color: #888;
+        font-size: 0.8rem;
     }
 
     </style>
@@ -209,18 +178,12 @@ st.markdown(
 # TITLE
 # =========================================================
 
-st.markdown(
-    '<div class="dashboard-title">'
-    "Macro Dashboard"
-    "</div>",
-    unsafe_allow_html=True,
+st.title(
+    "📊 Macro & Market Dashboard"
 )
 
-st.markdown(
-    '<div class="dashboard-subtitle">'
-    "US monetary policy, Treasury yields and inflation expectations"
-    "</div>",
-    unsafe_allow_html=True,
+st.caption(
+    "US monetary policy · Treasury yields · yield curve · focus financial news"
 )
 
 
@@ -229,95 +192,90 @@ st.markdown(
 # =========================================================
 
 compact_mode = st.toggle(
-    "缩小图表 / 快速浏览",
+    "Compact mode",
     value=True,
-    help="开启后，三个核心图表横向并排显示。",
 )
 
 
 # =========================================================
-# COMMON
+# HELPERS
 # =========================================================
 
 def get_start_date(
-    range_name,
+    compact,
 ):
+    """
+    Compact:
+        最近 1 年
 
-    today = (
+    Normal:
+        最近 3 年
+    """
+
+    if compact:
+        return (
+            pd.Timestamp.today()
+            - pd.Timedelta(
+                days=365
+            )
+        )
+
+    return (
         pd.Timestamp.today()
-        .normalize()
-    )
-
-    offsets = {
-        "5Y": pd.DateOffset(
-            years=5
-        ),
-        "1Y": pd.DateOffset(
-            years=1
-        ),
-        "6M": pd.DateOffset(
-            months=6
-        ),
-        "3M": pd.DateOffset(
-            months=3
-        ),
-        "1M": pd.DateOffset(
-            months=1
-        ),
-    }
-
-    return today - offsets.get(
-        range_name,
-        pd.DateOffset(
-            years=1
-        ),
+        - pd.Timedelta(
+            days=365 * 3
+        )
     )
 
 
 def apply_chart_style(
     fig,
-    height,
+    compact=True,
 ):
+    """
+    统一图表风格。
+
+    关键设置：
+        hovermode = x unified
+        dragmode  = False
+
+    鼠标停留时只用于查看数据，
+    不提供编辑/拖动操作。
+    """
 
     fig.update_layout(
-        height=height,
-        template="plotly_white",
         hovermode="x unified",
+        dragmode=False,
+
         margin=dict(
-            l=35,
-            r=35,
-            t=30,
+            l=45,
+            r=20,
+            t=45,
             b=35,
         ),
+
+        height=330 if compact else 390,
+
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=1.01,
+            y=1.02,
             xanchor="left",
             x=0,
-            font=dict(
-                size=10
-            ),
         ),
+
         hoverlabel=dict(
-            bgcolor="white",
-            font_size=11,
+            namelength=-1,
         ),
-        font=dict(
-            size=10
-            if compact_mode
-            else 12
-        ),
-        xaxis=dict(
-            showgrid=False,
-            showline=True,
-            linecolor="#d1d5db",
-        ),
-        yaxis=dict(
-            showgrid=True,
-            gridcolor="#eeeeee",
-            zeroline=False,
-        ),
+    )
+
+    fig.update_xaxes(
+        showgrid=False,
+        fixedrange=True,
+    )
+
+    fig.update_yaxes(
+        fixedrange=True,
     )
 
     return fig
@@ -326,61 +284,97 @@ def apply_chart_style(
 def add_sources(
     sources,
 ):
+    """
+    sources:
+        [
+            ("名称", "URL"),
+            ...
+        ]
+    """
 
     links = []
 
-    for text, url in sources:
-
-        safe_text = html.escape(
-            text
-        )
-
-        safe_url = html.escape(
-            url,
-            quote=True,
-        )
+    for name, url in sources:
 
         links.append(
-            f'<a href="{safe_url}" '
-            f'target="_blank" '
-            f'rel="noopener noreferrer">'
-            f'{safe_text}'
+            f'<a href="{html.escape(url)}" '
+            f'target="_blank">'
+            f'{html.escape(name)}'
             f'</a>'
         )
 
-    st.markdown(
-        '<div class="source-text">'
-        "Source: "
-        + '<span class="source-sep">|</span>'.join(
-            links
-        )
-        + "</div>",
-        unsafe_allow_html=True,
+    st.html(
+        '<div class="source-row">'
+        + " ".join(links)
+        + "</div>"
+    )
+
+
+def plotly_readonly_config():
+    """
+    Plotly 只读配置。
+
+    禁止：
+        - mode bar
+        - scroll zoom
+        - double click 操作
+        - editable
+        - logo
+
+    同时图表本身 fixedrange，
+    因此用户只能 hover 查看数据。
+    """
+
+    return {
+        "displayModeBar": False,
+        "scrollZoom": False,
+        "doubleClick": False,
+        "editable": False,
+        "displaylogo": False,
+    }
+
+
+def show_chart(
+    fig,
+):
+    """
+    所有图表统一使用只读配置。
+    """
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config=plotly_readonly_config(),
     )
 
 
 # =========================================================
 # CHART 1
+# Fed Policy Rate & Money Market
 # =========================================================
 
 def build_fig1(
-    date_range,
+    start_date,
 ):
+    iorb = get_iorb()
+    rrp = get_rrp_rate()
+    effr = get_effr()
+    sofr = get_sofr()
 
-    corridor = (
-        get_iorb()
+    df = (
+        iorb
         .merge(
-            get_rrp_rate(),
+            rrp,
             on="observation_date",
             how="outer",
         )
         .merge(
-            get_effr(),
+            effr,
             on="observation_date",
             how="outer",
         )
         .merge(
-            get_sofr(),
+            sofr,
             on="observation_date",
             how="outer",
         )
@@ -389,182 +383,166 @@ def build_fig1(
         )
     )
 
-    corridor = corridor[
-        corridor[
-            "observation_date"
-        ]
-        >= get_start_date(
-            date_range
-        )
+    df = df[
+        df["observation_date"]
+        >= start_date
     ]
 
     fig = go.Figure()
 
-    for column, name, width in [
-        (
-            "IORB",
-            "IORB",
-            2.6,
-        ),
-        (
-            "RRPONTSYAWARD",
-            "ON RRP",
-            2.6,
-        ),
-        (
-            "EFFR",
-            "EFFR",
-            2.6,
-        ),
-        (
-            "SOFR",
-            "SOFR",
-            2.2,
-        ),
-    ]:
-
-        fig.add_trace(
-            go.Scatter(
-                x=corridor[
-                    "observation_date"
-                ],
-                y=corridor[
-                    column
-                ],
-                name=name,
-                mode="lines",
-                line=dict(
-                    width=width
-                ),
-            )
+    fig.add_trace(
+        go.Scatter(
+            x=df["observation_date"],
+            y=df["IORB"],
+            mode="lines",
+            name="IORB",
+            connectgaps=False,
         )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=df["observation_date"],
+            y=df["RRPONTSYAWARD"],
+            mode="lines",
+            name="ON RRP",
+            connectgaps=False,
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=df["observation_date"],
+            y=df["EFFR"],
+            mode="lines",
+            name="EFFR",
+            connectgaps=False,
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=df["observation_date"],
+            y=df["SOFR"],
+            mode="lines",
+            name="SOFR",
+            connectgaps=False,
+        )
+    )
 
     fig.update_layout(
-        yaxis_title="Rate (%)"
+        title="Fed Policy Rate & Money Market",
+        yaxis_title="Rate (%)",
     )
 
-    return apply_chart_style(
+    apply_chart_style(
         fig,
-        190
-        if compact_mode
-        else 470,
+        compact_mode,
     )
+
+    return fig
 
 
 # =========================================================
 # CHART 2
+# 10Y Yield Structure
 # =========================================================
 
 def build_fig2(
-    date_range,
+    start_date,
 ):
+    dgs10 = get_dgs10()
+    dfii10 = get_dfii10()
 
-    data = (
-        get_dgs10()
+    df = (
+        dgs10
         .merge(
-            get_dfii10(),
+            dfii10,
             on="observation_date",
-            how="inner",
+            how="outer",
         )
         .sort_values(
             "observation_date"
         )
     )
 
-    data = data[
-        data[
-            "observation_date"
-        ]
-        >= get_start_date(
-            date_range
-        )
+    df = df[
+        df["observation_date"]
+        >= start_date
     ]
 
-    data["Breakeven"] = (
-        data["DGS10"]
-        - data["DFII10"]
+    # 10Y Breakeven
+    df["Breakeven"] = (
+        df["DGS10"]
+        - df["DFII10"]
     )
 
     fig = go.Figure()
 
     fig.add_trace(
         go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "DGS10"
-            ],
+            x=df["observation_date"],
+            y=df["DGS10"],
+            mode="lines",
             name="10Y Nominal",
-            mode="lines",
-            line=dict(
-                width=2.8
-            ),
+            connectgaps=False,
         )
     )
 
     fig.add_trace(
         go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "DFII10"
-            ],
+            x=df["observation_date"],
+            y=df["DFII10"],
+            mode="lines",
             name="10Y Real",
-            mode="lines",
-            line=dict(
-                width=2.6
-            ),
+            connectgaps=False,
         )
     )
 
     fig.add_trace(
         go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "Breakeven"
-            ],
-            name="10Y Breakeven",
+            x=df["observation_date"],
+            y=df["Breakeven"],
             mode="lines",
-            line=dict(
-                width=2.5,
-                dash="dot",
-            ),
+            name="10Y Breakeven",
+            connectgaps=False,
         )
     )
 
     fig.update_layout(
-        yaxis_title="Yield (%)"
+        title="10Y Yield Structure",
+        yaxis_title="Yield (%)",
     )
 
-    return apply_chart_style(
+    apply_chart_style(
         fig,
-        190
-        if compact_mode
-        else 470,
+        compact_mode,
     )
+
+    return fig
 
 
 # =========================================================
 # CHART 3
+# Treasury Yield & Curve Spread
 # =========================================================
 
 def build_fig3(
-    date_range,
+    start_date,
 ):
+    dgs3mo = get_dgs3mo()
+    dgs2 = get_dgs2()
+    dgs10 = get_dgs10()
 
-    data = (
-        get_dgs3mo()
+    df = (
+        dgs3mo
         .merge(
-            get_dgs2(),
+            dgs2,
             on="observation_date",
             how="outer",
         )
         .merge(
-            get_dgs10(),
+            dgs10,
             on="observation_date",
             how="outer",
         )
@@ -573,131 +551,117 @@ def build_fig3(
         )
     )
 
-    data = data[
-        data[
-            "observation_date"
-        ]
-        >= get_start_date(
-            date_range
-        )
+    df = df[
+        df["observation_date"]
+        >= start_date
     ]
 
-    data["10Y-2Y"] = (
-        data["DGS10"]
-        - data["DGS2"]
+    # Spread in percentage points
+    df["10Y-2Y"] = (
+        df["DGS10"]
+        - df["DGS2"]
     )
 
-    data["10Y-3M"] = (
-        data["DGS10"]
-        - data["DGS3MO"]
+    df["10Y-3M"] = (
+        df["DGS10"]
+        - df["DGS3MO"]
     )
 
-    fig = go.Figure()
+    fig = make_subplots(
+        specs=[
+            [
+                {
+                    "secondary_y": True
+                }
+            ]
+        ]
+    )
+
+    # ---------------------------------------------
+    # Treasury yields
+    # ---------------------------------------------
 
     fig.add_trace(
         go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "DGS3MO"
-            ],
+            x=df["observation_date"],
+            y=df["DGS3MO"],
+            mode="lines",
             name="3M",
-            mode="lines",
-            line=dict(
-                width=2.2
-            ),
-        )
+            connectgaps=False,
+        ),
+        secondary_y=False,
     )
 
     fig.add_trace(
         go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "DGS2"
-            ],
+            x=df["observation_date"],
+            y=df["DGS2"],
+            mode="lines",
             name="2Y",
-            mode="lines",
-            line=dict(
-                width=2.4
-            ),
-        )
+            connectgaps=False,
+        ),
+        secondary_y=False,
     )
 
     fig.add_trace(
         go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "DGS10"
-            ],
+            x=df["observation_date"],
+            y=df["DGS10"],
+            mode="lines",
             name="10Y",
+            connectgaps=False,
+        ),
+        secondary_y=False,
+    )
+
+    # ---------------------------------------------
+    # Curve spreads
+    #
+    # Convert percentage points to bp
+    # ---------------------------------------------
+
+    fig.add_trace(
+        go.Scatter(
+            x=df["observation_date"],
+            y=df["10Y-2Y"] * 100,
             mode="lines",
-            line=dict(
-                width=2.8
-            ),
-        )
+            name="10Y-2Y",
+            connectgaps=False,
+        ),
+        secondary_y=True,
     )
 
     fig.add_trace(
         go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "10Y-2Y"
-            ] * 100,
-            name="10Y−2Y",
+            x=df["observation_date"],
+            y=df["10Y-3M"] * 100,
             mode="lines",
-            line=dict(
-                width=2.2,
-                dash="dot",
-            ),
-            yaxis="y2",
-        )
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "10Y-3M"
-            ] * 100,
-            name="10Y−3M",
-            mode="lines",
-            line=dict(
-                width=2.2,
-                dash="dash",
-            ),
-            yaxis="y2",
-        )
+            name="10Y-3M",
+            connectgaps=False,
+        ),
+        secondary_y=True,
     )
 
     fig.update_layout(
-        yaxis=dict(
-            title="Yield (%)"
-        ),
-        yaxis2=dict(
-            title="Spread (bp)",
-            overlaying="y",
-            side="right",
-            showgrid=False,
-            zeroline=True,
-            zerolinecolor="#9ca3af",
-        ),
+        title="Treasury Yield & Curve Spread",
     )
 
-    return apply_chart_style(
-        fig,
-        200
-        if compact_mode
-        else 500,
+    fig.update_yaxes(
+        title_text="Yield (%)",
+        secondary_y=False,
     )
+
+    fig.update_yaxes(
+        title_text="Spread (bp)",
+        secondary_y=True,
+    )
+
+    apply_chart_style(
+        fig,
+        compact_mode,
+    )
+
+    return fig
 
 
 # =========================================================
@@ -709,365 +673,125 @@ def build_fig3(
 )
 def render_core_charts():
 
-    ranges = [
-        "5Y",
-        "1Y",
-        "6M",
-        "3M",
-        "1M",
-    ]
+    start_date = get_start_date(
+        compact_mode
+    )
 
-    if compact_mode:
+    # -----------------------------------------------------
+    # Chart 1
+    # -----------------------------------------------------
 
-        col1, col2, col3 = (
-            st.columns(
-                3,
-                gap="small",
-            )
-        )
+    st.subheader(
+        "Fed Policy Rate & Money Market"
+    )
 
-        # -------------------------------------------------
-        # 1
-        # -------------------------------------------------
+    fig1 = build_fig1(
+        start_date
+    )
 
-        with col1:
+    show_chart(
+        fig1
+    )
 
-            st.markdown(
-                '<div class="compact-title">'
-                "🏦 1. Fed Policy Rate"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-            st.markdown(
-                '<div class="compact-description">'
-                "IORB / ON RRP / EFFR / SOFR"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-            date_range = st.radio(
-                "时间范围",
-                ranges,
-                horizontal=True,
-                index=1,
-                key="compact_corridor_range",
-            )
-
-            st.plotly_chart(
-                build_fig1(
-                    date_range
-                ),
-                use_container_width=True,
-            )
-
-            add_sources(
-                [
-                    (
-                        "IORB",
-                        "https://fred.stlouisfed.org/series/IORB",
-                    ),
-                    (
-                        "ON RRP",
-                        "https://fred.stlouisfed.org/series/RRPONTSYAWARD",
-                    ),
-                    (
-                        "EFFR",
-                        "https://fred.stlouisfed.org/series/EFFR",
-                    ),
-                    (
-                        "SOFR",
-                        "https://fred.stlouisfed.org/series/SOFR",
-                    ),
-                ]
-            )
-
-        # -------------------------------------------------
-        # 2
-        # -------------------------------------------------
-
-        with col2:
-
-            st.markdown(
-                '<div class="compact-title">'
-                "2. 10Y Yield Structure"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-            st.markdown(
-                '<div class="compact-description">'
-                "10Y Nominal / Real / Breakeven"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-            date_range = st.radio(
-                "时间范围",
-                ranges,
-                horizontal=True,
-                index=1,
-                key="compact_yield10_range",
-            )
-
-            st.plotly_chart(
-                build_fig2(
-                    date_range
-                ),
-                use_container_width=True,
-            )
-
-            add_sources(
-                [
-                    (
-                        "DGS10",
-                        "https://fred.stlouisfed.org/series/DGS10",
-                    ),
-                    (
-                        "DFII10",
-                        "https://fred.stlouisfed.org/series/DFII10",
-                    ),
-                    (
-                        "T10YIE",
-                        "https://fred.stlouisfed.org/series/T10YIE",
-                    ),
-                ]
-            )
-
-        # -------------------------------------------------
-        # 3
-        # -------------------------------------------------
-
-        with col3:
-
-            st.markdown(
-                '<div class="compact-title">'
-                "3. Treasury Yield"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-            st.markdown(
-                '<div class="compact-description">'
-                "3M / 2Y / 10Y / Curve Spread"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-            date_range = st.radio(
-                "时间范围",
-                ranges,
-                horizontal=True,
-                index=1,
-                key="compact_treasury_range",
-            )
-
-            st.plotly_chart(
-                build_fig3(
-                    date_range
-                ),
-                use_container_width=True,
-            )
-
-            add_sources(
-                [
-                    (
-                        "DGS3MO",
-                        "https://fred.stlouisfed.org/series/DGS3MO",
-                    ),
-                    (
-                        "DGS2",
-                        "https://fred.stlouisfed.org/series/DGS2",
-                    ),
-                    (
-                        "DGS10",
-                        "https://fred.stlouisfed.org/series/DGS10",
-                    ),
-                    (
-                        "T10Y2Y",
-                        "https://fred.stlouisfed.org/series/T10Y2Y",
-                    ),
-                    (
-                        "T10Y3M",
-                        "https://fred.stlouisfed.org/series/T10Y3M",
-                    ),
-                ]
-            )
-
-    else:
-
-        # -------------------------------------------------
-        # 1
-        # -------------------------------------------------
-
-        st.markdown(
-            '<div class="section-title">'
-            "🏦 1. Fed Policy Rate & Money Market"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        st.markdown(
-            '<div class="section-description">'
-            "IORB、ON RRP Rate、EFFR 与 SOFR"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        date_range = st.radio(
-            "时间范围",
-            ranges,
-            horizontal=True,
-            index=1,
-            key="normal_corridor_range",
-        )
-
-        st.plotly_chart(
-            build_fig1(
-                date_range
+    add_sources(
+        [
+            (
+                "IORB",
+                FRED_URLS["IORB"],
             ),
-            use_container_width=True,
-        )
-
-        add_sources(
-            [
-                (
-                    "IORB",
-                    "https://fred.stlouisfed.org/series/IORB",
-                ),
-                (
-                    "ON RRP",
-                    "https://fred.stlouisfed.org/series/RRPONTSYAWARD",
-                ),
-                (
-                    "EFFR",
-                    "https://fred.stlouisfed.org/series/EFFR",
-                ),
-                (
-                    "SOFR",
-                    "https://fred.stlouisfed.org/series/SOFR",
-                ),
-            ]
-        )
-
-        st.markdown(
-            '<div class="chart-divider"></div>',
-            unsafe_allow_html=True,
-        )
-
-        # -------------------------------------------------
-        # 2
-        # -------------------------------------------------
-
-        st.markdown(
-            '<div class="section-title">'
-            "2. 10Y Yield Structure"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        st.markdown(
-            '<div class="section-description">'
-            "10Y Nominal / 10Y Real / 10Y Breakeven"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        date_range = st.radio(
-            "时间范围",
-            ranges,
-            horizontal=True,
-            index=1,
-            key="normal_yield10_range",
-        )
-
-        st.plotly_chart(
-            build_fig2(
-                date_range
+            (
+                "ON RRP",
+                FRED_URLS["ON RRP"],
             ),
-            use_container_width=True,
-        )
-
-        add_sources(
-            [
-                (
-                    "DGS10",
-                    "https://fred.stlouisfed.org/series/DGS10",
-                ),
-                (
-                    "DFII10",
-                    "https://fred.stlouisfed.org/series/DFII10",
-                ),
-                (
-                    "T10YIE",
-                    "https://fred.stlouisfed.org/series/T10YIE",
-                ),
-            ]
-        )
-
-        st.markdown(
-            '<div class="chart-divider"></div>',
-            unsafe_allow_html=True,
-        )
-
-        # -------------------------------------------------
-        # 3
-        # -------------------------------------------------
-
-        st.markdown(
-            '<div class="section-title">'
-            "3. Treasury Yield & Curve Spread"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        st.markdown(
-            '<div class="section-description">'
-            "3M、2Y、10Y Treasury Yield 与曲线利差"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        date_range = st.radio(
-            "时间范围",
-            ranges,
-            horizontal=True,
-            index=1,
-            key="normal_treasury_range",
-        )
-
-        st.plotly_chart(
-            build_fig3(
-                date_range
+            (
+                "EFFR",
+                FRED_URLS["EFFR"],
             ),
-            use_container_width=True,
-        )
+            (
+                "SOFR",
+                FRED_URLS["SOFR"],
+            ),
+        ]
+    )
 
-        add_sources(
-            [
-                (
-                    "DGS3MO",
-                    "https://fred.stlouisfed.org/series/DGS3MO",
-                ),
-                (
-                    "DGS2",
-                    "https://fred.stlouisfed.org/series/DGS2",
-                ),
-                (
-                    "DGS10",
-                    "https://fred.stlouisfed.org/series/DGS10",
-                ),
-                (
-                    "T10Y2Y",
-                    "https://fred.stlouisfed.org/series/T10Y2Y",
-                ),
-                (
-                    "T10Y3M",
-                    "https://fred.stlouisfed.org/series/T10Y3M",
-                ),
-            ]
-        )
+    # -----------------------------------------------------
+    # Chart 2
+    # -----------------------------------------------------
 
+    st.subheader(
+        "10Y Yield Structure"
+    )
+
+    fig2 = build_fig2(
+        start_date
+    )
+
+    show_chart(
+        fig2
+    )
+
+    add_sources(
+        [
+            (
+                "10Y Nominal",
+                FRED_URLS["10Y Nominal"],
+            ),
+            (
+                "10Y Real",
+                FRED_URLS["10Y Real"],
+            ),
+            (
+                "10Y Breakeven",
+                FRED_URLS["10Y Breakeven"],
+            ),
+        ]
+    )
+
+    # -----------------------------------------------------
+    # Chart 3
+    # -----------------------------------------------------
+
+    st.subheader(
+        "Treasury Yield & Curve Spread"
+    )
+
+    fig3 = build_fig3(
+        start_date
+    )
+
+    show_chart(
+        fig3
+    )
+
+    add_sources(
+        [
+            (
+                "3M",
+                FRED_URLS["3M"],
+            ),
+            (
+                "2Y",
+                FRED_URLS["2Y"],
+            ),
+            (
+                "10Y",
+                FRED_URLS["10Y"],
+            ),
+            (
+                "10Y-2Y",
+                FRED_URLS["10Y-2Y"],
+            ),
+            (
+                "10Y-3M",
+                FRED_URLS["10Y-3M"],
+            ),
+        ]
+    )
+
+
+# =========================================================
+# RENDER CORE
+# =========================================================
 
 render_core_charts()
 
@@ -1076,46 +800,55 @@ render_core_charts()
 # NEWS
 # =========================================================
 
-st.markdown(
-    '<div class="chart-divider"></div>',
-    unsafe_allow_html=True,
+st.divider()
+
+st.subheader(
+    "📰 红字焦点财经快讯"
 )
 
-st.markdown(
-    '<div class="section-title">'
-    "📰 7×24 重点财经快讯"
-    "</div>",
-    unsafe_allow_html=True,
+st.caption(
+    "东方财富平台筛选的「红字焦点快讯」"
+    " · 不进行自定义关键词筛选"
+    " · 每 60 秒自动刷新"
 )
 
-st.markdown(
-    '<div class="section-description">'
-    "新浪财经7×24 · 新浪原始排序 · 每60秒自动刷新"
-    "</div>",
-    unsafe_allow_html=True,
-)
 
+# =========================================================
+# NEWS PANEL
+# =========================================================
 
 @st.fragment(
     run_every="60s"
 )
 def render_news_panel():
 
+    # -----------------------------------------------------
+    # Refresh button
+    # -----------------------------------------------------
+
     col1, col2 = st.columns(
-        [1, 5]
+        [1, 8]
     )
 
     with col1:
 
-        if st.button(
-            "🔄 立即刷新",
-            key="refresh_7x24",
+        refresh = st.button(
+            "🔄 刷新",
+            key="news_refresh",
             use_container_width=True,
-        ):
+        )
 
-            get_sina_news.clear()
+    if refresh:
 
-            st.rerun()
+        get_sina_news.clear()
+
+        st.rerun(
+            scope="fragment"
+        )
+
+    # -----------------------------------------------------
+    # Get news
+    # -----------------------------------------------------
 
     news_items, news_error = (
         get_sina_news(
@@ -1123,136 +856,158 @@ def render_news_panel():
         )
     )
 
-    if news_items:
+    if news_error:
+
+        st.error(
+            news_error
+        )
 
         st.markdown(
-            f'<div class="news-status">'
-            f"当前显示 {len(news_items)} 条 · "
-            f"来源：新浪财经7×24 · "
-            f"60秒自动刷新"
-            f"</div>",
-            unsafe_allow_html=True,
+            "新闻源："
+            + f"[东方财富焦点快讯]"
+            f"({EASTMONEY_URL})"
         )
 
-        news_html = (
-            '<div class="news-box">'
+        return
+
+    if not news_items:
+
+        st.info(
+            "当前没有取得焦点快讯。"
         )
 
-        for idx, item in enumerate(
-            news_items,
-            start=1,
+        return
+
+    # -----------------------------------------------------
+    # Status
+    # -----------------------------------------------------
+
+    st.caption(
+        f"当前显示 {len(news_items)} 条"
+        " · 来源：东方财富红字焦点快讯"
+    )
+
+    # -----------------------------------------------------
+    # News HTML
+    # -----------------------------------------------------
+
+    news_html = [
+        '<div class="news-container">'
+    ]
+
+    for item in news_items:
+
+        title = html.escape(
+            str(
+                item.get(
+                    "title",
+                    "",
+                )
+            )
+        )
+
+        content = html.escape(
+            str(
+                item.get(
+                    "content",
+                    "",
+                )
+            )
+        )
+
+        news_time = html.escape(
+            str(
+                item.get(
+                    "time",
+                    "",
+                )
+            )
+        )
+
+        url = html.escape(
+            str(
+                item.get(
+                    "url",
+                    EASTMONEY_URL,
+                )
+            ),
+            quote=True,
+        )
+
+        if not url.startswith(
+            (
+                "http://",
+                "https://",
+            )
         ):
+            url = EASTMONEY_URL
 
-            news_time = html.escape(
-                str(
-                    item.get(
-                        "time",
-                        "",
-                    )
-                )
+        # 如果标题和正文完全一样，
+        # 不重复显示正文。
+        show_content = (
+            content
+            and content != title
+        )
+
+        news_html.append(
+            '<div class="news-item">'
+        )
+
+        news_html.append(
+            '<span class="news-time">'
+            + news_time
+            + "</span>"
+        )
+
+        news_html.append(
+            '<a class="news-title" '
+            'href="'
+            + url
+            + '" '
+            'target="_blank">'
+            + title
+            + "</a>"
+        )
+
+        if show_content:
+
+            news_html.append(
+                '<div class="news-content">'
+                + content
+                + "</div>"
             )
 
-            news_title = html.escape(
-                str(
-                    item.get(
-                        "title",
-                        "",
-                    )
-                )
-            )
-
-            news_content = html.escape(
-                str(
-                    item.get(
-                        "content",
-                        "",
-                    )
-                )
-            )
-
-            news_url = html.escape(
-                str(
-                    item.get(
-                        "url",
-                        SINA_7X24_URL,
-                    )
-                ),
-                quote=True,
-            )
-
-            # 如果有明确标题：
-            # 显示标题
-            if (
-                news_title
-                and news_content
-                and news_title
-                != news_content
-            ):
-
-                body = (
-                    f"<strong>"
-                    f"{news_title}"
-                    f"</strong>"
-                )
-
-            else:
-
-                body = news_title
-
-            news_html += f"""
-            <div class="news-item">
-
-                <span class="news-index">
-                    {idx}.
-                </span>
-
-                <span class="news-time">
-                    {news_time}
-                </span>
-
-                <div class="news-content">
-
-                    <a
-                        href="{news_url}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        {body}
-                    </a>
-
-                </div>
-
-            </div>
-            """
-
-        news_html += (
+        news_html.append(
             "</div>"
         )
 
-        st.html(
-            news_html
-        )
-
-    else:
-
-        st.warning(
-            "暂时无法取得新浪7×24快讯。"
-        )
-
-        if news_error:
-
-            st.caption(
-                f"错误：{news_error}"
-            )
-
-    add_sources(
-        [
-            (
-                "新浪财经 7×24",
-                SINA_7X24_URL,
-            )
-        ]
+    news_html.append(
+        "</div>"
     )
 
+    st.html(
+        "".join(
+            news_html
+        )
+    )
+
+    # -----------------------------------------------------
+    # Source
+    # -----------------------------------------------------
+
+    st.html(
+        '<div class="source-row">'
+        '<a href="'
+        + EASTMONEY_URL
+        + '" target="_blank">'
+        "Source: 东方财富焦点快讯"
+        "</a>"
+        "</div>"
+    )
+
+
+# =========================================================
+# RENDER NEWS
+# =========================================================
 
 render_news_panel()
