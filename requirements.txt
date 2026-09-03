@@ -3,3 +3,4 @@ pandas
 plotly
 requests
 beautifulsoup4
+# force Streamlit Community Cloud dependency redeploy
