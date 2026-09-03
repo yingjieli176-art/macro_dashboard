@@ -1,5 +1,7 @@
 import html
+import json
 import re
+import time
 
 import pandas as pd
 import requests
@@ -21,22 +23,16 @@ FRED_API_KEY = st.secrets.get(
 
 
 # =========================================================
-# NEWS
+# SINA 7×24
 # =========================================================
 
 SINA_FEED_URL = (
     "https://zhibo.sina.com.cn/api/zhibo/feed"
 )
 
-SINA_PAGE_URL = (
+SINA_7X24_URL = (
     "https://finance.sina.com.cn/7x24/"
 )
-
-EASTMONEY_FEED_URL = (
-    "https://np-weblist.eastmoney.com/"
-    "comm/web/getFastNewsList"
-)
-
 
 HEADERS = {
     "User-Agent": (
@@ -46,7 +42,7 @@ HEADERS = {
         "(KHTML, like Gecko) "
         "Chrome/152.0.0.0 Safari/537.36"
     ),
-    "Referer": SINA_PAGE_URL,
+    "Referer": SINA_7X24_URL,
     "Accept": (
         "application/json,text/plain,*/*"
     ),
@@ -54,7 +50,7 @@ HEADERS = {
 
 
 # =========================================================
-# FRED API
+# FRED
 # =========================================================
 
 def _fred_series(series_id):
@@ -102,6 +98,7 @@ def _fred_series(series_id):
 
         try:
             value = float(value)
+
         except (
             TypeError,
             ValueError,
@@ -209,59 +206,86 @@ def _clean_text(value):
 
 
 # =========================================================
-# NEWS FIELD EXTRACTION
+# SINA NEWS TEXT
 # =========================================================
 
-def _extract_title(item):
+def _extract_title(content):
 
-    candidates = [
-        item.get("rich_text"),
-        item.get("content"),
-        item.get("title"),
-        item.get("text"),
-        item.get("summary"),
-    ]
+    content = _clean_text(
+        content
+    )
 
-    for value in candidates:
+    if not content:
+        return ""
 
-        if isinstance(
-            value,
-            dict,
-        ):
+    # 新浪7×24很多消息格式：
+    #
+    # 〖标题〗正文
+    #
+    match = re.match(
+        r"^〖(.+?)〗",
+        content,
+        flags=re.DOTALL,
+    )
 
-            for key in (
-                "rich_text",
-                "content",
-                "title",
-                "text",
-                "summary",
-            ):
+    if match:
+        return match.group(1).strip()
 
-                if key not in value:
-                    continue
+    # 没有标题符号时，直接使用前面的句子
+    if len(content) <= 120:
+        return content
 
-                text = _clean_text(
-                    value[key]
-                )
+    return content[:120] + "..."
 
-                if text:
-                    return text
 
-        elif isinstance(
-            value,
-            list,
-        ):
+def _extract_time(item):
 
-            for part in value:
+    value = item.get(
+        "create_time"
+    )
 
-                text = _clean_text(
-                    part
-                )
+    if not value:
+        value = item.get(
+            "update_time",
+            "",
+        )
 
-                if text:
-                    return text
+    text = _clean_text(
+        value
+    )
 
-        else:
+    if not text:
+        return ""
+
+    # 例如：
+    # 2026-09-03 13:21:30
+    # 13:21:30
+    # 13:21
+    match = re.search(
+        r"(\d{1,2}:\d{2}(?::\d{2})?)",
+        text,
+    )
+
+    if match:
+        return match.group(1)
+
+    return text
+
+
+def _extract_content(item):
+
+    for key in (
+        "rich_text",
+        "content",
+        "title",
+        "text",
+    ):
+
+        value = item.get(
+            key
+        )
+
+        if value:
 
             text = _clean_text(
                 value
@@ -273,481 +297,161 @@ def _extract_title(item):
     return ""
 
 
-def _extract_time(item):
+# =========================================================
+# SINA FEED REQUEST
+# =========================================================
 
-    candidates = [
-        item.get("create_time"),
-        item.get("ctime"),
-        item.get("time"),
-        item.get("date"),
-        item.get("pub_time"),
-        item.get("pubTime"),
-    ]
+def _request_sina_feed(
+    page_size=100,
+):
 
-    for value in candidates:
+    params = {
+        "page": 1,
+        "page_size": page_size,
+        "zhibo_id": 152,
+        "tag_id": 0,
+        "dire": "f",
+        "dpc": 1,
+        "pagesize": page_size,
+        "type": 1,
+        "_": int(
+            time.time() * 1000
+        ),
+    }
 
-        if value is None:
-            continue
+    response = requests.get(
+        SINA_FEED_URL,
+        params=params,
+        headers=HEADERS,
+        timeout=15,
+    )
 
-        text = _clean_text(
-            value
+    response.raise_for_status()
+
+    # 正常 JSON
+    try:
+        return response.json()
+
+    except ValueError:
+        pass
+
+    # 有些情况下新浪会返回 JSONP
+    text = response.text.strip()
+
+    # 尝试从 JSONP 中截取 JSON
+    first_brace = text.find("{")
+    last_brace = text.rfind("}")
+
+    if (
+        first_brace >= 0
+        and last_brace > first_brace
+    ):
+
+        json_text = text[
+            first_brace:last_brace + 1
+        ]
+
+        return json.loads(
+            json_text
         )
 
-        match = re.search(
-            r"\d{1,2}:\d{2}",
-            text,
+    raise RuntimeError(
+        "新浪7×24返回的数据格式无法解析。"
+    )
+
+
+# =========================================================
+# GET RAW SINA LIST
+# =========================================================
+
+def _get_sina_raw_list():
+
+    data = _request_sina_feed(
+        page_size=100
+    )
+
+    try:
+
+        items = (
+            data
+            ["result"]
+            ["data"]
+            ["feed"]
+            ["list"]
         )
 
-        if match:
-            return match.group(0)
+    except (
+        KeyError,
+        TypeError,
+    ):
 
-    return ""
+        raise RuntimeError(
+            "新浪7×24接口结构发生变化，"
+            "找不到 result.data.feed.list。"
+        )
 
+    if not isinstance(
+        items,
+        list,
+    ):
 
-def _extract_url(item):
+        raise RuntimeError(
+            "新浪7×24没有返回新闻列表。"
+        )
 
-    keys = [
-        "url",
-        "link",
-        "wapurl",
-        "wap_url",
-        "article_url",
-        "articleUrl",
-    ]
-
-    for key in keys:
-
-        value = item.get(key)
-
-        if value:
-            return str(
-                value
-            ).strip()
-
-    return SINA_PAGE_URL
+    return items
 
 
 # =========================================================
-# GENERIC FEED FLATTENER
-# =========================================================
-
-def _flatten_feed(payload):
-
-    result = []
-
-    def walk(obj):
-
-        if isinstance(
-            obj,
-            dict,
-        ):
-
-            # 如果本身已经像一条新闻
-            if any(
-                key in obj
-                for key in (
-                    "rich_text",
-                    "content",
-                    "title",
-                    "text",
-                )
-            ):
-                result.append(obj)
-
-            for value in obj.values():
-                walk(value)
-
-        elif isinstance(
-            obj,
-            list,
-        ):
-
-            for item in obj:
-
-                if isinstance(
-                    item,
-                    dict,
-                ):
-                    walk(item)
-
-    walk(payload)
-
-    return result
-
-
-# =========================================================
-# IMPORTANCE KEYWORDS
+# IMPORTANT:
 #
-# 分数越高越重要。
+# 新浪公开 feed 本身没有稳定暴露给我们的
+# “焦点 typeid=9”字段。
+#
+# 因此这里不再自己做关键词评分。
+#
+# 优先使用新浪返回的原始排序。
+#
+# 这意味着：
+#   新浪排在前面的 → 我们排前面
+#   新浪新增的      → 自动进入
+#   新浪删除/更新的 → 自动刷新
+#
+# 不进行二次“AI判断重点”。
 # =========================================================
 
-HIGH_PRIORITY = {
 
-    # -----------------------------------------------------
-    # Fed / Monetary Policy
-    # -----------------------------------------------------
-
-    "fomc": 20,
-    "美联储": 20,
-    "联储": 17,
-    "fed": 17,
-
-    "powell": 20,
-    "鲍威尔": 20,
-
-    "利率决议": 20,
-    "降息": 18,
-    "加息": 18,
-    "降准": 18,
-
-    "货币政策": 17,
-    "央行": 14,
-
-    # -----------------------------------------------------
-    # Inflation / Employment / Macro
-    # -----------------------------------------------------
-
-    "核心cpi": 20,
-    "cpi": 19,
-
-    "核心pce": 20,
-    "pce": 19,
-
-    "非农": 20,
-    "非农业": 20,
-
-    "失业率": 17,
-    "初请失业金": 15,
-
-    "gdp": 18,
-    "gdp增速": 18,
-
-    "ppi": 15,
-    "零售销售": 15,
-
-    "ism": 15,
-    "消费者信心": 14,
-    "密歇根": 12,
-
-    # -----------------------------------------------------
-    # Treasury / Interest Rate
-    # -----------------------------------------------------
-
-    "10年期美债": 18,
-    "10年期国债": 18,
-    "美债收益率": 18,
-    "国债收益率": 15,
-
-    "收益率曲线": 17,
-    "期限利差": 16,
-    "倒挂": 17,
-
-    "美债": 12,
-    "国债": 10,
-
-    "利率": 9,
-
-    # -----------------------------------------------------
-    # US Equity Market
-    # -----------------------------------------------------
-
-    "标普500": 15,
-    "标普": 12,
-
-    "纳斯达克": 15,
-    "纳指": 13,
-
-    "道指": 13,
-
-    "美股": 12,
-
-    "熔断": 25,
-    "崩盘": 23,
-    "黑天鹅": 23,
-
-    "暴跌": 20,
-    "暴涨": 18,
-
-    "大跌": 15,
-    "大涨": 15,
-
-    # -----------------------------------------------------
-    # FX / Commodities
-    # -----------------------------------------------------
-
-    "美元指数": 16,
-    "美元": 9,
-
-    "黄金": 13,
-    "金价": 13,
-
-    "原油": 13,
-    "油价": 13,
-
-    # -----------------------------------------------------
-    # Trade / US Policy
-    # -----------------------------------------------------
-
-    "关税": 20,
-    "贸易战": 20,
-
-    "特朗普": 17,
-    "美国总统": 12,
-
-    "制裁": 17,
-    "出口管制": 17,
-
-    # -----------------------------------------------------
-    # Geopolitics
-    # -----------------------------------------------------
-
-    "战争": 23,
-    "停火": 20,
-    "冲突": 17,
-
-    "地缘政治": 18,
-
-    # -----------------------------------------------------
-    # China Macro
-    # -----------------------------------------------------
-
-    "中国人民银行": 19,
-    "人民银行": 17,
-
-    "存款准备金率": 18,
-    "lpr": 16,
-
-    "国常会": 16,
-    "财政政策": 15,
-    "刺激政策": 16,
-    "房地产政策": 14,
-}
-
-
-MEDIUM_PRIORITY = {
-
-    "英伟达": 7,
-    "nvidia": 7,
-
-    "苹果": 6,
-    "微软": 6,
-
-    "台积电": 8,
-
-    "芯片": 7,
-    "半导体": 7,
-
-    "ai": 6,
-    "人工智能": 6,
-
-    "银行": 5,
-    "能源": 5,
-
-    "科技股": 5,
-    "科技": 4,
-}
-
-
-LOW_PRIORITY = {
-
-    # 普通个股资讯
-    "目标价": -5,
-    "机构上调": -4,
-    "机构下调": -4,
-
-    "评级": -5,
-    "买入": -4,
-    "卖出": -4,
-
-    # 普通盘面信息
-    "盘中": -2,
-    "收盘": -2,
-
-    # 个股新闻通常优先级较低
-    "个股": -6,
-}
-
-
-# =========================================================
-# IMPORTANCE SCORE
-# =========================================================
-
-def _importance_score(title):
-
-    text = title.lower()
-
-    score = 0
-
-    matched = []
-
-    # -----------------------------------------------------
-    # High priority
-    # -----------------------------------------------------
-
-    for keyword, weight in HIGH_PRIORITY.items():
-
-        if keyword.lower() in text:
-
-            score += weight
-
-            matched.append(
-                (
-                    keyword,
-                    weight,
-                )
-            )
-
-    # -----------------------------------------------------
-    # Medium priority
-    # -----------------------------------------------------
-
-    for keyword, weight in MEDIUM_PRIORITY.items():
-
-        if keyword.lower() in text:
-
-            score += weight
-
-            matched.append(
-                (
-                    keyword,
-                    weight,
-                )
-            )
-
-    # -----------------------------------------------------
-    # Low priority
-    # -----------------------------------------------------
-
-    for keyword, weight in LOW_PRIORITY.items():
-
-        if keyword.lower() in text:
-
-            score += weight
-
-    # -----------------------------------------------------
-    # Significant market movement
-    # -----------------------------------------------------
-
-    movement_words = [
-        "大幅",
-        "大涨",
-        "大跌",
-        "暴涨",
-        "暴跌",
-        "创纪录",
-        "历史新高",
-        "历史新低",
-        "创历史",
-        "刷新纪录",
-    ]
-
-    movement_hit = False
-
-    for word in movement_words:
-
-        if word in title:
-
-            score += 5
-            movement_hit = True
-            break
-
-    # -----------------------------------------------------
-    # Percentage
-    # -----------------------------------------------------
-
-    if re.search(
-        r"\d+(?:\.\d+)?\s*%",
-        title,
-    ):
-
-        score += 2
-
-    # -----------------------------------------------------
-    # Number / amount
-    # -----------------------------------------------------
-
-    if re.search(
-        r"\d+(?:\.\d+)?\s*(?:万亿|千亿|亿|万亿美元|亿美元|亿元)",
-        title,
-    ):
-
-        score += 2
-
-    # -----------------------------------------------------
-    # Very short title
-    # -----------------------------------------------------
-
-    if len(title) < 8:
-        score -= 4
-
-    # -----------------------------------------------------
-    # Extremely long title
-    # -----------------------------------------------------
-
-    if len(title) > 220:
-        score -= 2
-
-    # -----------------------------------------------------
-    # Determine tag
-    # -----------------------------------------------------
-
-    importance_tag = ""
-
-    if matched:
-
-        matched.sort(
-            key=lambda x: x[1],
-            reverse=True,
-        )
-
-        importance_tag = matched[0][0]
-
-    elif movement_hit:
-
-        importance_tag = "市场异动"
-
-    return (
-        score,
-        importance_tag,
-    )
-
-
-# =========================================================
-# DEDUPLICATION
-# =========================================================
-
-def _normalize_title(title):
-
-    text = title.lower()
-
-    text = re.sub(
-        r"[\W_]+",
-        "",
-        text,
-        flags=re.UNICODE,
-    )
-
-    return text
-
-
-def _deduplicate_news(items):
+def _parse_sina_items(
+    raw_items,
+):
 
     result = []
 
     seen = set()
 
-    for item in items:
+    for item in raw_items:
 
-        title = item.get(
-            "title",
-            "",
-        ).strip()
-
-        if not title:
+        if not isinstance(
+            item,
+            dict,
+        ):
             continue
 
-        normalized = _normalize_title(
-            title
+        content = _extract_content(
+            item
+        )
+
+        if not content:
+            continue
+
+        # -------------------------------------------------
+        # 去掉重复消息
+        # -------------------------------------------------
+
+        normalized = re.sub(
+            r"\s+",
+            "",
+            content.lower(),
         )
 
         if not normalized:
@@ -760,560 +464,101 @@ def _deduplicate_news(items):
             normalized
         )
 
-        result.append(
+        # -------------------------------------------------
+        # ID
+        # -------------------------------------------------
+
+        news_id = str(
+            item.get(
+                "id",
+                "",
+            )
+        )
+
+        # -------------------------------------------------
+        # 新浪原始时间
+        # -------------------------------------------------
+
+        news_time = _extract_time(
             item
+        )
+
+        # -------------------------------------------------
+        # 标题
+        # -------------------------------------------------
+
+        title = _extract_title(
+            content
+        )
+
+        # -------------------------------------------------
+        # URL
+        #
+        # 新浪feed通常不会给每条直接URL，
+        # 所以使用7×24主页作为跳转入口。
+        # -------------------------------------------------
+
+        url = SINA_7X24_URL
+
+        result.append(
+            {
+                "id": news_id,
+                "title": title,
+                "content": content,
+                "time": news_time,
+                "url": url,
+            }
         )
 
     return result
 
 
 # =========================================================
-# DIVERSITY CONTROL
-#
-# 避免30条全部都是：
-# 美联储 / 美股 / 英伟达
-#
-# 让宏观、利率、市场、商品、政策、
-# 地缘政治尽量都有覆盖。
-# =========================================================
-
-def _classify_news(title):
-
-    text = title.lower()
-
-    if any(
-        x in text
-        for x in (
-            "美联储",
-            "fomc",
-            "powell",
-            "鲍威尔",
-            "降息",
-            "加息",
-            "利率决议",
-            "货币政策",
-        )
-    ):
-        return "fed"
-
-    if any(
-        x in text
-        for x in (
-            "cpi",
-            "pce",
-            "非农",
-            "失业率",
-            "gdp",
-            "ppi",
-            "零售销售",
-            "ism",
-        )
-    ):
-        return "macro"
-
-    if any(
-        x in text
-        for x in (
-            "美债",
-            "国债",
-            "收益率",
-            "期限利差",
-            "收益率曲线",
-            "倒挂",
-        )
-    ):
-        return "rates"
-
-    if any(
-        x in text
-        for x in (
-            "标普",
-            "标普500",
-            "纳斯达克",
-            "纳指",
-            "道指",
-            "美股",
-            "熔断",
-            "崩盘",
-        )
-    ):
-        return "equity"
-
-    if any(
-        x in text
-        for x in (
-            "美元",
-            "美元指数",
-            "黄金",
-            "原油",
-            "油价",
-        )
-    ):
-        return "fx_commodity"
-
-    if any(
-        x in text
-        for x in (
-            "关税",
-            "贸易战",
-            "特朗普",
-            "制裁",
-            "出口管制",
-        )
-    ):
-        return "policy"
-
-    if any(
-        x in text
-        for x in (
-            "战争",
-            "停火",
-            "冲突",
-            "地缘政治",
-        )
-    ):
-        return "geopolitics"
-
-    if any(
-        x in text
-        for x in (
-            "人民银行",
-            "降准",
-            "lpr",
-            "国常会",
-            "财政政策",
-            "房地产政策",
-        )
-    ):
-        return "china"
-
-    if any(
-        x in text
-        for x in (
-            "英伟达",
-            "nvidia",
-            "苹果",
-            "微软",
-            "台积电",
-            "芯片",
-            "半导体",
-            "人工智能",
-        )
-    ):
-        return "technology"
-
-    return "other"
-
-
-def _select_diverse_news(
-    items,
-    target=20,
-    maximum=30,
-):
-
-    if not items:
-        return []
-
-    # -----------------------------------------------------
-    # 已经按照分数排序
-    # -----------------------------------------------------
-
-    selected = []
-
-    category_count = {}
-
-    # 第一轮：
-    # 高分优先，同时避免单一类别霸占全部位置。
-    for item in items:
-
-        category = _classify_news(
-            item["title"]
-        )
-
-        count = category_count.get(
-            category,
-            0,
-        )
-
-        # 单一类别最多先占 5 条
-        if count >= 5:
-            continue
-
-        selected.append(
-            item
-        )
-
-        category_count[category] = (
-            count + 1
-        )
-
-        if len(selected) >= maximum:
-            break
-
-    # -----------------------------------------------------
-    # 如果还不到20条，再放宽类别限制
-    # -----------------------------------------------------
-
-    if len(selected) < target:
-
-        selected_keys = {
-            _normalize_title(
-                item["title"]
-            )
-            for item in selected
-        }
-
-        for item in items:
-
-            key = _normalize_title(
-                item["title"]
-            )
-
-            if key in selected_keys:
-                continue
-
-            selected.append(
-                item
-            )
-
-            selected_keys.add(
-                key
-            )
-
-            if len(selected) >= target:
-                break
-
-    return selected[:maximum]
-
-
-# =========================================================
-# PARSE RAW NEWS
-# =========================================================
-
-def _parse_news_items(raw_items):
-
-    parsed = []
-
-    for item in raw_items:
-
-        if not isinstance(
-            item,
-            dict,
-        ):
-            continue
-
-        title = _extract_title(
-            item
-        )
-
-        if not title:
-            continue
-
-        score, tag = (
-            _importance_score(
-                title
-            )
-        )
-
-        parsed.append(
-            {
-                "title": title,
-                "time": _extract_time(
-                    item
-                ),
-                "url": _extract_url(
-                    item
-                ),
-                "score": score,
-                "importance_tag": tag,
-            }
-        )
-
-    return _deduplicate_news(
-        parsed
-    )
-
-
-# =========================================================
-# SINA NEWS
-# =========================================================
-
-def _get_sina_news_raw():
-
-    params = {
-        "zhibo_id": "152",
-        "tag_id": "0",
-        "page": 1,
-        "pagesize": 100,
-    }
-
-    response = requests.get(
-        SINA_FEED_URL,
-        params=params,
-        headers=HEADERS,
-        timeout=15,
-    )
-
-    response.raise_for_status()
-
-    payload = response.json()
-
-    raw_items = _flatten_feed(
-        payload
-    )
-
-    return raw_items
-
-
-# =========================================================
-# EASTMONEY FALLBACK
-# =========================================================
-
-def _get_eastmoney_news_raw():
-
-    params = {
-        "client": "web",
-        "biz": "web_news_col",
-        "order": "1",
-        "needInteract": "0",
-        "pageSize": "100",
-        "pageIndex": "1",
-    }
-
-    response = requests.get(
-        EASTMONEY_FEED_URL,
-        params=params,
-        headers=HEADERS,
-        timeout=15,
-    )
-
-    response.raise_for_status()
-
-    payload = response.json()
-
-    raw_items = _flatten_feed(
-        payload
-    )
-
-    return raw_items
-
-
-# =========================================================
-# FINAL NEWS FUNCTION
+# GET SINA 7×24
 # =========================================================
 
 @st.cache_data(ttl=60)
-def get_sina_news(limit=30):
-
-    errors = []
-
-    # =====================================================
-    # 1. 新浪主源
-    # =====================================================
-
-    try:
-
-        raw_items = _get_sina_news_raw()
-
-        parsed = _parse_news_items(
-            raw_items
-        )
-
-        if parsed:
-
-            # -------------------------------------------------
-            # 第一层：真正重点
-            # -------------------------------------------------
-
-            important = [
-                item
-                for item in parsed
-                if item["score"] >= 10
-            ]
-
-            important.sort(
-                key=lambda x: x["score"],
-                reverse=True,
-            )
-
-            # -------------------------------------------------
-            # 第二层：重要市场新闻
-            #
-            # 如果真正重点不足20条，
-            # 扩展到 >=6。
-            # -------------------------------------------------
-
-            if len(important) < 20:
-
-                medium = [
-                    item
-                    for item in parsed
-                    if item["score"] >= 6
-                ]
-
-                medium.sort(
-                    key=lambda x: x["score"],
-                    reverse=True,
-                )
-
-                # 合并并去重
-                combined = (
-                    important
-                    + medium
-                )
-
-                combined = _deduplicate_news(
-                    combined
-                )
-
-                combined.sort(
-                    key=lambda x: x["score"],
-                    reverse=True,
-                )
-
-                important = combined
-
-            # -------------------------------------------------
-            # 第三层：
-            # 如果仍不足20条，再放宽到>=4。
-            #
-            # 这里只是为了避免新闻栏太空，
-            # 不是简单取最新20条。
-            # -------------------------------------------------
-
-            if len(important) < 20:
-
-                broad = [
-                    item
-                    for item in parsed
-                    if item["score"] >= 4
-                ]
-
-                broad.sort(
-                    key=lambda x: x["score"],
-                    reverse=True,
-                )
-
-                combined = (
-                    important
-                    + broad
-                )
-
-                combined = _deduplicate_news(
-                    combined
-                )
-
-                combined.sort(
-                    key=lambda x: x["score"],
-                    reverse=True,
-                )
-
-                important = combined
-
-            # -------------------------------------------------
-            # 最终多主题筛选
-            # -------------------------------------------------
-
-            selected = _select_diverse_news(
-                important,
-                target=20,
-                maximum=max(
-                    30,
-                    limit,
-                ),
-            )
-
-            if selected:
-
-                return (
-                    selected,
-                    None,
-                )
-
-        errors.append(
-            "新浪7×24没有筛选到足够的重点新闻。"
-        )
-
-    except Exception as exc:
-
-        errors.append(
-            f"新浪7×24：{exc}"
-        )
-
-    # =====================================================
-    # 2. 东方财富备用源
-    # =====================================================
+def get_sina_news(
+    limit=50,
+):
 
     try:
 
         raw_items = (
-            _get_eastmoney_news_raw()
+            _get_sina_raw_list()
         )
 
-        parsed = _parse_news_items(
-            raw_items
+        news_items = (
+            _parse_sina_items(
+                raw_items
+            )
         )
 
-        if parsed:
+        if not news_items:
 
-            important = [
-                item
-                for item in parsed
-                if item["score"] >= 6
-            ]
-
-            important.sort(
-                key=lambda x: x["score"],
-                reverse=True,
+            return (
+                [],
+                "新浪7×24接口返回了数据，但没有有效快讯。",
             )
 
-            if len(important) < 20:
+        # -------------------------------------------------
+        # 直接使用新浪自己的顺序
+        #
+        # 不做关键词评分
+        # 不做自己的“重点判断”
+        # -------------------------------------------------
 
-                important = [
-                    item
-                    for item in parsed
-                    if item["score"] >= 4
-                ]
-
-                important.sort(
-                    key=lambda x: x["score"],
-                    reverse=True,
-                )
-
-            selected = _select_diverse_news(
-                important,
-                target=20,
-                maximum=max(
-                    30,
-                    limit,
-                ),
-            )
-
-            if selected:
-
-                return (
-                    selected,
-                    None,
-                )
-
-        errors.append(
-            "东方财富备用源也没有筛选到足够的重点新闻。"
+        return (
+            news_items[:limit],
+            None,
         )
 
     except Exception as exc:
 
-        errors.append(
-            f"东方财富备用源：{exc}"
+        return (
+            [],
+            f"新浪7×24：{exc}",
         )
-
-    # =====================================================
-    # 3. 全部失败
-    # =====================================================
-
-    return (
-        [],
-        "；".join(errors),
-    )
 
 
 # =========================================================
