@@ -2,6 +2,7 @@ import html
 
 import pandas as pd
 import plotly.graph_objects as go
+import requests
 import streamlit as st
 
 from data import (
@@ -57,7 +58,8 @@ st.markdown(
     .news-content a:hover { color: #111827; text-decoration: none !important; }
     .market-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 7px 10px 6px; margin-bottom: 0.7rem; background: #ffffff; }
     .market-title { font-size: 0.78rem; font-weight: 650; color: #374151; margin-bottom: 5px; }
-    .market-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+    .market-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+    .market-row + .market-row { margin-top: 5px; padding-top: 5px; border-top: 1px solid #f3f4f6; }
     .market-item { min-width: 0; padding-right: 5px; border-right: 1px solid #f0f0f0; }
     .market-item:last-child { border-right: none; }
     .market-name { color: #6b7280; font-size: 0.68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -65,7 +67,7 @@ st.markdown(
     .market-change { font-size: 0.68rem; white-space: nowrap; }
     .market-meta { color: #9ca3af; font-size: 0.61rem; margin-top: 2px; white-space: nowrap; }
     .market-note { color: #9ca3af; font-size: 0.62rem; margin-top: 5px; }
-    @media (max-width: 900px) { .market-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    @media (max-width: 900px) { .market-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     </style>
     """,
     unsafe_allow_html=True,
@@ -80,20 +82,16 @@ compact_mode = st.toggle("缩小图表 / 快速浏览", value=True, help="开启
 @st.fragment(run_every="60s")
 def render_market_snapshot():
     rows = get_market_snapshot()
-    labels = [
+    regular_labels = [
         "纳斯达克",
         "标普500",
         "上证指数",
         "深证成指",
         "韩国综合",
-        "纳指期货",
-        "标普期货",
     ]
     by_name = {row.get("name"): row for row in rows}
 
-    items = []
-    for name in labels:
-        row = by_name.get(name, {})
+    def render_item(name, row, meta):
         price = row.get("price")
         change_pct = row.get("change_pct")
         if price is None:
@@ -102,14 +100,7 @@ def render_market_snapshot():
         else:
             price_text = f"{price:,.2f}"
             change_text = "--" if change_pct is None else f"{change_pct:+.2f}%"
-
-        if name in ("纳指期货", "标普期货"):
-            meta = "美股夜盘参考"
-        else:
-            state = row.get("market_state") or ""
-            meta = {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后"}.get(state, "")
-
-        items.append(
+        return (
             f'<div class="market-item">'
             f'<div class="market-name">{html.escape(name)}</div>'
             f'<div class="market-price">{html.escape(price_text)}</div>'
@@ -118,13 +109,57 @@ def render_market_snapshot():
             f'</div>'
         )
 
+    regular_items = []
+    for name in regular_labels:
+        row = by_name.get(name, {})
+        state = row.get("market_state") or ""
+        meta = {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后"}.get(state, "")
+        regular_items.append(render_item(name, row, meta))
+
+    after_hours = []
+    for name, symbol, label in [
+        ("纳指夜盘", "QQQ", "QQQ 盘后"),
+        ("标普夜盘", "SPY", "SPY 盘后"),
+    ]:
+        try:
+            response = requests.get(
+                "https://query1.finance.yahoo.com/v8/finance/chart/" + symbol,
+                params={
+                    "range": "1d",
+                    "interval": "1m",
+                    "includePrePost": "true",
+                },
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=10,
+            )
+            response.raise_for_status()
+            result = (response.json().get("chart", {}).get("result") or [])[0]
+            meta_data = result.get("meta", {})
+            post_price = meta_data.get("postMarketPrice")
+            post_change_pct = meta_data.get("postMarketChangePercent")
+            if post_price is None:
+                post_price = meta_data.get("regularMarketPrice")
+            post_row = {
+                "price": post_price,
+                "change_pct": post_change_pct,
+            }
+            after_hours.append(render_item(name, post_row, label))
+        except Exception:
+            after_hours.append(render_item(name, {}, label))
+
+    # 补足第二排空位，保持小模块两排整齐。
+    after_hours.extend([render_item("", {}, "") for _ in range(3)])
+
     st.markdown(
         '<div class="market-box">'
         '<div class="market-title">🌐 全球核心市场 · 实时/近实时</div>'
-        '<div class="market-grid">'
-        + "".join(items)
+        '<div class="market-row">'
+        + "".join(regular_items)
         + '</div>'
-        '<div class="market-note">每60秒刷新 · 美股夜盘采用 Nasdaq / S&P 500 期货（NQ / ES）作为夜盘参考 · 行情可能存在交易所或数据源延迟</div>'
+        '<div class="market-row">'
+        + "".join(after_hours[:5])
+        + '</div>'
+        '<div class="market-note">每60秒刷新 · 第一排为各核心指数盘中/最新收盘价；第二排为美股证券盘后价格（QQQ / SPY），不使用 NQ / ES 期货。指数本身通常没有可交易的盘后成交价。</div>'
         '</div>',
         unsafe_allow_html=True,
     )
