@@ -140,7 +140,7 @@ st.markdown(
         border-radius: 8px;
         padding: 6px 10px;
         background: #ffffff;
-        max-height: 520px;
+        max-height: 650px;
         overflow-y: auto;
     }
 
@@ -158,8 +158,8 @@ st.markdown(
     }
 
     .news-index {
-        flex: 0 0 28px;
-        width: 28px;
+        flex: 0 0 32px;
+        width: 32px;
         color: #9ca3af;
         font-size: 0.72rem;
         font-family: "Segoe UI", sans-serif;
@@ -191,18 +191,6 @@ st.markdown(
         text-decoration: none !important;
     }
 
-    .news-tag {
-        display: inline-block;
-        margin-right: 6px;
-        padding: 1px 5px;
-        border-radius: 4px;
-        background: #f3f4f6;
-        color: #6b7280;
-        font-size: 0.68rem;
-        line-height: 1.4;
-        vertical-align: 1px;
-    }
-
     </style>
     """,
     unsafe_allow_html=True,
@@ -214,7 +202,9 @@ st.markdown(
 # =========================================================
 
 st.markdown(
-    '<div class="dashboard-title">Macro Dashboard</div>',
+    '<div class="dashboard-title">'
+    "Macro Dashboard"
+    "</div>",
     unsafe_allow_html=True,
 )
 
@@ -238,28 +228,48 @@ compact_mode = st.toggle(
 
 
 # =========================================================
-# COMMON FUNCTIONS
+# COMMON
 # =========================================================
 
-def get_start_date(range_name):
+def get_start_date(
+    range_name,
+):
 
-    today = pd.Timestamp.today().normalize()
+    today = (
+        pd.Timestamp.today()
+        .normalize()
+    )
 
     offsets = {
-        "5Y": pd.DateOffset(years=5),
-        "1Y": pd.DateOffset(years=1),
-        "6M": pd.DateOffset(months=6),
-        "3M": pd.DateOffset(months=3),
-        "1M": pd.DateOffset(months=1),
+        "5Y": pd.DateOffset(
+            years=5
+        ),
+        "1Y": pd.DateOffset(
+            years=1
+        ),
+        "6M": pd.DateOffset(
+            months=6
+        ),
+        "3M": pd.DateOffset(
+            months=3
+        ),
+        "1M": pd.DateOffset(
+            months=1
+        ),
     }
 
     return today - offsets.get(
         range_name,
-        pd.DateOffset(years=1),
+        pd.DateOffset(
+            years=1
+        ),
     )
 
 
-def apply_chart_style(fig, height):
+def apply_chart_style(
+    fig,
+    height,
+):
 
     fig.update_layout(
         height=height,
@@ -277,14 +287,18 @@ def apply_chart_style(fig, height):
             y=1.01,
             xanchor="left",
             x=0,
-            font=dict(size=10),
+            font=dict(
+                size=10
+            ),
         ),
         hoverlabel=dict(
             bgcolor="white",
             font_size=11,
         ),
         font=dict(
-            size=10 if compact_mode else 12,
+            size=10
+            if compact_mode
+            else 12
         ),
         xaxis=dict(
             showgrid=False,
@@ -301,13 +315,18 @@ def apply_chart_style(fig, height):
     return fig
 
 
-def add_sources(sources):
+def add_sources(
+    sources,
+):
 
     links = []
 
     for text, url in sources:
 
-        safe_text = html.escape(text)
+        safe_text = html.escape(
+            text
+        )
+
         safe_url = html.escape(
             url,
             quote=True,
@@ -323,19 +342,22 @@ def add_sources(sources):
 
     st.markdown(
         '<div class="source-text">'
-        'Source: '
-        + '<span class="source-sep">|</span>'.join(links)
-        + '</div>',
+        "Source: "
+        + '<span class="source-sep">|</span>'.join(
+            links
+        )
+        + "</div>",
         unsafe_allow_html=True,
     )
 
 
 # =========================================================
 # CHART 1
-# Fed Policy Rate & Money Market
 # =========================================================
 
-def build_fig1(corridor_range):
+def build_fig1(
+    date_range,
+):
 
     corridor = (
         get_iorb()
@@ -354,138 +376,179 @@ def build_fig1(corridor_range):
             on="observation_date",
             how="outer",
         )
-        .sort_values("observation_date")
+        .sort_values(
+            "observation_date"
+        )
     )
 
     corridor = corridor[
-        corridor["observation_date"]
-        >= get_start_date(corridor_range)
+        corridor[
+            "observation_date"
+        ]
+        >= get_start_date(
+            date_range
+        )
     ]
 
     fig = go.Figure()
 
-    series_list = [
-        ("IORB", "IORB", 2.6),
-        ("RRPONTSYAWARD", "ON RRP", 2.6),
-        ("EFFR", "EFFR", 2.6),
-        ("SOFR", "SOFR", 2.2),
-    ]
-
-    for series_id, name, width in series_list:
+    for column, name, width in [
+        (
+            "IORB",
+            "IORB",
+            2.6,
+        ),
+        (
+            "RRPONTSYAWARD",
+            "ON RRP",
+            2.6,
+        ),
+        (
+            "EFFR",
+            "EFFR",
+            2.6,
+        ),
+        (
+            "SOFR",
+            "SOFR",
+            2.2,
+        ),
+    ]:
 
         fig.add_trace(
             go.Scatter(
-                x=corridor["observation_date"],
-                y=corridor[series_id],
+                x=corridor[
+                    "observation_date"
+                ],
+                y=corridor[
+                    column
+                ],
                 name=name,
                 mode="lines",
                 line=dict(
-                    width=width,
+                    width=width
                 ),
             )
         )
 
     fig.update_layout(
-        yaxis_title="Rate (%)",
+        yaxis_title="Rate (%)"
     )
 
-    apply_chart_style(
+    return apply_chart_style(
         fig,
-        190 if compact_mode else 470,
+        190
+        if compact_mode
+        else 470,
     )
-
-    return fig
 
 
 # =========================================================
 # CHART 2
-# 10Y Yield Structure
 # =========================================================
 
-def build_fig2(yield10_range):
+def build_fig2(
+    date_range,
+):
 
-    yield10 = (
+    data = (
         get_dgs10()
         .merge(
             get_dfii10(),
             on="observation_date",
             how="inner",
         )
-        .sort_values("observation_date")
+        .sort_values(
+            "observation_date"
+        )
     )
 
-    yield10 = yield10[
-        yield10["observation_date"]
-        >= get_start_date(yield10_range)
+    data = data[
+        data[
+            "observation_date"
+        ]
+        >= get_start_date(
+            date_range
+        )
     ]
 
-    yield10["Breakeven"] = (
-        yield10["DGS10"]
-        - yield10["DFII10"]
+    data["Breakeven"] = (
+        data["DGS10"]
+        - data["DFII10"]
     )
 
     fig = go.Figure()
 
-    series_list = [
-        (
-            "DGS10",
-            "10Y Nominal",
-            2.8,
-            None,
-        ),
-        (
-            "DFII10",
-            "10Y Real",
-            2.6,
-            None,
-        ),
-        (
-            "Breakeven",
-            "10Y Breakeven",
-            2.5,
-            "dot",
-        ),
-    ]
-
-    for col, name, width, dash in series_list:
-
-        line = dict(
-            width=width,
+    fig.add_trace(
+        go.Scatter(
+            x=data[
+                "observation_date"
+            ],
+            y=data[
+                "DGS10"
+            ],
+            name="10Y Nominal",
+            mode="lines",
+            line=dict(
+                width=2.8
+            ),
         )
+    )
 
-        if dash:
-            line["dash"] = dash
-
-        fig.add_trace(
-            go.Scatter(
-                x=yield10["observation_date"],
-                y=yield10[col],
-                name=name,
-                mode="lines",
-                line=line,
-            )
+    fig.add_trace(
+        go.Scatter(
+            x=data[
+                "observation_date"
+            ],
+            y=data[
+                "DFII10"
+            ],
+            name="10Y Real",
+            mode="lines",
+            line=dict(
+                width=2.6
+            ),
         )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=data[
+                "observation_date"
+            ],
+            y=data[
+                "Breakeven"
+            ],
+            name="10Y Breakeven",
+            mode="lines",
+            line=dict(
+                width=2.5,
+                dash="dot",
+            ),
+        )
+    )
 
     fig.update_layout(
-        yaxis_title="Yield (%)",
+        yaxis_title="Yield (%)"
     )
 
-    apply_chart_style(
+    return apply_chart_style(
         fig,
-        190 if compact_mode else 470,
+        190
+        if compact_mode
+        else 470,
     )
-
-    return fig
 
 
 # =========================================================
 # CHART 3
-# Treasury Yield & Curve Spread
 # =========================================================
 
-def build_fig3(treasury_range):
+def build_fig3(
+    date_range,
+):
 
-    treasury = (
+    data = (
         get_dgs3mo()
         .merge(
             get_dgs2(),
@@ -497,60 +560,88 @@ def build_fig3(treasury_range):
             on="observation_date",
             how="outer",
         )
-        .sort_values("observation_date")
+        .sort_values(
+            "observation_date"
+        )
     )
 
-    treasury = treasury[
-        treasury["observation_date"]
-        >= get_start_date(treasury_range)
+    data = data[
+        data[
+            "observation_date"
+        ]
+        >= get_start_date(
+            date_range
+        )
     ]
 
-    treasury["10Y-2Y"] = (
-        treasury["DGS10"]
-        - treasury["DGS2"]
+    data["10Y-2Y"] = (
+        data["DGS10"]
+        - data["DGS2"]
     )
 
-    treasury["10Y-3M"] = (
-        treasury["DGS10"]
-        - treasury["DGS3MO"]
+    data["10Y-3M"] = (
+        data["DGS10"]
+        - data["DGS3MO"]
     )
 
     fig = go.Figure()
 
     fig.add_trace(
         go.Scatter(
-            x=treasury["observation_date"],
-            y=treasury["DGS3MO"],
+            x=data[
+                "observation_date"
+            ],
+            y=data[
+                "DGS3MO"
+            ],
             name="3M",
             mode="lines",
-            line=dict(width=2.2),
+            line=dict(
+                width=2.2
+            ),
         )
     )
 
     fig.add_trace(
         go.Scatter(
-            x=treasury["observation_date"],
-            y=treasury["DGS2"],
+            x=data[
+                "observation_date"
+            ],
+            y=data[
+                "DGS2"
+            ],
             name="2Y",
             mode="lines",
-            line=dict(width=2.4),
+            line=dict(
+                width=2.4
+            ),
         )
     )
 
     fig.add_trace(
         go.Scatter(
-            x=treasury["observation_date"],
-            y=treasury["DGS10"],
+            x=data[
+                "observation_date"
+            ],
+            y=data[
+                "DGS10"
+            ],
             name="10Y",
             mode="lines",
-            line=dict(width=2.8),
+            line=dict(
+                width=2.8
+            ),
         )
     )
 
     fig.add_trace(
         go.Scatter(
-            x=treasury["observation_date"],
-            y=treasury["10Y-2Y"] * 100,
+            x=data[
+                "observation_date"
+            ],
+            y=data[
+                "10Y-2Y"
+            ] * 100,
             name="10Y−2Y",
             mode="lines",
             line=dict(
@@ -563,8 +654,12 @@ def build_fig3(treasury_range):
 
     fig.add_trace(
         go.Scatter(
-            x=treasury["observation_date"],
-            y=treasury["10Y-3M"] * 100,
+            x=data[
+                "observation_date"
+            ],
+            y=data[
+                "10Y-3M"
+            ] * 100,
             name="10Y−3M",
             mode="lines",
             line=dict(
@@ -577,7 +672,7 @@ def build_fig3(treasury_range):
 
     fig.update_layout(
         yaxis=dict(
-            title="Yield (%)",
+            title="Yield (%)"
         ),
         yaxis2=dict(
             title="Spread (bp)",
@@ -589,19 +684,21 @@ def build_fig3(treasury_range):
         ),
     )
 
-    apply_chart_style(
+    return apply_chart_style(
         fig,
-        200 if compact_mode else 500,
+        200
+        if compact_mode
+        else 500,
     )
-
-    return fig
 
 
 # =========================================================
 # CORE CHARTS
 # =========================================================
 
-@st.fragment(run_every="3600s")
+@st.fragment(
+    run_every="3600s"
+)
 def render_core_charts():
 
     ranges = [
@@ -614,13 +711,15 @@ def render_core_charts():
 
     if compact_mode:
 
-        col1, col2, col3 = st.columns(
-            3,
-            gap="small",
+        col1, col2, col3 = (
+            st.columns(
+                3,
+                gap="small",
+            )
         )
 
         # -------------------------------------------------
-        # CHART 1
+        # 1
         # -------------------------------------------------
 
         with col1:
@@ -639,7 +738,7 @@ def render_core_charts():
                 unsafe_allow_html=True,
             )
 
-            corridor_range = st.radio(
+            date_range = st.radio(
                 "时间范围",
                 ranges,
                 horizontal=True,
@@ -648,12 +747,10 @@ def render_core_charts():
             )
 
             st.plotly_chart(
-                build_fig1(corridor_range),
+                build_fig1(
+                    date_range
+                ),
                 use_container_width=True,
-            )
-
-            st.caption(
-                "政策利率走廊 / 货币市场利率"
             )
 
             add_sources(
@@ -678,7 +775,7 @@ def render_core_charts():
             )
 
         # -------------------------------------------------
-        # CHART 2
+        # 2
         # -------------------------------------------------
 
         with col2:
@@ -697,7 +794,7 @@ def render_core_charts():
                 unsafe_allow_html=True,
             )
 
-            yield10_range = st.radio(
+            date_range = st.radio(
                 "时间范围",
                 ranges,
                 horizontal=True,
@@ -706,12 +803,10 @@ def render_core_charts():
             )
 
             st.plotly_chart(
-                build_fig2(yield10_range),
+                build_fig2(
+                    date_range
+                ),
                 use_container_width=True,
-            )
-
-            st.caption(
-                "名义利率 / 实际利率 / 通胀预期"
             )
 
             add_sources(
@@ -732,7 +827,7 @@ def render_core_charts():
             )
 
         # -------------------------------------------------
-        # CHART 3
+        # 3
         # -------------------------------------------------
 
         with col3:
@@ -751,7 +846,7 @@ def render_core_charts():
                 unsafe_allow_html=True,
             )
 
-            treasury_range = st.radio(
+            date_range = st.radio(
                 "时间范围",
                 ranges,
                 horizontal=True,
@@ -760,12 +855,10 @@ def render_core_charts():
             )
 
             st.plotly_chart(
-                build_fig3(treasury_range),
+                build_fig3(
+                    date_range
+                ),
                 use_container_width=True,
-            )
-
-            st.caption(
-                "3M / 2Y / 10Y / 10Y−2Y / 10Y−3M"
             )
 
             add_sources(
@@ -796,7 +889,7 @@ def render_core_charts():
     else:
 
         # -------------------------------------------------
-        # CHART 1
+        # 1
         # -------------------------------------------------
 
         st.markdown(
@@ -813,7 +906,7 @@ def render_core_charts():
             unsafe_allow_html=True,
         )
 
-        corridor_range = st.radio(
+        date_range = st.radio(
             "时间范围",
             ranges,
             horizontal=True,
@@ -822,17 +915,10 @@ def render_core_charts():
         )
 
         st.plotly_chart(
-            build_fig1(corridor_range),
+            build_fig1(
+                date_range
+            ),
             use_container_width=True,
-        )
-
-        st.markdown(
-            '<div class="mini-description">'
-            "IORB / ON RRP构成政策利率走廊，"
-            "EFFR观察联邦基金市场，"
-            "SOFR观察隔夜担保融资。"
-            "</div>",
-            unsafe_allow_html=True,
         )
 
         add_sources(
@@ -862,7 +948,7 @@ def render_core_charts():
         )
 
         # -------------------------------------------------
-        # CHART 2
+        # 2
         # -------------------------------------------------
 
         st.markdown(
@@ -879,7 +965,7 @@ def render_core_charts():
             unsafe_allow_html=True,
         )
 
-        yield10_range = st.radio(
+        date_range = st.radio(
             "时间范围",
             ranges,
             horizontal=True,
@@ -888,16 +974,10 @@ def render_core_charts():
         )
 
         st.plotly_chart(
-            build_fig2(yield10_range),
+            build_fig2(
+                date_range
+            ),
             use_container_width=True,
-        )
-
-        st.markdown(
-            '<div class="mini-description">'
-            "10Y Breakeven = 10Y Nominal − 10Y Real，"
-            "用于观察市场隐含通胀预期。"
-            "</div>",
-            unsafe_allow_html=True,
         )
 
         add_sources(
@@ -923,7 +1003,7 @@ def render_core_charts():
         )
 
         # -------------------------------------------------
-        # CHART 3
+        # 3
         # -------------------------------------------------
 
         st.markdown(
@@ -940,7 +1020,7 @@ def render_core_charts():
             unsafe_allow_html=True,
         )
 
-        treasury_range = st.radio(
+        date_range = st.radio(
             "时间范围",
             ranges,
             horizontal=True,
@@ -949,16 +1029,10 @@ def render_core_charts():
         )
 
         st.plotly_chart(
-            build_fig3(treasury_range),
+            build_fig3(
+                date_range
+            ),
             use_container_width=True,
-        )
-
-        st.markdown(
-            '<div class="mini-description">'
-            "曲线斜率：10Y−2Y、10Y−3M；"
-            "正值代表正常向上倾斜，负值代表倒挂。"
-            "</div>",
-            unsafe_allow_html=True,
         )
 
         add_sources(
@@ -991,7 +1065,7 @@ render_core_charts()
 
 
 # =========================================================
-# 7×24 MARKET NEWS
+# NEWS
 # =========================================================
 
 st.markdown(
@@ -1001,46 +1075,60 @@ st.markdown(
 
 st.markdown(
     '<div class="section-title">'
-    "📰 7×24 Market News"
+    "📰 7×24 重点财经快讯"
     "</div>",
     unsafe_allow_html=True,
 )
 
 st.markdown(
     '<div class="section-description">'
-    "实时财经重点快讯 · 每 60 秒自动刷新 · 仅显示重要事件"
+    "新浪财经7×24 · 新浪原始排序 · 每60秒自动刷新"
     "</div>",
     unsafe_allow_html=True,
 )
 
 
-@st.fragment(run_every="60s")
+@st.fragment(
+    run_every="60s"
+)
 def render_news_panel():
 
-    if st.button(
-        "🔄 立即刷新7×24",
-        key="refresh_7x24",
-    ):
-        get_sina_news.clear()
+    col1, col2 = st.columns(
+        [1, 5]
+    )
 
-    # 注意：
-    # 这里不是“只取10条”。
-    # data.py 会先抓取较多原始快讯，
-    # 再根据重要性评分筛选。
-    news_items, news_error = get_sina_news(
-        limit=30
+    with col1:
+
+        if st.button(
+            "🔄 立即刷新",
+            key="refresh_7x24",
+            use_container_width=True,
+        ):
+
+            get_sina_news.clear()
+
+            st.rerun()
+
+    news_items, news_error = (
+        get_sina_news(
+            limit=50
+        )
     )
 
     if news_items:
 
         st.markdown(
             f'<div class="news-status">'
-            f"筛选后 {len(news_items)} 条重点新闻 · 自动刷新中"
+            f"当前显示 {len(news_items)} 条 · "
+            f"来源：新浪财经7×24 · "
+            f"60秒自动刷新"
             f"</div>",
             unsafe_allow_html=True,
         )
 
-        news_html = '<div class="news-box">'
+        news_html = (
+            '<div class="news-box">'
+        )
 
         for idx, item in enumerate(
             news_items,
@@ -1053,7 +1141,7 @@ def render_news_panel():
                         "time",
                         "",
                     )
-                ).strip()
+                )
             )
 
             news_title = html.escape(
@@ -1062,53 +1150,46 @@ def render_news_panel():
                         "title",
                         "",
                     )
-                ).strip()
+                )
+            )
+
+            news_content = html.escape(
+                str(
+                    item.get(
+                        "content",
+                        "",
+                    )
+                )
             )
 
             news_url = html.escape(
                 str(
                     item.get(
                         "url",
-                        "",
+                        SINA_7X24_URL,
                     )
-                ).strip(),
+                ),
                 quote=True,
             )
 
-            news_tag = html.escape(
-                str(
-                    item.get(
-                        "importance_tag",
-                        "",
-                    )
-                ).strip()
-            )
+            # 如果有明确标题：
+            # 显示标题 + 简短正文
+            if (
+                news_title
+                and news_content
+                and news_title
+                != news_content
+            ):
 
-            tag_html = (
-                f'<span class="news-tag">'
-                f"{news_tag}"
-                f"</span>"
-                if news_tag
-                else ""
-            )
-
-            if news_url:
-
-                content = (
-                    f'<a href="{news_url}" '
-                    f'target="_blank" '
-                    f'rel="noopener noreferrer">'
-                    f"{tag_html}"
+                body = (
+                    f"<strong>"
                     f"{news_title}"
-                    f"</a>"
+                    f"</strong>"
                 )
 
             else:
 
-                content = (
-                    f"{tag_html}"
-                    f"{news_title}"
-                )
+                body = news_title
 
             news_html += f"""
             <div class="news-item">
@@ -1122,23 +1203,36 @@ def render_news_panel():
                 </span>
 
                 <div class="news-content">
-                    {content}
+
+                    <a
+                        href="{news_url}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {body}
+                    </a>
+
                 </div>
 
             </div>
             """
 
-        news_html += "</div>"
+        news_html += (
+            "</div>"
+        )
 
-        st.html(news_html)
+        st.html(
+            news_html
+        )
 
     else:
 
         st.warning(
-            "目前没有筛选到重点7×24新闻。"
+            "暂时无法取得新浪7×24快讯。"
         )
 
         if news_error:
+
             st.caption(
                 f"错误：{news_error}"
             )
@@ -1147,7 +1241,7 @@ def render_news_panel():
         [
             (
                 "新浪财经 7×24",
-                "https://finance.sina.com.cn/7x24/",
+                SINA_7X24_URL,
             )
         ]
     )
