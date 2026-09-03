@@ -1,0 +1,124 @@
+name: Add diagnostics module
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - requirements.txt
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch app.py
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app.py')
+          s = p.read_text(encoding='utf-8')
+          marker = '# =========================================================\n# Footer\n# ========================================================='
+          if '## 4. System Diagnostics' in s:
+              print('Diagnostics already present')
+          elif marker not in s:
+              raise SystemExit('Footer marker not found')
+          else:
+              block = r'''# =========================================================
+# 4. System Diagnostics
+# =========================================================
+
+st.markdown(
+    '<div class="section-title">4. System Diagnostics</div>',
+    unsafe_allow_html=True
+)
+
+with st.expander("🔧 检查数据源 / 运行状态", expanded=True):
+
+    import requests
+    from datetime import datetime
+
+    diag_rows = []
+
+    # App runtime
+    diag_rows.append(("Streamlit App", True, "app.py 已正常执行到诊断模块"))
+
+    # FRED
+    try:
+        fred_test = get_dgs10()
+        ok = fred_test is not None and not fred_test.empty
+        detail = f"DGS10 返回 {len(fred_test)} 条数据" if ok else "DGS10 返回空数据"
+        diag_rows.append(("FRED API", ok, detail))
+    except Exception as e:
+        diag_rows.append(("FRED API", False, str(e)[:180]))
+
+    # Sina
+    try:
+        sina_test, sina_test_error = get_sina_news(limit=1)
+        ok = bool(sina_test)
+        detail = "新浪 7×24 返回数据" if ok else (sina_test_error or "新浪返回空数据")
+        diag_rows.append(("Sina 7×24", ok, detail[:180]))
+    except Exception as e:
+        diag_rows.append(("Sina 7×24", False, str(e)[:180]))
+
+    # Eastmoney direct fallback endpoint
+    try:
+        east_url = "https://np-weblist.eastmoney.com/comm/web/getFastNewsList"
+        east_params = {
+            "client": "web",
+            "biz": "web_724",
+            "fastColumn": "102",
+            "sortEnd": "",
+            "pageSize": 1,
+            "req_trace": str(int(datetime.now().timestamp() * 1000)),
+        }
+        r = requests.get(east_url, params=east_params, timeout=8, headers={
+            "User-Agent": "Mozilla/5.0",
+            "Referer": "https://kuaixun.eastmoney.com/",
+            "Accept": "application/json, text/plain, */*",
+        })
+        r.raise_for_status()
+        payload = r.json()
+        items = payload.get("data", {}).get("fastNewsList", [])
+        ok = bool(items)
+        detail = "Eastmoney 7×24 返回数据" if ok else "接口可访问，但返回空数据"
+        diag_rows.append(("Eastmoney 7×24", ok, detail))
+    except Exception as e:
+        diag_rows.append(("Eastmoney 7×24", False, str(e)[:180]))
+
+    # WSJ
+    try:
+        wsj_test, wsj_test_error = get_wsj_news(limit=1)
+        ok = bool(wsj_test)
+        detail = "WSJ headlines 返回数据" if ok else (wsj_test_error or "WSJ返回空数据")
+        diag_rows.append(("WSJ", ok, detail[:180]))
+    except Exception as e:
+        diag_rows.append(("WSJ", False, str(e)[:180]))
+
+    for name, ok, detail in diag_rows:
+        icon = "✅" if ok else "❌"
+        st.markdown(f"**{icon} {name}** — {detail}")
+
+    st.caption(
+        f"Compact Mode: {'ON' if compact_mode else 'OFF'} · "
+        f"Last Check: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    )
+
+
+'''
+              s = s.replace(marker, block + marker, 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit dashboard change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          git diff --cached --quiet || git commit -m "Add section 4 diagnostics to dashboard"
+          git push
+      - name: Remove one-time workflow
+        if: always()
+        run: |
+          rm -f .github/workflows/add_diagnostics.yml
+          git add .github/workflows/add_diagnostics.yml
+          git diff --cached --quiet || git commit -m "Remove one-time diagnostics patch workflow"
+          git push || true
