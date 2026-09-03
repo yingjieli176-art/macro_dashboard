@@ -1,5 +1,6 @@
 import re
 import html
+import json
 import time
 
 import streamlit as st
@@ -7,14 +8,15 @@ import pandas as pd
 import requests
 
 
+# =========================================================
+# FRED
+# =========================================================
+
 FRED_API_URL = "https://api.stlouisfed.org/fred/series/observations"
 
 
-# =========================================================
-# Generic FRED API
-# =========================================================
-
 def get_fred_series(series_id):
+
     api_key = st.secrets["FRED_API_KEY"]
 
     params = {
@@ -34,7 +36,9 @@ def get_fred_series(series_id):
 
     data = response.json()
 
-    df = pd.DataFrame(data["observations"])
+    df = pd.DataFrame(
+        data["observations"]
+    )
 
     df["observation_date"] = pd.to_datetime(
         df["date"]
@@ -103,11 +107,15 @@ def get_rrp_rate():
 
 
 # =========================================================
-# Sina 7x24
+# Sina Finance 7x24
 # =========================================================
 
 SINA_7X24_URL = (
     "https://zhibo.sina.com.cn/api/zhibo/feed"
+)
+
+SINA_7X24_PAGE_URL = (
+    "https://finance.sina.com.cn/7x24/"
 )
 
 
@@ -118,8 +126,13 @@ SINA_HEADERS = {
         "(KHTML, like Gecko) "
         "Chrome/140.0 Safari/537.36"
     ),
-    "Referer": "https://finance.sina.com.cn/7x24/",
-    "Accept": "application/json, text/plain, */*",
+    "Referer": SINA_7X24_PAGE_URL,
+    "Accept": (
+        "application/json, text/plain, */*"
+    ),
+    "Accept-Language": (
+        "zh-CN,zh;q=0.9,en;q=0.8"
+    ),
 }
 
 
@@ -128,16 +141,17 @@ def clean_sina_text(text):
     if not text:
         return ""
 
-    # Remove HTML
+    # Remove HTML tags
     text = re.sub(
         r"<[^>]+>",
         "",
         text
     )
 
+    # Decode HTML entities
     text = html.unescape(text)
 
-    # Remove Sina's special brackets
+    # Remove Sina special brackets
     text = text.replace("〖", "")
     text = text.replace("〗", "")
 
@@ -151,8 +165,34 @@ def clean_sina_text(text):
     return text.strip()
 
 
+def parse_sina_time(value):
+
+    if not value:
+        return ""
+
+    value = str(value).strip()
+
+    # Already looks like HH:MM:SS
+    if re.match(
+        r"^\d{2}:\d{2}:\d{2}$",
+        value
+    ):
+        return value
+
+    # Extract HH:MM:SS from a datetime
+    match = re.search(
+        r"(\d{2}:\d{2}:\d{2})",
+        value
+    )
+
+    if match:
+        return match.group(1)
+
+    return value
+
+
 @st.cache_data(ttl=60)
-def get_sina_news(limit=30):
+def get_sina_news(limit=20):
 
     timestamp = str(
         int(time.time() * 1000)
@@ -180,25 +220,34 @@ def get_sina_news(limit=30):
 
         response.raise_for_status()
 
-        # -------------------------------------------------
-        # Sina sometimes returns JSONP
-        # -------------------------------------------------
-
         text = response.text.strip()
 
-        if text.startswith("try{"):
+        # -------------------------------------------------
+        # Handle JSON / JSONP
+        # -------------------------------------------------
 
-            start = text.find("(")
-            end = text.rfind(");")
+        if text.startswith("{"):
 
-            if start != -1 and end != -1:
-                text = text[
-                    start + 1:end
-                ]
+            data = response.json()
 
-        data = response.json() \
-            if text.startswith("{") \
-            else __import__("json").loads(text)
+        else:
+
+            # Try to locate JSON object
+            start = text.find("{")
+            end = text.rfind("}")
+
+            if start == -1 or end == -1:
+                raise ValueError(
+                    "新浪接口返回的内容不是有效 JSON"
+                )
+
+            data = json.loads(
+                text[start:end + 1]
+            )
+
+        # -------------------------------------------------
+        # Extract feed
+        # -------------------------------------------------
 
         items = (
             data
@@ -208,17 +257,26 @@ def get_sina_news(limit=30):
             .get("list", [])
         )
 
+        if not items:
+            raise ValueError(
+                "新浪接口返回成功，但没有新闻数据"
+            )
+
         news = []
 
         for item in items:
 
             content = clean_sina_text(
-                item.get("rich_text", "")
+                item.get(
+                    "rich_text",
+                    ""
+                )
             )
 
             create_time = (
                 item.get("create_time")
                 or item.get("update_time")
+                or item.get("pub_time")
                 or ""
             )
 
@@ -227,18 +285,24 @@ def get_sina_news(limit=30):
 
             news.append(
                 {
-                    "time": create_time,
+                    "time": parse_sina_time(
+                        create_time
+                    ),
                     "title": content,
-                    "url": (
-                        "https://finance.sina.com.cn/7x24/"
-                    )
+                    "url": SINA_7X24_PAGE_URL
                 }
             )
 
-        return news[:limit]
+        if not news:
+            raise ValueError(
+                "新浪新闻数据为空"
+            )
 
-    except Exception:
-        return []
+        return news[:limit], None
+
+    except Exception as e:
+
+        return [], str(e)
 
 
 # =========================================================
@@ -257,7 +321,9 @@ def get_wsj_news(limit=10):
             "(KHTML, like Gecko) "
             "Chrome/140.0 Safari/537.36"
         ),
-        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Language": (
+            "en-US,en;q=0.9"
+        ),
     }
 
     try:
@@ -307,7 +373,6 @@ def get_wsj_news(limit=10):
             if title in seen:
                 continue
 
-            # Exclude navigation / quote UI
             bad_words = [
                 "Sign In",
                 "Subscribe",
@@ -315,10 +380,13 @@ def get_wsj_news(limit=10):
                 "Markets",
                 "Quotes Lookup",
                 "S&P 500 Stocks",
+                "Dow Jones",
+                "Nasdaq",
             ]
 
             if any(
-                word.lower() in title.lower()
+                word.lower()
+                in title.lower()
                 for word in bad_words
             ):
                 continue
@@ -336,7 +404,8 @@ def get_wsj_news(limit=10):
             if len(news) >= limit:
                 break
 
-        return news[:limit]
+        return news[:limit], None
 
-    except Exception:
-        return []
+    except Exception as e:
+
+        return [], str(e)
