@@ -1,6 +1,13 @@
-import html
-st.error("TEST BUILD 2026-09-03")
 import streamlit as st
+
+st.set_page_config(
+    page_title="Macro Dashboard",
+    layout="wide"
+)
+
+st.error("TEST BUILD 2026-09-03")
+
+import html
 import pandas as pd
 import plotly.graph_objects as go
 
