@@ -1,3 +1,5 @@
+import html
+
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
@@ -36,82 +38,94 @@ st.markdown(
     <style>
 
     .block-container {
-        padding-top: 2rem;
-        padding-bottom: 4rem;
+        padding-top: 1.5rem;
+        padding-bottom: 3rem;
         max-width: 1400px;
     }
 
     .dashboard-title {
         font-size: 2rem;
         font-weight: 700;
-        margin-bottom: 0.2rem;
+        margin-bottom: 0.15rem;
     }
 
     .dashboard-subtitle {
         color: #6b7280;
         font-size: 0.95rem;
-        margin-bottom: 1.0rem;
+        margin-bottom: 0.8rem;
     }
 
     .section-title {
         font-size: 1.35rem;
         font-weight: 650;
-        margin-top: 1rem;
+        margin-top: 0.8rem;
         margin-bottom: 0.15rem;
     }
 
     .section-description {
         color: #6b7280;
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
+        font-size: 0.88rem;
+        margin-bottom: 0.4rem;
     }
 
     .mini-description {
         color: #6b7280;
-        font-size: 0.82rem;
-        line-height: 1.5;
+        font-size: 0.78rem;
+        line-height: 1.45;
         margin-top: 2px;
-        margin-bottom: 14px;
+        margin-bottom: 8px;
     }
 
     .source-text {
         color: #6b7280;
-        font-size: 0.78rem;
-        margin-top: 4px;
-        margin-bottom: 18px;
+        font-size: 0.76rem;
+        margin-top: 3px;
+        margin-bottom: 12px;
     }
 
     .chart-divider {
-        margin-top: 1rem;
-        margin-bottom: 2rem;
+        margin-top: 0.8rem;
+        margin-bottom: 1.5rem;
         border-top: 1px solid #e5e7eb;
     }
 
+    .news-box {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 6px 10px;
+        background: #ffffff;
+        max-height: 520px;
+        overflow-y: auto;
+    }
+
     .news-item {
-        padding: 8px 4px;
+        padding: 7px 3px;
         border-bottom: 1px solid #eeeeee;
-        line-height: 1.45;
-        font-size: 0.86rem;
+        line-height: 1.4;
+        font-size: 0.84rem;
+    }
+
+    .news-item:last-child {
+        border-bottom: none;
     }
 
     .news-time {
         color: #6b7280;
-        font-size: 0.75rem;
-        margin-right: 8px;
+        font-size: 0.72rem;
+        margin-right: 7px;
         white-space: nowrap;
     }
 
     .news-source {
         color: #9ca3af;
-        font-size: 0.7rem;
+        font-size: 0.68rem;
         margin-top: 2px;
     }
 
-    .news-box {
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        padding: 10px 12px;
-        background: #ffffff;
+    .news-status {
+        color: #6b7280;
+        font-size: 0.75rem;
+        margin-bottom: 5px;
     }
 
     </style>
@@ -125,7 +139,9 @@ st.markdown(
 # =========================================================
 
 st.markdown(
-    '<div class="dashboard-title">Macro Dashboard</div>',
+    '<div class="dashboard-title">'
+    'Macro Dashboard'
+    '</div>',
     unsafe_allow_html=True
 )
 
@@ -144,7 +160,7 @@ st.markdown(
 compact_mode = st.toggle(
     "缩小图表 / 快速浏览",
     value=False,
-    help="开启后将图表缩小，并只保留一句核心说明。"
+    help="开启后，所有图表缩小，适合快速查看。"
 )
 
 
@@ -177,8 +193,11 @@ def get_start_date(range_name):
 def apply_chart_style(fig, height):
 
     fig.update_layout(
+
         height=height,
+
         template="plotly_white",
+
         hovermode="x unified",
 
         margin=dict(
@@ -228,12 +247,217 @@ def add_source(text, url):
         <div class="source-text">
             Source:
             <a href="{url}" target="_blank">
-                {text}
+                {html.escape(text)}
             </a>
         </div>
         """,
         unsafe_allow_html=True
     )
+
+
+# =========================================================
+# 7×24 Market News
+# =========================================================
+#
+# 放在最上面，确保打开 Dashboard 第一屏就能看到
+#
+
+st.markdown(
+    '<div class="section-title">'
+    '📰 7×24 Market News'
+    '</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div class="section-description">'
+    '实时财经文字快讯'
+    '</div>',
+    unsafe_allow_html=True
+)
+
+
+refresh = st.button(
+    "🔄 刷新7×24",
+    key="refresh_7x24"
+)
+
+
+if refresh:
+
+    get_sina_news.clear()
+    get_wsj_news.clear()
+
+
+sina_news, sina_error = get_sina_news(
+    limit=20
+)
+
+wsj_news, wsj_error = get_wsj_news(
+    limit=10
+)
+
+
+col_sina, col_wsj = st.columns(
+    2,
+    gap="large"
+)
+
+
+# =========================================================
+# Sina
+# =========================================================
+
+with col_sina:
+
+    st.markdown(
+        "#### 新浪财经 7×24"
+    )
+
+    if sina_news:
+
+        st.markdown(
+            '<div class="news-status">'
+            f'最新 {len(sina_news)} 条'
+            '</div>',
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            '<div class="news-box">',
+            unsafe_allow_html=True
+        )
+
+        for item in sina_news:
+
+            news_time = html.escape(
+                str(item.get("time", ""))
+            )
+
+            news_title = html.escape(
+                str(item.get("title", ""))
+            )
+
+            news_url = html.escape(
+                str(item.get("url", ""))
+            )
+
+            st.markdown(
+                f"""
+                <div class="news-item">
+                    <span class="news-time">
+                        {news_time}
+                    </span>
+                    <a href="{news_url}" target="_blank">
+                        {news_title}
+                    </a>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        st.markdown(
+            '</div>',
+            unsafe_allow_html=True
+        )
+
+    else:
+
+        st.error(
+            "新浪7×24获取失败。"
+        )
+
+        if sina_error:
+
+            st.caption(
+                f"错误：{sina_error}"
+            )
+
+    add_source(
+        "新浪财经 7×24",
+        "https://finance.sina.com.cn/7x24/"
+    )
+
+
+# =========================================================
+# WSJ
+# =========================================================
+
+with col_wsj:
+
+    st.markdown(
+        "#### WSJ"
+    )
+
+    if wsj_news:
+
+        st.markdown(
+            '<div class="news-status">'
+            f'公开可见 Headlines · {len(wsj_news)} 条'
+            '</div>',
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            '<div class="news-box">',
+            unsafe_allow_html=True
+        )
+
+        for item in wsj_news:
+
+            news_title = html.escape(
+                str(item.get("title", ""))
+            )
+
+            news_url = html.escape(
+                str(item.get("url", ""))
+            )
+
+            st.markdown(
+                f"""
+                <div class="news-item">
+                    <a href="{news_url}" target="_blank">
+                        {news_title}
+                    </a>
+                    <div class="news-source">
+                        The Wall Street Journal
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        st.markdown(
+            '</div>',
+            unsafe_allow_html=True
+        )
+
+    else:
+
+        st.warning(
+            "WSJ公开新闻暂时无法获取。"
+        )
+
+        if wsj_error:
+
+            st.caption(
+                f"错误：{wsj_error}"
+            )
+
+    add_source(
+        "WSJ Finance",
+        "https://www.wsj.com/finance"
+    )
+
+
+# =========================================================
+# Divider
+# =========================================================
+
+st.markdown(
+    '<div class="chart-divider"></div>',
+    unsafe_allow_html=True
+)
 
 
 # =========================================================
@@ -299,10 +523,19 @@ fig1 = go.Figure()
 
 
 for series_id, name, width in [
+
     ("IORB", "IORB", 2.6),
-    ("RRPONTSYAWARD", "ON RRP", 2.6),
+
+    (
+        "RRPONTSYAWARD",
+        "ON RRP",
+        2.6
+    ),
+
     ("EFFR", "EFFR", 2.6),
+
     ("SOFR", "SOFR", 2.2),
+
 ]:
 
     fig1.add_trace(
@@ -323,7 +556,7 @@ fig1.update_layout(
 
 fig1 = apply_chart_style(
     fig1,
-    270 if compact_mode else 470
+    220 if compact_mode else 470
 )
 
 
@@ -337,8 +570,8 @@ if compact_mode:
 
     st.markdown(
         '<div class="mini-description">'
-        '政策利率走廊：IORB与ON RRP构成走廊上下边界，'
-        'EFFR反映联邦基金实际成交水平，SOFR观察隔夜担保融资。'
+        'IORB / ON RRP构成政策利率走廊，'
+        'EFFR观察联邦基金市场，SOFR观察隔夜担保融资。'
         '</div>',
         unsafe_allow_html=True
     )
@@ -457,7 +690,7 @@ fig2.update_layout(
 
 fig2 = apply_chart_style(
     fig2,
-    270 if compact_mode else 470
+    220 if compact_mode else 470
 )
 
 
@@ -471,8 +704,8 @@ if compact_mode:
 
     st.markdown(
         '<div class="mini-description">'
-        '10Y Nominal = 10Y Real + Breakeven；'
-        '可用来拆解长期利率中的实际利率与通胀定价变化。'
+        '10Y Nominal = 10Y Real + Breakeven，'
+        '用于观察实际利率与通胀定价的变化。'
         '</div>',
         unsafe_allow_html=True
     )
@@ -638,7 +871,7 @@ fig3.update_layout(
 
 fig3 = apply_chart_style(
     fig3,
-    290 if compact_mode else 500
+    230 if compact_mode else 500
 )
 
 
@@ -652,8 +885,8 @@ if compact_mode:
 
     st.markdown(
         '<div class="mini-description">'
-        '10Y−2Y观察中长期收益率曲线；'
-        '10Y−3M更直接观察长期利率相对当前短端政策环境的变化。'
+        '10Y−2Y观察中长期曲线，'
+        '10Y−3M更直接观察长端相对短端的利差。'
         '</div>',
         unsafe_allow_html=True
     )
@@ -663,166 +896,6 @@ add_source(
     "FRED — 3M / 2Y / 10Y Treasury Yields",
     "https://fred.stlouisfed.org/graph/?id=DGS3MO%2CDGS2%2CDGS10"
 )
-
-
-st.markdown(
-    '<div class="chart-divider"></div>',
-    unsafe_allow_html=True
-)
-
-
-# =========================================================
-# 4. 7×24 Market News
-# =========================================================
-
-st.markdown(
-    '<div class="section-title">'
-    '4. 7×24 Market News'
-    '</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    '<div class="section-description">'
-    '实时财经文字快讯'
-    '</div>',
-    unsafe_allow_html=True
-)
-
-
-# =========================================================
-# Refresh Button
-# =========================================================
-
-refresh = st.button(
-    "🔄 刷新7×24",
-    key="refresh_7x24"
-)
-
-
-if refresh:
-
-    get_sina_news.clear()
-    get_wsj_news.clear()
-
-
-sina_news = get_sina_news(
-    limit=25
-)
-
-wsj_news = get_wsj_news(
-    limit=10
-)
-
-
-# =========================================================
-# News Columns
-# =========================================================
-
-col_sina, col_wsj = st.columns(
-    2,
-    gap="large"
-)
-
-
-# =========================================================
-# Sina 7×24
-# =========================================================
-
-with col_sina:
-
-    st.markdown(
-        "#### 新浪财经 7×24"
-    )
-
-    if sina_news:
-
-        st.markdown(
-            '<div class="news-box">',
-            unsafe_allow_html=True
-        )
-
-        for item in sina_news:
-
-            st.markdown(
-                f"""
-                <div class="news-item">
-                    <span class="news-time">
-                        {item["time"]}
-                    </span>
-                    <a href="{item["url"]}" target="_blank">
-                        {item["title"]}
-                    </a>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        st.markdown(
-            '</div>',
-            unsafe_allow_html=True
-        )
-
-    else:
-
-        st.warning(
-            "新浪7×24暂时无法获取。"
-        )
-
-    add_source(
-        "新浪财经 7×24",
-        "https://finance.sina.com.cn/7x24/"
-    )
-
-
-# =========================================================
-# WSJ
-# =========================================================
-
-with col_wsj:
-
-    st.markdown(
-        "#### WSJ"
-    )
-
-    if wsj_news:
-
-        st.markdown(
-            '<div class="news-box">',
-            unsafe_allow_html=True
-        )
-
-        for item in wsj_news:
-
-            st.markdown(
-                f"""
-                <div class="news-item">
-                    <a href="{item["url"]}" target="_blank">
-                        {item["title"]}
-                    </a>
-                    <div class="news-source">
-                        The Wall Street Journal
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        st.markdown(
-            '</div>',
-            unsafe_allow_html=True
-        )
-
-    else:
-
-        st.warning(
-            "WSJ公开新闻暂时无法获取。"
-        )
-
-    add_source(
-        "WSJ Finance",
-        "https://www.wsj.com/finance"
-    )
 
 
 # =========================================================
