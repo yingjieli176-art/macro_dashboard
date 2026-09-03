@@ -3,91 +3,254 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from data import (
+    get_dgs2,
+    get_dgs5,
     get_dgs10,
     get_dfii10,
     get_sofr,
     get_iorb,
     get_effr,
-    get_rrp,
-    get_dgs2,
-    get_dgs5,
+    get_rrp_rate,
 )
 
 
-# =========================
-# Page
-# =========================
+# =========================================================
+# Page Config
+# =========================================================
 
 st.set_page_config(
     page_title="Macro Dashboard",
+    page_icon="📊",
     layout="wide"
 )
 
-st.title("Macro Dashboard")
+
+# =========================================================
+# Custom CSS
+# =========================================================
+
+st.markdown(
+    """
+    <style>
+
+    /* Main page */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 4rem;
+        max-width: 1400px;
+    }
+
+    /* Main title */
+    .dashboard-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+
+    .dashboard-subtitle {
+        color: #6b7280;
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Section title */
+    .section-title {
+        font-size: 1.35rem;
+        font-weight: 650;
+        margin-top: 1.5rem;
+        margin-bottom: 0.15rem;
+    }
+
+    .section-description {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin-bottom: 0.7rem;
+    }
+
+    /* Source */
+    .source-text {
+        color: #6b7280;
+        font-size: 0.78rem;
+        margin-top: -0.3rem;
+        margin-bottom: 2.2rem;
+    }
+
+    /* Divider */
+    .chart-divider {
+        margin-top: 0.5rem;
+        margin-bottom: 2rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 
-# =========================
-# Load data
-# =========================
+# =========================================================
+# Header
+# =========================================================
 
+st.markdown(
+    '<div class="dashboard-title">Macro Dashboard</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div class="dashboard-subtitle">'
+    'US monetary policy, Treasury yields and inflation expectations'
+    '</div>',
+    unsafe_allow_html=True
+)
+
+
+# =========================================================
+# Time Range
+# =========================================================
+
+time_range = st.radio(
+    "Time range",
+    ["5Y", "1Y", "6M", "3M", "1M"],
+    horizontal=True,
+    index=1
+)
+
+
+def get_start_date(range_name):
+
+    today = pd.Timestamp.today().normalize()
+
+    if range_name == "5Y":
+        return today - pd.DateOffset(years=5)
+
+    if range_name == "1Y":
+        return today - pd.DateOffset(years=1)
+
+    if range_name == "6M":
+        return today - pd.DateOffset(months=6)
+
+    if range_name == "3M":
+        return today - pd.DateOffset(months=3)
+
+    if range_name == "1M":
+        return today - pd.DateOffset(months=1)
+
+    return today - pd.DateOffset(years=1)
+
+
+start_date = get_start_date(time_range)
+
+
+# =========================================================
+# Common Chart Style
+# =========================================================
+
+def apply_chart_style(fig, height=480):
+
+    fig.update_layout(
+        height=height,
+
+        template="plotly_white",
+
+        hovermode="x unified",
+
+        margin=dict(
+            l=55,
+            r=55,
+            t=55,
+            b=50
+        ),
+
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="left",
+            x=0
+        ),
+
+        hoverlabel=dict(
+            bgcolor="white",
+            font_size=13
+        ),
+
+        font=dict(
+            size=13
+        ),
+
+        xaxis=dict(
+            showgrid=False,
+            showline=True,
+            linecolor="#d1d5db",
+            rangeslider=dict(
+                visible=False
+            )
+        ),
+
+        yaxis=dict(
+            showgrid=True,
+            gridcolor="#eeeeee",
+            zeroline=False,
+            showline=False
+        )
+    )
+
+    return fig
+
+
+def add_source(text, url):
+
+    st.markdown(
+        f"""
+        <div class="source-text">
+            Source:
+            <a href="{url}" target="_blank">
+                {text}
+            </a>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+# =========================================================
+# Load Data
+# =========================================================
+
+dgs2 = get_dgs2()
+dgs5 = get_dgs5()
 dgs10 = get_dgs10()
+
 dfii10 = get_dfii10()
 
 sofr = get_sofr()
 iorb = get_iorb()
 effr = get_effr()
-rrp = get_rrp()
-
-dgs2 = get_dgs2()
-dgs5 = get_dgs5()
+rrp = get_rrp_rate()
 
 
-# =========================
-# Clean data
-# =========================
+# =========================================================
+# 1. Policy Rate Corridor
+# =========================================================
 
-dgs10 = dgs10.dropna(subset=["DGS10"]).copy()
-dfii10 = dfii10.dropna(subset=["DFII10"]).copy()
-
-sofr = sofr.dropna(subset=["SOFR"]).copy()
-iorb = iorb.dropna(subset=["IORB"]).copy()
-effr = effr.dropna(subset=["EFFR"]).copy()
-
-# ON RRP amount
-rrp = rrp.dropna(subset=["RRPONTSYD"]).copy()
-
-dgs2 = dgs2.dropna(subset=["DGS2"]).copy()
-dgs5 = dgs5.dropna(subset=["DGS5"]).copy()
-
-
-# =========================
-# 10Y Yield Structure
-# =========================
-
-yield_data = (
-    dgs10
-    .merge(
-        dfii10,
-        on="observation_date",
-        how="outer"
-    )
-    .sort_values("observation_date")
+st.markdown(
+    '<div class="section-title">Policy Rate Corridor</div>',
+    unsafe_allow_html=True
 )
 
-yield_data["BREAKEVEN10"] = (
-    yield_data["DGS10"]
-    - yield_data["DFII10"]
+st.markdown(
+    '<div class="section-description">'
+    'IORB, ON RRP rate, EFFR and SOFR'
+    '</div>',
+    unsafe_allow_html=True
 )
 
 
-# =========================
-# Funding / Liquidity
-# =========================
-
-liquidity_data = (
-    sofr
+corridor = (
+    iorb
     .merge(
-        iorb,
+        rrp,
         on="observation_date",
         how="outer"
     )
@@ -97,7 +260,7 @@ liquidity_data = (
         how="outer"
     )
     .merge(
-        rrp,
+        sofr,
         on="observation_date",
         how="outer"
     )
@@ -105,11 +268,237 @@ liquidity_data = (
 )
 
 
-# =========================
-# Treasury Yield Curve
-# =========================
+corridor = corridor[
+    corridor["observation_date"] >= start_date
+]
 
-curve_data = (
+
+fig1 = go.Figure()
+
+
+# IORB
+fig1.add_trace(
+    go.Scatter(
+        x=corridor["observation_date"],
+        y=corridor["IORB"],
+        name="IORB",
+        mode="lines",
+        line=dict(
+            width=2.5
+        )
+    )
+)
+
+
+# ON RRP Rate
+fig1.add_trace(
+    go.Scatter(
+        x=corridor["observation_date"],
+        y=corridor["RRPONTSYAWARD"],
+        name="ON RRP Rate",
+        mode="lines",
+        line=dict(
+            width=2.5
+        )
+    )
+)
+
+
+# EFFR
+fig1.add_trace(
+    go.Scatter(
+        x=corridor["observation_date"],
+        y=corridor["EFFR"],
+        name="EFFR",
+        mode="lines",
+        line=dict(
+            width=2.5
+        )
+    )
+)
+
+
+# SOFR
+fig1.add_trace(
+    go.Scatter(
+        x=corridor["observation_date"],
+        y=corridor["SOFR"],
+        name="SOFR",
+        mode="lines",
+        line=dict(
+            width=2
+        )
+    )
+)
+
+
+fig1.update_layout(
+    title="",
+    yaxis_title="Interest Rate (%)"
+)
+
+fig1 = apply_chart_style(
+    fig1,
+    height=470
+)
+
+st.plotly_chart(
+    fig1,
+    use_container_width=True
+)
+
+
+add_source(
+    "FRED — Policy Rate Corridor",
+    "https://fred.stlouisfed.org/graph/?graph_id=1547733&rn=698"
+)
+
+
+# =========================================================
+# Divider
+# =========================================================
+
+st.markdown(
+    '<div class="chart-divider"></div>',
+    unsafe_allow_html=True
+)
+
+
+# =========================================================
+# 2. 10Y Yield Structure
+# =========================================================
+
+st.markdown(
+    '<div class="section-title">10Y Yield Structure</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div class="section-description">'
+    'Nominal yield, real yield and 10Y breakeven inflation'
+    '</div>',
+    unsafe_allow_html=True
+)
+
+
+yield10 = (
+    dgs10
+    .merge(
+        dfii10,
+        on="observation_date",
+        how="inner"
+    )
+    .sort_values("observation_date")
+)
+
+
+yield10 = yield10[
+    yield10["observation_date"] >= start_date
+]
+
+
+yield10["Breakeven"] = (
+    yield10["DGS10"]
+    - yield10["DFII10"]
+)
+
+
+fig2 = go.Figure()
+
+
+# 10Y Nominal
+fig2.add_trace(
+    go.Scatter(
+        x=yield10["observation_date"],
+        y=yield10["DGS10"],
+        name="10Y Nominal",
+        mode="lines",
+        line=dict(
+            width=2.5
+        )
+    )
+)
+
+
+# 10Y Real
+fig2.add_trace(
+    go.Scatter(
+        x=yield10["observation_date"],
+        y=yield10["DFII10"],
+        name="10Y Real",
+        mode="lines",
+        line=dict(
+            width=2.5
+        )
+    )
+)
+
+
+# Breakeven
+fig2.add_trace(
+    go.Scatter(
+        x=yield10["observation_date"],
+        y=yield10["Breakeven"],
+        name="10Y Breakeven",
+        mode="lines",
+        line=dict(
+            width=2.5,
+            dash="dot"
+        )
+    )
+)
+
+
+fig2.update_layout(
+    title="",
+    yaxis_title="Yield / Inflation (%)"
+)
+
+fig2 = apply_chart_style(
+    fig2,
+    height=470
+)
+
+st.plotly_chart(
+    fig2,
+    use_container_width=True
+)
+
+
+add_source(
+    "FRED — 10Y Nominal / Real Yield",
+    "https://fred.stlouisfed.org/graph/?graph_id=145245"
+)
+
+
+# =========================================================
+# Divider
+# =========================================================
+
+st.markdown(
+    '<div class="chart-divider"></div>',
+    unsafe_allow_html=True
+)
+
+
+# =========================================================
+# 3. Treasury Yield & Curve Spreads
+# =========================================================
+
+st.markdown(
+    '<div class="section-title">Treasury Yield & Curve Spreads</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div class="section-description">'
+    '2Y / 5Y / 10Y Treasury yields with 2s10s and 5s10s spreads'
+    '</div>',
+    unsafe_allow_html=True
+)
+
+
+treasury = (
     dgs2
     .merge(
         dgs5,
@@ -124,358 +513,126 @@ curve_data = (
     .sort_values("observation_date")
 )
 
-# 2s10s = 10Y - 2Y
-curve_data["SPREAD_2S10S"] = (
-    curve_data["DGS10"]
-    - curve_data["DGS2"]
-)
 
-# 5s10s = 10Y - 5Y
-curve_data["SPREAD_5S10S"] = (
-    curve_data["DGS10"]
-    - curve_data["DGS5"]
-)
+treasury = treasury[
+    treasury["observation_date"] >= start_date
+]
 
 
-# =========================
-# Time Range
-# =========================
-
-period = st.radio(
-    "Time Range",
-    ["5Y", "1Y", "6M", "3M", "1M"],
-    horizontal=True,
-    index=0
-)
-
-days_map = {
-    "5Y": 365 * 5,
-    "1Y": 365,
-    "6M": 180,
-    "3M": 90,
-    "1M": 30,
-}
-
-days = days_map[period]
-
-latest_date = max(
-    yield_data["observation_date"].max(),
-    liquidity_data["observation_date"].max(),
-    curve_data["observation_date"].max()
-)
-
-start_date = latest_date - pd.Timedelta(days=days)
-
-yield_plot = yield_data[
-    yield_data["observation_date"] >= start_date
-].copy()
-
-liquidity_plot = liquidity_data[
-    liquidity_data["observation_date"] >= start_date
-].copy()
-
-curve_plot = curve_data[
-    curve_data["observation_date"] >= start_date
-].copy()
+# Spread calculation
+treasury["2s10s"] = (
+    treasury["DGS10"]
+    - treasury["DGS2"]
+) * 100
 
 
-# ============================================================
-# Chart 1
-# Funding / Liquidity
-# ============================================================
+treasury["5s10s"] = (
+    treasury["DGS10"]
+    - treasury["DGS5"]
+) * 100
 
-st.subheader("Funding / Liquidity")
-
-fig1 = go.Figure()
-
-
-# SOFR
-fig1.add_trace(
-    go.Scatter(
-        x=liquidity_plot["observation_date"],
-        y=liquidity_plot["SOFR"],
-        name="SOFR",
-        mode="lines",
-        yaxis="y1",
-    )
-)
-
-
-# IORB
-fig1.add_trace(
-    go.Scatter(
-        x=liquidity_plot["observation_date"],
-        y=liquidity_plot["IORB"],
-        name="IORB",
-        mode="lines",
-        yaxis="y1",
-    )
-)
-
-
-# EFFR
-fig1.add_trace(
-    go.Scatter(
-        x=liquidity_plot["observation_date"],
-        y=liquidity_plot["EFFR"],
-        name="EFFR",
-        mode="lines",
-        yaxis="y1",
-    )
-)
-
-
-# ON RRP amount
-# RRPONTSYD = Overnight Reverse Repurchase Agreement Treasury securities sold
-# Unit: Billions of USD
-fig1.add_trace(
-    go.Bar(
-        x=liquidity_plot["observation_date"],
-        y=liquidity_plot["RRPONTSYD"],
-        name="ON RRP ($B)",
-        opacity=0.35,
-        yaxis="y2",
-    )
-)
-
-
-fig1.update_layout(
-    height=500,
-    hovermode="x unified",
-
-    xaxis=dict(
-        title="Date"
-    ),
-
-    yaxis=dict(
-        title="Interest Rate (%)",
-        side="left",
-    ),
-
-    yaxis2=dict(
-        title="ON RRP ($B)",
-        side="right",
-        overlaying="y",
-        showgrid=False,
-    ),
-
-    legend=dict(
-        orientation="h",
-        yanchor="bottom",
-        y=1.02,
-        xanchor="left",
-        x=0
-    )
-)
-
-st.plotly_chart(
-    fig1,
-    use_container_width=True
-)
-
-st.caption(
-    "Data source: "
-    "FRED — SOFR, IORB, EFFR, and ON RRP amount (RRPONTSYD)"
-)
-
-st.markdown(
-    "[SOFR | FRED](https://fred.stlouisfed.org/graph/?graph_id=1547733&rn=698)  \n"
-    "[IORB | FRED](https://fred.stlouisfed.org/series/IORB)  \n"
-    "[EFFR | FRED](https://fred.stlouisfed.org/series/EFFR)  \n"
-    "[ON RRP Amount (RRPONTSYD) | FRED](https://fred.stlouisfed.org/series/RRPONTSYD)"
-)
-
-# 图表之间留空间
-st.markdown("<br><br>", unsafe_allow_html=True)
-
-
-# ============================================================
-# Chart 2
-# 10Y Yield Structure
-# ============================================================
-
-st.subheader("10Y Yield Structure")
-
-fig2 = go.Figure()
-
-
-# 10Y Breakeven
-fig2.add_trace(
-    go.Bar(
-        x=yield_plot["observation_date"],
-        y=yield_plot["BREAKEVEN10"],
-        name="10Y Breakeven",
-        opacity=0.35,
-    )
-)
-
-
-# 10Y Nominal Treasury
-fig2.add_trace(
-    go.Scatter(
-        x=yield_plot["observation_date"],
-        y=yield_plot["DGS10"],
-        name="10Y Treasury",
-        mode="lines",
-    )
-)
-
-
-# 10Y TIPS Real Yield
-fig2.add_trace(
-    go.Scatter(
-        x=yield_plot["observation_date"],
-        y=yield_plot["DFII10"],
-        name="10Y TIPS Real Yield",
-        mode="lines",
-    )
-)
-
-
-fig2.update_layout(
-    height=500,
-    hovermode="x unified",
-
-    xaxis=dict(
-        title="Date"
-    ),
-
-    yaxis=dict(
-        title="Yield (%)"
-    ),
-
-    legend=dict(
-        orientation="h",
-        yanchor="bottom",
-        y=1.02,
-        xanchor="left",
-        x=0
-    )
-)
-
-st.plotly_chart(
-    fig2,
-    use_container_width=True
-)
-
-st.caption(
-    "10Y Breakeven = 10Y Treasury Yield − 10Y TIPS Real Yield"
-)
-
-st.markdown(
-    "[10Y Treasury Yield (DGS10) | FRED](https://fred.stlouisfed.org/series/DGS10)  \n"
-    "[10Y TIPS Real Yield (DFII10) | FRED](https://fred.stlouisfed.org/series/DFII10)"
-)
-
-# 图表之间留空间
-st.markdown("<br><br>", unsafe_allow_html=True)
-
-
-# ============================================================
-# Chart 3
-# Treasury Yield Curve & Spreads
-# ============================================================
-
-st.subheader("Treasury Yield Curve & Spreads")
 
 fig3 = go.Figure()
 
 
-# =========================
-# Treasury yields
-# =========================
+# =========================================================
+# Left Axis: Treasury Yields
+# =========================================================
 
 fig3.add_trace(
     go.Scatter(
-        x=curve_plot["observation_date"],
-        y=curve_plot["DGS2"],
-        name="2Y Treasury",
+        x=treasury["observation_date"],
+        y=treasury["DGS2"],
+        name="2Y",
         mode="lines",
-        yaxis="y1",
+        line=dict(
+            width=2.2
+        ),
+        yaxis="y"
     )
 )
 
 
 fig3.add_trace(
     go.Scatter(
-        x=curve_plot["observation_date"],
-        y=curve_plot["DGS5"],
-        name="5Y Treasury",
+        x=treasury["observation_date"],
+        y=treasury["DGS5"],
+        name="5Y",
         mode="lines",
-        yaxis="y1",
+        line=dict(
+            width=2.2
+        ),
+        yaxis="y"
     )
 )
 
 
 fig3.add_trace(
     go.Scatter(
-        x=curve_plot["observation_date"],
-        y=curve_plot["DGS10"],
-        name="10Y Treasury",
+        x=treasury["observation_date"],
+        y=treasury["DGS10"],
+        name="10Y",
         mode="lines",
-        yaxis="y1",
+        line=dict(
+            width=2.5
+        ),
+        yaxis="y"
     )
 )
 
 
-# =========================
-# Yield spreads
-# =========================
+# =========================================================
+# Right Axis: Spreads
+# =========================================================
 
 fig3.add_trace(
     go.Bar(
-        x=curve_plot["observation_date"],
-        y=curve_plot["SPREAD_2S10S"],
-        name="2s10s Spread",
-        opacity=0.40,
-        yaxis="y2",
+        x=treasury["observation_date"],
+        y=treasury["2s10s"],
+        name="2s10s",
+        opacity=0.30,
+        yaxis="y2"
     )
 )
 
 
 fig3.add_trace(
     go.Bar(
-        x=curve_plot["observation_date"],
-        y=curve_plot["SPREAD_5S10S"],
-        name="5s10s Spread",
-        opacity=0.40,
-        yaxis="y2",
+        x=treasury["observation_date"],
+        y=treasury["5s10s"],
+        name="5s10s",
+        opacity=0.30,
+        yaxis="y2"
     )
 )
 
 
 fig3.update_layout(
-    height=550,
-    hovermode="x unified",
+    title="",
 
-    xaxis=dict(
-        title="Date"
-    ),
-
-    # 左轴：国债收益率
     yaxis=dict(
         title="Treasury Yield (%)",
-        side="left",
+        showgrid=True,
+        gridcolor="#eeeeee",
+        zeroline=False
     ),
 
-    # 右轴：利差
     yaxis2=dict(
-        title="Spread (pp)",
-        side="right",
+        title="Spread (bp)",
         overlaying="y",
-        showgrid=False,
+        side="right",
         zeroline=True,
+        zerolinecolor="#999999",
+        zerolinewidth=1
     ),
 
-    barmode="group",
+    barmode="group"
+)
 
-    legend=dict(
-        orientation="h",
-        yanchor="bottom",
-        y=1.02,
-        xanchor="left",
-        x=0
-    )
+
+fig3 = apply_chart_style(
+    fig3,
+    height=500
 )
 
 st.plotly_chart(
@@ -483,13 +640,28 @@ st.plotly_chart(
     use_container_width=True
 )
 
-st.caption(
-    "2s10s = 10Y Treasury − 2Y Treasury    |    "
-    "5s10s = 10Y Treasury − 5Y Treasury"
+
+add_source(
+    "FRED — 2Y / 5Y / 10Y Treasury Yields",
+    "https://fred.stlouisfed.org/graph/?id=DGS2%2CDGS5%2CDGS10"
 )
 
+
+# =========================================================
+# Footer
+# =========================================================
+
 st.markdown(
-    "[2Y Treasury Yield (DGS2) | FRED](https://fred.stlouisfed.org/series/DGS2)  \n"
-    "[5Y Treasury Yield (DGS5) | FRED](https://fred.stlouisfed.org/series/DGS5)  \n"
-    "[10Y Treasury Yield (DGS10) | FRED](https://fred.stlouisfed.org/series/DGS10)"
+    """
+    <div style="
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+        color: #9ca3af;
+        font-size: 0.75rem;
+    ">
+        Data source: Federal Reserve Economic Data (FRED)
+    </div>
+    """,
+    unsafe_allow_html=True
 )
