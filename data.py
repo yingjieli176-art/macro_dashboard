@@ -51,13 +51,13 @@ def get_fred_series(series_id):
 # =========================================================
 
 @st.cache_data(ttl=3600)
-def get_dgs2():
-    return get_fred_series("DGS2")
+def get_dgs3mo():
+    return get_fred_series("DGS3MO")
 
 
 @st.cache_data(ttl=3600)
-def get_dgs5():
-    return get_fred_series("DGS5")
+def get_dgs2():
+    return get_fred_series("DGS2")
 
 
 @st.cache_data(ttl=3600)
@@ -95,14 +95,4 @@ def get_effr():
 
 @st.cache_data(ttl=3600)
 def get_rrp_rate():
-    """
-    ON RRP Award Rate
-    FRED series: RRPONTSYAWARD
-
-    注意：
-    RRPONTSYAWARD = ON RRP 利率
-    RRPONTSYD     = ON RRP 交易金額
-
-    本 Dashboard 要的是利率走廊，因此使用 RRPONTSYAWARD。
-    """
     return get_fred_series("RRPONTSYAWARD")
