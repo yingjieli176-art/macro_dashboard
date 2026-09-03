@@ -52,6 +52,8 @@ dfii10 = dfii10.dropna(subset=["DFII10"]).copy()
 sofr = sofr.dropna(subset=["SOFR"]).copy()
 iorb = iorb.dropna(subset=["IORB"]).copy()
 effr = effr.dropna(subset=["EFFR"]).copy()
+
+# ON RRP amount
 rrp = rrp.dropna(subset=["RRPONTSYD"]).copy()
 
 dgs2 = dgs2.dropna(subset=["DGS2"]).copy()
@@ -104,7 +106,7 @@ liquidity_data = (
 
 
 # =========================
-# Treasury Yield Spread
+# Treasury Yield Curve
 # =========================
 
 curve_data = (
@@ -122,12 +124,13 @@ curve_data = (
     .sort_values("observation_date")
 )
 
-# Yield spread
+# 2s10s = 10Y - 2Y
 curve_data["SPREAD_2S10S"] = (
     curve_data["DGS10"]
     - curve_data["DGS2"]
 )
 
+# 5s10s = 10Y - 5Y
 curve_data["SPREAD_5S10S"] = (
     curve_data["DGS10"]
     - curve_data["DGS5"]
@@ -162,7 +165,6 @@ latest_date = max(
 )
 
 start_date = latest_date - pd.Timedelta(days=days)
-
 
 yield_plot = yield_data[
     yield_data["observation_date"] >= start_date
@@ -224,11 +226,13 @@ fig1.add_trace(
 
 
 # ON RRP amount
+# RRPONTSYD = Overnight Reverse Repurchase Agreement Treasury securities sold
+# Unit: Billions of USD
 fig1.add_trace(
     go.Bar(
         x=liquidity_plot["observation_date"],
         y=liquidity_plot["RRPONTSYD"],
-        name="ON RRP",
+        name="ON RRP ($B)",
         opacity=0.35,
         yaxis="y2",
     )
@@ -269,6 +273,21 @@ st.plotly_chart(
     use_container_width=True
 )
 
+st.caption(
+    "Data source: "
+    "FRED — SOFR, IORB, EFFR, and ON RRP amount (RRPONTSYD)"
+)
+
+st.markdown(
+    "[SOFR | FRED](https://fred.stlouisfed.org/graph/?graph_id=1547733&rn=698)  \n"
+    "[IORB | FRED](https://fred.stlouisfed.org/series/IORB)  \n"
+    "[EFFR | FRED](https://fred.stlouisfed.org/series/EFFR)  \n"
+    "[ON RRP Amount (RRPONTSYD) | FRED](https://fred.stlouisfed.org/series/RRPONTSYD)"
+)
+
+# 图表之间留空间
+st.markdown("<br><br>", unsafe_allow_html=True)
+
 
 # ============================================================
 # Chart 2
@@ -280,7 +299,7 @@ st.subheader("10Y Yield Structure")
 fig2 = go.Figure()
 
 
-# Breakeven
+# 10Y Breakeven
 fig2.add_trace(
     go.Bar(
         x=yield_plot["observation_date"],
@@ -291,7 +310,7 @@ fig2.add_trace(
 )
 
 
-# 10Y nominal
+# 10Y Nominal Treasury
 fig2.add_trace(
     go.Scatter(
         x=yield_plot["observation_date"],
@@ -302,7 +321,7 @@ fig2.add_trace(
 )
 
 
-# 10Y real yield
+# 10Y TIPS Real Yield
 fig2.add_trace(
     go.Scatter(
         x=yield_plot["observation_date"],
@@ -339,6 +358,18 @@ st.plotly_chart(
     use_container_width=True
 )
 
+st.caption(
+    "10Y Breakeven = 10Y Treasury Yield − 10Y TIPS Real Yield"
+)
+
+st.markdown(
+    "[10Y Treasury Yield (DGS10) | FRED](https://fred.stlouisfed.org/series/DGS10)  \n"
+    "[10Y TIPS Real Yield (DFII10) | FRED](https://fred.stlouisfed.org/series/DFII10)"
+)
+
+# 图表之间留空间
+st.markdown("<br><br>", unsafe_allow_html=True)
+
 
 # ============================================================
 # Chart 3
@@ -350,9 +381,9 @@ st.subheader("Treasury Yield Curve & Spreads")
 fig3 = go.Figure()
 
 
-# -------------------------
-# Left axis: Treasury yields
-# -------------------------
+# =========================
+# Treasury yields
+# =========================
 
 fig3.add_trace(
     go.Scatter(
@@ -387,16 +418,16 @@ fig3.add_trace(
 )
 
 
-# -------------------------
-# Right axis: spreads
-# -------------------------
+# =========================
+# Yield spreads
+# =========================
 
 fig3.add_trace(
     go.Bar(
         x=curve_plot["observation_date"],
         y=curve_plot["SPREAD_2S10S"],
         name="2s10s Spread",
-        opacity=0.45,
+        opacity=0.40,
         yaxis="y2",
     )
 )
@@ -407,7 +438,7 @@ fig3.add_trace(
         x=curve_plot["observation_date"],
         y=curve_plot["SPREAD_5S10S"],
         name="5s10s Spread",
-        opacity=0.45,
+        opacity=0.40,
         yaxis="y2",
     )
 )
@@ -421,7 +452,7 @@ fig3.update_layout(
         title="Date"
     ),
 
-    # 左轴：收益率
+    # 左轴：国债收益率
     yaxis=dict(
         title="Treasury Yield (%)",
         side="left",
@@ -452,22 +483,13 @@ st.plotly_chart(
     use_container_width=True
 )
 
-
-# =========================
-# Data Sources
-# =========================
-
-st.subheader("Data Sources")
+st.caption(
+    "2s10s = 10Y Treasury − 2Y Treasury    |    "
+    "5s10s = 10Y Treasury − 5Y Treasury"
+)
 
 st.markdown(
-    """
-- [SOFR / Secured Overnight Financing Rate | FRED](https://fred.stlouisfed.org/graph/?graph_id=1547733&rn=698)
-- [DGS10 / 10-Year Treasury Yield | FRED](https://fred.stlouisfed.org/series/DGS10)
-- [DFII10 / 10-Year TIPS Real Yield | FRED](https://fred.stlouisfed.org/series/DFII10)
-- [DGS2 / 2-Year Treasury Yield | FRED](https://fred.stlouisfed.org/series/DGS2)
-- [DGS5 / 5-Year Treasury Yield | FRED](https://fred.stlouisfed.org/series/DGS5)
-- [IORB | FRED](https://fred.stlouisfed.org/series/IORB)
-- [EFFR | FRED](https://fred.stlouisfed.org/series/EFFR)
-- [RRPONTSYD / ON RRP | FRED](https://fred.stlouisfed.org/series/RRPONTSYD)
-"""
+    "[2Y Treasury Yield (DGS2) | FRED](https://fred.stlouisfed.org/series/DGS2)  \n"
+    "[5Y Treasury Yield (DGS5) | FRED](https://fred.stlouisfed.org/series/DGS5)  \n"
+    "[10Y Treasury Yield (DGS10) | FRED](https://fred.stlouisfed.org/series/DGS10)"
 )
