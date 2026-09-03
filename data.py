@@ -23,28 +23,26 @@ FRED_API_KEY = st.secrets.get(
 
 
 # =========================================================
-# EASTMONEY 7×24 / FOCUS NEWS
+# NEWS
 # =========================================================
 
-# 东方财富实时资讯页面
+# 第三方接口：
+# type=101 = 东方财富「红字焦点快讯」
+#
+# 注意：
+# 101 是平台已经定义好的「红字焦点快讯」
+# 102 才是 7×24 全球直播全量。
+#
+# 这里明确只调用 101。
+EASTMONEY_FOCUS_API = (
+    "http://api.xcvts.cn/api/hotlist/eastmoney"
+)
+
 EASTMONEY_NEWS_URL = (
     "https://kuaixun.eastmoney.com/"
 )
 
-# 东方财富现成的「红字焦点快讯」
-#
-# 101 = 红字焦点快讯
-# 102 = 7×24 全球直播
-#
-# 这里明确使用 101，
-# 不抓全量 7×24，
-# 不自己判断什么是重点。
-EASTMONEY_FOCUS_URL = (
-    "https://np-listapi.eastmoney.com/"
-    "comm/web/getNewsByColumns"
-)
-
-EASTMONEY_HEADERS = {
+NEWS_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 "
         "(Windows NT 10.0; Win64; x64) "
@@ -54,13 +52,14 @@ EASTMONEY_HEADERS = {
     ),
     "Referer": EASTMONEY_NEWS_URL,
     "Accept": (
-        "application/json,text/plain,*/*"
+        "application/json,"
+        "text/plain,*/*"
     ),
 }
 
 
 # =========================================================
-# FRED
+# FRED CORE
 # =========================================================
 
 def _fred_series(
@@ -114,7 +113,6 @@ def _fred_series(
             value = float(
                 value
             )
-
         except (
             TypeError,
             ValueError,
@@ -159,7 +157,6 @@ def _fred_series(
 
 @st.cache_data(ttl=3600)
 def get_dgs3mo():
-
     return _fred_series(
         "DGS3MO"
     )
@@ -167,7 +164,6 @@ def get_dgs3mo():
 
 @st.cache_data(ttl=3600)
 def get_dgs2():
-
     return _fred_series(
         "DGS2"
     )
@@ -175,7 +171,6 @@ def get_dgs2():
 
 @st.cache_data(ttl=3600)
 def get_dgs10():
-
     return _fred_series(
         "DGS10"
     )
@@ -183,7 +178,6 @@ def get_dgs10():
 
 @st.cache_data(ttl=3600)
 def get_dfii10():
-
     return _fred_series(
         "DFII10"
     )
@@ -191,7 +185,6 @@ def get_dfii10():
 
 @st.cache_data(ttl=3600)
 def get_sofr():
-
     return _fred_series(
         "SOFR"
     )
@@ -199,7 +192,6 @@ def get_sofr():
 
 @st.cache_data(ttl=3600)
 def get_iorb():
-
     return _fred_series(
         "IORB"
     )
@@ -207,7 +199,6 @@ def get_iorb():
 
 @st.cache_data(ttl=3600)
 def get_effr():
-
     return _fred_series(
         "EFFR"
     )
@@ -215,7 +206,6 @@ def get_effr():
 
 @st.cache_data(ttl=3600)
 def get_rrp_rate():
-
     return _fred_series(
         "RRPONTSYAWARD"
     )
@@ -252,12 +242,102 @@ def _clean_text(
 
 
 # =========================================================
-# GENERIC JSON VALUE
+# JSON / NEWS LIST SEARCH
 # =========================================================
 
-def _first_value(
+def _find_list(
+    obj,
+):
+
+    if isinstance(
+        obj,
+        list,
+    ):
+        return obj
+
+    if not isinstance(
+        obj,
+        dict,
+    ):
+        return []
+
+    # 常见字段
+    for key in (
+        "list",
+        "List",
+        "data",
+        "Data",
+        "items",
+        "Items",
+        "rows",
+        "Rows",
+        "news",
+        "News",
+        "fastNewsList",
+        "FastNewsList",
+    ):
+
+        value = obj.get(
+            key
+        )
+
+        if isinstance(
+            value,
+            list,
+        ):
+            return value
+
+        if isinstance(
+            value,
+            dict,
+        ):
+
+            result = _find_list(
+                value
+            )
+
+            if result:
+                return result
+
+    # 递归搜索
+    for value in obj.values():
+
+        if isinstance(
+            value,
+            dict,
+        ):
+
+            result = _find_list(
+                value
+            )
+
+            if result:
+                return result
+
+        elif isinstance(
+            value,
+            list,
+        ):
+
+            if value and all(
+                isinstance(
+                    item,
+                    dict,
+                )
+                for item in value
+            ):
+                return value
+
+    return []
+
+
+# =========================================================
+# GET FIELD
+# =========================================================
+
+def _get_field(
     item,
-    keys,
+    names,
 ):
 
     if not isinstance(
@@ -266,10 +346,13 @@ def _first_value(
     ):
         return ""
 
-    for key in keys:
+    for name in names:
+
+        if name not in item:
+            continue
 
         value = item.get(
-            key
+            name
         )
 
         if value not in (
@@ -282,23 +365,94 @@ def _first_value(
 
 
 # =========================================================
-# EASTMONEY TITLE
+# TITLE
 # =========================================================
 
-def _extract_eastmoney_title(
+def _extract_title(
     item,
 ):
 
-    value = _first_value(
+    value = _get_field(
         item,
         [
             "title",
             "Title",
-            "showTitle",
             "newsTitle",
             "NewsTitle",
+            "showTitle",
+            "ShowTitle",
+            "art_title",
+            "ArtTitle",
+        ],
+    )
+
+    title = _clean_text(
+        value
+    )
+
+    if title:
+        return title
+
+    content = _get_field(
+        item,
+        [
             "content",
             "Content",
+            "text",
+            "Text",
+        ],
+    )
+
+    content = _clean_text(
+        content
+    )
+
+    if not content:
+        return ""
+
+    # 兼容新浪式 〖标题〗正文
+    match = re.match(
+        r"^〖(.+?)〗",
+        content,
+        flags=re.DOTALL,
+    )
+
+    if match:
+        return (
+            match.group(1)
+            .strip()
+        )
+
+    if len(content) <= 120:
+        return content
+
+    return (
+        content[:120]
+        + "..."
+    )
+
+
+# =========================================================
+# CONTENT
+# =========================================================
+
+def _extract_content(
+    item,
+):
+
+    value = _get_field(
+        item,
+        [
+            "content",
+            "Content",
+            "rich_text",
+            "RichText",
+            "text",
+            "Text",
+            "title",
+            "Title",
+            "newsTitle",
+            "NewsTitle",
         ],
     )
 
@@ -308,52 +462,29 @@ def _extract_eastmoney_title(
 
 
 # =========================================================
-# EASTMONEY CONTENT
+# TIME
 # =========================================================
 
-def _extract_eastmoney_content(
+def _extract_time(
     item,
 ):
 
-    value = _first_value(
-        item,
-        [
-            "content",
-            "Content",
-            "title",
-            "Title",
-            "showTitle",
-            "newsTitle",
-            "NewsTitle",
-        ],
-    )
-
-    return _clean_text(
-        value
-    )
-
-
-# =========================================================
-# EASTMONEY TIME
-# =========================================================
-
-def _extract_eastmoney_time(
-    item,
-):
-
-    value = _first_value(
+    value = _get_field(
         item,
         [
             "showTime",
             "ShowTime",
             "time",
             "Time",
-            "ctime",
-            "Ctime",
-            "publishTime",
-            "PublishTime",
+            "createTime",
+            "CreateTime",
+            "create_time",
             "updateTime",
             "UpdateTime",
+            "publishTime",
+            "PublishTime",
+            "ctime",
+            "Ctime",
         ],
     )
 
@@ -364,10 +495,6 @@ def _extract_eastmoney_time(
     if not text:
         return ""
 
-    # 例如：
-    # 2026-09-03 13:21:30
-    # 13:21:30
-    # 13:21
     match = re.search(
         r"(\d{1,2}:\d{2}(?::\d{2})?)",
         text,
@@ -380,97 +507,104 @@ def _extract_eastmoney_time(
 
 
 # =========================================================
-# EASTMONEY URL
+# URL
 # =========================================================
 
-def _extract_eastmoney_url(
+def _extract_url(
     item,
 ):
 
-    value = _first_value(
+    value = _get_field(
         item,
         [
             "url",
-            "Url",
             "URL",
+            "Url",
             "newsUrl",
             "NewsUrl",
-            "url_h5",
-            "urlH5",
             "articleUrl",
             "ArticleUrl",
+            "url_h5",
+            "urlH5",
+            "link",
+            "Link",
         ],
     )
 
-    value = _clean_text(
+    url = _clean_text(
         value
     )
 
     if (
-        value.startswith(
+        url.startswith(
             "http://"
         )
-        or value.startswith(
+        or url.startswith(
             "https://"
         )
     ):
-        return value
+        return url
 
     return EASTMONEY_NEWS_URL
 
 
 # =========================================================
-# EASTMONEY REQUEST
+# ID
 # =========================================================
 
-def _request_eastmoney_focus(
+def _extract_id(
+    item,
+):
+
+    value = _get_field(
+        item,
+        [
+            "id",
+            "ID",
+            "newsId",
+            "NewsId",
+            "art_code",
+            "ArtCode",
+            "code",
+            "Code",
+        ],
+    )
+
+    return str(
+        value
+        or ""
+    )
+
+
+# =========================================================
+# REQUEST FOCUS NEWS
+# =========================================================
+
+def _request_focus_news(
     page_size=100,
 ):
 
-    # -----------------------------------------------------
-    # 东方财富「红字焦点快讯」
-    #
-    # column = 101
-    #
-    # 不使用全量 102。
-    # -----------------------------------------------------
-
     params = {
-        "client": "web",
-        "biz": "web",
-        "column": "101",
-        "pageSize": page_size,
-        "pageIndex": 1,
-        "req_trace": int(
-            time.time() * 1000
-        ),
+        "type": "101",
     }
 
     response = requests.get(
-        EASTMONEY_FOCUS_URL,
+        EASTMONEY_FOCUS_API,
         params=params,
-        headers=EASTMONEY_HEADERS,
+        headers=NEWS_HEADERS,
         timeout=15,
     )
 
     response.raise_for_status()
 
-    # -----------------------------------------------------
     # 正常 JSON
-    # -----------------------------------------------------
-
     try:
-
         return response.json()
 
     except ValueError:
-
         pass
 
-    # -----------------------------------------------------
-    # 某些情况下可能返回 JSONP / 包装文本
-    # -----------------------------------------------------
-
+    # JSONP / 包装文本兼容
     text = (
         response.text
         .strip()
@@ -499,111 +633,15 @@ def _request_eastmoney_focus(
         )
 
     raise RuntimeError(
-        "东方财富焦点快讯返回的数据格式无法解析。"
+        "东方财富红字焦点快讯返回的数据格式无法解析。"
     )
 
 
 # =========================================================
-# FIND NEWS LIST
+# PARSE NEWS
 # =========================================================
 
-def _find_news_list(
-    data,
-):
-
-    if isinstance(
-        data,
-        list,
-    ):
-        return data
-
-    if not isinstance(
-        data,
-        dict,
-    ):
-        return []
-
-    # -----------------------------------------------------
-    # 常见结构直接查找
-    # -----------------------------------------------------
-
-    direct_keys = [
-        "list",
-        "List",
-        "data",
-        "Data",
-        "items",
-        "Items",
-        "news",
-        "News",
-        "rows",
-        "Rows",
-    ]
-
-    for key in direct_keys:
-
-        value = data.get(
-            key
-        )
-
-        if isinstance(
-            value,
-            list,
-        ):
-            return value
-
-        if isinstance(
-            value,
-            dict,
-        ):
-
-            nested = _find_news_list(
-                value
-            )
-
-            if nested:
-                return nested
-
-    # -----------------------------------------------------
-    # 递归寻找 list[dict]
-    # -----------------------------------------------------
-
-    for value in data.values():
-
-        if isinstance(
-            value,
-            dict,
-        ):
-
-            result = _find_news_list(
-                value
-            )
-
-            if result:
-                return result
-
-        elif isinstance(
-            value,
-            list,
-        ):
-
-            if value and all(
-                isinstance(
-                    x,
-                    dict,
-                )
-                for x in value
-            ):
-                return value
-
-    return []
-
-
-# =========================================================
-# PARSE EASTMONEY ITEMS
-# =========================================================
-
-def _parse_eastmoney_items(
+def _parse_focus_news(
     raw_items,
 ):
 
@@ -619,20 +657,16 @@ def _parse_eastmoney_items(
         ):
             continue
 
-        title = _extract_eastmoney_title(
+        title = _extract_title(
             item
         )
 
-        content = _extract_eastmoney_content(
+        content = _extract_content(
             item
         )
 
         if not title and not content:
             continue
-
-        # -------------------------------------------------
-        # 如果 title 没有，使用 content
-        # -------------------------------------------------
 
         if not title:
             title = content
@@ -640,16 +674,13 @@ def _parse_eastmoney_items(
         if not content:
             content = title
 
-        # -------------------------------------------------
         # 去重
-        # -------------------------------------------------
-
         normalized = re.sub(
             r"\s+",
             "",
             (
                 title
-                or content
+                + content
             ).lower(),
         )
 
@@ -663,47 +694,19 @@ def _parse_eastmoney_items(
             normalized
         )
 
-        # -------------------------------------------------
-        # ID
-        # -------------------------------------------------
-
-        news_id = str(
-            _first_value(
-                item,
-                [
-                    "id",
-                    "ID",
-                    "newsId",
-                    "NewsId",
-                    "art_code",
-                    "ArtCode",
-                ],
-            )
-        )
-
-        # -------------------------------------------------
-        # 时间
-        # -------------------------------------------------
-
-        news_time = _extract_eastmoney_time(
-            item
-        )
-
-        # -------------------------------------------------
-        # URL
-        # -------------------------------------------------
-
-        url = _extract_eastmoney_url(
-            item
-        )
-
         result.append(
             {
-                "id": news_id,
+                "id": _extract_id(
+                    item
+                ),
                 "title": title,
                 "content": content,
-                "time": news_time,
-                "url": url,
+                "time": _extract_time(
+                    item
+                ),
+                "url": _extract_url(
+                    item
+                ),
             }
         )
 
@@ -711,7 +714,7 @@ def _parse_eastmoney_items(
 
 
 # =========================================================
-# GET EASTMONEY FOCUS NEWS
+# GET NEWS
 # =========================================================
 
 @st.cache_data(ttl=60)
@@ -719,42 +722,43 @@ def get_sina_news(
     limit=50,
 ):
     """
-    保留原来的函数名称，
-    这样 app.py 不需要修改。
+    为了兼容现有 app.py，
+    函数名暂时保留 get_sina_news。
 
-    实际来源已经改成：
-    东方财富「红字焦点快讯」
+    实际数据源：
+        东方财富红字焦点快讯
+
+    type=101：
+        平台已经筛选好的红字焦点消息
 
     不做：
-    - 关键词评分
-    - AI 判断
-    - 自定义重要度
-    - 全量 7×24 再自行筛选
-
-    直接使用平台已经筛选好的焦点资讯。
+        - 关键词评分
+        - AI 判断
+        - 自己定义重点
+        - 从全量 7×24 中二次筛选
     """
 
     try:
 
-        data = _request_eastmoney_focus(
+        payload = _request_focus_news(
             page_size=max(
                 100,
                 limit,
             )
         )
 
-        raw_items = _find_news_list(
-            data
+        raw_items = _find_list(
+            payload
         )
 
         if not raw_items:
 
             return (
                 [],
-                "东方财富焦点快讯接口没有返回新闻列表。",
+                "东方财富红字焦点快讯接口没有返回新闻列表。",
             )
 
-        news_items = _parse_eastmoney_items(
+        news_items = _parse_focus_news(
             raw_items
         )
 
@@ -762,7 +766,7 @@ def get_sina_news(
 
             return (
                 [],
-                "东方财富焦点快讯接口返回了数据，但没有解析出有效快讯。",
+                "东方财富红字焦点快讯接口返回数据，但没有解析出有效新闻。",
             )
 
         return (
@@ -774,7 +778,7 @@ def get_sina_news(
 
         return (
             [],
-            f"东方财富焦点快讯：{exc}",
+            f"东方财富红字焦点快讯：{exc}",
         )
 
 
