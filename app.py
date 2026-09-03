@@ -466,7 +466,7 @@ st.markdown(
 
 st.markdown(
     '<div class="section-title">'
-    '1. Policy Rate Corridor'
+    '🏦 1. Fed Policy Rate & Money Market'
     '</div>',
     unsafe_allow_html=True
 )
@@ -704,16 +704,16 @@ if compact_mode:
 
     st.markdown(
         '<div class="mini-description">'
-        '10Y Nominal = 10Y Real + Breakeven，'
-        '用于观察实际利率与通胀定价的变化。'
+        '10Y Nominal − 10Y Real = 10Y Breakeven，'
+        '用于观察市场隐含通胀预期。'
         '</div>',
         unsafe_allow_html=True
     )
 
 
 add_source(
-    "FRED — 10Y Nominal / Real Yield",
-    "https://fred.stlouisfed.org/graph/?id=DGS10%2CDFII10"
+    "FRED — 10Y Treasury / 10Y TIPS",
+    "https://fred.stlouisfed.org/"
 )
 
 
@@ -736,7 +736,7 @@ st.markdown(
 
 st.markdown(
     '<div class="section-description">'
-    '3M / 2Y / 10Y / 10Y−2Y / 10Y−3M'
+    '3M、2Y、10Y Treasury Yield 与 10Y−2Y / 10Y−3M Spread'
     '</div>',
     unsafe_allow_html=True
 )
@@ -798,7 +798,7 @@ fig3.add_trace(
         y=treasury["DGS3MO"],
         name="3M",
         mode="lines",
-        line=dict(width=2.0)
+        line=dict(width=2.3)
     )
 )
 
@@ -809,7 +809,7 @@ fig3.add_trace(
         y=treasury["DGS2"],
         name="2Y",
         mode="lines",
-        line=dict(width=2.3)
+        line=dict(width=2.5)
     )
 )
 
@@ -820,53 +820,48 @@ fig3.add_trace(
         y=treasury["DGS10"],
         name="10Y",
         mode="lines",
-        line=dict(width=2.7)
-    )
-)
-
-
-fig3.add_trace(
-    go.Bar(
-        x=treasury["observation_date"],
-        y=treasury["10Y-2Y"],
-        name="10Y−2Y",
-        opacity=0.58,
-        yaxis="y2"
-    )
-)
-
-
-fig3.add_trace(
-    go.Bar(
-        x=treasury["observation_date"],
-        y=treasury["10Y-3M"],
-        name="10Y−3M",
-        opacity=0.38,
-        yaxis="y2"
+        line=dict(width=2.8)
     )
 )
 
 
 fig3.update_layout(
-
     yaxis=dict(
-        title="Treasury Yield (%)",
-        showgrid=True,
-        gridcolor="#eeeeee",
-        zeroline=False
+        title="Yield (%)",
+        side="left"
     ),
-
     yaxis2=dict(
         title="Spread (bp)",
         overlaying="y",
         side="right",
+        showgrid=False,
         zeroline=True,
-        zerolinecolor="#666666",
-        zerolinewidth=1
-    ),
-
-    barmode="group"
+        zerolinecolor="#9ca3af"
+    )
 )
+
+
+fig3.add_trace(
+    go.Scatter(
+        x=treasury["observation_date"],
+        y=treasury["10Y-2Y"],
+        name="10Y−2Y",
+        mode="lines",
+        line=dict(width=2.2, dash="dot"),
+        yaxis="y2"
+    )
+)
+
+
+fig3.add_trace(
+    go.Scatter(
+        x=treasury["observation_date"],
+        y=treasury["10Y-3M"],
+        name="10Y−3M",
+        mode="lines",
+        line=dict(width=2.2, dash="dash"),
+        yaxis="y2"
+    )
 
 
 fig3 = apply_chart_style(
@@ -885,16 +880,15 @@ if compact_mode:
 
     st.markdown(
         '<div class="mini-description">'
-        '10Y−2Y观察中长期曲线，'
-        '10Y−3M更直接观察长端相对短端的利差。'
+        '曲线斜率：10Y−2Y、10Y−3M；正值代表正常向上倾斜，负值代表倒挂。'
         '</div>',
         unsafe_allow_html=True
     )
 
 
 add_source(
-    "FRED — 3M / 2Y / 10Y Treasury Yields",
-    "https://fred.stlouisfed.org/graph/?id=DGS3MO%2CDGS2%2CDGS10"
+    "FRED — Treasury Constant Maturity Rates",
+    "https://fred.stlouisfed.org/"
 )
 
 
@@ -902,45 +896,80 @@ add_source(
 # 4. System Diagnostics
 # =========================================================
 
-st.markdown('<div class="section-title">4. System Diagnostics</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="chart-divider"></div>',
+    unsafe_allow_html=True
+)
 
-with st.expander("🔧 检查数据源 / 运行状态", expanded=True):
-    import requests
-    from datetime import datetime
+st.markdown(
+    '<div class="section-title">'
+    '4. System Diagnostics'
+    '</div>',
+    unsafe_allow_html=True
+)
 
-    rows = []
-    rows.append(("Streamlit App", True, "app.py 已执行到诊断模块"))
+st.markdown(
+    '<div class="section-description">'
+    '用于确认 Dashboard、FRED 与新闻数据链路是否正常。'
+    '</div>',
+    unsafe_allow_html=True
+)
 
+
+diag_col1, diag_col2, diag_col3 = st.columns(3)
+
+with diag_col1:
+    st.success("Dashboard：页面已执行到 Diagnostics")
+
+with diag_col2:
     try:
-        x = get_dgs10()
-        rows.append(("FRED API", x is not None and not x.empty, f"DGS10 返回 {len(x)} 条"))
-    except Exception as e:
-        rows.append(("FRED API", False, str(e)[:180]))
+        diag_fred = get_dgs10()
+        if diag_fred is not None and not diag_fred.empty:
+            st.success(f"FRED：正常 · DGS10 {len(diag_fred)} 条")
+        else:
+            st.warning("FRED：无数据")
+    except Exception as exc:
+        st.error(f"FRED：失败 · {exc}")
 
+with diag_col3:
     try:
-        x, err = get_sina_news(limit=1)
-        rows.append(("Sina 7×24", bool(x), "新浪返回数据" if x else (err or "返回空数据")))
-    except Exception as e:
-        rows.append(("Sina 7×24", False, str(e)[:180]))
+        diag_sina, diag_sina_error = get_sina_news(limit=1)
+        if diag_sina:
+            st.success("Sina 7×24：正常")
+        else:
+            st.warning(f"Sina 7×24：无数据 · {diag_sina_error or '未知原因'}")
+    except Exception as exc:
+        st.error(f"Sina 7×24：失败 · {exc}")
 
+
+diag_col4, diag_col5, diag_col6 = st.columns(3)
+
+with diag_col4:
     try:
-        r = requests.get("https://np-weblist.eastmoney.com/comm/web/getFastNewsList", params={"client":"web","biz":"web_724","fastColumn":"102","sortEnd":"","pageSize":1,"req_trace":str(int(datetime.now().timestamp()*1000))}, timeout=8, headers={"User-Agent":"Mozilla/5.0","Referer":"https://kuaixun.eastmoney.com/"})
-        r.raise_for_status()
-        items = r.json().get("data", {}).get("fastNewsList", [])
-        rows.append(("Eastmoney 7×24", bool(items), "Eastmoney 返回数据" if items else "接口可访问，但返回空数据"))
-    except Exception as e:
-        rows.append(("Eastmoney 7×24", False, str(e)[:180]))
+        diag_eastmoney, diag_eastmoney_error = get_sina_news(limit=1)
+        if diag_eastmoney:
+            st.success("7×24：数据链路可用")
+        else:
+            st.warning(f"7×24：无数据 · {diag_eastmoney_error or '未知原因'}")
+    except Exception as exc:
+        st.error(f"7×24：失败 · {exc}")
 
+with diag_col5:
     try:
-        x, err = get_wsj_news(limit=1)
-        rows.append(("WSJ", bool(x), "WSJ headlines 返回数据" if x else (err or "返回空数据")))
-    except Exception as e:
-        rows.append(("WSJ", False, str(e)[:180]))
+        diag_wsj, diag_wsj_error = get_wsj_news(limit=1)
+        if diag_wsj:
+            st.success("WSJ：正常")
+        else:
+            st.warning(f"WSJ：无公开 Headlines · {diag_wsj_error or '正常限制'}")
+    except Exception as exc:
+        st.error(f"WSJ：失败 · {exc}")
 
-    for name, ok, detail in rows:
-        st.markdown(f"{'✅' if ok else '❌'} **{name}** — {detail}")
+with diag_col6:
+    st.info(f"Compact Mode：{'ON' if compact_mode else 'OFF'}")
 
-    st.caption(f"Compact Mode: {'ON' if compact_mode else 'OFF'} · Last Check: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+st.caption(
+    f"Diagnostics timestamp: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}"
+)
 
 
 # =========================================================
@@ -948,16 +977,10 @@ with st.expander("🔧 检查数据源 / 运行状态", expanded=True):
 # =========================================================
 
 st.markdown(
-    """
-    <div style="
-        margin-top: 2rem;
-        padding-top: 1rem;
-        border-top: 1px solid #e5e7eb;
-        color: #9ca3af;
-        font-size: 0.75rem;
-    ">
-        Data source: FRED · News: Sina Finance / WSJ
-    </div>
-    """,
+    '<div class="chart-divider"></div>',
     unsafe_allow_html=True
+)
+
+st.caption(
+    "Macro Dashboard · Data sources: FRED / Sina Finance / WSJ"
 )
