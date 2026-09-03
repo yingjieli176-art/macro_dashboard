@@ -50,7 +50,7 @@ st.markdown(
     .dashboard-subtitle {
         color: #6b7280;
         font-size: 0.95rem;
-        margin-bottom: 1.2rem;
+        margin-bottom: 1.0rem;
     }
 
     .section-title {
@@ -66,26 +66,12 @@ st.markdown(
         margin-bottom: 0.5rem;
     }
 
-    .formula-box {
-        background: #f8fafc;
-        border-left: 4px solid #64748b;
-        padding: 10px 14px;
-        margin-top: 5px;
-        margin-bottom: 8px;
-        font-size: 0.86rem;
-        line-height: 1.6;
-    }
-
-    .parameter-box {
-        background: #fafafa;
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        padding: 10px 14px;
-        margin-top: 8px;
-        margin-bottom: 28px;
+    .mini-description {
+        color: #6b7280;
         font-size: 0.82rem;
-        line-height: 1.65;
-        color: #4b5563;
+        line-height: 1.5;
+        margin-top: 2px;
+        margin-bottom: 14px;
     }
 
     .source-text {
@@ -102,23 +88,30 @@ st.markdown(
     }
 
     .news-item {
-        padding: 7px 4px;
+        padding: 8px 4px;
         border-bottom: 1px solid #eeeeee;
         line-height: 1.45;
-        font-size: 0.88rem;
+        font-size: 0.86rem;
     }
 
     .news-time {
         color: #6b7280;
-        font-size: 0.78rem;
-        margin-right: 10px;
+        font-size: 0.75rem;
+        margin-right: 8px;
         white-space: nowrap;
     }
 
     .news-source {
         color: #9ca3af;
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         margin-top: 2px;
+    }
+
+    .news-box {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 10px 12px;
+        background: #ffffff;
     }
 
     </style>
@@ -145,18 +138,18 @@ st.markdown(
 
 
 # =========================================================
-# Detail Mode
+# Compact Mode
 # =========================================================
 
-detail_mode = st.toggle(
-    "展开详细说明",
+compact_mode = st.toggle(
+    "缩小图表 / 快速浏览",
     value=False,
-    help="开启后显示计算公式、参数中文释义和经济含义。"
+    help="开启后将图表缩小，并只保留一句核心说明。"
 )
 
 
 # =========================================================
-# Helper Functions
+# Helpers
 # =========================================================
 
 def get_start_date(range_name):
@@ -181,7 +174,7 @@ def get_start_date(range_name):
     return today - pd.DateOffset(years=1)
 
 
-def apply_chart_style(fig, height=470):
+def apply_chart_style(fig, height):
 
     fig.update_layout(
         height=height,
@@ -189,27 +182,27 @@ def apply_chart_style(fig, height=470):
         hovermode="x unified",
 
         margin=dict(
-            l=55,
-            r=70,
-            t=55,
-            b=50
+            l=45,
+            r=55,
+            t=35,
+            b=40
         ),
 
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=1.02,
+            y=1.01,
             xanchor="left",
             x=0
         ),
 
         hoverlabel=dict(
             bgcolor="white",
-            font_size=13
+            font_size=12
         ),
 
         font=dict(
-            size=13
+            size=12
         ),
 
         xaxis=dict(
@@ -243,47 +236,20 @@ def add_source(text, url):
     )
 
 
-def add_parameter_notes(html_text):
-
-    if detail_mode:
-
-        st.markdown(
-            f"""
-            <div class="parameter-box">
-                <b>参数备注 / 中文释义</b><br>
-                {html_text}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-
-def add_formula(html_text):
-
-    if detail_mode:
-
-        st.markdown(
-            f"""
-            <div class="formula-box">
-                {html_text}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-
 # =========================================================
 # 1. Policy Rate Corridor
 # =========================================================
 
 st.markdown(
-    '<div class="section-title">1. Policy Rate Corridor</div>',
+    '<div class="section-title">'
+    '1. Policy Rate Corridor'
+    '</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
     '<div class="section-description">'
-    '政策利率走廊：IORB、ON RRP Rate、EFFR 与 SOFR'
+    'IORB、ON RRP Rate、EFFR 与 SOFR'
     '</div>',
     unsafe_allow_html=True
 )
@@ -296,6 +262,7 @@ corridor_range = st.radio(
     index=1,
     key="corridor_range"
 )
+
 
 corridor_start = get_start_date(
     corridor_range
@@ -331,58 +298,32 @@ corridor = corridor[
 fig1 = go.Figure()
 
 
-fig1.add_trace(
-    go.Scatter(
-        x=corridor["observation_date"],
-        y=corridor["IORB"],
-        name="IORB",
-        mode="lines",
-        line=dict(width=2.8)
+for series_id, name, width in [
+    ("IORB", "IORB", 2.6),
+    ("RRPONTSYAWARD", "ON RRP", 2.6),
+    ("EFFR", "EFFR", 2.6),
+    ("SOFR", "SOFR", 2.2),
+]:
+
+    fig1.add_trace(
+        go.Scatter(
+            x=corridor["observation_date"],
+            y=corridor[series_id],
+            name=name,
+            mode="lines",
+            line=dict(width=width)
+        )
     )
-)
-
-
-fig1.add_trace(
-    go.Scatter(
-        x=corridor["observation_date"],
-        y=corridor["RRPONTSYAWARD"],
-        name="ON RRP",
-        mode="lines",
-        line=dict(width=2.8)
-    )
-)
-
-
-fig1.add_trace(
-    go.Scatter(
-        x=corridor["observation_date"],
-        y=corridor["EFFR"],
-        name="EFFR",
-        mode="lines",
-        line=dict(width=2.8)
-    )
-)
-
-
-fig1.add_trace(
-    go.Scatter(
-        x=corridor["observation_date"],
-        y=corridor["SOFR"],
-        name="SOFR",
-        mode="lines",
-        line=dict(width=2.2)
-    )
-)
 
 
 fig1.update_layout(
-    yaxis_title="Interest Rate (%)"
+    yaxis_title="Rate (%)"
 )
 
 
 fig1 = apply_chart_style(
     fig1,
-    470
+    270 if compact_mode else 470
 )
 
 
@@ -392,15 +333,15 @@ st.plotly_chart(
 )
 
 
-add_parameter_notes(
-    """
-    <b>IORB</b>：Interest on Reserve Balances，准备金余额利率。<br>
-    <b>ON RRP</b>：Overnight Reverse Repurchase Agreement Rate，隔夜逆回购利率。<br>
-    <b>EFFR</b>：Effective Federal Funds Rate，联邦基金有效利率。<br>
-    <b>SOFR</b>：Secured Overnight Financing Rate，有担保隔夜融资利率。<br>
-    <b>单位</b>：全部为 %
-    """
-)
+if compact_mode:
+
+    st.markdown(
+        '<div class="mini-description">'
+        '政策利率走廊：IORB与ON RRP构成走廊上下边界，'
+        'EFFR反映联邦基金实际成交水平，SOFR观察隔夜担保融资。'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
 
 add_source(
@@ -420,13 +361,15 @@ st.markdown(
 # =========================================================
 
 st.markdown(
-    '<div class="section-title">2. 10Y Yield Structure</div>',
+    '<div class="section-title">'
+    '2. 10Y Yield Structure'
+    '</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
     '<div class="section-description">'
-    '10年期名义收益率、实际收益率与盈亏平衡通胀率'
+    '10Y Nominal / 10Y Real / 10Y Breakeven'
     '</div>',
     unsafe_allow_html=True
 )
@@ -488,7 +431,7 @@ fig2.add_trace(
         y=yield10["DFII10"],
         name="10Y Real",
         mode="lines",
-        line=dict(width=2.8)
+        line=dict(width=2.6)
     )
 )
 
@@ -500,7 +443,7 @@ fig2.add_trace(
         name="10Y Breakeven",
         mode="lines",
         line=dict(
-            width=2.8,
+            width=2.5,
             dash="dot"
         )
     )
@@ -508,13 +451,13 @@ fig2.add_trace(
 
 
 fig2.update_layout(
-    yaxis_title="Yield / Inflation (%)"
+    yaxis_title="Yield (%)"
 )
 
 
 fig2 = apply_chart_style(
     fig2,
-    470
+    270 if compact_mode else 470
 )
 
 
@@ -524,23 +467,15 @@ st.plotly_chart(
 )
 
 
-add_formula(
-    """
-    <b>10Y Breakeven = 10Y Nominal − 10Y Real</b><br>
-    即：<b>DGS10 − DFII10</b>
-    """
-)
+if compact_mode:
 
-
-add_parameter_notes(
-    """
-    <b>DGS10</b>：美国10年期国债名义收益率。<br>
-    <b>DFII10</b>：美国10年期TIPS实际收益率。<br>
-    <b>10Y Breakeven</b>：10年期盈亏平衡通胀率。<br>
-    <b>注意</b>：Breakeven不等于纯粹的市场通胀预期，
-    还可能包含通胀风险溢价及流动性等因素。
-    """
-)
+    st.markdown(
+        '<div class="mini-description">'
+        '10Y Nominal = 10Y Real + Breakeven；'
+        '可用来拆解长期利率中的实际利率与通胀定价变化。'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
 
 add_source(
@@ -560,13 +495,15 @@ st.markdown(
 # =========================================================
 
 st.markdown(
-    '<div class="section-title">3. Treasury Yield & Curve Spread</div>',
+    '<div class="section-title">'
+    '3. Treasury Yield & Curve Spread'
+    '</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
     '<div class="section-description">'
-    '3个月、2年、10年美国国债收益率，以及10Y−2Y与10Y−3M期限利差'
+    '3M / 2Y / 10Y / 10Y−2Y / 10Y−3M'
     '</div>',
     unsafe_allow_html=True
 )
@@ -607,10 +544,6 @@ treasury = treasury[
 ]
 
 
-# =========================================================
-# Calculate Spreads
-# =========================================================
-
 treasury["10Y-2Y"] = (
     treasury["DGS10"]
     - treasury["DGS2"]
@@ -623,53 +556,42 @@ treasury["10Y-3M"] = (
 ) * 100
 
 
-# =========================================================
-# Chart
-# =========================================================
-
 fig3 = go.Figure()
 
 
-# 3M
 fig3.add_trace(
     go.Scatter(
         x=treasury["observation_date"],
         y=treasury["DGS3MO"],
         name="3M",
         mode="lines",
-        line=dict(width=2.2),
-        yaxis="y"
+        line=dict(width=2.0)
     )
 )
 
 
-# 2Y
 fig3.add_trace(
     go.Scatter(
         x=treasury["observation_date"],
         y=treasury["DGS2"],
         name="2Y",
         mode="lines",
-        line=dict(width=2.4),
-        yaxis="y"
+        line=dict(width=2.3)
     )
 )
 
 
-# 10Y
 fig3.add_trace(
     go.Scatter(
         x=treasury["observation_date"],
         y=treasury["DGS10"],
         name="10Y",
         mode="lines",
-        line=dict(width=2.8),
-        yaxis="y"
+        line=dict(width=2.7)
     )
 )
 
 
-# 10Y−2Y
 fig3.add_trace(
     go.Bar(
         x=treasury["observation_date"],
@@ -681,13 +603,12 @@ fig3.add_trace(
 )
 
 
-# 10Y−3M
 fig3.add_trace(
     go.Bar(
         x=treasury["observation_date"],
         y=treasury["10Y-3M"],
         name="10Y−3M",
-        opacity=0.42,
+        opacity=0.38,
         yaxis="y2"
     )
 )
@@ -717,7 +638,7 @@ fig3.update_layout(
 
 fig3 = apply_chart_style(
     fig3,
-    500
+    290 if compact_mode else 500
 )
 
 
@@ -727,39 +648,15 @@ st.plotly_chart(
 )
 
 
-add_formula(
-    """
-    <b>10Y−2Y = DGS10 − DGS2</b><br>
-    <b>10Y−3M = DGS10 − DGS3MO</b><br><br>
+if compact_mode:
 
-    <b>单位：</b>bp（基点）<br>
-    1个百分点 = 100 bp
-    """
-)
-
-
-add_parameter_notes(
-    """
-    <b>DGS3MO</b>：美国3个月国债收益率，
-    对当前货币政策和短端资金利率环境较敏感。<br>
-
-    <b>DGS2</b>：美国2年期国债收益率，
-    对未来短期政策利率路径预期较敏感。<br>
-
-    <b>DGS10</b>：美国10年期国债收益率，
-    是长期无风险利率的重要基准。<br>
-
-    <b>10Y−2Y</b>：10年期收益率减2年期收益率，
-    即传统意义上的2s10s。<br>
-
-    <b>10Y−3M</b>：10年期收益率减3个月收益率，
-    更直接反映长期利率与当前短端政策环境之间的差异。<br>
-
-    <b>Spread > 0</b>：收益率曲线对应区间向上。<br>
-
-    <b>Spread < 0</b>：对应区间倒挂。
-    """
-)
+    st.markdown(
+        '<div class="mini-description">'
+        '10Y−2Y观察中长期收益率曲线；'
+        '10Y−3M更直接观察长期利率相对当前短端政策环境的变化。'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
 
 add_source(
@@ -779,97 +676,98 @@ st.markdown(
 # =========================================================
 
 st.markdown(
-    '<div class="section-title">4. 7×24 Market News</div>',
+    '<div class="section-title">'
+    '4. 7×24 Market News'
+    '</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
     '<div class="section-description">'
-    '实时财经文字快讯：新浪财经 + WSJ公开市场新闻'
+    '实时财经文字快讯'
     '</div>',
     unsafe_allow_html=True
 )
 
 
 # =========================================================
-# Refresh
+# Refresh Button
 # =========================================================
 
-news_col1, news_col2 = st.columns([1, 6])
+refresh = st.button(
+    "🔄 刷新7×24",
+    key="refresh_7x24"
+)
 
 
-with news_col1:
-
-    refresh_news = st.button(
-        "🔄 刷新新闻",
-        key="refresh_news"
-    )
-
-
-if refresh_news:
+if refresh:
 
     get_sina_news.clear()
     get_wsj_news.clear()
 
 
-# =========================================================
-# Load News
-# =========================================================
-
 sina_news = get_sina_news(
-    limit=20
+    limit=25
 )
 
 wsj_news = get_wsj_news(
-    limit=12
+    limit=10
 )
 
 
-news_col1, news_col2 = st.columns(
+# =========================================================
+# News Columns
+# =========================================================
+
+col_sina, col_wsj = st.columns(
     2,
     gap="large"
 )
 
 
 # =========================================================
-# Sina
+# Sina 7×24
 # =========================================================
 
-with news_col1:
+with col_sina:
 
     st.markdown(
-        "### 新浪财经 7×24"
+        "#### 新浪财经 7×24"
     )
 
     if sina_news:
 
-        for item in sina_news:
+        st.markdown(
+            '<div class="news-box">',
+            unsafe_allow_html=True
+        )
 
-            title = item["title"]
-            time_text = item["time"]
-            url = item["url"]
+        for item in sina_news:
 
             st.markdown(
                 f"""
                 <div class="news-item">
                     <span class="news-time">
-                        {time_text}
+                        {item["time"]}
                     </span>
-                    <a href="{url}" target="_blank">
-                        {title}
+                    <a href="{item["url"]}" target="_blank">
+                        {item["title"]}
                     </a>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
 
-    else:
-
-        st.info(
-            "暂时无法获取新浪财经7×24数据。"
+        st.markdown(
+            '</div>',
+            unsafe_allow_html=True
         )
 
-    st.markdown("")
+    else:
+
+        st.warning(
+            "新浪7×24暂时无法获取。"
+        )
 
     add_source(
         "新浪财经 7×24",
@@ -881,24 +779,26 @@ with news_col1:
 # WSJ
 # =========================================================
 
-with news_col2:
+with col_wsj:
 
     st.markdown(
-        "### WSJ"
+        "#### WSJ"
     )
 
     if wsj_news:
 
-        for item in wsj_news:
+        st.markdown(
+            '<div class="news-box">',
+            unsafe_allow_html=True
+        )
 
-            title = item["title"]
-            url = item["url"]
+        for item in wsj_news:
 
             st.markdown(
                 f"""
                 <div class="news-item">
-                    <a href="{url}" target="_blank">
-                        {title}
+                    <a href="{item["url"]}" target="_blank">
+                        {item["title"]}
                     </a>
                     <div class="news-source">
                         The Wall Street Journal
@@ -908,13 +808,16 @@ with news_col2:
                 unsafe_allow_html=True
             )
 
-    else:
-
-        st.info(
-            "暂时无法获取WSJ公开新闻。"
+        st.markdown(
+            '</div>',
+            unsafe_allow_html=True
         )
 
-    st.markdown("")
+    else:
+
+        st.warning(
+            "WSJ公开新闻暂时无法获取。"
+        )
 
     add_source(
         "WSJ Finance",
@@ -935,8 +838,7 @@ st.markdown(
         color: #9ca3af;
         font-size: 0.75rem;
     ">
-        Data source: Federal Reserve Economic Data (FRED)
-        · News: Sina Finance / The Wall Street Journal
+        Data source: FRED · News: Sina Finance / WSJ
     </div>
     """,
     unsafe_allow_html=True
