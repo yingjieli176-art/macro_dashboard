@@ -106,11 +106,12 @@ st.markdown(
 
     .source-text a {
         color: #6b7280;
-        text-decoration: none;
+        text-decoration: none !important;
     }
 
     .source-text a:hover {
-        text-decoration: underline;
+        color: #374151;
+        text-decoration: underline !important;
     }
 
     .chart-divider {
@@ -145,6 +146,62 @@ st.markdown(
         color: #6b7280;
         font-size: 0.75rem;
         margin-bottom: 0.5rem;
+    }
+
+    .news-box {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 6px 10px;
+        background: #ffffff;
+        max-height: 520px;
+        overflow-y: auto;
+    }
+
+    .news-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 8px 3px;
+        border-bottom: 1px solid #eeeeee;
+        line-height: 1.5;
+        font-size: 0.84rem;
+    }
+
+    .news-item:last-child {
+        border-bottom: none;
+    }
+
+    .news-index {
+        flex: 0 0 28px;
+        width: 28px;
+        color: #9ca3af;
+        font-size: 0.72rem;
+        font-family: "Segoe UI", sans-serif;
+        padding-top: 2px;
+    }
+
+    .news-time {
+        flex: 0 0 72px;
+        width: 72px;
+        color: #6b7280;
+        font-size: 0.72rem;
+        white-space: nowrap;
+        padding-top: 2px;
+        margin-right: 6px;
+    }
+
+    .news-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .news-content a {
+        color: #374151;
+        text-decoration: none !important;
+    }
+
+    .news-content a:hover {
+        color: #111827;
+        text-decoration: underline !important;
     }
 
     </style>
@@ -479,7 +536,6 @@ def build_fig3(treasury_range):
 
     fig = go.Figure()
 
-    # 3M
     fig.add_trace(
         go.Scatter(
             x=treasury[
@@ -496,7 +552,6 @@ def build_fig3(treasury_range):
         )
     )
 
-    # 2Y
     fig.add_trace(
         go.Scatter(
             x=treasury[
@@ -513,7 +568,6 @@ def build_fig3(treasury_range):
         )
     )
 
-    # 10Y
     fig.add_trace(
         go.Scatter(
             x=treasury[
@@ -530,7 +584,6 @@ def build_fig3(treasury_range):
         )
     )
 
-    # 10Y - 2Y
     fig.add_trace(
         go.Scatter(
             x=treasury[
@@ -549,7 +602,6 @@ def build_fig3(treasury_range):
         )
     )
 
-    # 10Y - 3M
     fig.add_trace(
         go.Scatter(
             x=treasury[
@@ -593,47 +645,207 @@ def build_fig3(treasury_range):
 
 # =========================================================
 # CORE CHARTS
+#
+# 图表数据：
+# FRED cache = 1 hour
+# 页面 fragment = 1 hour 自动刷新
 # =========================================================
 
-if compact_mode:
+@st.fragment(run_every="3600s")
+def render_core_charts():
 
-    # =====================================================
-    # COMPACT MODE
-    #
-    # 每个 column 完整对应一个 chart
-    #
-    # Column 1:
-    # 1 + 时间范围 + Fig1
-    #
-    # Column 2:
-    # 2 + 时间范围 + Fig2
-    #
-    # Column 3:
-    # 3 + 时间范围 + Fig3
-    # =====================================================
+    if compact_mode:
 
-    col1, col2, col3 = st.columns(
-        3,
-        gap="small",
-    )
+        # =================================================
+        # Compact Mode
+        # =================================================
+
+        col1, col2, col3 = st.columns(
+            3,
+            gap="small",
+        )
 
 
-    # =====================================================
-    # 1. Fed
-    # =====================================================
+        # =================================================
+        # 1. Fed
+        # =================================================
 
-    with col1:
+        with col1:
+
+            st.markdown(
+                '<div class="compact-title">'
+                '🏦 1. Fed Policy Rate'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+            st.markdown(
+                '<div class="compact-description">'
+                'IORB / ON RRP / EFFR / SOFR'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+            corridor_range = st.radio(
+                "时间范围",
+                [
+                    "5Y",
+                    "1Y",
+                    "6M",
+                    "3M",
+                    "1M",
+                ],
+                horizontal=True,
+                index=1,
+                key="compact_corridor_range",
+            )
+
+            fig1 = build_fig1(
+                corridor_range
+            )
+
+            st.plotly_chart(
+                fig1,
+                use_container_width=True,
+            )
+
+            st.caption(
+                "政策利率走廊 / 货币市场利率"
+            )
+
+            add_source(
+                "FRED — Policy Rate Corridor",
+                "https://fred.stlouisfed.org/graph/?graph_id=1547733&rn=698",
+            )
+
+
+        # =================================================
+        # 2. 10Y
+        # =================================================
+
+        with col2:
+
+            st.markdown(
+                '<div class="compact-title">'
+                '2. 10Y Yield Structure'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+            st.markdown(
+                '<div class="compact-description">'
+                '10Y Nominal / Real / Breakeven'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+            yield10_range = st.radio(
+                "时间范围",
+                [
+                    "5Y",
+                    "1Y",
+                    "6M",
+                    "3M",
+                    "1M",
+                ],
+                horizontal=True,
+                index=1,
+                key="compact_yield10_range",
+            )
+
+            fig2 = build_fig2(
+                yield10_range
+            )
+
+            st.plotly_chart(
+                fig2,
+                use_container_width=True,
+            )
+
+            st.caption(
+                "名义利率 / 实际利率 / 通胀预期"
+            )
+
+            add_source(
+                "FRED — Treasury & Real Yield Data",
+                "https://fred.stlouisfed.org/",
+            )
+
+
+        # =================================================
+        # 3. Treasury
+        # =================================================
+
+        with col3:
+
+            st.markdown(
+                '<div class="compact-title">'
+                '3. Treasury Yield'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+            st.markdown(
+                '<div class="compact-description">'
+                '3M / 2Y / 10Y / Curve Spread'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+            treasury_range = st.radio(
+                "时间范围",
+                [
+                    "5Y",
+                    "1Y",
+                    "6M",
+                    "3M",
+                    "1M",
+                ],
+                horizontal=True,
+                index=1,
+                key="compact_treasury_range",
+            )
+
+            fig3 = build_fig3(
+                treasury_range
+            )
+
+            st.plotly_chart(
+                fig3,
+                use_container_width=True,
+            )
+
+            st.caption(
+                "3M / 2Y / 10Y / 10Y−2Y / 10Y−3M"
+            )
+
+            add_source(
+                "FRED — Treasury Constant Maturity Rates",
+                "https://fred.stlouisfed.org/",
+            )
+
+
+    else:
+
+        # =================================================
+        # Normal Mode
+        # =================================================
+
+
+        # -------------------------------------------------
+        # 1
+        # -------------------------------------------------
 
         st.markdown(
-            '<div class="compact-title">'
-            '🏦 1. Fed Policy Rate'
+            '<div class="section-title">'
+            '🏦 1. Fed Policy Rate & Money Market'
             '</div>',
             unsafe_allow_html=True,
         )
 
         st.markdown(
-            '<div class="compact-description">'
-            'IORB / ON RRP / EFFR / SOFR'
+            '<div class="section-description">'
+            'IORB、ON RRP Rate、EFFR 与 SOFR'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -649,7 +861,7 @@ if compact_mode:
             ],
             horizontal=True,
             index=1,
-            key="compact_corridor_range",
+            key="normal_corridor_range",
         )
 
         fig1 = build_fig1(
@@ -661,27 +873,41 @@ if compact_mode:
             use_container_width=True,
         )
 
-        st.caption(
-            "政策利率走廊 / 货币市场利率"
+        st.markdown(
+            '<div class="mini-description">'
+            'IORB / ON RRP构成政策利率走廊，'
+            'EFFR观察联邦基金市场，'
+            'SOFR观察隔夜担保融资。'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
+        add_source(
+            "FRED — Policy Rate Corridor",
+            "https://fred.stlouisfed.org/graph/?graph_id=1547733&rn=698",
         )
 
 
-    # =====================================================
-    # 2. 10Y
-    # =====================================================
+        st.markdown(
+            '<div class="chart-divider"></div>',
+            unsafe_allow_html=True,
+        )
 
-    with col2:
+
+        # -------------------------------------------------
+        # 2
+        # -------------------------------------------------
 
         st.markdown(
-            '<div class="compact-title">'
+            '<div class="section-title">'
             '2. 10Y Yield Structure'
             '</div>',
             unsafe_allow_html=True,
         )
 
         st.markdown(
-            '<div class="compact-description">'
-            '10Y Nominal / Real / Breakeven'
+            '<div class="section-description">'
+            '10Y Nominal / 10Y Real / 10Y Breakeven'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -697,7 +923,7 @@ if compact_mode:
             ],
             horizontal=True,
             index=1,
-            key="compact_yield10_range",
+            key="normal_yield10_range",
         )
 
         fig2 = build_fig2(
@@ -709,27 +935,40 @@ if compact_mode:
             use_container_width=True,
         )
 
-        st.caption(
-            "名义利率 / 实际利率 / 通胀预期"
+        st.markdown(
+            '<div class="mini-description">'
+            '10Y Breakeven = 10Y Nominal − 10Y Real，'
+            '用于观察市场隐含通胀预期。'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
+        add_source(
+            "FRED — Treasury & Real Yield Data",
+            "https://fred.stlouisfed.org/",
         )
 
 
-    # =====================================================
-    # 3. Treasury
-    # =====================================================
+        st.markdown(
+            '<div class="chart-divider"></div>',
+            unsafe_allow_html=True,
+        )
 
-    with col3:
+
+        # -------------------------------------------------
+        # 3
+        # -------------------------------------------------
 
         st.markdown(
-            '<div class="compact-title">'
-            '3. Treasury Yield'
+            '<div class="section-title">'
+            '3. Treasury Yield & Curve Spread'
             '</div>',
             unsafe_allow_html=True,
         )
 
         st.markdown(
-            '<div class="compact-description">'
-            '3M / 2Y / 10Y / Curve Spread'
+            '<div class="section-description">'
+            '3M、2Y、10Y Treasury Yield 与曲线利差'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -745,7 +984,7 @@ if compact_mode:
             ],
             horizontal=True,
             index=1,
-            key="compact_treasury_range",
+            key="normal_treasury_range",
         )
 
         fig3 = build_fig3(
@@ -757,207 +996,21 @@ if compact_mode:
             use_container_width=True,
         )
 
-        st.caption(
-            "3M / 2Y / 10Y / 10Y−2Y / 10Y−3M"
+        st.markdown(
+            '<div class="mini-description">'
+            '曲线斜率：10Y−2Y、10Y−3M；'
+            '正值代表正常向上倾斜，负值代表倒挂。'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
+        add_source(
+            "FRED — Treasury Constant Maturity Rates",
+            "https://fred.stlouisfed.org/",
         )
 
 
-else:
-
-    # =====================================================
-    # NORMAL MODE
-    #
-    # 严格：
-    # 标题1 → 时间1 → 图1
-    # 标题2 → 时间2 → 图2
-    # 标题3 → 时间3 → 图3
-    # =====================================================
-
-
-    # =====================================================
-    # 1. Fed Policy Rate
-    # =====================================================
-
-    st.markdown(
-        '<div class="section-title">'
-        '🏦 1. Fed Policy Rate & Money Market'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<div class="section-description">'
-        'IORB、ON RRP Rate、EFFR 与 SOFR'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    corridor_range = st.radio(
-        "时间范围",
-        [
-            "5Y",
-            "1Y",
-            "6M",
-            "3M",
-            "1M",
-        ],
-        horizontal=True,
-        index=1,
-        key="normal_corridor_range",
-    )
-
-    fig1 = build_fig1(
-        corridor_range
-    )
-
-    st.plotly_chart(
-        fig1,
-        use_container_width=True,
-    )
-
-    st.markdown(
-        '<div class="mini-description">'
-        'IORB / ON RRP构成政策利率走廊，'
-        'EFFR观察联邦基金市场，'
-        'SOFR观察隔夜担保融资。'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    add_source(
-        "FRED — Policy Rate Corridor",
-        "https://fred.stlouisfed.org/graph/?graph_id=1547733&rn=698",
-    )
-
-
-    # =====================================================
-    # Divider
-    # =====================================================
-
-    st.markdown(
-        '<div class="chart-divider"></div>',
-        unsafe_allow_html=True,
-    )
-
-
-    # =====================================================
-    # 2. 10Y Yield Structure
-    # =====================================================
-
-    st.markdown(
-        '<div class="section-title">'
-        '2. 10Y Yield Structure'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<div class="section-description">'
-        '10Y Nominal / 10Y Real / 10Y Breakeven'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    yield10_range = st.radio(
-        "时间范围",
-        [
-            "5Y",
-            "1Y",
-            "6M",
-            "3M",
-            "1M",
-        ],
-        horizontal=True,
-        index=1,
-        key="normal_yield10_range",
-    )
-
-    fig2 = build_fig2(
-        yield10_range
-    )
-
-    st.plotly_chart(
-        fig2,
-        use_container_width=True,
-    )
-
-    st.markdown(
-        '<div class="mini-description">'
-        '10Y Breakeven = 10Y Nominal − 10Y Real，'
-        '用于观察市场隐含通胀预期。'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    add_source(
-        "FRED — Treasury & Real Yield Data",
-        "https://fred.stlouisfed.org/",
-    )
-
-
-    # =====================================================
-    # Divider
-    # =====================================================
-
-    st.markdown(
-        '<div class="chart-divider"></div>',
-        unsafe_allow_html=True,
-    )
-
-
-    # =====================================================
-    # 3. Treasury Yield
-    # =====================================================
-
-    st.markdown(
-        '<div class="section-title">'
-        '3. Treasury Yield & Curve Spread'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<div class="section-description">'
-        '3M、2Y、10Y Treasury Yield 与曲线利差'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    treasury_range = st.radio(
-        "时间范围",
-        [
-            "5Y",
-            "1Y",
-            "6M",
-            "3M",
-            "1M",
-        ],
-        horizontal=True,
-        index=1,
-        key="normal_treasury_range",
-    )
-
-    fig3 = build_fig3(
-        treasury_range
-    )
-
-    st.plotly_chart(
-        fig3,
-        use_container_width=True,
-    )
-
-    st.markdown(
-        '<div class="mini-description">'
-        '曲线斜率：10Y−2Y、10Y−3M；'
-        '正值代表正常向上倾斜，负值代表倒挂。'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    add_source(
-        "FRED — Treasury Constant Maturity Rates",
-        "https://fred.stlouisfed.org/",
-    )
+render_core_charts()
 
 
 # =========================================================
@@ -991,10 +1044,6 @@ st.markdown(
 @st.fragment(run_every="60s")
 def render_news_panel():
 
-    # -----------------------------------------------------
-    # Refresh Button
-    # -----------------------------------------------------
-
     if st.button(
         "🔄 立即刷新7×24",
         key="refresh_7x24",
@@ -1002,16 +1051,12 @@ def render_news_panel():
         get_sina_news.clear()
 
     # -----------------------------------------------------
-    # Get News
+    # 只取 10 条，不再抓 20 条
     # -----------------------------------------------------
 
     sina_news, sina_error = get_sina_news(
-        limit=20
+        limit=10
     )
-
-    # -----------------------------------------------------
-    # News Result
-    # -----------------------------------------------------
 
     if sina_news:
 
@@ -1025,59 +1070,83 @@ def render_news_panel():
         )
 
         # -------------------------------------------------
-        # IMPORTANT
+        # 使用 st.html
         #
-        # 新闻这里完全不使用：
-        # <span>
-        # <div>
-        # <a>
+        # Streamlit 1.62 支持 st.html。
+        # 比 st.markdown(... unsafe_allow_html=True)
+        # 更适合这里的新闻 HTML。
         #
-        # 避免 Streamlit 把 HTML 原始代码显示出来。
+        # 新闻标题不显示下划线。
         # -------------------------------------------------
+
+        news_html = """
+        <div class="news-box">
+        """
 
         for idx, item in enumerate(
             sina_news,
             start=1,
         ):
 
-            news_time = str(
-                item.get(
-                    "time",
-                    "",
-                )
-            ).strip()
+            news_time = html.escape(
+                str(
+                    item.get(
+                        "time",
+                        "",
+                    )
+                ).strip()
+            )
 
-            news_title = str(
-                item.get(
-                    "title",
-                    "",
-                )
-            ).strip()
+            news_title = html.escape(
+                str(
+                    item.get(
+                        "title",
+                        "",
+                    )
+                ).strip()
+            )
 
-            news_url = str(
-                item.get(
-                    "url",
-                    "",
-                )
-            ).strip()
+            news_url = html.escape(
+                str(
+                    item.get(
+                        "url",
+                        "",
+                    )
+                ).strip(),
+                quote=True,
+            )
 
-            # -------------------------------------------------
-            # 使用 Streamlit 原生 Markdown
-            # -------------------------------------------------
+            news_html += f"""
+            <div class="news-item">
 
-            if news_url:
+                <span class="news-index">
+                    {idx}.
+                </span>
 
-                st.markdown(
-                    f"{idx}. **{news_time}**  "
-                    f"[{news_title}]({news_url})"
-                )
+                <span class="news-time">
+                    {news_time}
+                </span>
 
-            else:
+                <div class="news-content">
 
-                st.markdown(
-                    f"{idx}. **{news_time}**  "
-                    f"{news_title}"
-                )
+                    <a
+                        href="{news_url}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {news_title}
+                    </a>
+
+                </div>
+
+            </div>
+            """
+
+        news_html += """
+        </div>
+        """
+
+        st.html(news_html)
 
     else:
 
