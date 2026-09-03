@@ -1292,8 +1292,7 @@ def render_news_panel():
             ):
                 news_url = EASTMONEY_FOCUS_URL
 
-            # 如果有明确标题：
-            # 显示标题
+            # 标题 + 完整正文都显示，不再只显示标题
             if (
                 news_title
                 and news_content
@@ -1305,11 +1304,14 @@ def render_news_panel():
                     f"<strong>"
                     f"{news_title}"
                     f"</strong>"
+                    f"<div style=\"margin-top:3px;\">"
+                    f"{news_content}"
+                    f"</div>"
                 )
 
             else:
 
-                body = news_title
+                body = news_content or news_title
 
             news_html += f"""
             <div class="news-item">
