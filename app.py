@@ -14,6 +14,7 @@ from data import (
     get_effr,
     get_rrp_rate,
     get_sina_news,
+    get_market_snapshot,
 )
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
@@ -54,6 +55,17 @@ st.markdown(
     .news-content { flex: 1; min-width: 0; }
     .news-content a { color: #374151; text-decoration: none !important; }
     .news-content a:hover { color: #111827; text-decoration: none !important; }
+    .market-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 7px 10px 6px; margin-bottom: 0.7rem; background: #ffffff; }
+    .market-title { font-size: 0.78rem; font-weight: 650; color: #374151; margin-bottom: 5px; }
+    .market-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+    .market-item { min-width: 0; padding-right: 5px; border-right: 1px solid #f0f0f0; }
+    .market-item:last-child { border-right: none; }
+    .market-name { color: #6b7280; font-size: 0.68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .market-price { color: #111827; font-size: 0.86rem; font-weight: 650; margin-top: 1px; white-space: nowrap; }
+    .market-change { font-size: 0.68rem; white-space: nowrap; }
+    .market-meta { color: #9ca3af; font-size: 0.61rem; margin-top: 2px; white-space: nowrap; }
+    .market-note { color: #9ca3af; font-size: 0.62rem; margin-top: 5px; }
+    @media (max-width: 900px) { .market-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
     </style>
     """,
     unsafe_allow_html=True,
@@ -63,6 +75,62 @@ st.markdown('<div class="dashboard-title">Macro Dashboard</div>', unsafe_allow_h
 st.markdown('<div class="dashboard-subtitle">US monetary policy, Treasury yields and inflation expectations</div>', unsafe_allow_html=True)
 
 compact_mode = st.toggle("缩小图表 / 快速浏览", value=True, help="开启后，三个核心图表横向并排显示。")
+
+
+@st.fragment(run_every="60s")
+def render_market_snapshot():
+    rows = get_market_snapshot()
+    labels = [
+        "纳斯达克",
+        "标普500",
+        "上证指数",
+        "深证成指",
+        "韩国综合",
+        "纳指期货",
+        "标普期货",
+    ]
+    by_name = {row.get("name"): row for row in rows}
+
+    items = []
+    for name in labels:
+        row = by_name.get(name, {})
+        price = row.get("price")
+        change_pct = row.get("change_pct")
+        if price is None:
+            price_text = "--"
+            change_text = "数据暂缺"
+        else:
+            price_text = f"{price:,.2f}"
+            change_text = "--" if change_pct is None else f"{change_pct:+.2f}%"
+
+        if name in ("纳指期货", "标普期货"):
+            meta = "美股夜盘参考"
+        else:
+            state = row.get("market_state") or ""
+            meta = {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后"}.get(state, "")
+
+        items.append(
+            f'<div class="market-item">'
+            f'<div class="market-name">{html.escape(name)}</div>'
+            f'<div class="market-price">{html.escape(price_text)}</div>'
+            f'<div class="market-change">{html.escape(change_text)}</div>'
+            f'<div class="market-meta">{html.escape(meta)}</div>'
+            f'</div>'
+        )
+
+    st.markdown(
+        '<div class="market-box">'
+        '<div class="market-title">🌐 全球核心市场 · 实时/近实时</div>'
+        '<div class="market-grid">'
+        + "".join(items)
+        + '</div>'
+        '<div class="market-note">每60秒刷新 · 美股夜盘采用 Nasdaq / S&P 500 期货（NQ / ES）作为夜盘参考 · 行情可能存在交易所或数据源延迟</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+
+render_market_snapshot()
 
 
 def get_start_date(range_name):
@@ -173,9 +241,9 @@ def build_fig3(date_range):
 
 
 PARAM_DESCRIPTIONS = [
-    "IORB / ON RRP构成政策利率走廊，EFFR观察联邦基金市场，SOFR观察隔夜担保融资。",
-    "10Y Nominal = 10Y Real + Breakeven，用于观察实际利率与通胀定价的变化。",
-    "10Y−2Y观察中长期曲线，10Y−3M更直接观察长端相对短端的利差。",
+    "IORB（Interest on Reserve Balances）：美联储对存放在美联储的准备金余额支付的利率。ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具的利率。EFFR（Effective Federal Funds Rate）：美国联邦基金市场的有效隔夜利率。SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。",
+    "10Y Nominal：10年期美国国债名义收益率。10Y Real：10年期美国国债实际收益率，通常指10年期TIPS实际收益率。Breakeven：10年期盈亏平衡通胀率，即名义收益率与实际收益率之差。",
+    "3M：3个月期美国国债收益率。2Y：2年期美国国债收益率。10Y：10年期美国国债收益率。10Y−2Y：10年期与2年期美国国债收益率之差。10Y−3M：10年期与3个月期美国国债收益率之差。",
 ]
 
 
