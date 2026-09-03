@@ -79,6 +79,48 @@ st.markdown('<div class="dashboard-subtitle">US monetary policy, Treasury yields
 compact_mode = st.toggle("缩小图表 / 快速浏览", value=True, help="开启后，三个核心图表横向并排显示。")
 
 
+def _get_after_hours_quote(symbol):
+    response = requests.get(
+        "https://query1.finance.yahoo.com/v8/finance/chart/" + symbol,
+        params={
+            "range": "1d",
+            "interval": "1m",
+            "includePrePost": "true",
+        },
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=10,
+    )
+    response.raise_for_status()
+    result = (response.json().get("chart", {}).get("result") or [])[0]
+    meta = result.get("meta", {})
+    timestamps = result.get("timestamp") or []
+    closes = ((result.get("indicators", {}).get("quote") or [{}])[0]).get("close") or []
+    post_period = (meta.get("currentTradingPeriod") or {}).get("post") or {}
+    post_start = post_period.get("start")
+    post_end = post_period.get("end")
+
+    post_values = []
+    for timestamp, close in zip(timestamps, closes):
+        if close is None:
+            continue
+        if post_start is not None and timestamp < post_start:
+            continue
+        if post_end is not None and timestamp > post_end:
+            continue
+        post_values.append(close)
+
+    price = post_values[-1] if post_values else meta.get("postMarketPrice")
+    regular_price = meta.get("regularMarketPrice")
+    if price is None:
+        raise RuntimeError("没有取得盘后成交价")
+
+    change_pct = None
+    if regular_price not in (None, 0):
+        change_pct = (price - regular_price) / regular_price * 100
+
+    return price, change_pct
+
+
 @st.fragment(run_every="60s")
 def render_market_snapshot():
     rows = get_market_snapshot()
@@ -122,32 +164,11 @@ def render_market_snapshot():
         ("标普夜盘", "SPY", "SPY 盘后"),
     ]:
         try:
-            response = requests.get(
-                "https://query1.finance.yahoo.com/v8/finance/chart/" + symbol,
-                params={
-                    "range": "1d",
-                    "interval": "1m",
-                    "includePrePost": "true",
-                },
-                headers={"User-Agent": "Mozilla/5.0"},
-                timeout=10,
-            )
-            response.raise_for_status()
-            result = (response.json().get("chart", {}).get("result") or [])[0]
-            meta_data = result.get("meta", {})
-            post_price = meta_data.get("postMarketPrice")
-            post_change_pct = meta_data.get("postMarketChangePercent")
-            if post_price is None:
-                post_price = meta_data.get("regularMarketPrice")
-            post_row = {
-                "price": post_price,
-                "change_pct": post_change_pct,
-            }
-            after_hours.append(render_item(name, post_row, label))
+            price, change_pct = _get_after_hours_quote(symbol)
+            after_hours.append(render_item(name, {"price": price, "change_pct": change_pct}, label))
         except Exception:
             after_hours.append(render_item(name, {}, label))
 
-    # 补足第二排空位，保持小模块两排整齐。
     after_hours.extend([render_item("", {}, "") for _ in range(3)])
 
     st.markdown(
@@ -159,7 +180,7 @@ def render_market_snapshot():
         '<div class="market-row">'
         + "".join(after_hours[:5])
         + '</div>'
-        '<div class="market-note">每60秒刷新 · 第一排为各核心指数盘中/最新收盘价；第二排为美股证券盘后价格（QQQ / SPY），不使用 NQ / ES 期货。指数本身通常没有可交易的盘后成交价。</div>'
+        '<div class="market-note">每60秒刷新 · 第一排为核心指数盘中/最新收盘价；第二排为美股证券盘后价格（QQQ / SPY），不使用 NQ / ES 期货。指数本身通常没有可交易的盘后成交价。</div>'
         '</div>',
         unsafe_allow_html=True,
     )
