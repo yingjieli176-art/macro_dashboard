@@ -899,6 +899,51 @@ add_source(
 
 
 # =========================================================
+# 4. System Diagnostics
+# =========================================================
+
+st.markdown('<div class="section-title">4. System Diagnostics</div>', unsafe_allow_html=True)
+
+with st.expander("🔧 检查数据源 / 运行状态", expanded=True):
+    import requests
+    from datetime import datetime
+
+    rows = []
+    rows.append(("Streamlit App", True, "app.py 已执行到诊断模块"))
+
+    try:
+        x = get_dgs10()
+        rows.append(("FRED API", x is not None and not x.empty, f"DGS10 返回 {len(x)} 条"))
+    except Exception as e:
+        rows.append(("FRED API", False, str(e)[:180]))
+
+    try:
+        x, err = get_sina_news(limit=1)
+        rows.append(("Sina 7×24", bool(x), "新浪返回数据" if x else (err or "返回空数据")))
+    except Exception as e:
+        rows.append(("Sina 7×24", False, str(e)[:180]))
+
+    try:
+        r = requests.get("https://np-weblist.eastmoney.com/comm/web/getFastNewsList", params={"client":"web","biz":"web_724","fastColumn":"102","sortEnd":"","pageSize":1,"req_trace":str(int(datetime.now().timestamp()*1000))}, timeout=8, headers={"User-Agent":"Mozilla/5.0","Referer":"https://kuaixun.eastmoney.com/"})
+        r.raise_for_status()
+        items = r.json().get("data", {}).get("fastNewsList", [])
+        rows.append(("Eastmoney 7×24", bool(items), "Eastmoney 返回数据" if items else "接口可访问，但返回空数据"))
+    except Exception as e:
+        rows.append(("Eastmoney 7×24", False, str(e)[:180]))
+
+    try:
+        x, err = get_wsj_news(limit=1)
+        rows.append(("WSJ", bool(x), "WSJ headlines 返回数据" if x else (err or "返回空数据")))
+    except Exception as e:
+        rows.append(("WSJ", False, str(e)[:180]))
+
+    for name, ok, detail in rows:
+        st.markdown(f"{'✅' if ok else '❌'} **{name}** — {detail}")
+
+    st.caption(f"Compact Mode: {'ON' if compact_mode else 'OFF'} · Last Check: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+
+# =========================================================
 # Footer
 # =========================================================
 
