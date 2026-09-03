@@ -1,0 +1,54 @@
+name: Repair dashboard
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Repair app and news fallback
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          app = Path('app.py')
+          s = app.read_text(encoding='utf-8')
+
+          # Keep the full dashboard; remove only the accidental test banner
+          # and the duplicate Streamlit page configuration.
+          s = s.replace('st.error("TEST BUILD 2026-09-03")\n\n', '', 1)
+          duplicate = '''st.set_page_config(\n    page_title="Macro Dashboard",\n    layout="wide"\n)\n\n'''
+          if s.startswith('import streamlit as st\n\n' + duplicate):
+              s = s.replace('import streamlit as st\n\n' + duplicate, 'import streamlit as st\n\n', 1)
+          app.write_text(s, encoding='utf-8')
+
+          data = Path('data.py')
+          s = data.read_text(encoding='utf-8')
+
+          old = '''    except Exception as e:\n\n        return [], str(e)\n'''
+          new = '''    except Exception as sina_error:\n\n        # Streamlit Cloud / overseas network paths can intermittently block\n        # Sina's live-feed host. Fall back to Eastmoney's public 7x24 feed\n        # so the dashboard still shows live finance text instead of a blank box.\n        try:\n            fallback_url = "https://np-weblist.eastmoney.com/comm/web/getFastNewsList"\n            fallback_params = {\n                "client": "web",\n                "biz": "web_724",\n                "fastColumn": "102",\n                "sortEnd": "",\n                "pageSize": limit,\n                "req_trace": str(int(time.time() * 1000)),\n            }\n            fallback_headers = {\n                "User-Agent": SINA_HEADERS["User-Agent"],\n                "Referer": "https://kuaixun.eastmoney.com/",\n                "Accept": "application/json, text/plain, */*",\n            }\n            fallback_response = requests.get(\n                fallback_url,\n                params=fallback_params,\n                headers=fallback_headers,\n                timeout=15\n            )\n            fallback_response.raise_for_status()\n            fallback_data = fallback_response.json()\n            fallback_items = (\n                fallback_data.get("data", {})\n                .get("fastNewsList", [])\n            )\n\n            fallback_news = []\n            for item in fallback_items:\n                title = clean_sina_text(\n                    item.get("title") or item.get("summary") or item.get("brief") or ""\n                )\n                if not title:\n                    continue\n                fallback_news.append({\n                    "time": parse_sina_time(\n                        item.get("showTime") or item.get("time") or ""\n                    ),\n                    "title": title,\n                    "url": "https://kuaixun.eastmoney.com/7_24.html",\n                })\n\n            if fallback_news:\n                return fallback_news[:limit], None\n\n        except Exception as fallback_error:\n            return [], f"新浪: {sina_error}; 备用源: {fallback_error}"\n\n        return [], str(sina_error)\n'''
+          if old not in s:
+              raise SystemExit('Expected Sina exception block not found')
+          s = s.replace(old, new, 1)
+          data.write_text(s, encoding='utf-8')
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py data.py
+          git diff --cached --quiet || git commit -m "Fix dashboard startup and 7x24 fallback [skip ci]"
+          git push
+
+          rm -f .github/workflows/repair-dashboard.yml
+          git add -A
+          git diff --cached --quiet || git commit -m "Remove one-time repair workflow [skip ci]"
+          git push
