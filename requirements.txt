@@ -2,5 +2,5 @@ streamlit==1.62.0
 pandas
 plotly
 requests
-beautifulsoup4
+
 # force Streamlit Community Cloud dependency redeploy
