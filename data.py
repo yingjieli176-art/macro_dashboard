@@ -783,6 +783,98 @@ def get_sina_news(
 
 
 # =========================================================
+# LIVE MARKET SNAPSHOT
+# =========================================================
+
+YAHOO_CHART_API = "https://query1.finance.yahoo.com/v8/finance/chart/"
+
+MARKET_SYMBOLS = {
+    "纳斯达克": "^IXIC",
+    "标普500": "^GSPC",
+    "上证指数": "000001.SS",
+    "深证成指": "399001.SZ",
+    "韩国综合": "^KS11",
+    "纳指期货": "NQ=F",
+    "标普期货": "ES=F",
+}
+
+MARKET_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/152.0.0.0 Safari/537.36"
+    ),
+}
+
+
+def _fetch_yahoo_quote(symbol):
+    response = requests.get(
+        YAHOO_CHART_API + symbol,
+        params={
+            "range": "1d",
+            "interval": "1m",
+            "includePrePost": "true",
+        },
+        headers=MARKET_HEADERS,
+        timeout=10,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    result = payload.get("chart", {}).get("result") or []
+    if not result:
+        raise RuntimeError("没有返回行情数据")
+
+    meta = result[0].get("meta", {})
+    price = meta.get("regularMarketPrice")
+    previous = meta.get("previousClose")
+
+    if price is None:
+        timestamps = result[0].get("timestamp") or []
+        closes = (result[0].get("indicators", {}).get("quote") or [{}])[0].get("close") or []
+        values = [v for v in closes if v is not None]
+        if values:
+            price = values[-1]
+
+    change = None
+    if price is not None and previous not in (None, 0):
+        change = price - previous
+        change_pct = change / previous * 100
+    else:
+        change_pct = None
+
+    return {
+        "symbol": symbol,
+        "price": price,
+        "change": change,
+        "change_pct": change_pct,
+        "market_state": meta.get("marketState", ""),
+        "currency": meta.get("currency", ""),
+    }
+
+
+@st.cache_data(ttl=60)
+def get_market_snapshot():
+    rows = []
+    for name, symbol in MARKET_SYMBOLS.items():
+        try:
+            quote = _fetch_yahoo_quote(symbol)
+            quote["name"] = name
+            rows.append(quote)
+        except Exception as exc:
+            rows.append({
+                "name": name,
+                "symbol": symbol,
+                "price": None,
+                "change": None,
+                "change_pct": None,
+                "market_state": "",
+                "currency": "",
+                "error": str(exc),
+            })
+    return rows
+
+
+# =========================================================
 # EXPORT
 # =========================================================
 
@@ -796,4 +888,5 @@ __all__ = [
     "get_effr",
     "get_rrp_rate",
     "get_sina_news",
+    "get_market_snapshot",
 ]
