@@ -27,13 +27,15 @@ st.set_page_config(
     layout="wide",
 )
 
-
-# =========================================================
-# CONSTANTS
-# =========================================================
-
-# 东方财富红字焦点快讯页面
 EASTMONEY_FOCUS_URL = "https://kuaixun.eastmoney.com/"
+RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
+PLOTLY_CONFIG = {
+    "displayModeBar": False,
+    "scrollZoom": False,
+    "doubleClick": False,
+    "editable": False,
+    "displaylogo": False,
+}
 
 
 # =========================================================
@@ -43,16 +45,13 @@ EASTMONEY_FOCUS_URL = "https://kuaixun.eastmoney.com/"
 st.markdown(
     """
     <style>
-
     .block-container {
         padding-top: 1.5rem;
         padding-bottom: 3rem;
         max-width: 1400px;
     }
 
-    html,
-    body,
-    [class*="css"] {
+    html, body, [class*="css"] {
         font-family:
             "Noto Sans TC",
             "Noto Sans CJK TC",
@@ -198,7 +197,6 @@ st.markdown(
         color: #111827;
         text-decoration: none !important;
     }
-
     </style>
     """,
     unsafe_allow_html=True,
@@ -206,27 +204,19 @@ st.markdown(
 
 
 # =========================================================
-# TITLE
+# HEADER / MODE
 # =========================================================
 
 st.markdown(
-    '<div class="dashboard-title">'
-    "Macro Dashboard"
-    "</div>",
+    '<div class="dashboard-title">Macro Dashboard</div>',
     unsafe_allow_html=True,
 )
-
 st.markdown(
     '<div class="dashboard-subtitle">'
-    "US monetary policy, Treasury yields and inflation expectations"
-    "</div>",
+    'US monetary policy, Treasury yields and inflation expectations'
+    '</div>',
     unsafe_allow_html=True,
 )
-
-
-# =========================================================
-# COMPACT MODE
-# =========================================================
 
 compact_mode = st.toggle(
     "缩小图表 / 快速浏览",
@@ -236,544 +226,186 @@ compact_mode = st.toggle(
 
 
 # =========================================================
-# COMMON
+# HELPERS
 # =========================================================
 
-def get_start_date(
-    range_name,
-):
-
-    today = (
-        pd.Timestamp.today()
-        .normalize()
-    )
-
+def get_start_date(range_name):
+    today = pd.Timestamp.today().normalize()
     offsets = {
-        "5Y": pd.DateOffset(
-            years=5
-        ),
-        "1Y": pd.DateOffset(
-            years=1
-        ),
-        "6M": pd.DateOffset(
-            months=6
-        ),
-        "3M": pd.DateOffset(
-            months=3
-        ),
-        "1M": pd.DateOffset(
-            months=1
-        ),
+        "5Y": pd.DateOffset(years=5),
+        "1Y": pd.DateOffset(years=1),
+        "6M": pd.DateOffset(months=6),
+        "3M": pd.DateOffset(months=3),
+        "1M": pd.DateOffset(months=1),
     }
+    return today - offsets.get(range_name, pd.DateOffset(years=1))
 
-    return today - offsets.get(
-        range_name,
-        pd.DateOffset(
-            years=1
-        ),
+
+def filter_range(data, date_range):
+    return data[data["observation_date"] >= get_start_date(date_range)]
+
+
+def add_sources(sources):
+    links = []
+    for text, url in sources:
+        safe_text = html.escape(text)
+        safe_url = html.escape(url, quote=True)
+        links.append(
+            f'<a href="{safe_url}" target="_blank" '
+            f'rel="noopener noreferrer">{safe_text}</a>'
+        )
+
+    st.markdown(
+        '<div class="source-text">Source: '
+        + '<span class="source-sep">|</span>'.join(links)
+        + '</div>',
+        unsafe_allow_html=True,
     )
 
 
-# =========================================================
-# PLOTLY READ-ONLY CONFIG
-# =========================================================
+def add_line(fig, data, column, name, width=2.5, dash=None, yaxis=None, unit="%"):
+    line = {"width": width}
+    if dash:
+        line["dash"] = dash
 
-def plotly_readonly_config():
-
-    return {
-        # 不显示 Plotly 操作栏
-        "displayModeBar": False,
-
-        # 禁止滚轮缩放
-        "scrollZoom": False,
-
-        # 禁止双击操作
-        "doubleClick": False,
-
-        # 禁止编辑
-        "editable": False,
-
-        # 不显示 Plotly logo
-        "displaylogo": False,
-    }
+    trace = go.Scatter(
+        x=data["observation_date"],
+        y=data[column],
+        name=name,
+        mode="lines",
+        line=line,
+        hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>",
+    )
+    if yaxis:
+        trace.update(yaxis=yaxis)
+    fig.add_trace(trace)
 
 
-def apply_chart_style(
-    fig,
-    height,
-):
-
+def apply_chart_style(fig, height):
     fig.update_layout(
         height=height,
         template="plotly_white",
-
-        # 鼠标停留：
-        # 同一个日期同时显示所有曲线数据
         hovermode="x unified",
-
-        # 禁止拖动
         dragmode=False,
-
-        margin=dict(
-            l=35,
-            r=35,
-            t=30,
-            b=35,
-        ),
-
+        margin=dict(l=35, r=35, t=30, b=35),
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.01,
             xanchor="left",
             x=0,
-            font=dict(
-                size=10
-            ),
+            font=dict(size=10),
         ),
-
-        hoverlabel=dict(
-            bgcolor="white",
-            font_size=11,
-        ),
-
-        font=dict(
-            size=10
-            if compact_mode
-            else 12
-        ),
-
+        hoverlabel=dict(bgcolor="white", font_size=11),
+        font=dict(size=10 if compact_mode else 12),
         xaxis=dict(
             showgrid=False,
             showline=True,
             linecolor="#d1d5db",
-
-            # X 轴固定
             fixedrange=True,
-
-            # Hover 日期只显示 YYYY-MM-DD
             hoverformat="%Y-%m-%d",
         ),
-
         yaxis=dict(
             showgrid=True,
             gridcolor="#eeeeee",
             zeroline=False,
-
-            # Y 轴固定
             fixedrange=True,
         ),
     )
-
-    # 二次确保所有轴不能拖动/缩放
-    fig.update_xaxes(
-        fixedrange=True,
-    )
-
-    fig.update_yaxes(
-        fixedrange=True,
-    )
-
+    fig.update_xaxes(fixedrange=True)
+    fig.update_yaxes(fixedrange=True)
     return fig
 
 
-def add_sources(
-    sources,
-):
-
-    links = []
-
-    for text, url in sources:
-
-        safe_text = html.escape(
-            text
-        )
-
-        safe_url = html.escape(
-            url,
-            quote=True,
-        )
-
-        links.append(
-            f'<a href="{safe_url}" '
-            f'target="_blank" '
-            f'rel="noopener noreferrer">'
-            f'{safe_text}'
-            f'</a>'
-        )
-
-    st.markdown(
-        '<div class="source-text">'
-        "Source: "
-        + '<span class="source-sep">|</span>'.join(
-            links
-        )
-        + "</div>",
-        unsafe_allow_html=True,
-    )
+def chart_height(compact, normal, compact_mode):
+    return compact if compact_mode else normal
 
 
 # =========================================================
-# CHART 1
+# CHART BUILDERS
 # =========================================================
 
-def build_fig1(
-    date_range,
-):
-
-    corridor = (
+def build_fig1(date_range):
+    data = (
         get_iorb()
-        .merge(
-            get_rrp_rate(),
-            on="observation_date",
-            how="outer",
-        )
-        .merge(
-            get_effr(),
-            on="observation_date",
-            how="outer",
-        )
-        .merge(
-            get_sofr(),
-            on="observation_date",
-            how="outer",
-        )
-        .sort_values(
-            "observation_date"
-        )
+        .merge(get_rrp_rate(), on="observation_date", how="outer")
+        .merge(get_effr(), on="observation_date", how="outer")
+        .merge(get_sofr(), on="observation_date", how="outer")
+        .sort_values("observation_date")
     )
-
-    corridor = corridor[
-        corridor[
-            "observation_date"
-        ]
-        >= get_start_date(
-            date_range
-        )
-    ]
+    data = filter_range(data, date_range)
 
     fig = go.Figure()
-
     for column, name, width in [
-        (
-            "IORB",
-            "IORB",
-            2.6,
-        ),
-        (
-            "RRPONTSYAWARD",
-            "ON RRP",
-            2.6,
-        ),
-        (
-            "EFFR",
-            "EFFR",
-            2.6,
-        ),
-        (
-            "SOFR",
-            "SOFR",
-            2.2,
-        ),
+        ("IORB", "IORB", 2.6),
+        ("RRPONTSYAWARD", "ON RRP", 2.6),
+        ("EFFR", "EFFR", 2.6),
+        ("SOFR", "SOFR", 2.2),
     ]:
+        add_line(fig, data, column, name, width)
 
-        fig.add_trace(
-            go.Scatter(
-                x=corridor[
-                    "observation_date"
-                ],
-                y=corridor[
-                    column
-                ],
-                name=name,
-                mode="lines",
-                line=dict(
-                    width=width
-                ),
-                hovertemplate=(
-                    name
-                    + ": %{y:.3f}%"
-                    + "<extra></extra>"
-                ),
-            )
-        )
-
-    fig.update_layout(
-        yaxis_title="Rate (%)"
-    )
-
-    return apply_chart_style(
-        fig,
-        190
-        if compact_mode
-        else 470,
-    )
+    fig.update_layout(yaxis_title="Rate (%)")
+    return apply_chart_style(fig, chart_height(190, 470, compact_mode))
 
 
-# =========================================================
-# CHART 2
-# =========================================================
-
-def build_fig2(
-    date_range,
-):
-
+def build_fig2(date_range):
     data = (
         get_dgs10()
-        .merge(
-            get_dfii10(),
-            on="observation_date",
-            how="inner",
-        )
-        .sort_values(
-            "observation_date"
-        )
+        .merge(get_dfii10(), on="observation_date", how="inner")
+        .sort_values("observation_date")
     )
-
-    data = data[
-        data[
-            "observation_date"
-        ]
-        >= get_start_date(
-            date_range
-        )
-    ]
-
-    data["Breakeven"] = (
-        data["DGS10"]
-        - data["DFII10"]
-    )
+    data = filter_range(data, date_range)
+    data["Breakeven"] = data["DGS10"] - data["DFII10"]
 
     fig = go.Figure()
+    for column, name, width, dash in [
+        ("DGS10", "10Y Nominal", 2.8, None),
+        ("DFII10", "10Y Real", 2.6, None),
+        ("Breakeven", "10Y Breakeven", 2.5, "dot"),
+    ]:
+        add_line(fig, data, column, name, width, dash)
 
-    fig.add_trace(
-        go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "DGS10"
-            ],
-            name="10Y Nominal",
-            mode="lines",
-            line=dict(
-                width=2.8
-            ),
-            hovertemplate=(
-                "10Y Nominal: %{y:.3f}%"
-                "<extra></extra>"
-            ),
-        )
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "DFII10"
-            ],
-            name="10Y Real",
-            mode="lines",
-            line=dict(
-                width=2.6
-            ),
-            hovertemplate=(
-                "10Y Real: %{y:.3f}%"
-                "<extra></extra>"
-            ),
-        )
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "Breakeven"
-            ],
-            name="10Y Breakeven",
-            mode="lines",
-            line=dict(
-                width=2.5,
-                dash="dot",
-            ),
-            hovertemplate=(
-                "10Y Breakeven: %{y:.3f}%"
-                "<extra></extra>"
-            ),
-        )
-    )
-
-    fig.update_layout(
-        yaxis_title="Yield (%)"
-    )
-
-    return apply_chart_style(
-        fig,
-        190
-        if compact_mode
-        else 470,
-    )
+    fig.update_layout(yaxis_title="Yield (%)")
+    return apply_chart_style(fig, chart_height(190, 470, compact_mode))
 
 
-# =========================================================
-# CHART 3
-# =========================================================
-
-def build_fig3(
-    date_range,
-):
-
+def build_fig3(date_range):
     data = (
         get_dgs3mo()
-        .merge(
-            get_dgs2(),
-            on="observation_date",
-            how="outer",
-        )
-        .merge(
-            get_dgs10(),
-            on="observation_date",
-            how="outer",
-        )
-        .sort_values(
-            "observation_date"
-        )
+        .merge(get_dgs2(), on="observation_date", how="outer")
+        .merge(get_dgs10(), on="observation_date", how="outer")
+        .sort_values("observation_date")
     )
-
-    data = data[
-        data[
-            "observation_date"
-        ]
-        >= get_start_date(
-            date_range
-        )
-    ]
-
-    data["10Y-2Y"] = (
-        data["DGS10"]
-        - data["DGS2"]
-    )
-
-    data["10Y-3M"] = (
-        data["DGS10"]
-        - data["DGS3MO"]
-    )
+    data = filter_range(data, date_range)
+    data["10Y-2Y"] = data["DGS10"] - data["DGS2"]
+    data["10Y-3M"] = data["DGS10"] - data["DGS3MO"]
 
     fig = go.Figure()
+    for column, name, width in [
+        ("DGS3MO", "3M", 2.2),
+        ("DGS2", "2Y", 2.4),
+        ("DGS10", "10Y", 2.8),
+    ]:
+        add_line(fig, data, column, name, width)
 
-    fig.add_trace(
-        go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "DGS3MO"
-            ],
-            name="3M",
-            mode="lines",
-            line=dict(
-                width=2.2
-            ),
-            hovertemplate=(
-                "3M: %{y:.3f}%"
-                "<extra></extra>"
-            ),
-        )
+    add_line(
+        fig, data, "10Y-2Y", "10Y−2Y", 2.2, "dot", "y2", " bp"
+    )
+    add_line(
+        fig, data, "10Y-3M", "10Y−3M", 2.2, "dash", "y2", " bp"
     )
 
-    fig.add_trace(
-        go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "DGS2"
-            ],
-            name="2Y",
-            mode="lines",
-            line=dict(
-                width=2.4
-            ),
-            hovertemplate=(
-                "2Y: %{y:.3f}%"
-                "<extra></extra>"
-            ),
-        )
+    fig.update_traces(
+        selector=dict(name="10Y−2Y"),
+        hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>",
     )
-
-    fig.add_trace(
-        go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "DGS10"
-            ],
-            name="10Y",
-            mode="lines",
-            line=dict(
-                width=2.8
-            ),
-            hovertemplate=(
-                "10Y: %{y:.3f}%"
-                "<extra></extra>"
-            ),
-        )
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "10Y-2Y"
-            ] * 100,
-            name="10Y−2Y",
-            mode="lines",
-            line=dict(
-                width=2.2,
-                dash="dot",
-            ),
-            yaxis="y2",
-            hovertemplate=(
-                "10Y−2Y: %{y:.1f} bp"
-                "<extra></extra>"
-            ),
-        )
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=data[
-                "observation_date"
-            ],
-            y=data[
-                "10Y-3M"
-            ] * 100,
-            name="10Y−3M",
-            mode="lines",
-            line=dict(
-                width=2.2,
-                dash="dash",
-            ),
-            yaxis="y2",
-            hovertemplate=(
-                "10Y−3M: %{y:.1f} bp"
-                "<extra></extra>"
-            ),
-        )
+    fig.update_traces(
+        selector=dict(name="10Y−3M"),
+        hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>",
     )
 
     fig.update_layout(
-        yaxis=dict(
-            title="Yield (%)",
-            fixedrange=True,
-        ),
+        yaxis=dict(title="Yield (%)", fixedrange=True),
         yaxis2=dict(
             title="Spread (bp)",
             overlaying="y",
@@ -784,388 +416,162 @@ def build_fig3(
             fixedrange=True,
         ),
     )
+    return apply_chart_style(fig, chart_height(200, 500, compact_mode))
 
-    return apply_chart_style(
-        fig,
-        200
-        if compact_mode
-        else 500,
-    )
+
+# =========================================================
+# PARAMETER DESCRIPTIONS
+# =========================================================
+
+PARAM_DESCRIPTIONS = [
+    "IORB / ON RRP构成政策利率走廊，EFFR观察联邦基金市场，SOFR观察隔夜担保融资。",
+    "10Y Nominal = 10Y Real + Breakeven，用于观察实际利率与通胀定价的变化。",
+    "10Y−2Y观察中长期曲线，10Y−3M更直接观察长端相对短端的利差。",
+]
+
+
+def show_parameter_description(index):
+    if compact_mode:
+        st.markdown(
+            f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>',
+            unsafe_allow_html=True,
+        )
 
 
 # =========================================================
 # CORE CHARTS
 # =========================================================
 
-@st.fragment(
-    run_every="3600s"
-)
+@st.fragment(run_every="3600s")
 def render_core_charts():
-
-    ranges = [
-        "5Y",
-        "1Y",
-        "6M",
-        "3M",
-        "1M",
-    ]
-
     if compact_mode:
+        col1, col2, col3 = st.columns(3, gap="small")
 
-        col1, col2, col3 = (
-            st.columns(
-                3,
-                gap="small",
-            )
-        )
-
-        # -------------------------------------------------
-        # 1
-        # -------------------------------------------------
-
-        with col1:
-
-            st.markdown(
-                '<div class="compact-title">'
-                "🏦 1. Fed Policy Rate"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-            st.markdown(
-                '<div class="compact-description">'
-                "IORB / ON RRP / EFFR / SOFR"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-            date_range = st.radio(
-                "时间范围",
-                ranges,
-                horizontal=True,
-                index=1,
-                key="compact_corridor_range",
-            )
-
-            st.plotly_chart(
-                build_fig1(
-                    date_range
-                ),
-                use_container_width=True,
-                config=plotly_readonly_config(),
-            )
-
-            add_sources(
+        configs = [
+            (
+                col1,
+                '<div class="compact-title">🏦 1. Fed Policy Rate</div>',
+                '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>',
+                "compact_corridor_range",
+                build_fig1,
                 [
-                    (
-                        "IORB",
-                        "https://fred.stlouisfed.org/series/IORB",
-                    ),
-                    (
-                        "ON RRP",
-                        "https://fred.stlouisfed.org/series/RRPONTSYAWARD",
-                    ),
-                    (
-                        "EFFR",
-                        "https://fred.stlouisfed.org/series/EFFR",
-                    ),
-                    (
-                        "SOFR",
-                        "https://fred.stlouisfed.org/series/SOFR",
-                    ),
-                ]
-            )
-
-        # -------------------------------------------------
-        # 2
-        # -------------------------------------------------
-
-        with col2:
-
-            st.markdown(
-                '<div class="compact-title">'
-                "2. 10Y Yield Structure"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-            st.markdown(
-                '<div class="compact-description">'
-                "10Y Nominal / Real / Breakeven"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-            date_range = st.radio(
-                "时间范围",
-                ranges,
-                horizontal=True,
-                index=1,
-                key="compact_yield10_range",
-            )
-
-            st.plotly_chart(
-                build_fig2(
-                    date_range
-                ),
-                use_container_width=True,
-                config=plotly_readonly_config(),
-            )
-
-            add_sources(
+                    ("IORB", "https://fred.stlouisfed.org/series/IORB"),
+                    ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"),
+                    ("EFFR", "https://fred.stlouisfed.org/series/EFFR"),
+                    ("SOFR", "https://fred.stlouisfed.org/series/SOFR"),
+                ],
+                0,
+            ),
+            (
+                col2,
+                '<div class="compact-title">2. 10Y Yield Structure</div>',
+                '<div class="compact-description">10Y Nominal / Real / Breakeven</div>',
+                "compact_yield10_range",
+                build_fig2,
                 [
-                    (
-                        "DGS10",
-                        "https://fred.stlouisfed.org/series/DGS10",
-                    ),
-                    (
-                        "DFII10",
-                        "https://fred.stlouisfed.org/series/DFII10",
-                    ),
-                    (
-                        "T10YIE",
-                        "https://fred.stlouisfed.org/series/T10YIE",
-                    ),
-                ]
-            )
-
-        # -------------------------------------------------
-        # 3
-        # -------------------------------------------------
-
-        with col3:
-
-            st.markdown(
-                '<div class="compact-title">'
-                "3. Treasury Yield"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-            st.markdown(
-                '<div class="compact-description">'
-                "3M / 2Y / 10Y / Curve Spread"
-                "</div>",
-                unsafe_allow_html=True,
-            )
-
-            date_range = st.radio(
-                "时间范围",
-                ranges,
-                horizontal=True,
-                index=1,
-                key="compact_treasury_range",
-            )
-
-            st.plotly_chart(
-                build_fig3(
-                    date_range
-                ),
-                use_container_width=True,
-                config=plotly_readonly_config(),
-            )
-
-            add_sources(
+                    ("DGS10", "https://fred.stlouisfed.org/series/DGS10"),
+                    ("DFII10", "https://fred.stlouisfed.org/series/DFII10"),
+                    ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE"),
+                ],
+                1,
+            ),
+            (
+                col3,
+                '<div class="compact-title">3. Treasury Yield</div>',
+                '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>',
+                "compact_treasury_range",
+                build_fig3,
                 [
-                    (
-                        "DGS3MO",
-                        "https://fred.stlouisfed.org/series/DGS3MO",
-                    ),
-                    (
-                        "DGS2",
-                        "https://fred.stlouisfed.org/series/DGS2",
-                    ),
-                    (
-                        "DGS10",
-                        "https://fred.stlouisfed.org/series/DGS10",
-                    ),
-                    (
-                        "T10Y2Y",
-                        "https://fred.stlouisfed.org/series/T10Y2Y",
-                    ),
-                    (
-                        "T10Y3M",
-                        "https://fred.stlouisfed.org/series/T10Y3M",
-                    ),
-                ]
-            )
+                    ("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"),
+                    ("DGS2", "https://fred.stlouisfed.org/series/DGS2"),
+                    ("DGS10", "https://fred.stlouisfed.org/series/DGS10"),
+                    ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"),
+                    ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M"),
+                ],
+                2,
+            ),
+        ]
+
+        for column, title, description, key, builder, sources, desc_index in configs:
+            with column:
+                st.markdown(title, unsafe_allow_html=True)
+                st.markdown(description, unsafe_allow_html=True)
+                date_range = st.radio(
+                    "时间范围",
+                    RANGES,
+                    horizontal=True,
+                    index=1,
+                    key=key,
+                )
+                st.plotly_chart(
+                    builder(date_range),
+                    use_container_width=True,
+                    config=PLOTLY_CONFIG,
+                )
+                show_parameter_description(desc_index)
+                add_sources(sources)
 
     else:
-
-        # -------------------------------------------------
-        # 1
-        # -------------------------------------------------
-
-        st.markdown(
-            '<div class="section-title">'
-            "🏦 1. Fed Policy Rate & Money Market"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        st.markdown(
-            '<div class="section-description">'
-            "IORB、ON RRP Rate、EFFR 与 SOFR"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        date_range = st.radio(
-            "时间范围",
-            ranges,
-            horizontal=True,
-            index=1,
-            key="normal_corridor_range",
-        )
-
-        st.plotly_chart(
-            build_fig1(
-                date_range
+        normal_configs = [
+            (
+                '<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>',
+                '<div class="section-description">IORB、ON RRP Rate、EFFR 与 SOFR</div>',
+                "normal_corridor_range",
+                build_fig1,
+                [
+                    ("IORB", "https://fred.stlouisfed.org/series/IORB"),
+                    ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"),
+                    ("EFFR", "https://fred.stlouisfed.org/series/EFFR"),
+                    ("SOFR", "https://fred.stlouisfed.org/series/SOFR"),
+                ],
+                False,
             ),
-            use_container_width=True,
-            config=plotly_readonly_config(),
-        )
-
-        add_sources(
-            [
-                (
-                    "IORB",
-                    "https://fred.stlouisfed.org/series/IORB",
-                ),
-                (
-                    "ON RRP",
-                    "https://fred.stlouisfed.org/series/RRPONTSYAWARD",
-                ),
-                (
-                    "EFFR",
-                    "https://fred.stlouisfed.org/series/EFFR",
-                ),
-                (
-                    "SOFR",
-                    "https://fred.stlouisfed.org/series/SOFR",
-                ),
-            ]
-        )
-
-        st.markdown(
-            '<div class="chart-divider"></div>',
-            unsafe_allow_html=True,
-        )
-
-        # -------------------------------------------------
-        # 2
-        # -------------------------------------------------
-
-        st.markdown(
-            '<div class="section-title">'
-            "2. 10Y Yield Structure"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        st.markdown(
-            '<div class="section-description">'
-            "10Y Nominal / 10Y Real / 10Y Breakeven"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        date_range = st.radio(
-            "时间范围",
-            ranges,
-            horizontal=True,
-            index=1,
-            key="normal_yield10_range",
-        )
-
-        st.plotly_chart(
-            build_fig2(
-                date_range
+            (
+                '<div class="section-title">2. 10Y Yield Structure</div>',
+                '<div class="section-description">10Y Nominal / 10Y Real / 10Y Breakeven</div>',
+                "normal_yield10_range",
+                build_fig2,
+                [
+                    ("DGS10", "https://fred.stlouisfed.org/series/DGS10"),
+                    ("DFII10", "https://fred.stlouisfed.org/series/DFII10"),
+                    ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE"),
+                ],
+                True,
             ),
-            use_container_width=True,
-            config=plotly_readonly_config(),
-        )
-
-        add_sources(
-            [
-                (
-                    "DGS10",
-                    "https://fred.stlouisfed.org/series/DGS10",
-                ),
-                (
-                    "DFII10",
-                    "https://fred.stlouisfed.org/series/DFII10",
-                ),
-                (
-                    "T10YIE",
-                    "https://fred.stlouisfed.org/series/T10YIE",
-                ),
-            ]
-        )
-
-        st.markdown(
-            '<div class="chart-divider"></div>',
-            unsafe_allow_html=True,
-        )
-
-        # -------------------------------------------------
-        # 3
-        # -------------------------------------------------
-
-        st.markdown(
-            '<div class="section-title">'
-            "3. Treasury Yield & Curve Spread"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        st.markdown(
-            '<div class="section-description">'
-            "3M、2Y、10Y Treasury Yield 与曲线利差"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        date_range = st.radio(
-            "时间范围",
-            ranges,
-            horizontal=True,
-            index=1,
-            key="normal_treasury_range",
-        )
-
-        st.plotly_chart(
-            build_fig3(
-                date_range
+            (
+                '<div class="section-title">3. Treasury Yield & Curve Spread</div>',
+                '<div class="section-description">3M、2Y、10Y Treasury Yield 与曲线利差</div>',
+                "normal_treasury_range",
+                build_fig3,
+                [
+                    ("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"),
+                    ("DGS2", "https://fred.stlouisfed.org/series/DGS2"),
+                    ("DGS10", "https://fred.stlouisfed.org/series/DGS10"),
+                    ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"),
+                    ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M"),
+                ],
+                False,
             ),
-            use_container_width=True,
-            config=plotly_readonly_config(),
-        )
+        ]
 
-        add_sources(
-            [
-                (
-                    "DGS3MO",
-                    "https://fred.stlouisfed.org/series/DGS3MO",
-                ),
-                (
-                    "DGS2",
-                    "https://fred.stlouisfed.org/series/DGS2",
-                ),
-                (
-                    "DGS10",
-                    "https://fred.stlouisfed.org/series/DGS10",
-                ),
-                (
-                    "T10Y2Y",
-                    "https://fred.stlouisfed.org/series/T10Y2Y",
-                ),
-                (
-                    "T10Y3M",
-                    "https://fred.stlouisfed.org/series/T10Y3M",
-                ),
-            ]
-        )
+        for index, (title, description, key, builder, sources, divider) in enumerate(normal_configs):
+            st.markdown(title, unsafe_allow_html=True)
+            st.markdown(description, unsafe_allow_html=True)
+            date_range = st.radio(
+                "时间范围",
+                RANGES,
+                horizontal=True,
+                index=1,
+                key=key,
+            )
+            st.plotly_chart(
+                builder(date_range),
+                use_container_width=True,
+                config=PLOTLY_CONFIG,
+            )
+            add_sources(sources)
+            if divider:
+                st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
 render_core_charts()
@@ -1175,198 +581,81 @@ render_core_charts()
 # NEWS
 # =========================================================
 
+st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="chart-divider"></div>',
+    '<div class="section-title">📰 7×24 重点财经快讯</div>',
     unsafe_allow_html=True,
 )
-
-st.markdown(
-    '<div class="section-title">'
-    "📰 7×24 重点财经快讯"
-    "</div>",
-    unsafe_allow_html=True,
-)
-
 st.markdown(
     '<div class="section-description">'
-    "东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新"
-    "</div>",
+    '东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新'
+    '</div>',
     unsafe_allow_html=True,
 )
 
 
-@st.fragment(
-    run_every="60s"
-)
+@st.fragment(run_every="60s")
 def render_news_panel():
-
-    col1, col2 = st.columns(
-        [1, 5]
-    )
+    col1, col2 = st.columns([1, 5])
 
     with col1:
-
         if st.button(
             "🔄 立即刷新",
             key="refresh_7x24",
             use_container_width=True,
         ):
-
             get_sina_news.clear()
-
             st.rerun()
 
-    # data.py 已经固定：
-    # type=101
-    # = 东方财富红字焦点快讯
-    news_items, news_error = (
-        get_sina_news(
-            limit=50
-        )
-    )
+    news_items, news_error = get_sina_news(limit=50)
 
     if news_items:
-
         st.markdown(
-            f'<div class="news-status">'
-            f"当前显示 {len(news_items)} 条 · "
-            f"来源：东方财富红字焦点快讯 · "
-            f"60秒自动刷新"
-            f"</div>",
+            f'<div class="news-status">当前显示 {len(news_items)} 条 · '
+            '来源：东方财富红字焦点快讯 · 60秒自动刷新</div>',
             unsafe_allow_html=True,
         )
 
-        news_html = (
-            '<div class="news-box">'
-        )
-
-        for idx, item in enumerate(
-            news_items,
-            start=1,
-        ):
-
-            news_time = html.escape(
-                str(
-                    item.get(
-                        "time",
-                        "",
-                    )
-                )
-            )
-
-            news_title = html.escape(
-                str(
-                    item.get(
-                        "title",
-                        "",
-                    )
-                )
-            )
-
-            news_content = html.escape(
-                str(
-                    item.get(
-                        "content",
-                        "",
-                    )
-                )
-            )
-
+        news_html = '<div class="news-box">'
+        for idx, item in enumerate(news_items, start=1):
+            news_time = html.escape(str(item.get("time", "")))
+            news_title = html.escape(str(item.get("title", "")))
+            news_content = html.escape(str(item.get("content", "")))
             news_url = html.escape(
-                str(
-                    item.get(
-                        "url",
-                        EASTMONEY_FOCUS_URL,
-                    )
-                ),
+                str(item.get("url", EASTMONEY_FOCUS_URL)),
                 quote=True,
             )
 
-            if (
-                not news_url.startswith(
-                    "http://"
-                )
-                and not news_url.startswith(
-                    "https://"
-                )
-            ):
+            if not news_url.startswith(("http://", "https://")):
                 news_url = EASTMONEY_FOCUS_URL
 
-            # 标题 + 完整正文都显示，不再只显示标题
-            if (
-                news_title
-                and news_content
-                and news_title
-                != news_content
-            ):
-
+            if news_title and news_content and news_title != news_content:
                 body = (
-                    f"<strong>"
-                    f"{news_title}"
-                    f"</strong>"
-                    f"<div style=\"margin-top:3px;\">"
-                    f"{news_content}"
-                    f"</div>"
+                    f"<strong>{news_title}</strong>"
+                    f'<div style="margin-top:3px;">{news_content}</div>'
                 )
-
             else:
-
                 body = news_content or news_title
 
             news_html += f"""
             <div class="news-item">
-
-                <span class="news-index">
-                    {idx}.
-                </span>
-
-                <span class="news-time">
-                    {news_time}
-                </span>
-
+                <span class="news-index">{idx}.</span>
+                <span class="news-time">{news_time}</span>
                 <div class="news-content">
-
-                    <a
-                        href="{news_url}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
+                    <a href="{news_url}" target="_blank" rel="noopener noreferrer">
                         {body}
                     </a>
-
                 </div>
-
             </div>
             """
 
-        news_html += (
-            "</div>"
-        )
-
-        st.html(
-            news_html
-        )
-
+        st.html(news_html + "</div>")
     else:
-
-        st.warning(
-            "暂时无法取得东方财富红字焦点快讯。"
-        )
-
+        st.warning("暂时无法取得东方财富红字焦点快讯。")
         if news_error:
+            st.caption(f"错误：{news_error}")
 
-            st.caption(
-                f"错误：{news_error}"
-            )
-
-    add_sources(
-        [
-            (
-                "东方财富红字焦点快讯",
-                EASTMONEY_FOCUS_URL,
-            )
-        ]
-    )
+    add_sources([("东方财富红字焦点快讯", EASTMONEY_FOCUS_URL)])
 
 
 render_news_panel()
