@@ -3,8 +3,8 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from data import (
+    get_dgs3mo,
     get_dgs2,
-    get_dgs5,
     get_dgs10,
     get_dfii10,
     get_sofr,
@@ -26,7 +26,7 @@ st.set_page_config(
 
 
 # =========================================================
-# Custom CSS
+# CSS
 # =========================================================
 
 st.markdown(
@@ -48,7 +48,7 @@ st.markdown(
     .dashboard-subtitle {
         color: #6b7280;
         font-size: 0.95rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.2rem;
     }
 
     .section-title {
@@ -119,6 +119,17 @@ st.markdown(
     'US monetary policy, Treasury yields and inflation expectations'
     '</div>',
     unsafe_allow_html=True
+)
+
+
+# =========================================================
+# Detail Mode
+# =========================================================
+
+detail_mode = st.toggle(
+    "展开详细说明",
+    value=False,
+    help="开启后显示计算公式、参数中文释义和经济含义。"
 )
 
 
@@ -212,15 +223,29 @@ def add_source(text, url):
 
 def add_parameter_notes(html_text):
 
-    st.markdown(
-        f"""
-        <div class="parameter-box">
-            <b>参数备注 / 中文释义</b><br>
-            {html_text}
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    if detail_mode:
+        st.markdown(
+            f"""
+            <div class="parameter-box">
+                <b>参数备注 / 中文释义</b><br>
+                {html_text}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
+def add_formula(html_text):
+
+    if detail_mode:
+        st.markdown(
+            f"""
+            <div class="formula-box">
+                {html_text}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 
 # =========================================================
@@ -240,7 +265,6 @@ st.markdown(
 )
 
 
-# Individual time control
 corridor_range = st.radio(
     "时间范围",
     ["5Y", "1Y", "6M", "3M", "1M"],
@@ -296,7 +320,7 @@ fig1.add_trace(
     go.Scatter(
         x=corridor["observation_date"],
         y=corridor["RRPONTSYAWARD"],
-        name="ON RRP Rate",
+        name="ON RRP",
         mode="lines",
         line=dict(width=2.8)
     )
@@ -329,10 +353,7 @@ fig1.update_layout(
     yaxis_title="Interest Rate (%)"
 )
 
-fig1 = apply_chart_style(
-    fig1,
-    height=470
-)
+fig1 = apply_chart_style(fig1, 470)
 
 st.plotly_chart(
     fig1,
@@ -342,19 +363,11 @@ st.plotly_chart(
 
 add_parameter_notes(
     """
-    <b>IORB</b>：Interest on Reserve Balances，银行存放在美联储的准备金余额利率，
-    可理解为美联储管理联邦基金利率的重要上方政策利率。<br>
-
-    <b>ON RRP Rate</b>：Overnight Reverse Repurchase Agreement Rate，
-    隔夜逆回购利率，可理解为货币市场利率的重要下方利率。<br>
-
-    <b>EFFR</b>：Effective Federal Funds Rate，
-    联邦基金有效利率，代表银行间实际成交的联邦基金利率水平。<br>
-
-    <b>SOFR</b>：Secured Overnight Financing Rate，
-    有担保隔夜融资利率，主要反映美国国债抵押融资市场的隔夜资金成本。<br>
-
-    <b>本图单位</b>：全部为 %
+    <b>IORB</b>：Interest on Reserve Balances，准备金余额利率。<br>
+    <b>ON RRP</b>：Overnight Reverse Repurchase Agreement Rate，隔夜逆回购利率。<br>
+    <b>EFFR</b>：Effective Federal Funds Rate，联邦基金有效利率。<br>
+    <b>SOFR</b>：Secured Overnight Financing Rate，有担保隔夜融资利率。<br>
+    <b>单位</b>：全部为 %
     """
 )
 
@@ -388,7 +401,6 @@ st.markdown(
 )
 
 
-# Individual time control
 yield10_range = st.radio(
     "时间范围",
     ["5Y", "1Y", "6M", "3M", "1M"],
@@ -416,7 +428,6 @@ yield10 = yield10[
 ]
 
 
-# 10Y Breakeven
 yield10["Breakeven"] = (
     yield10["DGS10"]
     - yield10["DFII10"]
@@ -466,10 +477,7 @@ fig2.update_layout(
     yaxis_title="Yield / Inflation (%)"
 )
 
-fig2 = apply_chart_style(
-    fig2,
-    height=470
-)
+fig2 = apply_chart_style(fig2, 470)
 
 st.plotly_chart(
     fig2,
@@ -477,21 +485,21 @@ st.plotly_chart(
 )
 
 
+add_formula(
+    """
+    <b>10Y Breakeven = 10Y Nominal − 10Y Real</b><br>
+    即：<b>DGS10 − DFII10</b>
+    """
+)
+
+
 add_parameter_notes(
     """
-    <b>DGS10</b>：10-Year Treasury Constant Maturity Rate，
-    美国10年期国债名义收益率。<br>
-
-    <b>DFII10</b>：10-Year Treasury Inflation-Indexed Security，
-    美国10年期TIPS实际收益率，可作为市场实际利率的重要观察指标。<br>
-
-    <b>10Y Breakeven</b>：
-    <b>DGS10 − DFII10</b>，
-    10年期盈亏平衡通胀率（Breakeven Inflation Rate）。<br>
-
-    <b>经济含义</b>：
-    名义10年期国债收益率与TIPS实际收益率之间的差额，
-    可用于观察市场隐含的长期通胀补偿。
+    <b>DGS10</b>：美国10年期国债名义收益率。<br>
+    <b>DFII10</b>：美国10年期TIPS实际收益率。<br>
+    <b>10Y Breakeven</b>：10年期盈亏平衡通胀率。<br>
+    <b>注意</b>：Breakeven不等于纯粹的市场通胀预期，
+    还可能包含通胀风险溢价及流动性等因素。
     """
 )
 
@@ -509,23 +517,22 @@ st.markdown(
 
 
 # =========================================================
-# 3. Treasury Yield & Curve Spreads
+# 3. Treasury Yield & 10Y−2Y Spread
 # =========================================================
 
 st.markdown(
-    '<div class="section-title">3. Treasury Yield & Curve Spreads</div>',
+    '<div class="section-title">3. Treasury Yield & 10Y−2Y Spread</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
     '<div class="section-description">'
-    '2年、5年、10年国债收益率，以及2s10s / 5s10s期限利差'
+    '3个月、2年、10年美国国债收益率，以及10Y−2Y期限利差'
     '</div>',
     unsafe_allow_html=True
 )
 
 
-# Individual time control
 treasury_range = st.radio(
     "时间范围",
     ["5Y", "1Y", "6M", "3M", "1M"],
@@ -538,9 +545,9 @@ treasury_start = get_start_date(treasury_range)
 
 
 treasury = (
-    get_dgs2()
+    get_dgs3mo()
     .merge(
-        get_dgs5(),
+        get_dgs2(),
         on="observation_date",
         how="outer"
     )
@@ -559,54 +566,45 @@ treasury = treasury[
 
 
 # =========================================================
-# Spread Calculation
+# 10Y−2Y Spread
 # =========================================================
 
-# 2s10s = 10Y - 2Y
-treasury["2s10s"] = (
+treasury["10Y-2Y"] = (
     treasury["DGS10"]
     - treasury["DGS2"]
-) * 100
-
-
-# 5s10s = 10Y - 5Y
-treasury["5s10s"] = (
-    treasury["DGS10"]
-    - treasury["DGS5"]
 ) * 100
 
 
 fig3 = go.Figure()
 
 
-# =========================================================
-# Treasury Yields
-# =========================================================
+# 3M
+fig3.add_trace(
+    go.Scatter(
+        x=treasury["observation_date"],
+        y=treasury["DGS3MO"],
+        name="3M",
+        mode="lines",
+        line=dict(width=2.2),
+        yaxis="y"
+    )
+)
 
+
+# 2Y
 fig3.add_trace(
     go.Scatter(
         x=treasury["observation_date"],
         y=treasury["DGS2"],
         name="2Y",
         mode="lines",
-        line=dict(width=2.2),
+        line=dict(width=2.4),
         yaxis="y"
     )
 )
 
 
-fig3.add_trace(
-    go.Scatter(
-        x=treasury["observation_date"],
-        y=treasury["DGS5"],
-        name="5Y",
-        mode="lines",
-        line=dict(width=2.2),
-        yaxis="y"
-    )
-)
-
-
+# 10Y
 fig3.add_trace(
     go.Scatter(
         x=treasury["observation_date"],
@@ -619,33 +617,20 @@ fig3.add_trace(
 )
 
 
-# =========================================================
-# Spread Bars
-# =========================================================
-
+# 10Y−2Y
 fig3.add_trace(
     go.Bar(
         x=treasury["observation_date"],
-        y=treasury["2s10s"],
-        name="2s10s",
-        opacity=0.48,
-        yaxis="y2"
-    )
-)
-
-
-fig3.add_trace(
-    go.Bar(
-        x=treasury["observation_date"],
-        y=treasury["5s10s"],
-        name="5s10s",
-        opacity=0.48,
+        y=treasury["10Y-2Y"],
+        name="10Y−2Y",
+        opacity=0.58,
         yaxis="y2"
     )
 )
 
 
 fig3.update_layout(
+
     yaxis=dict(
         title="Treasury Yield (%)",
         showgrid=True,
@@ -654,22 +639,17 @@ fig3.update_layout(
     ),
 
     yaxis2=dict(
-        title="Spread (bp)",
+        title="10Y−2Y Spread (bp)",
         overlaying="y",
         side="right",
         zeroline=True,
         zerolinecolor="#666666",
         zerolinewidth=1
-    ),
-
-    barmode="group"
+    )
 )
 
 
-fig3 = apply_chart_style(
-    fig3,
-    height=500
-)
+fig3 = apply_chart_style(fig3, 500)
 
 st.plotly_chart(
     fig3,
@@ -677,57 +657,42 @@ st.plotly_chart(
 )
 
 
-# =========================================================
-# Spread Formula / Parameter Notes
-# =========================================================
-
-st.markdown(
+add_formula(
     """
-    <div class="formula-box">
-        <b>利差计算方式</b><br>
-        <b>2s10s = 10Y − 2Y</b>
-        → 10年期国债收益率减去2年期国债收益率<br>
+    <b>10Y−2Y = DGS10 − DGS2</b><br>
+    即：10年期国债收益率 − 2年期国债收益率<br><br>
 
-        <b>5s10s = 10Y − 5Y</b>
-        → 10年期国债收益率减去5年期国债收益率<br>
-
-        <b>单位转换</b>：
-        FRED收益率单位为 %，因此
-        <b>1个百分点 = 100 bp</b>。
-        代码中将差值 × 100 后以 bp 显示。
-    </div>
-    """,
-    unsafe_allow_html=True
+    <b>单位：</b>bp（基点）<br>
+    1个百分点 = 100 bp
+    """
 )
 
 
 add_parameter_notes(
     """
-    <b>DGS2</b>：2-Year Treasury Constant Maturity Rate，
-    美国2年期国债收益率。通常对短期政策利率预期较敏感。<br>
+    <b>DGS3MO</b>：3-Month Treasury Constant Maturity Rate，
+    美国3个月国债收益率，代表非常短期的无风险利率水平，
+    对货币政策和短端资金成本较敏感。<br>
 
-    <b>DGS5</b>：5-Year Treasury Constant Maturity Rate，
-    美国5年期国债收益率，可观察中期利率定价。<br>
+    <b>DGS2</b>：2-Year Treasury Constant Maturity Rate，
+    美国2年期国债收益率，对未来短期政策利率预期较敏感。<br>
 
     <b>DGS10</b>：10-Year Treasury Constant Maturity Rate，
     美国10年期国债收益率，是长期无风险利率的重要基准。<br>
 
-    <b>2s10s</b>：10Y − 2Y，
-    观察2年与10年期限之间的收益率曲线斜率。<br>
+    <b>10Y−2Y</b>：10年期收益率减2年期收益率，
+    即传统意义上的2s10s。<br>
 
-    <b>5s10s</b>：10Y − 5Y，
-    观察5年与10年期限之间的收益率曲线斜率。<br>
+    <b>Spread > 0</b>：10年期收益率高于2年期，收益率曲线向上。<br>
 
-    <b>Spread > 0</b>：长期收益率高于短期收益率，曲线向上。<br>
-
-    <b>Spread < 0</b>：长期收益率低于短期收益率，曲线倒挂。
+    <b>Spread < 0</b>：10年期收益率低于2年期，收益率曲线倒挂。
     """
 )
 
 
 add_source(
-    "FRED — 2Y / 5Y / 10Y Treasury Yields",
-    "https://fred.stlouisfed.org/graph/?id=DGS2%2CDGS5%2CDGS10"
+    "FRED — 3M / 2Y / 10Y Treasury Yields",
+    "https://fred.stlouisfed.org/graph/?id=DGS3MO%2CDGS2%2CDGS10"
 )
 
 
