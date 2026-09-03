@@ -23,18 +23,28 @@ FRED_API_KEY = st.secrets.get(
 
 
 # =========================================================
-# SINA 7×24
+# EASTMONEY 7×24 / FOCUS NEWS
 # =========================================================
 
-SINA_FEED_URL = (
-    "https://zhibo.sina.com.cn/api/zhibo/feed"
+# 东方财富实时资讯页面
+EASTMONEY_NEWS_URL = (
+    "https://kuaixun.eastmoney.com/"
 )
 
-SINA_7X24_URL = (
-    "https://finance.sina.com.cn/7x24/"
+# 东方财富现成的「红字焦点快讯」
+#
+# 101 = 红字焦点快讯
+# 102 = 7×24 全球直播
+#
+# 这里明确使用 101，
+# 不抓全量 7×24，
+# 不自己判断什么是重点。
+EASTMONEY_FOCUS_URL = (
+    "https://np-listapi.eastmoney.com/"
+    "comm/web/getNewsByColumns"
 )
 
-HEADERS = {
+EASTMONEY_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 "
         "(Windows NT 10.0; Win64; x64) "
@@ -42,7 +52,7 @@ HEADERS = {
         "(KHTML, like Gecko) "
         "Chrome/152.0.0.0 Safari/537.36"
     ),
-    "Referer": SINA_7X24_URL,
+    "Referer": EASTMONEY_NEWS_URL,
     "Accept": (
         "application/json,text/plain,*/*"
     ),
@@ -53,7 +63,9 @@ HEADERS = {
 # FRED
 # =========================================================
 
-def _fred_series(series_id):
+def _fred_series(
+    series_id,
+):
 
     if not FRED_API_KEY:
         raise RuntimeError(
@@ -87,7 +99,9 @@ def _fred_series(series_id):
 
     for item in observations:
 
-        value = item.get("value")
+        value = item.get(
+            "value"
+        )
 
         if value in (
             None,
@@ -97,7 +111,9 @@ def _fred_series(series_id):
             continue
 
         try:
-            value = float(value)
+            value = float(
+                value
+            )
 
         except (
             TypeError,
@@ -115,7 +131,9 @@ def _fred_series(series_id):
             }
         )
 
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(
+        rows
+    )
 
     if df.empty:
         raise RuntimeError(
@@ -125,7 +143,9 @@ def _fred_series(series_id):
     return (
         df
         .dropna(
-            subset=["observation_date"]
+            subset=[
+                "observation_date"
+            ]
         )
         .sort_values(
             "observation_date"
@@ -139,49 +159,75 @@ def _fred_series(series_id):
 
 @st.cache_data(ttl=3600)
 def get_dgs3mo():
-    return _fred_series("DGS3MO")
+
+    return _fred_series(
+        "DGS3MO"
+    )
 
 
 @st.cache_data(ttl=3600)
 def get_dgs2():
-    return _fred_series("DGS2")
+
+    return _fred_series(
+        "DGS2"
+    )
 
 
 @st.cache_data(ttl=3600)
 def get_dgs10():
-    return _fred_series("DGS10")
+
+    return _fred_series(
+        "DGS10"
+    )
 
 
 @st.cache_data(ttl=3600)
 def get_dfii10():
-    return _fred_series("DFII10")
+
+    return _fred_series(
+        "DFII10"
+    )
 
 
 @st.cache_data(ttl=3600)
 def get_sofr():
-    return _fred_series("SOFR")
+
+    return _fred_series(
+        "SOFR"
+    )
 
 
 @st.cache_data(ttl=3600)
 def get_iorb():
-    return _fred_series("IORB")
+
+    return _fred_series(
+        "IORB"
+    )
 
 
 @st.cache_data(ttl=3600)
 def get_effr():
-    return _fred_series("EFFR")
+
+    return _fred_series(
+        "EFFR"
+    )
 
 
 @st.cache_data(ttl=3600)
 def get_rrp_rate():
-    return _fred_series("RRPONTSYAWARD")
+
+    return _fred_series(
+        "RRPONTSYAWARD"
+    )
 
 
 # =========================================================
 # TEXT CLEAN
 # =========================================================
 
-def _clean_text(value):
+def _clean_text(
+    value,
+):
 
     if value is None:
         return ""
@@ -206,49 +252,110 @@ def _clean_text(value):
 
 
 # =========================================================
-# SINA NEWS TEXT
+# GENERIC JSON VALUE
 # =========================================================
 
-def _extract_title(content):
+def _first_value(
+    item,
+    keys,
+):
 
-    content = _clean_text(
-        content
-    )
-
-    if not content:
+    if not isinstance(
+        item,
+        dict,
+    ):
         return ""
 
-    # 新浪7×24很多消息格式：
-    #
-    # 〖标题〗正文
-    #
-    match = re.match(
-        r"^〖(.+?)〗",
-        content,
-        flags=re.DOTALL,
-    )
+    for key in keys:
 
-    if match:
-        return match.group(1).strip()
-
-    # 没有标题符号时，直接使用前面的句子
-    if len(content) <= 120:
-        return content
-
-    return content[:120] + "..."
-
-
-def _extract_time(item):
-
-    value = item.get(
-        "create_time"
-    )
-
-    if not value:
         value = item.get(
-            "update_time",
-            "",
+            key
         )
+
+        if value not in (
+            None,
+            "",
+        ):
+            return value
+
+    return ""
+
+
+# =========================================================
+# EASTMONEY TITLE
+# =========================================================
+
+def _extract_eastmoney_title(
+    item,
+):
+
+    value = _first_value(
+        item,
+        [
+            "title",
+            "Title",
+            "showTitle",
+            "newsTitle",
+            "NewsTitle",
+            "content",
+            "Content",
+        ],
+    )
+
+    return _clean_text(
+        value
+    )
+
+
+# =========================================================
+# EASTMONEY CONTENT
+# =========================================================
+
+def _extract_eastmoney_content(
+    item,
+):
+
+    value = _first_value(
+        item,
+        [
+            "content",
+            "Content",
+            "title",
+            "Title",
+            "showTitle",
+            "newsTitle",
+            "NewsTitle",
+        ],
+    )
+
+    return _clean_text(
+        value
+    )
+
+
+# =========================================================
+# EASTMONEY TIME
+# =========================================================
+
+def _extract_eastmoney_time(
+    item,
+):
+
+    value = _first_value(
+        item,
+        [
+            "showTime",
+            "ShowTime",
+            "time",
+            "Time",
+            "ctime",
+            "Ctime",
+            "publishTime",
+            "PublishTime",
+            "updateTime",
+            "UpdateTime",
+        ],
+    )
 
     text = _clean_text(
         value
@@ -272,75 +379,110 @@ def _extract_time(item):
     return text
 
 
-def _extract_content(item):
+# =========================================================
+# EASTMONEY URL
+# =========================================================
 
-    for key in (
-        "rich_text",
-        "content",
-        "title",
-        "text",
-    ):
+def _extract_eastmoney_url(
+    item,
+):
 
-        value = item.get(
-            key
+    value = _first_value(
+        item,
+        [
+            "url",
+            "Url",
+            "URL",
+            "newsUrl",
+            "NewsUrl",
+            "url_h5",
+            "urlH5",
+            "articleUrl",
+            "ArticleUrl",
+        ],
+    )
+
+    value = _clean_text(
+        value
+    )
+
+    if (
+        value.startswith(
+            "http://"
         )
+        or value.startswith(
+            "https://"
+        )
+    ):
+        return value
 
-        if value:
-
-            text = _clean_text(
-                value
-            )
-
-            if text:
-                return text
-
-    return ""
+    return EASTMONEY_NEWS_URL
 
 
 # =========================================================
-# SINA FEED REQUEST
+# EASTMONEY REQUEST
 # =========================================================
 
-def _request_sina_feed(
+def _request_eastmoney_focus(
     page_size=100,
 ):
 
+    # -----------------------------------------------------
+    # 东方财富「红字焦点快讯」
+    #
+    # column = 101
+    #
+    # 不使用全量 102。
+    # -----------------------------------------------------
+
     params = {
-        "page": 1,
-        "page_size": page_size,
-        "zhibo_id": 152,
-        "tag_id": 0,
-        "dire": "f",
-        "dpc": 1,
-        "pagesize": page_size,
-        "type": 1,
-        "_": int(
+        "client": "web",
+        "biz": "web",
+        "column": "101",
+        "pageSize": page_size,
+        "pageIndex": 1,
+        "req_trace": int(
             time.time() * 1000
         ),
     }
 
     response = requests.get(
-        SINA_FEED_URL,
+        EASTMONEY_FOCUS_URL,
         params=params,
-        headers=HEADERS,
+        headers=EASTMONEY_HEADERS,
         timeout=15,
     )
 
     response.raise_for_status()
 
+    # -----------------------------------------------------
     # 正常 JSON
+    # -----------------------------------------------------
+
     try:
+
         return response.json()
 
     except ValueError:
+
         pass
 
-    # 有些情况下新浪会返回 JSONP
-    text = response.text.strip()
+    # -----------------------------------------------------
+    # 某些情况下可能返回 JSONP / 包装文本
+    # -----------------------------------------------------
 
-    # 尝试从 JSONP 中截取 JSON
-    first_brace = text.find("{")
-    last_brace = text.rfind("}")
+    text = (
+        response.text
+        .strip()
+    )
+
+    first_brace = text.find(
+        "{"
+    )
+
+    last_brace = text.rfind(
+        "}"
+    )
 
     if (
         first_brace >= 0
@@ -348,7 +490,8 @@ def _request_sina_feed(
     ):
 
         json_text = text[
-            first_brace:last_brace + 1
+            first_brace:
+            last_brace + 1
         ]
 
         return json.loads(
@@ -356,72 +499,111 @@ def _request_sina_feed(
         )
 
     raise RuntimeError(
-        "新浪7×24返回的数据格式无法解析。"
+        "东方财富焦点快讯返回的数据格式无法解析。"
     )
 
 
 # =========================================================
-# GET RAW SINA LIST
+# FIND NEWS LIST
 # =========================================================
 
-def _get_sina_raw_list():
+def _find_news_list(
+    data,
+):
 
-    data = _request_sina_feed(
-        page_size=100
-    )
-
-    try:
-
-        items = (
-            data
-            ["result"]
-            ["data"]
-            ["feed"]
-            ["list"]
-        )
-
-    except (
-        KeyError,
-        TypeError,
-    ):
-
-        raise RuntimeError(
-            "新浪7×24接口结构发生变化，"
-            "找不到 result.data.feed.list。"
-        )
-
-    if not isinstance(
-        items,
+    if isinstance(
+        data,
         list,
     ):
+        return data
 
-        raise RuntimeError(
-            "新浪7×24没有返回新闻列表。"
+    if not isinstance(
+        data,
+        dict,
+    ):
+        return []
+
+    # -----------------------------------------------------
+    # 常见结构直接查找
+    # -----------------------------------------------------
+
+    direct_keys = [
+        "list",
+        "List",
+        "data",
+        "Data",
+        "items",
+        "Items",
+        "news",
+        "News",
+        "rows",
+        "Rows",
+    ]
+
+    for key in direct_keys:
+
+        value = data.get(
+            key
         )
 
-    return items
+        if isinstance(
+            value,
+            list,
+        ):
+            return value
+
+        if isinstance(
+            value,
+            dict,
+        ):
+
+            nested = _find_news_list(
+                value
+            )
+
+            if nested:
+                return nested
+
+    # -----------------------------------------------------
+    # 递归寻找 list[dict]
+    # -----------------------------------------------------
+
+    for value in data.values():
+
+        if isinstance(
+            value,
+            dict,
+        ):
+
+            result = _find_news_list(
+                value
+            )
+
+            if result:
+                return result
+
+        elif isinstance(
+            value,
+            list,
+        ):
+
+            if value and all(
+                isinstance(
+                    x,
+                    dict,
+                )
+                for x in value
+            ):
+                return value
+
+    return []
 
 
 # =========================================================
-# IMPORTANT:
-#
-# 新浪公开 feed 本身没有稳定暴露给我们的
-# “焦点 typeid=9”字段。
-#
-# 因此这里不再自己做关键词评分。
-#
-# 优先使用新浪返回的原始排序。
-#
-# 这意味着：
-#   新浪排在前面的 → 我们排前面
-#   新浪新增的      → 自动进入
-#   新浪删除/更新的 → 自动刷新
-#
-# 不进行二次“AI判断重点”。
+# PARSE EASTMONEY ITEMS
 # =========================================================
 
-
-def _parse_sina_items(
+def _parse_eastmoney_items(
     raw_items,
 ):
 
@@ -437,21 +619,38 @@ def _parse_sina_items(
         ):
             continue
 
-        content = _extract_content(
+        title = _extract_eastmoney_title(
             item
         )
 
-        if not content:
+        content = _extract_eastmoney_content(
+            item
+        )
+
+        if not title and not content:
             continue
 
         # -------------------------------------------------
-        # 去掉重复消息
+        # 如果 title 没有，使用 content
+        # -------------------------------------------------
+
+        if not title:
+            title = content
+
+        if not content:
+            content = title
+
+        # -------------------------------------------------
+        # 去重
         # -------------------------------------------------
 
         normalized = re.sub(
             r"\s+",
             "",
-            content.lower(),
+            (
+                title
+                or content
+            ).lower(),
         )
 
         if not normalized:
@@ -469,36 +668,34 @@ def _parse_sina_items(
         # -------------------------------------------------
 
         news_id = str(
-            item.get(
-                "id",
-                "",
+            _first_value(
+                item,
+                [
+                    "id",
+                    "ID",
+                    "newsId",
+                    "NewsId",
+                    "art_code",
+                    "ArtCode",
+                ],
             )
         )
 
         # -------------------------------------------------
-        # 新浪原始时间
+        # 时间
         # -------------------------------------------------
 
-        news_time = _extract_time(
+        news_time = _extract_eastmoney_time(
             item
         )
 
         # -------------------------------------------------
-        # 标题
-        # -------------------------------------------------
-
-        title = _extract_title(
-            content
-        )
-
-        # -------------------------------------------------
         # URL
-        #
-        # 新浪feed通常不会给每条直接URL，
-        # 所以使用7×24主页作为跳转入口。
         # -------------------------------------------------
 
-        url = SINA_7X24_URL
+        url = _extract_eastmoney_url(
+            item
+        )
 
         result.append(
             {
@@ -514,39 +711,59 @@ def _parse_sina_items(
 
 
 # =========================================================
-# GET SINA 7×24
+# GET EASTMONEY FOCUS NEWS
 # =========================================================
 
 @st.cache_data(ttl=60)
 def get_sina_news(
     limit=50,
 ):
+    """
+    保留原来的函数名称，
+    这样 app.py 不需要修改。
+
+    实际来源已经改成：
+    东方财富「红字焦点快讯」
+
+    不做：
+    - 关键词评分
+    - AI 判断
+    - 自定义重要度
+    - 全量 7×24 再自行筛选
+
+    直接使用平台已经筛选好的焦点资讯。
+    """
 
     try:
 
-        raw_items = (
-            _get_sina_raw_list()
+        data = _request_eastmoney_focus(
+            page_size=max(
+                100,
+                limit,
+            )
         )
 
-        news_items = (
-            _parse_sina_items(
-                raw_items
+        raw_items = _find_news_list(
+            data
+        )
+
+        if not raw_items:
+
+            return (
+                [],
+                "东方财富焦点快讯接口没有返回新闻列表。",
             )
+
+        news_items = _parse_eastmoney_items(
+            raw_items
         )
 
         if not news_items:
 
             return (
                 [],
-                "新浪7×24接口返回了数据，但没有有效快讯。",
+                "东方财富焦点快讯接口返回了数据，但没有解析出有效快讯。",
             )
-
-        # -------------------------------------------------
-        # 直接使用新浪自己的顺序
-        #
-        # 不做关键词评分
-        # 不做自己的“重点判断”
-        # -------------------------------------------------
 
         return (
             news_items[:limit],
@@ -557,7 +774,7 @@ def get_sina_news(
 
         return (
             [],
-            f"新浪7×24：{exc}",
+            f"东方财富焦点快讯：{exc}",
         )
 
 
