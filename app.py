@@ -336,3 +336,8 @@ def render_news_panel():
 
 
 render_news_panel()
+
+st.markdown(
+    f'<div class="source-text">Source: <a href="{EASTMONEY_FOCUS_URL}" target="_blank" rel="noopener noreferrer">Eastmoney 7×24 Focus News</a></div>',
+    unsafe_allow_html=True,
+)
