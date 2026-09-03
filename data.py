@@ -1,7 +1,5 @@
 import html
-import json
 import re
-import time
 
 import pandas as pd
 import requests
@@ -16,14 +14,56 @@ FRED_API_URL = (
     "https://api.stlouisfed.org/fred/series/observations"
 )
 
+FRED_API_KEY = st.secrets.get(
+    "FRED_API_KEY",
+    "",
+)
 
-def get_fred_series(series_id):
 
-    api_key = st.secrets["FRED_API_KEY"]
+# =========================================================
+# SINA 7×24
+# =========================================================
+
+SINA_FEED_URL = (
+    "https://zhibo.sina.com.cn/api/zhibo/feed"
+)
+
+SINA_PAGE_URL = (
+    "https://finance.sina.com.cn/7x24/"
+)
+
+
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 "
+        "(Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 "
+        "(KHTML, like Gecko) "
+        "Chrome/152.0.0.0 Safari/537.36"
+    ),
+    "Referer": SINA_PAGE_URL,
+    "Accept": (
+        "application/json,text/plain,*/*"
+    ),
+}
+
+
+# =========================================================
+# FRED API
+# =========================================================
+
+def _fred_series(series_id):
+
+    if not FRED_API_KEY:
+
+        raise RuntimeError(
+            "FRED_API_KEY 未设置。"
+            "请在 Streamlit Secrets 中加入 FRED_API_KEY。"
+        )
 
     params = {
         "series_id": series_id,
-        "api_key": api_key,
+        "api_key": FRED_API_KEY,
         "file_type": "json",
         "sort_order": "asc",
     }
@@ -31,42 +71,77 @@ def get_fred_series(series_id):
     response = requests.get(
         FRED_API_URL,
         params=params,
-        timeout=30,
+        timeout=20,
     )
 
     response.raise_for_status()
 
-    data = response.json()
+    payload = response.json()
 
-    df = pd.DataFrame(
-        data["observations"]
+    observations = payload.get(
+        "observations",
+        [],
     )
 
-    df["observation_date"] = pd.to_datetime(
-        df["date"]
-    )
+    rows = []
 
-    df[series_id] = pd.to_numeric(
-        df["value"],
-        errors="coerce",
-    )
+    for item in observations:
 
-    return df[
-        [
-            "observation_date",
-            series_id,
-        ]
-    ]
+        value = item.get("value")
+
+        if value in (
+            None,
+            "",
+            ".",
+        ):
+            continue
+
+        try:
+            value = float(value)
+
+        except (
+            TypeError,
+            ValueError,
+        ):
+            continue
+
+        rows.append(
+            {
+                "observation_date": pd.to_datetime(
+                    item["date"],
+                    errors="coerce",
+                ),
+                series_id: value,
+            }
+        )
+
+    df = pd.DataFrame(rows)
+
+    if df.empty:
+
+        raise RuntimeError(
+            f"FRED {series_id} 没有返回有效数据。"
+        )
+
+    return (
+        df
+        .dropna(
+            subset=["observation_date"]
+        )
+        .sort_values(
+            "observation_date"
+        )
+    )
 
 
 # =========================================================
-# Treasury Yield
+# FRED SERIES CACHE
 # =========================================================
 
 @st.cache_data(ttl=3600)
 def get_dgs3mo():
 
-    return get_fred_series(
+    return _fred_series(
         "DGS3MO"
     )
 
@@ -74,7 +149,7 @@ def get_dgs3mo():
 @st.cache_data(ttl=3600)
 def get_dgs2():
 
-    return get_fred_series(
+    return _fred_series(
         "DGS2"
     )
 
@@ -82,31 +157,23 @@ def get_dgs2():
 @st.cache_data(ttl=3600)
 def get_dgs10():
 
-    return get_fred_series(
+    return _fred_series(
         "DGS10"
     )
 
 
-# =========================================================
-# 10Y Real Yield
-# =========================================================
-
 @st.cache_data(ttl=3600)
 def get_dfii10():
 
-    return get_fred_series(
+    return _fred_series(
         "DFII10"
     )
 
 
-# =========================================================
-# Policy Rate Corridor
-# =========================================================
-
 @st.cache_data(ttl=3600)
 def get_sofr():
 
-    return get_fred_series(
+    return _fred_series(
         "SOFR"
     )
 
@@ -114,7 +181,7 @@ def get_sofr():
 @st.cache_data(ttl=3600)
 def get_iorb():
 
-    return get_fred_series(
+    return _fred_series(
         "IORB"
     )
 
@@ -122,7 +189,7 @@ def get_iorb():
 @st.cache_data(ttl=3600)
 def get_effr():
 
-    return get_fred_series(
+    return _fred_series(
         "EFFR"
     )
 
@@ -130,69 +197,30 @@ def get_effr():
 @st.cache_data(ttl=3600)
 def get_rrp_rate():
 
-    return get_fred_series(
+    return _fred_series(
         "RRPONTSYAWARD"
     )
 
 
 # =========================================================
-# News common helpers
+# TEXT CLEAN
 # =========================================================
 
-NEWS_HEADERS = {
+def _clean_text(value):
 
-    "User-Agent": (
-        "Mozilla/5.0 "
-        "(Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 "
-        "(KHTML, like Gecko) "
-        "Chrome/140.0.0.0 "
-        "Safari/537.36"
-    ),
-
-    "Accept": (
-        "application/json, "
-        "text/plain, "
-        "*/*"
-    ),
-
-    "Accept-Language": (
-        "zh-CN,zh;q=0.9,en;q=0.8"
-    ),
-}
-
-
-def clean_news_text(text):
-
-    if not text:
+    if value is None:
         return ""
 
-    text = str(text)
+    text = html.unescape(
+        str(value)
+    )
 
-    # Remove HTML
     text = re.sub(
         r"<[^>]+>",
-        "",
+        " ",
         text,
     )
 
-    # Decode HTML entities
-    text = html.unescape(
-        text
-    )
-
-    # Remove special brackets
-    text = text.replace(
-        "〖",
-        "",
-    )
-
-    text = text.replace(
-        "〗",
-        "",
-    )
-
-    # Normalize whitespace
     text = re.sub(
         r"\s+",
         " ",
@@ -202,345 +230,493 @@ def clean_news_text(text):
     return text.strip()
 
 
-def parse_news_time(value):
-
-    if not value:
-        return ""
-
-    value = str(
-        value
-    ).strip()
-
-    # HH:MM:SS
-    match = re.search(
-        r"(\d{2}:\d{2}:\d{2})",
-        value,
-    )
-
-    if match:
-
-        return match.group(
-            1
-        )
-
-    # HH:MM
-    match = re.search(
-        r"(\d{2}:\d{2})",
-        value,
-    )
-
-    if match:
-
-        return match.group(
-            1
-        )
-
-    return value
-
-
 # =========================================================
-# Sina Finance 7x24
+# SINA PARSER
 # =========================================================
 
-SINA_7X24_URL = (
-    "https://zhibo.sina.com.cn/api/zhibo/feed"
-)
+def _extract_title(item):
 
-SINA_7X24_PAGE_URL = (
-    "https://finance.sina.com.cn/7x24/"
-)
+    candidates = [
+        item.get("content"),
+        item.get("title"),
+        item.get("rich_text"),
+        item.get("text"),
+        item.get("summary"),
+    ]
 
+    for value in candidates:
 
-def fetch_sina_news(limit=30):
-
-    timestamp = str(
-        int(
-            time.time() * 1000
-        )
-    )
-
-    params = {
-
-        "page": 1,
-
-        "page_size": limit,
-
-        "zhibo_id": 152,
-
-        "tag_id": 0,
-
-        "dire": "f",
-
-        "dpc": 1,
-
-        "pagesize": limit,
-
-        "_": timestamp,
-    }
-
-
-    headers = {
-        **NEWS_HEADERS,
-        "Referer": SINA_7X24_PAGE_URL,
-    }
-
-
-    response = requests.get(
-        SINA_7X24_URL,
-        params=params,
-        headers=headers,
-        timeout=15,
-    )
-
-    response.raise_for_status()
-
-
-    text = response.text.strip()
-
-
-    # -----------------------------------------------------
-    # JSON
-    # -----------------------------------------------------
-
-    if text.startswith("{"):
-
-        data = response.json()
-
-    else:
-
-        start = text.find("{")
-        end = text.rfind("}")
-
-        if (
-            start == -1
-            or end == -1
+        if isinstance(
+            value,
+            dict,
         ):
 
-            raise ValueError(
-                "新浪接口返回内容不是有效 JSON"
-            )
-
-        data = json.loads(
-            text[
-                start:end + 1
-            ]
-        )
-
-
-    # -----------------------------------------------------
-    # Extract feed
-    # -----------------------------------------------------
-
-    items = (
-        data
-        .get("result", {})
-        .get("data", {})
-        .get("feed", {})
-        .get("list", [])
-    )
-
-
-    if not items:
-
-        raise ValueError(
-            "新浪接口返回成功，但没有新闻数据"
-        )
-
-
-    news = []
-
-
-    for item in items:
-
-        content = clean_news_text(
-            item.get(
+            for key in (
+                "content",
+                "title",
+                "text",
                 "rich_text",
-                "",
+                "summary",
+            ):
+
+                if key in value:
+
+                    text = _clean_text(
+                        value[key]
+                    )
+
+                    if text:
+                        return text
+
+        elif isinstance(
+            value,
+            list,
+        ):
+
+            for part in value:
+
+                text = _clean_text(
+                    part
+                )
+
+                if text:
+                    return text
+
+        else:
+
+            text = _clean_text(
+                value
             )
-        )
+
+            if text:
+                return text
+
+    return ""
 
 
-        create_time = (
+def _extract_time(item):
 
-            item.get(
-                "create_time"
-            )
+    candidates = [
+        item.get("create_time"),
+        item.get("ctime"),
+        item.get("time"),
+        item.get("date"),
+        item.get("pub_time"),
+        item.get("pubTime"),
+    ]
 
-            or item.get(
-                "update_time"
-            )
+    for value in candidates:
 
-            or item.get(
-                "pub_time"
-            )
-
-            or ""
-        )
-
-
-        if not content:
-
+        if value is None:
             continue
 
-
-        news.append(
-            {
-                "time": parse_news_time(
-                    create_time
-                ),
-
-                "title": content,
-
-                "url": SINA_7X24_PAGE_URL,
-
-                "source": "新浪财经",
-            }
+        text = _clean_text(
+            value
         )
 
-
-    if not news:
-
-        raise ValueError(
-            "新浪新闻数据为空"
+        match = re.search(
+            r"\d{1,2}:\d{2}",
+            text,
         )
 
+        if match:
+            return match.group(0)
 
-    return news[:limit]
+    return ""
+
+
+def _extract_url(item):
+
+    keys = [
+        "url",
+        "link",
+        "wapurl",
+        "wap_url",
+        "article_url",
+        "articleUrl",
+    ]
+
+    for key in keys:
+
+        value = item.get(key)
+
+        if value:
+
+            return str(
+                value
+            ).strip()
+
+    return SINA_PAGE_URL
+
+
+def _flatten_feed(payload):
+
+    result = []
+
+    def walk(obj):
+
+        if isinstance(
+            obj,
+            dict,
+        ):
+
+            for key, value in obj.items():
+
+                key_lower = str(
+                    key
+                ).lower()
+
+                if (
+                    key_lower
+                    in {
+                        "list",
+                        "data",
+                        "result",
+                        "feed",
+                        "items",
+                        "messages",
+                        "news",
+                        "docs",
+                    }
+                ):
+
+                    if isinstance(
+                        value,
+                        list,
+                    ):
+
+                        for item in value:
+
+                            if isinstance(
+                                item,
+                                dict,
+                            ):
+
+                                result.append(
+                                    item
+                                )
+
+                walk(value)
+
+        elif isinstance(
+            obj,
+            list,
+        ):
+
+            for item in obj:
+
+                if isinstance(
+                    item,
+                    dict,
+                ):
+
+                    result.append(
+                        item
+                    )
+
+                walk(item)
+
+    walk(payload)
+
+    return result
 
 
 # =========================================================
-# Eastmoney fallback
+# NEWS IMPORTANCE
+#
+# 不是简单取前 N 条。
+# 先抓取原始新闻 -> 评分 -> 过滤 -> 排序。
 # =========================================================
 
-EASTMONEY_URL = (
-    "https://np-weblist.eastmoney.com/"
-    "comm/web/getFastNewsList"
-)
+HIGH_PRIORITY = {
 
-EASTMONEY_PAGE_URL = (
-    "https://kuaixun.eastmoney.com/"
-)
+    # -----------------------------------------------------
+    # Fed / Monetary Policy
+    # -----------------------------------------------------
+
+    "fomc": 18,
+    "美联储": 18,
+    "联储": 16,
+    "fed": 16,
+    "powell": 18,
+    "鲍威尔": 18,
+
+    "降息": 16,
+    "加息": 16,
+    "利率决议": 18,
+    "货币政策": 15,
+    "央行": 12,
+
+    # -----------------------------------------------------
+    # US Macro
+    # -----------------------------------------------------
+
+    "cpi": 18,
+    "核心cpi": 18,
+    "pce": 18,
+    "核心pce": 18,
+
+    "非农": 18,
+    "非农业": 18,
+    "失业率": 15,
+    "初请失业金": 13,
+
+    "gdp": 16,
+    "gdp增速": 16,
+
+    "零售销售": 13,
+    "ppi": 13,
+    "ism": 13,
+
+    "消费者信心": 12,
+    "密歇根": 10,
+
+    # -----------------------------------------------------
+    # Treasury / Rates
+    # -----------------------------------------------------
+
+    "10年期美债": 15,
+    "10年期国债": 15,
+    "美债收益率": 15,
+    "国债收益率": 12,
+
+    "收益率曲线": 14,
+    "倒挂": 14,
+    "期限利差": 13,
+
+    # -----------------------------------------------------
+    # US Stock Market
+    # -----------------------------------------------------
+
+    "标普500": 13,
+    "纳斯达克": 13,
+    "道指": 12,
+    "美股": 11,
+
+    "熔断": 20,
+    "暴跌": 17,
+    "暴涨": 15,
+    "大跌": 12,
+    "大涨": 12,
+    "崩盘": 18,
+    "黑天鹅": 20,
+
+    # -----------------------------------------------------
+    # FX / Commodities
+    # -----------------------------------------------------
+
+    "美元指数": 13,
+    "美元": 9,
+
+    "黄金": 11,
+    "原油": 11,
+    "油价": 11,
+
+    # -----------------------------------------------------
+    # US Policy / Trade / Geopolitics
+    # -----------------------------------------------------
+
+    "关税": 17,
+    "贸易战": 17,
+    "特朗普": 14,
+    "美国总统": 10,
+
+    "制裁": 15,
+    "出口管制": 15,
+
+    "地缘政治": 15,
+    "停火": 16,
+    "战争": 18,
+    "冲突": 13,
+
+    # -----------------------------------------------------
+    # China / Asia
+    # -----------------------------------------------------
+
+    "中国人民银行": 16,
+    "人民银行": 15,
+
+    "降准": 16,
+    "存款准备金率": 16,
+    "lpr": 14,
+
+    "国常会": 13,
+    "财政政策": 12,
+    "刺激政策": 14,
+    "房地产政策": 12,
+}
 
 
-def fetch_eastmoney_news(limit=30):
+MEDIUM_PRIORITY = {
 
-    params = {
+    "英伟达": 6,
+    "nvidia": 6,
 
-        "client": "web",
+    "苹果": 5,
+    "微软": 5,
 
-        "biz": "web_724",
+    "台积电": 7,
 
-        "fastColumn": "102",
+    "芯片": 6,
+    "半导体": 6,
 
-        "sortEnd": "",
+    "ai": 5,
+    "人工智能": 5,
 
-        "pageSize": limit,
+    "银行": 4,
+    "能源": 4,
+}
 
-        "req_trace": str(
-            int(
-                time.time() * 1000
+
+LOW_PRIORITY = {
+
+    "目标价": -4,
+    "机构上调": -3,
+    "机构下调": -3,
+
+    "评级": -3,
+    "买入": -3,
+    "卖出": -3,
+
+    "盘中": -2,
+    "收盘": -2,
+
+    "个股": -5,
+}
+
+
+def _importance_score(title):
+
+    text = title.lower()
+
+    score = 0
+
+    matched = []
+
+    # High priority
+    for keyword, weight in HIGH_PRIORITY.items():
+
+        if keyword.lower() in text:
+
+            score += weight
+
+            matched.append(
+                (
+                    keyword,
+                    weight,
+                )
             )
-        ),
-    }
 
+    # Medium priority
+    for keyword, weight in MEDIUM_PRIORITY.items():
 
-    headers = {
-        **NEWS_HEADERS,
-        "Referer": EASTMONEY_PAGE_URL,
-    }
+        if keyword.lower() in text:
 
+            score += weight
 
-    response = requests.get(
-        EASTMONEY_URL,
-        params=params,
-        headers=headers,
-        timeout=15,
-    )
+            matched.append(
+                (
+                    keyword,
+                    weight,
+                )
+            )
 
-    response.raise_for_status()
+    # Low priority
+    for keyword, weight in LOW_PRIORITY.items():
 
+        if keyword.lower() in text:
 
-    data = response.json()
+            score += weight
 
+    # Significant movement language
+    if re.search(
+        r"(大幅|大涨|大跌|暴涨|暴跌|创纪录|历史新高|历史新低)",
+        title,
+    ):
 
-    items = (
-        data
-        .get("data", {})
-        .get("fastNewsList", [])
-    )
+        score += 5
 
+    # Percentage movement
+    if re.search(
+        r"\b\d+(?:\.\d+)?\s*%\b",
+        title,
+    ):
 
-    if not items:
+        score += 1
 
-        raise ValueError(
-            "东方财富接口没有返回新闻"
+    # Too short usually means low information density
+    if len(title) < 8:
+
+        score -= 4
+
+    # Extremely long title gets slight penalty
+    if len(title) > 220:
+
+        score -= 2
+
+    importance_tag = ""
+
+    if matched:
+
+        matched.sort(
+            key=lambda x: x[1],
+            reverse=True,
         )
 
+        importance_tag = matched[0][0]
 
-    news = []
+    return (
+        score,
+        importance_tag,
+    )
 
+
+# =========================================================
+# DEDUPLICATION
+# =========================================================
+
+def _deduplicate_news(items):
+
+    result = []
+
+    seen = set()
 
     for item in items:
 
-        title = clean_news_text(
-
-            item.get(
-                "title"
-            )
-
-            or item.get(
-                "summary"
-            )
-
-            or item.get(
-                "brief"
-            )
-
-            or ""
-        )
-
+        title = item.get(
+            "title",
+            "",
+        ).strip()
 
         if not title:
-
             continue
 
-
-        news.append(
-            {
-                "time": parse_news_time(
-
-                    item.get(
-                        "showTime"
-                    )
-
-                    or item.get(
-                        "time"
-                    )
-
-                    or ""
-                ),
-
-                "title": title,
-
-                "url": EASTMONEY_PAGE_URL,
-
-                "source": "东方财富",
-            }
+        normalized = re.sub(
+            r"[\W_]+",
+            "",
+            title.lower(),
+            flags=re.UNICODE,
         )
 
+        if not normalized:
+            continue
 
-    if not news:
+        if normalized in seen:
+            continue
 
-        raise ValueError(
-            "东方财富新闻数据为空"
+        seen.add(
+            normalized
         )
 
+        result.append(
+            item
+        )
 
-    return news[:limit]
+    return result
 
 
 # =========================================================
-# Public news function
+# GET SINA NEWS
 # =========================================================
 
 @st.cache_data(ttl=60)
@@ -548,54 +724,220 @@ def get_sina_news(limit=30):
 
     errors = []
 
+    # -----------------------------------------------------
+    # Sina primary
+    # -----------------------------------------------------
+
+    try:
+
+        params = {
+            "zhibo_id": "152",
+            "tag_id": "0",
+            "page": 1,
+            "pagesize": 100,
+        }
+
+        response = requests.get(
+            SINA_FEED_URL,
+            params=params,
+            headers=HEADERS,
+            timeout=15,
+        )
+
+        response.raise_for_status()
+
+        payload = response.json()
+
+        raw_items = _flatten_feed(
+            payload
+        )
+
+        parsed = []
+
+        for item in raw_items:
+
+            title = _extract_title(
+                item
+            )
+
+            if not title:
+                continue
+
+            score, importance_tag = (
+                _importance_score(
+                    title
+                )
+            )
+
+            parsed.append(
+                {
+                    "title": title,
+                    "time": _extract_time(
+                        item
+                    ),
+                    "url": _extract_url(
+                        item
+                    ),
+                    "score": score,
+                    "importance_tag": importance_tag,
+                }
+            )
+
+        parsed = _deduplicate_news(
+            parsed
+        )
+
+        # -------------------------------------------------
+        # 关键：
+        # 不是“最新30条”
+        # 而是先经过重要性阈值。
+        # -------------------------------------------------
+
+        important = [
+            item
+            for item in parsed
+            if item["score"] >= 10
+        ]
+
+        # 重要性高的优先
+        important.sort(
+            key=lambda x: x["score"],
+            reverse=True,
+        )
+
+        if important:
+
+            return (
+                important[:limit],
+                None,
+            )
+
+        errors.append(
+            "新浪抓取成功，但当前快讯没有达到重点新闻阈值。"
+        )
+
+    except Exception as exc:
+
+        errors.append(
+            f"新浪7×24：{exc}"
+        )
 
     # =====================================================
-    # Primary: Sina
+    # Eastmoney fallback
     # =====================================================
 
     try:
 
-        news = fetch_sina_news(
-            limit=limit
+        fallback_url = (
+            "https://np-weblist.eastmoney.com/"
+            "comm/web/getFastNewsList"
         )
 
-        if news:
+        params = {
+            "client": "web",
+            "biz": "web_news_col",
+            "order": "1",
+            "needInteract": "0",
+            "pageSize": "100",
+            "pageIndex": "1",
+        }
 
-            return news, None
+        response = requests.get(
+            fallback_url,
+            params=params,
+            headers=HEADERS,
+            timeout=15,
+        )
 
-    except Exception as e:
+        response.raise_for_status()
+
+        payload = response.json()
+
+        raw_items = _flatten_feed(
+            payload
+        )
+
+        parsed = []
+
+        for item in raw_items:
+
+            title = _extract_title(
+                item
+            )
+
+            if not title:
+                continue
+
+            score, importance_tag = (
+                _importance_score(
+                    title
+                )
+            )
+
+            parsed.append(
+                {
+                    "title": title,
+                    "time": _extract_time(
+                        item
+                    ),
+                    "url": _extract_url(
+                        item
+                    ),
+                    "score": score,
+                    "importance_tag": importance_tag,
+                }
+            )
+
+        parsed = _deduplicate_news(
+            parsed
+        )
+
+        important = [
+            item
+            for item in parsed
+            if item["score"] >= 10
+        ]
+
+        important.sort(
+            key=lambda x: x["score"],
+            reverse=True,
+        )
+
+        if important:
+
+            return (
+                important[:limit],
+                None,
+            )
 
         errors.append(
-            f"新浪：{e}"
+            "东方财富备用源也没有筛选到重点新闻。"
         )
 
-
-    # =====================================================
-    # Fallback: Eastmoney
-    # =====================================================
-
-    try:
-
-        news = fetch_eastmoney_news(
-            limit=limit
-        )
-
-        if news:
-
-            return news, None
-
-    except Exception as e:
+    except Exception as exc:
 
         errors.append(
-            f"东方财富：{e}"
+            f"东方财富备用源：{exc}"
         )
-
-
-    # =====================================================
-    # Both failed
-    # =====================================================
 
     return (
         [],
-        "；".join(errors)
+        "；".join(errors),
     )
+
+
+# =========================================================
+# EXPORTS
+# =========================================================
+
+__all__ = [
+    "get_dgs3mo",
+    "get_dgs2",
+    "get_dgs10",
+    "get_dfii10",
+    "get_sofr",
+    "get_iorb",
+    "get_effr",
+    "get_rrp_rate",
+    "get_sina_news",
+]
