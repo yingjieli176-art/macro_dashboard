@@ -33,14 +33,12 @@ st.markdown(
     """
     <style>
 
-    /* Main page */
     .block-container {
         padding-top: 2rem;
         padding-bottom: 4rem;
         max-width: 1400px;
     }
 
-    /* Main title */
     .dashboard-title {
         font-size: 2rem;
         font-weight: 700;
@@ -53,31 +51,50 @@ st.markdown(
         margin-bottom: 1.5rem;
     }
 
-    /* Section title */
     .section-title {
         font-size: 1.35rem;
         font-weight: 650;
-        margin-top: 1.5rem;
+        margin-top: 1rem;
         margin-bottom: 0.15rem;
     }
 
     .section-description {
         color: #6b7280;
         font-size: 0.9rem;
-        margin-bottom: 0.7rem;
+        margin-bottom: 0.5rem;
     }
 
-    /* Source */
+    .formula-box {
+        background: #f8fafc;
+        border-left: 4px solid #64748b;
+        padding: 10px 14px;
+        margin-top: 5px;
+        margin-bottom: 8px;
+        font-size: 0.86rem;
+        line-height: 1.6;
+    }
+
+    .parameter-box {
+        background: #fafafa;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 10px 14px;
+        margin-top: 8px;
+        margin-bottom: 28px;
+        font-size: 0.82rem;
+        line-height: 1.65;
+        color: #4b5563;
+    }
+
     .source-text {
         color: #6b7280;
         font-size: 0.78rem;
-        margin-top: -0.3rem;
-        margin-bottom: 2.2rem;
+        margin-top: 4px;
+        margin-bottom: 18px;
     }
 
-    /* Divider */
     .chart-divider {
-        margin-top: 0.5rem;
+        margin-top: 1rem;
         margin-bottom: 2rem;
         border-top: 1px solid #e5e7eb;
     }
@@ -106,16 +123,8 @@ st.markdown(
 
 
 # =========================================================
-# Time Range
+# Helper Functions
 # =========================================================
-
-time_range = st.radio(
-    "Time range",
-    ["5Y", "1Y", "6M", "3M", "1M"],
-    horizontal=True,
-    index=1
-)
-
 
 def get_start_date(range_name):
 
@@ -139,20 +148,11 @@ def get_start_date(range_name):
     return today - pd.DateOffset(years=1)
 
 
-start_date = get_start_date(time_range)
-
-
-# =========================================================
-# Common Chart Style
-# =========================================================
-
-def apply_chart_style(fig, height=480):
+def apply_chart_style(fig, height=470):
 
     fig.update_layout(
         height=height,
-
         template="plotly_white",
-
         hovermode="x unified",
 
         margin=dict(
@@ -182,17 +182,13 @@ def apply_chart_style(fig, height=480):
         xaxis=dict(
             showgrid=False,
             showline=True,
-            linecolor="#d1d5db",
-            rangeslider=dict(
-                visible=False
-            )
+            linecolor="#d1d5db"
         ),
 
         yaxis=dict(
             showgrid=True,
             gridcolor="#eeeeee",
-            zeroline=False,
-            showline=False
+            zeroline=False
         )
     )
 
@@ -214,20 +210,17 @@ def add_source(text, url):
     )
 
 
-# =========================================================
-# Load Data
-# =========================================================
+def add_parameter_notes(html_text):
 
-dgs2 = get_dgs2()
-dgs5 = get_dgs5()
-dgs10 = get_dgs10()
-
-dfii10 = get_dfii10()
-
-sofr = get_sofr()
-iorb = get_iorb()
-effr = get_effr()
-rrp = get_rrp_rate()
+    st.markdown(
+        f"""
+        <div class="parameter-box">
+            <b>参数备注 / 中文释义</b><br>
+            {html_text}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 # =========================================================
@@ -235,32 +228,44 @@ rrp = get_rrp_rate()
 # =========================================================
 
 st.markdown(
-    '<div class="section-title">Policy Rate Corridor</div>',
+    '<div class="section-title">1. Policy Rate Corridor</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
     '<div class="section-description">'
-    'IORB, ON RRP rate, EFFR and SOFR'
+    '政策利率走廊：IORB、ON RRP Rate、EFFR 与 SOFR'
     '</div>',
     unsafe_allow_html=True
 )
 
 
+# Individual time control
+corridor_range = st.radio(
+    "时间范围",
+    ["5Y", "1Y", "6M", "3M", "1M"],
+    horizontal=True,
+    index=1,
+    key="corridor_range"
+)
+
+corridor_start = get_start_date(corridor_range)
+
+
 corridor = (
-    iorb
+    get_iorb()
     .merge(
-        rrp,
+        get_rrp_rate(),
         on="observation_date",
         how="outer"
     )
     .merge(
-        effr,
+        get_effr(),
         on="observation_date",
         how="outer"
     )
     .merge(
-        sofr,
+        get_sofr(),
         on="observation_date",
         how="outer"
     )
@@ -269,71 +274,58 @@ corridor = (
 
 
 corridor = corridor[
-    corridor["observation_date"] >= start_date
+    corridor["observation_date"] >= corridor_start
 ]
 
 
 fig1 = go.Figure()
 
 
-# IORB
 fig1.add_trace(
     go.Scatter(
         x=corridor["observation_date"],
         y=corridor["IORB"],
         name="IORB",
         mode="lines",
-        line=dict(
-            width=2.5
-        )
+        line=dict(width=2.8)
     )
 )
 
 
-# ON RRP Rate
 fig1.add_trace(
     go.Scatter(
         x=corridor["observation_date"],
         y=corridor["RRPONTSYAWARD"],
         name="ON RRP Rate",
         mode="lines",
-        line=dict(
-            width=2.5
-        )
+        line=dict(width=2.8)
     )
 )
 
 
-# EFFR
 fig1.add_trace(
     go.Scatter(
         x=corridor["observation_date"],
         y=corridor["EFFR"],
         name="EFFR",
         mode="lines",
-        line=dict(
-            width=2.5
-        )
+        line=dict(width=2.8)
     )
 )
 
 
-# SOFR
 fig1.add_trace(
     go.Scatter(
         x=corridor["observation_date"],
         y=corridor["SOFR"],
         name="SOFR",
         mode="lines",
-        line=dict(
-            width=2
-        )
+        line=dict(width=2.2)
     )
 )
 
 
 fig1.update_layout(
-    title="",
     yaxis_title="Interest Rate (%)"
 )
 
@@ -348,15 +340,30 @@ st.plotly_chart(
 )
 
 
+add_parameter_notes(
+    """
+    <b>IORB</b>：Interest on Reserve Balances，银行存放在美联储的准备金余额利率，
+    可理解为美联储管理联邦基金利率的重要上方政策利率。<br>
+
+    <b>ON RRP Rate</b>：Overnight Reverse Repurchase Agreement Rate，
+    隔夜逆回购利率，可理解为货币市场利率的重要下方利率。<br>
+
+    <b>EFFR</b>：Effective Federal Funds Rate，
+    联邦基金有效利率，代表银行间实际成交的联邦基金利率水平。<br>
+
+    <b>SOFR</b>：Secured Overnight Financing Rate，
+    有担保隔夜融资利率，主要反映美国国债抵押融资市场的隔夜资金成本。<br>
+
+    <b>本图单位</b>：全部为 %
+    """
+)
+
+
 add_source(
     "FRED — Policy Rate Corridor",
     "https://fred.stlouisfed.org/graph/?graph_id=1547733&rn=698"
 )
 
-
-# =========================================================
-# Divider
-# =========================================================
 
 st.markdown(
     '<div class="chart-divider"></div>',
@@ -369,22 +376,34 @@ st.markdown(
 # =========================================================
 
 st.markdown(
-    '<div class="section-title">10Y Yield Structure</div>',
+    '<div class="section-title">2. 10Y Yield Structure</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
     '<div class="section-description">'
-    'Nominal yield, real yield and 10Y breakeven inflation'
+    '10年期名义收益率、实际收益率与盈亏平衡通胀率'
     '</div>',
     unsafe_allow_html=True
 )
 
 
+# Individual time control
+yield10_range = st.radio(
+    "时间范围",
+    ["5Y", "1Y", "6M", "3M", "1M"],
+    horizontal=True,
+    index=1,
+    key="yield10_range"
+)
+
+yield10_start = get_start_date(yield10_range)
+
+
 yield10 = (
-    dgs10
+    get_dgs10()
     .merge(
-        dfii10,
+        get_dfii10(),
         on="observation_date",
         how="inner"
     )
@@ -393,10 +412,11 @@ yield10 = (
 
 
 yield10 = yield10[
-    yield10["observation_date"] >= start_date
+    yield10["observation_date"] >= yield10_start
 ]
 
 
+# 10Y Breakeven
 yield10["Breakeven"] = (
     yield10["DGS10"]
     - yield10["DFII10"]
@@ -406,35 +426,28 @@ yield10["Breakeven"] = (
 fig2 = go.Figure()
 
 
-# 10Y Nominal
 fig2.add_trace(
     go.Scatter(
         x=yield10["observation_date"],
         y=yield10["DGS10"],
         name="10Y Nominal",
         mode="lines",
-        line=dict(
-            width=2.5
-        )
+        line=dict(width=2.8)
     )
 )
 
 
-# 10Y Real
 fig2.add_trace(
     go.Scatter(
         x=yield10["observation_date"],
         y=yield10["DFII10"],
         name="10Y Real",
         mode="lines",
-        line=dict(
-            width=2.5
-        )
+        line=dict(width=2.8)
     )
 )
 
 
-# Breakeven
 fig2.add_trace(
     go.Scatter(
         x=yield10["observation_date"],
@@ -442,7 +455,7 @@ fig2.add_trace(
         name="10Y Breakeven",
         mode="lines",
         line=dict(
-            width=2.5,
+            width=2.8,
             dash="dot"
         )
     )
@@ -450,7 +463,6 @@ fig2.add_trace(
 
 
 fig2.update_layout(
-    title="",
     yaxis_title="Yield / Inflation (%)"
 )
 
@@ -465,15 +477,30 @@ st.plotly_chart(
 )
 
 
-add_source(
-    "FRED — 10Y Nominal / Real Yield",
-    "https://fred.stlouisfed.org/graph/?graph_id=145245"
+add_parameter_notes(
+    """
+    <b>DGS10</b>：10-Year Treasury Constant Maturity Rate，
+    美国10年期国债名义收益率。<br>
+
+    <b>DFII10</b>：10-Year Treasury Inflation-Indexed Security，
+    美国10年期TIPS实际收益率，可作为市场实际利率的重要观察指标。<br>
+
+    <b>10Y Breakeven</b>：
+    <b>DGS10 − DFII10</b>，
+    10年期盈亏平衡通胀率（Breakeven Inflation Rate）。<br>
+
+    <b>经济含义</b>：
+    名义10年期国债收益率与TIPS实际收益率之间的差额，
+    可用于观察市场隐含的长期通胀补偿。
+    """
 )
 
 
-# =========================================================
-# Divider
-# =========================================================
+add_source(
+    "FRED — 10Y Nominal / Real Yield",
+    "https://fred.stlouisfed.org/graph/?id=DGS10%2CDFII10"
+)
+
 
 st.markdown(
     '<div class="chart-divider"></div>',
@@ -486,27 +513,39 @@ st.markdown(
 # =========================================================
 
 st.markdown(
-    '<div class="section-title">Treasury Yield & Curve Spreads</div>',
+    '<div class="section-title">3. Treasury Yield & Curve Spreads</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
     '<div class="section-description">'
-    '2Y / 5Y / 10Y Treasury yields with 2s10s and 5s10s spreads'
+    '2年、5年、10年国债收益率，以及2s10s / 5s10s期限利差'
     '</div>',
     unsafe_allow_html=True
 )
 
 
+# Individual time control
+treasury_range = st.radio(
+    "时间范围",
+    ["5Y", "1Y", "6M", "3M", "1M"],
+    horizontal=True,
+    index=1,
+    key="treasury_range"
+)
+
+treasury_start = get_start_date(treasury_range)
+
+
 treasury = (
-    dgs2
+    get_dgs2()
     .merge(
-        dgs5,
+        get_dgs5(),
         on="observation_date",
         how="outer"
     )
     .merge(
-        dgs10,
+        get_dgs10(),
         on="observation_date",
         how="outer"
     )
@@ -515,17 +554,22 @@ treasury = (
 
 
 treasury = treasury[
-    treasury["observation_date"] >= start_date
+    treasury["observation_date"] >= treasury_start
 ]
 
 
-# Spread calculation
+# =========================================================
+# Spread Calculation
+# =========================================================
+
+# 2s10s = 10Y - 2Y
 treasury["2s10s"] = (
     treasury["DGS10"]
     - treasury["DGS2"]
 ) * 100
 
 
+# 5s10s = 10Y - 5Y
 treasury["5s10s"] = (
     treasury["DGS10"]
     - treasury["DGS5"]
@@ -536,7 +580,7 @@ fig3 = go.Figure()
 
 
 # =========================================================
-# Left Axis: Treasury Yields
+# Treasury Yields
 # =========================================================
 
 fig3.add_trace(
@@ -545,9 +589,7 @@ fig3.add_trace(
         y=treasury["DGS2"],
         name="2Y",
         mode="lines",
-        line=dict(
-            width=2.2
-        ),
+        line=dict(width=2.2),
         yaxis="y"
     )
 )
@@ -559,9 +601,7 @@ fig3.add_trace(
         y=treasury["DGS5"],
         name="5Y",
         mode="lines",
-        line=dict(
-            width=2.2
-        ),
+        line=dict(width=2.2),
         yaxis="y"
     )
 )
@@ -573,16 +613,14 @@ fig3.add_trace(
         y=treasury["DGS10"],
         name="10Y",
         mode="lines",
-        line=dict(
-            width=2.5
-        ),
+        line=dict(width=2.8),
         yaxis="y"
     )
 )
 
 
 # =========================================================
-# Right Axis: Spreads
+# Spread Bars
 # =========================================================
 
 fig3.add_trace(
@@ -590,7 +628,7 @@ fig3.add_trace(
         x=treasury["observation_date"],
         y=treasury["2s10s"],
         name="2s10s",
-        opacity=0.30,
+        opacity=0.48,
         yaxis="y2"
     )
 )
@@ -601,15 +639,13 @@ fig3.add_trace(
         x=treasury["observation_date"],
         y=treasury["5s10s"],
         name="5s10s",
-        opacity=0.30,
+        opacity=0.48,
         yaxis="y2"
     )
 )
 
 
 fig3.update_layout(
-    title="",
-
     yaxis=dict(
         title="Treasury Yield (%)",
         showgrid=True,
@@ -622,7 +658,7 @@ fig3.update_layout(
         overlaying="y",
         side="right",
         zeroline=True,
-        zerolinecolor="#999999",
+        zerolinecolor="#666666",
         zerolinewidth=1
     ),
 
@@ -638,6 +674,54 @@ fig3 = apply_chart_style(
 st.plotly_chart(
     fig3,
     use_container_width=True
+)
+
+
+# =========================================================
+# Spread Formula / Parameter Notes
+# =========================================================
+
+st.markdown(
+    """
+    <div class="formula-box">
+        <b>利差计算方式</b><br>
+        <b>2s10s = 10Y − 2Y</b>
+        → 10年期国债收益率减去2年期国债收益率<br>
+
+        <b>5s10s = 10Y − 5Y</b>
+        → 10年期国债收益率减去5年期国债收益率<br>
+
+        <b>单位转换</b>：
+        FRED收益率单位为 %，因此
+        <b>1个百分点 = 100 bp</b>。
+        代码中将差值 × 100 后以 bp 显示。
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+
+add_parameter_notes(
+    """
+    <b>DGS2</b>：2-Year Treasury Constant Maturity Rate，
+    美国2年期国债收益率。通常对短期政策利率预期较敏感。<br>
+
+    <b>DGS5</b>：5-Year Treasury Constant Maturity Rate，
+    美国5年期国债收益率，可观察中期利率定价。<br>
+
+    <b>DGS10</b>：10-Year Treasury Constant Maturity Rate，
+    美国10年期国债收益率，是长期无风险利率的重要基准。<br>
+
+    <b>2s10s</b>：10Y − 2Y，
+    观察2年与10年期限之间的收益率曲线斜率。<br>
+
+    <b>5s10s</b>：10Y − 5Y，
+    观察5年与10年期限之间的收益率曲线斜率。<br>
+
+    <b>Spread > 0</b>：长期收益率高于短期收益率，曲线向上。<br>
+
+    <b>Spread < 0</b>：长期收益率低于短期收益率，曲线倒挂。
+    """
 )
 
 
