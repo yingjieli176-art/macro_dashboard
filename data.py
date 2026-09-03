@@ -300,9 +300,61 @@ def get_sina_news(limit=20):
 
         return news[:limit], None
 
-    except Exception as e:
+    except Exception as sina_error:
 
-        return [], str(e)
+        # Streamlit Cloud / overseas network paths can intermittently block
+        # Sina's live-feed host. Fall back to Eastmoney's public 7x24 feed
+        # so the dashboard still shows live finance text instead of a blank box.
+        try:
+            fallback_url = "https://np-weblist.eastmoney.com/comm/web/getFastNewsList"
+            fallback_params = {
+                "client": "web",
+                "biz": "web_724",
+                "fastColumn": "102",
+                "sortEnd": "",
+                "pageSize": limit,
+                "req_trace": str(int(time.time() * 1000)),
+            }
+            fallback_headers = {
+                "User-Agent": SINA_HEADERS["User-Agent"],
+                "Referer": "https://kuaixun.eastmoney.com/",
+                "Accept": "application/json, text/plain, */*",
+            }
+            fallback_response = requests.get(
+                fallback_url,
+                params=fallback_params,
+                headers=fallback_headers,
+                timeout=15
+            )
+            fallback_response.raise_for_status()
+            fallback_data = fallback_response.json()
+            fallback_items = (
+                fallback_data.get("data", {})
+                .get("fastNewsList", [])
+            )
+
+            fallback_news = []
+            for item in fallback_items:
+                title = clean_sina_text(
+                    item.get("title") or item.get("summary") or item.get("brief") or ""
+                )
+                if not title:
+                    continue
+                fallback_news.append({
+                    "time": parse_sina_time(
+                        item.get("showTime") or item.get("time") or ""
+                    ),
+                    "title": title,
+                    "url": "https://kuaixun.eastmoney.com/7_24.html",
+                })
+
+            if fallback_news:
+                return fallback_news[:limit], None
+
+        except Exception as fallback_error:
+            return [], f"新浪: {sina_error}; 备用源: {fallback_error}"
+
+        return [], str(sina_error)
 
 
 # =========================================================
