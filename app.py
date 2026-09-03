@@ -11,6 +11,8 @@ from data import (
     get_iorb,
     get_effr,
     get_rrp_rate,
+    get_sina_news,
+    get_wsj_news,
 )
 
 
@@ -99,6 +101,26 @@ st.markdown(
         border-top: 1px solid #e5e7eb;
     }
 
+    .news-item {
+        padding: 7px 4px;
+        border-bottom: 1px solid #eeeeee;
+        line-height: 1.45;
+        font-size: 0.88rem;
+    }
+
+    .news-time {
+        color: #6b7280;
+        font-size: 0.78rem;
+        margin-right: 10px;
+        white-space: nowrap;
+    }
+
+    .news-source {
+        color: #9ca3af;
+        font-size: 0.72rem;
+        margin-top: 2px;
+    }
+
     </style>
     """,
     unsafe_allow_html=True
@@ -168,7 +190,7 @@ def apply_chart_style(fig, height=470):
 
         margin=dict(
             l=55,
-            r=55,
+            r=70,
             t=55,
             b=50
         ),
@@ -224,6 +246,7 @@ def add_source(text, url):
 def add_parameter_notes(html_text):
 
     if detail_mode:
+
         st.markdown(
             f"""
             <div class="parameter-box">
@@ -238,6 +261,7 @@ def add_parameter_notes(html_text):
 def add_formula(html_text):
 
     if detail_mode:
+
         st.markdown(
             f"""
             <div class="formula-box">
@@ -273,7 +297,9 @@ corridor_range = st.radio(
     key="corridor_range"
 )
 
-corridor_start = get_start_date(corridor_range)
+corridor_start = get_start_date(
+    corridor_range
+)
 
 
 corridor = (
@@ -353,7 +379,12 @@ fig1.update_layout(
     yaxis_title="Interest Rate (%)"
 )
 
-fig1 = apply_chart_style(fig1, 470)
+
+fig1 = apply_chart_style(
+    fig1,
+    470
+)
+
 
 st.plotly_chart(
     fig1,
@@ -409,7 +440,10 @@ yield10_range = st.radio(
     key="yield10_range"
 )
 
-yield10_start = get_start_date(yield10_range)
+
+yield10_start = get_start_date(
+    yield10_range
+)
 
 
 yield10 = (
@@ -477,7 +511,12 @@ fig2.update_layout(
     yaxis_title="Yield / Inflation (%)"
 )
 
-fig2 = apply_chart_style(fig2, 470)
+
+fig2 = apply_chart_style(
+    fig2,
+    470
+)
+
 
 st.plotly_chart(
     fig2,
@@ -517,17 +556,17 @@ st.markdown(
 
 
 # =========================================================
-# 3. Treasury Yield & 10Y−2Y Spread
+# 3. Treasury Yield & Curve Spread
 # =========================================================
 
 st.markdown(
-    '<div class="section-title">3. Treasury Yield & 10Y−2Y Spread</div>',
+    '<div class="section-title">3. Treasury Yield & Curve Spread</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
     '<div class="section-description">'
-    '3个月、2年、10年美国国债收益率，以及10Y−2Y期限利差'
+    '3个月、2年、10年美国国债收益率，以及10Y−2Y与10Y−3M期限利差'
     '</div>',
     unsafe_allow_html=True
 )
@@ -541,7 +580,10 @@ treasury_range = st.radio(
     key="treasury_range"
 )
 
-treasury_start = get_start_date(treasury_range)
+
+treasury_start = get_start_date(
+    treasury_range
+)
 
 
 treasury = (
@@ -566,7 +608,7 @@ treasury = treasury[
 
 
 # =========================================================
-# 10Y−2Y Spread
+# Calculate Spreads
 # =========================================================
 
 treasury["10Y-2Y"] = (
@@ -574,6 +616,16 @@ treasury["10Y-2Y"] = (
     - treasury["DGS2"]
 ) * 100
 
+
+treasury["10Y-3M"] = (
+    treasury["DGS10"]
+    - treasury["DGS3MO"]
+) * 100
+
+
+# =========================================================
+# Chart
+# =========================================================
 
 fig3 = go.Figure()
 
@@ -629,6 +681,18 @@ fig3.add_trace(
 )
 
 
+# 10Y−3M
+fig3.add_trace(
+    go.Bar(
+        x=treasury["observation_date"],
+        y=treasury["10Y-3M"],
+        name="10Y−3M",
+        opacity=0.42,
+        yaxis="y2"
+    )
+)
+
+
 fig3.update_layout(
 
     yaxis=dict(
@@ -639,17 +703,23 @@ fig3.update_layout(
     ),
 
     yaxis2=dict(
-        title="10Y−2Y Spread (bp)",
+        title="Spread (bp)",
         overlaying="y",
         side="right",
         zeroline=True,
         zerolinecolor="#666666",
         zerolinewidth=1
-    )
+    ),
+
+    barmode="group"
 )
 
 
-fig3 = apply_chart_style(fig3, 500)
+fig3 = apply_chart_style(
+    fig3,
+    500
+)
+
 
 st.plotly_chart(
     fig3,
@@ -660,7 +730,7 @@ st.plotly_chart(
 add_formula(
     """
     <b>10Y−2Y = DGS10 − DGS2</b><br>
-    即：10年期国债收益率 − 2年期国债收益率<br><br>
+    <b>10Y−3M = DGS10 − DGS3MO</b><br><br>
 
     <b>单位：</b>bp（基点）<br>
     1个百分点 = 100 bp
@@ -670,22 +740,24 @@ add_formula(
 
 add_parameter_notes(
     """
-    <b>DGS3MO</b>：3-Month Treasury Constant Maturity Rate，
-    美国3个月国债收益率，代表非常短期的无风险利率水平，
-    对货币政策和短端资金成本较敏感。<br>
+    <b>DGS3MO</b>：美国3个月国债收益率，
+    对当前货币政策和短端资金利率环境较敏感。<br>
 
-    <b>DGS2</b>：2-Year Treasury Constant Maturity Rate，
-    美国2年期国债收益率，对未来短期政策利率预期较敏感。<br>
+    <b>DGS2</b>：美国2年期国债收益率，
+    对未来短期政策利率路径预期较敏感。<br>
 
-    <b>DGS10</b>：10-Year Treasury Constant Maturity Rate，
-    美国10年期国债收益率，是长期无风险利率的重要基准。<br>
+    <b>DGS10</b>：美国10年期国债收益率，
+    是长期无风险利率的重要基准。<br>
 
     <b>10Y−2Y</b>：10年期收益率减2年期收益率，
     即传统意义上的2s10s。<br>
 
-    <b>Spread > 0</b>：10年期收益率高于2年期，收益率曲线向上。<br>
+    <b>10Y−3M</b>：10年期收益率减3个月收益率，
+    更直接反映长期利率与当前短端政策环境之间的差异。<br>
 
-    <b>Spread < 0</b>：10年期收益率低于2年期，收益率曲线倒挂。
+    <b>Spread > 0</b>：收益率曲线对应区间向上。<br>
+
+    <b>Spread < 0</b>：对应区间倒挂。
     """
 )
 
@@ -694,6 +766,160 @@ add_source(
     "FRED — 3M / 2Y / 10Y Treasury Yields",
     "https://fred.stlouisfed.org/graph/?id=DGS3MO%2CDGS2%2CDGS10"
 )
+
+
+st.markdown(
+    '<div class="chart-divider"></div>',
+    unsafe_allow_html=True
+)
+
+
+# =========================================================
+# 4. 7×24 Market News
+# =========================================================
+
+st.markdown(
+    '<div class="section-title">4. 7×24 Market News</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div class="section-description">'
+    '实时财经文字快讯：新浪财经 + WSJ公开市场新闻'
+    '</div>',
+    unsafe_allow_html=True
+)
+
+
+# =========================================================
+# Refresh
+# =========================================================
+
+news_col1, news_col2 = st.columns([1, 6])
+
+
+with news_col1:
+
+    refresh_news = st.button(
+        "🔄 刷新新闻",
+        key="refresh_news"
+    )
+
+
+if refresh_news:
+
+    get_sina_news.clear()
+    get_wsj_news.clear()
+
+
+# =========================================================
+# Load News
+# =========================================================
+
+sina_news = get_sina_news(
+    limit=20
+)
+
+wsj_news = get_wsj_news(
+    limit=12
+)
+
+
+news_col1, news_col2 = st.columns(
+    2,
+    gap="large"
+)
+
+
+# =========================================================
+# Sina
+# =========================================================
+
+with news_col1:
+
+    st.markdown(
+        "### 新浪财经 7×24"
+    )
+
+    if sina_news:
+
+        for item in sina_news:
+
+            title = item["title"]
+            time_text = item["time"]
+            url = item["url"]
+
+            st.markdown(
+                f"""
+                <div class="news-item">
+                    <span class="news-time">
+                        {time_text}
+                    </span>
+                    <a href="{url}" target="_blank">
+                        {title}
+                    </a>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+    else:
+
+        st.info(
+            "暂时无法获取新浪财经7×24数据。"
+        )
+
+    st.markdown("")
+
+    add_source(
+        "新浪财经 7×24",
+        "https://finance.sina.com.cn/7x24/"
+    )
+
+
+# =========================================================
+# WSJ
+# =========================================================
+
+with news_col2:
+
+    st.markdown(
+        "### WSJ"
+    )
+
+    if wsj_news:
+
+        for item in wsj_news:
+
+            title = item["title"]
+            url = item["url"]
+
+            st.markdown(
+                f"""
+                <div class="news-item">
+                    <a href="{url}" target="_blank">
+                        {title}
+                    </a>
+                    <div class="news-source">
+                        The Wall Street Journal
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+    else:
+
+        st.info(
+            "暂时无法获取WSJ公开新闻。"
+        )
+
+    st.markdown("")
+
+    add_source(
+        "WSJ Finance",
+        "https://www.wsj.com/finance"
+    )
 
 
 # =========================================================
@@ -710,6 +936,7 @@ st.markdown(
         font-size: 0.75rem;
     ">
         Data source: Federal Reserve Economic Data (FRED)
+        · News: Sina Finance / The Wall Street Journal
     </div>
     """,
     unsafe_allow_html=True
