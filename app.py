@@ -55,7 +55,7 @@ st.markdown(
 compact_mode = st.toggle(
     "缩小图表 / 快速浏览",
     value=False,
-    help="开启后，所有图表缩小，适合快速查看。",
+    help="开启后，三个核心图表横向并排显示，适合快速查看。",
 )
 
 
@@ -76,10 +76,10 @@ def apply_chart_style(fig, height):
         height=height,
         template="plotly_white",
         hovermode="x unified",
-        margin=dict(l=45, r=55, t=35, b=40),
-        legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="left", x=0),
-        hoverlabel=dict(bgcolor="white", font_size=12),
-        font=dict(size=12),
+        margin=dict(l=35, r=35, t=30, b=35),
+        legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="left", x=0, font=dict(size=10)),
+        hoverlabel=dict(bgcolor="white", font_size=11),
+        font=dict(size=10 if compact_mode else 12),
         xaxis=dict(showgrid=False, showline=True, linecolor="#d1d5db"),
         yaxis=dict(showgrid=True, gridcolor="#eeeeee", zeroline=False),
     )
@@ -94,70 +94,10 @@ def add_source(text, url):
 
 
 # =========================================================
-# 7×24 Market News
+# Core charts
 # =========================================================
-st.markdown('<div class="section-title">📰 7×24 Market News</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-description">实时财经文字快讯</div>', unsafe_allow_html=True)
 
-if st.button("🔄 刷新7×24", key="refresh_7x24"):
-    get_sina_news.clear()
-    get_wsj_news.clear()
-
-sina_news, sina_error = get_sina_news(limit=20)
-wsj_news, wsj_error = get_wsj_news(limit=10)
-
-col_sina, col_wsj = st.columns(2, gap="large")
-
-with col_sina:
-    st.markdown("#### 新浪财经 7×24")
-    if sina_news:
-        st.markdown(f'<div class="news-status">最新 {len(sina_news)} 条</div>', unsafe_allow_html=True)
-        st.markdown('<div class="news-box">', unsafe_allow_html=True)
-        for item in sina_news:
-            news_time = html.escape(str(item.get("time", "")))
-            news_title = html.escape(str(item.get("title", "")))
-            news_url = html.escape(str(item.get("url", "")))
-            st.markdown(
-                f'<div class="news-item"><span class="news-time">{news_time}</span>'
-                f'<a href="{news_url}" target="_blank">{news_title}</a></div>',
-                unsafe_allow_html=True,
-            )
-        st.markdown("</div>", unsafe_allow_html=True)
-    else:
-        st.error("新浪7×24获取失败。")
-        if sina_error:
-            st.caption(f"错误：{sina_error}")
-    add_source("新浪财经 7×24", "https://finance.sina.com.cn/7x24/")
-
-with col_wsj:
-    st.markdown("#### WSJ")
-    if wsj_news:
-        st.markdown(
-            f'<div class="news-status">公开可见 Headlines · {len(wsj_news)} 条</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown('<div class="news-box">', unsafe_allow_html=True)
-        for item in wsj_news:
-            news_title = html.escape(str(item.get("title", "")))
-            news_url = html.escape(str(item.get("url", "")))
-            st.markdown(
-                f'<div class="news-item"><a href="{news_url}" target="_blank">{news_title}</a>'
-                '<div class="news-source">The Wall Street Journal</div></div>',
-                unsafe_allow_html=True,
-            )
-        st.markdown("</div>", unsafe_allow_html=True)
-    else:
-        st.warning("WSJ公开新闻暂时无法获取。")
-        if wsj_error:
-            st.caption(f"错误：{wsj_error}")
-    add_source("WSJ Finance", "https://www.wsj.com/finance")
-
-st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-
-
-# =========================================================
 # 1. Fed Policy Rate & Money Market
-# =========================================================
 st.markdown('<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-description">IORB、ON RRP Rate、EFFR 与 SOFR</div>', unsafe_allow_html=True)
 
@@ -194,28 +134,10 @@ for series_id, name, width in [
             line=dict(width=width),
         )
     )
-
 fig1.update_layout(yaxis_title="Rate (%)")
-apply_chart_style(fig1, 220 if compact_mode else 470)
-st.plotly_chart(fig1, use_container_width=True)
+apply_chart_style(fig1, 190 if compact_mode else 470)
 
-if compact_mode:
-    st.markdown(
-        '<div class="mini-description">IORB / ON RRP构成政策利率走廊，EFFR观察联邦基金市场，SOFR观察隔夜担保融资。</div>',
-        unsafe_allow_html=True,
-    )
-
-add_source(
-    "FRED — Policy Rate Corridor",
-    "https://fred.stlouisfed.org/graph/?graph_id=1547733&rn=698",
-)
-
-st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-
-
-# =========================================================
 # 2. 10Y Yield Structure
-# =========================================================
 st.markdown('<div class="section-title">2. 10Y Yield Structure</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-description">10Y Nominal / 10Y Real / 10Y Breakeven</div>', unsafe_allow_html=True)
 
@@ -253,24 +175,10 @@ for col, name, width, dash in [
             line=line,
         )
     )
-
 fig2.update_layout(yaxis_title="Yield (%)")
-apply_chart_style(fig2, 220 if compact_mode else 470)
-st.plotly_chart(fig2, use_container_width=True)
+apply_chart_style(fig2, 190 if compact_mode else 470)
 
-if compact_mode:
-    st.markdown(
-        '<div class="mini-description">10Y Breakeven = 10Y Nominal − 10Y Real，用于观察市场隐含通胀预期。</div>',
-        unsafe_allow_html=True,
-    )
-
-add_source("FRED — Treasury & Real Yield Data", "https://fred.stlouisfed.org/")
-st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-
-
-# =========================================================
 # 3. Treasury Yield & Curve Spread
-# =========================================================
 st.markdown('<div class="section-title">3. Treasury Yield & Curve Spread</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-description">3M、2Y、10Y Treasury Yield 与曲线利差</div>', unsafe_allow_html=True)
 
@@ -340,7 +248,6 @@ fig3.add_trace(
         yaxis="y2",
     )
 )
-
 fig3.update_layout(
     yaxis=dict(title="Yield (%)"),
     yaxis2=dict(
@@ -352,53 +259,102 @@ fig3.update_layout(
         zerolinecolor="#9ca3af",
     ),
 )
-apply_chart_style(fig3, 230 if compact_mode else 500)
-st.plotly_chart(fig3, use_container_width=True)
+apply_chart_style(fig3, 200 if compact_mode else 500)
 
+
+# Display charts horizontally only in compact mode.
 if compact_mode:
-    st.markdown(
-        '<div class="mini-description">曲线斜率：10Y−2Y、10Y−3M；正值代表正常向上倾斜，负值代表倒挂。</div>',
-        unsafe_allow_html=True,
-    )
+    chart_col1, chart_col2, chart_col3 = st.columns(3, gap="small")
+    with chart_col1:
+        st.markdown("**1. Fed Policy Rate & Money Market**")
+        st.plotly_chart(fig1, use_container_width=True)
+        st.caption("IORB / ON RRP / EFFR / SOFR")
+        add_source("FRED", "https://fred.stlouisfed.org/graph/?graph_id=1547733&rn=698")
+    with chart_col2:
+        st.markdown("**2. 10Y Yield Structure**")
+        st.plotly_chart(fig2, use_container_width=True)
+        st.caption("10Y Nominal / Real / Breakeven")
+        add_source("FRED", "https://fred.stlouisfed.org/")
+    with chart_col3:
+        st.markdown("**3. Treasury Yield & Curve Spread**")
+        st.plotly_chart(fig3, use_container_width=True)
+        st.caption("3M / 2Y / 10Y / 10Y−2Y / 10Y−3M")
+        add_source("FRED", "https://fred.stlouisfed.org/")
+else:
+    st.plotly_chart(fig1, use_container_width=True)
+    st.markdown('<div class="mini-description">IORB / ON RRP构成政策利率走廊，EFFR观察联邦基金市场，SOFR观察隔夜担保融资。</div>', unsafe_allow_html=True)
+    add_source("FRED — Policy Rate Corridor", "https://fred.stlouisfed.org/graph/?graph_id=1547733&rn=698")
 
-add_source("FRED — Treasury Constant Maturity Rates", "https://fred.stlouisfed.org/")
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+    st.plotly_chart(fig2, use_container_width=True)
+    st.markdown('<div class="mini-description">10Y Breakeven = 10Y Nominal − 10Y Real，用于观察市场隐含通胀预期。</div>', unsafe_allow_html=True)
+    add_source("FRED — Treasury & Real Yield Data", "https://fred.stlouisfed.org/")
+
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+    st.plotly_chart(fig3, use_container_width=True)
+    st.markdown('<div class="mini-description">曲线斜率：10Y−2Y、10Y−3M；正值代表正常向上倾斜，负值代表倒挂。</div>', unsafe_allow_html=True)
+    add_source("FRED — Treasury Constant Maturity Rates", "https://fred.stlouisfed.org/")
 
 
 # =========================================================
-# 4. System Diagnostics
+# 7×24 Market News — standalone bottom panel
 # =========================================================
+
 st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">4. System Diagnostics</div>', unsafe_allow_html=True)
-st.markdown(
-    '<div class="section-description">用于确认 Dashboard、FRED 与新闻数据链路是否正常。</div>',
-    unsafe_allow_html=True,
-)
+st.markdown('<div class="section-title">📰 7×24 Market News</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-description">实时财经文字快讯 · 每 60 秒自动刷新</div>', unsafe_allow_html=True)
 
-diag_col1, diag_col2, diag_col3 = st.columns(3)
+@st.fragment(run_every="60s")
+def render_news_panel():
+    if st.button("🔄 立即刷新7×24", key="refresh_7x24"):
+        get_sina_news.clear()
+        get_wsj_news.clear()
 
-with diag_col1:
-    st.success("Dashboard：页面已执行到 Diagnostics")
+    sina_news, sina_error = get_sina_news(limit=20)
+    wsj_news, wsj_error = get_wsj_news(limit=10)
 
-with diag_col2:
-    try:
-        diag_fred = get_dgs10()
-        if diag_fred is not None and not diag_fred.empty:
-            st.success(f"FRED：正常 · DGS10 {len(diag_fred)} 条")
+    col_sina, col_wsj = st.columns(2, gap="large")
+
+    with col_sina:
+        st.markdown("#### 新浪财经 7×24")
+        if sina_news:
+            st.markdown(f'<div class="news-status">最新 {len(sina_news)} 条 · 自动刷新中</div>', unsafe_allow_html=True)
+            st.markdown('<div class="news-box">', unsafe_allow_html=True)
+            for item in sina_news:
+                news_time = html.escape(str(item.get("time", "")))
+                news_title = html.escape(str(item.get("title", "")))
+                news_url = html.escape(str(item.get("url", "")))
+                st.markdown(
+                    f'<div class="news-item"><span class="news-time">{news_time}</span>'
+                    f'<a href="{news_url}" target="_blank">{news_title}</a></div>',
+                    unsafe_allow_html=True,
+                )
+            st.markdown("</div>", unsafe_allow_html=True)
         else:
-            st.warning("FRED：无数据")
-    except Exception as exc:
-        st.error(f"FRED：失败 · {exc}")
+            st.error("新浪7×24获取失败。")
+            if sina_error:
+                st.caption(f"错误：{sina_error}")
+        add_source("新浪财经 7×24", "https://finance.sina.com.cn/7x24/")
 
-with diag_col3:
-    try:
-        diag_sina, diag_sina_error = get_sina_news(limit=1)
-        if diag_sina:
-            st.success("7×24：数据链路可用")
+    with col_wsj:
+        st.markdown("#### WSJ")
+        if wsj_news:
+            st.markdown(f'<div class="news-status">公开可见 Headlines · {len(wsj_news)} 条 · 自动刷新中</div>', unsafe_allow_html=True)
+            st.markdown('<div class="news-box">', unsafe_allow_html=True)
+            for item in wsj_news:
+                news_title = html.escape(str(item.get("title", "")))
+                news_url = html.escape(str(item.get("url", "")))
+                st.markdown(
+                    f'<div class="news-item"><a href="{news_url}" target="_blank">{news_title}</a>'
+                    '<div class="news-source">The Wall Street Journal</div></div>',
+                    unsafe_allow_html=True,
+                )
+            st.markdown("</div>", unsafe_allow_html=True)
         else:
-            st.warning(f"7×24：无数据 · {diag_sina_error or '未知原因'}")
-    except Exception as exc:
-        st.error(f"7×24：失败 · {exc}")
+            st.warning("WSJ公开新闻暂时无法获取。")
+            if wsj_error:
+                st.caption(f"错误：{wsj_error}")
+        add_source("WSJ Finance", "https://www.wsj.com/finance")
 
-st.caption(
-    f"Diagnostics timestamp: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}"
-)
+
+render_news_panel()
