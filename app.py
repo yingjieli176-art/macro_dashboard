@@ -59,6 +59,7 @@ st.markdown(
     .market-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 7px 10px 6px; margin-bottom: 0.7rem; background: #ffffff; }
     .market-title { font-size: 0.78rem; font-weight: 650; color: #374151; margin-bottom: 5px; }
     .market-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+    .market-row.after-hours-row { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 40%; }
     .market-row + .market-row { margin-top: 5px; padding-top: 5px; border-top: 1px solid #f3f4f6; }
     .market-item { min-width: 0; padding-right: 5px; border-right: 1px solid #f0f0f0; }
     .market-item:last-child { border-right: none; }
@@ -66,8 +67,9 @@ st.markdown(
     .market-price { color: #111827; font-size: 0.86rem; font-weight: 650; margin-top: 1px; white-space: nowrap; }
     .market-change { font-size: 0.68rem; white-space: nowrap; }
     .market-meta { color: #9ca3af; font-size: 0.61rem; margin-top: 2px; white-space: nowrap; }
-    .market-note { color: #9ca3af; font-size: 0.62rem; margin-top: 5px; }
-    @media (max-width: 900px) { .market-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .market-note { color: #9ca3af; font-size: 0.62rem; margin-top: 5px; line-height: 1.55; }
+    .market-note-line + .market-note-line { margin-top: 2px; }
+    @media (max-width: 900px) { .market-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } .market-row.after-hours-row { max-width: 100%; } }
     </style>
     """,
     unsafe_allow_html=True,
@@ -83,8 +85,8 @@ def _get_after_hours_quote(symbol):
     response = requests.get(
         "https://query1.finance.yahoo.com/v8/finance/chart/" + symbol,
         params={
-            "range": "1d",
-            "interval": "1m",
+            "range": "5d",
+            "interval": "5m",
             "includePrePost": "true",
         },
         headers={"User-Agent": "Mozilla/5.0"},
@@ -169,18 +171,19 @@ def render_market_snapshot():
         except Exception:
             after_hours.append(render_item(name, {}, label))
 
-    after_hours.extend([render_item("", {}, "") for _ in range(3)])
-
     st.markdown(
         '<div class="market-box">'
         '<div class="market-title">🌐 全球核心市场 · 实时/近实时</div>'
         '<div class="market-row">'
         + "".join(regular_items)
         + '</div>'
-        '<div class="market-row">'
-        + "".join(after_hours[:5])
+        '<div class="market-row after-hours-row">'
+        + "".join(after_hours)
         + '</div>'
-        '<div class="market-note">每60秒刷新 · 第一排为核心指数盘中/最新收盘价；第二排为美股证券盘后价格（QQQ / SPY），不使用 NQ / ES 期货。指数本身通常没有可交易的盘后成交价。</div>'
+        '<div class="market-note">'
+        '<div class="market-note-line">每60秒刷新 · 第一排为核心指数盘中/最新收盘价。</div>'
+        '<div class="market-note-line">第二排仅显示美股盘后价格：纳指参考 QQQ、标普参考 SPY；不使用 NQ / ES 期货。</div>'
+        '</div>'
         '</div>',
         unsafe_allow_html=True,
     )
