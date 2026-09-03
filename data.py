@@ -43,7 +43,7 @@ def get_fred_series(series_id):
 
 
 # =========================
-# 10Y Yield
+# 10Y Yield / TIPS
 # =========================
 
 @st.cache_data(ttl=3600)
@@ -77,4 +77,19 @@ def get_effr():
 
 @st.cache_data(ttl=3600)
 def get_rrp():
+    # ON RRP amount, USD billions
     return get_fred_series("RRPONTSYD")
+
+
+# =========================
+# Treasury Yield Curve
+# =========================
+
+@st.cache_data(ttl=3600)
+def get_dgs2():
+    return get_fred_series("DGS2")
+
+
+@st.cache_data(ttl=3600)
+def get_dgs5():
+    return get_fred_series("DGS5")
