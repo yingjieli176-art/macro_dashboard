@@ -6,6 +6,10 @@ import requests
 FRED_API_URL = "https://api.stlouisfed.org/fred/series/observations"
 
 
+# =========================================================
+# Generic FRED API
+# =========================================================
+
 def get_fred_series(series_id):
     api_key = st.secrets["FRED_API_KEY"]
 
@@ -42,23 +46,37 @@ def get_fred_series(series_id):
     ]
 
 
-# =========================
-# 10Y Yield / TIPS
-# =========================
+# =========================================================
+# Treasury Yield
+# =========================================================
+
+@st.cache_data(ttl=3600)
+def get_dgs2():
+    return get_fred_series("DGS2")
+
+
+@st.cache_data(ttl=3600)
+def get_dgs5():
+    return get_fred_series("DGS5")
+
 
 @st.cache_data(ttl=3600)
 def get_dgs10():
     return get_fred_series("DGS10")
 
 
+# =========================================================
+# 10Y Real Yield / Inflation
+# =========================================================
+
 @st.cache_data(ttl=3600)
 def get_dfii10():
     return get_fred_series("DFII10")
 
 
-# =========================
-# Funding / Liquidity
-# =========================
+# =========================================================
+# Funding / Policy Rate Corridor
+# =========================================================
 
 @st.cache_data(ttl=3600)
 def get_sofr():
@@ -76,20 +94,15 @@ def get_effr():
 
 
 @st.cache_data(ttl=3600)
-def get_rrp():
-    # ON RRP amount, USD billions
-    return get_fred_series("RRPONTSYD")
+def get_rrp_rate():
+    """
+    ON RRP Award Rate
+    FRED series: RRPONTSYAWARD
 
+    注意：
+    RRPONTSYAWARD = ON RRP 利率
+    RRPONTSYD     = ON RRP 交易金額
 
-# =========================
-# Treasury Yield Curve
-# =========================
-
-@st.cache_data(ttl=3600)
-def get_dgs2():
-    return get_fred_series("DGS2")
-
-
-@st.cache_data(ttl=3600)
-def get_dgs5():
-    return get_fred_series("DGS5")
+    本 Dashboard 要的是利率走廊，因此使用 RRPONTSYAWARD。
+    """
+    return get_fred_series("RRPONTSYAWARD")
