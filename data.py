@@ -1,8 +1,10 @@
+import re
+import html
+import time
+
 import streamlit as st
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
 
 
 FRED_API_URL = "https://api.stlouisfed.org/fred/series/observations"
@@ -68,7 +70,7 @@ def get_dgs10():
 
 
 # =========================================================
-# 10Y Real Yield / Inflation
+# 10Y Real Yield
 # =========================================================
 
 @st.cache_data(ttl=3600)
@@ -77,7 +79,7 @@ def get_dfii10():
 
 
 # =========================================================
-# Funding / Policy Rate Corridor
+# Policy Rate Corridor
 # =========================================================
 
 @st.cache_data(ttl=3600)
@@ -101,38 +103,174 @@ def get_rrp_rate():
 
 
 # =========================================================
-# News Helpers
+# Sina 7x24
 # =========================================================
 
-NEWS_HEADERS = {
+SINA_7X24_URL = (
+    "https://zhibo.sina.com.cn/api/zhibo/feed"
+)
+
+
+SINA_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "AppleWebKit/537.36 "
+        "(KHTML, like Gecko) "
         "Chrome/140.0 Safari/537.36"
     ),
-    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8"
+    "Referer": "https://finance.sina.com.cn/7x24/",
+    "Accept": "application/json, text/plain, */*",
 }
 
 
-# =========================================================
-# Sina Finance 7x24
-# =========================================================
+def clean_sina_text(text):
 
-@st.cache_data(ttl=300)
-def get_sina_news(limit=20):
+    if not text:
+        return ""
 
-    url = "https://finance.sina.com.cn/7x24/"
+    # Remove HTML
+    text = re.sub(
+        r"<[^>]+>",
+        "",
+        text
+    )
+
+    text = html.unescape(text)
+
+    # Remove Sina's special brackets
+    text = text.replace("〖", "")
+    text = text.replace("〗", "")
+
+    # Normalize whitespace
+    text = re.sub(
+        r"\s+",
+        " ",
+        text
+    )
+
+    return text.strip()
+
+
+@st.cache_data(ttl=60)
+def get_sina_news(limit=30):
+
+    timestamp = str(
+        int(time.time() * 1000)
+    )
+
+    params = {
+        "page": 1,
+        "page_size": limit,
+        "zhibo_id": 152,
+        "tag_id": 0,
+        "dire": "f",
+        "dpc": 1,
+        "pagesize": limit,
+        "_": timestamp,
+    }
 
     try:
+
         response = requests.get(
-            url,
-            headers=NEWS_HEADERS,
+            SINA_7X24_URL,
+            params=params,
+            headers=SINA_HEADERS,
             timeout=15
         )
 
         response.raise_for_status()
 
-        response.encoding = response.apparent_encoding
+        # -------------------------------------------------
+        # Sina sometimes returns JSONP
+        # -------------------------------------------------
+
+        text = response.text.strip()
+
+        if text.startswith("try{"):
+
+            start = text.find("(")
+            end = text.rfind(");")
+
+            if start != -1 and end != -1:
+                text = text[
+                    start + 1:end
+                ]
+
+        data = response.json() \
+            if text.startswith("{") \
+            else __import__("json").loads(text)
+
+        items = (
+            data
+            .get("result", {})
+            .get("data", {})
+            .get("feed", {})
+            .get("list", [])
+        )
+
+        news = []
+
+        for item in items:
+
+            content = clean_sina_text(
+                item.get("rich_text", "")
+            )
+
+            create_time = (
+                item.get("create_time")
+                or item.get("update_time")
+                or ""
+            )
+
+            if not content:
+                continue
+
+            news.append(
+                {
+                    "time": create_time,
+                    "title": content,
+                    "url": (
+                        "https://finance.sina.com.cn/7x24/"
+                    )
+                }
+            )
+
+        return news[:limit]
+
+    except Exception:
+        return []
+
+
+# =========================================================
+# WSJ
+# =========================================================
+
+@st.cache_data(ttl=600)
+def get_wsj_news(limit=10):
+
+    url = "https://www.wsj.com/finance"
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 "
+            "(KHTML, like Gecko) "
+            "Chrome/140.0 Safari/537.36"
+        ),
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+
+    try:
+
+        response = requests.get(
+            url,
+            headers=headers,
+            timeout=15
+        )
+
+        response.raise_for_status()
+
+        from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(
             response.text,
@@ -140,150 +278,65 @@ def get_sina_news(limit=20):
         )
 
         news = []
-
-        # -------------------------------------------------
-        # Method 1:
-        # Search page text for 7x24 live news items
-        # -------------------------------------------------
-
-        text_lines = [
-            line.strip()
-            for line in soup.get_text("\n").splitlines()
-            if line.strip()
-        ]
-
-        for line in text_lines:
-
-            # Typical Sina time format:
-            # 08:02:16
-            if len(line) >= 9 and line[2] == ":" and line[5] == ":":
-                time_text = line[:8]
-                title = line[9:].strip()
-
-                if len(title) >= 4:
-
-                    news.append({
-                        "time": time_text,
-                        "title": title,
-                        "url": url
-                    })
-
-        # -------------------------------------------------
-        # Remove duplicates
-        # -------------------------------------------------
-
-        unique_news = []
         seen = set()
 
-        for item in news:
+        for link in soup.find_all("a"):
 
-            key = (
-                item["time"],
-                item["title"]
+            title = link.get_text(
+                " ",
+                strip=True
             )
 
-            if key not in seen:
+            href = link.get("href")
 
-                seen.add(key)
-                unique_news.append(item)
+            if not title or not href:
+                continue
 
-        return unique_news[:limit]
-
-    except Exception:
-        return []
-
-
-# =========================================================
-# WSJ Public Headlines
-# =========================================================
-
-@st.cache_data(ttl=600)
-def get_wsj_news(limit=12):
-
-    urls = [
-        "https://www.wsj.com/finance",
-        "https://www.wsj.com/livecoverage"
-    ]
-
-    news = []
-    seen = set()
-
-    for page_url in urls:
-
-        try:
-
-            response = requests.get(
-                page_url,
-                headers=NEWS_HEADERS,
-                timeout=15
-            )
-
-            response.raise_for_status()
-
-            soup = BeautifulSoup(
-                response.text,
-                "html.parser"
-            )
-
-            # -------------------------------------------------
-            # Collect links from page
-            # -------------------------------------------------
-
-            for link in soup.find_all("a"):
-
-                href = link.get("href")
-
-                if not href:
-                    continue
-
-                title = link.get_text(
-                    " ",
-                    strip=True
+            if href.startswith("/"):
+                href = (
+                    "https://www.wsj.com"
+                    + href
                 )
 
-                if not title:
-                    continue
+            if "wsj.com" not in href:
+                continue
 
-                # Absolute URL
-                href = urljoin(
-                    "https://www.wsj.com",
-                    href
-                )
+            if len(title) < 20:
+                continue
 
-                # Only WSJ article / live coverage links
-                if "wsj.com" not in href:
-                    continue
+            if title in seen:
+                continue
 
-                if not (
-                    "/finance/" in href
-                    or "/livecoverage/" in href
-                    or "/markets/" in href
-                ):
-                    continue
+            # Exclude navigation / quote UI
+            bad_words = [
+                "Sign In",
+                "Subscribe",
+                "Search",
+                "Markets",
+                "Quotes Lookup",
+                "S&P 500 Stocks",
+            ]
 
-                # Filter out very short / navigation text
-                if len(title) < 15:
-                    continue
+            if any(
+                word.lower() in title.lower()
+                for word in bad_words
+            ):
+                continue
 
-                # Avoid duplicate titles
-                if title in seen:
-                    continue
+            seen.add(title)
 
-                seen.add(title)
-
-                news.append({
+            news.append(
+                {
                     "time": "",
                     "title": title,
                     "url": href
-                })
+                }
+            )
 
-                if len(news) >= limit:
-                    break
+            if len(news) >= limit:
+                break
 
-        except Exception:
-            continue
+        return news[:limit]
 
-        if len(news) >= limit:
-            break
-
-    return news[:limit]
+    except Exception:
+        return []
