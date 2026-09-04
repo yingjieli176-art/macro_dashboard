@@ -56,7 +56,8 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .search-price { color: #111827; font-size: 1.02rem; font-weight: 650; margin-top: 2px; }
 .search-after { color: #6b7280; font-size: 0.78rem; margin-top: 3px; }
 .search-hint { color: #9ca3af; font-size: 0.76rem; margin-top: 2px; }
-.module-delete button { min-width: 18px !important; width: 18px !important; height: 18px !important; padding: 0 !important; margin: 1px 0 0 !important; font-size: 11px !important; line-height: 18px !important; border: 0 !important; }
+.module-delete button { min-width: 16px !important; width: 16px !important; height: 16px !important; padding: 0 !important; margin: 0 !important; font-size: 10px !important; line-height: 16px !important; border: 0 !important; }
+.module-refresh button { min-height: 30px !important; height: 30px !important; padding: 0 10px !important; font-size: 0.78rem !important; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 </style>
 """, unsafe_allow_html=True)
@@ -156,7 +157,7 @@ def _market_item_html(name, price, change_pct, meta=""):
     price_text = "--" if price is None else f"{price:,.2f}"; change_text = "--" if change_pct is None else f"{change_pct:+.2f}%"
     return f'<div class="market-item"><div class="market-name">{html.escape(name)}</div><div class="market-price">{html.escape(price_text)}</div><div class="market-change">{html.escape(change_text)}</div><div class="market-meta">{html.escape(meta)}</div></div>'
 
-@st.cache_data(ttl=5, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def _get_cached_quote(symbol):
     if str(symbol).upper().endswith((".SS", ".SZ")):
         row = _get_eastmoney_quote_safe(symbol)
@@ -169,7 +170,11 @@ def _quote_meta(row, market=""):
     elif source: parts.append(source)
     return " · ".join(parts)
 
-@st.fragment(run_every="5s")
+def _refresh_quote_cache():
+    _get_cached_quote.clear()
+    _get_yahoo_overnight_safe.clear()
+
+@st.fragment(run_every="300s")
 def render_market_groups():
     quotes = {"nasdaq": _get_cached_quote("^IXIC"), "sp500": _get_cached_quote("^GSPC"), "dow": _get_cached_quote("^DJI"), "hsi": _get_cached_quote("^HSI"), "hstech": _get_cached_quote("HSTECH.HK"), "sh": _get_cached_quote("000001.SS"), "sz": _get_cached_quote("399001.SZ"), "csi300": _get_cached_quote("000300.SS")}
     groups = [("🇺🇸 美股", [_market_item_html("纳斯达克", quotes["nasdaq"].get("price"), quotes["nasdaq"].get("change_pct"), _quote_meta(quotes["nasdaq"], "US")), _market_item_html("标普500", quotes["sp500"].get("price"), quotes["sp500"].get("change_pct"), _quote_meta(quotes["sp500"], "US")), _market_item_html("道琼斯", quotes["dow"].get("price"), quotes["dow"].get("change_pct"), _quote_meta(quotes["dow"], "US"))], "three"), ("🇭🇰 港股", [_market_item_html("恒生指数", quotes["hsi"].get("price"), quotes["hsi"].get("change_pct"), _quote_meta(quotes["hsi"], "HK")), _market_item_html("恒生科技", quotes["hstech"].get("price"), quotes["hstech"].get("change_pct"), _quote_meta(quotes["hstech"], "HK"))], "two"), ("🇨🇳 A股", [_market_item_html("上证指数", quotes["sh"].get("price"), quotes["sh"].get("change_pct"), _quote_meta(quotes["sh"], "CN")), _market_item_html("深证成指", quotes["sz"].get("price"), quotes["sz"].get("change_pct"), _quote_meta(quotes["sz"], "CN")), _market_item_html("沪深300", quotes["csi300"].get("price"), quotes["csi300"].get("change_pct"), _quote_meta(quotes["csi300"], "CN"))], "three")]
@@ -247,8 +252,13 @@ def _confirm_search(key, market):
     else: selected = {"symbol": _direct_symbol(market, query), "name": query, "exchange": "", "market": market}
     _add_confirmed(key, selected)
 
-@st.fragment(run_every="5s")
+@st.fragment(run_every="300s")
 def render_watchlists():
+    refresh_col, _, _ = st.columns([1.2, 3.8, 1])
+    with refresh_col:
+        st.markdown('<div class="module-refresh">', unsafe_allow_html=True)
+        st.button("↻ 刷新股价", key="refresh_watchlist_quotes", use_container_width=True, on_click=_refresh_quote_cache, help="立即重新获取已添加模块的最新报价")
+        st.markdown('</div>', unsafe_allow_html=True)
     search_cols = st.columns(3, gap="small")
     search_config = [(search_cols[0], "US", "🇺🇸 美股", "NVDA / Apple", "market_search_us"), (search_cols[1], "HK", "🇭🇰 港股", "0700 / 腾讯", "market_search_hk"), (search_cols[2], "CN", "🇨🇳 A股", "600519 / 贵州茅台", "market_search_cn")]
     for col, market, title, placeholder, key in search_config:
