@@ -17,57 +17,36 @@ jobs:
           from pathlib import Path
           p = Path('app.py')
           s = p.read_text(encoding='utf-8')
-
-          # Refresh button gets its own fragment, so clicking it does not rerun
-          # the existing three watchlist/module layout or the top market groups.
           old = '''@st.fragment(run_every="300s")\ndef render_watchlists():\n    refresh_col, _, _ = st.columns([1.2, 3.8, 1])\n    with refresh_col:\n        if st.button("↻ 刷新股价", key="refresh_watchlist_quotes", use_container_width=True, help="立即重新获取已添加模块的最新报价"):\n            st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1\n    search_cols = st.columns(3, gap="small")'''
           new = '''@st.fragment\ndef render_watchlist_refresh_control():\n    refresh_col, _, _ = st.columns([1.2, 3.8, 1])\n    with refresh_col:\n        if st.button("↻ 刷新股价", key="refresh_watchlist_quotes", use_container_width=True, help="立即重新获取已添加模块的最新报价"):\n            st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1\n\nrender_watchlist_refresh_control()\n\ndef render_watchlists():\n    search_cols = st.columns(3, gap="small")'''
-          if old not in s:
-              raise SystemExit('ASSERT FAILED: watchlist refresh block not found')
+          if old not in s: raise SystemExit('watchlist refresh block not found')
           s = s.replace(old, new, 1)
-
-          # Only the quote HTML is a fragment. Its 1-second heartbeat means a
-          # manual refresh key change is picked up immediately without rerunning
-          # the surrounding module/search/delete UI.
           marker = '''def _add_confirmed(key, item):'''
           fragment = '''@st.fragment(run_every="1s")\ndef _render_watchlist_quote_fragment(item):\n    st.markdown(_render_quote_block(item), unsafe_allow_html=True)\n\n'''
-          if marker not in s:
-              raise SystemExit('ASSERT FAILED: quote insertion point not found')
+          if marker not in s: raise SystemExit('quote insertion point not found')
           s = s.replace(marker, fragment + marker, 1)
-
           old_quote = '''with quote_col: st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)'''
           new_quote = '''with quote_col: _render_watchlist_quote_fragment({**confirmed, "market": market})'''
-          if old_quote not in s:
-              raise SystemExit('ASSERT FAILED: quote render call not found')
+          if old_quote not in s: raise SystemExit('quote render call not found')
           s = s.replace(old_quote, new_quote, 1)
-
-          # This button is already inside a fragment. st.rerun() from its callback
-          # is a no-op and causes the warning shown in the UI; clearing the cache is
-          # enough because the fragment reruns automatically after the button event.
           old_news = 'if st.button("🔄 立即刷新", key="refresh_7x24", use_container_width=True): get_sina_news.clear(); st.rerun()'
           new_news = 'if st.button("🔄 立即刷新", key="refresh_7x24", use_container_width=True): get_sina_news.clear()'
-          if old_news not in s:
-              raise SystemExit('ASSERT FAILED: news refresh callback not found')
+          if old_news not in s: raise SystemExit('news refresh callback not found')
           s = s.replace(old_news, new_news, 1)
-
-          # Safety checks: keep the three existing market columns and quote source logic.
-          for required in [
+          for text in [
               'def render_watchlist_refresh_control():',
               '@st.fragment(run_every="1s")\ndef _render_watchlist_quote_fragment(item):',
               'with quote_col: _render_watchlist_quote_fragment({**confirmed, "market": market})',
-              'get_sina_news.clear()}',
+              'if st.button("🔄 立即刷新", key="refresh_7x24", use_container_width=True): get_sina_news.clear()',
               '_get_cached_quote("^IXIC", refresh_key)',
           ]:
-              if required not in s:
-                  raise SystemExit(f'ASSERT FAILED: missing expected text: {required}')
-
+              if text not in s: raise SystemExit(f'missing expected text: {text}')
           p.write_text(s, encoding='utf-8')
           PY
           python -m py_compile app.py
           git diff --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app.py .github/workflows/fix-watchlist-refresh-final.yml
-          git rm .github/workflows/fix-watchlist-refresh-final.yml
+          git add app.py
           git commit -m 'Isolate stock price refresh from dashboard modules'
           git push
