@@ -134,6 +134,8 @@ def _get_yahoo_quote_safe(symbol):
 
 def _eastmoney_secid(symbol):
     raw = str(symbol or "").upper().strip()
+    if raw == "^HSI": return "100.HSI"
+    if raw in ("HSTECH.HK", "^HSTECH"): return "100.HSTECH"
     if raw.endswith(".HK"): return f"116.{raw[:-3].zfill(5)}"
     if raw.endswith(".SS"): return f"1.{raw[:-3]}"
     if raw.endswith(".SZ"): return f"0.{raw[:-3]}"
@@ -147,7 +149,8 @@ def _get_eastmoney_quote_safe(symbol):
         if not data: return _empty_quote()
         price_raw, prev_raw, pct_raw = data.get("f43"), data.get("f60"), data.get("f170")
         if price_raw in (None, "-", ""): return _empty_quote()
-        price = float(price_raw) / 100; previous = None if prev_raw in (None, "-", "") else float(prev_raw) / 100
+        divisor = 1 if str(symbol).upper() in ("^HSI", "HSTECH.HK", "^HSTECH", "000001.SS", "399001.SZ", "000300.SS") else 100
+        price = float(price_raw) / divisor; previous = None if prev_raw in (None, "-", "") else float(prev_raw) / divisor
         change_pct = None if pct_raw in (None, "-", "") else float(pct_raw)
         if change_pct is None and previous not in (None, 0): change_pct = (price - previous) / previous * 100
         return {"price": price, "change_pct": change_pct, "market_state": "REGULAR", "currency": ("HKD" if str(symbol).upper().endswith(".HK") else "CNY"), "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": data.get("f86"), "post_market_time": None, "pre_market_time": None, "quote_source": "Eastmoney", "delayed_by": 0, "data_source": "东方财富"}
@@ -160,7 +163,7 @@ def _market_item_html(name, price, change_pct, meta=""):
 
 @st.cache_data(ttl=300, show_spinner=False)
 def _get_cached_quote(symbol, refresh_key=0):
-    if str(symbol).upper().endswith((".SS", ".SZ", ".HK")):
+    if str(symbol).upper().endswith((".SS", ".SZ", ".HK")) or str(symbol).upper() in ("^HSI", "^HSTECH"):
         row = _get_eastmoney_quote_safe(symbol)
         if row.get("price") is not None: return row
     return _get_yahoo_quote_safe(symbol)
@@ -180,7 +183,6 @@ def _refresh_quote_cache():
     st.session_state["_quote_refresh_nonce"] = st.session_state.get("_quote_refresh_nonce", 0) + 1
     _get_cached_quote.clear()
     _get_yahoo_overnight_safe.clear()
-    st.rerun()
 
 @st.fragment(run_every="300s")
 def render_market_groups():
