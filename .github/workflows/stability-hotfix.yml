@@ -1,0 +1,49 @@
+name: Stability hotfix
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '.github/workflows/stability-hotfix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Remove fragment auto-rerun execution
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app.py')
+          s = p.read_text(encoding='utf-8')
+          s2 = s.replace('@st.fragment(run_every="300s")\n', '')
+          s2 = s2.replace('@st.fragment(run_every="3600s")\n', '')
+          s2 = s2.replace('@st.fragment(run_every="60s")\n', '')
+          if s2 != s:
+              p.write_text(s2, encoding='utf-8')
+              print('Removed all known fragment auto-refresh decorators from app.py')
+          else:
+              print('No fragment decorators changed')
+          PY
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+            exit 0
+          fi
+          git commit -m 'Fix Streamlit refresh freeze by disabling fragments'
+          git push origin main
