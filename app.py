@@ -169,11 +169,16 @@ def render_market_groups():
         refresh_key = _quote_refresh_key()
         snapshot = {"nasdaq": _get_cached_quote("^IXIC", refresh_key), "sp500": _get_cached_quote("^GSPC", refresh_key), "dow": _get_cached_quote("^DJI", refresh_key), "hsi": _get_cached_quote("^HSI", refresh_key), "hstech": _get_cached_quote("HSTECH.HK", refresh_key), "sh": _get_cached_quote("000001.SS", refresh_key), "sz": _get_cached_quote("399001.SZ", refresh_key), "csi300": _get_cached_quote("000300.SS", refresh_key)}
         st.session_state["_market_quotes_snapshot"] = snapshot; st.session_state["_market_quotes_snapshot_time"] = now
-    quotes = snapshot
-    groups = [("🇺🇸 美股", [_market_item_html("纳斯达克", quotes["nasdaq"].get("price"), quotes["nasdaq"].get("change_pct"), _quote_meta(quotes["nasdaq"], "US")), _market_item_html("标普500", quotes["sp500"].get("price"), quotes["sp500"].get("change_pct"), _quote_meta(quotes["sp500"], "US")), _market_item_html("道琼斯", quotes["dow"].get("price"), quotes["dow"].get("change_pct"), _quote_meta(quotes["dow"], "US"))], "three"), ("🇭🇰 港股", [_market_item_html("恒生指数", quotes["hsi"].get("price"), quotes["hsi"].get("change_pct"), _quote_meta(quotes["hsi"], "HK")), _market_item_html("恒生科技", quotes["hstech"].get("price"), quotes["hstech"].get("change_pct"), _quote_meta(quotes["hstech"], "HK"))], "two"), ("🇨🇳 A股", [_market_item_html("上证指数", quotes["sh"].get("price"), quotes["sh"].get("change_pct"), _quote_meta(quotes["sh"], "CN")), _market_item_html("深证成指", quotes["sz"].get("price"), quotes["sz"].get("change_pct"), _quote_meta(quotes["sz"], "CN")), _market_item_html("沪深300", quotes["csi300"].get("price"), quotes["csi300"].get("change_pct"), _quote_meta(quotes["csi300"], "CN"))], "three")]
-    cols = st.columns(3, gap="small")
-    for col, (title, items, grid_class) in zip(cols, groups):
-        with col: st.markdown(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>', unsafe_allow_html=True)
+    q = snapshot
+    groups = [
+        ("🇺🇸 美股", [_market_item_html("纳斯达克", q["nasdaq"].get("price"), q["nasdaq"].get("change_pct"), _quote_meta(q["nasdaq"])), _market_item_html("标普500", q["sp500"].get("price"), q["sp500"].get("change_pct"), _quote_meta(q["sp500"])), _market_item_html("道琼斯", q["dow"].get("price"), q["dow"].get("change_pct"), _quote_meta(q["dow"]))], "three"),
+        ("🇭🇰 港股", [_market_item_html("恒生指数", q["hsi"].get("price"), q["hsi"].get("change_pct"), _quote_meta(q["hsi"])), _market_item_html("恒生科技", q["hstech"].get("price"), q["hstech"].get("change_pct"), _quote_meta(q["hstech"]))], "two"),
+        ("🇨🇳 A股", [_market_item_html("上证指数", q["sh"].get("price"), q["sh"].get("change_pct"), _quote_meta(q["sh"])), _market_item_html("深证成指", q["sz"].get("price"), q["sz"].get("change_pct"), _quote_meta(q["sz"])), _market_item_html("沪深300", q["csi300"].get("price"), q["csi300"].get("change_pct"), _quote_meta(q["csi300"]))], "three"),
+    ]
+    cards = []
+    for title, items, grid_class in groups:
+        cards.append(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>')
+    st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
 render_market_groups()
 
 @st.cache_data(ttl=20, show_spinner=False)
@@ -263,7 +268,6 @@ def render_watchlist_refresh_control():
         if st.button("↻ 刷新股价", key="refresh_watchlist_quotes", use_container_width=True, help="立即重新获取已添加模块的最新报价"):
             _get_watchlist_quote.clear()
             st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
-            st.rerun()
 
 render_watchlist_refresh_control()
 
