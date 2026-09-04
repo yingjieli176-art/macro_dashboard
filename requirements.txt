@@ -4,3 +4,4 @@ plotly
 requests
 
 # force Streamlit Community Cloud dependency redeploy
+# redeploy after restoring stable app baseline
