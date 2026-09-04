@@ -44,14 +44,14 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .market-group-title { color: #374151; font-size: 0.88rem; font-weight: 650; margin-bottom: 5px; }
 .market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; min-height: 52px; align-items: start; }
 .market-group-row.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.market-item { min-width: 0; min-height: 52px; padding-right: 4px; border-right: 1px solid #f0f0f0; box-sizing: border-box; }
+.market-item { min-width: 0; height: 52px; min-height: 52px; max-height: 52px; padding-right: 4px; border-right: 1px solid #f0f0f0; box-sizing: border-box; overflow: hidden; }
 .market-item:last-child { border-right: none; }
 .market-name { color: #6b7280; font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .market-price { color: #111827; font-size: 0.98rem; font-weight: 650; margin-top: 1px; white-space: nowrap; }
 .market-change { font-size: 0.76rem; white-space: nowrap; }
 .market-meta { color: #9ca3af; font-size: 0.68rem; margin-top: 1px; white-space: nowrap; }
 .search-title { color: #374151; font-size: 1.05rem; font-weight: 650; margin: 0.55rem 0 0.3rem; }
-.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; min-height: 68px; box-sizing: border-box; }
+.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; height: 76px; min-height: 76px; max-height: 76px; box-sizing: border-box; overflow: hidden; }
 .search-result-label { color: #374151; font-size: 0.80rem; line-height: 1.3; }
 .search-result-symbol { color: #6b7280; font-size: 0.70rem; }
 .search-price { color: #111827; font-size: 0.94rem; font-weight: 650; margin-top: 1px; width: 118px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -59,6 +59,7 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .search-hint { color: #9ca3af; font-size: 0.68rem; margin-top: 1px; }
 .module-delete { display: flex; justify-content: flex-end; align-items: flex-start; margin-top: -7px; margin-right: -4px; transform: none; position: relative; z-index: 5; }
 .module-delete button { min-width: 24px !important; width: 24px !important; max-width: 24px !important; height: 24px !important; padding: 0 !important; margin: 0 !important; font-size: 14px !important; line-height: 24px !important; border: 0 !important; }
+.search-result .search-after, .search-result .search-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 </style>
 """, unsafe_allow_html=True)
@@ -263,7 +264,7 @@ def _confirm_search(key, market):
     _add_confirmed(key, selected)
 
 def render_watchlist_refresh_control():
-    refresh_col, _, _ = st.columns([1.2, 3.8, 1])
+    refresh_col, _, _ = st.columns([1.2, 3.8, 1], vertical_alignment="top")
     with refresh_col:
         if st.button("↻ 刷新股价", key="refresh_watchlist_quotes", use_container_width=True, help="立即重新获取已添加模块的最新报价"):
             _get_watchlist_quote.clear()
@@ -272,7 +273,7 @@ def render_watchlist_refresh_control():
 render_watchlist_refresh_control()
 
 def render_watchlists():
-    search_cols = st.columns(3, gap="small")
+    search_cols = st.columns(3, gap="small", vertical_alignment="top")
     search_config = [(search_cols[0], "US", "🇺🇸 美股", "NVDA / Apple", "market_search_us"), (search_cols[1], "HK", "🇭🇰 港股", "0700 / 腾讯", "market_search_hk"), (search_cols[2], "CN", "🇨🇳 A股", "600519 / 贵州茅台", "market_search_cn")]
     for col, market, title, placeholder, key in search_config:
         with col:
