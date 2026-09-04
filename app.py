@@ -56,7 +56,7 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .search-price { color: #111827; font-size: 1.02rem; font-weight: 650; margin-top: 2px; }
 .search-after { color: #6b7280; font-size: 0.78rem; margin-top: 3px; }
 .search-hint { color: #9ca3af; font-size: 0.76rem; margin-top: 2px; }
-.module-delete { display: flex; justify-content: flex-end; margin-top: -1px; margin-right: -2px; }
+.module-delete { display: flex; justify-content: flex-end; margin-top: 0; margin-right: -3px; transform: translateY(-78px); }
 .module-delete button { min-width: 14px !important; width: 14px !important; height: 14px !important; padding: 0 !important; margin: 0 !important; font-size: 9px !important; line-height: 14px !important; border: 0 !important; }
 .module-refresh button { min-height: 30px !important; height: 30px !important; padding: 0 10px !important; font-size: 0.78rem !important; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
