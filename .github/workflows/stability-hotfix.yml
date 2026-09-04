@@ -2,8 +2,7 @@ name: Stability hotfix
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: write
@@ -12,13 +11,12 @@ jobs:
   patch:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Patch app
+      - name: Stabilize Streamlit layout and network calls
         shell: bash
         run: |
           python - <<'PY'
@@ -28,63 +26,31 @@ jobs:
           p = Path('app.py')
           s = p.read_text(encoding='utf-8')
 
-          # A Streamlit button reruns the script automatically. Do not call
-          # st.rerun from the button/callback path.
-          s = s.replace('            st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1\n            st.rerun()\n', '            st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1\n')
+          # Never invoke rerun explicitly from a widget/callback path.
+          s = re.sub(r'^\s*st\.rerun\(\)\s*$', '', s, flags=re.M)
 
-          # Keep the top market cards in one Streamlit element. The old
-          # st.columns tree was the source of visible horizontal reflow.
-          pattern = r'def render_market_groups\(\):\n.*?\nrender_market_groups\(\)'
-          replacement = '''def render_market_groups():
-              now = time.time()
-              snapshot = st.session_state.get("_market_quotes_snapshot")
-              snapshot_time = st.session_state.get("_market_quotes_snapshot_time", 0)
-              if not isinstance(snapshot, dict) or now - snapshot_time >= 300:
-                  refresh_key = _quote_refresh_key()
-                  snapshot = {
-                      "nasdaq": _get_cached_quote("^IXIC", refresh_key),
-                      "sp500": _get_cached_quote("^GSPC", refresh_key),
-                      "dow": _get_cached_quote("^DJI", refresh_key),
-                      "hsi": _get_cached_quote("^HSI", refresh_key),
-                      "hstech": _get_cached_quote("HSTECH.HK", refresh_key),
-                      "sh": _get_cached_quote("000001.SS", refresh_key),
-                      "sz": _get_cached_quote("399001.SZ", refresh_key),
-                      "csi300": _get_cached_quote("000300.SS", refresh_key),
-                  }
-                  st.session_state["_market_quotes_snapshot"] = snapshot
-                  st.session_state["_market_quotes_snapshot_time"] = now
-              q = snapshot
-              groups = [
-                  ("🇺🇸 美股", [
-                      _market_item_html("纳斯达克", q["nasdaq"].get("price"), q["nasdaq"].get("change_pct"), _quote_meta(q["nasdaq"], "US")),
-                      _market_item_html("标普500", q["sp500"].get("price"), q["sp500"].get("change_pct"), _quote_meta(q["sp500"], "US")),
-                      _market_item_html("道琼斯", q["dow"].get("price"), q["dow"].get("change_pct"), _quote_meta(q["dow"], "US")),
-                  ], "three"),
-                  ("🇭🇰 港股", [
-                      _market_item_html("恒生指数", q["hsi"].get("price"), q["hsi"].get("change_pct"), _quote_meta(q["hsi"], "HK")),
-                      _market_item_html("恒生科技", q["hstech"].get("price"), q["hstech"].get("change_pct"), _quote_meta(q["hstech"], "HK")),
-                  ], "two"),
-                  ("🇨🇳 A股", [
-                      _market_item_html("上证指数", q["sh"].get("price"), q["sh"].get("change_pct"), _quote_meta(q["sh"], "CN")),
-                      _market_item_html("深证成指", q["sz"].get("price"), q["sz"].get("change_pct"), _quote_meta(q["sz"], "CN")),
-                      _market_item_html("沪深300", q["csi300"].get("price"), q["csi300"].get("change_pct"), _quote_meta(q["csi300"], "CN")),
-                  ], "three"),
-              ]
-              cards = []
-              for title, items, grid_class in groups:
-                  cards.append(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>')
-              st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
+          # Fixed-height quote cards prevent one changing quote/source line
+          # from moving the neighbouring cards on every full Streamlit rerun.
+          replacements = {
+              '.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; min-height: 68px; box-sizing: border-box; }':
+              '.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; height: 76px; min-height: 76px; max-height: 76px; box-sizing: border-box; overflow: hidden; }',
+              '.market-item { min-width: 0; min-height: 52px; padding-right: 4px; border-right: 1px solid #f0f0f0; box-sizing: border-box; }':
+              '.market-item { min-width: 0; height: 52px; min-height: 52px; max-height: 52px; padding-right: 4px; border-right: 1px solid #f0f0f0; box-sizing: border-box; overflow: hidden; }',
+              '.module-delete button { min-width: 24px !important; width: 24px !important; max-width: 24px !important; height: 24px !important; padding: 0 !important; margin: 0 !important; font-size: 14px !important; line-height: 24px !important; border: 0 !important; }':
+              '.module-delete button { min-width: 24px !important; width: 24px !important; max-width: 24px !important; height: 24px !important; padding: 0 !important; margin: 0 !important; font-size: 14px !important; line-height: 24px !important; border: 0 !important; }\n.search-result .search-after, .search-result .search-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
+          }
+          for old, new in replacements.items():
+              s = s.replace(old, new)
 
-render_market_groups()'''
-          s, n = re.subn(pattern, replacement, s, count=1, flags=re.S)
-          if n != 1:
-              raise SystemExit('render_market_groups replacement failed')
+          # All three watchlist columns start at the same vertical origin.
+          s = s.replace('search_cols = st.columns(3, gap="small")', 'search_cols = st.columns(3, gap="small", vertical_alignment="top")')
+          s = s.replace('refresh_col, _, _ = st.columns([1.2, 3.8, 1])', 'refresh_col, _, _ = st.columns([1.2, 3.8, 1], vertical_alignment="top")')
 
-          # Eliminate every remaining fragment decorator.
+          # Do not let the workflow repeatedly rewrite an already-stabilized
+          # function. Remove all fragment decorators left by old revisions.
           s = re.sub(r'^@st\.fragment\([^\n]*\)\n', '', s, flags=re.M)
           p.write_text(s, encoding='utf-8')
 
-          # Fail fast on upstream APIs.
           p = Path('data.py')
           s = p.read_text(encoding='utf-8')
           s = s.replace('timeout=20,', 'timeout=4,').replace('timeout=15,', 'timeout=3,').replace('timeout=8,', 'timeout=4,').replace('timeout=5,', 'timeout=3,')
@@ -94,7 +60,7 @@ render_market_groups()'''
       - name: Validate
         run: python -m py_compile app.py data.py
 
-      - name: Commit patched source
+      - name: Commit source changes
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
@@ -104,5 +70,5 @@ render_market_groups()'''
             echo 'No source changes required'
             exit 0
           fi
-          git commit -m 'Fix rerun warning and top module reflow'
+          git commit -m 'Stabilize watchlist card geometry'
           git push origin main
