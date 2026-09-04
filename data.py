@@ -82,7 +82,7 @@ def _fred_series(
     response = requests.get(
         FRED_API_URL,
         params=params,
-        timeout=20,
+        timeout=8,
     )
 
     response.raise_for_status()
@@ -592,7 +592,7 @@ def _request_focus_news(
         EASTMONEY_FOCUS_API,
         params=params,
         headers=NEWS_HEADERS,
-        timeout=15,
+        timeout=5,
     )
 
     response.raise_for_status()
