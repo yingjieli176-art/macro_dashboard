@@ -4,3 +4,4 @@ plotly
 requests
 
 # trigger final deployment after removing broken watchlist refresh
+# retrigger layout/callback stabilization
