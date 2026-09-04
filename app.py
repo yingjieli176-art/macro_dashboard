@@ -60,6 +60,7 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .module-delete { display: flex; justify-content: flex-end; align-items: flex-start; margin-top: -7px; margin-right: -4px; transform: none; position: relative; z-index: 5; }
 .module-delete button { min-width: 24px !important; width: 24px !important; max-width: 24px !important; height: 24px !important; padding: 0 !important; margin: 0 !important; font-size: 14px !important; line-height: 24px !important; border: 0 !important; }
 .search-result .search-after, .search-result .search-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-result .search-after, .search-result .search-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 </style>
 """, unsafe_allow_html=True)
@@ -111,7 +112,7 @@ def _get_yahoo_quote_safe(symbol):
         if regular_change_pct is None and price is not None and previous not in (None, 0): regular_change_pct = (price - previous) / previous * 100
         if post_change_pct is None and post_price is not None and previous not in (None, 0): post_change_pct = (post_price - previous) / previous * 100
         if pre_change_pct is None and pre_price is not None and previous not in (None, 0): pre_change_pct = (pre_price - previous) / previous * 100
-        row = _empty_quote(); row.update({"price": price, "change_pct": regular_change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct, "pre_price": pre_price, "pre_change_pct": pre_change_pct, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": meta.get("regularMarketTime"), "post_market_time": meta.get("postMarketTime"), "pre_market_time": meta.get("preMarketTime"), "quote_source": meta.get("quoteSourceName", ""), "delayed_by": meta.get("exchangeDataDelayedBy"), "data_source": "Yahoo Finance"}); return row
+        row = _empty_quote(); row.update({"price": price, "change_pct": regular_change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct, "pre_price": pre_price, "pre_change_pct": pre_change_pct, "overnight_price": post_price, "overnight_change_pct": post_change_pct, "regular_market_time": meta.get("regularMarketTime"), "post_market_time": meta.get("postMarketTime"), "pre_market_time": meta.get("preMarketTime"), "quote_source": meta.get("quoteSourceName", ""), "delayed_by": meta.get("exchangeDataDelayedBy"), "data_source": "Yahoo Finance"}); return row
     except Exception: return _empty_quote()
 
 def _eastmoney_secid(symbol):
