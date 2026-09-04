@@ -50,36 +50,31 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .market-change { font-size: 0.76rem; white-space: nowrap; }
 .market-meta { color: #9ca3af; font-size: 0.68rem; margin-top: 1px; white-space: nowrap; }
 .search-title { color: #374151; font-size: 1.05rem; font-weight: 650; margin: 0.55rem 0 0.3rem; }
-.search-result { padding: 7px 5px; margin-top: 4px; border: 1px solid #e5e7eb; border-radius: 6px; }
+.search-result { padding: 7px 5px; margin-top: 4px; border-radius: 6px; }
 .search-result-label { color: #374151; font-size: 0.86rem; line-height: 1.4; }
 .search-result-symbol { color: #6b7280; font-size: 0.76rem; }
 .search-price { color: #111827; font-size: 1.02rem; font-weight: 650; margin-top: 2px; }
 .search-after { color: #6b7280; font-size: 0.78rem; margin-top: 3px; }
 .search-hint { color: #9ca3af; font-size: 0.76rem; margin-top: 2px; }
+.module-delete button { min-width: 18px !important; width: 18px !important; height: 18px !important; padding: 0 !important; margin: 1px 0 0 !important; font-size: 11px !important; line-height: 18px !important; border: 0 !important; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown('<div class="dashboard-title">Macro Dashboard</div>', unsafe_allow_html=True)
 
-
 def _load_watchlists():
-    if st.session_state.get("_watchlist_loaded"):
-        return
+    if st.session_state.get("_watchlist_loaded"): return
     raw = st.query_params.get(WATCHLIST_PARAM, "")
-    try:
-        payload = json.loads(raw) if raw else {}
-    except (TypeError, ValueError, json.JSONDecodeError):
-        payload = {}
-    if not isinstance(payload, dict):
-        payload = {}
+    try: payload = json.loads(raw) if raw else {}
+    except (TypeError, ValueError, json.JSONDecodeError): payload = {}
+    if not isinstance(payload, dict): payload = {}
     for key in ("market_search_us", "market_search_hk", "market_search_cn"):
         items = payload.get(key, [])
         if isinstance(items, dict): items = [items]
         if not isinstance(items, list): items = []
         st.session_state[f"{key}_confirmed"] = [item for item in items if isinstance(item, dict) and item.get("symbol")]
     st.session_state["_watchlist_loaded"] = True
-
 
 def _save_watchlists():
     payload = {}
@@ -89,19 +84,14 @@ def _save_watchlists():
         if not isinstance(items, list): items = []
         payload[key] = [item for item in items if isinstance(item, dict) and item.get("symbol")]
     st.query_params[WATCHLIST_PARAM] = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-
-
 _load_watchlists()
-
 
 def _empty_quote():
     return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": None, "post_market_time": None, "pre_market_time": None, "quote_source": "", "delayed_by": None, "data_source": ""}
 
-
 def _yahoo_raw_value(value):
     if isinstance(value, dict): return value.get("raw") if value.get("raw") is not None else value.get("fmt")
     return value
-
 
 @st.cache_data(ttl=60, show_spinner=False)
 def _get_yahoo_overnight_safe(symbol):
@@ -112,12 +102,9 @@ def _get_yahoo_overnight_safe(symbol):
         crumb = session.get("https://query1.finance.yahoo.com/v1/test/getcrumb", headers=headers, timeout=4).text.strip()
         if not crumb or crumb.startswith("{"): return None, None
         response = session.get(f"https://query1.finance.yahoo.com/v10/finance/quoteSummary/{symbol}", params={"formatted": "true", "modules": "price", "overnightPrice": "true", "lang": "en-US", "region": "US", "crumb": crumb}, headers=headers, timeout=5)
-        response.raise_for_status(); payload = response.json()
-        result = ((payload.get("quoteSummary") or {}).get("result") or [None])[0] or {}
-        price = result.get("price") or {}
+        response.raise_for_status(); payload = response.json(); result = ((payload.get("quoteSummary") or {}).get("result") or [None])[0] or {}; price = result.get("price") or {}
         return _yahoo_raw_value(price.get("overnightPrice")), _yahoo_raw_value(price.get("overnightChangePercent"))
     except Exception: return None, None
-
 
 def _get_yahoo_quote_safe(symbol):
     try:
@@ -132,8 +119,7 @@ def _get_yahoo_quote_safe(symbol):
             if start is None: return None
             candidates = [close for ts, close in zip(timestamps, closes) if close is not None and ts >= start and (end is None or ts <= end)]
             return candidates[-1] if candidates else None
-        if price is None:
-            price = _last_close_in_period(regular_period) or (next((v for v in reversed(closes) if v is not None), None))
+        if price is None: price = _last_close_in_period(regular_period) or next((v for v in reversed(closes) if v is not None), None)
         if pre_price is None: pre_price = _last_close_in_period(pre_period)
         if post_price is None: post_price = _last_close_in_period(post_period)
         if regular_change_pct is None and price is not None and previous not in (None, 0): regular_change_pct = (price - previous) / previous * 100
@@ -143,13 +129,11 @@ def _get_yahoo_quote_safe(symbol):
         row = _empty_quote(); row.update({"price": price, "change_pct": regular_change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct, "pre_price": pre_price, "pre_change_pct": pre_change_pct, "overnight_price": overnight_price, "overnight_change_pct": overnight_change_pct, "regular_market_time": meta.get("regularMarketTime"), "post_market_time": meta.get("postMarketTime"), "pre_market_time": meta.get("preMarketTime"), "quote_source": meta.get("quoteSourceName", ""), "delayed_by": meta.get("exchangeDataDelayedBy"), "data_source": "Yahoo Finance"}); return row
     except Exception: return _empty_quote()
 
-
 def _eastmoney_secid(symbol):
     raw = str(symbol or "").upper().strip()
     if raw.endswith(".SS"): return f"1.{raw[:-3]}"
     if raw.endswith(".SZ"): return f"0.{raw[:-3]}"
     return ""
-
 
 def _get_eastmoney_quote_safe(symbol):
     secid = _eastmoney_secid(symbol)
@@ -167,21 +151,17 @@ def _get_eastmoney_quote_safe(symbol):
         return {"price": price, "change_pct": change_pct, "market_state": "REGULAR", "currency": "CNY", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": data.get("f86"), "post_market_time": None, "pre_market_time": None, "quote_source": "Eastmoney", "delayed_by": 0, "data_source": "东方财富"}
     except Exception: return _empty_quote()
 
-
 def _market_state_text(row): return {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后", "CLOSED": "休市"}.get(row.get("market_state") or "", "")
-
 def _market_item_html(name, price, change_pct, meta=""):
     price_text = "--" if price is None else f"{price:,.2f}"; change_text = "--" if change_pct is None else f"{change_pct:+.2f}%"
     return f'<div class="market-item"><div class="market-name">{html.escape(name)}</div><div class="market-price">{html.escape(price_text)}</div><div class="market-change">{html.escape(change_text)}</div><div class="market-meta">{html.escape(meta)}</div></div>'
 
-
-@st.cache_data(ttl=10, show_spinner=False)
+@st.cache_data(ttl=5, show_spinner=False)
 def _get_cached_quote(symbol):
     if str(symbol).upper().endswith((".SS", ".SZ")):
         row = _get_eastmoney_quote_safe(symbol)
         if row.get("price") is not None: return row
     return _get_yahoo_quote_safe(symbol)
-
 
 def _quote_meta(row, market=""):
     source = row.get("data_source") or row.get("quote_source") or ""; delayed = row.get("delayed_by"); state = _market_state_text(row); parts = [state] if state else []
@@ -189,15 +169,13 @@ def _quote_meta(row, market=""):
     elif source: parts.append(source)
     return " · ".join(parts)
 
-
-@st.fragment(run_every="10s")
+@st.fragment(run_every="5s")
 def render_market_groups():
     quotes = {"nasdaq": _get_cached_quote("^IXIC"), "sp500": _get_cached_quote("^GSPC"), "dow": _get_cached_quote("^DJI"), "hsi": _get_cached_quote("^HSI"), "hstech": _get_cached_quote("HSTECH.HK"), "sh": _get_cached_quote("000001.SS"), "sz": _get_cached_quote("399001.SZ"), "csi300": _get_cached_quote("000300.SS")}
     groups = [("🇺🇸 美股", [_market_item_html("纳斯达克", quotes["nasdaq"].get("price"), quotes["nasdaq"].get("change_pct"), _quote_meta(quotes["nasdaq"], "US")), _market_item_html("标普500", quotes["sp500"].get("price"), quotes["sp500"].get("change_pct"), _quote_meta(quotes["sp500"], "US")), _market_item_html("道琼斯", quotes["dow"].get("price"), quotes["dow"].get("change_pct"), _quote_meta(quotes["dow"], "US"))], "three"), ("🇭🇰 港股", [_market_item_html("恒生指数", quotes["hsi"].get("price"), quotes["hsi"].get("change_pct"), _quote_meta(quotes["hsi"], "HK")), _market_item_html("恒生科技", quotes["hstech"].get("price"), quotes["hstech"].get("change_pct"), _quote_meta(quotes["hstech"], "HK"))], "two"), ("🇨🇳 A股", [_market_item_html("上证指数", quotes["sh"].get("price"), quotes["sh"].get("change_pct"), _quote_meta(quotes["sh"], "CN")), _market_item_html("深证成指", quotes["sz"].get("price"), quotes["sz"].get("change_pct"), _quote_meta(quotes["sz"], "CN")), _market_item_html("沪深300", quotes["csi300"].get("price"), quotes["csi300"].get("change_pct"), _quote_meta(quotes["csi300"], "CN"))], "three")]
     cols = st.columns(3, gap="small")
     for col, (title, items, grid_class) in zip(cols, groups):
         with col: st.markdown(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>', unsafe_allow_html=True)
-
 render_market_groups()
 
 @st.cache_data(ttl=20, show_spinner=False)
@@ -269,27 +247,32 @@ def _confirm_search(key, market):
     else: selected = {"symbol": _direct_symbol(market, query), "name": query, "exchange": "", "market": market}
     _add_confirmed(key, selected)
 
-
-search_cols = st.columns(3, gap="small")
-search_config = [(search_cols[0], "US", "🇺🇸 美股", "NVDA / Apple", "market_search_us"), (search_cols[1], "HK", "🇭🇰 港股", "0700 / 腾讯", "market_search_hk"), (search_cols[2], "CN", "🇨🇳 A股", "600519 / 贵州茅台", "market_search_cn")]
-for col, market, title, placeholder, key in search_config:
-    with col:
-        confirmed_list = st.session_state.get(f"{key}_confirmed", []); confirmed_list = [confirmed_list] if isinstance(confirmed_list, dict) else (confirmed_list if isinstance(confirmed_list, list) else [])
-        if confirmed_list:
-            st.markdown(f'<div class="market-group-title">{title}</div>', unsafe_allow_html=True)
-            for idx, confirmed in enumerate(confirmed_list):
-                if not isinstance(confirmed, dict): continue
-                quote_col, delete_col = st.columns([10, 0.7], gap="small")
-                with quote_col: st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
-                with delete_col: st.button("×", key=f"{key}_delete_{idx}", use_container_width=True, on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除此模块")
-        is_open = st.session_state.get(f"{key}_open", False)
-        if not is_open:
-            st.button("+", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,), help="添加模块")
-        else:
-            input_col, confirm_col = st.columns([6, 1], gap="small")
-            with input_col: st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
-            with confirm_col: st.button("✓", key=f"{key}_confirm", use_container_width=True, on_click=_confirm_search, args=(key, market), help="确认并新增")
-
+@st.fragment(run_every="5s")
+def render_watchlists():
+    search_cols = st.columns(3, gap="small")
+    search_config = [(search_cols[0], "US", "🇺🇸 美股", "NVDA / Apple", "market_search_us"), (search_cols[1], "HK", "🇭🇰 港股", "0700 / 腾讯", "market_search_hk"), (search_cols[2], "CN", "🇨🇳 A股", "600519 / 贵州茅台", "market_search_cn")]
+    for col, market, title, placeholder, key in search_config:
+        with col:
+            confirmed_list = st.session_state.get(f"{key}_confirmed", []); confirmed_list = [confirmed_list] if isinstance(confirmed_list, dict) else (confirmed_list if isinstance(confirmed_list, list) else [])
+            if confirmed_list:
+                st.markdown(f'<div class="market-group-title">{title}</div>', unsafe_allow_html=True)
+                for idx, confirmed in enumerate(confirmed_list):
+                    if not isinstance(confirmed, dict): continue
+                    with st.container(border=True):
+                        quote_col, delete_col = st.columns([20, 0.45], gap="small")
+                        with quote_col: st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
+                        with delete_col:
+                            st.markdown('<div class="module-delete">', unsafe_allow_html=True)
+                            st.button("×", key=f"{key}_delete_{idx}", on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除此模块", type="tertiary")
+                            st.markdown('</div>', unsafe_allow_html=True)
+            is_open = st.session_state.get(f"{key}_open", False)
+            if not is_open:
+                st.button("+", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,), help="添加模块")
+            else:
+                input_col, confirm_col = st.columns([6, 1], gap="small")
+                with input_col: st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
+                with confirm_col: st.button("✓", key=f"{key}_confirm", use_container_width=True, on_click=_confirm_search, args=(key, market), help="确认并新增")
+render_watchlists()
 
 def add_sources(sources):
     links = [f'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">{html.escape(text)}</a>' for text, url in sources]
