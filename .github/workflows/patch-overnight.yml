@@ -1,0 +1,50 @@
+name: Patch overnight display
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Patch app
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app.py')
+          s = p.read_text(encoding='utf-8')
+          if 'def _us_market_meta(row):' not in s:
+              marker = 'def render_market_groups():\n'
+              helper = '''def _us_market_meta(row):
+    base = _quote_meta(row)
+    pp = row.get("post_price")
+    pc = row.get("post_change_pct")
+    if pp is not None:
+        change = "--" if pc is None else f"{pc:+.2f}%"
+        overnight = f"夜盘 {pp:,.2f} {change}"
+        return f"{overnight} · {base}" if base else overnight
+    return base
+
+'''
+              s = s.replace(marker, helper + marker, 1)
+          s = s.replace('_market_item_html("纳斯达克", q["nasdaq"].get("price"), q["nasdaq"].get("change_pct"), _quote_meta(q["nasdaq"]))', '_market_item_html("纳斯达克", q["nasdaq"].get("price"), q["nasdaq"].get("change_pct"), _us_market_meta(q["nasdaq"]))')
+          s = s.replace('_market_item_html("标普500", q["sp500"].get("price"), q["sp500"].get("change_pct"), _quote_meta(q["sp500"]))', '_market_item_html("标普500", q["sp500"].get("price"), q["sp500"].get("change_pct"), _us_market_meta(q["sp500"]))')
+          s = s.replace('_market_item_html("道琼斯", q["dow"].get("price"), q["dow"].get("change_pct"), _quote_meta(q["dow"]))', '_market_item_html("道琼斯", q["dow"].get("price"), q["dow"].get("change_pct"), _us_market_meta(q["dow"]))')
+          p.write_text(s, encoding='utf-8')
+          PY
+          python -m py_compile app.py data.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py
+          git rm .github/workflows/patch-overnight.yml
+          git commit -m 'Display US overnight prices in market cards'
+          git push origin main
