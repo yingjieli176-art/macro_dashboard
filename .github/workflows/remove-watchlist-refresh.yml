@@ -1,0 +1,55 @@
+name: Remove broken watchlist refresh
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove refresh feature and repair market block
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('app.py')
+          s = p.read_text(encoding='utf-8')
+
+          # Remove the user-added "刷新股价" UI block completely.
+          s = re.sub(
+              r'\n    refresh_col, _, _ = st\.columns\(\[1\.2, 3\.8, 1\]\)\n    with refresh_col:\n        st\.markdown\(\'<div class="module-refresh">\', unsafe_allow_html=True\)\n        st\.button\(\n            "↻ 刷新股价",\n            key="refresh_watchlist_quotes",\n            use_container_width=True,\n            on_click=_refresh_quote_cache,\n            help="立即重新获取已添加模块的最新报价"\n        \)\n        st\.markdown\(\'</div>\', unsafe_allow_html=True\)',
+              '', s)
+
+          # Remove the now-unused refresh CSS/function helpers.
+          s = s.replace('\n.module-refresh button { min-height: 28px !important; height: 28px !important; padding: 0 8px !important; font-size: 0.72rem !important; }', '')
+          s = re.sub(r'\n\ndef _watchlist_quote_refresh_key\(\):\n    bucket = int\(time\.time\(\) // 300\)\n    nonce = st\.session_state\.get\("_watchlist_quote_refresh_nonce", 0\)\n    return f"\{bucket\}:\{nonce\}"', '', s)
+          s = re.sub(r'\n\ndef _refresh_quote_cache\(\):\n    # Only change the watchlist-local refresh key\. Never clear any global/top-market cache\.\n    st\.session_state\["_watchlist_refresh_key"\] = st\.session_state\.get\("_watchlist_refresh_key", 0\) \+ 1', '', s)
+
+          # Previous automated patch accidentally left a duplicated/corrupted assignment.
+          s = re.sub(r'\n    quotes = snapshot.*?\n    groups =', '\n    quotes = snapshot\n    groups =', s, flags=re.S)
+
+          # Keep the 7×24 news typography independent from the global dashboard font.
+          # This restores a compact, neutral sans-serif appearance for that feed only.
+          if '.news-content {' in s and '.news-content { font-family:' not in s:
+              s = s.replace('.news-content { flex: 1; min-width: 0; }', '.news-content { flex: 1; min-width: 0; font-family: Arial, "Segoe UI", sans-serif; }')
+
+          p.write_text(s, encoding='utf-8')
+          PY
+          python -m py_compile app.py
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py
+          git commit -m 'Remove broken watchlist refresh feature' || exit 0
+          git push
+      - name: Remove temporary workflow
+        run: |
+          rm -f .github/workflows/remove-watchlist-refresh.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -u .github/workflows/remove-watchlist-refresh.yml
+          git commit -m 'Remove temporary repair workflow' || exit 0
+          git push
