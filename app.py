@@ -1,5 +1,6 @@
 import html
 import json
+import time
 import pandas as pd
 import plotly.graph_objects as go
 import requests
@@ -50,15 +51,15 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .market-change { font-size: 0.76rem; white-space: nowrap; }
 .market-meta { color: #9ca3af; font-size: 0.68rem; margin-top: 1px; white-space: nowrap; }
 .search-title { color: #374151; font-size: 1.05rem; font-weight: 650; margin: 0.55rem 0 0.3rem; }
-.search-result { padding: 7px 5px; margin-top: 4px; border-radius: 6px; }
-.search-result-label { color: #374151; font-size: 0.86rem; line-height: 1.4; }
-.search-result-symbol { color: #6b7280; font-size: 0.76rem; }
-.search-price { color: #111827; font-size: 1.02rem; font-weight: 650; margin-top: 2px; }
-.search-after { color: #6b7280; font-size: 0.78rem; margin-top: 3px; }
-.search-hint { color: #9ca3af; font-size: 0.76rem; margin-top: 2px; }
+.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; }
+.search-result-label { color: #374151; font-size: 0.80rem; line-height: 1.3; }
+.search-result-symbol { color: #6b7280; font-size: 0.70rem; }
+.search-price { color: #111827; font-size: 0.94rem; font-weight: 650; margin-top: 1px; }
+.search-after { color: #6b7280; font-size: 0.72rem; margin-top: 1px; }
+.search-hint { color: #9ca3af; font-size: 0.68rem; margin-top: 1px; }
 .module-delete { display: flex; justify-content: flex-end; margin-top: 0; margin-right: -3px; transform: translateY(-78px); }
 .module-delete button { min-width: 14px !important; width: 14px !important; height: 14px !important; padding: 0 !important; margin: 0 !important; font-size: 9px !important; line-height: 14px !important; border: 0 !important; }
-.module-refresh button { min-height: 30px !important; height: 30px !important; padding: 0 10px !important; font-size: 0.78rem !important; }
+.module-refresh button { min-height: 28px !important; height: 28px !important; padding: 0 8px !important; font-size: 0.72rem !important; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 </style>
 """, unsafe_allow_html=True)
@@ -159,11 +160,16 @@ def _market_item_html(name, price, change_pct, meta=""):
     return f'<div class="market-item"><div class="market-name">{html.escape(name)}</div><div class="market-price">{html.escape(price_text)}</div><div class="market-change">{html.escape(change_text)}</div><div class="market-meta">{html.escape(meta)}</div></div>'
 
 @st.cache_data(ttl=300, show_spinner=False)
-def _get_cached_quote(symbol):
+def _get_cached_quote(symbol, refresh_key=0):
     if str(symbol).upper().endswith((".SS", ".SZ")):
         row = _get_eastmoney_quote_safe(symbol)
         if row.get("price") is not None: return row
     return _get_yahoo_quote_safe(symbol)
+
+def _quote_refresh_key():
+    bucket = int(time.time() // 300)
+    nonce = st.session_state.get("_quote_refresh_nonce", 0)
+    return f"{bucket}:{nonce}"
 
 def _quote_meta(row, market=""):
     source = row.get("data_source") or row.get("quote_source") or ""; delayed = row.get("delayed_by"); state = _market_state_text(row); parts = [state] if state else []
@@ -172,12 +178,15 @@ def _quote_meta(row, market=""):
     return " · ".join(parts)
 
 def _refresh_quote_cache():
+    st.session_state["_quote_refresh_nonce"] = st.session_state.get("_quote_refresh_nonce", 0) + 1
     _get_cached_quote.clear()
     _get_yahoo_overnight_safe.clear()
+    st.rerun()
 
 @st.fragment(run_every="300s")
 def render_market_groups():
-    quotes = {"nasdaq": _get_cached_quote("^IXIC"), "sp500": _get_cached_quote("^GSPC"), "dow": _get_cached_quote("^DJI"), "hsi": _get_cached_quote("^HSI"), "hstech": _get_cached_quote("HSTECH.HK"), "sh": _get_cached_quote("000001.SS"), "sz": _get_cached_quote("399001.SZ"), "csi300": _get_cached_quote("000300.SS")}
+    refresh_key = _quote_refresh_key()
+    quotes = {"nasdaq": _get_cached_quote("^IXIC", refresh_key), "sp500": _get_cached_quote("^GSPC", refresh_key), "dow": _get_cached_quote("^DJI", refresh_key), "hsi": _get_cached_quote("^HSI", refresh_key), "hstech": _get_cached_quote("HSTECH.HK", refresh_key), "sh": _get_cached_quote("000001.SS", refresh_key), "sz": _get_cached_quote("399001.SZ", refresh_key), "csi300": _get_cached_quote("000300.SS", refresh_key)}
     groups = [("🇺🇸 美股", [_market_item_html("纳斯达克", quotes["nasdaq"].get("price"), quotes["nasdaq"].get("change_pct"), _quote_meta(quotes["nasdaq"], "US")), _market_item_html("标普500", quotes["sp500"].get("price"), quotes["sp500"].get("change_pct"), _quote_meta(quotes["sp500"], "US")), _market_item_html("道琼斯", quotes["dow"].get("price"), quotes["dow"].get("change_pct"), _quote_meta(quotes["dow"], "US"))], "three"), ("🇭🇰 港股", [_market_item_html("恒生指数", quotes["hsi"].get("price"), quotes["hsi"].get("change_pct"), _quote_meta(quotes["hsi"], "HK")), _market_item_html("恒生科技", quotes["hstech"].get("price"), quotes["hstech"].get("change_pct"), _quote_meta(quotes["hstech"], "HK"))], "two"), ("🇨🇳 A股", [_market_item_html("上证指数", quotes["sh"].get("price"), quotes["sh"].get("change_pct"), _quote_meta(quotes["sh"], "CN")), _market_item_html("深证成指", quotes["sz"].get("price"), quotes["sz"].get("change_pct"), _quote_meta(quotes["sz"], "CN")), _market_item_html("沪深300", quotes["csi300"].get("price"), quotes["csi300"].get("change_pct"), _quote_meta(quotes["csi300"], "CN"))], "three")]
     cols = st.columns(3, gap="small")
     for col, (title, items, grid_class) in zip(cols, groups):
@@ -223,7 +232,7 @@ def _direct_symbol(market, query):
     return f"{digits}.SS" if digits.startswith(("5", "6", "68", "9")) else f"{digits}.SZ"
 
 def _render_quote_block(item):
-    row = _get_cached_quote(item["symbol"]); price, change = row.get("price"), row.get("change_pct"); price_text = "--" if price is None else f"{price:,.2f}"; change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%"); state = _market_state_text(row); after = ""
+    row = _get_cached_quote(item["symbol"], _quote_refresh_key()); price, change = row.get("price"), row.get("change_pct"); price_text = "--" if price is None else f"{price:,.2f}"; change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%"); state = _market_state_text(row); after = ""
     if item.get("market") == "US":
         pp, pc = row.get("post_price"), row.get("post_change_pct"); pre_price, pre_change = row.get("pre_price"), row.get("pre_change_pct"); overnight_price, overnight_change = row.get("overnight_price"), row.get("overnight_change_pct")
         if overnight_price is not None: after = f'<div class="search-after">夜盘：<strong>{overnight_price:,.2f}</strong> <span>{"--" if overnight_change is None else f"{overnight_change:+.2f}%"}</span></div>'
@@ -270,7 +279,7 @@ def render_watchlists():
                 for idx, confirmed in enumerate(confirmed_list):
                     if not isinstance(confirmed, dict): continue
                     with st.container(border=True):
-                        quote_col, delete_col = st.columns([1, 0.05], gap="small", vertical_alignment="top")
+                        quote_col, delete_col = st.columns([1, 0.035], gap="small", vertical_alignment="top")
                         with quote_col: st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
                         with delete_col:
                             st.markdown('<div class="module-delete">', unsafe_allow_html=True)
