@@ -56,7 +56,7 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .search-price { color: #111827; font-size: 1.02rem; font-weight: 650; margin-top: 2px; }
 .search-after { color: #6b7280; font-size: 0.78rem; margin-top: 3px; }
 .search-hint { color: #9ca3af; font-size: 0.76rem; margin-top: 2px; }
-.module-delete button { min-width: 16px !important; width: 16px !important; height: 16px !important; padding: 0 !important; margin: 0 !important; font-size: 10px !important; line-height: 16px !important; border: 0 !important; }
+.module-delete button { min-width: 14px !important; width: 14px !important; height: 14px !important; padding: 0 !important; margin: 0 !important; font-size: 9px !important; line-height: 14px !important; border: 0 !important; }
 .module-refresh button { min-height: 30px !important; height: 30px !important; padding: 0 10px !important; font-size: 0.78rem !important; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 </style>
@@ -269,7 +269,7 @@ def render_watchlists():
                 for idx, confirmed in enumerate(confirmed_list):
                     if not isinstance(confirmed, dict): continue
                     with st.container(border=True):
-                        quote_col, delete_col = st.columns([20, 0.45], gap="small")
+                        quote_col, delete_col = st.columns([1, 0.05], gap="small", vertical_alignment="top")
                         with quote_col: st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
                         with delete_col:
                             st.markdown('<div class="module-delete">', unsafe_allow_html=True)
@@ -331,7 +331,7 @@ def render_core_charts():
     with toggle_col: compact_mode = st.toggle("缩小图表 / 快速浏览", value=True, key="compact_mode", help="开启后，三个核心图表横向并排显示。")
     if compact_mode:
         cols = st.columns(3, gap="small")
-        configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1), (cols[2], '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>', "compact_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")], 2)]
+        configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1), (cols[2], '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>', "compact_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10")], 2)]
         for column, title, description, key, builder, sources, desc_index in configs:
             with column: st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
     else:
