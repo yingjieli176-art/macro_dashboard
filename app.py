@@ -32,13 +32,13 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .compact-title { font-size: 0.98rem; font-weight: 650; margin-bottom: 0.15rem; }
 .compact-description { color: #6b7280; font-size: 0.73rem; line-height: 1.35; margin-bottom: 0.2rem; }
 .news-status { color: #6b7280; font-size: 0.75rem; margin-bottom: 0.5rem; }
-.news-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; background: #ffffff; max-height: 650px; overflow-y: auto; }
-.news-item { display: flex; align-items: flex-start; padding: 8px 3px; border-bottom: 1px solid #eeeeee; line-height: 1.5; font-size: 0.84rem; }
+.news-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; background: #ffffff; max-height: 650px; overflow-y: auto; overflow-x: hidden; }
+.news-item { display: flex; align-items: flex-start; padding: 8px 3px; border-bottom: 1px solid #eeeeee; line-height: 1.5; font-size: 0.84rem; overflow: visible; }
 .news-item:last-child { border-bottom: none; }
 .news-index { flex: 0 0 32px; width: 32px; color: #9ca3af; font-size: 0.72rem; font-family: "Segoe UI", sans-serif; padding-top: 2px; }
 .news-time { flex: 0 0 72px; width: 72px; color: #6b7280; font-size: 0.72rem; white-space: nowrap; padding-top: 2px; margin-right: 6px; }
-.news-content { flex: 1; min-width: 0; }
-.news-content a { color: #374151; text-decoration: none !important; }
+.news-content { flex: 1; min-width: 0; overflow: visible; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.news-content a { color: #374151; text-decoration: none !important; display: block; white-space: normal; overflow: visible; overflow-wrap: anywhere; word-break: break-word; }
 .market-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 0.45rem; }
 .market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; }
 .market-group-title { color: #374151; font-size: 0.88rem; font-weight: 650; margin-bottom: 5px; }
@@ -57,8 +57,8 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .search-price { color: #111827; font-size: 0.94rem; font-weight: 650; margin-top: 1px; width: 118px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .search-after { color: #6b7280; font-size: 0.72rem; margin-top: 1px; }
 .search-hint { color: #9ca3af; font-size: 0.68rem; margin-top: 1px; }
-.module-delete { display: flex; justify-content: flex-end; align-items: flex-start; margin-top: -2px; margin-right: -6px; transform: none; }
-.module-delete button { min-width: 14px !important; width: 14px !important; height: 14px !important; padding: 0 !important; margin: 0 !important; font-size: 9px !important; line-height: 14px !important; border: 0 !important; }
+.module-delete { display: flex; justify-content: flex-end; align-items: flex-start; margin-top: -7px; margin-right: -4px; transform: none; position: relative; z-index: 5; }
+.module-delete button { min-width: 24px !important; width: 24px !important; max-width: 24px !important; height: 24px !important; padding: 0 !important; margin: 0 !important; font-size: 14px !important; line-height: 24px !important; border: 0 !important; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 </style>
 """, unsafe_allow_html=True)
@@ -149,8 +149,8 @@ def _get_eastmoney_quote_safe(symbol):
         price_raw, prev_raw, pct_raw = data.get("f43"), data.get("f60"), data.get("f170")
         if price_raw in (None, "-", ""): return _empty_quote()
         divisor = 1 if str(symbol).upper() in ("^HSI", "HSTECH.HK", "^HSTECH", "000001.SS", "399001.SZ", "000300.SS") else 100
-        price = float(price_raw) / divisor; previous = None if prev_raw in (None, "-", "") else float(prev_raw) / divisor
-        change_pct = None if pct_raw in (None, "-", "") else float(pct_raw)
+        price = float(price_raw) / divisor; previous = None if prev_raw in (None, "-") else float(prev_raw) / divisor
+        change_pct = None if pct_raw in (None, "-") else float(pct_raw)
         if change_pct is None and previous not in (None, 0): change_pct = (price - previous) / previous * 100
         return {"price": price, "change_pct": change_pct, "market_state": "REGULAR", "currency": ("HKD" if str(symbol).upper().endswith(".HK") else "CNY"), "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": data.get("f86"), "post_market_time": None, "pre_market_time": None, "quote_source": "Eastmoney", "delayed_by": 0, "data_source": "东方财富"}
     except Exception: return _empty_quote()
@@ -183,8 +183,6 @@ def _get_watchlist_quote(symbol, refresh_key=0):
     return _get_yahoo_quote_safe(symbol)
 @st.fragment(run_every="300s")
 def render_market_groups():
-    # Keep the top market snapshot in session state. A watchlist button interaction
-    # may rerun the script, but must not trigger fresh requests for these indices.
     now = time.time()
     snapshot = st.session_state.get("_market_quotes_snapshot")
     snapshot_time = st.session_state.get("_market_quotes_snapshot_time", 0)
@@ -318,11 +316,11 @@ def render_watchlists():
                 for idx, confirmed in enumerate(confirmed_list):
                     if not isinstance(confirmed, dict): continue
                     with st.container(border=True):
-                        quote_col, delete_col = st.columns([1, 0.035], gap="small", vertical_alignment="top")
+                        quote_col, delete_col = st.columns([1, 0.08], gap="small", vertical_alignment="top")
                         with quote_col: _render_watchlist_quote_fragment({**confirmed, "market": market})
                         with delete_col:
                             st.markdown('<div class="module-delete">', unsafe_allow_html=True)
-                            st.button("×", key=f"{key}_delete_{idx}", on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除此模块", type="tertiary")
+                            st.button("×", key=f"{key}_delete_{idx}", on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除此模块", type="tertiary", use_container_width=True)
                             st.markdown('</div>', unsafe_allow_html=True)
             is_open = st.session_state.get(f"{key}_open", False)
             if not is_open:
@@ -380,7 +378,7 @@ def render_core_charts():
     with toggle_col: compact_mode = st.toggle("缩小图表 / 快速浏览", value=True, key="compact_mode", help="开启后，三个核心图表横向并排显示。")
     if compact_mode:
         cols = st.columns(3, gap="small")
-        configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1), (cols[2], '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>', "compact_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10")], 2)]
+        configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1), (cols[2], '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>', "compact_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2") , ("DGS10", "https://fred.stlouisfed.org/series/DGS10")], 2)]
         for column, title, description, key, builder, sources, desc_index in configs:
             with column: st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
     else:
@@ -406,7 +404,7 @@ def render_news_panel():
             if not news_url.startswith(("http://", "https://")): news_url = EASTMONEY_FOCUS_URL
             body = f"<strong>{news_title}</strong><div style=\"margin-top:3px;\">{news_content}</div>" if news_title and news_content and news_title != news_content else (news_content or news_title)
             news_html += f'<div class="news-item"><span class="news-index">{idx}.</span><span class="news-time">{news_time}</span><div class="news-content"><a href="{news_url}" target="_blank" rel="noopener noreferrer">{body}</a></div></div>'
-        st.html(news_html + "</div>")
+        st.markdown(news_html + "</div>", unsafe_allow_html=True)
     else:
         st.warning("暂时无法取得东方财富红字焦点快讯。");
         if news_error: st.caption(f"错误：{news_error}")
