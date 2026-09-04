@@ -169,8 +169,11 @@ def _get_cached_quote(symbol, refresh_key=0):
     return _get_yahoo_quote_safe(symbol)
 
 def _quote_refresh_key():
+    return int(time.time() // 300)
+
+def _watchlist_quote_refresh_key():
     bucket = int(time.time() // 300)
-    nonce = st.session_state.get("_quote_refresh_nonce", 0)
+    nonce = st.session_state.get("_watchlist_quote_refresh_nonce", 0)
     return f"{bucket}:{nonce}"
 
 def _quote_meta(row, market=""):
@@ -180,9 +183,9 @@ def _quote_meta(row, market=""):
     return " · ".join(parts)
 
 def _refresh_quote_cache():
-    st.session_state["_quote_refresh_nonce"] = st.session_state.get("_quote_refresh_nonce", 0) + 1
-    _get_cached_quote.clear()
-    _get_yahoo_overnight_safe.clear()
+    # Only invalidate the user-added watchlist quotes. Keep the top market
+    # index cards cached so clicking refresh cannot break/reload them.
+    st.session_state["_watchlist_quote_refresh_nonce"] = st.session_state.get("_watchlist_quote_refresh_nonce", 0) + 1
 
 @st.fragment(run_every="300s")
 def render_market_groups():
@@ -247,7 +250,7 @@ def _direct_symbol(market, query):
     return f"{digits}.SS" if digits.startswith(("5", "6", "68", "9")) else f"{digits}.SZ"
 
 def _render_quote_block(item):
-    row = _get_cached_quote(item["symbol"], _quote_refresh_key()); price, change = row.get("price"), row.get("change_pct"); price_text = "--" if price is None else f"{price:,.2f}"; change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%"); state = _market_state_text(row); after = ""
+    row = _get_cached_quote(item["symbol"], _watchlist_quote_refresh_key()); price, change = row.get("price"), row.get("change_pct"); price_text = "--" if price is None else f"{price:,.2f}"; change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%"); state = _market_state_text(row); after = ""
     if item.get("market") == "US":
         pp, pc = row.get("post_price"), row.get("post_change_pct"); pre_price, pre_change = row.get("pre_price"), row.get("pre_change_pct"); overnight_price, overnight_change = row.get("overnight_price"), row.get("overnight_change_pct")
         if overnight_price is not None: after = f'<div class="search-after">夜盘：<strong>{overnight_price:,.2f}</strong> <span>{"--" if overnight_change is None else f"{overnight_change:+.2f}%"}</span></div>'
