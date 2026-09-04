@@ -40,18 +40,18 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .news-content { flex: 1; min-width: 0; overflow: visible; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
 .news-content a { color: #374151; text-decoration: none !important; display: block; white-space: normal; overflow: visible; overflow-wrap: anywhere; word-break: break-word; }
 .market-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 0.45rem; }
-.market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; }
+.market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; min-height: 82px; box-sizing: border-box; }
 .market-group-title { color: #374151; font-size: 0.88rem; font-weight: 650; margin-bottom: 5px; }
-.market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; min-height: 52px; align-items: start; }
 .market-group-row.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.market-item { min-width: 0; padding-right: 4px; border-right: 1px solid #f0f0f0; }
+.market-item { min-width: 0; min-height: 52px; padding-right: 4px; border-right: 1px solid #f0f0f0; box-sizing: border-box; }
 .market-item:last-child { border-right: none; }
 .market-name { color: #6b7280; font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .market-price { color: #111827; font-size: 0.98rem; font-weight: 650; margin-top: 1px; white-space: nowrap; }
 .market-change { font-size: 0.76rem; white-space: nowrap; }
 .market-meta { color: #9ca3af; font-size: 0.68rem; margin-top: 1px; white-space: nowrap; }
 .search-title { color: #374151; font-size: 1.05rem; font-weight: 650; margin: 0.55rem 0 0.3rem; }
-.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; }
+.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; min-height: 68px; box-sizing: border-box; }
 .search-result-label { color: #374151; font-size: 0.80rem; line-height: 1.3; }
 .search-result-symbol { color: #6b7280; font-size: 0.70rem; }
 .search-price { color: #111827; font-size: 0.94rem; font-weight: 650; margin-top: 1px; width: 118px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
