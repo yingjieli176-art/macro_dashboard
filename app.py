@@ -37,7 +37,7 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .news-item:last-child { border-bottom: none; }
 .news-index { flex: 0 0 32px; width: 32px; color: #9ca3af; font-size: 0.72rem; font-family: "Segoe UI", sans-serif; padding-top: 2px; }
 .news-time { flex: 0 0 72px; width: 72px; color: #6b7280; font-size: 0.72rem; white-space: nowrap; padding-top: 2px; margin-right: 6px; }
-.news-content { flex: 1; min-width: 0; }
+.news-content { flex: 1; min-width: 0; font-family: Arial, "Segoe UI", sans-serif; }
 .news-content a { color: #374151; text-decoration: none !important; }
 .market-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 0.45rem; }
 .market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; }
@@ -59,7 +59,6 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .search-hint { color: #9ca3af; font-size: 0.68rem; margin-top: 1px; }
 .module-delete { display: flex; justify-content: flex-end; align-items: flex-start; margin-top: -2px; margin-right: -6px; transform: none; }
 .module-delete button { min-width: 14px !important; width: 14px !important; height: 14px !important; padding: 0 !important; margin: 0 !important; font-size: 9px !important; line-height: 14px !important; border: 0 !important; }
-.module-refresh button { min-height: 28px !important; height: 28px !important; padding: 0 8px !important; font-size: 0.72rem !important; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 </style>
 """, unsafe_allow_html=True)
@@ -170,12 +169,6 @@ def _get_cached_quote(symbol, refresh_key=0):
 
 def _quote_refresh_key():
     return int(time.time() // 300)
-
-def _watchlist_quote_refresh_key():
-    bucket = int(time.time() // 300)
-    nonce = st.session_state.get("_watchlist_quote_refresh_nonce", 0)
-    return f"{bucket}:{nonce}"
-
 def _quote_meta(row, market=""):
     source = row.get("data_source") or row.get("quote_source") or ""; delayed = row.get("delayed_by"); state = _market_state_text(row); parts = [state] if state else []
     if delayed not in (None, 0, "0") and source == "Yahoo Finance": parts.append(f"延迟{delayed}分")
@@ -188,11 +181,6 @@ def _get_watchlist_quote(symbol, refresh_key=0):
         row = _get_eastmoney_quote_safe(symbol)
         if row.get("price") is not None: return row
     return _get_yahoo_quote_safe(symbol)
-
-def _refresh_quote_cache():
-    # Only change the watchlist-local refresh key. Never clear any global/top-market cache.
-    st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
-
 @st.fragment(run_every="300s")
 def render_market_groups():
     # Keep the top market snapshot in session state. A watchlist button interaction
@@ -214,7 +202,7 @@ def render_market_groups():
         }
         st.session_state["_market_quotes_snapshot"] = snapshot
         st.session_state["_market_quotes_snapshot_time"] = now
-    quotes = snapshot"nasdaq": _get_cached_quote("^IXIC", refresh_key), "sp500": _get_cached_quote("^GSPC", refresh_key), "dow": _get_cached_quote("^DJI", refresh_key), "hsi": _get_cached_quote("^HSI", refresh_key), "hstech": _get_cached_quote("HSTECH.HK", refresh_key), "sh": _get_cached_quote("000001.SS", refresh_key), "sz": _get_cached_quote("399001.SZ", refresh_key), "csi300": _get_cached_quote("000300.SS", refresh_key)}
+    quotes = snapshot
     groups = [("🇺🇸 美股", [_market_item_html("纳斯达克", quotes["nasdaq"].get("price"), quotes["nasdaq"].get("change_pct"), _quote_meta(quotes["nasdaq"], "US")), _market_item_html("标普500", quotes["sp500"].get("price"), quotes["sp500"].get("change_pct"), _quote_meta(quotes["sp500"], "US")), _market_item_html("道琼斯", quotes["dow"].get("price"), quotes["dow"].get("change_pct"), _quote_meta(quotes["dow"], "US"))], "three"), ("🇭🇰 港股", [_market_item_html("恒生指数", quotes["hsi"].get("price"), quotes["hsi"].get("change_pct"), _quote_meta(quotes["hsi"], "HK")), _market_item_html("恒生科技", quotes["hstech"].get("price"), quotes["hstech"].get("change_pct"), _quote_meta(quotes["hstech"], "HK"))], "two"), ("🇨🇳 A股", [_market_item_html("上证指数", quotes["sh"].get("price"), quotes["sh"].get("change_pct"), _quote_meta(quotes["sh"], "CN")), _market_item_html("深证成指", quotes["sz"].get("price"), quotes["sz"].get("change_pct"), _quote_meta(quotes["sz"], "CN")), _market_item_html("沪深300", quotes["csi300"].get("price"), quotes["csi300"].get("change_pct"), _quote_meta(quotes["csi300"], "CN"))], "three")]
     cols = st.columns(3, gap="small")
     for col, (title, items, grid_class) in zip(cols, groups):
@@ -308,11 +296,6 @@ def _confirm_search(key, market):
 
 @st.fragment(run_every="300s")
 def render_watchlists():
-    refresh_col, _, _ = st.columns([1.2, 3.8, 1])
-    with refresh_col:
-        st.markdown('<div class="module-refresh">', unsafe_allow_html=True)
-        st.button("↻ 刷新股价", key="refresh_watchlist_quotes", use_container_width=True, on_click=_refresh_quote_cache, help="立即重新获取已添加模块的最新报价")
-        st.markdown('</div>', unsafe_allow_html=True)
     search_cols = st.columns(3, gap="small")
     search_config = [(search_cols[0], "US", "🇺🇸 美股", "NVDA / Apple", "market_search_us"), (search_cols[1], "HK", "🇭🇰 港股", "0700 / 腾讯", "market_search_hk"), (search_cols[2], "CN", "🇨🇳 A股", "600519 / 贵州茅台", "market_search_cn")]
     for col, market, title, placeholder, key in search_config:
