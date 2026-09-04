@@ -7,7 +7,7 @@ import streamlit as st
 
 from data import (
     get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb,
-    get_effr, get_rrp_rate, get_sina_news, get_market_snapshot,
+    get_effr, get_rrp_rate, get_sina_news,
 )
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
@@ -17,10 +17,10 @@ PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": Fa
 
 st.markdown("""
 <style>
-.block-container { padding-top: 1.5rem; padding-bottom: 3rem; max-width: 1400px; }
+.block-container { padding-top: 1.15rem; padding-bottom: 2.5rem; max-width: 1400px; }
 html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "PingFang TC", "Segoe UI", sans-serif; }
 .dashboard-title { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.15rem; }
-.dashboard-subtitle { color: #6b7280; font-size: 0.95rem; margin-bottom: 0.8rem; }
+.dashboard-subtitle { color: #6b7280; font-size: 0.9rem; margin-bottom: 0.55rem; }
 .section-title { font-size: 1.35rem; font-weight: 650; letter-spacing: -0.01em; margin-top: 0.8rem; margin-bottom: 0.15rem; }
 .section-description { color: #6b7280; font-size: 0.88rem; margin-bottom: 0.4rem; }
 .mini-description { color: #6b7280; font-size: 0.78rem; line-height: 1.5; margin: 2px 0 8px; }
@@ -28,7 +28,7 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .source-text a { color: #6b7280; text-decoration: none !important; white-space: nowrap; }
 .source-text a:hover { color: #374151; text-decoration: underline !important; }
 .source-sep { color: #d1d5db; margin: 0 5px; }
-.chart-divider { margin: 1rem 0 1.5rem; border-top: 1px solid #e5e7eb; }
+.chart-divider { margin: 0.8rem 0 1.2rem; border-top: 1px solid #e5e7eb; }
 .compact-title { font-size: 1rem; font-weight: 650; margin-bottom: 0.2rem; }
 .compact-description { color: #6b7280; font-size: 0.75rem; line-height: 1.4; margin-bottom: 0.25rem; }
 .news-status { color: #6b7280; font-size: 0.75rem; margin-bottom: 0.5rem; }
@@ -40,18 +40,17 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .news-content { flex: 1; min-width: 0; }
 .news-content a { color: #374151; text-decoration: none !important; }
 .news-content a:hover { color: #111827; text-decoration: none !important; }
-.market-groups, .search-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 0.7rem; }
-.market-group, .search-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 7px 9px 6px; background: #fff; min-width: 0; }
-.market-group-title { color: #374151; font-size: 0.76rem; font-weight: 650; margin-bottom: 5px; }
-.market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
-.market-group-row.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.market-item { min-width: 0; padding-right: 5px; border-right: 1px solid #f0f0f0; }
+.market-card { padding: 0.45rem 0.55rem 0.35rem; }
+.market-card-title { color: #374151; font-size: 0.76rem; font-weight: 650; margin-bottom: 0.35rem; }
+.market-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.35rem; }
+.market-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.market-item { min-width: 0; padding-right: 0.35rem; border-right: 1px solid #f0f0f0; }
 .market-item:last-child { border-right: none; }
-.market-name { color: #6b7280; font-size: 0.68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.market-price { color: #111827; font-size: 0.86rem; font-weight: 650; margin-top: 1px; white-space: nowrap; }
-.market-change { font-size: 0.68rem; white-space: nowrap; }
-.market-meta { color: #9ca3af; font-size: 0.61rem; margin-top: 2px; white-space: nowrap; }
-@media (max-width: 900px) { .market-groups, .search-groups { grid-template-columns: 1fr; } }
+.market-name { color: #6b7280; font-size: 0.67rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.market-price { color: #111827; font-size: 0.84rem; font-weight: 650; margin-top: 1px; white-space: nowrap; }
+.market-change { font-size: 0.66rem; white-space: nowrap; }
+.market-meta { color: #9ca3af; font-size: 0.6rem; margin-top: 1px; white-space: nowrap; }
+@media (max-width: 900px) { .market-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>
 """, unsafe_allow_html=True)
 
@@ -61,9 +60,11 @@ st.markdown('<div class="dashboard-subtitle">US monetary policy, Treasury yields
 
 def _get_yahoo_quote_safe(symbol):
     try:
-        response = requests.get("https://query1.finance.yahoo.com/v8/finance/chart/" + symbol,
-                                params={"range": "1d", "interval": "1m", "includePrePost": "true"},
-                                headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+        response = requests.get(
+            "https://query1.finance.yahoo.com/v8/finance/chart/" + symbol,
+            params={"range": "1d", "interval": "1m", "includePrePost": "true"},
+            headers={"User-Agent": "Mozilla/5.0"}, timeout=10,
+        )
         response.raise_for_status()
         result = (response.json().get("chart", {}).get("result") or [])[0]
         meta = result.get("meta", {})
@@ -74,125 +75,65 @@ def _get_yahoo_quote_safe(symbol):
             values = [v for v in closes if v is not None]
             price = values[-1] if values else None
         change_pct = None if price is None or previous in (None, 0) else (price - previous) / previous * 100
-        return {"price": price, "change_pct": change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", "")}
+        post_price = meta.get("postMarketPrice")
+        post_change_pct = meta.get("postMarketChangePercent")
+        if post_price is not None and post_change_pct is None and previous not in (None, 0):
+            post_change_pct = (post_price - previous) / previous * 100
+        return {
+            "price": price,
+            "change_pct": change_pct,
+            "market_state": meta.get("marketState", ""),
+            "currency": meta.get("currency", ""),
+            "post_price": post_price,
+            "post_change_pct": post_change_pct,
+        }
     except Exception:
-        return {"price": None, "change_pct": None, "market_state": "", "currency": ""}
+        return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None}
 
 
 def _market_state_text(row):
     return {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后"}.get(row.get("market_state") or "", "")
 
 
-def _render_market_item(name, row, meta=""):
-    price = row.get("price")
-    change_pct = row.get("change_pct")
+def _market_item_html(name, price, change_pct, meta=""):
     price_text = "--" if price is None else f"{price:,.2f}"
-    change_text = "数据暂缺" if price is None else ("--" if change_pct is None else f"{change_pct:+.2f}%")
-    return (f'<div class="market-item"><div class="market-name">{html.escape(name)}</div>'
-            f'<div class="market-price">{html.escape(price_text)}</div>'
-            f'<div class="market-change">{html.escape(change_text)}</div>'
-            f'<div class="market-meta">{html.escape(meta)}</div></div>')
+    change_text = "--" if change_pct is None else f"{change_pct:+.2f}%"
+    return (
+        f'<div class="market-item">'
+        f'<div class="market-name">{html.escape(name)}</div>'
+        f'<div class="market-price">{html.escape(price_text)}</div>'
+        f'<div class="market-change">{html.escape(change_text)}</div>'
+        f'<div class="market-meta">{html.escape(meta)}</div>'
+        f'</div>'
+    )
 
 
 @st.fragment(run_every="60s")
 def render_market_groups():
-    groups = [
-        ("🇺🇸 美股", [("纳斯达克", "^IXIC"), ("标普500", "^GSPC"), ("道琼斯", "^DJI")]),
-        ("🇭🇰 港股", [("恒生指数", "^HSI"), ("恒生科技", "^HSTECH")]),
-        ("🇨🇳 A股", [("上证指数", "000001.SS"), ("深证成指", "399001.SZ"), ("沪深300", "000300.SS")]),
+    nvda = _get_yahoo_quote_safe("NVDA")
+    market_data = [
+        ("🇺🇸 美股", "NVDA", [
+            _market_item_html("NVDA 正股", nvda.get("price"), nvda.get("change_pct"), _market_state_text(nvda)),
+            _market_item_html("夜盘 / 盘后", nvda.get("post_price"), nvda.get("post_change_pct"), "POST" if nvda.get("post_price") is not None else "--"),
+        ], "two"),
+        ("🇭🇰 港股", "HSTECH.HK", [
+            _market_item_html("恒生指数", (_get_yahoo_quote_safe("^HSI")).get("price"), (_get_yahoo_quote_safe("^HSI")).get("change_pct"), _market_state_text(_get_yahoo_quote_safe("^HSI"))),
+            _market_item_html("恒生科技", (_get_yahoo_quote_safe("HSTECH.HK")).get("price"), (_get_yahoo_quote_safe("HSTECH.HK")).get("change_pct"), _market_state_text(_get_yahoo_quote_safe("HSTECH.HK"))),
+        ], "two"),
+        ("🇨🇳 A股", "A-SH/SZ", [
+            _market_item_html("上证指数", (_get_yahoo_quote_safe("000001.SS")).get("price"), (_get_yahoo_quote_safe("000001.SS")).get("change_pct"), _market_state_text(_get_yahoo_quote_safe("000001.SS"))),
+            _market_item_html("深证成指", (_get_yahoo_quote_safe("399001.SZ")).get("price"), (_get_yahoo_quote_safe("399001.SZ")).get("change_pct"), _market_state_text(_get_yahoo_quote_safe("399001.SZ"))),
+            _market_item_html("沪深300", (_get_yahoo_quote_safe("000300.SS")).get("price"), (_get_yahoo_quote_safe("000300.SS")).get("change_pct"), _market_state_text(_get_yahoo_quote_safe("000300.SS"))),
+        ], ""),
     ]
     cols = st.columns(3, gap="small")
-    for col, (title, symbols) in zip(cols, groups):
+    for col, (title, _, items, grid_class) in zip(cols, market_data):
         with col:
-            st.markdown(f'<div class="market-group"><div class="market-group-title">{title}</div>', unsafe_allow_html=True)
-            row_cols = st.columns(len(symbols), gap="small")
-            for row_col, (name, symbol) in zip(row_cols, symbols):
-                with row_col:
-                    row = _get_yahoo_quote_safe(symbol)
-                    st.markdown(_render_market_item(name, row, _market_state_text(row)), unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+            with st.container(border=True):
+                st.markdown(f'<div class="market-card"><div class="market-card-title">{title}</div><div class="market-grid {grid_class}">' + "".join(items) + '</div></div>', unsafe_allow_html=True)
 
 
 render_market_groups()
-
-
-@st.cache_data(ttl=60, show_spinner=False)
-def _search_yahoo(market, query):
-    if not query.strip():
-        return []
-    try:
-        response = requests.get("https://query1.finance.yahoo.com/v1/finance/search",
-                                params={"q": query.strip(), "quotesCount": 10, "newsCount": 0},
-                                headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
-        response.raise_for_status()
-        quotes = response.json().get("quotes") or []
-        suffixes = {"US": ("",), "HK": (".HK",), "CN": (".SS", ".SZ")}[market]
-        results = []
-        for item in quotes:
-            if item.get("quoteType") != "EQUITY":
-                continue
-            symbol = str(item.get("symbol") or "")
-            if market == "US" and ("." in symbol or symbol.endswith(("=F", "=X"))):
-                continue
-            if market == "HK" and not symbol.upper().endswith(".HK"):
-                continue
-            if market == "CN" and not symbol.upper().endswith((".SS", ".SZ")):
-                continue
-            results.append({"symbol": symbol, "name": item.get("longname") or item.get("shortname") or symbol,
-                            "exchange": item.get("exchange") or item.get("exchDisp") or ""})
-        return results[:6]
-    except Exception:
-        return []
-
-
-def _direct_symbol(market, query):
-    q = query.strip().upper()
-    if market == "US":
-        return q
-    digits = "".join(ch for ch in q if ch.isdigit())
-    if market == "HK":
-        return f"{digits.zfill(4)}.HK" if digits else q
-    if not digits:
-        return q
-    return f"{digits}.SS" if digits.startswith(("5", "6", "68", "9")) else f"{digits}.SZ"
-
-
-def _render_search_result(item):
-    row = _get_yahoo_quote_safe(item["symbol"])
-    price = row.get("price")
-    change = row.get("change_pct")
-    price_text = "--" if price is None else f"{price:,.2f}"
-    change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%")
-    state = _market_state_text(row)
-    st.markdown(
-        f'<div style="padding:5px 0;border-bottom:1px solid #f3f4f6;">'
-        f'<div class="market-name">{html.escape(item["name"])} · {html.escape(item["symbol"])} {html.escape(item.get("exchange", ""))}</div>'
-        f'<div class="market-price">{html.escape(price_text)}</div>'
-        f'<div class="market-change">{html.escape(change_text)} {html.escape(state)}</div></div>',
-        unsafe_allow_html=True,
-    )
-
-
-st.markdown('<div class="section-title">🔎 市场搜索</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-description">分别搜索美股、港股、A股；支持股票名称、代码或 ticker。</div>', unsafe_allow_html=True)
-search_cols = st.columns(3, gap="small")
-search_config = [
-    (search_cols[0], "US", "🇺🇸 美股 · 搜索", "例如 NVDA / Apple", "market_search_us"),
-    (search_cols[1], "HK", "🇭🇰 港股 · 搜索", "例如 0700 / 腾讯", "market_search_hk"),
-    (search_cols[2], "CN", "🇨🇳 A股 · 搜索", "例如 600519 / 贵州茅台", "market_search_cn"),
-]
-for col, market, title, placeholder, key in search_config:
-    with col:
-        st.markdown(f'<div class="search-group"><div class="market-group-title">{title}</div></div>', unsafe_allow_html=True)
-        query = st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
-        if query.strip():
-            results = _search_yahoo(market, query)
-            if not results:
-                results = [{"symbol": _direct_symbol(market, query), "name": query.strip(), "exchange": ""}]
-            for item in results:
-                _render_search_result(item)
-        else:
-            st.caption("输入名称或代码后按 Enter 搜索")
 
 
 def get_start_date(range_name):
