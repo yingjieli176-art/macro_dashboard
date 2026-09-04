@@ -1,0 +1,191 @@
+name: Temporary dashboard patch
+
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-ui-night.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch dashboard
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('app.py')
+          text = path.read_text(encoding='utf-8')
+
+          text = text.replace(
+              'return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "regular_market_time": None, "post_market_time": None, "pre_market_time": None, "quote_source": "", "delayed_by": None, "data_source": ""}',
+              'return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": None, "post_market_time": None, "pre_market_time": None, "quote_source": "", "delayed_by": None, "data_source": ""}',
+              1,
+          )
+
+          marker = '\ndef _eastmoney_secid(symbol):\n'
+          overnight_helpers = r'''
+
+def _yahoo_raw_value(value):
+    if isinstance(value, dict):
+        return value.get("raw") if value.get("raw") is not None else value.get("fmt")
+    return value
+
+
+def _get_yahoo_overnight_safe(symbol):
+    if not symbol or "." in str(symbol) or str(symbol).startswith("^"):
+        return None, None
+    try:
+        session = requests.Session()
+        headers = {"User-Agent": "Mozilla/5.0"}
+        session.get("https://fc.yahoo.com", headers=headers, timeout=6)
+        crumb_response = session.get("https://query1.finance.yahoo.com/v1/test/getcrumb", headers=headers, timeout=6)
+        crumb = crumb_response.text.strip()
+        if not crumb or crumb.startswith("{"):
+            return None, None
+        response = session.get(
+            f"https://query1.finance.yahoo.com/v10/finance/quoteSummary/{symbol}",
+            params={"formatted": "true", "modules": "price", "overnightPrice": "true", "lang": "en-US", "region": "US", "crumb": crumb},
+            headers=headers,
+            timeout=8,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        result = ((payload.get("quoteSummary") or {}).get("result") or [None])[0] or {}
+        price = result.get("price") or {}
+        overnight_price = _yahoo_raw_value(price.get("overnightPrice"))
+        overnight_change_pct = _yahoo_raw_value(price.get("overnightChangePercent"))
+        if overnight_price is None:
+            def find_key(obj, wanted):
+                if isinstance(obj, dict):
+                    if wanted in obj:
+                        return _yahoo_raw_value(obj[wanted])
+                    for value in obj.values():
+                        found = find_key(value, wanted)
+                        if found is not None:
+                            return found
+                elif isinstance(obj, list):
+                    for value in obj:
+                        found = find_key(value, wanted)
+                        if found is not None:
+                            return found
+                return None
+            overnight_price = find_key(payload, "overnightPrice")
+            overnight_change_pct = find_key(payload, "overnightChangePercent")
+        return overnight_price, overnight_change_pct
+    except Exception:
+        return None, None
+'''
+          if '_get_yahoo_overnight_safe' not in text:
+              if marker not in text:
+                  raise SystemExit('anchor not found for overnight helper')
+              text = text.replace(marker, overnight_helpers + marker, 1)
+
+          old_row = 'row.update({"price": price, "change_pct": regular_change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct, "pre_price": pre_price, "pre_change_pct": pre_change_pct, "regular_market_time": meta.get("regularMarketTime"), "post_market_time": meta.get("postMarketTime"), "pre_market_time": meta.get("preMarketTime"), "quote_source": meta.get("quoteSourceName", ""), "delayed_by": meta.get("exchangeDataDelayedBy"), "data_source": "Yahoo Finance"})'
+          new_row = 'overnight_price, overnight_change_pct = _get_yahoo_overnight_safe(symbol)\n        row.update({"price": price, "change_pct": regular_change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct, "pre_price": pre_price, "pre_change_pct": pre_change_pct, "overnight_price": overnight_price, "overnight_change_pct": overnight_change_pct, "regular_market_time": meta.get("regularMarketTime"), "post_market_time": meta.get("postMarketTime"), "pre_market_time": meta.get("preMarketTime"), "quote_source": meta.get("quoteSourceName", ""), "delayed_by": meta.get("exchangeDataDelayedBy"), "data_source": "Yahoo Finance"})'
+          if old_row not in text:
+              raise SystemExit('anchor not found for Yahoo row')
+          text = text.replace(old_row, new_row, 1)
+
+          old_render = '''        if row.get("market_state") in ("POST", "POSTPOST", "CLOSED") and pp is not None:
+            after = f'<div class="search-after">盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
+        elif row.get("market_state") in ("PRE", "PREPRE") and pre_price is not None:
+            after = f'<div class="search-after">盘前：<strong>{pre_price:,.2f}</strong> <span>{"--" if pre_change is None else f"{pre_change:+.2f}%"}</span></div>'
+        elif pp is not None and row.get("post_market_time"):
+            after = f'<div class="search-after">最近盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
+'''
+          new_render = '''        overnight_price = row.get("overnight_price")
+        overnight_change = row.get("overnight_change_pct")
+        if overnight_price is not None:
+            after = f'<div class="search-after">夜盘：<strong>{overnight_price:,.2f}</strong> <span>{"--" if overnight_change is None else f"{overnight_change:+.2f}%"}</span></div>'
+        elif row.get("market_state") in ("POST", "POSTPOST", "CLOSED") and pp is not None:
+            after = f'<div class="search-after">盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
+        elif row.get("market_state") in ("PRE", "PREPRE") and pre_price is not None:
+            after = f'<div class="search-after">盘前：<strong>{pre_price:,.2f}</strong> <span>{"--" if pre_change is None else f"{pre_change:+.2f}%"}</span></div>'
+        elif pp is not None and row.get("post_market_time"):
+            after = f'<div class="search-after">最近盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
+'''
+          if old_render not in text:
+              raise SystemExit('anchor not found for quote render')
+          text = text.replace(old_render, new_render, 1)
+
+          old_search = '''search_cols = st.columns(3, gap="small")
+search_config = [(search_cols[0], "US", "🇺🇸 美股", "NVDA / Apple", "market_search_us"), (search_cols[1], "HK", "🇭🇰 港股", "0700 / 腾讯", "market_search_hk"), (search_cols[2], "CN", "🇨🇳 A股", "600519 / 贵州茅台", "market_search_cn")]
+for col, market, title, placeholder, key in search_config:
+    with col:
+        confirmed_list = st.session_state.get(f"{key}_confirmed", [])
+        if isinstance(confirmed_list, dict):
+            confirmed_list = [confirmed_list]
+        if confirmed_list:
+            st.markdown(f'<div class="market-group-title">{title}</div>', unsafe_allow_html=True)
+            for idx, confirmed in enumerate(confirmed_list):
+                if isinstance(confirmed, dict):
+                    quote_col, delete_col = st.columns([10, 1], gap="small")
+                    with quote_col:
+                        st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
+                    with delete_col:
+                        st.button("×", key=f"{key}_delete_{idx}", use_container_width=True, on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除")
+
+        is_open = st.session_state.get(f"{key}_open", False)
+        if not is_open:
+            st.button("🔎 搜索添加", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,))
+        else:
+            input_col, confirm_col = st.columns([6, 1], gap="small")
+            with input_col:
+                st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
+            with confirm_col:
+                st.button("✓", key=f"{key}_confirm", use_container_width=True, on_click=_confirm_search, args=(key, market), help="确认并新增")
+            st.caption(f"输入代码/名称后点 ✓：{placeholder}")
+'''
+          new_search = '''search_cols = st.columns(3, gap="small")
+search_config = [(search_cols[0], "US", "🇺🇸 美股", "NVDA / Apple", "market_search_us"), (search_cols[1], "HK", "🇭🇰 港股", "0700 / 腾讯", "market_search_hk"), (search_cols[2], "CN", "🇨🇳 A股", "600519 / 贵州茅台", "market_search_cn")]
+for col, market, title, placeholder, key in search_config:
+    with col:
+        is_open = st.session_state.get(f"{key}_open", False)
+        confirmed_list = st.session_state.get(f"{key}_confirmed", [])
+        if isinstance(confirmed_list, dict):
+            confirmed_list = [confirmed_list]
+        if confirmed_list:
+            st.markdown(f'<div class="market-group-title">{title}</div>', unsafe_allow_html=True)
+            for idx, confirmed in enumerate(confirmed_list):
+                if isinstance(confirmed, dict):
+                    if is_open:
+                        quote_col, delete_col = st.columns([10, 1], gap="small")
+                        with quote_col:
+                            st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
+                        with delete_col:
+                            st.button("×", key=f"{key}_delete_{idx}", use_container_width=True, on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除")
+                    else:
+                        st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
+
+        if not is_open:
+            st.button("+", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,), help="添加模块")
+        else:
+            input_col, confirm_col = st.columns([6, 1], gap="small")
+            with input_col:
+                st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
+            with confirm_col:
+                st.button("✓", key=f"{key}_confirm", use_container_width=True, on_click=_confirm_search, args=(key, market), help="确认并新增")
+'''
+          if old_search not in text:
+              raise SystemExit('anchor not found for search UI')
+          text = text.replace(old_search, new_search, 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          python -m py_compile app.py
+
+          rm -f .github/workflows/patch-ui-night.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py .github/workflows/patch-ui-night.yml
+          git diff --cached --check
+          git commit -m "Refine search controls and add US overnight quotes"
+          git push
