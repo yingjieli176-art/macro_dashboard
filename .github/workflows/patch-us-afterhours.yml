@@ -1,0 +1,40 @@
+name: Patch US stock after-hours display
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch app
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app.py')
+          s = p.read_text(encoding='utf-8')
+          old = '''        if row.get("market_state") in ("POST", "POSTPOST", "CLOSED") and pp is not None: after = f'<div class="search-after">盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
+        elif row.get("market_state") in ("PRE", "PREPRE") and pre_price is not None: after = f'<div class="search-after">盘前：<strong>{pre_price:,.2f}</strong> <span>{"--" if pre_change is None else f"{pre_change:+.2f}%"}</span></div>'
+        elif pp is not None and row.get("post_market_time"): after = f'<div class="search-after">最近盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
+'''
+          new = '''        if row.get("market_state") in ("PRE", "PREPRE") and pre_price is not None: after = f'<div class="search-after">盘前：<strong>{pre_price:,.2f}</strong> <span>{"--" if pre_change is None else f"{pre_change:+.2f}%"}</span></div>'
+        elif pp is not None: after = f'<div class="search-after">夜盘：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
+'''
+          if old not in s:
+              raise SystemExit('target block not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+          python -m py_compile app.py data.py
+          rm -f .github/workflows/patch-us-afterhours.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py .github/workflows/patch-us-afterhours.yml
+          git commit -m 'Show after-hours prices for added US stocks'
+          git push origin main
