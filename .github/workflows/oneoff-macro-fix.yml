@@ -1,0 +1,49 @@
+name: oneoff-macro-fix
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch dashboard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app.py')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('''def _eastmoney_secid(symbol):\n    raw = str(symbol or "").upper().strip()\n    if raw.endswith(".SS"): return f"1.{raw[:-3]}"\n    if raw.endswith(".SZ"): return f"0.{raw[:-3]}"\n    return ""''', '''def _eastmoney_secid(symbol):\n    raw = str(symbol or "").upper().strip()\n    if raw == "^HSI": return "100.HSI"\n    if raw in ("HSTECH.HK", "^HSTECH"): return "100.HSTECH"\n    if raw.endswith(".HK"): return f"116.{raw[:-3].zfill(5)}"\n    if raw.endswith(".SS"): return f"1.{raw[:-3]}"\n    if raw.endswith(".SZ"): return f"0.{raw[:-3]}"\n    return ""''', 1)
+          s = s.replace('if str(symbol).upper().endswith((".SS", ".SZ")):', 'if str(symbol).upper().endswith((".SS", ".SZ", ".HK")) or str(symbol).upper() in ("^HSI", "^HSTECH"):', 1)
+          s = s.replace('        price = float(price_raw); previous = None if prev_raw in (None, "-", "") else float(prev_raw)\n        if price > 10000: price /= 100\n        if previous is not None and previous > 10000: previous /= 100', '        divisor = 1 if str(symbol).upper() in ("^HSI", "HSTECH.HK", "^HSTECH", "000001.SS", "399001.SZ", "000300.SS") else 100\n        price = float(price_raw) / divisor; previous = None if prev_raw in (None, "-", "") else float(prev_raw) / divisor', 1)
+          s = s.replace('"currency": "CNY", "post_price"', '"currency": ("HKD" if str(symbol).upper().endswith(".HK") or str(symbol).upper() in ("^HSI", "^HSTECH") else "CNY"), "post_price"', 1)
+          marker = '@st.cache_data(ttl=60, show_spinner=False)\ndef _search_eastmoney_cn(query):'
+          insert = '''@st.cache_data(ttl=60, show_spinner=False)\ndef _search_eastmoney_hk(query):\n    if not query.strip(): return []\n    try:\n        response = requests.get(EASTMONEY_SEARCH_URL, params={"input": query.strip(), "type": 14, "count": 6}, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}, timeout=5)\n        response.raise_for_status(); payload = response.json() or {}; table = payload.get("QuotationCodeTable") or {}; rows = table.get("Data") or payload.get("data") or []; results = []\n        for item in rows:\n            if not isinstance(item, dict): continue\n            code = str(item.get("SecurityCode") or item.get("Code") or item.get("code") or "").strip(); name = str(item.get("SecurityName") or item.get("Name") or item.get("name") or "").strip(); quote_id = str(item.get("QuoteID") or item.get("quoteId") or "").strip()\n            if quote_id.startswith("116.") and code and name:\n                results.append({"symbol": f"{code.zfill(5)}.HK", "name": name, "exchange": "HK"})\n        return results[:6]\n    except Exception: return []\n\n'''
+          if marker not in s: raise SystemExit('HK search marker not found')
+          s = s.replace(marker, insert + marker, 1)
+          old = 'results = (_search_eastmoney_cn(query) if market == "CN" else _search_yahoo(market, query))\n    if market == "CN" and not results: results = _search_yahoo(market, query)'
+          new = 'results = (_search_eastmoney_cn(query) if market == "CN" else (_search_eastmoney_hk(query) if market == "HK" else _search_yahoo(market, query)))\n    if market == "CN" and not results: results = _search_yahoo(market, query)\n    if market == "HK" and not results: results = _search_yahoo(market, query)'
+          if old not in s: raise SystemExit('search dispatch marker not found')
+          s = s.replace(old, new, 1)
+          s = s.replace('.search-price { color: #111827; font-size: 0.94rem; font-weight: 650; margin-top: 1px; }', '.search-price { color: #111827; font-size: 0.94rem; font-weight: 650; margin-top: 1px; width: 118px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }', 1)
+          s = s.replace('.module-delete { display: flex; justify-content: flex-end; margin-top: 0; margin-right: -3px; transform: translateY(-78px); }', '.module-delete { display: flex; justify-content: flex-end; align-items: flex-start; margin-top: -2px; margin-right: -6px; transform: none; }', 1)
+          s = s.replace('    st.rerun()\n\n@st.fragment(run_every="300s")', '\n@st.fragment(run_every="300s")', 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          git diff --cached --quiet || git commit -m "Fix quote refresh and Eastmoney index scaling"
+          git push
+      - name: Remove workflow
+        if: always()
+        run: |
+          git rm -f .github/workflows/oneoff-macro-fix.yml || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Remove one-off patch workflow" || true
+          git push || true
