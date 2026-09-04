@@ -1,14 +1,9 @@
 import html
-
 import pandas as pd
 import plotly.graph_objects as go
 import requests
 import streamlit as st
-
-from data import (
-    get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb,
-    get_effr, get_rrp_rate, get_sina_news,
-)
+from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news)
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
 EASTMONEY_FOCUS_URL = "https://kuaixun.eastmoney.com/"
@@ -20,7 +15,6 @@ st.markdown("""
 .block-container { padding-top: 1.05rem; padding-bottom: 2.5rem; max-width: 1400px; }
 html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "PingFang TC", "Segoe UI", sans-serif; }
 .dashboard-title { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.1rem; }
-.dashboard-subtitle { color: #6b7280; font-size: 0.88rem; margin: 0.1rem 0 0.45rem; }
 .section-title { font-size: 1.35rem; font-weight: 650; letter-spacing: -0.01em; margin-top: 0.7rem; margin-bottom: 0.15rem; }
 .section-description { color: #6b7280; font-size: 0.86rem; margin-bottom: 0.35rem; }
 .mini-description { color: #6b7280; font-size: 0.76rem; line-height: 1.5; margin: 2px 0 8px; }
@@ -39,7 +33,6 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .news-time { flex: 0 0 72px; width: 72px; color: #6b7280; font-size: 0.72rem; white-space: nowrap; padding-top: 2px; margin-right: 6px; }
 .news-content { flex: 1; min-width: 0; }
 .news-content a { color: #374151; text-decoration: none !important; }
-.news-content a:hover { color: #111827; text-decoration: none !important; }
 .market-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 0.45rem; }
 .market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; }
 .market-group-title { color: #374151; font-size: 0.88rem; font-weight: 650; margin-bottom: 5px; }
@@ -58,13 +51,11 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .search-price { color: #111827; font-size: 1.02rem; font-weight: 650; margin-top: 2px; }
 .search-after { color: #6b7280; font-size: 0.78rem; margin-top: 3px; }
 .search-hint { color: #9ca3af; font-size: 0.76rem; margin-top: 2px; }
-.search-confirmed { border: 1px solid #d1d5db; border-radius: 7px; padding: 8px 10px; margin-top: 7px; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown('<div class="dashboard-title">Macro Dashboard</div>', unsafe_allow_html=True)
-
 
 def _get_yahoo_quote_safe(symbol):
     try:
@@ -87,100 +78,77 @@ def _get_yahoo_quote_safe(symbol):
     except Exception:
         return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None}
 
-
 def _market_state_text(row):
     return {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后"}.get(row.get("market_state") or "", "")
-
 
 def _market_item_html(name, price, change_pct, meta=""):
     price_text = "--" if price is None else f"{price:,.2f}"
     change_text = "--" if change_pct is None else f"{change_pct:+.2f}%"
     return f'<div class="market-item"><div class="market-name">{html.escape(name)}</div><div class="market-price">{html.escape(price_text)}</div><div class="market-change">{html.escape(change_text)}</div><div class="market-meta">{html.escape(meta)}</div></div>'
 
-
 @st.cache_data(ttl=60, show_spinner=False)
 def _get_cached_quote(symbol):
     return _get_yahoo_quote_safe(symbol)
 
-
 @st.fragment(run_every="60s")
 def render_market_groups():
     quotes = {"nasdaq": _get_cached_quote("^IXIC"), "sp500": _get_cached_quote("^GSPC"), "dow": _get_cached_quote("^DJI"), "hsi": _get_cached_quote("^HSI"), "hstech": _get_cached_quote("HSTECH.HK"), "sh": _get_cached_quote("000001.SS"), "sz": _get_cached_quote("399001.SZ"), "csi300": _get_cached_quote("000300.SS")}
-    groups = [
-        ("🇺🇸 美股", [_market_item_html("纳斯达克", quotes["nasdaq"].get("price"), quotes["nasdaq"].get("change_pct"), _market_state_text(quotes["nasdaq"])), _market_item_html("标普500", quotes["sp500"].get("price"), quotes["sp500"].get("change_pct"), _market_state_text(quotes["sp500"])), _market_item_html("道琼斯", quotes["dow"].get("price"), quotes["dow"].get("change_pct"), _market_state_text(quotes["dow"]))], "three"),
-        ("🇭🇰 港股", [_market_item_html("恒生指数", quotes["hsi"].get("price"), quotes["hsi"].get("change_pct"), _market_state_text(quotes["hsi"])), _market_item_html("恒生科技", quotes["hstech"].get("price"), quotes["hstech"].get("change_pct"), _market_state_text(quotes["hstech"]))], "two"),
-        ("🇨🇳 A股", [_market_item_html("上证指数", quotes["sh"].get("price"), quotes["sh"].get("change_pct"), _market_state_text(quotes["sh"])), _market_item_html("深证成指", quotes["sz"].get("price"), quotes["sz"].get("change_pct"), _market_state_text(quotes["sz"])), _market_item_html("沪深300", quotes["csi300"].get("price"), quotes["csi300"].get("change_pct"), _market_state_text(quotes["csi300"]))], "three"),
-    ]
+    groups = [("🇺🇸 美股", [_market_item_html("纳斯达克", quotes["nasdaq"].get("price"), quotes["nasdaq"].get("change_pct"), _market_state_text(quotes["nasdaq"])), _market_item_html("标普500", quotes["sp500"].get("price"), quotes["sp500"].get("change_pct"), _market_state_text(quotes["sp500"])), _market_item_html("道琼斯", quotes["dow"].get("price"), quotes["dow"].get("change_pct"), _market_state_text(quotes["dow"]))], "three"), ("🇭🇰 港股", [_market_item_html("恒生指数", quotes["hsi"].get("price"), quotes["hsi"].get("change_pct"), _market_state_text(quotes["hsi"])), _market_item_html("恒生科技", quotes["hstech"].get("price"), quotes["hstech"].get("change_pct"), _market_state_text(quotes["hstech"]))], "two"), ("🇨🇳 A股", [_market_item_html("上证指数", quotes["sh"].get("price"), quotes["sh"].get("change_pct"), _market_state_text(quotes["sh"])), _market_item_html("深证成指", quotes["sz"].get("price"), quotes["sz"].get("change_pct"), _market_state_text(quotes["sz"])), _market_item_html("沪深300", quotes["csi300"].get("price"), quotes["csi300"].get("change_pct"), _market_state_text(quotes["csi300"]))], "three")]
     cols = st.columns(3, gap="small")
     for col, (title, items, grid_class) in zip(cols, groups):
         with col:
             st.markdown(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>', unsafe_allow_html=True)
-
-
 render_market_groups()
-
 
 @st.cache_data(ttl=60, show_spinner=False)
 def _search_yahoo(market, query):
-    if not query.strip():
-        return []
+    if not query.strip(): return []
     try:
         response = requests.get("https://query1.finance.yahoo.com/v1/finance/search", params={"q": query.strip(), "quotesCount": 10, "newsCount": 0}, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
         response.raise_for_status()
         quotes = response.json().get("quotes") or []
         results = []
         for item in quotes:
-            if item.get("quoteType") != "EQUITY":
-                continue
+            if item.get("quoteType") != "EQUITY": continue
             symbol = str(item.get("symbol") or "")
-            if market == "US" and ("." in symbol or symbol.endswith(("=F", "=X"))):
-                continue
-            if market == "HK" and not symbol.upper().endswith(".HK"):
-                continue
-            if market == "CN" and not symbol.upper().endswith((".SS", ".SZ")):
-                continue
+            if market == "US" and ("." in symbol or symbol.endswith(("=F", "=X"))): continue
+            if market == "HK" and not symbol.upper().endswith(".HK"): continue
+            if market == "CN" and not symbol.upper().endswith((".SS", ".SZ")): continue
             results.append({"symbol": symbol, "name": item.get("longname") or item.get("shortname") or symbol, "exchange": item.get("exchange") or item.get("exchDisp") or ""})
         return results[:6]
-    except Exception:
-        return []
-
+    except Exception: return []
 
 def _direct_symbol(market, query):
     q = query.strip().upper()
-    if market == "US":
-        return q
+    if market == "US": return q
     digits = "".join(ch for ch in q if ch.isdigit())
-    if market == "HK":
-        return f"{digits.zfill(4)}.HK" if digits else q
-    if not digits:
-        return q
+    if market == "HK": return f"{digits.zfill(4)}.HK" if digits else q
+    if not digits: return q
     return f"{digits}.SS" if digits.startswith(("5", "6", "68", "9")) else f"{digits}.SZ"
-
 
 def _render_quote_block(item):
     row = _get_cached_quote(item["symbol"])
-    price = row.get("price")
-    change = row.get("change_pct")
-    post_price = row.get("post_price")
-    post_change = row.get("post_change_pct")
+    price, change = row.get("price"), row.get("change_pct")
     price_text = "--" if price is None else f"{price:,.2f}"
     change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%")
     state = _market_state_text(row)
     after = ""
     if item.get("market") == "US":
-        after_price = "--" if post_price is None else f"{post_price:,.2f}"
-        after_change = "--" if post_change is None else f"{post_change:+.2f}%"
-        after = f'<div class="search-after">盘后 / 夜盘：<strong>{after_price}</strong> <span>{after_change}</span></div>'
+        pp, pc = row.get("post_price"), row.get("post_change_pct")
+        after = f'<div class="search-after">盘后 / 夜盘：<strong>{"--" if pp is None else f"{pp:,.2f}"}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
     return f'<div class="search-result"><div class="search-result-label">{html.escape(item["name"])} <span class="search-result-symbol">· {html.escape(item["symbol"])} · {html.escape(item.get("exchange", ""))}</span></div><div class="search-price">{html.escape(price_text)} <span class="market-change">{html.escape(change_text)} {html.escape(state)}</span></div>{after}</div>'
 
-
 def _add_confirmed(key, item):
-    confirmed = st.session_state.setdefault(f"{key}_confirmed", [])
-    if not any(x.get("symbol") == item.get("symbol") for x in confirmed):
+    confirmed = st.session_state.get(f"{key}_confirmed", [])
+    if isinstance(confirmed, dict):
+        confirmed = [confirmed]
+    elif not isinstance(confirmed, list):
+        confirmed = []
+    if not any(x.get("symbol") == item.get("symbol") for x in confirmed if isinstance(x, dict)):
         confirmed.append(item)
+    st.session_state[f"{key}_confirmed"] = confirmed
     st.session_state[key] = ""
-    st.session_state[f"{key}_select"] = 0
-
+    st.session_state.pop(f"{key}_select", None)
 
 st.markdown('<div class="search-title">🔎 市场搜索</div>', unsafe_allow_html=True)
 search_cols = st.columns(3, gap="small")
@@ -188,19 +156,19 @@ search_config = [(search_cols[0], "US", "🇺🇸 美股", "例如 NVDA / Apple"
 for col, market, title, placeholder, key in search_config:
     with col:
         confirmed_list = st.session_state.get(f"{key}_confirmed", [])
+        if isinstance(confirmed_list, dict): confirmed_list = [confirmed_list]
         if confirmed_list:
             st.markdown(f'<div class="market-group-title">{title}</div>', unsafe_allow_html=True)
             for confirmed in confirmed_list:
-                st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
-            st.markdown('<div class="search-hint">可继续搜索并新增标的</div>', unsafe_allow_html=True)
+                if isinstance(confirmed, dict):
+                    st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
         query = st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
         if query.strip():
             results = _search_yahoo(market, query)
             if not results:
                 results = [{"symbol": _direct_symbol(market, query), "name": query.strip(), "exchange": "", "market": market}]
             else:
-                for item in results:
-                    item["market"] = market
+                for item in results: item["market"] = market
             result_options = [f'{item["name"]} · {item["symbol"]}' for item in results]
             selected_idx = st.radio("确认搜索结果", range(len(results)), format_func=lambda i: result_options[i], key=f"{key}_select", label_visibility="collapsed")
             selected = results[selected_idx]
@@ -209,92 +177,48 @@ for col, market, title, placeholder, key in search_config:
         elif not confirmed_list:
             st.markdown('<div class="search-hint">输入股票代码或名称后选择结果并确认</div>', unsafe_allow_html=True)
 
-
 def add_sources(sources):
-    links = []
-    for text, url in sources:
-        links.append(f'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">{html.escape(text)}</a>')
+    links = [f'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">{html.escape(text)}</a>' for text, url in sources]
     st.markdown('<div class="source-text">Source: ' + '<span class="source-sep">|</span>'.join(links) + '</div>', unsafe_allow_html=True)
-
 
 def add_line(fig, data, column, name, width=2.5, dash=None, yaxis=None, unit="%"):
     line = {"width": width}
-    if dash:
-        line["dash"] = dash
+    if dash: line["dash"] = dash
     trace = go.Scatter(x=data["observation_date"], y=data[column], name=name, mode="lines", line=line, hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>")
-    if yaxis:
-        trace.update(yaxis=yaxis)
+    if yaxis: trace.update(yaxis=yaxis)
     fig.add_trace(trace)
-
 
 def apply_chart_style(fig, height):
     fig.update_layout(height=height, template="plotly_white", hovermode="x unified", dragmode=False, margin=dict(l=35, r=35, t=30, b=35), legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="left", x=0, font=dict(size=10)), hoverlabel=dict(bgcolor="white", font_size=11), font=dict(size=10 if compact_mode else 12), xaxis=dict(showgrid=False, showline=True, linecolor="#d1d5db", fixedrange=True, hoverformat="%Y-%m-%d"), yaxis=dict(showgrid=True, gridcolor="#eeeeee", zeroline=False, fixedrange=True))
-    fig.update_xaxes(fixedrange=True)
-    fig.update_yaxes(fixedrange=True)
-    return fig
-
+    fig.update_xaxes(fixedrange=True); fig.update_yaxes(fixedrange=True); return fig
 
 def get_start_date(date_range):
     end = pd.Timestamp.today().normalize()
     return {"5Y": end - pd.DateOffset(years=5), "1Y": end - pd.DateOffset(years=1), "6M": end - pd.DateOffset(months=6), "3M": end - pd.DateOffset(months=3), "1M": end - pd.DateOffset(months=1)}[date_range]
 
-
-def filter_range(data, date_range):
-    return data[data["observation_date"] >= get_start_date(date_range)].copy()
-
-
-def chart_height(compact, normal):
-    return compact if compact_mode else normal
-
+def filter_range(data, date_range): return data[data["observation_date"] >= get_start_date(date_range)].copy()
+def chart_height(compact, normal): return compact if compact_mode else normal
 
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date")
-    data = filter_range(data, date_range)
-    fig = go.Figure()
-    for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]:
-        add_line(fig, data, column, name, width)
-    fig.update_layout(yaxis_title="Rate (%)")
-    return apply_chart_style(fig, chart_height(190, 470))
-
+    data = filter_range(data, date_range); fig = go.Figure()
+    for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
+    fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(190, 470))
 
 def build_fig2(date_range):
-    data = get_dgs10().merge(get_dfii10(), on="observation_date", how="inner").sort_values("observation_date")
-    data = filter_range(data, date_range)
-    data["Breakeven"] = data["DGS10"] - data["DFII10"]
-    fig = go.Figure()
-    for column, name, width, dash in [("DGS10", "10Y Nominal", 2.8, None), ("DFII10", "10Y Real", 2.6, None), ("Breakeven", "10Y Breakeven", 2.5, "dot")]:
-        add_line(fig, data, column, name, width, dash)
-    fig.update_layout(yaxis_title="Yield (%)")
-    return apply_chart_style(fig, chart_height(190, 470))
-
+    data = get_dgs10().merge(get_dfii10(), on="observation_date", how="inner").sort_values("observation_date"); data = filter_range(data, date_range); data["Breakeven"] = data["DGS10"] - data["DFII10"]; fig = go.Figure()
+    for column, name, width, dash in [("DGS10", "10Y Nominal", 2.8, None), ("DFII10", "10Y Real", 2.6, None), ("Breakeven", "10Y Breakeven", 2.5, "dot")]: add_line(fig, data, column, name, width, dash)
+    fig.update_layout(yaxis_title="Yield (%)"); return apply_chart_style(fig, chart_height(190, 470))
 
 def build_fig3(date_range):
-    data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").sort_values("observation_date")
-    data = filter_range(data, date_range)
-    data["10Y-2Y"] = data["DGS10"] - data["DGS2"]
-    data["10Y-3M"] = data["DGS10"] - data["DGS3MO"]
-    fig = go.Figure()
-    for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8)]:
-        add_line(fig, data, column, name, width)
-    add_line(fig, data, "10Y-2Y", "10Y−2Y", 2.2, "dot", "y2", " bp")
-    add_line(fig, data, "10Y-3M", "10Y−3M", 2.2, "dash", "y2", " bp")
-    fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>")
-    fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>")
-    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True))
-    return apply_chart_style(fig, chart_height(200, 500))
+    data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); data["10Y-2Y"] = data["DGS10"] - data["DGS2"]; data["10Y-3M"] = data["DGS10"] - data["DGS3MO"]; fig = go.Figure()
+    for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8)]: add_line(fig, data, column, name, width)
+    add_line(fig, data, "10Y-2Y", "10Y−2Y", 2.2, "dot", "y2", " bp"); add_line(fig, data, "10Y-3M", "10Y−3M", 2.2, "dash", "y2", " bp")
+    fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>")
+    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True)); return apply_chart_style(fig, chart_height(200, 500))
 
-
-PARAM_DESCRIPTIONS = [
-    "IORB（Interest on Reserve Balances）：美联储对存放在美联储的准备金余额支付的利率。ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具的利率。EFFR（Effective Federal Funds Rate）：美国联邦基金市场的有效隔夜利率。SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。",
-    "10Y Nominal：10年期美国国债名义收益率。10Y Real：10年期美国国债实际收益率，通常指10年期TIPS实际收益率。Breakeven：10年期盈亏平衡通胀率，即名义收益率与实际收益率之差。",
-    "3M：3个月期美国国债收益率。2Y：2年期美国国债收益率。10Y：10年期美国国债收益率。10Y−2Y：10年期与2年期美国国债收益率之差。10Y−3M：10年期与3个月期美国国债收益率之差。",
-]
-
-
-def show_parameter_description(index):
-    st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
-
-
+PARAM_DESCRIPTIONS = ["IORB（Interest on Reserve Balances）：美联储对存放在美联储的准备金余额支付的利率。ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具的利率。EFFR（Effective Federal Funds Rate）：美国联邦基金市场的有效隔夜利率。SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。", "10Y Nominal：10年期美国国债名义收益率。10Y Real：10年期美国国债实际收益率，通常指10年期TIPS实际收益率。Breakeven：10年期盈亏平衡通胀率，即名义收益率与实际收益率之差。", "3M：3个月期美国国债收益率。2Y：2年期美国国债收益率。10Y：10年期美国国债收益率。10Y−2Y：10年期与2年期美国国债收益率之差。10Y−3M：10年期与3个月期美国国债收益率之差。"]
+def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
 compact_mode = True
 
 @st.fragment(run_every="3600s")
@@ -302,64 +226,41 @@ def render_core_charts():
     global compact_mode
     st.markdown('<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>', unsafe_allow_html=True)
     toggle_col, _ = st.columns([1, 5])
-    with toggle_col:
-        compact_mode = st.toggle("缩小图表 / 快速浏览", value=True, key="compact_mode", help="开启后，三个核心图表横向并排显示。")
+    with toggle_col: compact_mode = st.toggle("缩小图表 / 快速浏览", value=True, key="compact_mode", help="开启后，三个核心图表横向并排显示。")
     if compact_mode:
-        col1, col2, col3 = st.columns(3, gap="small")
-        configs = [(col1, '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (col2, '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1), (col3, '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>', "compact_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")], 2)]
+        cols = st.columns(3, gap="small")
+        configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1), (cols[2], '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>', "compact_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")], 2)]
         for column, title, description, key, builder, sources, desc_index in configs:
             with column:
-                st.markdown(title, unsafe_allow_html=True)
-                st.markdown(description, unsafe_allow_html=True)
-                date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed")
-                st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG)
-                show_parameter_description(desc_index)
-                add_sources(sources)
+                st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
     else:
         configs = [('<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>', '<div class="section-description">IORB、ON RRP Rate、EFFR 与 SOFR</div>', "normal_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0, True), ('<div class="section-title">2. 10Y Yield Structure</div>', '<div class="section-description">10Y Nominal / 10Y Real / 10Y Breakeven</div>', "normal_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1, True), ('<div class="section-title">3. Treasury Yield & Curve Spread</div>', '<div class="section-description">3M、2Y、10Y Treasury Yield 与曲线利差</div>', "normal_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")], 2, False)]
         for title, description, key, builder, sources, desc_index, divider in configs:
-            st.markdown(title, unsafe_allow_html=True)
-            st.markdown(description, unsafe_allow_html=True)
-            date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed")
-            st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG)
-            show_parameter_description(desc_index)
-            add_sources(sources)
-            if divider:
-                st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-
-
+            st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
+            if divider: st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 render_core_charts()
 
 st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-description">东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新</div>', unsafe_allow_html=True)
-
 @st.fragment(run_every="60s")
 def render_news_panel():
     col1, col2 = st.columns([1, 5])
     with col1:
-        if st.button("🔄 立即刷新", key="refresh_7x24", use_container_width=True):
-            get_sina_news.clear()
-            st.rerun()
+        if st.button("🔄 立即刷新", key="refresh_7x24", use_container_width=True): get_sina_news.clear(); st.rerun()
     news_items, news_error = get_sina_news(limit=50)
     if news_items:
         st.markdown(f'<div class="news-status">当前显示 {len(news_items)} 条 · 来源：东方财富红字焦点快讯 · 60秒自动刷新</div>', unsafe_allow_html=True)
         news_html = '<div class="news-box">'
         for idx, item in enumerate(news_items, start=1):
-            news_time = html.escape(str(item.get("time", "")))
-            news_title = html.escape(str(item.get("title", "")))
-            news_content = html.escape(str(item.get("content", "")))
-            news_url = html.escape(str(item.get("url", EASTMONEY_FOCUS_URL)), quote=True)
-            if not news_url.startswith(("http://", "https://")):
-                news_url = EASTMONEY_FOCUS_URL
+            news_time = html.escape(str(item.get("time", ""))); news_title = html.escape(str(item.get("title", ""))); news_content = html.escape(str(item.get("content", ""))); news_url = html.escape(str(item.get("url", EASTMONEY_FOCUS_URL)), quote=True)
+            if not news_url.startswith(("http://", "https://")): news_url = EASTMONEY_FOCUS_URL
             body = f"<strong>{news_title}</strong><div style=\"margin-top:3px;\">{news_content}</div>" if news_title and news_content and news_title != news_content else (news_content or news_title)
             news_html += f'<div class="news-item"><span class="news-index">{idx}.</span><span class="news-time">{news_time}</span><div class="news-content"><a href="{news_url}" target="_blank" rel="noopener noreferrer">{body}</a></div></div>'
         st.html(news_html + "</div>")
     else:
-        st.warning("暂时无法取得东方财富红字焦点快讯。")
-        if news_error:
-            st.caption(f"错误：{news_error}")
+        st.warning("暂时无法取得东方财富红字焦点快讯。");
+        if news_error: st.caption(f"错误：{news_error}")
     add_sources([("东方财富红字焦点快讯", EASTMONEY_FOCUS_URL)])
-
 render_news_panel()
 st.markdown(f'<div class="source-text">Source: <a href="{EASTMONEY_FOCUS_URL}" target="_blank" rel="noopener noreferrer">Eastmoney 7×24 Focus News</a></div>', unsafe_allow_html=True)
