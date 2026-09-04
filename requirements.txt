@@ -2,6 +2,3 @@ streamlit==1.62.0
 pandas
 plotly
 requests
-
-# trigger final deployment after removing broken watchlist refresh
-# retrigger layout/callback stabilization
