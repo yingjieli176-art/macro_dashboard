@@ -5,3 +5,4 @@ requests
 
 # force Streamlit Community Cloud dependency redeploy
 # redeploy after restoring stable app baseline
+# trigger quote refresh patch
