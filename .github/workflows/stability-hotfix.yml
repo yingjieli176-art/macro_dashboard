@@ -31,16 +31,22 @@ jobs:
               p.write_text(s2, encoding='utf-8')
               print('Removed all st.fragment decorators from app.py')
 
-          # Keep external requests from holding the whole Streamlit run for
-          # tens of seconds when an upstream API is slow/unreachable.
+          # Keep external requests fail-fast so a cold Streamlit rerun cannot
+          # be held for a long time by an unavailable upstream API.
           p = Path('data.py')
           s = p.read_text(encoding='utf-8')
-          s2 = s.replace('timeout=20,', 'timeout=8,')
-          s2 = s2.replace('timeout=15,', 'timeout=5,')
+          s2 = s.replace('timeout=20,', 'timeout=4,')
+          s2 = s2.replace('timeout=15,', 'timeout=3,')
+          s2 = s2.replace('timeout=8,', 'timeout=4,')
+          s2 = s2.replace('timeout=5,', 'timeout=3,')
           if s2 != s:
               p.write_text(s2, encoding='utf-8')
-              print('Reduced FRED timeout 20s->8s and news timeout 15s->5s')
+              print('Reduced FRED timeout to 4s and news timeout to 3s')
           PY
+
+      - name: Validate Python syntax
+        shell: bash
+        run: python -m py_compile app.py data.py
 
       - name: Commit patch
         shell: bash
@@ -52,5 +58,5 @@ jobs:
             echo 'No changes to commit'
             exit 0
           fi
-          git commit -m 'Harden dashboard refresh against slow external APIs'
+          git commit -m 'Fail fast on slow macro data providers'
           git push origin main
