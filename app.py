@@ -69,7 +69,12 @@ st.markdown(
     .market-meta { color: #9ca3af; font-size: 0.61rem; margin-top: 2px; white-space: nowrap; }
     .market-note { color: #9ca3af; font-size: 0.62rem; margin-top: 5px; line-height: 1.55; }
     .market-note-line + .market-note-line { margin-top: 2px; }
-    @media (max-width: 900px) { .market-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } .market-row.after-hours-row { max-width: 100%; } }
+    .market-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 0.7rem; }
+    .market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 7px 9px 6px; background: #fff; min-width: 0; }
+    .market-group-title { color: #374151; font-size: 0.76rem; font-weight: 650; margin-bottom: 5px; }
+    .market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+    .market-group-row.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 900px) { .market-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } .market-row.after-hours-row { max-width: 100%; } .market-groups { grid-template-columns: 1fr; } }
     </style>
     """,
     unsafe_allow_html=True,
@@ -84,11 +89,7 @@ compact_mode = st.toggle("缩小图表 / 快速浏览", value=True, help="开启
 def _get_after_hours_quote(symbol):
     response = requests.get(
         "https://query1.finance.yahoo.com/v8/finance/chart/" + symbol,
-        params={
-            "range": "5d",
-            "interval": "5m",
-            "includePrePost": "true",
-        },
+        params={"range": "5d", "interval": "5m", "includePrePost": "true"},
         headers={"User-Agent": "Mozilla/5.0"},
         timeout=10,
     )
@@ -100,7 +101,6 @@ def _get_after_hours_quote(symbol):
     post_period = (meta.get("currentTradingPeriod") or {}).get("post") or {}
     post_start = post_period.get("start")
     post_end = post_period.get("end")
-
     post_values = []
     for timestamp, close in zip(timestamps, closes):
         if close is None:
@@ -110,97 +110,111 @@ def _get_after_hours_quote(symbol):
         if post_end is not None and timestamp > post_end:
             continue
         post_values.append(close)
-
     price = post_values[-1] if post_values else meta.get("postMarketPrice")
     regular_price = meta.get("regularMarketPrice")
     if price is None:
         raise RuntimeError("没有取得盘后成交价")
-
-    change_pct = None
-    if regular_price not in (None, 0):
-        change_pct = (price - regular_price) / regular_price * 100
-
+    change_pct = None if regular_price in (None, 0) else (price - regular_price) / regular_price * 100
     return price, change_pct
+
+
+def _get_yahoo_quote_safe(symbol):
+    try:
+        response = requests.get(
+            "https://query1.finance.yahoo.com/v8/finance/chart/" + symbol,
+            params={"range": "1d", "interval": "1m", "includePrePost": "true"},
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=10,
+        )
+        response.raise_for_status()
+        result = (response.json().get("chart", {}).get("result") or [])[0]
+        meta = result.get("meta", {})
+        price = meta.get("regularMarketPrice")
+        previous = meta.get("previousClose")
+        if price is None:
+            closes = ((result.get("indicators", {}).get("quote") or [{}])[0]).get("close") or []
+            values = [v for v in closes if v is not None]
+            price = values[-1] if values else None
+        change_pct = None if price is None or previous in (None, 0) else (price - previous) / previous * 100
+        return {"price": price, "change_pct": change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", "")}
+    except Exception as exc:
+        return {"price": None, "change_pct": None, "market_state": "", "currency": "", "error": str(exc)}
+
+
+def _render_market_item(name, row, meta=""):
+    price = row.get("price")
+    change_pct = row.get("change_pct")
+    price_text = "--" if price is None else f"{price:,.2f}"
+    change_text = "数据暂缺" if price is None else ("--" if change_pct is None else f"{change_pct:+.2f}%")
+    return (
+        f'<div class="market-item"><div class="market-name">{html.escape(name)}</div>'
+        f'<div class="market-price">{html.escape(price_text)}</div>'
+        f'<div class="market-change">{html.escape(change_text)}</div>'
+        f'<div class="market-meta">{html.escape(meta)}</div></div>'
+    )
 
 
 @st.fragment(run_every="60s")
 def render_market_snapshot():
     rows = get_market_snapshot()
-    regular_labels = [
-        "纳斯达克",
-        "标普500",
-        "上证指数",
-        "深证成指",
-        "韩国综合",
-    ]
     by_name = {row.get("name"): row for row in rows}
-
-    def render_item(name, row, meta):
-        price = row.get("price")
-        change_pct = row.get("change_pct")
-        if price is None:
-            price_text = "--"
-            change_text = "数据暂缺"
-        else:
-            price_text = f"{price:,.2f}"
-            change_text = "--" if change_pct is None else f"{change_pct:+.2f}%"
-        return (
-            f'<div class="market-item">'
-            f'<div class="market-name">{html.escape(name)}</div>'
-            f'<div class="market-price">{html.escape(price_text)}</div>'
-            f'<div class="market-change">{html.escape(change_text)}</div>'
-            f'<div class="market-meta">{html.escape(meta)}</div>'
-            f'</div>'
-        )
-
+    nvda = _get_yahoo_quote_safe("NVDA")
     regular_items = []
-    for name in regular_labels:
+    for name in ["纳斯达克", "标普500", "上证指数", "深证成指"]:
         row = by_name.get(name, {})
         state = row.get("market_state") or ""
         meta = {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后"}.get(state, "")
-        regular_items.append(render_item(name, row, meta))
-
+        regular_items.append(_render_market_item(name, row, meta))
+    regular_items.append(_render_market_item("英伟达", nvda, {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后"}.get(nvda.get("market_state", ""), "")))
     after_hours = []
-    for name, symbol, label in [
-        ("纳指夜盘", "QQQ", "QQQ 盘后"),
-        ("标普夜盘", "SPY", "SPY 盘后"),
-    ]:
+    for name, symbol, label in [("纳指夜盘", "QQQ", "QQQ 盘后"), ("标普夜盘", "SPY", "SPY 盘后")]:
         try:
             price, change_pct = _get_after_hours_quote(symbol)
-            after_hours.append(render_item(name, {"price": price, "change_pct": change_pct}, label))
+            after_hours.append(_render_market_item(name, {"price": price, "change_pct": change_pct}, label))
         except Exception:
-            after_hours.append(render_item(name, {}, label))
-
+            after_hours.append(_render_market_item(name, {}, label))
     st.markdown(
-        '<div class="market-box">'
-        '<div class="market-title">🌐 全球核心市场 · 实时/近实时</div>'
-        '<div class="market-row">'
-        + "".join(regular_items)
-        + '</div>'
-        '<div class="market-row after-hours-row">'
-        + "".join(after_hours)
-        + '</div>'
-        '<div class="market-note">'
-        '<div class="market-note-line">每60秒刷新 · 第一排为核心指数盘中/最新收盘价。</div>'
-        '<div class="market-note-line">第二排仅显示美股盘后价格：纳指参考 QQQ、标普参考 SPY；不使用 NQ / ES 期货。</div>'
-        '</div>'
-        '</div>',
+        '<div class="market-box"><div class="market-title">🌐 全球核心市场 · 实时/近实时</div>'
+        '<div class="market-row">' + "".join(regular_items) + '</div>'
+        '<div class="market-row after-hours-row">' + "".join(after_hours) + '</div>'
+        '<div class="market-note"><div class="market-note-line">每60秒刷新 · 第一排为核心指数盘中/最新收盘价。</div>'
+        '<div class="market-note-line">第二排仅显示美股盘后价格：纳指参考 QQQ、标普参考 SPY；不使用 NQ / ES 期货。</div></div></div>',
         unsafe_allow_html=True,
     )
 
 
+def _market_state_text(row):
+    return {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后"}.get(row.get("market_state") or "", "")
+
+
+@st.fragment(run_every="60s")
+def render_market_groups():
+    us_symbols = [("纳斯达克", "^IXIC"), ("标普500", "^GSPC"), ("道琼斯", "^DJI")]
+    hk_symbols = [("恒生指数", "^HSI"), ("恒生科技", "^HSTECH")]
+    cn_symbols = [("上证指数", "000001.SS"), ("深证成指", "399001.SZ"), ("沪深300", "000300.SS")]
+
+    groups = [("🇺🇸 美股", us_symbols), ("🇭🇰 港股", hk_symbols), ("🇨🇳 A股", cn_symbols)]
+    html_groups = []
+    for title, symbols in groups:
+        items = []
+        for name, symbol in symbols:
+            row = _get_yahoo_quote_safe(symbol)
+            items.append(_render_market_item(name, row, _market_state_text(row)))
+        two_class = " two" if len(symbols) == 2 else ""
+        html_groups.append(
+            f'<div class="market-group"><div class="market-group-title">{title}</div>'
+            f'<div class="market-group-row{two_class}">' + "".join(items) + '</div></div>'
+        )
+    st.markdown('<div class="market-groups">' + "".join(html_groups) + '</div>', unsafe_allow_html=True)
+
+
 render_market_snapshot()
+render_market_groups()
 
 
 def get_start_date(range_name):
     today = pd.Timestamp.today().normalize()
-    offsets = {
-        "5Y": pd.DateOffset(years=5),
-        "1Y": pd.DateOffset(years=1),
-        "6M": pd.DateOffset(months=6),
-        "3M": pd.DateOffset(months=3),
-        "1M": pd.DateOffset(months=1),
-    }
+    offsets = {"5Y": pd.DateOffset(years=5), "1Y": pd.DateOffset(years=1), "6M": pd.DateOffset(months=6), "3M": pd.DateOffset(months=3), "1M": pd.DateOffset(months=1)}
     return today - offsets.get(range_name, pd.DateOffset(years=1))
 
 
@@ -221,24 +235,14 @@ def add_line(fig, data, column, name, width=2.5, dash=None, yaxis=None, unit="%"
     line = {"width": width}
     if dash:
         line["dash"] = dash
-    trace = go.Scatter(
-        x=data["observation_date"], y=data[column], name=name, mode="lines", line=line,
-        hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>",
-    )
+    trace = go.Scatter(x=data["observation_date"], y=data[column], name=name, mode="lines", line=line, hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>")
     if yaxis:
         trace.update(yaxis=yaxis)
     fig.add_trace(trace)
 
 
 def apply_chart_style(fig, height):
-    fig.update_layout(
-        height=height, template="plotly_white", hovermode="x unified", dragmode=False,
-        margin=dict(l=35, r=35, t=30, b=35),
-        legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="left", x=0, font=dict(size=10)),
-        hoverlabel=dict(bgcolor="white", font_size=11), font=dict(size=10 if compact_mode else 12),
-        xaxis=dict(showgrid=False, showline=True, linecolor="#d1d5db", fixedrange=True, hoverformat="%Y-%m-%d"),
-        yaxis=dict(showgrid=True, gridcolor="#eeeeee", zeroline=False, fixedrange=True),
-    )
+    fig.update_layout(height=height, template="plotly_white", hovermode="x unified", dragmode=False, margin=dict(l=35, r=35, t=30, b=35), legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="left", x=0, font=dict(size=10)), hoverlabel=dict(bgcolor="white", font_size=11), font=dict(size=10 if compact_mode else 12), xaxis=dict(showgrid=False, showline=True, linecolor="#d1d5db", fixedrange=True, hoverformat="%Y-%m-%d"), yaxis=dict(showgrid=True, gridcolor="#eeeeee", zeroline=False, fixedrange=True))
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
     return fig
@@ -249,13 +253,7 @@ def chart_height(compact, normal):
 
 
 def build_fig1(date_range):
-    data = (
-        get_iorb()
-        .merge(get_rrp_rate(), on="observation_date", how="outer")
-        .merge(get_effr(), on="observation_date", how="outer")
-        .merge(get_sofr(), on="observation_date", how="outer")
-        .sort_values("observation_date")
-    )
+    data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date")
     data = filter_range(data, date_range)
     fig = go.Figure()
     for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]:
@@ -276,12 +274,7 @@ def build_fig2(date_range):
 
 
 def build_fig3(date_range):
-    data = (
-        get_dgs3mo()
-        .merge(get_dgs2(), on="observation_date", how="outer")
-        .merge(get_dgs10(), on="observation_date", how="outer")
-        .sort_values("observation_date")
-    )
+    data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").sort_values("observation_date")
     data = filter_range(data, date_range)
     data["10Y-2Y"] = data["DGS10"] - data["DGS2"]
     data["10Y-3M"] = data["DGS10"] - data["DGS3MO"]
@@ -292,10 +285,7 @@ def build_fig3(date_range):
     add_line(fig, data, "10Y-3M", "10Y−3M", 2.2, "dash", "y2", " bp")
     fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>")
     fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>")
-    fig.update_layout(
-        yaxis=dict(title="Yield (%)", fixedrange=True),
-        yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True),
-    )
+    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True))
     return apply_chart_style(fig, chart_height(200, 500))
 
 
@@ -307,10 +297,7 @@ PARAM_DESCRIPTIONS = [
 
 
 def show_parameter_description(index):
-    st.markdown(
-        f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
 
 
 @st.fragment(run_every="3600s")
@@ -326,7 +313,7 @@ def render_core_charts():
             with column:
                 st.markdown(title, unsafe_allow_html=True)
                 st.markdown(description, unsafe_allow_html=True)
-                date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key)
+                date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed")
                 st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG)
                 show_parameter_description(desc_index)
                 add_sources(sources)
@@ -339,7 +326,7 @@ def render_core_charts():
         for title, description, key, builder, sources, desc_index, divider in configs:
             st.markdown(title, unsafe_allow_html=True)
             st.markdown(description, unsafe_allow_html=True)
-            date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key)
+            date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed")
             st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG)
             show_parameter_description(desc_index)
             add_sources(sources)
@@ -361,7 +348,6 @@ def render_news_panel():
         if st.button("🔄 立即刷新", key="refresh_7x24", use_container_width=True):
             get_sina_news.clear()
             st.rerun()
-
     news_items, news_error = get_sina_news(limit=50)
     if news_items:
         st.markdown(f'<div class="news-status">当前显示 {len(news_items)} 条 · 来源：东方财富红字焦点快讯 · 60秒自动刷新</div>', unsafe_allow_html=True)
@@ -381,9 +367,7 @@ def render_news_panel():
             <div class="news-item">
                 <span class="news-index">{idx}.</span>
                 <span class="news-time">{news_time}</span>
-                <div class="news-content">
-                    <a href="{news_url}" target="_blank" rel="noopener noreferrer">{body}</a>
-                </div>
+                <div class="news-content"><a href="{news_url}" target="_blank" rel="noopener noreferrer">{body}</a></div>
             </div>
             """
         st.html(news_html + "</div>")
@@ -396,7 +380,4 @@ def render_news_panel():
 
 render_news_panel()
 
-st.markdown(
-    f'<div class="source-text">Source: <a href="{EASTMONEY_FOCUS_URL}" target="_blank" rel="noopener noreferrer">Eastmoney 7×24 Focus News</a></div>',
-    unsafe_allow_html=True,
-)
+st.markdown(f'<div class="source-text">Source: <a href="{EASTMONEY_FOCUS_URL}" target="_blank" rel="noopener noreferrer">Eastmoney 7×24 Focus News</a></div>', unsafe_allow_html=True)
