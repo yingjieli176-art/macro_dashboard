@@ -56,7 +56,6 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .search-price { color: #111827; font-size: 1.02rem; font-weight: 650; margin-top: 2px; }
 .search-after { color: #6b7280; font-size: 0.78rem; margin-top: 3px; }
 .search-hint { color: #9ca3af; font-size: 0.76rem; margin-top: 2px; }
-.search-confirm-row { display: grid; grid-template-columns: minmax(0, 1fr) 42px; gap: 5px; align-items: end; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 </style>
 """, unsafe_allow_html=True)
@@ -117,16 +116,39 @@ def _get_yahoo_quote_safe(symbol):
         regular_change_pct = meta.get("regularMarketChangePercent")
         post_change_pct = meta.get("postMarketChangePercent")
         pre_change_pct = meta.get("preMarketChangePercent")
+
+        periods = meta.get("currentTradingPeriod") or {}
+        pre_period = periods.get("pre") or {}
+        regular_period = periods.get("regular") or {}
+        post_period = periods.get("post") or {}
+        timestamps = result.get("timestamp") or []
+        closes = ((result.get("indicators", {}).get("quote") or [{}])[0]).get("close") or []
+
+        def _last_close_in_period(period):
+            start, end = period.get("start"), period.get("end")
+            if start is None:
+                return None
+            candidates = [close for ts, close in zip(timestamps, closes) if close is not None and ts >= start and (end is None or ts <= end)]
+            return candidates[-1] if candidates else None
+
         if price is None:
-            closes = ((result.get("indicators", {}).get("quote") or [{}])[0]).get("close") or []
-            values = [v for v in closes if v is not None]
-            price = values[-1] if values else None
+            regular_fallback = _last_close_in_period(regular_period)
+            if regular_fallback is not None:
+                price = regular_fallback
+            else:
+                values = [v for v in closes if v is not None]
+                price = values[-1] if values else None
+        if pre_price is None:
+            pre_price = _last_close_in_period(pre_period)
+        if post_price is None:
+            post_price = _last_close_in_period(post_period)
         if regular_change_pct is None and price is not None and previous not in (None, 0):
             regular_change_pct = (price - previous) / previous * 100
         if post_change_pct is None and post_price is not None and previous not in (None, 0):
             post_change_pct = (post_price - previous) / previous * 100
         if pre_change_pct is None and pre_price is not None and previous not in (None, 0):
             pre_change_pct = (pre_price - previous) / previous * 100
+
         row = _empty_quote()
         row.update({"price": price, "change_pct": regular_change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct, "pre_price": pre_price, "pre_change_pct": pre_change_pct, "regular_market_time": meta.get("regularMarketTime"), "post_market_time": meta.get("postMarketTime"), "pre_market_time": meta.get("preMarketTime"), "quote_source": meta.get("quoteSourceName", ""), "delayed_by": meta.get("exchangeDataDelayedBy"), "data_source": "Yahoo Finance"})
         return row
@@ -318,6 +340,7 @@ def _add_confirmed(key, item):
         confirmed.append(item)
     st.session_state[f"{key}_confirmed"] = confirmed
     st.session_state[key] = ""
+    st.session_state[f"{key}_open"] = False
     st.session_state.pop(f"{key}_select", None)
     st.session_state.pop(f"{key}_confirm", None)
     _save_watchlists()
@@ -329,8 +352,14 @@ def _delete_confirmed(key, symbol):
         confirmed = [confirmed]
     if not isinstance(confirmed, list):
         confirmed = []
-    st.session_state[f"{key}_confirmed"] = [item for item in confirmed if not (isinstance(item, dict) and item.get("symbol") == symbol)]
+    remaining = [item for item in confirmed if not (isinstance(item, dict) and item.get("symbol") == symbol)]
+    st.session_state[f"{key}_confirmed"] = remaining
+    st.session_state[f"{key}_open"] = False
     _save_watchlists()
+
+
+def _open_search(key):
+    st.session_state[f"{key}_open"] = True
 
 
 def _confirm_search(key, market):
@@ -349,7 +378,6 @@ def _confirm_search(key, market):
     _add_confirmed(key, selected)
 
 
-st.markdown('<div class="search-title">🔎 市场搜索</div>', unsafe_allow_html=True)
 search_cols = st.columns(3, gap="small")
 search_config = [(search_cols[0], "US", "🇺🇸 美股", "NVDA / Apple", "market_search_us"), (search_cols[1], "HK", "🇭🇰 港股", "0700 / 腾讯", "market_search_hk"), (search_cols[2], "CN", "🇨🇳 A股", "600519 / 贵州茅台", "market_search_cn")]
 for col, market, title, placeholder, key in search_config:
@@ -366,13 +394,17 @@ for col, market, title, placeholder, key in search_config:
                         st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
                     with delete_col:
                         st.button("×", key=f"{key}_delete_{idx}", use_container_width=True, on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除")
-        input_col, confirm_col = st.columns([6, 1], gap="small")
-        with input_col:
-            st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
-        with confirm_col:
-            st.button("✓", key=f"{key}_confirm", use_container_width=True, on_click=_confirm_search, args=(key, market), help="确认并新增")
-        if not confirmed_list and not st.session_state.get(key, "").strip():
-            st.markdown('<div class="search-hint">输入代码/名称后直接点 ✓</div>', unsafe_allow_html=True)
+
+        is_open = st.session_state.get(f"{key}_open", False)
+        if not is_open:
+            st.button("🔎 搜索添加", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,))
+        else:
+            input_col, confirm_col = st.columns([6, 1], gap="small")
+            with input_col:
+                st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
+            with confirm_col:
+                st.button("✓", key=f"{key}_confirm", use_container_width=True, on_click=_confirm_search, args=(key, market), help="确认并新增")
+            st.caption(f"输入代码/名称后点 ✓：{placeholder}")
 
 
 def add_sources(sources):
@@ -457,7 +489,7 @@ def render_news_panel():
             news_html += f'<div class="news-item"><span class="news-index">{idx}.</span><span class="news-time">{news_time}</span><div class="news-content"><a href="{news_url}" target="_blank" rel="noopener noreferrer">{body}</a></div></div>'
         st.html(news_html + "</div>")
     else:
-        st.warning("暂时无法取得东方财富红字焦点快讯。");
+        st.warning("暂时无法取得东方财富红字焦点快讯。")
         if news_error: st.caption(f"错误：{news_error}")
     add_sources([("东方财富红字焦点快讯", EASTMONEY_FOCUS_URL)])
 render_news_panel()
