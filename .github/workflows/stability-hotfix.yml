@@ -16,7 +16,7 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Harden dashboard network calls and layout
+      - name: Harden dashboard refresh and layout
         shell: bash
         run: |
           python - <<'PY'
@@ -27,31 +27,78 @@ jobs:
           s = p.read_text(encoding='utf-8')
           s2 = re.sub(r'^@st\.fragment\([^\n]*\)\n', '', s, flags=re.M)
 
-          # Keep the top quote/search modules at a stable height so changing
-          # quote text cannot cause cards to jump during a rerun.
-          marker = '.market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; }'
-          replacement = '.market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; min-height: 82px; box-sizing: border-box; }'
-          s2 = s2.replace(marker, replacement)
-          marker = '.market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }'
-          replacement = '.market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; min-height: 52px; align-items: start; }'
-          s2 = s2.replace(marker, replacement)
-          marker = '.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; }'
-          replacement = '.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; min-height: 68px; box-sizing: border-box; }'
-          s2 = s2.replace(marker, replacement)
-          marker = '.market-item { min-width: 0; padding-right: 4px; border-right: 1px solid #f0f0f0; }'
-          replacement = '.market-item { min-width: 0; min-height: 52px; padding-right: 4px; border-right: 1px solid #f0f0f0; box-sizing: border-box; }'
-          s2 = s2.replace(marker, replacement)
+          # The refresh button already uses on_click. Streamlit reruns after
+          # the callback automatically, so calling st.rerun() inside it is a
+          # no-op and produces a warning.
+          s2 = s2.replace('            st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1\n            st.rerun()\n', '            st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1\n')
+
+          # Render the three top market cards as ONE HTML grid instead of
+          # Streamlit st.columns. This removes block-tree reflow between the
+          # three cards when quote content changes during a rerun.
+          pattern = r'def render_market_groups\(\):\n.*?\nrender_market_groups\(\)'
+          replacement = '''def render_market_groups():
+              now = time.time()
+              snapshot = st.session_state.get("_market_quotes_snapshot")
+              snapshot_time = st.session_state.get("_market_quotes_snapshot_time", 0)
+              if not isinstance(snapshot, dict) or now - snapshot_time >= 300:
+                  refresh_key = _quote_refresh_key()
+                  snapshot = {
+                      "nasdaq": _get_cached_quote("^IXIC", refresh_key),
+                      "sp500": _get_cached_quote("^GSPC", refresh_key),
+                      "dow": _get_cached_quote("^DJI", refresh_key),
+                      "hsi": _get_cached_quote("^HSI", refresh_key),
+                      "hstech": _get_cached_quote("HSTECH.HK", refresh_key),
+                      "sh": _get_cached_quote("000001.SS", refresh_key),
+                      "sz": _get_cached_quote("399001.SZ", refresh_key),
+                      "csi300": _get_cached_quote("000300.SS", refresh_key),
+                  }
+                  st.session_state["_market_quotes_snapshot"] = snapshot
+                  st.session_state["_market_quotes_snapshot_time"] = now
+              quotes = snapshot
+              groups = [
+                  ("🇺🇸 美股", [
+                      _market_item_html("Nasdaq", quotes["nasdaq"].get("price"), quotes["nasdaq"].get("change_pct"), _market_state_text(quotes["nasdaq"])),
+                      _market_item_html("S&P 500", quotes["sp500"].get("price"), quotes["sp500"].get("change_pct"), _market_state_text(quotes["sp500"])),
+                      _market_item_html("Dow Jones", quotes["dow"].get("price"), quotes["dow"].get("change_pct"), _market_state_text(quotes["dow"])),
+                  ], "three"),
+                  ("🇭🇰 港股", [
+                      _market_item_html("恒生指数", quotes["hsi"].get("price"), quotes["hsi"].get("change_pct"), _market_state_text(quotes["hsi"])),
+                      _market_item_html("恒生科技", quotes["hstech"].get("price"), quotes["hstech"].get("change_pct"), _market_state_text(quotes["hstech"])),
+                  ], "two"),
+                  ("🇨🇳 A股", [
+                      _market_item_html("上证指数", quotes["sh"].get("price"), quotes["sh"].get("change_pct"), _market_state_text(quotes["sh"])),
+                      _market_item_html("深证成指", quotes["sz"].get("price"), quotes["sz"].get("change_pct"), _market_state_text(quotes["sz"])),
+                      _market_item_html("沪深300", quotes["csi300"].get("price"), quotes["csi300"].get("change_pct"), _market_state_text(quotes["csi300"])),
+                  ], "three"),
+              ]
+              cards = []
+              for title, items, grid_class in groups:
+                  cards.append(
+                      f'<div class="market-group"><div class="market-group-title">{title}</div>'
+                      f'<div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>'
+                  )
+              st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
+
+render_market_groups()'''
+          s2, count = re.subn(pattern, replacement, s2, count=1, flags=re.S)
+          if count:
+              print('Replaced top market cards with a single fixed HTML grid')
+          else:
+              print('Top market function pattern not found; leaving function unchanged')
+
+          # Keep the card geometry deterministic during reruns.
+          s2 = s2.replace('.market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; }', '.market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; min-height: 82px; box-sizing: border-box; }')
+          s2 = s2.replace('.market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }', '.market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; min-height: 52px; align-items: start; }')
+          s2 = s2.replace('.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; }', '.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; min-height: 68px; box-sizing: border-box; }')
+          s2 = s2.replace('.market-item { min-width: 0; padding-right: 4px; border-right: 1px solid #f0f0f0; }', '.market-item { min-width: 0; min-height: 52px; padding-right: 4px; border-right: 1px solid #f0f0f0; box-sizing: border-box; }')
 
           if s2 != s:
               p.write_text(s2, encoding='utf-8')
-              print('Stabilized top market/watchlist module heights')
+              print('Patched app.py')
 
           p = Path('data.py')
           s = p.read_text(encoding='utf-8')
-          s2 = s.replace('timeout=20,', 'timeout=4,')
-          s2 = s2.replace('timeout=15,', 'timeout=3,')
-          s2 = s2.replace('timeout=8,', 'timeout=4,')
-          s2 = s2.replace('timeout=5,', 'timeout=3,')
+          s2 = s.replace('timeout=20,', 'timeout=4,').replace('timeout=15,', 'timeout=3,').replace('timeout=8,', 'timeout=4,').replace('timeout=5,', 'timeout=3,')
           if s2 != s:
               p.write_text(s2, encoding='utf-8')
               print('Reduced slow provider timeouts')
@@ -71,5 +118,5 @@ jobs:
             echo 'No changes to commit'
             exit 0
           fi
-          git commit -m 'Stabilize top dashboard module layout'
+          git commit -m 'Fix callback rerun warning and stabilize top grid'
           git push origin main
