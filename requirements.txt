@@ -3,4 +3,4 @@ pandas
 plotly
 requests
 
-# trigger isolated stock-price refresh deployment
+# trigger final deployment after removing broken watchlist refresh
