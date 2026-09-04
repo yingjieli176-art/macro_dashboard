@@ -45,7 +45,6 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .market-group-title { color: #374151; font-size: 0.74rem; font-weight: 650; margin-bottom: 4px; }
 .market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
 .market-group-row.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.market-group-row.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .market-item { min-width: 0; padding-right: 4px; border-right: 1px solid #f0f0f0; }
 .market-item:last-child { border-right: none; }
 .market-name { color: #6b7280; font-size: 0.65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -55,7 +54,7 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .search-title { color: #374151; font-size: 0.82rem; font-weight: 650; margin: 0.35rem 0 0.2rem; }
 .search-result { padding: 4px 0; border-bottom: 1px solid #f3f4f6; }
 .search-hint { color: #9ca3af; font-size: 0.68rem; margin-top: 1px; }
-@media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } .market-group-row.five { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 </style>
 """, unsafe_allow_html=True)
 
@@ -112,27 +111,29 @@ def _market_item_html(name, price, change_pct, meta=""):
     )
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def _get_cached_quote(symbol):
+    return _get_yahoo_quote_safe(symbol)
+
+
 @st.fragment(run_every="60s")
 def render_market_groups():
     quotes = {
-        "nasdaq": _get_yahoo_quote_safe("^IXIC"),
-        "sp500": _get_yahoo_quote_safe("^GSPC"),
-        "dow": _get_yahoo_quote_safe("^DJI"),
-        "hsi": _get_yahoo_quote_safe("^HSI"),
-        "hstech": _get_yahoo_quote_safe("HSTECH.HK"),
-        "sh": _get_yahoo_quote_safe("000001.SS"),
-        "sz": _get_yahoo_quote_safe("399001.SZ"),
-        "csi300": _get_yahoo_quote_safe("000300.SS"),
-        "nvda": _get_yahoo_quote_safe("NVDA"),
+        "nasdaq": _get_cached_quote("^IXIC"),
+        "sp500": _get_cached_quote("^GSPC"),
+        "dow": _get_cached_quote("^DJI"),
+        "hsi": _get_cached_quote("^HSI"),
+        "hstech": _get_cached_quote("HSTECH.HK"),
+        "sh": _get_cached_quote("000001.SS"),
+        "sz": _get_cached_quote("399001.SZ"),
+        "csi300": _get_cached_quote("000300.SS"),
     }
     groups = [
         ("🇺🇸 美股", [
             _market_item_html("纳斯达克", quotes["nasdaq"].get("price"), quotes["nasdaq"].get("change_pct"), _market_state_text(quotes["nasdaq"])),
             _market_item_html("标普500", quotes["sp500"].get("price"), quotes["sp500"].get("change_pct"), _market_state_text(quotes["sp500"])),
             _market_item_html("道琼斯", quotes["dow"].get("price"), quotes["dow"].get("change_pct"), _market_state_text(quotes["dow"])),
-            _market_item_html("NVDA 正股", quotes["nvda"].get("price"), quotes["nvda"].get("change_pct"), _market_state_text(quotes["nvda"])),
-            _market_item_html("NVDA 盘后", quotes["nvda"].get("post_price"), quotes["nvda"].get("post_change_pct"), "POST" if quotes["nvda"].get("post_price") is not None else "--"),
-        ], "five"),
+        ], "three"),
         ("🇭🇰 港股", [
             _market_item_html("恒生指数", quotes["hsi"].get("price"), quotes["hsi"].get("change_pct"), _market_state_text(quotes["hsi"])),
             _market_item_html("恒生科技", quotes["hstech"].get("price"), quotes["hstech"].get("change_pct"), _market_state_text(quotes["hstech"])),
@@ -202,7 +203,7 @@ def _direct_symbol(market, query):
 
 
 def _render_search_result(item):
-    row = _get_yahoo_quote_safe(item["symbol"])
+    row = _get_cached_quote(item["symbol"])
     price = row.get("price")
     change = row.get("change_pct")
     price_text = "--" if price is None else f"{price:,.2f}"
@@ -226,7 +227,7 @@ search_config = [
 ]
 for col, market, title, placeholder, key in search_config:
     with col:
-        st.markdown(f'<div class="search-title">{title}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="market-group-title">{title}</div>', unsafe_allow_html=True)
         query = st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
         if query.strip():
             results = _search_yahoo(market, query)
@@ -236,9 +237,6 @@ for col, market, title, placeholder, key in search_config:
                 _render_search_result(item)
         else:
             st.markdown('<div class="search-hint">输入名称或代码后按 Enter 搜索</div>', unsafe_allow_html=True)
-
-
-st.markdown('<div class="dashboard-subtitle">US monetary policy, Treasury yields and inflation expectations</div>', unsafe_allow_html=True)
 
 
 def get_start_date(range_name):
