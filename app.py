@@ -91,26 +91,9 @@ _load_watchlists()
 def _empty_quote():
     return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": None, "post_market_time": None, "pre_market_time": None, "quote_source": "", "delayed_by": None, "data_source": ""}
 
-def _yahoo_raw_value(value):
-    if isinstance(value, dict): return value.get("raw") if value.get("raw") is not None else value.get("fmt")
-    return value
-
-@st.cache_data(ttl=60, show_spinner=False)
-def _get_yahoo_overnight_safe(symbol):
-    if not symbol or "." in str(symbol) or str(symbol).startswith("^"): return None, None
-    try:
-        session = requests.Session(); headers = {"User-Agent": "Mozilla/5.0"}
-        session.get("https://fc.yahoo.com", headers=headers, timeout=4)
-        crumb = session.get("https://query1.finance.yahoo.com/v1/test/getcrumb", headers=headers, timeout=4).text.strip()
-        if not crumb or crumb.startswith("{"): return None, None
-        response = session.get(f"https://query1.finance.yahoo.com/v10/finance/quoteSummary/{symbol}", params={"formatted": "true", "modules": "price", "overnightPrice": "true", "lang": "en-US", "region": "US", "crumb": crumb}, headers=headers, timeout=5)
-        response.raise_for_status(); payload = response.json(); result = ((payload.get("quoteSummary") or {}).get("result") or [None])[0] or {}; price = result.get("price") or {}
-        return _yahoo_raw_value(price.get("overnightPrice")), _yahoo_raw_value(price.get("overnightChangePercent"))
-    except Exception: return None, None
-
 def _get_yahoo_quote_safe(symbol):
     try:
-        response = requests.get("https://query1.finance.yahoo.com/v8/finance/chart/" + symbol, params={"range": "1d", "interval": "5m", "includePrePost": "true"}, headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
+        response = requests.get("https://query1.finance.yahoo.com/v8/finance/chart/" + symbol, params={"range": "1d", "interval": "5m", "includePrePost": "true"}, headers={"User-Agent": "Mozilla/5.0"}, timeout=2.5)
         response.raise_for_status(); result = (response.json().get("chart", {}).get("result") or [])[0]; meta = result.get("meta", {})
         previous = meta.get("previousClose") or meta.get("regularMarketPreviousClose"); price = meta.get("regularMarketPrice"); pre_price = meta.get("preMarketPrice"); post_price = meta.get("postMarketPrice")
         regular_change_pct = meta.get("regularMarketChangePercent"); post_change_pct = meta.get("postMarketChangePercent"); pre_change_pct = meta.get("preMarketChangePercent")
@@ -127,8 +110,7 @@ def _get_yahoo_quote_safe(symbol):
         if regular_change_pct is None and price is not None and previous not in (None, 0): regular_change_pct = (price - previous) / previous * 100
         if post_change_pct is None and post_price is not None and previous not in (None, 0): post_change_pct = (post_price - previous) / previous * 100
         if pre_change_pct is None and pre_price is not None and previous not in (None, 0): pre_change_pct = (pre_price - previous) / previous * 100
-        overnight_price, overnight_change_pct = _get_yahoo_overnight_safe(symbol)
-        row = _empty_quote(); row.update({"price": price, "change_pct": regular_change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct, "pre_price": pre_price, "pre_change_pct": pre_change_pct, "overnight_price": overnight_price, "overnight_change_pct": overnight_change_pct, "regular_market_time": meta.get("regularMarketTime"), "post_market_time": meta.get("postMarketTime"), "pre_market_time": meta.get("preMarketTime"), "quote_source": meta.get("quoteSourceName", ""), "delayed_by": meta.get("exchangeDataDelayedBy"), "data_source": "Yahoo Finance"}); return row
+        row = _empty_quote(); row.update({"price": price, "change_pct": regular_change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct, "pre_price": pre_price, "pre_change_pct": pre_change_pct, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": meta.get("regularMarketTime"), "post_market_time": meta.get("postMarketTime"), "pre_market_time": meta.get("preMarketTime"), "quote_source": meta.get("quoteSourceName", ""), "delayed_by": meta.get("exchangeDataDelayedBy"), "data_source": "Yahoo Finance"}); return row
     except Exception: return _empty_quote()
 
 def _eastmoney_secid(symbol):
@@ -144,7 +126,7 @@ def _get_eastmoney_quote_safe(symbol):
     secid = _eastmoney_secid(symbol)
     if not secid: return _empty_quote()
     try:
-        response = requests.get(EASTMONEY_QUOTE_URL, params={"secid": secid, "fields": "f43,f57,f58,f169,f170,f46,f44,f45,f47,f48,f60,f86", "ut": EASTMONEY_UT, "fltt": "2", "invt": "2"}, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}, timeout=5); response.raise_for_status(); data = (response.json() or {}).get("data") or {}
+        response = requests.get(EASTMONEY_QUOTE_URL, params={"secid": secid, "fields": "f43,f57,f58,f169,f170,f46,f44,f45,f47,f48,f60,f86", "ut": EASTMONEY_UT, "fltt": "2", "invt": "2"}, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}, timeout=2.5); response.raise_for_status(); data = (response.json() or {}).get("data") or {}
         if not data: return _empty_quote()
         price_raw, prev_raw, pct_raw = data.get("f43"), data.get("f60"), data.get("f170")
         if price_raw in (None, "-", ""): return _empty_quote()
@@ -167,39 +149,27 @@ def _get_cached_quote(symbol, refresh_key=0):
         if row.get("price") is not None: return row
     return _get_yahoo_quote_safe(symbol)
 
-def _quote_refresh_key():
-    return int(time.time() // 300)
+def _quote_refresh_key(): return int(time.time() // 300)
 def _quote_meta(row, market=""):
     source = row.get("data_source") or row.get("quote_source") or ""; delayed = row.get("delayed_by"); state = _market_state_text(row); parts = [state] if state else []
     if delayed not in (None, 0, "0") and source == "Yahoo Finance": parts.append(f"延迟{delayed}分")
     elif source: parts.append(source)
     return " · ".join(parts)
 
-@st.cache_data(ttl=20, show_spinner=False)
-def _get_watchlist_quote(symbol, refresh_key=0):
+@st.cache_data(ttl=60, show_spinner=False)
+def _get_watchlist_quote(symbol):
     if str(symbol).upper().endswith((".SS", ".SZ", ".HK")) or str(symbol).upper() in ("^HSI", "^HSTECH"):
         row = _get_eastmoney_quote_safe(symbol)
         if row.get("price") is not None: return row
     return _get_yahoo_quote_safe(symbol)
+
 @st.fragment(run_every="300s")
 def render_market_groups():
-    now = time.time()
-    snapshot = st.session_state.get("_market_quotes_snapshot")
-    snapshot_time = st.session_state.get("_market_quotes_snapshot_time", 0)
+    now = time.time(); snapshot = st.session_state.get("_market_quotes_snapshot"); snapshot_time = st.session_state.get("_market_quotes_snapshot_time", 0)
     if not isinstance(snapshot, dict) or now - snapshot_time >= 300:
         refresh_key = _quote_refresh_key()
-        snapshot = {
-            "nasdaq": _get_cached_quote("^IXIC", refresh_key),
-            "sp500": _get_cached_quote("^GSPC", refresh_key),
-            "dow": _get_cached_quote("^DJI", refresh_key),
-            "hsi": _get_cached_quote("^HSI", refresh_key),
-            "hstech": _get_cached_quote("HSTECH.HK", refresh_key),
-            "sh": _get_cached_quote("000001.SS", refresh_key),
-            "sz": _get_cached_quote("399001.SZ", refresh_key),
-            "csi300": _get_cached_quote("000300.SS", refresh_key),
-        }
-        st.session_state["_market_quotes_snapshot"] = snapshot
-        st.session_state["_market_quotes_snapshot_time"] = now
+        snapshot = {"nasdaq": _get_cached_quote("^IXIC", refresh_key), "sp500": _get_cached_quote("^GSPC", refresh_key), "dow": _get_cached_quote("^DJI", refresh_key), "hsi": _get_cached_quote("^HSI", refresh_key), "hstech": _get_cached_quote("HSTECH.HK", refresh_key), "sh": _get_cached_quote("000001.SS", refresh_key), "sz": _get_cached_quote("399001.SZ", refresh_key), "csi300": _get_cached_quote("000300.SS", refresh_key)}
+        st.session_state["_market_quotes_snapshot"] = snapshot; st.session_state["_market_quotes_snapshot_time"] = now
     quotes = snapshot
     groups = [("🇺🇸 美股", [_market_item_html("纳斯达克", quotes["nasdaq"].get("price"), quotes["nasdaq"].get("change_pct"), _quote_meta(quotes["nasdaq"], "US")), _market_item_html("标普500", quotes["sp500"].get("price"), quotes["sp500"].get("change_pct"), _quote_meta(quotes["sp500"], "US")), _market_item_html("道琼斯", quotes["dow"].get("price"), quotes["dow"].get("change_pct"), _quote_meta(quotes["dow"], "US"))], "three"), ("🇭🇰 港股", [_market_item_html("恒生指数", quotes["hsi"].get("price"), quotes["hsi"].get("change_pct"), _quote_meta(quotes["hsi"], "HK")), _market_item_html("恒生科技", quotes["hstech"].get("price"), quotes["hstech"].get("change_pct"), _quote_meta(quotes["hstech"], "HK"))], "two"), ("🇨🇳 A股", [_market_item_html("上证指数", quotes["sh"].get("price"), quotes["sh"].get("change_pct"), _quote_meta(quotes["sh"], "CN")), _market_item_html("深证成指", quotes["sz"].get("price"), quotes["sz"].get("change_pct"), _quote_meta(quotes["sz"], "CN")), _market_item_html("沪深300", quotes["csi300"].get("price"), quotes["csi300"].get("change_pct"), _quote_meta(quotes["csi300"], "CN"))], "three")]
     cols = st.columns(3, gap="small")
@@ -211,7 +181,7 @@ render_market_groups()
 def _search_yahoo(market, query):
     if not query.strip(): return []
     try:
-        response = requests.get("https://query1.finance.yahoo.com/v1/finance/search", params={"q": query.strip(), "quotesCount": 10, "newsCount": 0}, headers={"User-Agent": "Mozilla/5.0"}, timeout=5); response.raise_for_status(); quotes = response.json().get("quotes") or []; results = []
+        response = requests.get("https://query1.finance.yahoo.com/v1/finance/search", params={"q": query.strip(), "quotesCount": 10, "newsCount": 0}, headers={"User-Agent": "Mozilla/5.0"}, timeout=2.5); response.raise_for_status(); quotes = response.json().get("quotes") or []; results = []
         for item in quotes:
             if item.get("quoteType") != "EQUITY": continue
             symbol = str(item.get("symbol") or "")
@@ -226,13 +196,11 @@ def _search_yahoo(market, query):
 def _search_eastmoney_hk(query):
     if not query.strip(): return []
     try:
-        response = requests.get(EASTMONEY_SEARCH_URL, params={"input": query.strip(), "type": 14, "count": 6}, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}, timeout=5)
-        response.raise_for_status(); payload = response.json() or {}; table = payload.get("QuotationCodeTable") or {}; rows = table.get("Data") or payload.get("data") or []; results = []
+        response = requests.get(EASTMONEY_SEARCH_URL, params={"input": query.strip(), "type": 14, "count": 6}, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}, timeout=2.5); response.raise_for_status(); payload = response.json() or {}; table = payload.get("QuotationCodeTable") or {}; rows = table.get("Data") or payload.get("data") or []; results = []
         for item in rows:
             if not isinstance(item, dict): continue
             code = str(item.get("SecurityCode") or item.get("Code") or item.get("code") or "").strip(); name = str(item.get("SecurityName") or item.get("Name") or item.get("name") or "").strip(); quote_id = str(item.get("QuoteID") or item.get("quoteId") or "").strip()
-            if quote_id.startswith("116.") and code and name:
-                results.append({"symbol": f"{code.zfill(5)}.HK", "name": name, "exchange": "HK"})
+            if quote_id.startswith("116.") and code and name: results.append({"symbol": f"{code.zfill(5)}.HK", "name": name, "exchange": "HK"})
         return results[:6]
     except Exception: return []
 
@@ -240,7 +208,7 @@ def _search_eastmoney_hk(query):
 def _search_eastmoney_cn(query):
     if not query.strip(): return []
     try:
-        response = requests.get(EASTMONEY_SEARCH_URL, params={"input": query.strip(), "type": 14, "count": 6}, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}, timeout=5); response.raise_for_status(); payload = response.json() or {}; table = payload.get("QuotationCodeTable") or {}; rows = table.get("Data") or payload.get("data") or []; results = []
+        response = requests.get(EASTMONEY_SEARCH_URL, params={"input": query.strip(), "type": 14, "count": 6}, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}, timeout=2.5); response.raise_for_status(); payload = response.json() or {}; table = payload.get("QuotationCodeTable") or {}; rows = table.get("Data") or payload.get("data") or []; results = []
         for item in rows:
             if not isinstance(item, dict): continue
             code = str(item.get("SecurityCode") or item.get("Code") or item.get("code") or "").strip(); name = str(item.get("SecurityName") or item.get("Name") or item.get("name") or "").strip(); quote_id = str(item.get("QuoteID") or item.get("quoteId") or "").strip()
@@ -260,20 +228,14 @@ def _direct_symbol(market, query):
     return f"{digits}.SS" if digits.startswith(("5", "6", "68", "9")) else f"{digits}.SZ"
 
 def _render_quote_block(item):
-    refresh_key = st.session_state.get("_watchlist_refresh_key", 0)
-    row = _get_watchlist_quote(item["symbol"], refresh_key); price, change = row.get("price"), row.get("change_pct"); price_text = "--" if price is None else f"{price:,.2f}"; change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%"); state = _market_state_text(row); after = ""
+    row = _get_watchlist_quote(item["symbol"]); price, change = row.get("price"), row.get("change_pct"); price_text = "--" if price is None else f"{price:,.2f}"; change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%"); state = _market_state_text(row); after = ""
     if item.get("market") == "US":
-        pp, pc = row.get("post_price"), row.get("post_change_pct"); pre_price, pre_change = row.get("pre_price"), row.get("pre_change_pct"); overnight_price, overnight_change = row.get("overnight_price"), row.get("overnight_change_pct")
-        if overnight_price is not None: after = f'<div class="search-after">夜盘：<strong>{overnight_price:,.2f}</strong> <span>{"--" if overnight_change is None else f"{overnight_change:+.2f}%"}</span></div>'
-        elif row.get("market_state") in ("POST", "POSTPOST", "CLOSED") and pp is not None: after = f'<div class="search-after">盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
+        pp, pc = row.get("post_price"), row.get("post_change_pct"); pre_price, pre_change = row.get("pre_price"), row.get("pre_change_pct")
+        if row.get("market_state") in ("POST", "POSTPOST", "CLOSED") and pp is not None: after = f'<div class="search-after">盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
         elif row.get("market_state") in ("PRE", "PREPRE") and pre_price is not None: after = f'<div class="search-after">盘前：<strong>{pre_price:,.2f}</strong> <span>{"--" if pre_change is None else f"{pre_change:+.2f}%"}</span></div>'
         elif pp is not None and row.get("post_market_time"): after = f'<div class="search-after">最近盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
     source = row.get("data_source") or row.get("quote_source") or ""; delay = row.get("delayed_by"); source_text = f"{source} · 延迟{delay}分" if delay not in (None, 0, "0") and source == "Yahoo Finance" else source
     return f'<div class="search-result"><div class="search-result-label">{html.escape(item["name"])} <span class="search-result-symbol">· {html.escape(item["symbol"])} · {html.escape(item.get("exchange", ""))}</span></div><div class="search-price">{html.escape(price_text)} <span class="market-change">{html.escape(change_text)} {html.escape(state)}</span></div>{after}<div class="search-hint">{html.escape(source_text)}</div></div>'
-
-@st.fragment(run_every="1s")
-def _render_watchlist_quote_fragment(item):
-    st.markdown(_render_quote_block(item), unsafe_allow_html=True)
 
 def _add_confirmed(key, item):
     confirmed = st.session_state.get(f"{key}_confirmed", []); confirmed = [confirmed] if isinstance(confirmed, dict) else (confirmed if isinstance(confirmed, list) else [])
@@ -296,12 +258,13 @@ def _confirm_search(key, market):
     else: selected = {"symbol": _direct_symbol(market, query), "name": query, "exchange": "", "market": market}
     _add_confirmed(key, selected)
 
-@st.fragment
 def render_watchlist_refresh_control():
     refresh_col, _, _ = st.columns([1.2, 3.8, 1])
     with refresh_col:
         if st.button("↻ 刷新股价", key="refresh_watchlist_quotes", use_container_width=True, help="立即重新获取已添加模块的最新报价"):
+            _get_watchlist_quote.clear()
             st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
+            st.rerun()
 
 render_watchlist_refresh_control()
 
@@ -317,7 +280,7 @@ def render_watchlists():
                     if not isinstance(confirmed, dict): continue
                     with st.container(border=True):
                         quote_col, delete_col = st.columns([1, 0.08], gap="small", vertical_alignment="top")
-                        with quote_col: _render_watchlist_quote_fragment({**confirmed, "market": market})
+                        with quote_col: st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
                         with delete_col:
                             st.markdown('<div class="module-delete">', unsafe_allow_html=True)
                             st.button("×", key=f"{key}_delete_{idx}", on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除此模块", type="tertiary", use_container_width=True)
@@ -378,7 +341,7 @@ def render_core_charts():
     with toggle_col: compact_mode = st.toggle("缩小图表 / 快速浏览", value=True, key="compact_mode", help="开启后，三个核心图表横向并排显示。")
     if compact_mode:
         cols = st.columns(3, gap="small")
-        configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1), (cols[2], '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>', "compact_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2") , ("DGS10", "https://fred.stlouisfed.org/series/DGS10")], 2)]
+        configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1), (cols[2], '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>', "compact_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10")], 2)]
         for column, title, description, key, builder, sources, desc_index in configs:
             with column: st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
     else:
