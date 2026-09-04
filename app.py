@@ -9,6 +9,7 @@ from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_ior
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
 EASTMONEY_FOCUS_URL = "https://kuaixun.eastmoney.com/"
 EASTMONEY_QUOTE_URL = "https://push2.eastmoney.com/api/qt/stock/get"
+EASTMONEY_SEARCH_URL = "https://searchapi.eastmoney.com/api/suggest/get"
 EASTMONEY_UT = "bd1d9ddb04089700cf9c27f4f4961f5b"
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False}
@@ -158,7 +159,11 @@ def _get_eastmoney_quote_safe(symbol):
         if price_raw in (None, "-", ""):
             return _empty_quote()
         price = float(price_raw)
+        if price > 10000:
+            price /= 100
         previous = None if prev_raw in (None, "-", "") else float(prev_raw)
+        if previous is not None and previous > 10000:
+            previous /= 100
         change_pct = None if pct_raw in (None, "-", "") else float(pct_raw)
         if change_pct is None and price is not None and previous not in (None, 0):
             change_pct = (price - previous) / previous * 100
@@ -236,10 +241,43 @@ def _search_yahoo(market, query):
         return []
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def _search_eastmoney_cn(query):
+    if not query.strip():
+        return []
+    try:
+        response = requests.get(EASTMONEY_SEARCH_URL, params={"input": query.strip(), "type": 14, "count": 6}, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}, timeout=8)
+        response.raise_for_status()
+        payload = response.json() or {}
+        table = payload.get("QuotationCodeTable") or {}
+        rows = table.get("Data") or payload.get("data") or []
+        results = []
+        for item in rows:
+            if not isinstance(item, dict):
+                continue
+            code = str(item.get("SecurityCode") or item.get("Code") or item.get("code") or "").strip()
+            name = str(item.get("SecurityName") or item.get("Name") or item.get("name") or "").strip()
+            quote_id = str(item.get("QuoteID") or item.get("quoteId") or "").strip()
+            if not code and quote_id:
+                code = quote_id.split(".")[-1]
+            if not code or not name:
+                continue
+            market = ""
+            if quote_id.startswith("1.") or code.startswith(("5", "6", "9")):
+                market = "SS"
+            elif quote_id.startswith("0.") or code.startswith(("0", "2", "3")):
+                market = "SZ"
+            if market:
+                results.append({"symbol": f"{code}.{market}", "name": name, "exchange": "SH" if market == "SS" else "SZ"})
+        return results[:6]
+    except Exception:
+        return []
+
+
 def _direct_symbol(market, query):
     q = query.strip().upper()
     if market == "US":
-        return q
+        return {"NVDIA": "NVDA", "NVIDA": "NVDA"}.get(q, q)
     digits = "".join(ch for ch in q if ch.isdigit())
     if market == "HK":
         return f"{digits.zfill(4)}.HK" if digits else q
@@ -285,11 +323,24 @@ def _add_confirmed(key, item):
     _save_watchlists()
 
 
+def _delete_confirmed(key, symbol):
+    confirmed = st.session_state.get(f"{key}_confirmed", [])
+    if isinstance(confirmed, dict):
+        confirmed = [confirmed]
+    if not isinstance(confirmed, list):
+        confirmed = []
+    st.session_state[f"{key}_confirmed"] = [item for item in confirmed if not (isinstance(item, dict) and item.get("symbol") == symbol)]
+    _save_watchlists()
+
+
 def _confirm_search(key, market):
     query = str(st.session_state.get(key, "")).strip()
     if not query:
         return
-    results = _search_yahoo(market, query)
+    if market == "CN":
+        results = _search_eastmoney_cn(query) or _search_yahoo(market, query)
+    else:
+        results = _search_yahoo(market, query)
     if results:
         selected = results[0]
         selected["market"] = market
@@ -308,9 +359,13 @@ for col, market, title, placeholder, key in search_config:
             confirmed_list = [confirmed_list]
         if confirmed_list:
             st.markdown(f'<div class="market-group-title">{title}</div>', unsafe_allow_html=True)
-            for confirmed in confirmed_list:
+            for idx, confirmed in enumerate(confirmed_list):
                 if isinstance(confirmed, dict):
-                    st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
+                    quote_col, delete_col = st.columns([10, 1], gap="small")
+                    with quote_col:
+                        st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
+                    with delete_col:
+                        st.button("×", key=f"{key}_delete_{idx}", use_container_width=True, on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除")
         input_col, confirm_col = st.columns([6, 1], gap="small")
         with input_col:
             st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
