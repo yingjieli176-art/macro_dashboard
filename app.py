@@ -100,7 +100,40 @@ _load_watchlists()
 
 
 def _empty_quote():
-    return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "regular_market_time": None, "post_market_time": None, "pre_market_time": None, "quote_source": "", "delayed_by": None, "data_source": ""}
+    return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": None, "post_market_time": None, "pre_market_time": None, "quote_source": "", "delayed_by": None, "data_source": ""}
+
+
+def _yahoo_raw_value(value):
+    if isinstance(value, dict):
+        return value.get("raw") if value.get("raw") is not None else value.get("fmt")
+    return value
+
+
+def _get_yahoo_overnight_safe(symbol):
+    if not symbol or "." in str(symbol) or str(symbol).startswith("^"):
+        return None, None
+    try:
+        session = requests.Session()
+        headers = {"User-Agent": "Mozilla/5.0"}
+        session.get("https://fc.yahoo.com", headers=headers, timeout=6)
+        crumb = session.get("https://query1.finance.yahoo.com/v1/test/getcrumb", headers=headers, timeout=6).text.strip()
+        if not crumb or crumb.startswith("{"):
+            return None, None
+        response = session.get(
+            f"https://query1.finance.yahoo.com/v10/finance/quoteSummary/{symbol}",
+            params={"formatted": "true", "modules": "price", "overnightPrice": "true", "lang": "en-US", "region": "US", "crumb": crumb},
+            headers=headers,
+            timeout=8,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        result = ((payload.get("quoteSummary") or {}).get("result") or [None])[0] or {}
+        price = result.get("price") or {}
+        overnight_price = _yahoo_raw_value(price.get("overnightPrice"))
+        overnight_change_pct = _yahoo_raw_value(price.get("overnightChangePercent"))
+        return overnight_price, overnight_change_pct
+    except Exception:
+        return None, None
 
 
 def _get_yahoo_quote_safe(symbol):
@@ -149,8 +182,9 @@ def _get_yahoo_quote_safe(symbol):
         if pre_change_pct is None and pre_price is not None and previous not in (None, 0):
             pre_change_pct = (pre_price - previous) / previous * 100
 
+        overnight_price, overnight_change_pct = _get_yahoo_overnight_safe(symbol)
         row = _empty_quote()
-        row.update({"price": price, "change_pct": regular_change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct, "pre_price": pre_price, "pre_change_pct": pre_change_pct, "regular_market_time": meta.get("regularMarketTime"), "post_market_time": meta.get("postMarketTime"), "pre_market_time": meta.get("preMarketTime"), "quote_source": meta.get("quoteSourceName", ""), "delayed_by": meta.get("exchangeDataDelayedBy"), "data_source": "Yahoo Finance"})
+        row.update({"price": price, "change_pct": regular_change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct, "pre_price": pre_price, "pre_change_pct": pre_change_pct, "overnight_price": overnight_price, "overnight_change_pct": overnight_change_pct, "regular_market_time": meta.get("regularMarketTime"), "post_market_time": meta.get("postMarketTime"), "pre_market_time": meta.get("preMarketTime"), "quote_source": meta.get("quoteSourceName", ""), "delayed_by": meta.get("exchangeDataDelayedBy"), "data_source": "Yahoo Finance"})
         return row
     except Exception:
         return _empty_quote()
@@ -189,7 +223,7 @@ def _get_eastmoney_quote_safe(symbol):
         change_pct = None if pct_raw in (None, "-", "") else float(pct_raw)
         if change_pct is None and price is not None and previous not in (None, 0):
             change_pct = (price - previous) / previous * 100
-        return {"price": price, "change_pct": change_pct, "market_state": "REGULAR", "currency": "CNY", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "regular_market_time": data.get("f86"), "post_market_time": None, "pre_market_time": None, "quote_source": "Eastmoney", "delayed_by": 0, "data_source": "东方财富"}
+        return {"price": price, "change_pct": change_pct, "market_state": "REGULAR", "currency": "CNY", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": data.get("f86"), "post_market_time": None, "pre_market_time": None, "quote_source": "Eastmoney", "delayed_by": 0, "data_source": "东方财富"}
     except Exception:
         return _empty_quote()
 
@@ -318,7 +352,11 @@ def _render_quote_block(item):
     if item.get("market") == "US":
         pp, pc = row.get("post_price"), row.get("post_change_pct")
         pre_price, pre_change = row.get("pre_price"), row.get("pre_change_pct")
-        if row.get("market_state") in ("POST", "POSTPOST", "CLOSED") and pp is not None:
+        overnight_price = row.get("overnight_price")
+        overnight_change = row.get("overnight_change_pct")
+        if overnight_price is not None:
+            after = f'<div class="search-after">夜盘：<strong>{overnight_price:,.2f}</strong> <span>{"--" if overnight_change is None else f"{overnight_change:+.2f}%"}</span></div>'
+        elif row.get("market_state") in ("POST", "POSTPOST", "CLOSED") and pp is not None:
             after = f'<div class="search-after">盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
         elif row.get("market_state") in ("PRE", "PREPRE") and pre_price is not None:
             after = f'<div class="search-after">盘前：<strong>{pre_price:,.2f}</strong> <span>{"--" if pre_change is None else f"{pre_change:+.2f}%"}</span></div>'
@@ -382,6 +420,7 @@ search_cols = st.columns(3, gap="small")
 search_config = [(search_cols[0], "US", "🇺🇸 美股", "NVDA / Apple", "market_search_us"), (search_cols[1], "HK", "🇭🇰 港股", "0700 / 腾讯", "market_search_hk"), (search_cols[2], "CN", "🇨🇳 A股", "600519 / 贵州茅台", "market_search_cn")]
 for col, market, title, placeholder, key in search_config:
     with col:
+        is_open = st.session_state.get(f"{key}_open", False)
         confirmed_list = st.session_state.get(f"{key}_confirmed", [])
         if isinstance(confirmed_list, dict):
             confirmed_list = [confirmed_list]
@@ -389,22 +428,23 @@ for col, market, title, placeholder, key in search_config:
             st.markdown(f'<div class="market-group-title">{title}</div>', unsafe_allow_html=True)
             for idx, confirmed in enumerate(confirmed_list):
                 if isinstance(confirmed, dict):
-                    quote_col, delete_col = st.columns([10, 1], gap="small")
-                    with quote_col:
+                    if is_open:
+                        quote_col, delete_col = st.columns([10, 1], gap="small")
+                        with quote_col:
+                            st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
+                        with delete_col:
+                            st.button("×", key=f"{key}_delete_{idx}", use_container_width=True, on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除")
+                    else:
                         st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
-                    with delete_col:
-                        st.button("×", key=f"{key}_delete_{idx}", use_container_width=True, on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除")
 
-        is_open = st.session_state.get(f"{key}_open", False)
         if not is_open:
-            st.button("🔎 搜索添加", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,))
+            st.button("+", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,), help="添加模块")
         else:
             input_col, confirm_col = st.columns([6, 1], gap="small")
             with input_col:
                 st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
             with confirm_col:
                 st.button("✓", key=f"{key}_confirm", use_container_width=True, on_click=_confirm_search, args=(key, market), help="确认并新增")
-            st.caption(f"输入代码/名称后点 ✓：{placeholder}")
 
 
 def add_sources(sources):
