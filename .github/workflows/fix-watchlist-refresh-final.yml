@@ -1,0 +1,61 @@
+name: Verified watchlist refresh fix
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch app.py and verify
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app.py')
+          s = p.read_text(encoding='utf-8')
+
+          # Restore the original 7x24 news font: inherit the dashboard font.
+          s = s.replace(
+              '.news-content { flex: 1; min-width: 0; font-family: Arial, "Segoe UI", sans-serif; }',
+              '.news-content { flex: 1; min-width: 0; }'
+          )
+
+          # Restore a reliable watchlist-only refresh control inside the existing fragment.
+          old = '''def render_watchlists():\n    search_cols = st.columns(3, gap="small")'''
+          new = '''def render_watchlists():\n    refresh_col, _, _ = st.columns([1.2, 3.8, 1])\n    with refresh_col:\n        if st.button("↻ 刷新股价", key="refresh_watchlist_quotes", use_container_width=True, help="立即重新获取已添加模块的最新报价"):\n            st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1\n    search_cols = st.columns(3, gap="small")'''
+          if old not in s:
+              raise SystemExit('ASSERT FAILED: render_watchlists insertion point not found')
+          s = s.replace(old, new, 1)
+
+          # The refresh key is intentionally consumed only by watchlist quotes.
+          # Do not clear or invalidate the top-market cache.
+          if 'row = _get_watchlist_quote(item["symbol"], refresh_key)' not in s:
+              raise SystemExit('ASSERT FAILED: watchlist quote refresh key is missing')
+          if '_get_cached_quote("^IXIC", refresh_key)' not in s:
+              raise SystemExit('ASSERT FAILED: market snapshot block is missing')
+          if 'refresh_watchlist_quotes' not in s:
+              raise SystemExit('ASSERT FAILED: refresh button was not restored')
+          if '.news-content { flex: 1; min-width: 0; }' not in s:
+              raise SystemExit('ASSERT FAILED: original 7x24 font rule was not restored')
+
+          p.write_text(s, encoding='utf-8')
+          PY
+          python -m py_compile app.py
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py
+          git commit -m 'Restore reliable watchlist refresh and 7x24 font'
+          git push
+      - name: Remove this temporary workflow
+        run: |
+          rm -f .github/workflows/fix-watchlist-refresh-final.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -u .github/workflows/fix-watchlist-refresh-final.yml
+          git commit -m 'Remove temporary repair workflow'
+          git push
