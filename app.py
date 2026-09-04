@@ -273,6 +273,10 @@ def _render_quote_block(item):
     source = row.get("data_source") or row.get("quote_source") or ""; delay = row.get("delayed_by"); source_text = f"{source} · 延迟{delay}分" if delay not in (None, 0, "0") and source == "Yahoo Finance" else source
     return f'<div class="search-result"><div class="search-result-label">{html.escape(item["name"])} <span class="search-result-symbol">· {html.escape(item["symbol"])} · {html.escape(item.get("exchange", ""))}</span></div><div class="search-price">{html.escape(price_text)} <span class="market-change">{html.escape(change_text)} {html.escape(state)}</span></div>{after}<div class="search-hint">{html.escape(source_text)}</div></div>'
 
+@st.fragment(run_every="1s")
+def _render_watchlist_quote_fragment(item):
+    st.markdown(_render_quote_block(item), unsafe_allow_html=True)
+
 def _add_confirmed(key, item):
     confirmed = st.session_state.get(f"{key}_confirmed", []); confirmed = [confirmed] if isinstance(confirmed, dict) else (confirmed if isinstance(confirmed, list) else [])
     if not any(x.get("symbol") == item.get("symbol") for x in confirmed if isinstance(x, dict)): confirmed.append(item)
@@ -294,12 +298,16 @@ def _confirm_search(key, market):
     else: selected = {"symbol": _direct_symbol(market, query), "name": query, "exchange": "", "market": market}
     _add_confirmed(key, selected)
 
-@st.fragment(run_every="300s")
-def render_watchlists():
+@st.fragment
+def render_watchlist_refresh_control():
     refresh_col, _, _ = st.columns([1.2, 3.8, 1])
     with refresh_col:
         if st.button("↻ 刷新股价", key="refresh_watchlist_quotes", use_container_width=True, help="立即重新获取已添加模块的最新报价"):
             st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
+
+render_watchlist_refresh_control()
+
+def render_watchlists():
     search_cols = st.columns(3, gap="small")
     search_config = [(search_cols[0], "US", "🇺🇸 美股", "NVDA / Apple", "market_search_us"), (search_cols[1], "HK", "🇭🇰 港股", "0700 / 腾讯", "market_search_hk"), (search_cols[2], "CN", "🇨🇳 A股", "600519 / 贵州茅台", "market_search_cn")]
     for col, market, title, placeholder, key in search_config:
@@ -311,7 +319,7 @@ def render_watchlists():
                     if not isinstance(confirmed, dict): continue
                     with st.container(border=True):
                         quote_col, delete_col = st.columns([1, 0.035], gap="small", vertical_alignment="top")
-                        with quote_col: st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
+                        with quote_col: _render_watchlist_quote_fragment({**confirmed, "market": market})
                         with delete_col:
                             st.markdown('<div class="module-delete">', unsafe_allow_html=True)
                             st.button("×", key=f"{key}_delete_{idx}", on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除此模块", type="tertiary")
@@ -389,7 +397,7 @@ st.markdown('<div class="section-description">东方财富「红字焦点快讯�
 def render_news_panel():
     col1, col2 = st.columns([1, 5])
     with col1:
-        if st.button("🔄 立即刷新", key="refresh_7x24", use_container_width=True): get_sina_news.clear(); st.rerun()
+        if st.button("🔄 立即刷新", key="refresh_7x24", use_container_width=True): get_sina_news.clear()
     news_items, news_error = get_sina_news(limit=50)
     if news_items:
         st.markdown(f'<div class="news-status">当前显示 {len(news_items)} 条 · 来源：东方财富红字焦点快讯 · 60秒自动刷新</div>', unsafe_allow_html=True); news_html = '<div class="news-box">'
