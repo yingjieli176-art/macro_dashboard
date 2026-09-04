@@ -163,7 +163,6 @@ def _get_watchlist_quote(symbol):
         if row.get("price") is not None: return row
     return _get_yahoo_quote_safe(symbol)
 
-@st.fragment(run_every="300s")
 def render_market_groups():
     now = time.time(); snapshot = st.session_state.get("_market_quotes_snapshot"); snapshot_time = st.session_state.get("_market_quotes_snapshot_time", 0)
     if not isinstance(snapshot, dict) or now - snapshot_time >= 300:
@@ -334,7 +333,6 @@ PARAM_DESCRIPTIONS = ["IORB（Interest on Reserve Balances）：美联储对存�
 def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
 compact_mode = True
 
-@st.fragment(run_every="3600s")
 def render_core_charts():
     global compact_mode
     st.markdown('<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>', unsafe_allow_html=True); toggle_col, _ = st.columns([1, 5])
@@ -354,7 +352,6 @@ render_core_charts()
 st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-description">东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新</div>', unsafe_allow_html=True)
-@st.fragment(run_every="60s")
 def render_news_panel():
     col1, col2 = st.columns([1, 5])
     with col1:
