@@ -54,10 +54,10 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; }
 .search-result-label { color: #374151; font-size: 0.80rem; line-height: 1.3; }
 .search-result-symbol { color: #6b7280; font-size: 0.70rem; }
-.search-price { color: #111827; font-size: 0.94rem; font-weight: 650; margin-top: 1px; }
+.search-price { color: #111827; font-size: 0.94rem; font-weight: 650; margin-top: 1px; width: 118px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .search-after { color: #6b7280; font-size: 0.72rem; margin-top: 1px; }
 .search-hint { color: #9ca3af; font-size: 0.68rem; margin-top: 1px; }
-.module-delete { display: flex; justify-content: flex-end; margin-top: 0; margin-right: -3px; transform: translateY(-78px); }
+.module-delete { display: flex; justify-content: flex-end; align-items: flex-start; margin-top: -2px; margin-right: -6px; transform: none; }
 .module-delete button { min-width: 14px !important; width: 14px !important; height: 14px !important; padding: 0 !important; margin: 0 !important; font-size: 9px !important; line-height: 14px !important; border: 0 !important; }
 .module-refresh button { min-height: 28px !important; height: 28px !important; padding: 0 8px !important; font-size: 0.72rem !important; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
@@ -134,6 +134,7 @@ def _get_yahoo_quote_safe(symbol):
 
 def _eastmoney_secid(symbol):
     raw = str(symbol or "").upper().strip()
+    if raw.endswith(".HK"): return f"116.{raw[:-3].zfill(5)}"
     if raw.endswith(".SS"): return f"1.{raw[:-3]}"
     if raw.endswith(".SZ"): return f"0.{raw[:-3]}"
     return ""
@@ -146,12 +147,10 @@ def _get_eastmoney_quote_safe(symbol):
         if not data: return _empty_quote()
         price_raw, prev_raw, pct_raw = data.get("f43"), data.get("f60"), data.get("f170")
         if price_raw in (None, "-", ""): return _empty_quote()
-        price = float(price_raw); previous = None if prev_raw in (None, "-", "") else float(prev_raw)
-        if price > 10000: price /= 100
-        if previous is not None and previous > 10000: previous /= 100
+        price = float(price_raw) / 100; previous = None if prev_raw in (None, "-", "") else float(prev_raw) / 100
         change_pct = None if pct_raw in (None, "-", "") else float(pct_raw)
         if change_pct is None and previous not in (None, 0): change_pct = (price - previous) / previous * 100
-        return {"price": price, "change_pct": change_pct, "market_state": "REGULAR", "currency": "CNY", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": data.get("f86"), "post_market_time": None, "pre_market_time": None, "quote_source": "Eastmoney", "delayed_by": 0, "data_source": "东方财富"}
+        return {"price": price, "change_pct": change_pct, "market_state": "REGULAR", "currency": ("HKD" if str(symbol).upper().endswith(".HK") else "CNY"), "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": data.get("f86"), "post_market_time": None, "pre_market_time": None, "quote_source": "Eastmoney", "delayed_by": 0, "data_source": "东方财富"}
     except Exception: return _empty_quote()
 
 def _market_state_text(row): return {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后", "CLOSED": "休市"}.get(row.get("market_state") or "", "")
@@ -161,7 +160,7 @@ def _market_item_html(name, price, change_pct, meta=""):
 
 @st.cache_data(ttl=300, show_spinner=False)
 def _get_cached_quote(symbol, refresh_key=0):
-    if str(symbol).upper().endswith((".SS", ".SZ")):
+    if str(symbol).upper().endswith((".SS", ".SZ", ".HK")):
         row = _get_eastmoney_quote_safe(symbol)
         if row.get("price") is not None: return row
     return _get_yahoo_quote_safe(symbol)
@@ -205,6 +204,20 @@ def _search_yahoo(market, query):
             if market == "HK" and not symbol.upper().endswith(".HK"): continue
             if market == "CN" and not symbol.upper().endswith((".SS", ".SZ")): continue
             results.append({"symbol": symbol, "name": item.get("longname") or item.get("shortname") or symbol, "exchange": item.get("exchange") or item.get("exchDisp") or ""})
+        return results[:6]
+    except Exception: return []
+
+@st.cache_data(ttl=60, show_spinner=False)
+def _search_eastmoney_hk(query):
+    if not query.strip(): return []
+    try:
+        response = requests.get(EASTMONEY_SEARCH_URL, params={"input": query.strip(), "type": 14, "count": 6}, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}, timeout=5)
+        response.raise_for_status(); payload = response.json() or {}; table = payload.get("QuotationCodeTable") or {}; rows = table.get("Data") or payload.get("data") or []; results = []
+        for item in rows:
+            if not isinstance(item, dict): continue
+            code = str(item.get("SecurityCode") or item.get("Code") or item.get("code") or "").strip(); name = str(item.get("SecurityName") or item.get("Name") or item.get("name") or "").strip(); quote_id = str(item.get("QuoteID") or item.get("quoteId") or "").strip()
+            if quote_id.startswith("116.") and code and name:
+                results.append({"symbol": f"{code.zfill(5)}.HK", "name": name, "exchange": "HK"})
         return results[:6]
     except Exception: return []
 
@@ -256,8 +269,9 @@ def _open_search(key): st.session_state[f"{key}_open"] = True
 def _confirm_search(key, market):
     query = str(st.session_state.get(key, "")).strip()
     if not query: return
-    results = (_search_eastmoney_cn(query) if market == "CN" else _search_yahoo(market, query))
+    results = (_search_eastmoney_cn(query) if market == "CN" else (_search_eastmoney_hk(query) if market == "HK" else _search_yahoo(market, query)))
     if market == "CN" and not results: results = _search_yahoo(market, query)
+    if market == "HK" and not results: results = _search_yahoo(market, query)
     if results: selected = {**results[0], "market": market}
     else: selected = {"symbol": _direct_symbol(market, query), "name": query, "exchange": "", "market": market}
     _add_confirmed(key, selected)
