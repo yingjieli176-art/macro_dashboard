@@ -25,12 +25,7 @@ jobs:
 
           p = Path('app.py')
           s = p.read_text(encoding='utf-8')
-
-          # Never invoke rerun explicitly from a widget/callback path.
           s = re.sub(r'^\s*st\.rerun\(\)\s*$', '', s, flags=re.M)
-
-          # Fixed-height quote cards prevent one changing quote/source line
-          # from moving the neighbouring cards on every full Streamlit rerun.
           replacements = {
               '.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; min-height: 68px; box-sizing: border-box; }':
               '.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; height: 76px; min-height: 76px; max-height: 76px; box-sizing: border-box; overflow: hidden; }',
@@ -39,16 +34,13 @@ jobs:
               '.module-delete button { min-width: 24px !important; width: 24px !important; max-width: 24px !important; height: 24px !important; padding: 0 !important; margin: 0 !important; font-size: 14px !important; line-height: 24px !important; border: 0 !important; }':
               '.module-delete button { min-width: 24px !important; width: 24px !important; max-width: 24px !important; height: 24px !important; padding: 0 !important; margin: 0 !important; font-size: 14px !important; line-height: 24px !important; border: 0 !important; }\n.search-result .search-after, .search-result .search-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
           }
-          for old, new in replacements.items():
-              s = s.replace(old, new)
-
-          # All three watchlist columns start at the same vertical origin.
+          for old, new in replacements.items(): s = s.replace(old, new)
           s = s.replace('search_cols = st.columns(3, gap="small")', 'search_cols = st.columns(3, gap="small", vertical_alignment="top")')
           s = s.replace('refresh_col, _, _ = st.columns([1.2, 3.8, 1])', 'refresh_col, _, _ = st.columns([1.2, 3.8, 1], vertical_alignment="top")')
-
-          # Do not let the workflow repeatedly rewrite an already-stabilized
-          # function. Remove all fragment decorators left by old revisions.
           s = re.sub(r'^@st\.fragment\([^\n]*\)\n', '', s, flags=re.M)
+
+          # Reuse Yahoo's post-market quote as the existing overnight field.
+          s = re.sub(r'("pre_change_pct": pre_change_pct, "overnight_price": )None(, "overnight_change_pct": )None', r'\1post_price\2post_change_pct', s, count=1)
           p.write_text(s, encoding='utf-8')
 
           p = Path('data.py')
@@ -66,9 +58,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add app.py data.py
-          if git diff --cached --quiet; then
-            echo 'No source changes required'
-            exit 0
-          fi
-          git commit -m 'Stabilize watchlist card geometry'
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Show US overnight prices in watchlist'
           git push origin main
