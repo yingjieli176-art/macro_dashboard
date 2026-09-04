@@ -1,6 +1,7 @@
 name: Fix watchlist refresh isolation v2
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
   patch:
@@ -32,7 +33,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add app.py
-          git diff --cached --quiet || git commit -m "Fix watchlist refresh without clearing market cache"
+          git diff --cached --quiet || git commit -m "Isolate watchlist refresh key"
           git push
       - name: Remove temporary workflow
         run: |
