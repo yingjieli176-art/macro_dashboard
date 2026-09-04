@@ -3,4 +3,4 @@ pandas
 plotly
 requests
 
-# force Streamlit Community Cloud redeploy after quote refresh isolation fix
+# trigger final deployment after removing broken watchlist refresh
