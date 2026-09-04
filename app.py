@@ -195,8 +195,26 @@ def _refresh_quote_cache():
 
 @st.fragment(run_every="300s")
 def render_market_groups():
-    refresh_key = _quote_refresh_key()
-    quotes = {"nasdaq": _get_cached_quote("^IXIC", refresh_key), "sp500": _get_cached_quote("^GSPC", refresh_key), "dow": _get_cached_quote("^DJI", refresh_key), "hsi": _get_cached_quote("^HSI", refresh_key), "hstech": _get_cached_quote("HSTECH.HK", refresh_key), "sh": _get_cached_quote("000001.SS", refresh_key), "sz": _get_cached_quote("399001.SZ", refresh_key), "csi300": _get_cached_quote("000300.SS", refresh_key)}
+    # Keep the top market snapshot in session state. A watchlist button interaction
+    # may rerun the script, but must not trigger fresh requests for these indices.
+    now = time.time()
+    snapshot = st.session_state.get("_market_quotes_snapshot")
+    snapshot_time = st.session_state.get("_market_quotes_snapshot_time", 0)
+    if not isinstance(snapshot, dict) or now - snapshot_time >= 300:
+        refresh_key = _quote_refresh_key()
+        snapshot = {
+            "nasdaq": _get_cached_quote("^IXIC", refresh_key),
+            "sp500": _get_cached_quote("^GSPC", refresh_key),
+            "dow": _get_cached_quote("^DJI", refresh_key),
+            "hsi": _get_cached_quote("^HSI", refresh_key),
+            "hstech": _get_cached_quote("HSTECH.HK", refresh_key),
+            "sh": _get_cached_quote("000001.SS", refresh_key),
+            "sz": _get_cached_quote("399001.SZ", refresh_key),
+            "csi300": _get_cached_quote("000300.SS", refresh_key),
+        }
+        st.session_state["_market_quotes_snapshot"] = snapshot
+        st.session_state["_market_quotes_snapshot_time"] = now
+    quotes = snapshot"nasdaq": _get_cached_quote("^IXIC", refresh_key), "sp500": _get_cached_quote("^GSPC", refresh_key), "dow": _get_cached_quote("^DJI", refresh_key), "hsi": _get_cached_quote("^HSI", refresh_key), "hstech": _get_cached_quote("HSTECH.HK", refresh_key), "sh": _get_cached_quote("000001.SS", refresh_key), "sz": _get_cached_quote("399001.SZ", refresh_key), "csi300": _get_cached_quote("000300.SS", refresh_key)}
     groups = [("🇺🇸 美股", [_market_item_html("纳斯达克", quotes["nasdaq"].get("price"), quotes["nasdaq"].get("change_pct"), _quote_meta(quotes["nasdaq"], "US")), _market_item_html("标普500", quotes["sp500"].get("price"), quotes["sp500"].get("change_pct"), _quote_meta(quotes["sp500"], "US")), _market_item_html("道琼斯", quotes["dow"].get("price"), quotes["dow"].get("change_pct"), _quote_meta(quotes["dow"], "US"))], "three"), ("🇭🇰 港股", [_market_item_html("恒生指数", quotes["hsi"].get("price"), quotes["hsi"].get("change_pct"), _quote_meta(quotes["hsi"], "HK")), _market_item_html("恒生科技", quotes["hstech"].get("price"), quotes["hstech"].get("change_pct"), _quote_meta(quotes["hstech"], "HK"))], "two"), ("🇨🇳 A股", [_market_item_html("上证指数", quotes["sh"].get("price"), quotes["sh"].get("change_pct"), _quote_meta(quotes["sh"], "CN")), _market_item_html("深证成指", quotes["sz"].get("price"), quotes["sz"].get("change_pct"), _quote_meta(quotes["sz"], "CN")), _market_item_html("沪深300", quotes["csi300"].get("price"), quotes["csi300"].get("change_pct"), _quote_meta(quotes["csi300"], "CN"))], "three")]
     cols = st.columns(3, gap="small")
     for col, (title, items, grid_class) in zip(cols, groups):
