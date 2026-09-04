@@ -2,7 +2,8 @@ name: Stability hotfix
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -11,12 +12,13 @@ jobs:
   patch:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Harden dashboard refresh and layout
+      - name: Patch app
         shell: bash
         run: |
           python - <<'PY'
@@ -25,16 +27,13 @@ jobs:
 
           p = Path('app.py')
           s = p.read_text(encoding='utf-8')
-          s2 = re.sub(r'^@st\.fragment\([^\n]*\)\n', '', s, flags=re.M)
 
-          # The refresh button already uses on_click. Streamlit reruns after
-          # the callback automatically, so calling st.rerun() inside it is a
-          # no-op and produces a warning.
-          s2 = s2.replace('            st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1\n            st.rerun()\n', '            st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1\n')
+          # A Streamlit button reruns the script automatically. Do not call
+          # st.rerun from the button/callback path.
+          s = s.replace('            st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1\n            st.rerun()\n', '            st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1\n')
 
-          # Render the three top market cards as ONE HTML grid instead of
-          # Streamlit st.columns. This removes block-tree reflow between the
-          # three cards when quote content changes during a rerun.
+          # Keep the top market cards in one Streamlit element. The old
+          # st.columns tree was the source of visible horizontal reflow.
           pattern = r'def render_market_groups\(\):\n.*?\nrender_market_groups\(\)'
           replacement = '''def render_market_groups():
               now = time.time()
@@ -54,69 +53,56 @@ jobs:
                   }
                   st.session_state["_market_quotes_snapshot"] = snapshot
                   st.session_state["_market_quotes_snapshot_time"] = now
-              quotes = snapshot
+              q = snapshot
               groups = [
                   ("🇺🇸 美股", [
-                      _market_item_html("Nasdaq", quotes["nasdaq"].get("price"), quotes["nasdaq"].get("change_pct"), _market_state_text(quotes["nasdaq"])),
-                      _market_item_html("S&P 500", quotes["sp500"].get("price"), quotes["sp500"].get("change_pct"), _market_state_text(quotes["sp500"])),
-                      _market_item_html("Dow Jones", quotes["dow"].get("price"), quotes["dow"].get("change_pct"), _market_state_text(quotes["dow"])),
+                      _market_item_html("纳斯达克", q["nasdaq"].get("price"), q["nasdaq"].get("change_pct"), _quote_meta(q["nasdaq"], "US")),
+                      _market_item_html("标普500", q["sp500"].get("price"), q["sp500"].get("change_pct"), _quote_meta(q["sp500"], "US")),
+                      _market_item_html("道琼斯", q["dow"].get("price"), q["dow"].get("change_pct"), _quote_meta(q["dow"], "US")),
                   ], "three"),
                   ("🇭🇰 港股", [
-                      _market_item_html("恒生指数", quotes["hsi"].get("price"), quotes["hsi"].get("change_pct"), _market_state_text(quotes["hsi"])),
-                      _market_item_html("恒生科技", quotes["hstech"].get("price"), quotes["hstech"].get("change_pct"), _market_state_text(quotes["hstech"])),
+                      _market_item_html("恒生指数", q["hsi"].get("price"), q["hsi"].get("change_pct"), _quote_meta(q["hsi"], "HK")),
+                      _market_item_html("恒生科技", q["hstech"].get("price"), q["hstech"].get("change_pct"), _quote_meta(q["hstech"], "HK")),
                   ], "two"),
                   ("🇨🇳 A股", [
-                      _market_item_html("上证指数", quotes["sh"].get("price"), quotes["sh"].get("change_pct"), _market_state_text(quotes["sh"])),
-                      _market_item_html("深证成指", quotes["sz"].get("price"), quotes["sz"].get("change_pct"), _market_state_text(quotes["sz"])),
-                      _market_item_html("沪深300", quotes["csi300"].get("price"), quotes["csi300"].get("change_pct"), _market_state_text(quotes["csi300"])),
+                      _market_item_html("上证指数", q["sh"].get("price"), q["sh"].get("change_pct"), _quote_meta(q["sh"], "CN")),
+                      _market_item_html("深证成指", q["sz"].get("price"), q["sz"].get("change_pct"), _quote_meta(q["sz"], "CN")),
+                      _market_item_html("沪深300", q["csi300"].get("price"), q["csi300"].get("change_pct"), _quote_meta(q["csi300"], "CN")),
                   ], "three"),
               ]
               cards = []
               for title, items, grid_class in groups:
-                  cards.append(
-                      f'<div class="market-group"><div class="market-group-title">{title}</div>'
-                      f'<div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>'
-                  )
+                  cards.append(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>')
               st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
 
 render_market_groups()'''
-          s2, count = re.subn(pattern, replacement, s2, count=1, flags=re.S)
-          if count:
-              print('Replaced top market cards with a single fixed HTML grid')
-          else:
-              print('Top market function pattern not found; leaving function unchanged')
+          s, n = re.subn(pattern, replacement, s, count=1, flags=re.S)
+          if n != 1:
+              raise SystemExit('render_market_groups replacement failed')
 
-          # Keep the card geometry deterministic during reruns.
-          s2 = s2.replace('.market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; }', '.market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; min-height: 82px; box-sizing: border-box; }')
-          s2 = s2.replace('.market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }', '.market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; min-height: 52px; align-items: start; }')
-          s2 = s2.replace('.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; }', '.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; min-height: 68px; box-sizing: border-box; }')
-          s2 = s2.replace('.market-item { min-width: 0; padding-right: 4px; border-right: 1px solid #f0f0f0; }', '.market-item { min-width: 0; min-height: 52px; padding-right: 4px; border-right: 1px solid #f0f0f0; box-sizing: border-box; }')
+          # Eliminate every remaining fragment decorator.
+          s = re.sub(r'^@st\.fragment\([^\n]*\)\n', '', s, flags=re.M)
+          p.write_text(s, encoding='utf-8')
 
-          if s2 != s:
-              p.write_text(s2, encoding='utf-8')
-              print('Patched app.py')
-
+          # Fail fast on upstream APIs.
           p = Path('data.py')
           s = p.read_text(encoding='utf-8')
-          s2 = s.replace('timeout=20,', 'timeout=4,').replace('timeout=15,', 'timeout=3,').replace('timeout=8,', 'timeout=4,').replace('timeout=5,', 'timeout=3,')
-          if s2 != s:
-              p.write_text(s2, encoding='utf-8')
-              print('Reduced slow provider timeouts')
+          s = s.replace('timeout=20,', 'timeout=4,').replace('timeout=15,', 'timeout=3,').replace('timeout=8,', 'timeout=4,').replace('timeout=5,', 'timeout=3,')
+          p.write_text(s, encoding='utf-8')
           PY
 
-      - name: Validate Python syntax
-        shell: bash
+      - name: Validate
         run: python -m py_compile app.py data.py
 
-      - name: Commit patch
+      - name: Commit patched source
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add app.py data.py
           if git diff --cached --quiet; then
-            echo 'No changes to commit'
+            echo 'No source changes required'
             exit 0
           fi
-          git commit -m 'Fix callback rerun warning and stabilize top grid'
+          git commit -m 'Fix rerun warning and top module reflow'
           git push origin main
