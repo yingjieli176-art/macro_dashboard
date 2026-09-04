@@ -1,4 +1,5 @@
 import html
+import json
 import pandas as pd
 import plotly.graph_objects as go
 import requests
@@ -9,6 +10,7 @@ st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide"
 EASTMONEY_FOCUS_URL = "https://kuaixun.eastmoney.com/"
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False}
+WATCHLIST_PARAM = "watchlist"
 
 st.markdown("""
 <style>
@@ -57,6 +59,43 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 
 st.markdown('<div class="dashboard-title">Macro Dashboard</div>', unsafe_allow_html=True)
 
+
+def _load_watchlists():
+    if st.session_state.get("_watchlist_loaded"):
+        return
+    raw = st.query_params.get(WATCHLIST_PARAM, "")
+    try:
+        payload = json.loads(raw) if raw else {}
+    except (TypeError, ValueError, json.JSONDecodeError):
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    for key in ("market_search_us", "market_search_hk", "market_search_cn"):
+        items = payload.get(key, [])
+        if isinstance(items, dict):
+            items = [items]
+        if not isinstance(items, list):
+            items = []
+        clean = [item for item in items if isinstance(item, dict) and item.get("symbol")]
+        st.session_state[f"{key}_confirmed"] = clean
+    st.session_state["_watchlist_loaded"] = True
+
+
+def _save_watchlists():
+    payload = {}
+    for key in ("market_search_us", "market_search_hk", "market_search_cn"):
+        items = st.session_state.get(f"{key}_confirmed", [])
+        if isinstance(items, dict):
+            items = [items]
+        if not isinstance(items, list):
+            items = []
+        payload[key] = [item for item in items if isinstance(item, dict) and item.get("symbol")]
+    st.query_params[WATCHLIST_PARAM] = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+
+
+_load_watchlists()
+
+
 def _get_yahoo_quote_safe(symbol):
     try:
         response = requests.get("https://query1.finance.yahoo.com/v8/finance/chart/" + symbol, params={"range": "1d", "interval": "1m", "includePrePost": "true"}, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
@@ -74,21 +113,25 @@ def _get_yahoo_quote_safe(symbol):
         post_change_pct = meta.get("postMarketChangePercent")
         if post_price is not None and post_change_pct is None and previous not in (None, 0):
             post_change_pct = (post_price - previous) / previous * 100
-        return {"price": price, "change_pct": change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct}
+        return {"price": price, "change_pct": change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct, "regular_market_time": meta.get("regularMarketTime"), "post_market_time": meta.get("postMarketTime"), "quote_source": meta.get("quoteSourceName", ""), "delayed_by": meta.get("exchangeDataDelayedBy")}
     except Exception:
-        return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None}
+        return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None, "regular_market_time": None, "post_market_time": None, "quote_source": "", "delayed_by": None}
+
 
 def _market_state_text(row):
-    return {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后"}.get(row.get("market_state") or "", "")
+    return {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后", "CLOSED": "休市"}.get(row.get("market_state") or "", "")
+
 
 def _market_item_html(name, price, change_pct, meta=""):
     price_text = "--" if price is None else f"{price:,.2f}"
     change_text = "--" if change_pct is None else f"{change_pct:+.2f}%"
     return f'<div class="market-item"><div class="market-name">{html.escape(name)}</div><div class="market-price">{html.escape(price_text)}</div><div class="market-change">{html.escape(change_text)}</div><div class="market-meta">{html.escape(meta)}</div></div>'
 
+
 @st.cache_data(ttl=60, show_spinner=False)
 def _get_cached_quote(symbol):
     return _get_yahoo_quote_safe(symbol)
+
 
 @st.fragment(run_every="60s")
 def render_market_groups():
@@ -98,33 +141,47 @@ def render_market_groups():
     for col, (title, items, grid_class) in zip(cols, groups):
         with col:
             st.markdown(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>', unsafe_allow_html=True)
+
+
 render_market_groups()
+
 
 @st.cache_data(ttl=60, show_spinner=False)
 def _search_yahoo(market, query):
-    if not query.strip(): return []
+    if not query.strip():
+        return []
     try:
         response = requests.get("https://query1.finance.yahoo.com/v1/finance/search", params={"q": query.strip(), "quotesCount": 10, "newsCount": 0}, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
         response.raise_for_status()
         quotes = response.json().get("quotes") or []
         results = []
         for item in quotes:
-            if item.get("quoteType") != "EQUITY": continue
+            if item.get("quoteType") != "EQUITY":
+                continue
             symbol = str(item.get("symbol") or "")
-            if market == "US" and ("." in symbol or symbol.endswith(("=F", "=X"))): continue
-            if market == "HK" and not symbol.upper().endswith(".HK"): continue
-            if market == "CN" and not symbol.upper().endswith((".SS", ".SZ")): continue
+            if market == "US" and ("." in symbol or symbol.endswith(("=F", "=X"))):
+                continue
+            if market == "HK" and not symbol.upper().endswith(".HK"):
+                continue
+            if market == "CN" and not symbol.upper().endswith((".SS", ".SZ")):
+                continue
             results.append({"symbol": symbol, "name": item.get("longname") or item.get("shortname") or symbol, "exchange": item.get("exchange") or item.get("exchDisp") or ""})
         return results[:6]
-    except Exception: return []
+    except Exception:
+        return []
+
 
 def _direct_symbol(market, query):
     q = query.strip().upper()
-    if market == "US": return q
+    if market == "US":
+        return q
     digits = "".join(ch for ch in q if ch.isdigit())
-    if market == "HK": return f"{digits.zfill(4)}.HK" if digits else q
-    if not digits: return q
+    if market == "HK":
+        return f"{digits.zfill(4)}.HK" if digits else q
+    if not digits:
+        return q
     return f"{digits}.SS" if digits.startswith(("5", "6", "68", "9")) else f"{digits}.SZ"
+
 
 def _render_quote_block(item):
     row = _get_cached_quote(item["symbol"])
@@ -135,8 +192,15 @@ def _render_quote_block(item):
     after = ""
     if item.get("market") == "US":
         pp, pc = row.get("post_price"), row.get("post_change_pct")
-        after = f'<div class="search-after">盘后 / 夜盘：<strong>{"--" if pp is None else f"{pp:,.2f}"}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
+        if row.get("market_state") == "POST" and pp is not None:
+            after = f'<div class="search-after">盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
+        elif row.get("market_state") == "PRE":
+            pre_price = row.get("pre_price")
+            pre_change = row.get("pre_change_pct")
+            if pre_price is not None:
+                after = f'<div class="search-after">盘前：<strong>{pre_price:,.2f}</strong> <span>{"--" if pre_change is None else f"{pre_change:+.2f}%"}</span></div>'
     return f'<div class="search-result"><div class="search-result-label">{html.escape(item["name"])} <span class="search-result-symbol">· {html.escape(item["symbol"])} · {html.escape(item.get("exchange", ""))}</span></div><div class="search-price">{html.escape(price_text)} <span class="market-change">{html.escape(change_text)} {html.escape(state)}</span></div>{after}</div>'
+
 
 def _add_confirmed(key, item):
     confirmed = st.session_state.get(f"{key}_confirmed", [])
@@ -149,6 +213,8 @@ def _add_confirmed(key, item):
     st.session_state[f"{key}_confirmed"] = confirmed
     st.session_state[key] = ""
     st.session_state.pop(f"{key}_select", None)
+    _save_watchlists()
+
 
 st.markdown('<div class="search-title">🔎 市场搜索</div>', unsafe_allow_html=True)
 search_cols = st.columns(3, gap="small")
@@ -156,7 +222,8 @@ search_config = [(search_cols[0], "US", "🇺🇸 美股", "例如 NVDA / Apple"
 for col, market, title, placeholder, key in search_config:
     with col:
         confirmed_list = st.session_state.get(f"{key}_confirmed", [])
-        if isinstance(confirmed_list, dict): confirmed_list = [confirmed_list]
+        if isinstance(confirmed_list, dict):
+            confirmed_list = [confirmed_list]
         if confirmed_list:
             st.markdown(f'<div class="market-group-title">{title}</div>', unsafe_allow_html=True)
             for confirmed in confirmed_list:
@@ -168,7 +235,8 @@ for col, market, title, placeholder, key in search_config:
             if not results:
                 results = [{"symbol": _direct_symbol(market, query), "name": query.strip(), "exchange": "", "market": market}]
             else:
-                for item in results: item["market"] = market
+                for item in results:
+                    item["market"] = market
             result_options = [f'{item["name"]} · {item["symbol"]}' for item in results]
             selected_idx = st.radio("确认搜索结果", range(len(results)), format_func=lambda i: result_options[i], key=f"{key}_select", label_visibility="collapsed")
             selected = results[selected_idx]
@@ -234,7 +302,7 @@ def render_core_charts():
             with column:
                 st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
     else:
-        configs = [('<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>', '<div class="section-description">IORB、ON RRP Rate、EFFR 与 SOFR</div>', "normal_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0, True), ('<div class="section-title">2. 10Y Yield Structure</div>', '<div class="section-description">10Y Nominal / 10Y Real / 10Y Breakeven</div>', "normal_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1, True), ('<div class="section-title">3. Treasury Yield & Curve Spread</div>', '<div class="section-description">3M、2Y、10Y Treasury Yield 与曲线利差</div>', "normal_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")], 2, False)]
+        configs = [('<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>', '<div class="section-description">IORB、ON RRP Rate、EFFR 与 SOFR</div>', "normal_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0, True), ('<div class="section-title">2. 10Y Yield Structure</div>', '<div class="section-description">10Y Nominal / 10Y Real / 10Y Breakeven</div>', "normal_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1, True), ('<div class="section-title">3. Treasury Yield & Curve Spread</div>', '<div class="section-description">3M、2Y、10Y Treasury Yield 与曲线利差</div>', "normal_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")], 2, False)]
         for title, description, key, builder, sources, desc_index, divider in configs:
             st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
             if divider: st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
