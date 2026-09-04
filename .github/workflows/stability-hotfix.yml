@@ -16,23 +16,36 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Harden dashboard network calls
+      - name: Harden dashboard network calls and layout
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
-          # Remove every Streamlit fragment auto-rerun decorator.
           p = Path('app.py')
           s = p.read_text(encoding='utf-8')
           s2 = re.sub(r'^@st\.fragment\([^\n]*\)\n', '', s, flags=re.M)
+
+          # Keep the top quote/search modules at a stable height so changing
+          # quote text cannot cause cards to jump during a rerun.
+          marker = '.market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; }'
+          replacement = '.market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; min-height: 82px; box-sizing: border-box; }'
+          s2 = s2.replace(marker, replacement)
+          marker = '.market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }'
+          replacement = '.market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; min-height: 52px; align-items: start; }'
+          s2 = s2.replace(marker, replacement)
+          marker = '.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; }'
+          replacement = '.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; min-height: 68px; box-sizing: border-box; }'
+          s2 = s2.replace(marker, replacement)
+          marker = '.market-item { min-width: 0; padding-right: 4px; border-right: 1px solid #f0f0f0; }'
+          replacement = '.market-item { min-width: 0; min-height: 52px; padding-right: 4px; border-right: 1px solid #f0f0f0; box-sizing: border-box; }'
+          s2 = s2.replace(marker, replacement)
+
           if s2 != s:
               p.write_text(s2, encoding='utf-8')
-              print('Removed all st.fragment decorators from app.py')
+              print('Stabilized top market/watchlist module heights')
 
-          # Keep external requests fail-fast so a cold Streamlit rerun cannot
-          # be held for a long time by an unavailable upstream API.
           p = Path('data.py')
           s = p.read_text(encoding='utf-8')
           s2 = s.replace('timeout=20,', 'timeout=4,')
@@ -41,7 +54,7 @@ jobs:
           s2 = s2.replace('timeout=5,', 'timeout=3,')
           if s2 != s:
               p.write_text(s2, encoding='utf-8')
-              print('Reduced FRED timeout to 4s and news timeout to 3s')
+              print('Reduced slow provider timeouts')
           PY
 
       - name: Validate Python syntax
@@ -58,5 +71,5 @@ jobs:
             echo 'No changes to commit'
             exit 0
           fi
-          git commit -m 'Fail fast on slow macro data providers'
+          git commit -m 'Stabilize top dashboard module layout'
           git push origin main
