@@ -59,7 +59,6 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .search-after { color: #6b7280; font-size: 0.78rem; margin-top: 3px; }
 .search-hint { color: #9ca3af; font-size: 0.76rem; margin-top: 2px; }
 .search-confirmed { border: 1px solid #d1d5db; border-radius: 7px; padding: 8px 10px; margin-top: 7px; }
-.search-confirmed-title { font-size: 0.9rem; font-weight: 650; color: #374151; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 </style>
 """, unsafe_allow_html=True)
@@ -69,11 +68,7 @@ st.markdown('<div class="dashboard-title">Macro Dashboard</div>', unsafe_allow_h
 
 def _get_yahoo_quote_safe(symbol):
     try:
-        response = requests.get(
-            "https://query1.finance.yahoo.com/v8/finance/chart/" + symbol,
-            params={"range": "1d", "interval": "1m", "includePrePost": "true"},
-            headers={"User-Agent": "Mozilla/5.0"}, timeout=10,
-        )
+        response = requests.get("https://query1.finance.yahoo.com/v8/finance/chart/" + symbol, params={"range": "1d", "interval": "1m", "includePrePost": "true"}, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
         response.raise_for_status()
         result = (response.json().get("chart", {}).get("result") or [])[0]
         meta = result.get("meta", {})
@@ -162,7 +157,7 @@ def _direct_symbol(market, query):
     return f"{digits}.SS" if digits.startswith(("5", "6", "68", "9")) else f"{digits}.SZ"
 
 
-def _render_quote_block(item, confirmed=False):
+def _render_quote_block(item):
     row = _get_cached_quote(item["symbol"])
     price = row.get("price")
     change = row.get("change_pct")
@@ -176,8 +171,15 @@ def _render_quote_block(item, confirmed=False):
         after_price = "--" if post_price is None else f"{post_price:,.2f}"
         after_change = "--" if post_change is None else f"{post_change:+.2f}%"
         after = f'<div class="search-after">盘后 / 夜盘：<strong>{after_price}</strong> <span>{after_change}</span></div>'
-    cls = "search-confirmed" if confirmed else "search-result"
-    return f'<div class="{cls}"><div class="search-result-label">{html.escape(item["name"])} <span class="search-result-symbol">· {html.escape(item["symbol"])} · {html.escape(item.get("exchange", ""))}</span></div><div class="search-price">{html.escape(price_text)} <span class="market-change">{html.escape(change_text)} {html.escape(state)}</span></div>{after}</div>'
+    return f'<div class="search-result"><div class="search-result-label">{html.escape(item["name"])} <span class="search-result-symbol">· {html.escape(item["symbol"])} · {html.escape(item.get("exchange", ""))}</span></div><div class="search-price">{html.escape(price_text)} <span class="market-change">{html.escape(change_text)} {html.escape(state)}</span></div>{after}</div>'
+
+
+def _add_confirmed(key, item):
+    confirmed = st.session_state.setdefault(f"{key}_confirmed", [])
+    if not any(x.get("symbol") == item.get("symbol") for x in confirmed):
+        confirmed.append(item)
+    st.session_state[key] = ""
+    st.session_state[f"{key}_select"] = 0
 
 
 st.markdown('<div class="search-title">🔎 市场搜索</div>', unsafe_allow_html=True)
@@ -185,7 +187,12 @@ search_cols = st.columns(3, gap="small")
 search_config = [(search_cols[0], "US", "🇺🇸 美股", "例如 NVDA / Apple", "market_search_us"), (search_cols[1], "HK", "🇭🇰 港股", "例如 0700 / 腾讯", "market_search_hk"), (search_cols[2], "CN", "🇨🇳 A股", "例如 600519 / 贵州茅台", "market_search_cn")]
 for col, market, title, placeholder, key in search_config:
     with col:
-        st.markdown(f'<div class="market-group-title">{title}</div>', unsafe_allow_html=True)
+        confirmed_list = st.session_state.get(f"{key}_confirmed", [])
+        if confirmed_list:
+            st.markdown(f'<div class="market-group-title">{title}</div>', unsafe_allow_html=True)
+            for confirmed in confirmed_list:
+                st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
+            st.markdown('<div class="search-hint">可继续搜索并新增标的</div>', unsafe_allow_html=True)
         query = st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
         if query.strip():
             results = _search_yahoo(market, query)
@@ -198,13 +205,8 @@ for col, market, title, placeholder, key in search_config:
             selected_idx = st.radio("确认搜索结果", range(len(results)), format_func=lambda i: result_options[i], key=f"{key}_select", label_visibility="collapsed")
             selected = results[selected_idx]
             st.markdown(_render_quote_block(selected), unsafe_allow_html=True)
-            if st.button("✓ 确认此结果", key=f"{key}_confirm", use_container_width=True):
-                st.session_state[f"{key}_confirmed"] = selected
-        confirmed = st.session_state.get(f"{key}_confirmed")
-        if confirmed:
-            st.markdown('<div class="search-hint">已确认</div>', unsafe_allow_html=True)
-            st.markdown(_render_quote_block(confirmed, confirmed=True), unsafe_allow_html=True)
-        elif not query.strip():
+            st.button("✓ 确认并新增", key=f"{key}_confirm", use_container_width=True, on_click=_add_confirmed, args=(key, selected))
+        elif not confirmed_list:
             st.markdown('<div class="search-hint">输入股票代码或名称后选择结果并确认</div>', unsafe_allow_html=True)
 
 
