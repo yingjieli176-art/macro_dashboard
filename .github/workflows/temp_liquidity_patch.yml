@@ -1,0 +1,100 @@
+name: temporary-liquidity-patch
+on:
+  push:
+    paths:
+      - '.github/workflows/temp_liquidity_patch.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch liquidity chart
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          app = Path('app.py')
+          text = app.read_text()
+
+          old_import = 'from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_gfdebtn, get_fygfdpun, get_fdhbfrbn, get_fdhbfin, get_fdhbpin)'
+          new_import = 'from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_walcl, get_wresbal, get_wtre_gen, get_rrp_daily)'
+          if old_import in text:
+              text = text.replace(old_import, new_import, 1)
+          else:
+              text = re.sub(r'^from data import .*$', new_import, text, count=1, flags=re.M)
+
+          new_build = '''def build_fig4(date_range):
+              assets = get_walcl().copy()
+              reserves = get_wresbal().copy()
+              tga = get_wtre_gen().copy()
+              rrp = get_rrp_daily().copy()
+
+              assets["WALCL"] = assets["WALCL"] / 1000000.0
+              reserves["WRESBAL"] = reserves["WRESBAL"] / 1000000.0
+              tga["WTREGEN"] = tga["WTREGEN"] / 1000000.0
+              rrp["RRPONTSYD"] = rrp["RRPONTSYD"] / 1000.0
+
+              data = assets.merge(reserves, on="observation_date", how="outer")
+              data = data.merge(tga, on="observation_date", how="outer")
+              data = data.merge(rrp, on="observation_date", how="outer")
+              data = data.sort_values("observation_date")
+              data["NetLiquidity"] = data["WALCL"] - data["WTREGEN"] - data["RRPONTSYD"]
+              data = filter_range(data, date_range)
+
+              fig = go.Figure()
+              for column, name, width, dash in [
+                  ("NetLiquidity", "Net Liquidity Proxy", 2.8, None),
+                  ("WRESBAL", "Reserve Balances", 2.4, None),
+                  ("WTREGEN", "TGA", 2.1, "dash"),
+                  ("RRPONTSYD", "ON RRP", 2.1, "dot"),
+                  ("WALCL", "Fed Total Assets", 2.2, "dashdot"),
+              ]:
+                  add_line(fig, data, column, name, width, dash, unit=" T")
+              fig.update_layout(yaxis_title="$T")
+              return apply_chart_style(fig, chart_height(285, 470))
+          '''
+          pattern = r'def build_fig4\(date_range\):.*?(?=\ndef )'
+          if re.search(pattern, text, flags=re.S):
+              text = re.sub(pattern, new_build.rstrip() + '\n', text, count=1, flags=re.S)
+          else:
+              raise SystemExit('build_fig4 not found')
+
+          # Replace the existing four chart descriptions while preserving the rest of the app.
+          desc_pattern = r'PARAM_DESCRIPTIONS\s*=\s*\[.*?\n\]'
+          desc_repl = '''PARAM_DESCRIPTIONS = [
+              "3M/2Y/10Y nominal Treasury yields, showing the front-to-long end rate structure.",
+              "10Y nominal yield, 10Y real yield and inflation compensation (breakeven) for inflation expectations.",
+              "3M-10Y Treasury curve spread with the 10Y-2Y spread shown on the right axis.",
+              "Weekly U.S. liquidity conditions: Fed total assets, reserve balances, Treasury General Account, ON RRP and a net-liquidity proxy.",
+          ]'''
+          text2 = re.sub(desc_pattern, desc_repl, text, count=1, flags=re.S)
+          if text2 == text:
+              print('PARAM_DESCRIPTIONS not found; leaving descriptions unchanged')
+          else:
+              text = text2
+
+          app.write_text(text)
+
+          data = Path('data.py')
+          d = data.read_text()
+          if 'def get_walcl()' not in d:
+              marker = '\n\n# =========================================================\n# TEXT CLEAN\n# =========================================================\n'
+              additions = '''\n\n@st.cache_data(ttl=3600)\ndef get_walcl():\n    return _fred_series("WALCL")\n\n\n@st.cache_data(ttl=3600)\ndef get_wresbal():\n    return _fred_series("WRESBAL")\n\n\n@st.cache_data(ttl=3600)\ndef get_wtre_gen():\n    return _fred_series("WTREGEN")\n\n\n@st.cache_data(ttl=3600)\ndef get_rrp_daily():\n    return _fred_series("RRPONTSYD")\n'''
+              if marker not in d:
+                  raise SystemExit('data insertion marker not found')
+              d = d.replace(marker, additions + marker, 1)
+              data.write_text(d)
+
+          print('Patched Chart 4 to weekly Fed liquidity data.')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py data.py
+          git commit -m 'Replace chart 4 with Fed liquidity dashboard' || exit 0
+          git push
