@@ -1,102 +1,80 @@
 name: Patch Yahoo full-session watchlist quotes
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 permissions:
   contents: write
   pull-requests: write
 jobs:
   patch:
-    if: github.event.head_commit.message != 'Patch Yahoo full-session watchlist quotes' && github.event.head_commit.message != 'Remove Yahoo session patch workflow'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Patch app
+        shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
-          p = Path('app.py')
-          s = p.read_text(encoding='utf-8')
-          s = s.replace('.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; height: 76px; min-height: 76px; max-height: 76px;', '.search-result { padding: 5px 6px; margin-top: 1px; border-radius: 6px; min-height: 96px; box-sizing: border-box;')
-          s = s.replace('.search-after { color: #6b7280; font-size: 0.72rem; margin-top: 1px; }', '.search-after { color: #6b7280; font-size: 0.72rem; margin-top: 2px; line-height: 1.35; }')
+          p = Path("app.py")
+          s = p.read_text(encoding="utf-8")
+          s = s.replace(
+              '.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; height: 76px; min-height: 76px; max-height: 76px;',
+              '.search-result { padding: 5px 6px; margin-top: 1px; border-radius: 6px; min-height: 96px; box-sizing: border-box;'
+          )
+          s = s.replace(
+              '.search-after { color: #6b7280; font-size: 0.72rem; margin-top: 1px; }',
+              '.search-after { color: #6b7280; font-size: 0.72rem; margin-top: 2px; line-height: 1.35; }'
+          )
           s = re.sub(r'def _get_yahoo_quote_safe\(symbol\):.*?\n\ndef _eastmoney_secid', '''def _get_yahoo_quote_safe(symbol):
     """Yahoo-only quote loader for watchlists, including pre/regular/post/overnight."""
     try:
         headers = {"User-Agent": "Mozilla/5.0"}
-        quote_response = requests.get(
-            "https://query1.finance.yahoo.com/v7/finance/quote",
-            params={"symbols": symbol}, headers=headers, timeout=2.5,
-        )
+        quote_response = requests.get("https://query1.finance.yahoo.com/v7/finance/quote", params={"symbols": symbol}, headers=headers, timeout=2.5)
         quote_response.raise_for_status()
         rows = ((quote_response.json() or {}).get("quoteResponse") or {}).get("result") or []
         quote = rows[0] if rows else {}
-
-        chart_response = requests.get(
-            "https://query1.finance.yahoo.com/v8/finance/chart/" + symbol,
-            params={"range": "1d", "interval": "5m", "includePrePost": "true"},
-            headers=headers, timeout=2.5,
-        )
+        chart_response = requests.get("https://query1.finance.yahoo.com/v8/finance/chart/" + symbol, params={"range": "1d", "interval": "5m", "includePrePost": "true"}, headers=headers, timeout=2.5)
         chart_response.raise_for_status()
         chart_result = (chart_response.json().get("chart", {}).get("result") or [None])[0] or {}
         meta = chart_result.get("meta", {})
-
         previous = quote.get("regularMarketPreviousClose") or quote.get("previousClose") or meta.get("previousClose") or meta.get("regularMarketPreviousClose")
         price = quote.get("regularMarketPrice") or meta.get("regularMarketPrice")
         pre_price = quote.get("preMarketPrice") or meta.get("preMarketPrice")
         post_price = quote.get("postMarketPrice") or meta.get("postMarketPrice")
         overnight_price = quote.get("overnightMarketPrice")
-
         regular_change_pct = quote.get("regularMarketChangePercent") or meta.get("regularMarketChangePercent")
         pre_change_pct = quote.get("preMarketChangePercent") or meta.get("preMarketChangePercent")
         post_change_pct = quote.get("postMarketChangePercent") or meta.get("postMarketChangePercent")
         overnight_change_pct = quote.get("overnightChangePercent")
-
         periods = meta.get("currentTradingPeriod") or {}
-        pre_period = periods.get("pre") or {}
-        regular_period = periods.get("regular") or {}
-        post_period = periods.get("post") or {}
         timestamps = chart_result.get("timestamp") or []
         closes = ((chart_result.get("indicators", {}).get("quote") or [{}])[0]).get("close") or []
-
         def _last_close_in_period(period):
             start, end = period.get("start"), period.get("end")
-            if start is None:
-                return None
+            if start is None: return None
             values = [close for ts, close in zip(timestamps, closes) if close is not None and ts >= start and (end is None or ts <= end)]
             return values[-1] if values else None
-
-        if price is None:
-            price = _last_close_in_period(regular_period) or next((v for v in reversed(closes) if v is not None), None)
-        if pre_price is None:
-            pre_price = _last_close_in_period(pre_period)
-        if post_price is None:
-            post_price = _last_close_in_period(post_period)
-
+        if price is None: price = _last_close_in_period(periods.get("regular") or {}) or next((v for v in reversed(closes) if v is not None), None)
+        if pre_price is None: pre_price = _last_close_in_period(periods.get("pre") or {})
+        if post_price is None: post_price = _last_close_in_period(periods.get("post") or {})
         def _pct(value, current):
-            if value is not None:
-                return value
-            if current is not None and previous not in (None, 0):
-                return (current - previous) / previous * 100
+            if value is not None: return value
+            if current is not None and previous not in (None, 0): return (current - previous) / previous * 100
             return None
-
-        regular_change_pct = _pct(regular_change_pct, price)
-        pre_change_pct = _pct(pre_change_pct, pre_price)
-        post_change_pct = _pct(post_change_pct, post_price)
-        overnight_change_pct = _pct(overnight_change_pct, overnight_price)
-
         row = _empty_quote()
         row.update({
             "price": price,
-            "change_pct": regular_change_pct,
+            "change_pct": _pct(regular_change_pct, price),
             "market_state": quote.get("marketState") or meta.get("marketState", ""),
             "currency": quote.get("currency") or meta.get("currency", ""),
             "post_price": post_price,
-            "post_change_pct": post_change_pct,
+            "post_change_pct": _pct(post_change_pct, post_price),
             "pre_price": pre_price,
-            "pre_change_pct": pre_change_pct,
+            "pre_change_pct": _pct(pre_change_pct, pre_price),
             "overnight_price": overnight_price,
-            "overnight_change_pct": overnight_change_pct,
+            "overnight_change_pct": _pct(overnight_change_pct, overnight_price),
             "regular_market_time": quote.get("regularMarketTime") or meta.get("regularMarketTime"),
             "post_market_time": quote.get("postMarketTime") or meta.get("postMarketTime"),
             "pre_market_time": quote.get("preMarketTime") or meta.get("preMarketTime"),
@@ -110,7 +88,10 @@ jobs:
         return _empty_quote()
 
 def _eastmoney_secid''', s, flags=re.S)
-          s = s.replace('def _market_state_text(row): return {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后", "CLOSED": "休市"}.get(row.get("market_state") or "", "")', 'def _market_state_text(row): return {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后", "POSTPOST": "夜盘", "CLOSED": "休市"}.get(row.get("market_state") or "", "")')
+          s = s.replace(
+              'def _market_state_text(row): return {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后", "CLOSED": "休市"}.get(row.get("market_state") or "", "")',
+              'def _market_state_text(row): return {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后", "POSTPOST": "夜盘", "CLOSED": "休市"}.get(row.get("market_state") or "", "")'
+          )
           s = re.sub(r'def _render_quote_block\(item\):.*?\n\ndef _add_confirmed', '''def _render_quote_block(item):
     row = _get_watchlist_quote(item["symbol"])
     price, change = row.get("price"), row.get("change_pct")
@@ -119,30 +100,23 @@ def _eastmoney_secid''', s, flags=re.S)
     state = _market_state_text(row)
     session_html = ""
     if item.get("market") == "US":
-        sessions = [
-            ("盘前", row.get("pre_price"), row.get("pre_change_pct")),
-            ("正常", row.get("price"), row.get("change_pct")),
-            ("盘后", row.get("post_price"), row.get("post_change_pct")),
-            ("夜盘", row.get("overnight_price"), row.get("overnight_change_pct")),
-        ]
+        sessions = [("盘前", row.get("pre_price"), row.get("pre_change_pct")), ("正常", row.get("price"), row.get("change_pct")), ("盘后", row.get("post_price"), row.get("post_change_pct")), ("夜盘", row.get("overnight_price"), row.get("overnight_change_pct"))]
         parts = []
         for label, value, pct in sessions:
-            if value is None:
-                continue
+            if value is None: continue
             pct_text = "--" if pct is None else f"{pct:+.2f}%"
             parts.append(f"{label} {value:,.2f} ({pct_text})")
-        if parts:
-            session_html = '<div class="search-after">' + ' <span class="source-sep">|</span> '.join(html.escape(x) for x in parts) + '</div>'
+        if parts: session_html = '<div class="search-after">' + ' <span class="source-sep">|</span> '.join(html.escape(x) for x in parts) + '</div>'
     source = row.get("data_source") or row.get("quote_source") or ""
     delay = row.get("delayed_by")
     source_text = f"{source} · 延迟{delay}分" if delay not in (None, 0, "0") and source == "Yahoo Finance" else source
     return f'<div class="search-result"><div class="search-result-label">{html.escape(item["name"])} <span class="search-result-symbol">· {html.escape(item["symbol"])} · {html.escape(item.get("exchange", ""))}</span></div><div class="search-price">{html.escape(price_text)} <span class="market-change">{html.escape(change_text)} {html.escape(state)}</span></div>{session_html}<div class="search-hint">{html.escape(source_text)}</div></div>'
 
 def _add_confirmed''', s, flags=re.S)
-          p.write_text(s, encoding='utf-8')
+          p.write_text(s, encoding="utf-8")
           PY
           python -m py_compile app.py
-      - name: Create patch branch and PR
+      - name: Create branch and pull request
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
