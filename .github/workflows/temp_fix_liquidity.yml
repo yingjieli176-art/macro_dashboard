@@ -1,0 +1,74 @@
+name: Fix Chart 4 liquidity
+on:
+  push:
+    branches: [main]
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch app
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app.py')
+          s = p.read_text()
+          start = s.index('def build_fig4(date_range):')
+          end = s.index('\ndef build_fig3(date_range):', start)
+          new_func = '''def build_fig4(date_range):
+              specs = [(get_wresbal, "WRESBAL"), (get_wtre_gen, "WTREGEN"), (get_rrp_daily, "RRPONTSYD")]
+              series = []
+              for getter, column in specs:
+                  try:
+                      frame = getter().copy()
+                      frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
+                      frame[column] = pd.to_numeric(frame[column], errors="coerce")
+                      frame = frame.dropna(subset=["observation_date", column]).sort_values("observation_date")[["observation_date", column]]
+                      if not frame.empty:
+                          if column == "RRPONTSYD":
+                              frame[column] = frame[column] / 1000.0
+                              frame = frame.set_index("observation_date")[column].resample("W-WED").mean().rename(column).reset_index()
+                          else:
+                              frame[column] = frame[column] / 1000000.0
+                          series.append(frame)
+                  except Exception:
+                      continue
+              if not series:
+                  return apply_chart_style(go.Figure(), chart_height(285, 470))
+              data = series[0]
+              for frame in series[1:]:
+                  data = data.merge(frame, on="observation_date", how="outer")
+              data = data.sort_values("observation_date")
+              value_cols = [c for c in ["WRESBAL", "WTREGEN", "RRPONTSYD"] if c in data.columns]
+              data[value_cols] = data[value_cols].ffill()
+              if all(c in data.columns for c in ["WRESBAL", "WTREGEN", "RRPONTSYD"]):
+                  data["NetLiquidity"] = data["WRESBAL"] - data["WTREGEN"] - data["RRPONTSYD"]
+              data = filter_range(data, date_range)
+              fig = go.Figure()
+              for column, name, width, dash in [
+                  ("NetLiquidity", "Net Liquidity Proxy", 3.0, None),
+                  ("WRESBAL", "Reserve Balances", 2.3, None),
+                  ("WTREGEN", "TGA", 2.1, "dash"),
+                  ("RRPONTSYD", "ON RRP", 2.1, "dot"),
+              ]:
+                  add_line(fig, data, column, name, width, dash, unit=" T")
+              fig.update_layout(yaxis_title="$T")
+              return apply_chart_style(fig, chart_height(285, 470))
+          '''
+          s = s[:start] + new_func + s[end:]
+          old = 'Fed Total Assets：美联储总资产。Reserve Balances：存款机构在美联储的准备金余额。TGA：美国财政部在美联储的总账户。ON RRP：隔夜逆回购余额。Net Liquidity Proxy：Fed Total Assets − TGA − ON RRP，用于观察流动性方向的代理指标，不是官方指标。'
+          new = 'Net Liquidity Proxy：Reserve Balances − TGA − ON RRP，用于观察美国金融市场流动性方向的分析指标，不是美联储官方命名指标。Reserve Balances：存款机构在美联储的准备金余额。TGA：美国财政部在美联储的总账户。ON RRP：隔夜逆回购余额。'
+          s = s.replace(old, new)
+          s = s.replace('Fed Assets / Reserves / TGA / ON RRP / Net Liquidity', 'Net Liquidity / Reserve Balances / TGA / ON RRP')
+          p.write_text(s)
+          PY
+          rm -f .github/workflows/temp_fix_liquidity.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py .github/workflows/temp_fix_liquidity.yml
+          git diff --cached --quiet && exit 0
+          git commit -m 'Refine Chart 4 net liquidity'
+          git push
