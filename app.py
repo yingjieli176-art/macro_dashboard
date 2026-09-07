@@ -218,14 +218,17 @@ def _search_yahoo(market, query):
 @st.cache_data(ttl=60, show_spinner=False)
 def _search_eastmoney_hk(query):
     if not query.strip(): return []
+    results = []
     try:
-        response = requests.get(EASTMONEY_SEARCH_URL, params={"input": query.strip(), "type": 14, "count": 6}, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}, timeout=2.5); response.raise_for_status(); payload = response.json() or {}; table = payload.get("QuotationCodeTable") or {}; rows = table.get("Data") or payload.get("data") or []; results = []
-        for item in rows:
-            if not isinstance(item, dict): continue
-            code = str(item.get("SecurityCode") or item.get("Code") or item.get("code") or "").strip(); name = str(item.get("SecurityName") or item.get("Name") or item.get("name") or "").strip(); quote_id = str(item.get("QuoteID") or item.get("quoteId") or "").strip()
-            if quote_id.startswith("116.") and code and name: results.append({"symbol": f"{code.zfill(5)}.HK", "name": name, "exchange": "HK"})
-        return results[:6]
-    except Exception: return []
+        response = requests.get("https://query1.finance.yahoo.com/v1/finance/search", params={"q": query.strip(), "quotesCount": 20, "newsCount": 0}, headers={"User-Agent": "Mozilla/5.0"}, timeout=2.5); response.raise_for_status()
+        for item in response.json().get("quotes") or []:
+            if item.get("quoteType") != "EQUITY": continue
+            symbol = str(item.get("symbol") or "")
+            if not symbol.upper().endswith(".HK"): continue
+            results.append({"symbol": symbol, "name": item.get("longname") or item.get("shortname") or symbol, "exchange": item.get("exchange") or item.get("exchDisp") or "HK"})
+    except Exception:
+        pass
+    return results[:6]
 
 @st.cache_data(ttl=60, show_spinner=False)
 def _search_eastmoney_cn(query):
@@ -273,15 +276,25 @@ def _delete_confirmed(key, symbol):
 
 def _open_search(key): st.session_state[f"{key}_open"] = True
 
-def _confirm_search(key, market):
+def _run_search(key, market):
     query = str(st.session_state.get(key, "")).strip()
     if not query: return
-    results = (_search_eastmoney_cn(query) if market == "CN" else (_search_eastmoney_hk(query) if market == "HK" else _search_yahoo(market, query)))
-    if market == "CN" and not results: results = _search_yahoo(market, query)
-    if market == "HK" and not results: results = _search_yahoo(market, query)
-    if results: selected = {**results[0], "market": market}
-    else: selected = {"symbol": _direct_symbol(market, query), "name": query, "exchange": "", "market": market}
-    _add_confirmed(key, selected)
+    results = _search_eastmoney_cn(query) if market == "CN" else (_search_eastmoney_hk(query) if market == "HK" else _search_yahoo(market, query))
+    if not results and market in ("HK", "CN"): results = _search_yahoo(market, query)
+    st.session_state[f"{key}_results"] = [{**item, "market": market} for item in results]
+
+def _confirm_selected(key):
+    results = st.session_state.get(f"{key}_results", [])
+    index = st.session_state.get(f"{key}_result_select")
+    if not results or index is None: return
+    try: item = results[int(index)]
+    except (ValueError, TypeError, IndexError): return
+    _add_confirmed(key, item)
+    st.session_state.pop(f"{key}_results", None)
+
+def _cancel_search(key):
+    st.session_state[f"{key}_open"] = False
+    st.session_state.pop(f"{key}_results", None)
 
 def render_watchlist_refresh_control():
     refresh_col, _, _ = st.columns([1.2, 3.8, 1], vertical_alignment="top")
@@ -313,9 +326,19 @@ def render_watchlists():
             if not is_open:
                 st.button("+", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,), help="添加模块")
             else:
-                input_col, confirm_col = st.columns([6, 1], gap="small")
+                input_col, search_col, cancel_col = st.columns([5.2, 1.1, 1.1], gap="small")
                 with input_col: st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
-                with confirm_col: st.button("✓", key=f"{key}_confirm", use_container_width=True, on_click=_confirm_search, args=(key, market), help="确认并新增")
+                with search_col:
+                    st.button("搜索", key=f"{key}_search_button", use_container_width=True, on_click=_run_search, args=(key, market))
+                with cancel_col:
+                    st.button("取消", key=f"{key}_cancel_button", use_container_width=True, on_click=_cancel_search, args=(key,))
+                results = st.session_state.get(f"{key}_results", [])
+                if results:
+                    options = [f'{item.get("name", "")} · {item.get("symbol", "")} · {item.get("exchange", "")}' for item in results]
+                    st.radio("搜索结果", range(len(options)), format_func=lambda i: options[i], key=f"{key}_result_select", label_visibility="collapsed")
+                    st.button("确认添加", key=f"{key}_confirm_selected", use_container_width=True, on_click=_confirm_selected, args=(key,), type="primary")
+                elif st.session_state.get(key, "").strip() and f"{key}_results" in st.session_state:
+                    st.caption("没有找到匹配的股票，请检查名称或代码。")
 render_watchlists()
 
 def add_sources(sources):
