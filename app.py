@@ -207,39 +207,10 @@ def _search_yahoo(market, query):
         return results[:6]
     except Exception: return []
 
-@st.cache_data(ttl=60, show_spinner=False)
-def _search_eastmoney_hk(query):
-    if not query.strip(): return []
-    return _search_yahoo("HK", query)
-
-@st.cache_data(ttl=60, show_spinner=False)
-def _search_eastmoney_cn(query):
-    if not query.strip(): return []
-    try:
-        response = requests.get(EASTMONEY_SEARCH_URL, params={"input": query.strip(), "type": 14, "count": 6}, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}, timeout=2.5); response.raise_for_status(); payload = response.json() or {}; table = payload.get("QuotationCodeTable") or {}; rows = table.get("Data") or payload.get("data") or []; results = []
-        for item in rows:
-            if not isinstance(item, dict): continue
-            code = str(item.get("SecurityCode") or item.get("Code") or item.get("code") or "").strip(); name = str(item.get("SecurityName") or item.get("Name") or item.get("name") or "").strip(); quote_id = str(item.get("QuoteID") or item.get("quoteId") or "").strip()
-            if not code and quote_id: code = quote_id.split(".")[-1]
-            if not code or not name: continue
-            market = "SS" if quote_id.startswith("1.") or code.startswith(("5", "6", "9")) else ("SZ" if quote_id.startswith("0.") or code.startswith(("0", "2", "3")) else "")
-            if market: results.append({"symbol": f"{code}.{market}", "name": name, "exchange": "SH" if market == "SS" else "SZ"})
-        return results[:6]
-    except Exception: return []
-
-def _direct_symbol(market, query):
-    q = query.strip().upper()
-    if market == "US": return {"NVDIA": "NVDA", "NVIDA": "NVDA"}.get(q, q)
-    digits = "".join(ch for ch in q if ch.isdigit())
-    if market == "HK": return f"{digits.zfill(4)}.HK" if digits else q
-    if not digits: return q
-    return f"{digits}.SS" if digits.startswith(("5", "6", "68", "9")) else f"{digits}.SZ"
-
 def _render_quote_block(item):
     row = _get_watchlist_quote(item["symbol"]); price, change = row.get("price"), row.get("change_pct"); price_text = "--" if price is None else f"{price:,.2f}"; change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%"); state = _market_state_text(row); after = ""
     if item.get("market") == "US":
-        pp, pc = row.get("post_price"), row.get("post_change_pct"); pre_price, pre_change = row.get("pre_price"), row.get("pre_change_pct"); overnight_price, overnight_change = row.get("overnight_price"), row.get("overnight_change_pct")
-        market_state = row.get("market_state")
+        pp, pc = row.get("post_price"), row.get("post_change_pct"); pre_price, pre_change = row.get("pre_price"), row.get("pre_change_pct"); overnight_price, overnight_change = row.get("overnight_price"), row.get("overnight_change_pct"); market_state = row.get("market_state")
         if market_state in ("POSTPOST", "CLOSED") and overnight_price is not None: after = f'<div class="search-after">夜盘：<strong>{overnight_price:,.2f}</strong> <span>{"--" if overnight_change is None else f"{overnight_change:+.2f}%"}</span></div>'
         elif market_state in ("PRE", "PREPRE") and pre_price is not None: after = f'<div class="search-after">盘前：<strong>{pre_price:,.2f}</strong> <span>{"--" if pre_change is None else f"{pre_change:+.2f}%"}</span></div>'
         elif market_state == "POST" and pp is not None: after = f'<div class="search-after">盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
@@ -317,6 +288,7 @@ def add_sources(sources):
     st.markdown('<div class="source-text">Source: ' + '<span class="source-sep">|</span>'.join(links) + '</div>', unsafe_allow_html=True)
 
 def add_line(fig, data, column, name, width=2.5, dash=None, yaxis=None, unit="%"):
+    if column not in data.columns or data[column].notna().sum() == 0: return
     line = {"width": width}
     if dash: line["dash"] = dash
     trace = go.Scatter(x=data["observation_date"], y=data[column], name=name, mode="lines", line=line, hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>")
@@ -342,31 +314,34 @@ def build_fig2(date_range):
     fig.update_layout(yaxis_title="Yield (%)"); return apply_chart_style(fig, chart_height(285, 470))
 
 def build_fig4(date_range):
-    assets = get_walcl().copy()
-    reserves = get_wresbal().copy()
-    tga = get_wtre_gen().copy()
-    rrp = get_rrp_daily().copy()
-
-    assets["WALCL"] = assets["WALCL"] / 1000000.0
-    reserves["WRESBAL"] = reserves["WRESBAL"] / 1000000.0
-    tga["WTREGEN"] = tga["WTREGEN"] / 1000000.0
-    rrp["RRPONTSYD"] = rrp["RRPONTSYD"] / 1000.0
-
-    data = assets.merge(reserves, on="observation_date", how="outer")
-    data = data.merge(tga, on="observation_date", how="outer")
-    data = data.merge(rrp, on="observation_date", how="outer")
+    specs = [(get_walcl, "WALCL"), (get_wresbal, "WRESBAL"), (get_wtre_gen, "WTREGEN"), (get_rrp_daily, "RRPONTSYD")]
+    series = []
+    for getter, column in specs:
+        try:
+            frame = getter().copy()
+            frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
+            frame[column] = pd.to_numeric(frame[column], errors="coerce")
+            frame = frame.dropna(subset=["observation_date", column]).sort_values("observation_date")[["observation_date", column]]
+            if not frame.empty:
+                if column == "RRPONTSYD":
+                    frame[column] = frame[column] / 1000.0
+                    frame = frame.set_index("observation_date")[column].resample("W-WED").mean().rename(column).reset_index()
+                else:
+                    frame[column] = frame[column] / 1000000.0
+                series.append(frame)
+        except Exception:
+            continue
+    if not series: return apply_chart_style(go.Figure(), chart_height(285, 470))
+    data = series[0]
+    for frame in series[1:]: data = data.merge(frame, on="observation_date", how="outer")
     data = data.sort_values("observation_date")
-    data["NetLiquidity"] = data["WALCL"] - data["WTREGEN"] - data["RRPONTSYD"]
+    value_cols = [c for c in ["WALCL", "WRESBAL", "WTREGEN", "RRPONTSYD"] if c in data.columns]
+    data[value_cols] = data[value_cols].ffill()
+    if "WALCL" in data.columns and "WTREGEN" in data.columns and "RRPONTSYD" in data.columns:
+        data["NetLiquidity"] = data["WALCL"] - data["WTREGEN"] - data["RRPONTSYD"]
     data = filter_range(data, date_range)
-
     fig = go.Figure()
-    for column, name, width, dash in [
-        ("NetLiquidity", "Net Liquidity Proxy", 2.8, None),
-        ("WRESBAL", "Reserve Balances", 2.4, None),
-        ("WTREGEN", "TGA", 2.1, "dash"),
-        ("RRPONTSYD", "ON RRP", 2.1, "dot"),
-        ("WALCL", "Fed Total Assets", 2.2, "dashdot"),
-    ]:
+    for column, name, width, dash in [("NetLiquidity", "Net Liquidity Proxy", 2.8, None), ("WRESBAL", "Reserve Balances", 2.4, None), ("WTREGEN", "TGA", 2.1, "dash"), ("RRPONTSYD", "ON RRP", 2.1, "dot"), ("WALCL", "Fed Total Assets", 2.2, "dashdot")]:
         add_line(fig, data, column, name, width, dash, unit=" T")
     fig.update_layout(yaxis_title="$T")
     return apply_chart_style(fig, chart_height(285, 470))
@@ -375,10 +350,10 @@ def build_fig3(date_range):
     data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); data["10Y-2Y"] = data["DGS10"] - data["DGS2"]; data["10Y-3M"] = data["DGS10"] - data["DGS3MO"]; fig = go.Figure()
     for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8)]: add_line(fig, data, column, name, width)
     add_line(fig, data, "10Y-2Y", "10Y−2Y", 2.2, "dot", "y2", " bp"); add_line(fig, data, "10Y-3M", "10Y−3M", 2.2, "dash", "y2", " bp")
-    fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra")
+    fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>")
     fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True)); return apply_chart_style(fig, chart_height(285, 500))
 
-PARAM_DESCRIPTIONS = ["IORB（Interest on Reserve Balances）：美联储对存放在美联储的准备金余额支付的利率。ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具的利率。EFFR（Effective Federal Funds Rate）：美国联邦基金市场的有效隔夜利率。SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。", "10Y Nominal：10年期美国国债名义收益率。10Y Real：10年期美国国债实际收益率，通常指10年期TIPS实际收益率。Breakeven：10年期盈亏平衡通胀率，即名义收益率与实际收益率之差。", "3M：3个月期美国国债收益率。2Y：2年期美国国债收益率。10Y：10年期美国国债收益率。10Y−2Y：10年期与2年期美国国债收益率之差。10Y−3M：10年期与3个月期美国国债收益率之差。", "Total Public Debt：美国联邦政府总公共债务。Debt Held by Public：公众持有的联邦债务。Federal Reserve：美联储持有的联邦债务。Foreign & International：外国及国际投资者持有的联邦债务。Private Investors：私人投资者持有的联邦债务。"]
+PARAM_DESCRIPTIONS = ["IORB（Interest on Reserve Balances）：美联储对存放在美联储的准备金余额支付的利率。ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具的利率。EFFR（Effective Federal Funds Rate）：美国联邦基金市场的有效隔夜利率。SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。", "10Y Nominal：10年期美国国债名义收益率。10Y Real：10年期美国国债实际收益率，通常指10年期TIPS实际收益率。Breakeven：10年期盈亏平衡通胀率，即名义收益率与实际收益率之差。", "3M：3个月期美国国债收益率。2Y：2年期美国国债收益率。10Y：10年期美国国债收益率。10Y−2Y：10年期与2年期美国国债收益率之差。10Y−3M：10年期与3个月期美国国债收益率之差。", "Fed Total Assets：美联储总资产。Reserve Balances：存款机构在美联储的准备金余额。TGA：美国财政部在美联储的总账户。ON RRP：隔夜逆回购余额。Net Liquidity Proxy：Fed Total Assets − TGA − ON RRP，用于观察流动性方向的代理指标，不是官方指标。"]
 def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
 compact_mode = True
 
@@ -388,17 +363,10 @@ def render_core_charts():
     with toggle_col: compact_mode = st.toggle("缩小图表 / 快速浏览", value=True, key="compact_mode", help="开启后，图表1、2并排，图表3单独占满一行。")
     if compact_mode:
         cols = st.columns(2, gap="large")
-        configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR") ,("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1), (cols[0], '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>', "compact_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")], 2), (cols[1], '<div class="compact-title">4. Federal Debt: Total & Holders</div>', '<div class="compact-description">Total Debt / Public / Fed / Foreign / Private</div>', "compact_debt_range", build_fig4, [("GFDEBTN", "https://fred.stlouisfed.org/series/GFDEBTN"), ("FYGFDPUN", "https://fred.stlouisfed.org/series/FYGFDPUN"), ("FDHBFRBN", "https://fred.stlouisfed.org/series/FDHBFRBN"), ("FDHBFIN", "https://fred.stlouisfed.org/series/FDHBFIN"), ("FDHBPIN", "https://fred.stlouisfed.org/series/FDHBPIN")], 3)]
+        configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR") ,("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1), (cols[0], '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>', "compact_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")], 2), (cols[1], '<div class="compact-title">4. US Liquidity</div>', '<div class="compact-description">Fed Assets / Reserves / TGA / ON RRP / Net Liquidity</div>', "compact_debt_range", build_fig4, [("WALCL", "https://fred.stlouisfed.org/series/WALCL"), ("WRESBAL", "https://fred.stlouisfed.org/series/WRESBAL"), ("WTREGEN", "https://fred.stlouisfed.org/series/WTREGEN"), ("RRPONTSYD", "https://fred.stlouisfed.org/series/RRPONTSYD")], 3)]
         for column, title, description, key, builder, sources, desc_index in configs:
             with column:
-                st.markdown(title, unsafe_allow_html=True)
-                st.markdown(description, unsafe_allow_html=True)
-                date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed")
-                st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True)
-                st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG)
-                show_parameter_description(desc_index)
-                add_sources(sources)
-
+                st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
     else:
         configs = [('<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>', '<div class="section-description">IORB、ON RRP Rate、EFFR 与 SOFR</div>', "normal_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0, True), ('<div class="section-title">2. 10Y Yield Structure</div>', '<div class="section-description">10Y Nominal / 10Y Real / 10Y Breakeven</div>', "normal_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1, True), ('<div class="section-title">3. Treasury Yield & Curve Spread</div>', '<div class="section-description">3M、2Y、10Y Treasury Yield 与曲线利差</div>', "normal_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")], 2, False)]
         for title, description, key, builder, sources, desc_index, divider in configs:
