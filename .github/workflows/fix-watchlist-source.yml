@@ -1,0 +1,44 @@
+name: Fix watchlist quote source
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch app.py
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path("app.py")
+          s = p.read_text(encoding="utf-8")
+          old = '''@st.cache_data(ttl=60, show_spinner=False)\ndef _search_eastmoney_hk(query):\n    if not query.strip(): return []\n    results = []\n    try:\n        response = requests.get("https://query1.finance.yahoo.com/v1/finance/search", params={"q": query.strip(), "quotesCount": 20, "newsCount": 0}, headers={"User-Agent": "Mozilla/5.0"}, timeout=2.5); response.raise_for_status()\n        for item in response.json().get("quotes") or []:\n            if item.get("quoteType") != "EQUITY": continue\n            symbol = str(item.get("symbol") or "")\n            if not symbol.upper().endswith(".HK"): continue\n            results.append({"symbol": symbol, "name": item.get("longname") or item.get("shortname") or symbol, "exchange": item.get("exchange") or item.get("exchDisp") or "HK"})\n    except Exception:\n        pass\n    return results[:6]\n'''
+          new = '''@st.cache_data(ttl=60, show_spinner=False)\ndef _search_eastmoney_hk(query):\n    # Keep all three watchlist search modules on the same Yahoo Finance search source.\n    if not query.strip(): return []\n    return _search_yahoo("HK", query)\n'''
+          if old not in s:
+              raise SystemExit("HK search block not found")
+          s = s.replace(old, new, 1)
+          old = '''def _get_watchlist_quote(symbol):\n    if str(symbol).upper().endswith((".SS", ".SZ", ".HK")) or str(symbol).upper() in ("^HSI", "^HSTECH"):\n        row = _get_eastmoney_quote_safe(symbol)\n        if row.get("price") is not None: return row\n    return _get_yahoo_quote_safe(symbol)\n'''
+          new = '''def _get_watchlist_quote(symbol):\n    # Watchlist cards use one quote source only: Yahoo Finance.\n    # This prevents the same module from switching between Eastmoney and Yahoo.\n    return _get_yahoo_quote_safe(symbol)\n'''
+          if old not in s:
+              raise SystemExit("watchlist quote block not found")
+          s = s.replace(old, new, 1)
+          old = '''    results = _search_eastmoney_cn(query) if market == "CN" else (_search_eastmoney_hk(query) if market == "HK" else _search_yahoo(market, query))\n    if not results and market in ("HK", "CN"): results = _search_yahoo(market, query)\n    st.session_state[f"{key}_results"] = [{**item, "market": market} for item in results]\n'''
+          new = '''    # All three watchlist search modules use Yahoo Finance so the result source is consistent.\n    results = _search_yahoo(market, query)\n    st.session_state[f"{key}_results"] = [{**item, "market": market} for item in results]\n'''
+          if old not in s:
+              raise SystemExit("search dispatch block not found")
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding="utf-8")
+      - name: Commit and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          git commit -m "Use one Yahoo source for watchlist search and quotes" || true
+          git push
+          git rm .github/workflows/fix-watchlist-source.yml || true
+          git commit -m "Remove temporary patch workflow" || true
+          git push
