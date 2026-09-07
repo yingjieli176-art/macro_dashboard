@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import requests
 import streamlit as st
-from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news)
+from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_gfdebtn, get_fygfdpun, get_fdhbfrbn, get_fdhbfin, get_fdhbpin)
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
 EASTMONEY_FOCUS_URL = "https://kuaixun.eastmoney.com/"
@@ -341,14 +341,27 @@ def build_fig2(date_range):
     for column, name, width, dash in [("DGS10", "10Y Nominal", 2.8, None), ("DFII10", "10Y Real", 2.6, None), ("Breakeven", "10Y Breakeven", 2.5, "dot")]: add_line(fig, data, column, name, width, dash)
     fig.update_layout(yaxis_title="Yield (%)"); return apply_chart_style(fig, chart_height(285, 470))
 
+def build_fig4(date_range):
+    total = get_gfdebtn().copy(); total["GFDEBTN"] = total["GFDEBTN"] / 1000000.0
+    public = get_fygfdpun().copy(); public["FYGFDPUN"] = public["FYGFDPUN"] / 1000000.0
+    fed = get_fdhbfrbn().copy(); fed["FDHBFRBN"] = fed["FDHBFRBN"] / 1000.0
+    foreign = get_fdhbfin().copy(); foreign["FDHBFIN"] = foreign["FDHBFIN"] / 1000.0
+    private = get_fdhbpin().copy(); private["FDHBPIN"] = private["FDHBPIN"] / 1000.0
+    data = total.merge(public, on="observation_date", how="outer").merge(fed, on="observation_date", how="outer").merge(foreign, on="observation_date", how="outer").merge(private, on="observation_date", how="outer").sort_values("observation_date")
+    data = filter_range(data, date_range)
+    fig = go.Figure()
+    for column, name, width, dash in [("GFDEBTN", "Total Public Debt", 2.8, None), ("FYGFDPUN", "Debt Held by Public", 2.5, None), ("FDHBFRBN", "Federal Reserve", 2.2, "dot"), ("FDHBFIN", "Foreign & International", 2.2, "dash"), ("FDHBPIN", "Private Investors", 2.2, "dashdot")]: add_line(fig, data, column, name, width, dash, unit=" T")
+    fig.update_layout(yaxis_title="Debt ($T)")
+    return apply_chart_style(fig, chart_height(285, 470))
+
 def build_fig3(date_range):
     data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); data["10Y-2Y"] = data["DGS10"] - data["DGS2"]; data["10Y-3M"] = data["DGS10"] - data["DGS3MO"]; fig = go.Figure()
     for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8)]: add_line(fig, data, column, name, width)
     add_line(fig, data, "10Y-2Y", "10Y−2Y", 2.2, "dot", "y2", " bp"); add_line(fig, data, "10Y-3M", "10Y−3M", 2.2, "dash", "y2", " bp")
     fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra")
-    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True)); return apply_chart_style(fig, chart_height(285, 500))
+    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True)); return apply_chart_style(fig, chart_height(285, 500))
 
-PARAM_DESCRIPTIONS = ["IORB（Interest on Reserve Balances）：美联储对存放在美联储的准备金余额支付的利率。ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具的利率。EFFR（Effective Federal Funds Rate）：美国联邦基金市场的有效隔夜利率。SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。", "10Y Nominal：10年期美国国债名义收益率。10Y Real：10年期美国国债实际收益率，通常指10年期TIPS实际收益率。Breakeven：10年期盈亏平衡通胀率，即名义收益率与实际收益率之差。", "3M：3个月期美国国债收益率。2Y：2年期美国国债收益率。10Y：10年期美国国债收益率。10Y−2Y：10年期与2年期美国国债收益率之差。10Y−3M：10年期与3个月期美国国债收益率之差。"]
+PARAM_DESCRIPTIONS = ["IORB（Interest on Reserve Balances）：美联储对存放在美联储的准备金余额支付的利率。ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具的利率。EFFR（Effective Federal Funds Rate）：美国联邦基金市场的有效隔夜利率。SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。", "10Y Nominal：10年期美国国债名义收益率。10Y Real：10年期美国国债实际收益率，通常指10年期TIPS实际收益率。Breakeven：10年期盈亏平衡通胀率，即名义收益率与实际收益率之差。", "3M：3个月期美国国债收益率。2Y：2年期美国国债收益率。10Y：10年期美国国债收益率。10Y−2Y：10年期与2年期美国国债收益率之差。10Y−3M：10年期与3个月期美国国债收益率之差。", "Total Public Debt：美国联邦政府总公共债务。Debt Held by Public：公众持有的联邦债务。Federal Reserve：美联储持有的联邦债务。Foreign & International：外国及国际投资者持有的联邦债务。Private Investors：私人投资者持有的联邦债务。"]
 def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
 compact_mode = True
 
@@ -358,8 +371,8 @@ def render_core_charts():
     with toggle_col: compact_mode = st.toggle("缩小图表 / 快速浏览", value=True, key="compact_mode", help="开启后，图表1、2并排，图表3单独占满一行。")
     if compact_mode:
         cols = st.columns(2, gap="large")
-        configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR") ,("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1), (None, '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>', "compact_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")], 2)]
-        for column, title, description, key, builder, sources, desc_index in configs[:2]:
+        configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR") ,("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1), (cols[0], '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>', "compact_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")], 2), (cols[1], '<div class="compact-title">4. Federal Debt: Total & Holders</div>', '<div class="compact-description">Total Debt / Public / Fed / Foreign / Private</div>', "compact_debt_range", build_fig4, [("GFDEBTN", "https://fred.stlouisfed.org/series/GFDEBTN"), ("FYGFDPUN", "https://fred.stlouisfed.org/series/FYGFDPUN"), ("FDHBFRBN", "https://fred.stlouisfed.org/series/FDHBFRBN"), ("FDHBFIN", "https://fred.stlouisfed.org/series/FDHBFIN"), ("FDHBPIN", "https://fred.stlouisfed.org/series/FDHBPIN")], 3)]
+        for column, title, description, key, builder, sources, desc_index in configs:
             with column:
                 st.markdown(title, unsafe_allow_html=True)
                 st.markdown(description, unsafe_allow_html=True)
@@ -368,15 +381,7 @@ def render_core_charts():
                 st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG)
                 show_parameter_description(desc_index)
                 add_sources(sources)
-        _, title, description, key, builder, sources, desc_index = configs[2]
-        st.markdown('<div style="height:12px"></div>', unsafe_allow_html=True)
-        st.markdown(title, unsafe_allow_html=True)
-        st.markdown(description, unsafe_allow_html=True)
-        date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed")
-        st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True)
-        st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG)
-        show_parameter_description(desc_index)
-        add_sources(sources)
+
     else:
         configs = [('<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>', '<div class="section-description">IORB、ON RRP Rate、EFFR 与 SOFR</div>', "normal_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0, True), ('<div class="section-title">2. 10Y Yield Structure</div>', '<div class="section-description">10Y Nominal / 10Y Real / 10Y Breakeven</div>', "normal_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1, True), ('<div class="section-title">3. Treasury Yield & Curve Spread</div>', '<div class="section-description">3M、2Y、10Y Treasury Yield 与曲线利差</div>', "normal_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")], 2, False)]
         for title, description, key, builder, sources, desc_index, divider in configs:

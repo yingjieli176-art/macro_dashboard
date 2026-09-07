@@ -211,6 +211,27 @@ def get_rrp_rate():
     )
 
 
+@st.cache_data(ttl=3600)
+def get_gfdebtn():
+    return _fred_series("GFDEBTN")
+
+@st.cache_data(ttl=3600)
+def get_fygfdpun():
+    return _fred_series("FYGFDPUN")
+
+@st.cache_data(ttl=3600)
+def get_fdhbfrbn():
+    return _fred_series("FDHBFRBN")
+
+@st.cache_data(ttl=3600)
+def get_fdhbfin():
+    return _fred_series("FDHBFIN")
+
+@st.cache_data(ttl=3600)
+def get_fdhbpin():
+    return _fred_series("FDHBPIN")
+
+
 # =========================================================
 # TEXT CLEAN
 # =========================================================
