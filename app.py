@@ -177,9 +177,8 @@ def _quote_meta(row, market=""):
 
 @st.cache_data(ttl=60, show_spinner=False)
 def _get_watchlist_quote(symbol):
-    if str(symbol).upper().endswith((".SS", ".SZ", ".HK")) or str(symbol).upper() in ("^HSI", "^HSTECH"):
-        row = _get_eastmoney_quote_safe(symbol)
-        if row.get("price") is not None: return row
+    # Watchlist cards use one quote source only: Yahoo Finance.
+    # This prevents the same module from switching between Eastmoney and Yahoo.
     return _get_yahoo_quote_safe(symbol)
 
 def render_market_groups():
@@ -217,18 +216,9 @@ def _search_yahoo(market, query):
 
 @st.cache_data(ttl=60, show_spinner=False)
 def _search_eastmoney_hk(query):
+    # Keep all three watchlist search modules on the same Yahoo Finance search source.
     if not query.strip(): return []
-    results = []
-    try:
-        response = requests.get("https://query1.finance.yahoo.com/v1/finance/search", params={"q": query.strip(), "quotesCount": 20, "newsCount": 0}, headers={"User-Agent": "Mozilla/5.0"}, timeout=2.5); response.raise_for_status()
-        for item in response.json().get("quotes") or []:
-            if item.get("quoteType") != "EQUITY": continue
-            symbol = str(item.get("symbol") or "")
-            if not symbol.upper().endswith(".HK"): continue
-            results.append({"symbol": symbol, "name": item.get("longname") or item.get("shortname") or symbol, "exchange": item.get("exchange") or item.get("exchDisp") or "HK"})
-    except Exception:
-        pass
-    return results[:6]
+    return _search_yahoo("HK", query)
 
 @st.cache_data(ttl=60, show_spinner=False)
 def _search_eastmoney_cn(query):
@@ -279,8 +269,8 @@ def _open_search(key): st.session_state[f"{key}_open"] = True
 def _run_search(key, market):
     query = str(st.session_state.get(key, "")).strip()
     if not query: return
-    results = _search_eastmoney_cn(query) if market == "CN" else (_search_eastmoney_hk(query) if market == "HK" else _search_yahoo(market, query))
-    if not results and market in ("HK", "CN"): results = _search_yahoo(market, query)
+    # All three watchlist search modules use Yahoo Finance so the result source is consistent.
+    results = _search_yahoo(market, query)
     st.session_state[f"{key}_results"] = [{**item, "market": market} for item in results]
 
 def _confirm_selected(key):
