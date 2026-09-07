@@ -1,0 +1,40 @@
+name: Add one-minute dashboard auto refresh
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.event.head_commit.message != 'Add one-minute dashboard auto refresh' && github.event.head_commit.message != 'Remove temporary auto-refresh workflow'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch auto refresh
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app.py')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('@st.cache_data(ttl=300, show_spinner=False)\ndef _get_cached_quote', '@st.cache_data(ttl=60, show_spinner=False)\ndef _get_cached_quote')
+          s = s.replace('now - snapshot_time >= 300', 'now - snapshot_time >= 60')
+          s = s.replace('def render_market_groups():', '@st.fragment(run_every="60s")\ndef render_market_groups():')
+          s = s.replace('def render_watchlists():', '@st.fragment(run_every="60s")\ndef render_watchlists():')
+          p.write_text(s, encoding='utf-8')
+          PY
+          python -m py_compile app.py
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          git commit -m "Enable one-minute quote refresh" || exit 0
+          git push
+      - name: Remove temporary workflow
+        if: always()
+        run: |
+          rm -f .github/workflows/auto-refresh.yml
+          git add -u .github/workflows/auto-refresh.yml
+          git commit -m "Remove temporary auto-refresh workflow" || exit 0
+          git push
