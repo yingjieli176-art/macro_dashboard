@@ -93,6 +93,22 @@ _load_watchlists()
 def _empty_quote():
     return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": None, "post_market_time": None, "pre_market_time": None, "quote_source": "", "delayed_by": None, "data_source": ""}
 
+def _get_yahoo_overnight_safe(symbol, previous=None):
+    try:
+        response = requests.get("https://query1.finance.yahoo.com/v7/finance/quote", params={"symbols": symbol}, headers={"User-Agent": "Mozilla/5.0"}, timeout=2.5)
+        response.raise_for_status()
+        rows = ((response.json() or {}).get("quoteResponse") or {}).get("result") or []
+        if rows:
+            item = rows[0]
+            price = item.get("overnightMarketPrice")
+            pct = item.get("overnightChangePercent")
+            if price is not None:
+                if pct is None and previous not in (None, 0): pct = (price - previous) / previous * 100
+                return price, pct
+    except Exception:
+        pass
+    return None, None
+
 def _get_yahoo_quote_safe(symbol):
     try:
         response = requests.get("https://query1.finance.yahoo.com/v8/finance/chart/" + symbol, params={"range": "1d", "interval": "5m", "includePrePost": "true"}, headers={"User-Agent": "Mozilla/5.0"}, timeout=2.5)
@@ -112,7 +128,8 @@ def _get_yahoo_quote_safe(symbol):
         if regular_change_pct is None and price is not None and previous not in (None, 0): regular_change_pct = (price - previous) / previous * 100
         if post_change_pct is None and post_price is not None and previous not in (None, 0): post_change_pct = (post_price - previous) / previous * 100
         if pre_change_pct is None and pre_price is not None and previous not in (None, 0): pre_change_pct = (pre_price - previous) / previous * 100
-        row = _empty_quote(); row.update({"price": price, "change_pct": regular_change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct, "pre_price": pre_price, "pre_change_pct": pre_change_pct, "overnight_price": post_price, "overnight_change_pct": post_change_pct, "regular_market_time": meta.get("regularMarketTime"), "post_market_time": meta.get("postMarketTime"), "pre_market_time": meta.get("preMarketTime"), "quote_source": meta.get("quoteSourceName", ""), "delayed_by": meta.get("exchangeDataDelayedBy"), "data_source": "Yahoo Finance"}); return row
+        overnight_price, overnight_change_pct = _get_yahoo_overnight_safe(symbol, previous)
+        row = _empty_quote(); row.update({"price": price, "change_pct": regular_change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct, "pre_price": pre_price, "pre_change_pct": pre_change_pct, "overnight_price": overnight_price, "overnight_change_pct": overnight_change_pct, "regular_market_time": meta.get("regularMarketTime"), "post_market_time": meta.get("postMarketTime"), "pre_market_time": meta.get("preMarketTime"), "quote_source": meta.get("quoteSourceName", ""), "delayed_by": meta.get("exchangeDataDelayedBy"), "data_source": "Yahoo Finance"}); return row
     except Exception: return _empty_quote()
 
 def _eastmoney_secid(symbol):
@@ -236,9 +253,11 @@ def _direct_symbol(market, query):
 def _render_quote_block(item):
     row = _get_watchlist_quote(item["symbol"]); price, change = row.get("price"), row.get("change_pct"); price_text = "--" if price is None else f"{price:,.2f}"; change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%"); state = _market_state_text(row); after = ""
     if item.get("market") == "US":
-        pp, pc = row.get("post_price"), row.get("post_change_pct"); pre_price, pre_change = row.get("pre_price"), row.get("pre_change_pct")
-        if row.get("market_state") in ("POST", "POSTPOST", "CLOSED") and pp is not None: after = f'<div class="search-after">盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
-        elif row.get("market_state") in ("PRE", "PREPRE") and pre_price is not None: after = f'<div class="search-after">盘前：<strong>{pre_price:,.2f}</strong> <span>{"--" if pre_change is None else f"{pre_change:+.2f}%"}</span></div>'
+        pp, pc = row.get("post_price"), row.get("post_change_pct"); pre_price, pre_change = row.get("pre_price"), row.get("pre_change_pct"); overnight_price, overnight_change = row.get("overnight_price"), row.get("overnight_change_pct")
+        market_state = row.get("market_state")
+        if market_state in ("POSTPOST", "CLOSED") and overnight_price is not None: after = f'<div class="search-after">夜盘：<strong>{overnight_price:,.2f}</strong> <span>{"--" if overnight_change is None else f"{overnight_change:+.2f}%"}</span></div>'
+        elif market_state in ("PRE", "PREPRE") and pre_price is not None: after = f'<div class="search-after">盘前：<strong>{pre_price:,.2f}</strong> <span>{"--" if pre_change is None else f"{pre_change:+.2f}%"}</span></div>'
+        elif market_state == "POST" and pp is not None: after = f'<div class="search-after">盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
         elif pp is not None and row.get("post_market_time"): after = f'<div class="search-after">最近盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
     source = row.get("data_source") or row.get("quote_source") or ""; delay = row.get("delayed_by"); source_text = f"{source} · 延迟{delay}分" if delay not in (None, 0, "0") and source == "Yahoo Finance" else source
     return f'<div class="search-result"><div class="search-result-label">{html.escape(item["name"])} <span class="search-result-symbol">· {html.escape(item["symbol"])} · {html.escape(item.get("exchange", ""))}</span></div><div class="search-price">{html.escape(price_text)} <span class="market-change">{html.escape(change_text)} {html.escape(state)}</span></div>{after}<div class="search-hint">{html.escape(source_text)}</div></div>'
