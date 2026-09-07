@@ -232,6 +232,26 @@ def get_fdhbpin():
     return _fred_series("FDHBPIN")
 
 
+@st.cache_data(ttl=3600)
+def get_walcl():
+    return _fred_series("WALCL")
+
+
+@st.cache_data(ttl=3600)
+def get_wresbal():
+    return _fred_series("WRESBAL")
+
+
+@st.cache_data(ttl=3600)
+def get_wtre_gen():
+    return _fred_series("WTREGEN")
+
+
+@st.cache_data(ttl=3600)
+def get_rrp_daily():
+    return _fred_series("RRPONTSYD")
+
+
 # =========================================================
 # TEXT CLEAN
 # =========================================================

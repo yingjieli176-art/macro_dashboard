@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import requests
 import streamlit as st
-from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_gfdebtn, get_fygfdpun, get_fdhbfrbn, get_fdhbfin, get_fdhbpin)
+from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_walcl, get_wresbal, get_wtre_gen, get_rrp_daily)
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
 EASTMONEY_FOCUS_URL = "https://kuaixun.eastmoney.com/"
@@ -342,16 +342,33 @@ def build_fig2(date_range):
     fig.update_layout(yaxis_title="Yield (%)"); return apply_chart_style(fig, chart_height(285, 470))
 
 def build_fig4(date_range):
-    total = get_gfdebtn().copy(); total["GFDEBTN"] = total["GFDEBTN"] / 1000000.0
-    public = get_fygfdpun().copy(); public["FYGFDPUN"] = public["FYGFDPUN"] / 1000000.0
-    fed = get_fdhbfrbn().copy(); fed["FDHBFRBN"] = fed["FDHBFRBN"] / 1000.0
-    foreign = get_fdhbfin().copy(); foreign["FDHBFIN"] = foreign["FDHBFIN"] / 1000.0
-    private = get_fdhbpin().copy(); private["FDHBPIN"] = private["FDHBPIN"] / 1000.0
-    data = total.merge(public, on="observation_date", how="outer").merge(fed, on="observation_date", how="outer").merge(foreign, on="observation_date", how="outer").merge(private, on="observation_date", how="outer").sort_values("observation_date")
+    assets = get_walcl().copy()
+    reserves = get_wresbal().copy()
+    tga = get_wtre_gen().copy()
+    rrp = get_rrp_daily().copy()
+
+    assets["WALCL"] = assets["WALCL"] / 1000000.0
+    reserves["WRESBAL"] = reserves["WRESBAL"] / 1000000.0
+    tga["WTREGEN"] = tga["WTREGEN"] / 1000000.0
+    rrp["RRPONTSYD"] = rrp["RRPONTSYD"] / 1000.0
+
+    data = assets.merge(reserves, on="observation_date", how="outer")
+    data = data.merge(tga, on="observation_date", how="outer")
+    data = data.merge(rrp, on="observation_date", how="outer")
+    data = data.sort_values("observation_date")
+    data["NetLiquidity"] = data["WALCL"] - data["WTREGEN"] - data["RRPONTSYD"]
     data = filter_range(data, date_range)
+
     fig = go.Figure()
-    for column, name, width, dash in [("GFDEBTN", "Total Public Debt", 2.8, None), ("FYGFDPUN", "Debt Held by Public", 2.5, None), ("FDHBFRBN", "Federal Reserve", 2.2, "dot"), ("FDHBFIN", "Foreign & International", 2.2, "dash"), ("FDHBPIN", "Private Investors", 2.2, "dashdot")]: add_line(fig, data, column, name, width, dash, unit=" T")
-    fig.update_layout(yaxis_title="Debt ($T)")
+    for column, name, width, dash in [
+        ("NetLiquidity", "Net Liquidity Proxy", 2.8, None),
+        ("WRESBAL", "Reserve Balances", 2.4, None),
+        ("WTREGEN", "TGA", 2.1, "dash"),
+        ("RRPONTSYD", "ON RRP", 2.1, "dot"),
+        ("WALCL", "Fed Total Assets", 2.2, "dashdot"),
+    ]:
+        add_line(fig, data, column, name, width, dash, unit=" T")
+    fig.update_layout(yaxis_title="$T")
     return apply_chart_style(fig, chart_height(285, 470))
 
 def build_fig3(date_range):
