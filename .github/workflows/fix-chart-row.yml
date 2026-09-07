@@ -1,0 +1,41 @@
+name: Fix chart row
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rewrite compact chart layout
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('app.py')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('max-width: 1400px;', 'max-width: 1700px;')
+          s=s.replace('return apply_chart_style(fig, chart_height(320, 470))', 'return apply_chart_style(fig, chart_height(285, 470))')
+          s=s.replace('return apply_chart_style(fig, chart_height(320, 500))', 'return apply_chart_style(fig, chart_height(285, 500))')
+          a=s.index('    if compact_mode:\n', s.index('def render_core_charts'))
+          b=s.index('    else:\n', a)
+          old=s[a:b]
+          new='''    if compact_mode:\n        configs = [(0, '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (1, '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1)]\n        cols = st.columns(2, gap="large")\n        for col_index, title, description, key, builder, sources, desc_index in configs:\n            with cols[col_index]:\n                st.markdown(title, unsafe_allow_html=True)\n                st.markdown(description, unsafe_allow_html=True)\n                date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed")\n                st.markdown('<div class="compact-chart-gap"></div>', unsafe_allow_html=True)\n                st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG)\n                show_parameter_description(desc_index)\n                add_sources(sources)\n        st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)\n        st.markdown('<div class="compact-title">3. Treasury Yield & Curve Spread</div>', unsafe_allow_html=True)\n        st.markdown('<div class="compact-description">3M / 2Y / 10Y / 10Y−2Y / 10Y−3M</div>', unsafe_allow_html=True)\n        date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="compact_treasury_range", label_visibility="collapsed")\n        st.markdown('<div class="compact-chart-gap"></div>', unsafe_allow_html=True)\n        st.plotly_chart(build_fig3(date_range), use_container_width=True, config=PLOTLY_CONFIG)\n        show_parameter_description(2)\n        add_sources([("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")])\n'''
+          s=s[:a]+new+s[b:]
+          p.write_text(s,encoding='utf-8')
+          PY
+          python -m py_compile app.py
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py
+          git commit -m 'Put chart 3 on separate row' || exit 0
+          git push
+      - name: Remove temporary workflow
+        if: always()
+        run: |
+          rm -f .github/workflows/fix-chart-row.yml
+          git add -u .github/workflows/fix-chart-row.yml
+          git commit -m 'Remove temporary chart workflow' || exit 0
+          git push
