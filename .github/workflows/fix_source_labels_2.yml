@@ -1,0 +1,39 @@
+name: Fix remaining source labels
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, '[source-label-patch]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Align source labels with chart names
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app.py')
+          s = p.read_text(encoding='utf-8')
+          reps = {
+            '("IORB", "https://fred.stlouisfed.org/series/IORB")': '("IORB (IORB)", "https://fred.stlouisfed.org/series/IORB")',
+            '("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD")': '("ON RRP Rate (RRPONTSYAWARD)", "https://fred.stlouisfed.org/series/RRPONTSYAWARD")',
+            '("EFFR", "https://fred.stlouisfed.org/series/EFFR")': '("EFFR (EFFR)", "https://fred.stlouisfed.org/series/EFFR")',
+            '("SOFR", "https://fred.stlouisfed.org/series/SOFR")': '("SOFR (SOFR)", "https://fred.stlouisfed.org/series/SOFR")',
+            '("WRESBAL", "https://fred.stlouisfed.org/series/WRESBAL")': '("Reserve Balances (WRESBAL)", "https://fred.stlouisfed.org/series/WRESBAL")',
+            '("WTREGEN", "https://fred.stlouisfed.org/series/WTREGEN")': '("TGA (WTREGEN)", "https://fred.stlouisfed.org/series/WTREGEN")',
+            '("RRPONTSYD", "https://fred.stlouisfed.org/series/RRPONTSYD")': '("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD")',
+          }
+          for old, new in reps.items():
+              s = s.replace(old, new)
+          p.write_text(s, encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py
+          git commit -m '[source-label-patch] Align source labels with chart names' || exit 0
+          git push
