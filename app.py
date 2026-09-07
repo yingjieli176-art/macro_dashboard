@@ -18,7 +18,7 @@ WATCHLIST_PARAM = "watchlist"
 
 st.markdown("""
 <style>
-.block-container { padding-top: 1.05rem; padding-bottom: 2.5rem; max-width: 1400px; }
+.block-container { padding-top: 1.05rem; padding-bottom: 2.5rem; max-width: 1700px; }
 html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "PingFang TC", "Segoe UI", sans-serif; }
 .dashboard-title { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.1rem; }
 .section-title { font-size: 1.35rem; font-weight: 650; letter-spacing: -0.01em; margin-top: 0.7rem; margin-bottom: 0.15rem; }
@@ -30,7 +30,7 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .source-sep { color: #d1d5db; margin: 0 5px; }
 .chart-divider { margin: 0.65rem 0 1rem; border-top: 1px solid #e5e7eb; }
 .compact-title { font-size: 0.98rem; font-weight: 650; margin-bottom: 0.15rem; }
-.compact-description { color: #6b7280; font-size: 0.73rem; line-height: 1.35; margin-bottom: 0.2rem; }
+.compact-description { color: #6b7280; font-size: 0.73rem; line-height: 1.35; margin-bottom: 0.35rem; }
 .news-status { color: #6b7280; font-size: 0.75rem; margin-bottom: 0.5rem; }
 .news-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; background: #ffffff; max-height: 650px; overflow-y: auto; overflow-x: hidden; }
 .news-item { display: flex; align-items: flex-start; padding: 8px 3px; border-bottom: 1px solid #eeeeee; line-height: 1.5; font-size: 0.84rem; overflow: visible; }
@@ -59,7 +59,6 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .search-hint { color: #9ca3af; font-size: 0.68rem; margin-top: 1px; }
 .module-delete { display: flex; justify-content: flex-end; align-items: flex-start; margin-top: -7px; margin-right: -4px; transform: none; position: relative; z-index: 5; }
 .module-delete button { min-width: 24px !important; width: 24px !important; max-width: 24px !important; height: 24px !important; padding: 0 !important; margin: 0 !important; font-size: 14px !important; line-height: 24px !important; border: 0 !important; }
-.search-result .search-after, .search-result .search-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .search-result .search-after, .search-result .search-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 </style>
@@ -177,8 +176,6 @@ def _quote_meta(row, market=""):
 
 @st.cache_data(ttl=60, show_spinner=False)
 def _get_watchlist_quote(symbol):
-    # Watchlist cards use one quote source only: Yahoo Finance.
-    # This prevents the same module from switching between Eastmoney and Yahoo.
     return _get_yahoo_quote_safe(symbol)
 
 def render_market_groups():
@@ -188,14 +185,9 @@ def render_market_groups():
         snapshot = {"nasdaq": _get_cached_quote("^IXIC", refresh_key), "sp500": _get_cached_quote("^GSPC", refresh_key), "dow": _get_cached_quote("^DJI", refresh_key), "hsi": _get_cached_quote("^HSI", refresh_key), "hstech": _get_cached_quote("HSTECH.HK", refresh_key), "sh": _get_cached_quote("000001.SS", refresh_key), "sz": _get_cached_quote("399001.SZ", refresh_key), "csi300": _get_cached_quote("000300.SS", refresh_key)}
         st.session_state["_market_quotes_snapshot"] = snapshot; st.session_state["_market_quotes_snapshot_time"] = now
     q = snapshot
-    groups = [
-        ("🇺🇸 美股", [_market_item_html("纳斯达克", q["nasdaq"].get("price"), q["nasdaq"].get("change_pct"), _quote_meta(q["nasdaq"])), _market_item_html("标普500", q["sp500"].get("price"), q["sp500"].get("change_pct"), _quote_meta(q["sp500"])), _market_item_html("道琼斯", q["dow"].get("price"), q["dow"].get("change_pct"), _quote_meta(q["dow"]))], "three"),
-        ("🇭🇰 港股", [_market_item_html("恒生指数", q["hsi"].get("price"), q["hsi"].get("change_pct"), _quote_meta(q["hsi"])), _market_item_html("恒生科技", q["hstech"].get("price"), q["hstech"].get("change_pct"), _quote_meta(q["hstech"]))], "two"),
-        ("🇨🇳 A股", [_market_item_html("上证指数", q["sh"].get("price"), q["sh"].get("change_pct"), _quote_meta(q["sh"])), _market_item_html("深证成指", q["sz"].get("price"), q["sz"].get("change_pct"), _quote_meta(q["sz"])), _market_item_html("沪深300", q["csi300"].get("price"), q["csi300"].get("change_pct"), _quote_meta(q["csi300"]))], "three"),
-    ]
+    groups = [("🇺🇸 美股", [_market_item_html("纳斯达克", q["nasdaq"].get("price"), q["nasdaq"].get("change_pct"), _quote_meta(q["nasdaq"])), _market_item_html("标普500", q["sp500"].get("price"), q["sp500"].get("change_pct"), _quote_meta(q["sp500"])), _market_item_html("道琼斯", q["dow"].get("price"), q["dow"].get("change_pct"), _quote_meta(q["dow"]))], "three"), ("🇭🇰 港股", [_market_item_html("恒生指数", q["hsi"].get("price"), q["hsi"].get("change_pct"), _quote_meta(q["hsi"])), _market_item_html("恒生科技", q["hstech"].get("price"), q["hstech"].get("change_pct"), _quote_meta(q["hstech"]))], "two"), ("🇨🇳 A股", [_market_item_html("上证指数", q["sh"].get("price"), q["sh"].get("change_pct"), _quote_meta(q["sh"])), _market_item_html("深证成指", q["sz"].get("price"), q["sz"].get("change_pct"), _quote_meta(q["sz"])), _market_item_html("沪深300", q["csi300"].get("price"), q["csi300"].get("change_pct"), _quote_meta(q["csi300"]))], "three")]
     cards = []
-    for title, items, grid_class in groups:
-        cards.append(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>')
+    for title, items, grid_class in groups: cards.append(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>')
     st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
 render_market_groups()
 
@@ -216,7 +208,6 @@ def _search_yahoo(market, query):
 
 @st.cache_data(ttl=60, show_spinner=False)
 def _search_eastmoney_hk(query):
-    # Keep all three watchlist search modules on the same Yahoo Finance search source.
     if not query.strip(): return []
     return _search_yahoo("HK", query)
 
@@ -269,30 +260,24 @@ def _open_search(key): st.session_state[f"{key}_open"] = True
 def _run_search(key, market):
     query = str(st.session_state.get(key, "")).strip()
     if not query: return
-    # All three watchlist search modules use Yahoo Finance so the result source is consistent.
     results = _search_yahoo(market, query)
     st.session_state[f"{key}_results"] = [{**item, "market": market} for item in results]
 
 def _confirm_selected(key):
-    results = st.session_state.get(f"{key}_results", [])
-    index = st.session_state.get(f"{key}_result_select")
+    results = st.session_state.get(f"{key}_results", []); index = st.session_state.get(f"{key}_result_select")
     if not results or index is None: return
     try: item = results[int(index)]
     except (ValueError, TypeError, IndexError): return
-    _add_confirmed(key, item)
-    st.session_state.pop(f"{key}_results", None)
+    _add_confirmed(key, item); st.session_state.pop(f"{key}_results", None)
 
 def _cancel_search(key):
-    st.session_state[f"{key}_open"] = False
-    st.session_state.pop(f"{key}_results", None)
+    st.session_state[f"{key}_open"] = False; st.session_state.pop(f"{key}_results", None)
 
 def render_watchlist_refresh_control():
     refresh_col, _, _ = st.columns([1.2, 3.8, 1], vertical_alignment="top")
     with refresh_col:
         if st.button("↻ 刷新股价", key="refresh_watchlist_quotes", use_container_width=True, help="立即重新获取已添加模块的最新报价"):
-            _get_watchlist_quote.clear()
-            st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
-
+            _get_watchlist_quote.clear(); st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
 render_watchlist_refresh_control()
 
 def render_watchlists():
@@ -309,26 +294,20 @@ def render_watchlists():
                         quote_col, delete_col = st.columns([1, 0.08], gap="small", vertical_alignment="top")
                         with quote_col: st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
                         with delete_col:
-                            st.markdown('<div class="module-delete">', unsafe_allow_html=True)
-                            st.button("×", key=f"{key}_delete_{idx}", on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除此模块", type="tertiary", use_container_width=True)
-                            st.markdown('</div>', unsafe_allow_html=True)
+                            st.markdown('<div class="module-delete">', unsafe_allow_html=True); st.button("×", key=f"{key}_delete_{idx}", on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除此模块", type="tertiary", use_container_width=True); st.markdown('</div>', unsafe_allow_html=True)
             is_open = st.session_state.get(f"{key}_open", False)
-            if not is_open:
-                st.button("+", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,), help="添加模块")
+            if not is_open: st.button("+", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,), help="添加模块")
             else:
                 input_col, search_col, cancel_col = st.columns([5.2, 1.1, 1.1], gap="small")
                 with input_col: st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
-                with search_col:
-                    st.button("搜索", key=f"{key}_search_button", use_container_width=True, on_click=_run_search, args=(key, market))
-                with cancel_col:
-                    st.button("取消", key=f"{key}_cancel_button", use_container_width=True, on_click=_cancel_search, args=(key,))
+                with search_col: st.button("搜索", key=f"{key}_search_button", use_container_width=True, on_click=_run_search, args=(key, market))
+                with cancel_col: st.button("取消", key=f"{key}_cancel_button", use_container_width=True, on_click=_cancel_search, args=(key,))
                 results = st.session_state.get(f"{key}_results", [])
                 if results:
                     options = [f'{item.get("name", "")} · {item.get("symbol", "")} · {item.get("exchange", "")}' for item in results]
                     st.radio("搜索结果", range(len(options)), format_func=lambda i: options[i], key=f"{key}_result_select", label_visibility="collapsed")
                     st.button("确认添加", key=f"{key}_confirm_selected", use_container_width=True, on_click=_confirm_selected, args=(key,), type="primary")
-                elif st.session_state.get(key, "").strip() and f"{key}_results" in st.session_state:
-                    st.caption("没有找到匹配的股票，请检查名称或代码。")
+                elif st.session_state.get(key, "").strip() and f"{key}_results" in st.session_state: st.caption("没有找到匹配的股票，请检查名称或代码。")
 render_watchlists()
 
 def add_sources(sources):
@@ -353,19 +332,19 @@ def chart_height(compact, normal): return compact if compact_mode else normal
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
-    fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(190, 470))
+    fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(285, 470))
 
 def build_fig2(date_range):
     data = get_dgs10().merge(get_dfii10(), on="observation_date", how="inner").sort_values("observation_date"); data = filter_range(data, date_range); data["Breakeven"] = data["DGS10"] - data["DFII10"]; fig = go.Figure()
     for column, name, width, dash in [("DGS10", "10Y Nominal", 2.8, None), ("DFII10", "10Y Real", 2.6, None), ("Breakeven", "10Y Breakeven", 2.5, "dot")]: add_line(fig, data, column, name, width, dash)
-    fig.update_layout(yaxis_title="Yield (%)"); return apply_chart_style(fig, chart_height(190, 470))
+    fig.update_layout(yaxis_title="Yield (%)"); return apply_chart_style(fig, chart_height(285, 470))
 
 def build_fig3(date_range):
     data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); data["10Y-2Y"] = data["DGS10"] - data["DGS2"]; data["10Y-3M"] = data["DGS10"] - data["DGS3MO"]; fig = go.Figure()
     for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8)]: add_line(fig, data, column, name, width)
     add_line(fig, data, "10Y-2Y", "10Y−2Y", 2.2, "dot", "y2", " bp"); add_line(fig, data, "10Y-3M", "10Y−3M", 2.2, "dash", "y2", " bp")
-    fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>")
-    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True)); return apply_chart_style(fig, chart_height(200, 500))
+    fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra")
+    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True)); return apply_chart_style(fig, chart_height(285, 500))
 
 PARAM_DESCRIPTIONS = ["IORB（Interest on Reserve Balances）：美联储对存放在美联储的准备金余额支付的利率。ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具的利率。EFFR（Effective Federal Funds Rate）：美国联邦基金市场的有效隔夜利率。SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。", "10Y Nominal：10年期美国国债名义收益率。10Y Real：10年期美国国债实际收益率，通常指10年期TIPS实际收益率。Breakeven：10年期盈亏平衡通胀率，即名义收益率与实际收益率之差。", "3M：3个月期美国国债收益率。2Y：2年期美国国债收益率。10Y：10年期美国国债收益率。10Y−2Y：10年期与2年期美国国债收益率之差。10Y−3M：10年期与3个月期美国国债收益率之差。"]
 def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
@@ -374,12 +353,28 @@ compact_mode = True
 def render_core_charts():
     global compact_mode
     st.markdown('<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>', unsafe_allow_html=True); toggle_col, _ = st.columns([1, 5])
-    with toggle_col: compact_mode = st.toggle("缩小图表 / 快速浏览", value=True, key="compact_mode", help="开启后，三个核心图表横向并排显示。")
+    with toggle_col: compact_mode = st.toggle("缩小图表 / 快速浏览", value=True, key="compact_mode", help="开启后，图表1、2并排，图表3单独占满一行。")
     if compact_mode:
-        cols = st.columns(3, gap="small")
-        configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1), (cols[2], '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>', "compact_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10")], 2)]
-        for column, title, description, key, builder, sources, desc_index in configs:
-            with column: st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
+        cols = st.columns(2, gap="large")
+        configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR") ,("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1), (None, '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / Curve Spread</div>', "compact_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")], 2)]
+        for column, title, description, key, builder, sources, desc_index in configs[:2]:
+            with column:
+                st.markdown(title, unsafe_allow_html=True)
+                st.markdown(description, unsafe_allow_html=True)
+                date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed")
+                st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True)
+                st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG)
+                show_parameter_description(desc_index)
+                add_sources(sources)
+        _, title, description, key, builder, sources, desc_index = configs[2]
+        st.markdown('<div style="height:12px"></div>', unsafe_allow_html=True)
+        st.markdown(title, unsafe_allow_html=True)
+        st.markdown(description, unsafe_allow_html=True)
+        date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed")
+        st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True)
+        st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG)
+        show_parameter_description(desc_index)
+        add_sources(sources)
     else:
         configs = [('<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>', '<div class="section-description">IORB、ON RRP Rate、EFFR 与 SOFR</div>', "normal_corridor_range", build_fig1, [("IORB", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR", "https://fred.stlouisfed.org/series/SOFR")], 0, True), ('<div class="section-title">2. 10Y Yield Structure</div>', '<div class="section-description">10Y Nominal / 10Y Real / 10Y Breakeven</div>', "normal_yield10_range", build_fig2, [("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("DFII10", "https://fred.stlouisfed.org/series/DFII10"), ("T10YIE", "https://fred.stlouisfed.org/series/T10YIE")], 1, True), ('<div class="section-title">3. Treasury Yield & Curve Spread</div>', '<div class="section-description">3M、2Y、10Y Treasury Yield 与曲线利差</div>', "normal_treasury_range", build_fig3, [("DGS3MO", "https://fred.stlouisfed.org/series/DGS3MO"), ("DGS2", "https://fred.stlouisfed.org/series/DGS2"), ("DGS10", "https://fred.stlouisfed.org/series/DGS10"), ("T10Y2Y", "https://fred.stlouisfed.org/series/T10Y2Y"), ("T10Y3M", "https://fred.stlouisfed.org/series/T10Y3M")], 2, False)]
         for title, description, key, builder, sources, desc_index, divider in configs:
