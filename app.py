@@ -3,11 +3,24 @@ from pathlib import Path
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Restore the original parameter behavior: the parameter description is
-# rendered directly below each chart. Range selection does not create a
-# separate parameter state.
-old_parameter_fn = '''def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)'''
-new_parameter_fn = old_parameter_fn
+# Keep Plotly legend visibility attached to each chart, not to its time range.
+def _render_chart_with_state(fig, desc_index):
+    fig.update_layout(
+        uirevision=f"macro-chart-{desc_index}",
+        legend_uirevision=f"macro-chart-{desc_index}",
+    )
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config=PLOTLY_CONFIG,
+        key=f"macro-chart-{desc_index}",
+    )
+
+render_call = 'st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index)'
+render_replacement = '_render_chart_with_state(builder(date_range), desc_index); show_parameter_description(desc_index)'
+if render_call not in source:
+    raise RuntimeError("chart render call not found")
+source = source.replace(render_call, render_replacement)
 
 # Chart 1: retain the four official series and add the derived SOFR−IORB spread.
 start = source.index("def build_fig1(date_range):")
