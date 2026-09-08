@@ -6,23 +6,38 @@ import streamlit as st
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Keep every chart on the same fixed canvas. Legends are outside the plot area.
+# Plotly legend state is stored by chart + parameter, so hiding a parameter
+# remains effective when switching 5Y / 1Y / 6M / 3M / 1M.
 def _render_chart_with_state(fig, desc_index):
     chart_id = f"macro-chart-{desc_index}"
     for trace in fig.data:
         if getattr(trace, "name", None):
             trace.uid = f"{chart_id}:{trace.name}"
 
-    # Final geometry is applied here, after the chart builder/style function,
-    # so chart 1-4 all use exactly the same plot dimensions.
+    # Restore the normal Plotly colors/template.  Do not alter the plot width.
     fig.update_layout(
+        template="plotly_white",
         width=None,
         height=390,
-        margin=dict(l=58, r=58, t=118, b=42),
-        legend=dict(orientation="h", yanchor="bottom", y=1.16, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
-        legend2=dict(orientation="h", yanchor="bottom", y=1.16, xanchor="right", x=0.98, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
-        legend3=dict(orientation="h", yanchor="bottom", y=1.065, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
+        margin=dict(l=58, r=58, t=112, b=42),
+        legend=dict(
+            orientation="h", yanchor="bottom", y=1.13,
+            xanchor="left", x=0.02, xref="paper",
+            font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal",
+        ),
+        legend2=dict(
+            orientation="h", yanchor="bottom", y=1.13,
+            xanchor="right", x=0.98, xref="paper",
+            font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal",
+        ),
+        legend3=dict(
+            orientation="h", yanchor="bottom", y=1.035,
+            xanchor="left", x=0.02, xref="paper",
+            font=dict(size=10), bgcolor="rgba(255,255,255,0),", traceorder="normal",
+        ),
     )
+    # Correct the typo-safe transparent background for legend3.
+    fig.layout.legend3.bgcolor = "rgba(255,255,255,0)"
 
     payload = json.dumps(pio.to_json(fig, validate=False, pretty=False), ensure_ascii=False)
     html = f"""
@@ -63,6 +78,14 @@ if render_call not in source:
     raise RuntimeError("chart render call not found")
 source = source.replace(render_call, render_replacement)
 
+# Make the compact 2x2 grid vertically deterministic: chart descriptions and
+# source rows occupy the same minimum height in every card.
+source = source.replace(
+    "</style>",
+    ".mini-description { min-height: 54px; box-sizing: border-box; }\n.source-text { min-height: 34px; box-sizing: border-box; }\n</style>",
+    1,
+)
+
 chart_override = r'''
 
 def _clean_chart_frame(frame, column):
@@ -77,11 +100,6 @@ def _apply_split_legends(fig, right_names=(), second_row_names=()):
         fig.update_traces(selector=dict(name=name), legend="legend2")
     for name in second_row_names:
         fig.update_traces(selector=dict(name=name), legend="legend3")
-    fig.update_layout(
-        legend=dict(orientation="h", yanchor="bottom", y=1.16, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
-        legend2=dict(orientation="h", yanchor="bottom", y=1.16, xanchor="right", x=0.98, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
-        legend3=dict(orientation="h", yanchor="bottom", y=1.065, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
-    )
 
 
 def build_fig1(date_range):
@@ -89,18 +107,17 @@ def build_fig1(date_range):
     data = frames[0]
     for frame in frames[1:]: data = data.merge(frame, on="observation_date", how="outer")
     data = data.sort_values("observation_date")
-    iorb_cutoff = pd.Timestamp("2021-07-29")
-    bad_iorb = (data["observation_date"] >= iorb_cutoff) & (data["IORB"] <= 0)
+    bad_iorb = (data["observation_date"] >= pd.Timestamp("2021-07-29")) & (data["IORB"] <= 0)
     data.loc[bad_iorb, "IORB"] = pd.NA
     data = filter_range(data, date_range)
-    if "SOFR" in data.columns and "IORB" in data.columns: data["SOFR_minus_IORB_bp"] = (data["SOFR"] - data["IORB"]) * 100.0
+    data["SOFR_minus_IORB_bp"] = (data["SOFR"] - data["IORB"]) * 100.0
     fig = go.Figure()
     for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
     add_line(fig, data, "SOFR_minus_IORB_bp", "SOFR−IORB", 2.2, "dot", "y2", " bp")
     _apply_split_legends(fig, ["SOFR−IORB"], ["ON RRP"])
-    fig.update_layout(yaxis=dict(title="Rate (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="x", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True))
+    fig.update_layout(yaxis=dict(title="Rate (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True))
     fig.update_traces(selector=dict(name="SOFR−IORB"), hovertemplate="SOFR−IORB: %{y:.1f} bp<extra></extra>")
-    return fig
+    return apply_chart_style(fig, chart_height(285, 470))
 
 
 def build_fig2(date_range):
@@ -112,7 +129,7 @@ def build_fig2(date_range):
     for column, name, width, dash in [("DGS10", "10Y Nominal", 2.8, None), ("DFII10", "10Y Real", 2.6, None), ("T10YIE", "10Y Breakeven", 2.5, "dot")]: add_line(fig, data, column, name, width, dash)
     _apply_split_legends(fig, [], ["10Y Real"])
     fig.update_layout(yaxis_title="Yield (%)")
-    return fig
+    return apply_chart_style(fig, chart_height(285, 470))
 
 
 def build_fig3(date_range):
@@ -129,8 +146,8 @@ def build_fig3(date_range):
     _apply_split_legends(fig, ["10Y−2Y", "10Y−3M"], ["2Y"])
     fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>")
     fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>")
-    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="x", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True))
-    return fig
+    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True))
+    return apply_chart_style(fig, chart_height(285, 500))
 
 
 def build_fig4(date_range):
@@ -140,8 +157,7 @@ def build_fig4(date_range):
     reserve["WRESBAL"] = reserve["WRESBAL"] / 1_000_000.0
     tga["WTREGEN"] = tga["WTREGEN"] / 1_000_000.0
     rrp["RRPONTSYD"] = rrp["RRPONTSYD"] / 1_000.0
-    data = reserve.merge(tga, on="observation_date", how="outer").merge(rrp, on="observation_date", how="outer")
-    data = data.sort_values("observation_date")
+    data = reserve.merge(tga, on="observation_date", how="outer").merge(rrp, on="observation_date", how="outer").sort_values("observation_date")
     data[["WRESBAL", "WTREGEN"]] = data[["WRESBAL", "WTREGEN"]].ffill()
     data["NetLiquidity"] = data["WRESBAL"] - data["WTREGEN"] - data["RRPONTSYD"]
     data = filter_range(data, date_range)
@@ -149,11 +165,12 @@ def build_fig4(date_range):
     for column, name, width, dash in [("NetLiquidity", "Net Liquidity Proxy", 3.0, None), ("WRESBAL", "Reserve Balances", 2.3, None), ("WTREGEN", "TGA", 2.1, "dash"), ("RRPONTSYD", "ON RRP", 2.1, "dot")]: add_line(fig, data, column, name, width, dash, unit=" T")
     _apply_split_legends(fig, [], ["Reserve Balances"])
     fig.update_layout(yaxis_title="$T")
-    return fig
+    return apply_chart_style(fig, chart_height(285, 470))
 '''
 
 marker = "\nrender_core_charts()"
-if marker not in source: raise RuntimeError("render_core_charts call not found")
+if marker not in source:
+    raise RuntimeError("render_core_charts call not found")
 source = source.replace(marker, "\n" + chart_override + marker, 1)
 source = source.replace("IORB / ON RRP / EFFR / SOFR", "IORB / ON RRP / EFFR / SOFR / SOFR−IORB")
 source = source.replace("IORB、ON RRP Rate、EFFR、SOFR", "IORB、ON RRP Rate、EFFR、SOFR 与 SOFR−IORB 利差")
