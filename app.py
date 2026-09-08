@@ -8,25 +8,13 @@ source = base_path.read_text(encoding="utf-8")
 
 # app_base.py is executed after these provenance-safe compatibility rewrites.
 # The real news endpoint lives in data.py; do not keep any third-party proxy URL here.
-source = source.replace(
-    "get_sina_news",
-    "get_eastmoney_news",
-)
-source = source.replace(
-    "东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新",
-    "东方财富 7×24 全球直播 · 全量快讯 · 每60秒自动刷新",
-)
-source = source.replace(
-    "东方财富红字焦点快讯",
-    "东方财富 7×24 全球直播",
-)
-source = source.replace(
-    "Eastmoney 7×24 Focus News",
-    "Eastmoney 7×24 Global Live News",
-)
+source = source.replace("get_sina_news", "get_eastmoney_news")
+source = source.replace("东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新", "东方财富 7×24 全球直播 · 全量快讯 · 每60秒自动刷新")
+source = source.replace("东方财富红字焦点快讯", "东方财富 7×24 全球直播")
+source = source.replace("Eastmoney 7×24 Focus News", "Eastmoney 7×24 Global Live News")
 
-# Plotly legend state is stored by chart + parameter, so hiding a parameter
-# remains effective when switching 5Y / 1Y / 6M / 3M / 1M.
+# All four macro charts use one fixed canvas size. Legends are placed on
+# dedicated rows so traces never compete for the same vertical space.
 def _render_chart_with_state(fig, desc_index):
     chart_id = f"macro-chart-{desc_index}"
     for trace in fig.data:
@@ -36,25 +24,27 @@ def _render_chart_with_state(fig, desc_index):
     fig.update_layout(
         template="plotly_white",
         width=None,
-        height=390,
-        margin=dict(l=58, r=58, t=112, b=42),
+        height=400,
+        margin=dict(l=58, r=58, t=150, b=42),
         legend=dict(
-            orientation="h", yanchor="bottom", y=1.13,
+            orientation="h", yanchor="bottom", y=1.20,
             xanchor="left", x=0.02, xref="paper",
-            font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal",
+            font=dict(size=10), bgcolor="rgba(255,255,255,0)",
+            traceorder="normal", entrywidthmode="pixels", entrywidth=145,
         ),
         legend2=dict(
-            orientation="h", yanchor="bottom", y=1.13,
-            xanchor="right", x=0.98, xref="paper",
-            font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal",
+            orientation="h", yanchor="bottom", y=1.105,
+            xanchor="left", x=0.02, xref="paper",
+            font=dict(size=10), bgcolor="rgba(255,255,255,0)",
+            traceorder="normal", entrywidthmode="pixels", entrywidth=145,
         ),
         legend3=dict(
-            orientation="h", yanchor="bottom", y=1.035,
+            orientation="h", yanchor="bottom", y=1.01,
             xanchor="left", x=0.02, xref="paper",
-            font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal",
+            font=dict(size=10), bgcolor="rgba(255,255,255,0)",
+            traceorder="normal", entrywidthmode="pixels", entrywidth=145,
         ),
     )
-    fig.layout.legend3.bgcolor = "rgba(255,255,255,0)"
 
     payload = json.dumps(pio.to_json(fig, validate=False, pretty=False), ensure_ascii=False)
     html = f"""
@@ -87,7 +77,7 @@ Plotly.newPlot(gd,fig.data||[],fig.layout||{{}},{{displayModeBar:false,scrollZoo
 }});
 </script></body></html>
 """
-    st.iframe(html, height=468)
+    st.iframe(html, height=500)
 
 render_call = 'st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index)'
 render_replacement = '_render_chart_with_state(builder(date_range), desc_index); show_parameter_description(desc_index)'
@@ -132,7 +122,7 @@ def build_fig1(date_range):
     _apply_split_legends(fig, ["SOFR−IORB"], ["ON RRP"])
     fig.update_layout(yaxis=dict(title="Rate (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True))
     fig.update_traces(selector=dict(name="SOFR−IORB"), hovertemplate="SOFR−IORB: %{y:.1f} bp<extra></extra>")
-    return apply_chart_style(fig, chart_height(285, 470))
+    return apply_chart_style(fig, chart_height(400, 400))
 
 
 def build_fig2(date_range):
@@ -144,7 +134,7 @@ def build_fig2(date_range):
     for column, name, width, dash in [("DGS10", "10Y Nominal", 2.8, None), ("DFII10", "10Y Real", 2.6, None), ("T10YIE", "10Y Breakeven", 2.5, "dot")]: add_line(fig, data, column, name, width, dash)
     _apply_split_legends(fig, [], ["10Y Real"])
     fig.update_layout(yaxis_title="Yield (%)")
-    return apply_chart_style(fig, chart_height(285, 470))
+    return apply_chart_style(fig, chart_height(400, 400))
 
 
 def build_fig3(date_range):
@@ -162,7 +152,7 @@ def build_fig3(date_range):
     fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>")
     fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>")
     fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True))
-    return apply_chart_style(fig, chart_height(285, 500))
+    return apply_chart_style(fig, chart_height(400, 400))
 
 
 def build_fig4(date_range):
@@ -180,7 +170,7 @@ def build_fig4(date_range):
     for column, name, width, dash in [("NetLiquidity", "Net Liquidity Proxy", 3.0, None), ("WRESBAL", "Reserve Balances", 2.3, None), ("WTREGEN", "TGA", 2.1, "dash"), ("RRPONTSYD", "ON RRP", 2.1, "dot")]: add_line(fig, data, column, name, width, dash, unit=" T")
     _apply_split_legends(fig, [], ["Reserve Balances"])
     fig.update_layout(yaxis_title="$T")
-    return apply_chart_style(fig, chart_height(285, 470))
+    return apply_chart_style(fig, chart_height(400, 400))
 '''
 
 marker = "\nrender_core_charts()"
