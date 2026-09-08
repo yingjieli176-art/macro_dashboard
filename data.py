@@ -27,13 +27,9 @@ FRED_API_KEY = st.secrets.get(
 # =========================================================
 
 # 第三方接口：
-# type=101 = 东方财富「红字焦点快讯」
+# type=102 = 东方财富 7×24 全球直播全量。
 #
-# 注意：
-# 101 是平台已经定义好的「红字焦点快讯」
-# 102 才是 7×24 全球直播全量。
-#
-# 这里明确只调用 101。
+# 这里使用 102，保留 7×24 全量快讯，不再错误地使用 101 红字焦点筛选。
 EASTMONEY_FOCUS_API = (
     "http://api.xcvts.cn/api/hotlist/eastmoney"
 )
@@ -302,7 +298,6 @@ def _find_list(
     ):
         return []
 
-    # 常见字段
     for key in (
         "list",
         "List",
@@ -340,7 +335,6 @@ def _find_list(
             if result:
                 return result
 
-    # 递归搜索
     for value in obj.values():
 
         if isinstance(
@@ -451,7 +445,6 @@ def _extract_title(
     if not content:
         return ""
 
-    # 兼容新浪式 〖标题〗正文
     match = re.match(
         r"^〖(.+?)〗",
         content,
@@ -618,7 +611,7 @@ def _extract_id(
 
 
 # =========================================================
-# REQUEST FOCUS NEWS
+# REQUEST 7x24 NEWS
 # =========================================================
 
 def _request_focus_news(
@@ -626,7 +619,7 @@ def _request_focus_news(
 ):
 
     params = {
-        "type": "101",
+        "type": "102",
     }
 
     response = requests.get(
@@ -638,14 +631,12 @@ def _request_focus_news(
 
     response.raise_for_status()
 
-    # 正常 JSON
     try:
         return response.json()
 
     except ValueError:
         pass
 
-    # JSONP / 包装文本兼容
     text = (
         response.text
         .strip()
@@ -674,7 +665,7 @@ def _request_focus_news(
         )
 
     raise RuntimeError(
-        "东方财富红字焦点快讯返回的数据格式无法解析。"
+        "东方财富 7×24 全球直播返回的数据格式无法解析。"
     )
 
 
@@ -715,7 +706,6 @@ def _parse_focus_news(
         if not content:
             content = title
 
-        # 去重
         normalized = re.sub(
             r"\s+",
             "",
@@ -767,16 +757,15 @@ def get_sina_news(
     函数名暂时保留 get_sina_news。
 
     实际数据源：
-        东方财富红字焦点快讯
+        东方财富 7×24 全球直播全量
 
-    type=101：
-        平台已经筛选好的红字焦点消息
+    type=102：
+        东方财富 7×24 全球直播全量消息。
 
     不做：
         - 关键词评分
         - AI 判断
         - 自己定义重点
-        - 从全量 7×24 中二次筛选
     """
 
     try:
@@ -796,7 +785,7 @@ def get_sina_news(
 
             return (
                 [],
-                "东方财富红字焦点快讯接口没有返回新闻列表。",
+                "东方财富 7×24 全球直播接口没有返回新闻列表。",
             )
 
         news_items = _parse_focus_news(
@@ -807,7 +796,7 @@ def get_sina_news(
 
             return (
                 [],
-                "东方财富红字焦点快讯接口返回数据，但没有解析出有效新闻。",
+                "东方财富 7×24 全球直播接口返回数据，但没有解析出有效新闻。",
             )
 
         return (
@@ -819,7 +808,7 @@ def get_sina_news(
 
         return (
             [],
-            f"东方财富红字焦点快讯：{exc}",
+            f"东方财富 7×24 全球直播：{exc}",
         )
 
 
@@ -842,7 +831,8 @@ MARKET_SYMBOLS = {
 MARKET_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "AppleWebKit/537.36 "
+        "KHTML, like Gecko "
         "Chrome/152.0.0.0 Safari/537.36"
     ),
 }
