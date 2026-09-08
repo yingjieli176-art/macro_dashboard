@@ -66,24 +66,26 @@ def _clean_chart_frame(frame, column):
 def _apply_split_legends(fig, right_names=()):
     for name in right_names:
         fig.update_traces(selector=dict(name=name), legend="legend2")
-    # Do not use entrywidth here: it allocates a large width to every legend
-    # item and makes the two legend groups overlap. Natural item widths keep
-    # each group compact while the opposite anchors create the center gap.
+    # Legends live above the plotting area. They are anchored to the full
+    # chart container, so they do not consume/squeeze the x-axis plot width.
     fig.update_layout(
         legend=dict(
             orientation="h",
-            yanchor="bottom", y=1.01,
+            yanchor="bottom", y=1.12,
             xanchor="left", x=0.0,
             xref="container",
             font=dict(size=10),
+            bgcolor="rgba(255,255,255,0)",
         ),
         legend2=dict(
             orientation="h",
-            yanchor="bottom", y=1.01,
+            yanchor="bottom", y=1.12,
             xanchor="right", x=1.0,
             xref="container",
             font=dict(size=10),
+            bgcolor="rgba(255,255,255,0)",
         ),
+        margin=dict(t=72),
     )
 
 
