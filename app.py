@@ -3,17 +3,23 @@ from pathlib import Path
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Keep Plotly legend visibility attached to each chart, not to its time range.
+# Persist Plotly legend text visibility by chart + parameter, independently of the time range.
 def _render_chart_with_state(fig, desc_index):
+    chart_id = f"macro-chart-{desc_index}"
+    # Give every trace a stable identity. Plotly uses trace identity together
+    # with legend_uirevision to retain user-hidden/shown legend items.
+    for trace in fig.data:
+        if getattr(trace, "name", None):
+            trace.uid = f"{chart_id}:{trace.name}"
     fig.update_layout(
-        uirevision=f"macro-chart-{desc_index}",
-        legend_uirevision=f"macro-chart-{desc_index}",
+        uirevision=chart_id,
+        legend_uirevision=chart_id,
     )
     st.plotly_chart(
         fig,
         use_container_width=True,
         config=PLOTLY_CONFIG,
-        key=f"macro-chart-{desc_index}",
+        key=chart_id,
     )
 
 render_call = 'st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index)'
