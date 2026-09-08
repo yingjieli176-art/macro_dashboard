@@ -331,8 +331,8 @@ def _parse_focus_news(raw_items):
 # =========================================================
 
 @st.cache_data(ttl=60)
-def get_sina_news(limit=50):
-    """Compatibility name retained for app.py; actual source is official Eastmoney 7×24."""
+def get_eastmoney_news(limit=50):
+    """Fetch live 7×24 global news directly from Eastmoney's official endpoint."""
     try:
         payload = _request_focus_news(page_size=max(100, limit))
         raw_items = _find_list(payload)
@@ -345,6 +345,10 @@ def get_sina_news(limit=50):
         return news_items[:limit], None
     except Exception as exc:
         return [], f"东方财富 7×24 全球直播：{exc}"
+
+
+# Backward-compatible alias. The data source is Eastmoney, not Sina.
+get_sina_news = get_eastmoney_news
 
 
 # =========================================================
@@ -440,6 +444,6 @@ def get_market_snapshot():
 
 __all__ = [
     "get_dgs3mo", "get_dgs2", "get_dgs10", "get_dfii10", "get_sofr",
-    "get_iorb", "get_effr", "get_rrp_rate", "get_sina_news", "get_market_snapshot",
+    "get_iorb", "get_effr", "get_rrp_rate", "get_eastmoney_news", "get_sina_news", "get_market_snapshot",
     "get_wresbal", "get_wtre_gen", "get_rrp_daily", "_fred_series",
 ]
