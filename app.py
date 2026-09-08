@@ -6,56 +6,22 @@ import streamlit as st
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Fixed chart canvas. Native Plotly legends are split into three independent
-# containers so the parameter labels can be arranged as:
-#   left-axis items ---------------------------- right-axis items
-#   remaining left-axis item(s)
+# Keep every chart on the same fixed canvas. Legends are outside the plot area.
 def _render_chart_with_state(fig, desc_index):
     chart_id = f"macro-chart-{desc_index}"
     for trace in fig.data:
         if getattr(trace, "name", None):
             trace.uid = f"{chart_id}:{trace.name}"
 
-    # Re-apply AFTER the builder/apply_chart_style() call.  This is deliberate:
-    # apply_chart_style() defines the normal Plotly legend, so doing this only in
-    # the builder gets overwritten before the figure reaches this renderer.
+    # Final geometry is applied here, after the chart builder/style function,
+    # so chart 1-4 all use exactly the same plot dimensions.
     fig.update_layout(
         width=None,
         height=390,
         margin=dict(l=58, r=58, t=118, b=42),
-        legend=dict(
-            orientation="h",
-            x=0.0, y=1.17,
-            xanchor="left", yanchor="bottom",
-            xref="paper", yref="paper",
-            font=dict(size=10),
-            bgcolor="rgba(255,255,255,0)",
-            traceorder="normal",
-            itemclick="toggle",
-            itemdoubleclick="toggleothers",
-        ),
-        legend2=dict(
-            orientation="h",
-            x=1.0, y=1.17,
-            xanchor="right", yanchor="bottom",
-            xref="paper", yref="paper",
-            font=dict(size=10),
-            bgcolor="rgba(255,255,255,0)",
-            traceorder="normal",
-            itemclick="toggle",
-            itemdoubleclick="toggleothers",
-        ),
-        legend3=dict(
-            orientation="h",
-            x=0.0, y=1.055,
-            xanchor="left", yanchor="bottom",
-            xref="paper", yref="paper",
-            font=dict(size=10),
-            bgcolor="rgba(255,255,255,0)",
-            traceorder="normal",
-            itemclick="toggle",
-            itemdoubleclick="toggleothers",
-        ),
+        legend=dict(orientation="h", yanchor="bottom", y=1.16, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
+        legend2=dict(orientation="h", yanchor="bottom", y=1.16, xanchor="right", x=0.98, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
+        legend3=dict(orientation="h", yanchor="bottom", y=1.065, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
     )
 
     payload = json.dumps(pio.to_json(fig, validate=False, pretty=False), ensure_ascii=False)
@@ -111,6 +77,11 @@ def _apply_split_legends(fig, right_names=(), second_row_names=()):
         fig.update_traces(selector=dict(name=name), legend="legend2")
     for name in second_row_names:
         fig.update_traces(selector=dict(name=name), legend="legend3")
+    fig.update_layout(
+        legend=dict(orientation="h", yanchor="bottom", y=1.16, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
+        legend2=dict(orientation="h", yanchor="bottom", y=1.16, xanchor="right", x=0.98, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
+        legend3=dict(orientation="h", yanchor="bottom", y=1.065, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
+    )
 
 
 def build_fig1(date_range):
@@ -129,7 +100,7 @@ def build_fig1(date_range):
     _apply_split_legends(fig, ["SOFR−IORB"], ["ON RRP"])
     fig.update_layout(yaxis=dict(title="Rate (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="x", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True))
     fig.update_traces(selector=dict(name="SOFR−IORB"), hovertemplate="SOFR−IORB: %{y:.1f} bp<extra></extra>")
-    return apply_chart_style(fig, chart_height(285, 470))
+    return fig
 
 
 def build_fig2(date_range):
@@ -141,7 +112,7 @@ def build_fig2(date_range):
     for column, name, width, dash in [("DGS10", "10Y Nominal", 2.8, None), ("DFII10", "10Y Real", 2.6, None), ("T10YIE", "10Y Breakeven", 2.5, "dot")]: add_line(fig, data, column, name, width, dash)
     _apply_split_legends(fig, [], ["10Y Real"])
     fig.update_layout(yaxis_title="Yield (%)")
-    return apply_chart_style(fig, chart_height(285, 470))
+    return fig
 
 
 def build_fig3(date_range):
@@ -159,7 +130,7 @@ def build_fig3(date_range):
     fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>")
     fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>")
     fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="x", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True))
-    return apply_chart_style(fig, chart_height(285, 500))
+    return fig
 
 
 def build_fig4(date_range):
@@ -178,7 +149,7 @@ def build_fig4(date_range):
     for column, name, width, dash in [("NetLiquidity", "Net Liquidity Proxy", 3.0, None), ("WRESBAL", "Reserve Balances", 2.3, None), ("WTREGEN", "TGA", 2.1, "dash"), ("RRPONTSYD", "ON RRP", 2.1, "dot")]: add_line(fig, data, column, name, width, dash, unit=" T")
     _apply_split_legends(fig, [], ["Reserve Balances"])
     fig.update_layout(yaxis_title="$T")
-    return apply_chart_style(fig, chart_height(285, 470))
+    return fig
 '''
 
 marker = "\nrender_core_charts()"
