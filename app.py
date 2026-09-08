@@ -31,6 +31,14 @@ if 'SOFR_minus_IORB_bp' not in block:
     )
     source = source[:start] + block + source[end:]
 
+# Preserve Plotly legend visibility across time-range changes. The state key
+# is tied to the chart itself, never to the selected date range.
+plotly_call = 'st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG)'
+plotly_replacement = 'fig = builder(date_range)\n        fig.update_layout(uirevision=f"macro-chart-{desc_index}")\n        st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG, key=f"macro-chart-{desc_index}")'
+if plotly_call not in source:
+    raise RuntimeError("chart render call not found")
+source = source.replace(plotly_call, plotly_replacement, 1)
+
 source = source.replace("IORB / ON RRP / EFFR / SOFR", "IORB / ON RRP / EFFR / SOFR / SOFR−IORB")
 source = source.replace("IORB、ON RRP Rate、EFFR、SOFR", "IORB、ON RRP Rate、EFFR、SOFR 与 SOFR−IORB 利差")
 source = source.replace(
