@@ -7,7 +7,7 @@ base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
 # Render each chart on a fixed, full-width canvas. Legends are deliberately split:
-# left-axis parameters stay on the left, right-axis parameters stay on the right.
+# left-axis parameters stay on the left, right-axis parameters stay on the far right.
 def _render_chart_with_state(fig, desc_index):
     chart_id = f"macro-chart-{desc_index}"
     for trace in fig.data:
@@ -15,7 +15,7 @@ def _render_chart_with_state(fig, desc_index):
             trace.uid = f"{chart_id}:{trace.name}"
 
     # Re-apply the split legend geometry AFTER app_base's apply_chart_style().
-    # This is important because apply_chart_style() resets the default legend.
+    # The right-axis legend is anchored to the right edge, leaving a clear gap.
     fig.update_layout(
         width=None,
         height=390,
@@ -32,7 +32,7 @@ def _render_chart_with_state(fig, desc_index):
         legend2=dict(
             orientation="h",
             yanchor="bottom", y=1.04,
-            xanchor="left", x=0.72,
+            xanchor="right", x=0.98,
             xref="paper",
             font=dict(size=10),
             bgcolor="rgba(255,255,255,0)",
@@ -91,11 +91,9 @@ def _clean_chart_frame(frame, column):
 def _apply_split_legends(fig, right_names=()):
     for name in right_names:
         fig.update_traces(selector=dict(name=name), legend="legend2")
-    # Keep the two groups clearly separated in the header. _render_chart_with_state
-    # reapplies this after apply_chart_style() so the split cannot be overwritten.
     fig.update_layout(
         legend=dict(orientation="h", yanchor="bottom", y=1.04, xanchor="left", x=0.02, xref="paper", font=dict(size=10), traceorder="normal"),
-        legend2=dict(orientation="h", yanchor="bottom", y=1.04, xanchor="left", x=0.72, xref="paper", font=dict(size=10), traceorder="normal"),
+        legend2=dict(orientation="h", yanchor="bottom", y=1.04, xanchor="right", x=0.98, xref="paper", font=dict(size=10), traceorder="normal"),
     )
 
 
