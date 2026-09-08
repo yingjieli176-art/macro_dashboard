@@ -1,8 +1,6 @@
 name: repair chart layout
 
-on:
-  push:
-    branches: [main]
+on: push
 
 permissions:
   contents: write
@@ -13,13 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Patch chart layout
-        shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('app.py')
           s = p.read_text(encoding='utf-8')
-
           old = '''        legend=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal", entrywidthmode="pixels", entrywidth=145),
         legend2=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="right", x=0.98, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal", entrywidthmode="pixels", entrywidth=145),
         legend3=dict(orientation="h", yanchor="bottom", y=1.105, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal", entrywidthmode="pixels", entrywidth=145),
@@ -27,35 +23,20 @@ jobs:
           new = '''        legend=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="left", x=0, xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
         legend2=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="right", x=1, xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
         xaxis=dict(domain=[0.10, 0.90], fixedrange=True, automargin=False),'''
-          assert old in s, 'render layout block not found'
+          assert old in s
           s = s.replace(old, new, 1)
-
-          s = s.replace('.mini-description { min-height: 54px; box-sizing: border-box; }\\n.source-text { min-height: 34px; box-sizing: border-box; }', '.mini-description { height: 72px; min-height: 72px; max-height: 72px; box-sizing: border-box; overflow: hidden; }\\n.source-text { height: 34px; min-height: 34px; max-height: 34px; box-sizing: border-box; overflow: hidden; }', 1)
-
-          old = '''def _finalize_chart(fig, right_names=(), second_row_names=(), right_title=None, left_title=None):
-    fig = apply_chart_style(fig, 400)
-    fig.update_layout(
-        height=400,
-        margin=dict(l=72, r=72, t=150, b=42, pad=0, autoexpand=False),
-        autosize=True,
-        xaxis=dict(domain=[0, 1], fixedrange=True, automargin=False, showgrid=False, showline=True, linecolor="#d1d5db", hoverformat="%Y-%m-%d"),
+          old = '''def _finalize_chart(fig, right_names=(), second_row_names=(), right_title=None, left_title=None):'''
+          assert old in s
+          s = s.replace(old, '''def _finalize_chart(fig, right_names=(), right_title=None, left_title=None):''', 1)
+          old = '''        xaxis=dict(domain=[0, 1], fixedrange=True, automargin=False, showgrid=False, showline=True, linecolor="#d1d5db", hoverformat="%Y-%m-%d"),
         legend=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", entrywidthmode="pixels", entrywidth=145),
         legend2=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="right", x=0.98, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", entrywidthmode="pixels", entrywidth=145),
-        legend3=dict(orientation="h", yanchor="bottom", y=1.105, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", entrywidthmode="pixels", entrywidth=145),
-    )'''
-          new = '''def _finalize_chart(fig, right_names=(), right_title=None, left_title=None):
-    fig = apply_chart_style(fig, 400)
-    fig.update_layout(
-        height=400,
-        margin=dict(l=72, r=72, t=150, b=42, pad=0, autoexpand=False),
-        autosize=True,
-        xaxis=dict(domain=[0.10, 0.90], fixedrange=True, automargin=False, showgrid=False, showline=True, linecolor="#d1d5db", hoverformat="%Y-%m-%d"),
+        legend3=dict(orientation="h", yanchor="bottom", y=1.105, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", entrywidthmode="pixels", entrywidth=145),'''
+          new = '''        xaxis=dict(domain=[0.10, 0.90], fixedrange=True, automargin=False, showgrid=False, showline=True, linecolor="#d1d5db", hoverformat="%Y-%m-%d"),
         legend=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="left", x=0, xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
-        legend2=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="right", x=1, xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
-    )'''
-          assert old in s, 'finalize layout block not found'
+        legend2=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="right", x=1, xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),'''
+          assert old in s
           s = s.replace(old, new, 1)
-
           old = '''    right_names = set(right_names)
     second_row_names = set(second_row_names)
     for trace in fig.data:
@@ -75,19 +56,21 @@ jobs:
         else:
             trace.legend = "legend"
     return fig'''
-          assert old in s, 'legend mapping block not found'
+          assert old in s
           s = s.replace(old, new, 1)
-
-          s = s.replace('return _finalize_chart(fig, second_row_names=("ON RRP",), right_title="Spread (bp)", left_title="Rate (%)")', 'return _finalize_chart(fig, right_title="Spread (bp)", left_title="Rate (%)")', 1)
-          s = s.replace('return _finalize_chart(fig, second_row_names=("10Y Real",), left_title="Yield (%)")', 'return _finalize_chart(fig, left_title="Yield (%)")', 1)
-          s = s.replace('return _finalize_chart(fig, second_row_names=("2Y",), right_names=("10Y−2Y", "10Y−3M"), right_title="Spread (bp)", left_title="Yield (%)")', 'return _finalize_chart(fig, right_names=("10Y−2Y", "10Y−3M"), right_title="Spread (bp)", left_title="Yield (%)")', 1)
-          s = s.replace('return _finalize_chart(fig, second_row_names=("Reserve Balances",), left_title="$T")', 'return _finalize_chart(fig, left_title="$T")', 1)
-
+          for old, new in [
+              ('return _finalize_chart(fig, second_row_names=("ON RRP",), right_title="Spread (bp)", left_title="Rate (%)")', 'return _finalize_chart(fig, right_title="Spread (bp)", left_title="Rate (%)")'),
+              ('return _finalize_chart(fig, second_row_names=("10Y Real",), left_title="Yield (%)")', 'return _finalize_chart(fig, left_title="Yield (%)")'),
+              ('return _finalize_chart(fig, second_row_names=("2Y",), right_names=("10Y−2Y", "10Y−3M"), right_title="Spread (bp)", left_title="Yield (%)")', 'return _finalize_chart(fig, right_names=("10Y−2Y", "10Y−3M"), right_title="Spread (bp)", left_title="Yield (%)")'),
+              ('return _finalize_chart(fig, second_row_names=("Reserve Balances",), left_title="$T")', 'return _finalize_chart(fig, left_title="$T")'),
+          ]:
+              assert old in s
+              s = s.replace(old, new, 1)
+          s = s.replace('.mini-description { min-height: 54px; box-sizing: border-box; }\\n.source-text { min-height: 34px; box-sizing: border-box; }', '.mini-description { height: 72px; min-height: 72px; max-height: 72px; box-sizing: border-box; overflow: hidden; }\\n.source-text { height: 34px; min-height: 34px; max-height: 34px; box-sizing: border-box; overflow: hidden; }', 1)
           p.write_text(s, encoding='utf-8')
           PY
           python -m py_compile app.py
-      - name: Commit repair and remove temporary workflow
-        shell: bash
+      - name: Commit and remove temporary workflow
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
