@@ -18,19 +18,19 @@ WATCHLIST_PARAM = "watchlist"
 
 st.markdown("""
 <style>
-.block-container { padding-top: 1.05rem; padding-bottom: 2.5rem; max-width: 1700px; }
+.block-container { padding-top: 1.05rem; padding-bottom: 2.5rem; max-width: 1900px; }
 html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "PingFang TC", "Segoe UI", sans-serif; }
 .dashboard-title { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.1rem; }
-.section-title { font-size: 1.35rem; font-weight: 650; letter-spacing: -0.01em; margin-top: 0.7rem; margin-bottom: 0.15rem; }
-.section-description { color: #6b7280; font-size: 0.86rem; margin-bottom: 0.35rem; }
+.section-title { font-size: 1.35rem; font-weight: 650; letter-spacing: -0.01em; margin-top: 0.7rem; margin-bottom: 0.15rem; min-height: 32px; display: flex; align-items: center; }
+.section-description { color: #6b7280; font-size: 0.86rem; margin-bottom: 0.35rem; min-height: 22px; display: flex; align-items: center; }
 .mini-description { color: #6b7280; font-size: 0.76rem; line-height: 1.5; margin: 2px 0 8px; }
 .source-text { color: #6b7280; font-size: 0.74rem; margin: 3px 0 10px; line-height: 1.45; }
 .source-text a { color: #6b7280; text-decoration: none !important; white-space: nowrap; }
 .source-text a:hover { color: #374151; text-decoration: underline !important; }
 .source-sep { color: #d1d5db; margin: 0 5px; }
 .chart-divider { margin: 0.65rem 0 1rem; border-top: 1px solid #e5e7eb; }
-.compact-title { font-size: 0.98rem; font-weight: 650; margin-bottom: 0.15rem; }
-.compact-description { color: #6b7280; font-size: 0.73rem; line-height: 1.35; margin-bottom: 0.35rem; }
+.compact-title { font-size: 0.98rem; font-weight: 650; margin-bottom: 0.15rem; min-height: 25px; display: flex; align-items: center; }
+.compact-description { color: #6b7280; font-size: 0.73rem; line-height: 1.35; margin-bottom: 0.35rem; min-height: 20px; display: flex; align-items: center; }
 .news-status { color: #6b7280; font-size: 0.75rem; margin-bottom: 0.5rem; }
 .news-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; background: #ffffff; max-height: 650px; overflow-y: auto; overflow-x: hidden; }
 .news-item { display: flex; align-items: flex-start; padding: 8px 3px; border-bottom: 1px solid #eeeeee; line-height: 1.5; font-size: 0.84rem; overflow: visible; }
@@ -289,8 +289,34 @@ def add_line(fig, data, column, name, width=2.5, dash=None, yaxis=None, unit="%"
     if yaxis: trace.update(yaxis=yaxis)
     fig.add_trace(trace)
 
-def apply_chart_style(fig, height):
-    fig.update_layout(height=height, template="plotly_white", hovermode="x unified", dragmode=False, margin=dict(l=45, r=65, t=30, b=35), legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="left", x=0, font=dict(size=10)), hoverlabel=dict(bgcolor="white", font_size=11), font=dict(size=10 if compact_mode else 12), xaxis=dict(showgrid=False, showline=True, linecolor="#d1d5db", fixedrange=True, hoverformat="%Y-%m-%d"), yaxis=dict(showgrid=True, gridcolor="#eeeeee", zeroline=False, fixedrange=True)); fig.update_xaxes(fixedrange=True); fig.update_yaxes(fixedrange=True); return fig
+def _xaxis_config(date_range):
+    cfg = {
+        "5Y": {"dtick": "M6", "tickformat": "%Y-%m"},
+        "1Y": {"dtick": "M2", "tickformat": "%Y-%m"},
+        "6M": {"dtick": "M2", "tickformat": "%Y-%m"},
+        "3M": {"dtick": "D14", "tickformat": "%m/%d"},
+        "1M": {"dtick": "D7", "tickformat": "%m/%d"},
+    }[date_range]
+    return dict(showgrid=True, gridcolor="#eef2f7", griddash="dot", showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True, hoverformat="%Y-%m-%d", tickfont=dict(size=9), tickangle=-20, ticklabelstandoff=5, automargin=True, **cfg)
+
+def apply_chart_style(fig, height, date_range):
+    fig.update_layout(
+        height=height,
+        template="plotly_white",
+        hovermode="x unified",
+        dragmode=False,
+        margin=dict(l=62, r=72, t=58, b=58),
+        legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="left", x=0, font=dict(size=10), traceorder="normal", itemwidth=70),
+        hoverlabel=dict(bgcolor="white", font_size=11),
+        font=dict(size=11 if compact_mode else 12),
+        xaxis=_xaxis_config(date_range),
+        yaxis=dict(showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=False, showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True, tickfont=dict(size=9), automargin=True),
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+    )
+    fig.update_xaxes(fixedrange=True)
+    fig.update_yaxes(fixedrange=True)
+    return fig
 
 def get_start_date(date_range):
     end = pd.Timestamp.today().normalize(); return {"5Y": end - pd.DateOffset(years=5), "1Y": end - pd.DateOffset(years=1), "6M": end - pd.DateOffset(months=6), "3M": end - pd.DateOffset(months=3), "1M": end - pd.DateOffset(months=1)}[date_range]
@@ -304,62 +330,48 @@ def get_fred_series(series_id):
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
-    fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(285, 470))
+    fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(285, 500), date_range)
 
 def build_fig2(date_range):
     data = get_dgs10().merge(get_dfii10(), on="observation_date", how="outer").merge(get_fred_series("T10YIE"), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width, dash in [("DGS10", "10Y Nominal", 2.8, None), ("DFII10", "10Y Real", 2.6, None), ("T10YIE", "10Y Breakeven", 2.5, "dot")]: add_line(fig, data, column, name, width, dash)
-    fig.update_layout(yaxis_title="Yield (%)"); return apply_chart_style(fig, chart_height(285, 470))
+    fig.update_layout(yaxis_title="Yield (%)"); return apply_chart_style(fig, chart_height(285, 500), date_range)
 
 def build_fig4(date_range):
     specs = [(get_wresbal, "WRESBAL"), (get_wtre_gen, "WTREGEN"), (get_rrp_daily, "RRPONTSYD")]
     series = []
     for getter, column in specs:
         try:
-            frame = getter().copy()
-            frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
-            frame[column] = pd.to_numeric(frame[column], errors="coerce")
-            frame = frame.dropna(subset=["observation_date", column]).sort_values("observation_date")[["observation_date", column]]
+            frame = getter().copy(); frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce"); frame[column] = pd.to_numeric(frame[column], errors="coerce"); frame = frame.dropna(subset=["observation_date", column]).sort_values("observation_date")[["observation_date", column]]
             if not frame.empty:
-                if column == "RRPONTSYD":
-                    frame[column] = frame[column] / 1000.0
-                    frame = frame.set_index("observation_date")[column].resample("W-WED").mean().rename(column).reset_index()
-                else:
-                    frame[column] = frame[column] / 1000000.0
+                if column == "RRPONTSYD": frame[column] = frame[column] / 1000.0; frame = frame.set_index("observation_date")[column].resample("W-WED").mean().rename(column).reset_index()
+                else: frame[column] = frame[column] / 1000000.0
                 series.append(frame)
-        except Exception:
-            continue
-    if not series:
-        return apply_chart_style(go.Figure(), chart_height(285, 470))
+        except Exception: continue
+    if not series: return apply_chart_style(go.Figure(), chart_height(285, 500), date_range)
     data = series[0]
-    for frame in series[1:]:
-        data = data.merge(frame, on="observation_date", how="outer")
-    data = data.sort_values("observation_date")
-    value_cols = [c for c in ["WRESBAL", "WTREGEN", "RRPONTSYD"] if c in data.columns]
-    data[value_cols] = data[value_cols].ffill()
-    if all(c in data.columns for c in ["WRESBAL", "WTREGEN", "RRPONTSYD"]):
-        data["NetLiquidity"] = data["WRESBAL"] - data["WTREGEN"] - data["RRPONTSYD"]
-    data = filter_range(data, date_range)
-    fig = go.Figure()
+    for frame in series[1:]: data = data.merge(frame, on="observation_date", how="outer")
+    data = data.sort_values("observation_date"); value_cols = [c for c in ["WRESBAL", "WTREGEN", "RRPONTSYD"] if c in data.columns]; data[value_cols] = data[value_cols].ffill()
+    if all(c in data.columns for c in ["WRESBAL", "WTREGEN", "RRPONTSYD"]): data["NetLiquidity"] = data["WRESBAL"] - data["WTREGEN"] - data["RRPONTSYD"]
+    data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width, dash in [("NetLiquidity", "Net Liquidity Proxy", 3.0, None), ("WRESBAL", "Reserve Balances", 2.3, None), ("WTREGEN", "TGA", 2.1, "dash"), ("RRPONTSYD", "ON RRP", 2.1, "dot")]: add_line(fig, data, column, name, width, dash, unit=" T")
-    fig.update_layout(yaxis_title="$T")
-    return apply_chart_style(fig, chart_height(285, 470))
+    fig.update_layout(yaxis_title="$T"); return apply_chart_style(fig, chart_height(285, 500), date_range)
 
 def build_fig3(date_range):
     data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").merge(get_fred_series("T10Y2Y"), on="observation_date", how="outer").merge(get_fred_series("T10Y3M"), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8)]: add_line(fig, data, column, name, width)
-    data["T10Y2Y_bp"] = data["T10Y2Y"] * 100.0; data["T10Y3M_bp"] = data["T10Y3M"] * 100.0; add_line(fig, data, "T10Y2Y_bp", "10Y−2Y", 2.2, "dot", "y2", " bp"); add_line(fig, data, "T10Y3M_bp", "10Y−3M", 2.2, "dash", "y2", " bp")
-    fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>")
-    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True)); return apply_chart_style(fig, chart_height(285, 500))
+    data["T10Y2Y_bp"] = data["T10Y2Y"] * 100.0; data["T10Y3M_bp"] = data["T10Y3M"] * 100.0; add_line(fig, data, "T10Y2Y_bp", "10Y−2Y (R)", 2.2, "dot", "y2", " bp"); add_line(fig, data, "T10Y3M_bp", "10Y−3M (R)", 2.2, "dash", "y2", " bp")
+    fig.update_traces(selector=dict(name="10Y−2Y (R)"), hovertemplate="10Y−2Y (R): %{y:.1f} bp<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M (R)"), hovertemplate="10Y−3M (R): %{y:.1f} bp<extra></extra>")
+    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True, tickfont=dict(size=9))); return apply_chart_style(fig, chart_height(285, 500), date_range)
 
 PARAM_DESCRIPTIONS = ["IORB（Interest on Reserve Balances）：美联储对存放在美联储的准备金余额支付的利率。ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具的利率。EFFR（Effective Federal Funds Rate）：美国联邦基金市场的有效隔夜利率。SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。", "10Y Nominal：10年期美国国债名义收益率。10Y Real：10年期美国国债实际收益率，通常指10年期TIPS实际收益率。Breakeven：FRED官方10年期盈亏平衡通胀率（T10YIE）。", "3M：3个月期美国国债收益率。2Y：2年期美国国债收益率。10Y：10年期美国国债收益率。10Y−2Y：FRED官方10年期与2年期美国国债收益率利差（T10Y2Y）。10Y−3M：FRED官方10年期与3个月期美国国债收益率利差（T10Y3M）。", "Net Liquidity Proxy：Reserve Balances − TGA − ON RRP，用于观察美国金融市场流动性方向的分析指标，不是美联储官方命名指标。Reserve Balances：存款机构在美联储的准备金余额。TGA：美国财政部在美联储的总账户。ON RRP：隔夜逆回购余额。"]
 def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
-compact_mode = True
+compact_mode = False
 
 def render_core_charts():
     global compact_mode
     st.markdown('<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>', unsafe_allow_html=True); toggle_col, _ = st.columns([1, 5])
-    with toggle_col: compact_mode = st.toggle("缩小图表 / 快速浏览", value=True, key="compact_mode", help="开启后，图表1、2并排，图表3、4并排。关闭后显示完整图表。")
+    with toggle_col: compact_mode = st.toggle("缩小图表 / 快速浏览", value=False, key="compact_mode", help="开启后，图表1、2并排，图表3、4并排。关闭后显示完整图表。")
     if compact_mode:
         cols = st.columns(2, gap="large")
         configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB (IORB)", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP Rate (RRPONTSYAWARD)", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR (EFFR)", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR (SOFR)", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y Real (DFII10)", "https://fred.stlouisfed.org/series/DFII10"), ("10Y Breakeven (T10YIE)", "https://fred.stlouisfed.org/series/T10YIE")], 1), (cols[0], '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / 10Y−2Y / 10Y−3M</div>', "compact_treasury_range", build_fig3, [("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"), ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"), ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"), ("10Y−3M Spread (T10Y3M)", "https://fred.stlouisfed.org/series/T10Y3M")], 2), (cols[1], '<div class="compact-title">4. US Liquidity</div>', '<div class="compact-description">Net Liquidity / Reserve Balances / TGA / ON RRP</div>', "compact_debt_range", build_fig4, [("Reserve Balances (WRESBAL)", "https://fred.stlouisfed.org/series/WRESBAL"), ("TGA (WTREGEN)", "https://fred.stlouisfed.org/series/WTREGEN"), ("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD")], 3)]
