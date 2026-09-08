@@ -6,35 +6,37 @@ import streamlit as st
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Render each chart on a fixed, full-width canvas. The Plotly legend occupies
-# the top margin of the figure itself, never the left/right plotting margins.
+# Render each chart on a fixed, full-width canvas. Legends are deliberately split:
+# left-axis parameters stay on the left, right-axis parameters stay on the right.
 def _render_chart_with_state(fig, desc_index):
     chart_id = f"macro-chart-{desc_index}"
     for trace in fig.data:
         if getattr(trace, "name", None):
             trace.uid = f"{chart_id}:{trace.name}"
 
-    # One identical geometry for every chart. Extra top margin is reserved
-    # exclusively for the parameter legend; left/right plot width is untouched.
+    # Re-apply the split legend geometry AFTER app_base's apply_chart_style().
+    # This is important because apply_chart_style() resets the default legend.
     fig.update_layout(
         width=None,
         height=390,
         margin=dict(l=58, r=58, t=86, b=42),
         legend=dict(
             orientation="h",
-            yanchor="bottom", y=1.035,
-            xanchor="left", x=0.0,
+            yanchor="bottom", y=1.04,
+            xanchor="left", x=0.02,
             xref="paper",
             font=dict(size=10),
             bgcolor="rgba(255,255,255,0)",
+            traceorder="normal",
         ),
         legend2=dict(
             orientation="h",
-            yanchor="bottom", y=1.035,
-            xanchor="right", x=1.0,
+            yanchor="bottom", y=1.04,
+            xanchor="left", x=0.72,
             xref="paper",
             font=dict(size=10),
             bgcolor="rgba(255,255,255,0)",
+            traceorder="normal",
         ),
     )
 
@@ -69,7 +71,6 @@ Plotly.newPlot(gd,fig.data||[],fig.layout||{{}},{{displayModeBar:false,scrollZoo
 }});
 </script></body></html>
 """
-    # 440px iframe = 390px plot + fixed top/bottom room; all four are identical.
     st.iframe(html, height=440)
 
 render_call = 'st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index)'
@@ -78,9 +79,6 @@ if render_call not in source:
     raise RuntimeError("chart render call not found")
 source = source.replace(render_call, render_replacement)
 
-# -------------------------------------------------------------------------
-# Data audit / correction
-# -------------------------------------------------------------------------
 chart_override = r'''
 
 def _clean_chart_frame(frame, column):
@@ -93,11 +91,11 @@ def _clean_chart_frame(frame, column):
 def _apply_split_legends(fig, right_names=()):
     for name in right_names:
         fig.update_traces(selector=dict(name=name), legend="legend2")
-    # Final geometry is applied by _render_chart_with_state so every chart has
-    # the same top legend band and the same plotting width.
+    # Keep the two groups clearly separated in the header. _render_chart_with_state
+    # reapplies this after apply_chart_style() so the split cannot be overwritten.
     fig.update_layout(
-        legend=dict(orientation="h", yanchor="bottom", y=1.035, xanchor="left", x=0.0, xref="paper", font=dict(size=10)),
-        legend2=dict(orientation="h", yanchor="bottom", y=1.035, xanchor="right", x=1.0, xref="paper", font=dict(size=10)),
+        legend=dict(orientation="h", yanchor="bottom", y=1.04, xanchor="left", x=0.02, xref="paper", font=dict(size=10), traceorder="normal"),
+        legend2=dict(orientation="h", yanchor="bottom", y=1.04, xanchor="left", x=0.72, xref="paper", font=dict(size=10), traceorder="normal"),
     )
 
 
