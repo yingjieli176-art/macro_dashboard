@@ -22,17 +22,17 @@ wrapper_code = r'''
 
 def _xaxis_config(date_range):
     date_cfg = {
-        "5Y": {"dtick": "M3", "tickformat": "%Y-%m"},
-        "1Y": {"dtick": "M1", "tickformat": "%Y-%m"},
-        "6M": {"dtick": "M1", "tickformat": "%m-%Y"},
-        "3M": {"dtick": "D7", "tickformat": "%m/%d"},
-        "1M": {"dtick": "D3", "tickformat": "%m/%d"},
-    }.get(date_range, {"dtick": "M1", "tickformat": "%Y-%m"})
+        "5Y": {"dtick": "M6", "tickformat": "%Y-%m"},
+        "1Y": {"dtick": "M2", "tickformat": "%Y-%m"},
+        "6M": {"dtick": "M2", "tickformat": "%Y-%m"},
+        "3M": {"dtick": "D14", "tickformat": "%m/%d"},
+        "1M": {"dtick": "D7", "tickformat": "%m/%d"},
+    }.get(date_range, {"dtick": "M2", "tickformat": "%Y-%m"})
     return dict(domain=[0.035, 0.965], fixedrange=True, automargin=False,
                 showgrid=True, gridcolor="#f1f3f5", showline=True,
                 linecolor="#c7cdd4", ticks="outside", ticklen=5, tickwidth=1,
-                tickfont=dict(size=11), tickangle=-28, ticklabelmode="instant",
-                ticklabelstandoff=5, ticklabeloverflow="hide past div",
+                tickfont=dict(size=9), tickangle=-20, ticklabelmode="instant",
+                ticklabelstandoff=4, ticklabeloverflow="hide past div",
                 hoverformat="%Y-%m-%d", **date_cfg)
 
 
@@ -61,8 +61,8 @@ def build_fig1(date_range):
     data = get_iorb().merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date")
     data = filter_range(data, date_range)
     data["SOFR_minus_IORB_bp"] = (data["SOFR"] - data["IORB"]) * 100.0
-    add_line(fig, data, "SOFR_minus_IORB_bp", "SOFR−IORB", 2.2, "dot", "y2", " bp")
-    fig.update_traces(selector=dict(name="SOFR−IORB"), hovertemplate="SOFR−IORB: %{y:.1f} bp<extra></extra>")
+    add_line(fig, data, "SOFR_minus_IORB_bp", "SOFR−IORB (R)", 2.2, "dot", "y2", " bp")
+    fig.update_traces(selector=dict(name="SOFR−IORB (R)"), hovertemplate="SOFR−IORB: %{y:.1f} bp<extra></extra>")
     return _finalize_chart(fig, right_title="Spread (bp)", left_title="Rate (%)", date_range=date_range)
 
 
@@ -71,8 +71,8 @@ def build_fig2(date_range):
     data = filter_range(data, date_range)
     fig = go.Figure()
     add_line(fig, data, "DGS10", "10Y Nominal", 2.8)
-    add_line(fig, data, "DFII10", "10Y Real", 2.6, None, "y2")
-    add_line(fig, data, "T10YIE", "10Y Breakeven", 2.5, "dot", "y2")
+    add_line(fig, data, "DFII10", "10Y Real (R)", 2.6, None, "y2")
+    add_line(fig, data, "T10YIE", "10Y Breakeven (R)", 2.5, "dot", "y2")
     fig = _finalize_chart(fig, right_title="Yield (%)", left_title="Yield (%)", date_range=date_range)
     for trace in fig.data:
         trace.legend = "legend"
@@ -81,7 +81,11 @@ def build_fig2(date_range):
 
 
 def build_fig3(date_range):
-    return _finalize_chart(_base_build_fig3(date_range), right_names=("10Y−2Y", "10Y−3M"), right_title="Spread (bp)", left_title="Yield (%)", date_range=date_range)
+    fig = _base_build_fig3(date_range)
+    for trace in fig.data:
+        if getattr(trace, "name", None) in {"10Y−2Y", "10Y−3M"}:
+            trace.name = f"{trace.name} (R)"
+    return _finalize_chart(fig, right_names=("10Y−2Y (R)", "10Y−3M (R)"), right_title="Spread (bp)", left_title="Yield (%)", date_range=date_range)
 
 
 def build_fig4(date_range):
