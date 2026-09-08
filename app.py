@@ -3,34 +3,13 @@ from pathlib import Path
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Keep parameter information collapsed by default, with a native HTML
-# details control that does not trigger a Streamlit rerun when opened/closed.
+# Restore the original parameter behavior: the parameter description is
+# rendered directly below each chart. Range selection does not create a
+# separate parameter state.
 old_parameter_fn = '''def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)'''
-new_parameter_fn = '''def show_parameter_description(index):
-    text = html.escape(PARAM_DESCRIPTIONS[index])
-    st.markdown(
-        f'<details class="parameter-details"><summary>参数</summary><div class="mini-description">{text}</div></details>',
-        unsafe_allow_html=True,
-    )'''
-if old_parameter_fn not in source:
-    raise RuntimeError("parameter function not found")
-source = source.replace(old_parameter_fn, new_parameter_fn, 1)
+new_parameter_fn = old_parameter_fn
 
-# Native details styling: each chart owns its own parameter panel and the
-# browser handles open/close locally, so changing any time-range radio cannot
-# cause parameter descriptions from other charts to appear.
-source = source.replace(
-    '''.mini-description {''',
-    '''.parameter-details { margin: 4px 0 8px 0; }
-.parameter-details summary { cursor: pointer; font-size: 13px; font-weight: 600; padding: 2px 0; list-style: none; }
-.parameter-details summary::-webkit-details-marker { display: none; }
-.parameter-details summary::before { content: "▸ "; }
-.parameter-details[open] summary::before { content: "▾ "; }
-.mini-description {''',
-    1,
-)
-
-# Chart 1: retain official series and add the derived SOFR−IORB spread.
+# Chart 1: retain the four official series and add the derived SOFR−IORB spread.
 start = source.index("def build_fig1(date_range):")
 end = source.index("\ndef build_fig2(date_range):", start)
 block = source[start:end]
