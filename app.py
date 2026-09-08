@@ -10,11 +10,12 @@ source = source.replace("东方财富「红字焦点快讯」 · 平台已筛选
 source = source.replace("东方财富红字焦点快讯", "东方财富 7×24 全球直播")
 source = source.replace("Eastmoney 7×24 Focus News", "Eastmoney 7×24 Global Live News")
 
-# Give the dashboard more horizontal room and reduce the gap between the two
-# compact charts.  The old layout made each chart unnecessarily narrow.
+# Keep the compact dashboard wide enough for readable charts.
 source = source.replace("max-width: 1700px;", "max-width: 1850px;")
 source = source.replace('cols = st.columns(2, gap="large")', 'cols = st.columns(2, gap="small")')
 
+# Rename the original builders so the wrapper can safely replace chart behavior
+# before render_core_charts() is executed.
 source = source.replace("def build_fig1(date_range):", "def _base_build_fig1(date_range):", 1)
 source = source.replace("def build_fig2(date_range):", "def _base_build_fig2(date_range):", 1)
 source = source.replace("def build_fig3(date_range):", "def _base_build_fig3(date_range):", 1)
@@ -23,8 +24,6 @@ source = source.replace("def build_fig4(date_range):", "def _base_build_fig4(dat
 wrapper_code = r'''
 
 def _xaxis_config(date_range):
-    # Keep date labels readable at every range. Shorter windows get finer
-    # ticks, but labels are shortened/angled so adjacent dates never collide.
     date_cfg = {
         "5Y": {"dtick": "M6", "tickformat": "%Y-%m"},
         "1Y": {"dtick": "M2", "tickformat": "%y-%m"},
@@ -33,23 +32,12 @@ def _xaxis_config(date_range):
         "1M": {"dtick": "D7", "tickformat": "%m/%d"},
     }.get(date_range, {"dtick": "M1", "tickformat": "%m/%d"})
     return dict(
-        domain=[0.035, 0.965],
-        fixedrange=True,
-        automargin=False,
-        showgrid=True,
-        gridcolor="#f1f3f5",
-        showline=True,
-        linecolor="#c7cdd4",
-        ticks="outside",
-        ticklen=4,
-        tickwidth=1,
-        tickfont=dict(size=10),
-        tickangle=-28,
-        ticklabelmode="instant",
-        ticklabelstandoff=5,
-        ticklabeloverflow="hide past div",
-        hoverformat="%Y-%m-%d",
-        **date_cfg,
+        domain=[0.035, 0.965], fixedrange=True, automargin=False,
+        showgrid=True, gridcolor="#f1f3f5", showline=True,
+        linecolor="#c7cdd4", ticks="outside", ticklen=4, tickwidth=1,
+        tickfont=dict(size=10), tickangle=-28, ticklabelmode="instant",
+        ticklabelstandoff=5, ticklabeloverflow="hide past div",
+        hoverformat="%Y-%m-%d", **date_cfg,
     )
 
 
@@ -68,32 +56,25 @@ def _finalize_chart(fig, right_names=(), right_title=None, left_title=None, date
                      xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)"),
     )
     fig.update_yaxes(
-        automargin=False,
-        fixedrange=True,
-        ticks="outside",
-        ticklen=4,
-        tickwidth=1,
-        tickfont=dict(size=11),
-        nticks=8,
-        showgrid=True,
-        gridcolor="#eeeeee",
+        automargin=False, fixedrange=True, ticks="outside", ticklen=4,
+        tickwidth=1, tickfont=dict(size=11), nticks=8,
+        showgrid=True, gridcolor="#eeeeee",
     )
     if left_title is not None:
-        fig.update_layout(yaxis=dict(title=left_title, side="left", anchor="x",
-                                     fixedrange=True, automargin=False, ticks="outside",
-                                     ticklabelposition="outside", tickformat=".2f", nticks=8,
-                                     tickfont=dict(size=11)))
+        fig.update_layout(yaxis=dict(
+            title=left_title, side="left", anchor="x", fixedrange=True,
+            automargin=False, ticks="outside", ticklabelposition="outside",
+            tickformat=".2f", nticks=8, tickfont=dict(size=11),
+        ))
     if right_names or any(getattr(t, "yaxis", "y") == "y2" for t in fig.data):
-        fig.update_layout(yaxis2=dict(title=right_title or "Spread (bp)", overlaying="y",
-                                      side="right", anchor="x", fixedrange=True,
-                                      automargin=False, ticks="outside", ticklen=4,
-                                      tickwidth=1, tickfont=dict(size=11), nticks=8,
-                                      ticklabelposition="outside", showgrid=False,
-                                      zeroline=True, zerolinecolor="#9ca3af", tickmode="sync"))
-        if right_title == "Spread (bp)":
-            fig.update_layout(yaxis2_tickformat=".0f")
-        else:
-            fig.update_layout(yaxis2_tickformat=".2f")
+        fig.update_layout(yaxis2=dict(
+            title=right_title or "Spread (bp)", overlaying="y", side="right",
+            anchor="x", fixedrange=True, automargin=False, ticks="outside",
+            ticklen=4, tickwidth=1, tickfont=dict(size=11), nticks=8,
+            ticklabelposition="outside", showgrid=False, zeroline=True,
+            zerolinecolor="#9ca3af", tickmode="sync",
+        ))
+        fig.update_layout(yaxis2_tickformat=".0f" if right_title == "Spread (bp)" else ".2f")
     right_names = set(right_names)
     for trace in fig.data:
         name = getattr(trace, "name", None)
@@ -112,10 +93,26 @@ def build_fig1(date_range):
 
 
 def build_fig2(date_range):
-    fig = _base_build_fig2(date_range)
-    fig.update_traces(selector=dict(name="10Y Real"), yaxis="y2")
-    fig.update_traces(selector=dict(name="10Y Breakeven"), yaxis="y2")
-    return _finalize_chart(fig, right_names=("10Y Real", "10Y Breakeven"), right_title="Yield (%)", left_title="Yield (%)", date_range=date_range)
+    # Build Chart 2 directly instead of inheriting any state from the base
+    # builder. This makes DGS10 / 10Y Nominal an explicit trace in the figure.
+    data = (
+        get_dgs10()
+        .merge(get_dfii10(), on="observation_date", how="outer")
+        .merge(get_fred_series("T10YIE"), on="observation_date", how="outer")
+        .sort_values("observation_date")
+    )
+    data = filter_range(data, date_range)
+    fig = go.Figure()
+    add_line(fig, data, "DGS10", "10Y Nominal", 2.8)
+    add_line(fig, data, "DFII10", "10Y Real", 2.6, None, "y2")
+    add_line(fig, data, "T10YIE", "10Y Breakeven", 2.5, "dot", "y2")
+    # Do not route Chart 2 through split Plotly legends. All three series use
+    # one legend; the right axis is determined only by each trace's yaxis.
+    for trace in fig.data:
+        trace.legend = "legend"
+        trace.visible = True
+    fig.update_layout(yaxis_title="Yield (%)")
+    return _finalize_chart(fig, right_title="Yield (%)", left_title="Yield (%)", date_range=date_range)
 
 
 def build_fig3(date_range):
@@ -152,10 +149,8 @@ def _render_chart_with_state(fig, desc_index, date_range):
                      xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)"),
         xaxis=_xaxis_config(date_range),
     )
-    fig.update_yaxes(
-        automargin=False, fixedrange=True, ticks="outside", ticklen=4,
-        tickwidth=1, tickfont=dict(size=11), nticks=8,
-    )
+    fig.update_yaxes(automargin=False, fixedrange=True, ticks="outside", ticklen=4,
+                     tickwidth=1, tickfont=dict(size=11), nticks=8)
     payload = json.dumps(pio.to_json(fig, validate=False, pretty=False), ensure_ascii=False)
     html = f'''<!doctype html><html><head><script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script><style>html,body,#chart{{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:transparent;}}</style></head><body><div id="chart"></div><script>const chartId={json.dumps(chart_id)};const storageKey="macro-dashboard-legend:"+chartId;const fig=JSON.parse({payload});const gd=document.getElementById("chart");function readHidden(){{try{{const v=localStorage.getItem(storageKey);const p=v?JSON.parse(v):[];return Array.isArray(p)?new Set(p):new Set();}}catch(e){{return new Set();}}}}function writeHidden(s){{try{{localStorage.setItem(storageKey,JSON.stringify([...s]));}}catch(e){{}}}}function keyOf(t,i){{return t&&(t.uid||t.name)||String(i);}}function restoreHidden(){{const hidden=readHidden();(fig.data||[]).forEach((t,i)=>{{if(hidden.has(keyOf(t,i)))Plotly.restyle(gd,{{visible:"legendonly"}},[i]);}});}}Plotly.newPlot(gd,fig.data||[],fig.layout||{{}},{{displayModeBar:false,scrollZoom:false,doubleClick:false,editable:false,displaylogo:false,responsive:true}}).then(()=>{{restoreHidden();gd.on("plotly_legendclick",ev=>{{const i=ev.curveNumber,t=gd.data[i],k=keyOf(t,i),hidden=readHidden();if(t.visible==="legendonly"){{Plotly.restyle(gd,{{visible:true}},[i]);hidden.delete(k);}}else{{Plotly.restyle(gd,{{visible:"legendonly"}},[i]);hidden.add(k);}}writeHidden(hidden);return false;}});}});</script></body></html>'''
     st.components.v1.html(html, height=500, scrolling=False)
