@@ -41,7 +41,6 @@ source = source.replace("</style>", ".mini-description { height: 72px; min-heigh
 
 # Reuse the base data builders, then make the axis/legend contract explicit.
 # This avoids duplicating the data-fetching logic in app.py.
-chart_override = r'''
 _orig_build_fig1 = build_fig1
 _orig_build_fig2 = build_fig2
 _orig_build_fig3 = build_fig3
@@ -86,7 +85,9 @@ def build_fig1(date_range):
 
 def build_fig2(date_range):
     fig = _orig_build_fig2(date_range)
-    return _finalize_chart(fig, left_title="Yield (%)")
+    fig.update_traces(selector=dict(name="10Y Real"), yaxis="y2")
+    fig.update_traces(selector=dict(name="10Y Breakeven"), yaxis="y2")
+    return _finalize_chart(fig, right_names=("10Y Real", "10Y Breakeven"), right_title="Yield (%)", left_title="Yield (%)")
 
 def build_fig3(date_range):
     fig = _orig_build_fig3(date_range)
@@ -95,12 +96,7 @@ def build_fig3(date_range):
 def build_fig4(date_range):
     fig = _orig_build_fig4(date_range)
     return _finalize_chart(fig, left_title="$T")
-'''
 
-marker = "\nrender_core_charts"
-if marker not in source:
-    raise RuntimeError("render_core_charts call not found")
-source = source.replace(marker, "\n" + chart_override + marker, 1)
 source = source.replace("IORB / ON RRP / EFFR / SOFR", "IORB / ON RRP / EFFR / SOFR / SOFR−IORB")
 source = source.replace("IORB、ON RRP Rate、EFFR、SOFR", "IORB、ON RRP Rate、EFFR、SOFR 与 SOFR−IORB 利差")
 source = source.replace("SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。", "SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。SOFR−IORB：SOFR 与 IORB 的利差，单位 bp，用于观察短期融资压力；为 Dashboard 派生指标，不是 FRED 官方独立序列。", 1)
