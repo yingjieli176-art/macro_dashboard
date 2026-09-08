@@ -84,10 +84,12 @@ def build_fig1(date_range):
     for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]:
         add_line(fig, data, column, name, width)
     add_line(fig, data, "SOFR_minus_IORB_bp", "SOFR−IORB", 2.2, "dot", "y2", " bp")
+    fig.update_traces(selector=dict(name="SOFR−IORB"), legend="legend2")
     fig.update_layout(
         yaxis=dict(title="Rate (%)", fixedrange=True),
         yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="x", position=1.0,
                     showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True),
+        legend2=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1, font=dict(size=10)),
     )
     fig.update_traces(selector=dict(name="SOFR−IORB"), hovertemplate="SOFR−IORB: %{y:.1f} bp<extra></extra>")
     return apply_chart_style(fig, chart_height(285, 470))
@@ -119,12 +121,15 @@ def build_fig3(date_range):
         add_line(fig, data, column, name, width)
     add_line(fig, data, "T10Y2Y_bp", "10Y−2Y", 2.2, "dot", "y2", " bp")
     add_line(fig, data, "T10Y3M_bp", "10Y−3M", 2.2, "dash", "y2", " bp")
+    fig.update_traces(selector=dict(name="10Y−2Y"), legend="legend2")
+    fig.update_traces(selector=dict(name="10Y−3M"), legend="legend2")
     fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>")
     fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>")
     fig.update_layout(
         yaxis=dict(title="Yield (%)", fixedrange=True),
         yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="x", position=1.0,
                     showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True),
+        legend2=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1, font=dict(size=10)),
     )
     return apply_chart_style(fig, chart_height(285, 500))
 
