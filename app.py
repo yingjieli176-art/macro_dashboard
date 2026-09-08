@@ -63,23 +63,27 @@ def _clean_chart_frame(frame, column):
     return frame.dropna(subset=["observation_date", column]).sort_values("observation_date")[["observation_date", column]]
 
 
-def _split_legend_layout():
-    # Keep the left-axis parameters grouped on the left and the right-axis
-    # parameters grouped on the right, with an explicit central blank area.
-    return dict(
-        orientation="h",
-        yanchor="bottom", y=1.01,
-        xanchor="left", x=0.0,
-        xref="container",
-        entrywidthmode="fraction", entrywidth=0.18,
-        font=dict(size=10),
-    ), dict(
-        orientation="h",
-        yanchor="bottom", y=1.01,
-        xanchor="right", x=1.0,
-        xref="container",
-        entrywidthmode="fraction", entrywidth=0.18,
-        font=dict(size=10),
+def _apply_split_legends(fig, right_names=()):
+    for name in right_names:
+        fig.update_traces(selector=dict(name=name), legend="legend2")
+    # Do not use entrywidth here: it allocates a large width to every legend
+    # item and makes the two legend groups overlap. Natural item widths keep
+    # each group compact while the opposite anchors create the center gap.
+    fig.update_layout(
+        legend=dict(
+            orientation="h",
+            yanchor="bottom", y=1.01,
+            xanchor="left", x=0.0,
+            xref="container",
+            font=dict(size=10),
+        ),
+        legend2=dict(
+            orientation="h",
+            yanchor="bottom", y=1.01,
+            xanchor="right", x=1.0,
+            xref="container",
+            font=dict(size=10),
+        ),
     )
 
 
@@ -104,14 +108,11 @@ def build_fig1(date_range):
     for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]:
         add_line(fig, data, column, name, width)
     add_line(fig, data, "SOFR_minus_IORB_bp", "SOFR−IORB", 2.2, "dot", "y2", " bp")
-    fig.update_traces(selector=dict(name="SOFR−IORB"), legend="legend2")
-    legend_left, legend_right = _split_legend_layout()
+    _apply_split_legends(fig, ["SOFR−IORB"])
     fig.update_layout(
         yaxis=dict(title="Rate (%)", fixedrange=True),
         yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="x", position=1.0,
                     showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True),
-        legend=legend_left,
-        legend2=legend_right,
     )
     fig.update_traces(selector=dict(name="SOFR−IORB"), hovertemplate="SOFR−IORB: %{y:.1f} bp<extra></extra>")
     return apply_chart_style(fig, chart_height(285, 470))
@@ -143,17 +144,13 @@ def build_fig3(date_range):
         add_line(fig, data, column, name, width)
     add_line(fig, data, "T10Y2Y_bp", "10Y−2Y", 2.2, "dot", "y2", " bp")
     add_line(fig, data, "T10Y3M_bp", "10Y−3M", 2.2, "dash", "y2", " bp")
-    fig.update_traces(selector=dict(name="10Y−2Y"), legend="legend2")
-    fig.update_traces(selector=dict(name="10Y−3M"), legend="legend2")
+    _apply_split_legends(fig, ["10Y−2Y", "10Y−3M"])
     fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>")
     fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>")
-    legend_left, legend_right = _split_legend_layout()
     fig.update_layout(
         yaxis=dict(title="Yield (%)", fixedrange=True),
         yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="x", position=1.0,
                     showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True),
-        legend=legend_left,
-        legend2=legend_right,
     )
     return apply_chart_style(fig, chart_height(285, 500))
 
@@ -177,7 +174,6 @@ def build_fig4(date_range):
     return apply_chart_style(fig, chart_height(285, 470))
 '''
 
-# Important: only replace the standalone top-level call, not the function definition.
 marker = "\nrender_core_charts()"
 if marker not in source:
     raise RuntimeError("render_core_charts call not found")
