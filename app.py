@@ -52,4 +52,9 @@ source = source.replace(
     1,
 )
 
+# The news backend now uses Eastmoney type=102 (full 7x24 feed), so keep UI labels consistent.
+source = source.replace("东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新", "东方财富 7×24 全球直播 · 全量快讯 · 每60秒自动刷新")
+source = source.replace("东方财富红字焦点快讯", "东方财富 7×24 全球直播")
+source = source.replace("Eastmoney 7×24 Focus News", "Eastmoney 7×24 Global Live News")
+
 exec(compile(source, str(base_path), "exec"), globals(), globals())
