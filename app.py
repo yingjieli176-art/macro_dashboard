@@ -1,26 +1,87 @@
 from pathlib import Path
+import json
+import plotly.io as pio
+import streamlit.components.v1 as components
 
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Persist Plotly legend text visibility by chart + parameter, independently of the time range.
+# Render Plotly charts in a small component so native legend click state can be
+# stored in browser localStorage and restored after Streamlit reruns/range changes.
 def _render_chart_with_state(fig, desc_index):
     chart_id = f"macro-chart-{desc_index}"
-    # Give every trace a stable identity. Plotly uses trace identity together
-    # with legend_uirevision to retain user-hidden/shown legend items.
     for trace in fig.data:
         if getattr(trace, "name", None):
             trace.uid = f"{chart_id}:{trace.name}"
-    fig.update_layout(
-        uirevision=chart_id,
-        legend_uirevision=chart_id,
-    )
-    st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config=PLOTLY_CONFIG,
-        key=chart_id,
-    )
+
+    fig_json = pio.to_json(fig, validate=False, pretty=False)
+    payload = json.dumps(fig_json, ensure_ascii=False)
+    html = f"""
+<!doctype html>
+<html>
+<head>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>html,body,#chart{{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;}}</style>
+</head>
+<body>
+<div id="chart"></div>
+<script>
+const chartId = {json.dumps(chart_id)};
+const storageKey = "macro-dashboard-legend:" + chartId;
+const fig = JSON.parse({payload});
+const gd = document.getElementById("chart");
+
+function readHidden() {{
+  try {{
+    const value = localStorage.getItem(storageKey);
+    const parsed = value ? JSON.parse(value) : [];
+    return Array.isArray(parsed) ? new Set(parsed) : new Set();
+  }} catch (e) {{ return new Set(); }}
+}}
+function writeHidden(hidden) {{
+  try {{ localStorage.setItem(storageKey, JSON.stringify(Array.from(hidden))); }} catch (e) {{}}
+}}
+function restoreHidden() {{
+  const hidden = readHidden();
+  const indices = [];
+  (fig.data || []).forEach((trace, i) => {{
+    const key = trace.uid || trace.name || String(i);
+    if (hidden.has(key)) indices.push(i);
+  }});
+  if (indices.length) Plotly.restyle(gd, {{visible: "legendonly"}}, indices);
+}}
+
+Plotly.newPlot(gd, fig.data || [], fig.layout || {{}}, {{displayModeBar:false, scrollZoom:false, doubleClick:false, editable:false, displaylogo:false, responsive:true}}).then(() => {{
+  restoreHidden();
+  gd.on("plotly_legendclick", (event) => {{
+    const hidden = readHidden();
+    const index = event.curveNumber;
+    const trace = gd.data[index];
+    const key = trace && (trace.uid || trace.name || String(index));
+    if (!key) return true;
+    if (trace.visible === "legendonly") hidden.delete(key);
+    else hidden.add(key);
+    writeHidden(hidden);
+    return true;
+  }});
+  gd.on("plotly_legenddoubleclick", (event) => {{
+    // Plotly handles double-click natively; reconcile the stored state after it.
+    setTimeout(() => {{
+      const hidden = readHidden();
+      (gd.data || []).forEach((trace, i) => {{
+        const key = trace.uid || trace.name || String(i);
+        if (trace.visible === "legendonly") hidden.add(key);
+        else hidden.delete(key);
+      }});
+      writeHidden(hidden);
+    }}, 80);
+  }});
+}});
+</script>
+</body>
+</html>
+"""
+    components.html(html, height=470, scrolling=False)
 
 render_call = 'st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index)'
 render_replacement = '_render_chart_with_state(builder(date_range), desc_index); show_parameter_description(desc_index)'
@@ -58,7 +119,7 @@ source = source.replace(
     1,
 )
 
-# The news backend now uses Eastmoney type=102 (full 7x24 feed), so keep UI labels consistent.
+# The news backend uses Eastmoney type=102 (full 7x24 feed), so keep UI labels consistent.
 source = source.replace("东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新", "东方财富 7×24 全球直播 · 全量快讯 · 每60秒自动刷新")
 source = source.replace("东方财富红字焦点快讯", "东方财富 7×24 全球直播")
 source = source.replace("Eastmoney 7×24 Focus News", "Eastmoney 7×24 Global Live News")
