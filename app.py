@@ -63,6 +63,26 @@ def _clean_chart_frame(frame, column):
     return frame.dropna(subset=["observation_date", column]).sort_values("observation_date")[["observation_date", column]]
 
 
+def _split_legend_layout():
+    # Keep the left-axis parameters grouped on the left and the right-axis
+    # parameters grouped on the right, with an explicit central blank area.
+    return dict(
+        orientation="h",
+        yanchor="bottom", y=1.01,
+        xanchor="left", x=0.0,
+        xref="container",
+        entrywidthmode="fraction", entrywidth=0.18,
+        font=dict(size=10),
+    ), dict(
+        orientation="h",
+        yanchor="bottom", y=1.01,
+        xanchor="right", x=1.0,
+        xref="container",
+        entrywidthmode="fraction", entrywidth=0.18,
+        font=dict(size=10),
+    )
+
+
 def build_fig1(date_range):
     frames = [
         _clean_chart_frame(get_iorb(), "IORB"),
@@ -85,11 +105,13 @@ def build_fig1(date_range):
         add_line(fig, data, column, name, width)
     add_line(fig, data, "SOFR_minus_IORB_bp", "SOFR−IORB", 2.2, "dot", "y2", " bp")
     fig.update_traces(selector=dict(name="SOFR−IORB"), legend="legend2")
+    legend_left, legend_right = _split_legend_layout()
     fig.update_layout(
         yaxis=dict(title="Rate (%)", fixedrange=True),
         yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="x", position=1.0,
                     showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True),
-        legend2=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1, font=dict(size=10)),
+        legend=legend_left,
+        legend2=legend_right,
     )
     fig.update_traces(selector=dict(name="SOFR−IORB"), hovertemplate="SOFR−IORB: %{y:.1f} bp<extra></extra>")
     return apply_chart_style(fig, chart_height(285, 470))
@@ -125,11 +147,13 @@ def build_fig3(date_range):
     fig.update_traces(selector=dict(name="10Y−3M"), legend="legend2")
     fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>")
     fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>")
+    legend_left, legend_right = _split_legend_layout()
     fig.update_layout(
         yaxis=dict(title="Yield (%)", fixedrange=True),
         yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="x", position=1.0,
                     showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True),
-        legend2=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1, font=dict(size=10)),
+        legend=legend_left,
+        legend2=legend_right,
     )
     return apply_chart_style(fig, chart_height(285, 500))
 
