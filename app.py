@@ -65,17 +65,18 @@ def build_fig1(date_range):
 
 
 def build_fig2(date_range):
-    # Chart 2 is built independently so DGS10 is guaranteed to be a real trace.
     data = get_dgs10().merge(get_dfii10(), on="observation_date", how="outer").merge(get_fred_series("T10YIE"), on="observation_date", how="outer").sort_values("observation_date")
     data = filter_range(data, date_range)
     fig = go.Figure()
     add_line(fig, data, "DGS10", "10Y Nominal", 2.8)
     add_line(fig, data, "DFII10", "10Y Real", 2.6, None, "y2")
     add_line(fig, data, "T10YIE", "10Y Breakeven", 2.5, "dot", "y2")
-    for trace in fig.data:
-        trace.visible = True
     fig.update_layout(yaxis_title="Yield (%)")
-    return _finalize_chart(fig, right_title="Yield (%)", left_title="Yield (%)", date_range=date_range)
+    fig = _finalize_chart(fig, right_title="Yield (%)", left_title="Yield (%)", date_range=date_range)
+    for trace in fig.data:
+        trace.legend = "legend"
+        trace.visible = True
+    return fig
 
 
 def build_fig3(date_range):
@@ -97,20 +98,7 @@ if render_call not in source:
     raise RuntimeError("chart render call not found")
 
 def _render_chart_with_state(fig, desc_index, date_range):
-    chart_id = f"macro-chart-{desc_index}"
-    for trace in fig.data:
-        if getattr(trace, "name", None):
-            trace.uid = f"{chart_id}:{trace.name}"
-    fig.update_layout(template="plotly_white", width=None, height=400, autosize=True,
-                      margin=dict(l=58, r=58, t=150, b=62, pad=0, autoexpand=False),
-                      legend=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="left", x=0, xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)"),
-                      legend2=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="right", x=1, xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)"),
-                      legend3=dict(orientation="h", yanchor="bottom", y=1.105, xanchor="left", x=0, xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)"),
-                      xaxis=_xaxis_config(date_range))
-    fig.update_yaxes(automargin=False, fixedrange=True, ticks="outside", ticklen=4, tickwidth=1, tickfont=dict(size=11), nticks=8)
-    payload = json.dumps(pio.to_json(fig, validate=False, pretty=False), ensure_ascii=False)
-    html = f'''<!doctype html><html><head><script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script><style>html,body,#chart{{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:transparent;}}</style></head><body><div id="chart"></div><script>const chartId={json.dumps(chart_id)};const storageKey="macro-dashboard-legend:"+chartId;const fig=JSON.parse({payload});const gd=document.getElementById("chart");function readHidden(){{try{{const v=localStorage.getItem(storageKey);const p=v?JSON.parse(v):[];return Array.isArray(p)?new Set(p):new Set();}}catch(e){{return new Set();}}}}function writeHidden(s){{try{{localStorage.setItem(storageKey,JSON.stringify([...s]));}}catch(e){{}}}}function keyOf(t,i){{return t&&(t.uid||t.name)||String(i);}}function restoreHidden(){{const hidden=readHidden();(fig.data||[]).forEach((t,i)=>{{const isChart2Nominal=chartId==="macro-chart-1"&&t.name==="10Y Nominal";if(!isChart2Nominal&&hidden.has(keyOf(t,i)))Plotly.restyle(gd,{{visible:"legendonly"}},[i]);}});}}Plotly.newPlot(gd,fig.data||[],fig.layout||{{}},{{displayModeBar:false,scrollZoom:false,doubleClick:false,editable:false,displaylogo:false,responsive:true}}).then(()=>{{restoreHidden();gd.on("plotly_legendclick",ev=>{{const i=ev.curveNumber,t=gd.data[i],k=keyOf(t,i),hidden=readHidden();if(t.visible==="legendonly"){{Plotly.restyle(gd,{{visible:true}},[i]);hidden.delete(k);}}else{{Plotly.restyle(gd,{{visible:"legendonly"}},[i]);hidden.add(k);}}writeHidden(hidden);return false;}});}});</script></body></html>'''
-    st.components.v1.html(html, height=500, scrolling=False)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 
 source = source.replace(render_call, '_render_chart_with_state(builder(date_range), desc_index, date_range); show_parameter_description(desc_index)')
 source = source.replace("</style>", ".mini-description { height: 72px; min-height: 72px; max-height: 72px; box-sizing: border-box; overflow: hidden; }\n.source-text { height: 34px; min-height: 34px; max-height: 34px; box-sizing: border-box; overflow: hidden; }\n</style>", 1)
