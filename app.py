@@ -6,31 +6,23 @@ import streamlit as st
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Fix provenance before executing app_base.py. The dashboard must never label
-# a third-party proxy as an official Eastmoney source.
+# app_base.py is executed after these provenance-safe compatibility rewrites.
+# The real news endpoint lives in data.py; do not keep any third-party proxy URL here.
 source = source.replace(
-    'EASTMONEY_FOCUS_API = (\n    "http://api.xcvts.cn/api/hotlist/eastmoney"\n)',
-    'EASTMONEY_FOCUS_API = (\n    "https://np-weblist.eastmoney.com/comm/web/getFastNewsList"\n)',
+    "get_sina_news",
+    "get_eastmoney_news",
 )
 source = source.replace(
-    'params = {\n        "type": "102",\n    }',
-    'params = {\n        "client": "web",\n        "biz": "web_724",\n        "fastColumn": "102",\n        "sortEnd": "",\n        "pageSize": str(page_size),\n        "req_trace": str(int(time.time() * 1000)),\n    }',
+    "东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新",
+    "东方财富 7×24 全球直播 · 全量快讯 · 每60秒自动刷新",
 )
 source = source.replace(
-    '"rich_text",\n            "RichText",',
-    '"rich_text",\n            "RichText",\n            "summary",\n            "Summary",\n            "digest",\n            "Digest",',
+    "东方财富红字焦点快讯",
+    "东方财富 7×24 全球直播",
 )
 source = source.replace(
-    '东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新',
-    '东方财富 7×24 全球直播 · 全量快讯 · 每60秒自动刷新',
-)
-source = source.replace(
-    '东方财富红字焦点快讯',
-    '东方财富 7×24 全球直播',
-)
-source = source.replace(
-    'Eastmoney 7×24 Focus News',
-    'Eastmoney 7×24 Global Live News',
+    "Eastmoney 7×24 Focus News",
+    "Eastmoney 7×24 Global Live News",
 )
 
 # Plotly legend state is stored by chart + parameter, so hiding a parameter
@@ -59,7 +51,7 @@ def _render_chart_with_state(fig, desc_index):
         legend3=dict(
             orientation="h", yanchor="bottom", y=1.035,
             xanchor="left", x=0.02, xref="paper",
-            font=dict(size=10), bgcolor="rgba(255,255,255,0),", traceorder="normal",
+            font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal",
         ),
     )
     fig.layout.legend3.bgcolor = "rgba(255,255,255,0)"
@@ -199,13 +191,23 @@ source = source.replace("IORB / ON RRP / EFFR / SOFR", "IORB / ON RRP / EFFR / S
 source = source.replace("IORB、ON RRP Rate、EFFR、SOFR", "IORB、ON RRP Rate、EFFR、SOFR 与 SOFR−IORB 利差")
 source = source.replace("SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。", "SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。SOFR−IORB：SOFR 与 IORB 的利差，单位 bp，用于观察短期融资压力；为 Dashboard 派生指标，不是 FRED 官方独立序列。", 1)
 source = source.replace("Net Liquidity Proxy：Reserve Balances − TGA − ON RRP，用于观察美国金融市场流动性方向的分析指标，不是美联储官方命名指标。", "Net Liquidity Proxy：Reserve Balances − TGA − ON RRP。该值由 Dashboard 根据三个 FRED 原始序列计算，不是 FRED 官方独立序列。")
-source = source.replace("东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新", "东方财富 7×24 全球直播 · 全量快讯 · 每60秒自动刷新")
-source = source.replace("东方财富红字焦点快讯", "东方财富 7×24 全球直播")
-source = source.replace("Eastmoney 7×24 Focus News", "Eastmoney 7×24 Global Live News")
 
-# Replace generic Source: labels for derived series with explicit provenance.
+# Make provenance explicit: raw series use Source links; derived traces use Inputs + Formula.
+source = source.replace(
+    '[("IORB (IORB)", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP Rate (RRPONTSYAWARD)", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR (EFFR)", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR (SOFR)", "https://fred.stlouisfed.org/series/SOFR")]',
+    '[("IORB (IORB)", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP Rate (RRPONTSYAWARD)", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR (EFFR)", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR (SOFR)", "https://fred.stlouisfed.org/series/SOFR"), ("Inputs: SOFR + IORB → Formula: (SOFR − IORB) × 100 bp", "")]',
+)
+source = source.replace(
+    '[("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"), ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"), ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"), ("10Y−3M Spread (T10Y3M)", "https://fred.stlouisfed.org/series/T10Y3M")]',
+    '[("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"), ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"), ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"), ("10Y−3M Spread (T10Y3M)", "https://fred.stlouisfed.org/series/T10Y3M"), ("Derived display: T10Y2Y/T10Y3M × 100 = bp", "")]',
+)
+source = source.replace(
+    '[("Reserve Balances (WRESBAL)", "https://fred.stlouisfed.org/series/WRESBAL"), ("TGA (WTREGEN)", "https://fred.stlouisfed.org/series/WTREGEN"), ("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD")]',
+    '[("Reserve Balances (WRESBAL)", "https://fred.stlouisfed.org/series/WRESBAL"), ("TGA (WTREGEN)", "https://fred.stlouisfed.org/series/WTREGEN"), ("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD"), ("Inputs: WRESBAL + WTREGEN + RRPONTSYD → Formula: WRESBAL − WTREGEN − RRPONTSYD", "")]',
+)
 source = source.replace(
     'def add_sources(sources):\n    links = [f\'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">{html.escape(text)}</a>\' for text, url in sources]\n    st.markdown(\'<div class="source-text">Source: \' + \'<span class="source-sep">|</span>\'.join(links) + \'</div>\', unsafe_allow_html=True)',
     'def add_sources(sources):\n    parts = []\n    for text, url in sources:\n        if url:\n            parts.append(f\'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">{html.escape(text)}</a>\')\n        else:\n            parts.append(html.escape(text))\n    st.markdown(\'<div class="source-text">Source: \' + \'<span class="source-sep">|</span>\'.join(parts) + \'</div>\', unsafe_allow_html=True)',
 )
+
 exec(compile(source, str(base_path), "exec"), globals(), globals())
