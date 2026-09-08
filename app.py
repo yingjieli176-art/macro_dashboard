@@ -10,7 +10,7 @@ source = source.replace("东方财富「红字焦点快讯」 · 平台已筛选
 source = source.replace("东方财富红字焦点快讯", "东方财富 7×24 全球直播")
 source = source.replace("Eastmoney 7×24 Focus News", "Eastmoney 7×24 Global Live News")
 source = source.replace("max-width: 1700px;", "max-width: 1900px;")
-source = source.replace('cols = st.columns(2, gap="large")', 'cols = st.columns(1, gap="large")')
+source = source.replace('cols = st.columns(2, gap="large")', 'cols = st.columns(2, gap="large")')
 source = source.replace('compact_mode = True', 'compact_mode = False', 1)
 source = source.replace('st.toggle("缩小图表 / 快速浏览", value=True', 'st.toggle("缩小图表 / 快速浏览", value=False')
 source = source.replace("def build_fig1(date_range):", "def _base_build_fig1(date_range):", 1)
