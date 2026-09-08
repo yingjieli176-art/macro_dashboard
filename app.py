@@ -3,9 +3,7 @@ from pathlib import Path
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Use a native popover for parameter details. It is frontend-driven, so opening
-# it does not introduce persistent session-state that can interfere with the
-# chart range/month controls. A range change simply reruns the app normally.
+# Parameter UI: use a lightweight popover with no persistent global state.
 old_parameter_fn = '''def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)'''
 new_parameter_fn = '''def show_parameter_description(index):
     with st.popover("参数", use_container_width=True):
@@ -14,8 +12,60 @@ if old_parameter_fn not in source:
     raise RuntimeError("parameter function not found")
 source = source.replace(old_parameter_fn, new_parameter_fn, 1)
 
-# Chart 1: retain the existing four official series and add the derived
-# SOFR−IORB spread on the secondary axis.
+# Keep each chart's controls inside its own Streamlit fragment. Changing a
+# month/range then reruns only that chart instead of rebuilding the whole page.
+fragment_helper = '''
+def _render_chart_fragment(column, title, description, key, builder, sources, desc_index, divider=False):
+    with column:
+        st.markdown(title, unsafe_allow_html=True)
+        st.markdown(description, unsafe_allow_html=True)
+        date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed")
+        st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True)
+        st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG)
+        show_parameter_description(desc_index)
+        add_sources(sources)
+        if divider:
+            st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+if hasattr(st, "fragment"):
+    _render_chart_fragment = st.fragment(_render_chart_fragment)
+'''
+marker = '\ncompact_mode = True\n'
+if marker not in source:
+    raise RuntimeError("compact mode marker not found")
+source = source.replace(marker, fragment_helper + marker, 1)
+
+# Replace both old render loops with calls to the isolated fragment helper.
+old_compact_loop = '''        for column, title, description, key, builder, sources, desc_index in configs:
+            with column:
+                st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
+'''
+new_compact_loop = '''        for column, title, description, key, builder, sources, desc_index in configs:
+            _render_chart_fragment(column, title, description, key, builder, sources, desc_index)
+'''
+if old_compact_loop not in source:
+    raise RuntimeError("compact render loop not found")
+source = source.replace(old_compact_loop, new_compact_loop, 1)
+
+old_normal_loop = '''        for title, description, key, builder, sources, desc_index, divider in configs:
+            st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
+            if divider: st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+'''
+new_normal_loop = '''        for title, description, key, builder, sources, desc_index, divider in configs:
+            _render_chart_fragment(None, title, description, key, builder, sources, desc_index, divider)
+'''
+if old_normal_loop not in source:
+    raise RuntimeError("normal render loop not found")
+source = source.replace(old_normal_loop, new_normal_loop, 1)
+
+# In normal mode the helper receives no column, so make that case use the
+# current root container naturally.
+source = source.replace('''    with column:
+        st.markdown(title, unsafe_allow_html=True)''', '''    container = column if column is not None else st
+    with container:
+        st.markdown(title, unsafe_allow_html=True)''', 1)
+
+# Chart 1: retain the four official series and add the derived SOFR−IORB spread.
 start = source.index("def build_fig1(date_range):")
 end = source.index("\ndef build_fig2(date_range):", start)
 block = source[start:end]
