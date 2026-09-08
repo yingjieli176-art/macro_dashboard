@@ -1,6 +1,6 @@
 name: repair chart layout
 
-on: push
+"on": push
 
 permissions:
   contents: write
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch chart layout
+      - name: Patch
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -70,11 +70,12 @@ jobs:
           p.write_text(s, encoding='utf-8')
           PY
           python -m py_compile app.py
-      - name: Commit and remove temporary workflow
+      - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app.py
+          rm -f repair_trigger.txt
+          git add app.py repair_trigger.txt
           git rm .github/workflows/repair_charts.yml
           git commit -m "Fix chart row alignment and axis-side legends"
           git push
