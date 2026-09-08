@@ -6,45 +6,55 @@ import streamlit as st
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Render charts on a fixed canvas. Legend layout is intentionally two-row:
-# row 1: left-axis parameters at the left + right-axis parameters at the far right
-# row 2: the remaining left-axis parameter(s) underneath, without shrinking the plot.
+# Fixed chart canvas. Native Plotly legends are split into three independent
+# containers so the parameter labels can be arranged as:
+#   left-axis items ---------------------------- right-axis items
+#   remaining left-axis item(s)
 def _render_chart_with_state(fig, desc_index):
     chart_id = f"macro-chart-{desc_index}"
     for trace in fig.data:
         if getattr(trace, "name", None):
             trace.uid = f"{chart_id}:{trace.name}"
 
+    # Re-apply AFTER the builder/apply_chart_style() call.  This is deliberate:
+    # apply_chart_style() defines the normal Plotly legend, so doing this only in
+    # the builder gets overwritten before the figure reaches this renderer.
     fig.update_layout(
         width=None,
         height=390,
-        margin=dict(l=58, r=58, t=112, b=42),
+        margin=dict(l=58, r=58, t=118, b=42),
         legend=dict(
             orientation="h",
-            yanchor="bottom", y=1.12,
-            xanchor="left", x=0.02,
-            xref="paper",
+            x=0.0, y=1.17,
+            xanchor="left", yanchor="bottom",
+            xref="paper", yref="paper",
             font=dict(size=10),
             bgcolor="rgba(255,255,255,0)",
             traceorder="normal",
+            itemclick="toggle",
+            itemdoubleclick="toggleothers",
         ),
         legend2=dict(
             orientation="h",
-            yanchor="bottom", y=1.12,
-            xanchor="right", x=0.98,
-            xref="paper",
+            x=1.0, y=1.17,
+            xanchor="right", yanchor="bottom",
+            xref="paper", yref="paper",
             font=dict(size=10),
             bgcolor="rgba(255,255,255,0)",
             traceorder="normal",
+            itemclick="toggle",
+            itemdoubleclick="toggleothers",
         ),
         legend3=dict(
             orientation="h",
-            yanchor="bottom", y=1.035,
-            xanchor="left", x=0.02,
-            xref="paper",
+            x=0.0, y=1.055,
+            xanchor="left", yanchor="bottom",
+            xref="paper", yref="paper",
             font=dict(size=10),
             bgcolor="rgba(255,255,255,0)",
             traceorder="normal",
+            itemclick="toggle",
+            itemdoubleclick="toggleothers",
         ),
     )
 
@@ -79,7 +89,7 @@ Plotly.newPlot(gd,fig.data||[],fig.layout||{{}},{{displayModeBar:false,scrollZoo
 }});
 </script></body></html>
 """
-    st.iframe(html, height=462)
+    st.iframe(html, height=468)
 
 render_call = 'st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index)'
 render_replacement = '_render_chart_with_state(builder(date_range), desc_index); show_parameter_description(desc_index)'
@@ -101,11 +111,6 @@ def _apply_split_legends(fig, right_names=(), second_row_names=()):
         fig.update_traces(selector=dict(name=name), legend="legend2")
     for name in second_row_names:
         fig.update_traces(selector=dict(name=name), legend="legend3")
-    fig.update_layout(
-        legend=dict(orientation="h", yanchor="bottom", y=1.12, xanchor="left", x=0.02, xref="paper", font=dict(size=10), traceorder="normal"),
-        legend2=dict(orientation="h", yanchor="bottom", y=1.12, xanchor="right", x=0.98, xref="paper", font=dict(size=10), traceorder="normal"),
-        legend3=dict(orientation="h", yanchor="bottom", y=1.035, xanchor="left", x=0.02, xref="paper", font=dict(size=10), traceorder="normal"),
-    )
 
 
 def build_fig1(date_range):
