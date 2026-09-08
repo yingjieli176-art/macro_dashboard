@@ -15,8 +15,6 @@ source = source.replace("Eastmoney 7×24 Focus News", "Eastmoney 7×24 Global Li
 source = source.replace("max-width: 1700px;", "max-width: 1850px;")
 source = source.replace('cols = st.columns(2, gap="large")', 'cols = st.columns(2, gap="small")')
 
-# app_base.py executes its UI while being exec()'d, so chart overrides must
-# exist BEFORE execution reaches render_core_charts().
 source = source.replace("def build_fig1(date_range):", "def _base_build_fig1(date_range):", 1)
 source = source.replace("def build_fig2(date_range):", "def _base_build_fig2(date_range):", 1)
 source = source.replace("def build_fig3(date_range):", "def _base_build_fig3(date_range):", 1)
@@ -25,15 +23,15 @@ source = source.replace("def build_fig4(date_range):", "def _base_build_fig4(dat
 wrapper_code = r'''
 
 def _xaxis_config(date_range):
-    # Finer date ticks as the selected window gets shorter.
-    # Plotly date dticks: M=month, D=day.
+    # Keep date labels readable at every range. Shorter windows get finer
+    # ticks, but labels are shortened/angled so adjacent dates never collide.
     date_cfg = {
         "5Y": {"dtick": "M6", "tickformat": "%Y-%m"},
-        "1Y": {"dtick": "M2", "tickformat": "%Y-%m"},
-        "6M": {"dtick": "M1", "tickformat": "%Y-%m"},
-        "3M": {"dtick": "D14", "tickformat": "%m-%d"},
-        "1M": {"dtick": "D7", "tickformat": "%m-%d"},
-    }.get(date_range, {"dtick": "M1", "tickformat": "%Y-%m"})
+        "1Y": {"dtick": "M2", "tickformat": "%y-%m"},
+        "6M": {"dtick": "M1", "tickformat": "%m-%Y"},
+        "3M": {"dtick": "D14", "tickformat": "%m/%d"},
+        "1M": {"dtick": "D7", "tickformat": "%m/%d"},
+    }.get(date_range, {"dtick": "M1", "tickformat": "%m/%d"})
     return dict(
         domain=[0.035, 0.965],
         fixedrange=True,
@@ -45,9 +43,11 @@ def _xaxis_config(date_range):
         ticks="outside",
         ticklen=4,
         tickwidth=1,
-        tickfont=dict(size=11),
-        tickangle=0,
-        ticklabelmode="period",
+        tickfont=dict(size=10),
+        tickangle=-28,
+        ticklabelmode="instant",
+        ticklabelstandoff=5,
+        ticklabeloverflow="hide past div",
         hoverformat="%Y-%m-%d",
         **date_cfg,
     )
@@ -57,7 +57,7 @@ def _finalize_chart(fig, right_names=(), right_title=None, left_title=None, date
     fig = apply_chart_style(fig, 400)
     fig.update_layout(
         height=400,
-        margin=dict(l=58, r=58, t=150, b=52, pad=0, autoexpand=False),
+        margin=dict(l=58, r=58, t=150, b=62, pad=0, autoexpand=False),
         autosize=True,
         xaxis=_xaxis_config(date_range),
         legend=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="left", x=0,
@@ -136,8 +136,6 @@ render_call = 'st.plotly_chart(builder(date_range), use_container_width=True, co
 if render_call not in source:
     raise RuntimeError("chart render call not found")
 
-# Keep legend visibility across reruns/browser refreshes while rendering the
-# chart at the full width of its Streamlit column.
 def _render_chart_with_state(fig, desc_index, date_range):
     chart_id = f"macro-chart-{desc_index}"
     for trace in fig.data:
@@ -145,7 +143,7 @@ def _render_chart_with_state(fig, desc_index, date_range):
             trace.uid = f"{chart_id}:{trace.name}"
     fig.update_layout(
         template="plotly_white", width=None, height=400, autosize=True,
-        margin=dict(l=58, r=58, t=150, b=52, pad=0, autoexpand=False),
+        margin=dict(l=58, r=58, t=150, b=62, pad=0, autoexpand=False),
         legend=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="left", x=0,
                     xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)"),
         legend2=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="right", x=1,
