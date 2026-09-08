@@ -6,6 +6,33 @@ import streamlit as st
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
+# Fix provenance before executing app_base.py. The dashboard must never label
+# a third-party proxy as an official Eastmoney source.
+source = source.replace(
+    'EASTMONEY_FOCUS_API = (\n    "http://api.xcvts.cn/api/hotlist/eastmoney"\n)',
+    'EASTMONEY_FOCUS_API = (\n    "https://np-weblist.eastmoney.com/comm/web/getFastNewsList"\n)',
+)
+source = source.replace(
+    'params = {\n        "type": "102",\n    }',
+    'params = {\n        "client": "web",\n        "biz": "web_724",\n        "fastColumn": "102",\n        "sortEnd": "",\n        "pageSize": str(page_size),\n        "req_trace": str(int(time.time() * 1000)),\n    }',
+)
+source = source.replace(
+    '"rich_text",\n            "RichText",',
+    '"rich_text",\n            "RichText",\n            "summary",\n            "Summary",\n            "digest",\n            "Digest",',
+)
+source = source.replace(
+    '东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新',
+    '东方财富 7×24 全球直播 · 全量快讯 · 每60秒自动刷新',
+)
+source = source.replace(
+    '东方财富红字焦点快讯',
+    '东方财富 7×24 全球直播',
+)
+source = source.replace(
+    'Eastmoney 7×24 Focus News',
+    'Eastmoney 7×24 Global Live News',
+)
+
 # Plotly legend state is stored by chart + parameter, so hiding a parameter
 # remains effective when switching 5Y / 1Y / 6M / 3M / 1M.
 def _render_chart_with_state(fig, desc_index):
@@ -14,7 +41,6 @@ def _render_chart_with_state(fig, desc_index):
         if getattr(trace, "name", None):
             trace.uid = f"{chart_id}:{trace.name}"
 
-    # Restore the normal Plotly colors/template.  Do not alter the plot width.
     fig.update_layout(
         template="plotly_white",
         width=None,
@@ -36,7 +62,6 @@ def _render_chart_with_state(fig, desc_index):
             font=dict(size=10), bgcolor="rgba(255,255,255,0),", traceorder="normal",
         ),
     )
-    # Correct the typo-safe transparent background for legend3.
     fig.layout.legend3.bgcolor = "rgba(255,255,255,0)"
 
     payload = json.dumps(pio.to_json(fig, validate=False, pretty=False), ensure_ascii=False)
@@ -78,8 +103,6 @@ if render_call not in source:
     raise RuntimeError("chart render call not found")
 source = source.replace(render_call, render_replacement)
 
-# Make the compact 2x2 grid vertically deterministic: chart descriptions and
-# source rows occupy the same minimum height in every card.
 source = source.replace(
     "</style>",
     ".mini-description { min-height: 54px; box-sizing: border-box; }\n.source-text { min-height: 34px; box-sizing: border-box; }\n</style>",
@@ -175,7 +198,14 @@ source = source.replace(marker, "\n" + chart_override + marker, 1)
 source = source.replace("IORB / ON RRP / EFFR / SOFR", "IORB / ON RRP / EFFR / SOFR / SOFR−IORB")
 source = source.replace("IORB、ON RRP Rate、EFFR、SOFR", "IORB、ON RRP Rate、EFFR、SOFR 与 SOFR−IORB 利差")
 source = source.replace("SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。", "SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。SOFR−IORB：SOFR 与 IORB 的利差，单位 bp，用于观察短期融资压力；为 Dashboard 派生指标，不是 FRED 官方独立序列。", 1)
+source = source.replace("Net Liquidity Proxy：Reserve Balances − TGA − ON RRP，用于观察美国金融市场流动性方向的分析指标，不是美联储官方命名指标。", "Net Liquidity Proxy：Reserve Balances − TGA − ON RRP。该值由 Dashboard 根据三个 FRED 原始序列计算，不是 FRED 官方独立序列。")
 source = source.replace("东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新", "东方财富 7×24 全球直播 · 全量快讯 · 每60秒自动刷新")
 source = source.replace("东方财富红字焦点快讯", "东方财富 7×24 全球直播")
 source = source.replace("Eastmoney 7×24 Focus News", "Eastmoney 7×24 Global Live News")
+
+# Replace generic Source: labels for derived series with explicit provenance.
+source = source.replace(
+    'def add_sources(sources):\n    links = [f\'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">{html.escape(text)}</a>\' for text, url in sources]\n    st.markdown(\'<div class="source-text">Source: \' + \'<span class="source-sep">|</span>\'.join(links) + \'</div>\', unsafe_allow_html=True)',
+    'def add_sources(sources):\n    parts = []\n    for text, url in sources:\n        if url:\n            parts.append(f\'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">{html.escape(text)}</a>\')\n        else:\n            parts.append(html.escape(text))\n    st.markdown(\'<div class="source-text">Source: \' + \'<span class="source-sep">|</span>\'.join(parts) + \'</div>\', unsafe_allow_html=True)',
+)
 exec(compile(source, str(base_path), "exec"), globals(), globals())
