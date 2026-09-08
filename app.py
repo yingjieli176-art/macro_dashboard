@@ -3,26 +3,16 @@ from pathlib import Path
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Keep parameter details collapsed by default and show only the chart whose
-# parameter button was most recently selected. Streamlit reruns caused by a
-# range/month change therefore preserve the user's current parameter focus.
+# Use a native popover for parameter details. It is frontend-driven, so opening
+# it does not introduce persistent session-state that can interfere with the
+# chart range/month controls. A range change simply reruns the app normally.
 old_parameter_fn = '''def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)'''
-new_parameter_fn = '''def _toggle_parameter(chart_key):
-    current = st.session_state.get("active_parameter")
-    st.session_state["active_parameter"] = None if current == chart_key else chart_key
-
-def show_parameter_description(index, chart_key):
-    st.button("参数", key=f"parameter_button_{chart_key}", on_click=_toggle_parameter, args=(chart_key,), use_container_width=True)
-    if st.session_state.get("active_parameter") == chart_key:
+new_parameter_fn = '''def show_parameter_description(index):
+    with st.popover("参数", use_container_width=True):
         st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)'''
 if old_parameter_fn not in source:
     raise RuntimeError("parameter function not found")
 source = source.replace(old_parameter_fn, new_parameter_fn, 1)
-
-source = source.replace(
-    'show_parameter_description(desc_index); add_sources(sources)',
-    'show_parameter_description(desc_index, key); add_sources(sources)',
-)
 
 # Chart 1: retain the existing four official series and add the derived
 # SOFR−IORB spread on the secondary axis.
