@@ -3,10 +3,10 @@ from pathlib import Path
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
+# Chart 1: keep the four original rates and add the derived SOFR−IORB spread.
 start = source.index("def build_fig1(date_range):")
 end = source.index("\ndef build_fig2(date_range):", start)
 block = source[start:end]
-
 block = block.replace(
     'data = filter_range(data, date_range); fig = go.Figure()\n',
     'data = filter_range(data, date_range);\n    if "SOFR" in data.columns and "IORB" in data.columns:\n        data["SOFR_minus_IORB_bp"] = (data["SOFR"] - data["IORB"]) * 100.0\n    fig = go.Figure()\n',
@@ -22,7 +22,6 @@ block = block.replace(
     'fig.update_layout(yaxis=dict(title="Rate (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True)); fig.update_traces(selector=dict(name="SOFR−IORB"), hovertemplate="SOFR−IORB: %{y:.1f} bp<extra></extra>"); return apply_chart_style(fig, chart_height(285, 470))\n',
     1,
 )
-
 source = source[:start] + block + source[end:]
 source = source.replace("IORB / ON RRP / EFFR / SOFR", "IORB / ON RRP / EFFR / SOFR / SOFR−IORB")
 source = source.replace("IORB、ON RRP Rate、EFFR、SOFR", "IORB、ON RRP Rate、EFFR、SOFR 与 SOFR−IORB 利差")
@@ -31,5 +30,18 @@ source = source.replace(
     "SOFR：担保隔夜融资利率。SOFR−IORB：SOFR 与 IORB 的利差，单位 bp，用于观察短期融资压力；为 Dashboard 派生指标，不是 FRED 官方独立序列。",
     1,
 )
+
+# Parameter panel: each chart owns its own expanded state. Selecting a month
+# only reruns the app; it does not open all other charts' parameter panels.
+old = 'def show_parameter_description(index): st.markdown(f\'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>\', unsafe_allow_html=True)'
+new = '''def show_parameter_description(index):
+    key = f"show_parameter_{index}"
+    if st.button("参数", key=f"parameter_button_{index}", type="secondary"):
+        st.session_state[key] = not st.session_state.get(key, False)
+    if st.session_state.get(key, False):
+        st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)'''
+if old not in source:
+    raise RuntimeError("Parameter function target not found")
+source = source.replace(old, new, 1)
 
 exec(compile(source, str(base_path), "exec"), globals(), globals())
