@@ -23,10 +23,10 @@ def _render_chart_with_state(fig, desc_index):
         height=400,
         autosize=True,
         margin=dict(l=72, r=72, t=150, b=42, pad=0, autoexpand=False),
-        legend=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal", entrywidthmode="pixels", entrywidth=145),
-        legend2=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="right", x=0.98, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal", entrywidthmode="pixels", entrywidth=145),
-        legend3=dict(orientation="h", yanchor="bottom", y=1.105, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal", entrywidthmode="pixels", entrywidth=145),
-        xaxis=dict(domain=[0, 1], fixedrange=True, automargin=False),
+        legend=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="left", x=0, xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
+        legend2=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="right", x=1, xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
+        legend3=dict(orientation="h", yanchor="bottom", y=1.105, xanchor="left", x=0, xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)", traceorder="normal"),
+        xaxis=dict(domain=[0.10, 0.90], fixedrange=True, automargin=False),
     )
     fig.update_yaxes(automargin=False, fixedrange=True)
     payload = json.dumps(pio.to_json(fig, validate=False, pretty=False), ensure_ascii=False)
@@ -37,7 +37,7 @@ render_call = 'st.plotly_chart(builder(date_range), use_container_width=True, co
 if render_call not in source:
     raise RuntimeError("chart render call not found")
 source = source.replace(render_call, '_render_chart_with_state(builder(date_range), desc_index); show_parameter_description(desc_index)')
-source = source.replace("</style>", ".mini-description { min-height: 54px; box-sizing: border-box; }\n.source-text { min-height: 34px; box-sizing: border-box; }\n</style>", 1)
+source = source.replace("</style>", ".mini-description { height: 72px; min-height: 72px; max-height: 72px; box-sizing: border-box; overflow: hidden; }\n.source-text { height: 34px; min-height: 34px; max-height: 34px; box-sizing: border-box; overflow: hidden; }\n</style>", 1)
 
 # Reuse the base data builders, then make the axis/legend contract explicit.
 # This avoids duplicating the data-fetching logic in app.py.
@@ -53,10 +53,10 @@ def _finalize_chart(fig, right_names=(), second_row_names=(), right_title=None, 
         height=400,
         margin=dict(l=72, r=72, t=150, b=42, pad=0, autoexpand=False),
         autosize=True,
-        xaxis=dict(domain=[0, 1], fixedrange=True, automargin=False, showgrid=False, showline=True, linecolor="#d1d5db", hoverformat="%Y-%m-%d"),
-        legend=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", entrywidthmode="pixels", entrywidth=145),
-        legend2=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="right", x=0.98, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", entrywidthmode="pixels", entrywidth=145),
-        legend3=dict(orientation="h", yanchor="bottom", y=1.105, xanchor="left", x=0.02, xref="paper", font=dict(size=10), bgcolor="rgba(255,255,255,0)", entrywidthmode="pixels", entrywidth=145),
+        xaxis=dict(domain=[0.10, 0.90], fixedrange=True, automargin=False, showgrid=False, showline=True, linecolor="#d1d5db", hoverformat="%Y-%m-%d"),
+        legend=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="left", x=0, xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)"),
+        legend2=dict(orientation="h", yanchor="bottom", y=1.20, xanchor="right", x=1, xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)"),
+        legend3=dict(orientation="h", yanchor="bottom", y=1.105, xanchor="left", x=0, xref="container", font=dict(size=10), bgcolor="rgba(255,255,255,0)"),
     )
     fig.update_yaxes(automargin=False, fixedrange=True)
     if left_title is not None:
@@ -82,19 +82,19 @@ def build_fig1(date_range):
     data["SOFR_minus_IORB_bp"] = (data["SOFR"] - data["IORB"]) * 100.0
     add_line(fig, data, "SOFR_minus_IORB_bp", "SOFR−IORB", 2.2, "dot", "y2", " bp")
     fig.update_traces(selector=dict(name="SOFR−IORB"), hovertemplate="SOFR−IORB: %{y:.1f} bp<extra></extra>")
-    return _finalize_chart(fig, second_row_names=("ON RRP",), right_title="Spread (bp)", left_title="Rate (%)")
+    return _finalize_chart(fig, right_title="Spread (bp)", left_title="Rate (%)")
 
 def build_fig2(date_range):
     fig = _orig_build_fig2(date_range)
-    return _finalize_chart(fig, second_row_names=("10Y Real",), left_title="Yield (%)")
+    return _finalize_chart(fig, left_title="Yield (%)")
 
 def build_fig3(date_range):
     fig = _orig_build_fig3(date_range)
-    return _finalize_chart(fig, second_row_names=("2Y",), right_names=("10Y−2Y", "10Y−3M"), right_title="Spread (bp)", left_title="Yield (%)")
+    return _finalize_chart(fig, right_names=("10Y−2Y", "10Y−3M"), right_title="Spread (bp)", left_title="Yield (%)")
 
 def build_fig4(date_range):
     fig = _orig_build_fig4(date_range)
-    return _finalize_chart(fig, second_row_names=("Reserve Balances",), left_title="$T")
+    return _finalize_chart(fig, left_title="$T")
 '''
 
 marker = "\nrender_core_charts"
