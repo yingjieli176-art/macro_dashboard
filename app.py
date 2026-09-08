@@ -6,16 +6,38 @@ import streamlit as st
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Render each Plotly chart in a full-width iframe. Legends are placed in a
-# dedicated top band so they never consume/squeeze the plot width.
+# Render each chart on a fixed, full-width canvas. The Plotly legend occupies
+# the top margin of the figure itself, never the left/right plotting margins.
 def _render_chart_with_state(fig, desc_index):
     chart_id = f"macro-chart-{desc_index}"
     for trace in fig.data:
         if getattr(trace, "name", None):
             trace.uid = f"{chart_id}:{trace.name}"
 
-    # Make all four charts use the same visual canvas size.
-    fig.update_layout(height=410, margin=dict(l=58, r=58, t=62, b=42))
+    # One identical geometry for every chart. Extra top margin is reserved
+    # exclusively for the parameter legend; left/right plot width is untouched.
+    fig.update_layout(
+        width=None,
+        height=390,
+        margin=dict(l=58, r=58, t=86, b=42),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom", y=1.035,
+            xanchor="left", x=0.0,
+            xref="paper",
+            font=dict(size=10),
+            bgcolor="rgba(255,255,255,0)",
+        ),
+        legend2=dict(
+            orientation="h",
+            yanchor="bottom", y=1.035,
+            xanchor="right", x=1.0,
+            xref="paper",
+            font=dict(size=10),
+            bgcolor="rgba(255,255,255,0)",
+        ),
+    )
+
     payload = json.dumps(pio.to_json(fig, validate=False, pretty=False), ensure_ascii=False)
     html = f"""
 <!doctype html><html><head>
@@ -47,8 +69,8 @@ Plotly.newPlot(gd,fig.data||[],fig.layout||{{}},{{displayModeBar:false,scrollZoo
 }});
 </script></body></html>
 """
-    # 450px keeps the chart area consistent while the legend sits in its top band.
-    st.iframe(html, height=450)
+    # 440px iframe = 390px plot + fixed top/bottom room; all four are identical.
+    st.iframe(html, height=440)
 
 render_call = 'st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index)'
 render_replacement = '_render_chart_with_state(builder(date_range), desc_index); show_parameter_description(desc_index)'
@@ -71,19 +93,11 @@ def _clean_chart_frame(frame, column):
 def _apply_split_legends(fig, right_names=()):
     for name in right_names:
         fig.update_traces(selector=dict(name=name), legend="legend2")
-    # Two compact legend groups live in the top band of the full chart.
-    # No entrywidth/fraction is used, so legend items never force the plot narrower.
+    # Final geometry is applied by _render_chart_with_state so every chart has
+    # the same top legend band and the same plotting width.
     fig.update_layout(
-        legend=dict(
-            orientation="h", yanchor="bottom", y=1.03,
-            xanchor="left", x=0.0, xref="container",
-            font=dict(size=10), bgcolor="rgba(255,255,255,0)",
-        ),
-        legend2=dict(
-            orientation="h", yanchor="bottom", y=1.03,
-            xanchor="right", x=1.0, xref="container",
-            font=dict(size=10), bgcolor="rgba(255,255,255,0)",
-        ),
+        legend=dict(orientation="h", yanchor="bottom", y=1.035, xanchor="left", x=0.0, xref="paper", font=dict(size=10)),
+        legend2=dict(orientation="h", yanchor="bottom", y=1.035, xanchor="right", x=1.0, xref="paper", font=dict(size=10)),
     )
 
 
