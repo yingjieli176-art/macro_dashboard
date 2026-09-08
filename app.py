@@ -6,7 +6,9 @@ import streamlit as st
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Keep Plotly legend visibility persistent by chart + parameter.
+# Keep Plotly legend visibility persistent by chart + parameter. The iframe is
+# same-origin in Streamlit, so browser localStorage can retain the state across
+# Streamlit reruns and time-range changes.
 def _render_chart_with_state(fig, desc_index):
     chart_id = f"macro-chart-{desc_index}"
     for trace in fig.data:
@@ -49,6 +51,9 @@ if render_call not in source:
     raise RuntimeError("chart render call not found")
 source = source.replace(render_call, render_replacement)
 
+# -------------------------------------------------------------------------
+# Data audit / correction
+# -------------------------------------------------------------------------
 chart_override = r'''
 
 def _clean_chart_frame(frame, column):
@@ -57,47 +62,72 @@ def _clean_chart_frame(frame, column):
     frame[column] = pd.to_numeric(frame[column], errors="coerce")
     return frame.dropna(subset=["observation_date", column]).sort_values("observation_date")[["observation_date", column]]
 
+
 def build_fig1(date_range):
-    frames = [_clean_chart_frame(get_iorb(), "IORB"), _clean_chart_frame(get_rrp_rate(), "RRPONTSYAWARD"), _clean_chart_frame(get_effr(), "EFFR"), _clean_chart_frame(get_sofr(), "SOFR")]
+    frames = [
+        _clean_chart_frame(get_iorb(), "IORB"),
+        _clean_chart_frame(get_rrp_rate(), "RRPONTSYAWARD"),
+        _clean_chart_frame(get_effr(), "EFFR"),
+        _clean_chart_frame(get_sofr(), "SOFR"),
+    ]
     data = frames[0]
-    for frame in frames[1:]: data = data.merge(frame, on="observation_date", how="outer")
+    for frame in frames[1:]:
+        data = data.merge(frame, on="observation_date", how="outer")
     data = data.sort_values("observation_date")
-    bad_iorb = (data["observation_date"] >= pd.Timestamp("2021-07-29")) & (data["IORB"] <= 0)
+    iorb_cutoff = pd.Timestamp("2021-07-29")
+    bad_iorb = (data["observation_date"] >= iorb_cutoff) & (data["IORB"] <= 0)
     data.loc[bad_iorb, "IORB"] = pd.NA
     data = filter_range(data, date_range)
-    data["SOFR_minus_IORB_bp"] = (data["SOFR"] - data["IORB"]) * 100.0
+    if "SOFR" in data.columns and "IORB" in data.columns:
+        data["SOFR_minus_IORB_bp"] = (data["SOFR"] - data["IORB"]) * 100.0
     fig = go.Figure()
-    for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
+    for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]:
+        add_line(fig, data, column, name, width)
     add_line(fig, data, "SOFR_minus_IORB_bp", "SOFR−IORB", 2.2, "dot", "y2", " bp")
-    fig.update_layout(yaxis=dict(title="Rate (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, fixedrange=True, automargin=True))
+    fig.update_layout(
+        yaxis=dict(title="Rate (%)", fixedrange=True),
+        yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="x", position=1.0,
+                    showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True),
+    )
     fig.update_traces(selector=dict(name="SOFR−IORB"), hovertemplate="SOFR−IORB: %{y:.1f} bp<extra></extra>")
     return apply_chart_style(fig, chart_height(285, 470))
+
 
 def build_fig2(date_range):
     frames = [_clean_chart_frame(get_dgs10(), "DGS10"), _clean_chart_frame(get_dfii10(), "DFII10"), _clean_chart_frame(get_fred_series("T10YIE"), "T10YIE")]
     data = frames[0]
-    for frame in frames[1:]: data = data.merge(frame, on="observation_date", how="outer")
+    for frame in frames[1:]:
+        data = data.merge(frame, on="observation_date", how="outer")
     data = filter_range(data.sort_values("observation_date"), date_range)
     fig = go.Figure()
-    for column, name, width, dash in [("DGS10", "10Y Nominal", 2.8, None), ("DFII10", "10Y Real", 2.6, None), ("T10YIE", "10Y Breakeven", 2.5, "dot")]: add_line(fig, data, column, name, width, dash)
+    for column, name, width, dash in [("DGS10", "10Y Nominal", 2.8, None), ("DFII10", "10Y Real", 2.6, None), ("T10YIE", "10Y Breakeven", 2.5, "dot")]:
+        add_line(fig, data, column, name, width, dash)
     fig.update_layout(yaxis_title="Yield (%)")
     return apply_chart_style(fig, chart_height(285, 470))
+
 
 def build_fig3(date_range):
     frames = [_clean_chart_frame(get_dgs3mo(), "DGS3MO"), _clean_chart_frame(get_dgs2(), "DGS2"), _clean_chart_frame(get_dgs10(), "DGS10"), _clean_chart_frame(get_fred_series("T10Y2Y"), "T10Y2Y"), _clean_chart_frame(get_fred_series("T10Y3M"), "T10Y3M")]
     data = frames[0]
-    for frame in frames[1:]: data = data.merge(frame, on="observation_date", how="outer")
+    for frame in frames[1:]:
+        data = data.merge(frame, on="observation_date", how="outer")
     data = filter_range(data.sort_values("observation_date"), date_range)
     data["T10Y2Y_bp"] = data["T10Y2Y"] * 100.0
     data["T10Y3M_bp"] = data["T10Y3M"] * 100.0
     fig = go.Figure()
-    for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8)]: add_line(fig, data, column, name, width)
+    for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8)]:
+        add_line(fig, data, column, name, width)
     add_line(fig, data, "T10Y2Y_bp", "10Y−2Y", 2.2, "dot", "y2", " bp")
     add_line(fig, data, "T10Y3M_bp", "10Y−3M", 2.2, "dash", "y2", " bp")
     fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>")
     fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>")
-    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, fixedrange=True, automargin=True))
+    fig.update_layout(
+        yaxis=dict(title="Yield (%)", fixedrange=True),
+        yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="x", position=1.0,
+                    showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True),
+    )
     return apply_chart_style(fig, chart_height(285, 500))
+
 
 def build_fig4(date_range):
     reserve = _clean_chart_frame(get_wresbal(), "WRESBAL")
@@ -106,17 +136,19 @@ def build_fig4(date_range):
     reserve["WRESBAL"] = reserve["WRESBAL"] / 1_000_000.0
     tga["WTREGEN"] = tga["WTREGEN"] / 1_000_000.0
     rrp["RRPONTSYD"] = rrp["RRPONTSYD"] / 1_000.0
-    data = reserve.merge(tga, on="observation_date", how="outer").merge(rrp, on="observation_date", how="outer").sort_values("observation_date")
+    data = reserve.merge(tga, on="observation_date", how="outer").merge(rrp, on="observation_date", how="outer")
+    data = data.sort_values("observation_date")
     data[["WRESBAL", "WTREGEN"]] = data[["WRESBAL", "WTREGEN"]].ffill()
     data["NetLiquidity"] = data["WRESBAL"] - data["WTREGEN"] - data["RRPONTSYD"]
     data = filter_range(data, date_range)
     fig = go.Figure()
-    for column, name, width, dash in [("NetLiquidity", "Net Liquidity Proxy", 3.0, None), ("WRESBAL", "Reserve Balances", 2.3, None), ("WTREGEN", "TGA", 2.1, "dash"), ("RRPONTSYD", "ON RRP", 2.1, "dot")]: add_line(fig, data, column, name, width, dash, unit=" T")
+    for column, name, width, dash in [("NetLiquidity", "Net Liquidity Proxy", 3.0, None), ("WRESBAL", "Reserve Balances", 2.3, None), ("WTREGEN", "TGA", 2.1, "dash"), ("RRPONTSYD", "ON RRP", 2.1, "dot")]:
+        add_line(fig, data, column, name, width, dash, unit=" T")
     fig.update_layout(yaxis_title="$T")
     return apply_chart_style(fig, chart_height(285, 470))
 '''
 
-# Important: match only the top-level invocation, not the function definition.
+# Important: only replace the standalone top-level call, not the function definition.
 marker = "\nrender_core_charts()"
 if marker not in source:
     raise RuntimeError("render_core_charts call not found")
@@ -124,6 +156,11 @@ source = source.replace(marker, "\n" + chart_override + marker, 1)
 
 source = source.replace("IORB / ON RRP / EFFR / SOFR", "IORB / ON RRP / EFFR / SOFR / SOFR−IORB")
 source = source.replace("IORB、ON RRP Rate、EFFR、SOFR", "IORB、ON RRP Rate、EFFR、SOFR 与 SOFR−IORB 利差")
+source = source.replace(
+    "SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。",
+    "SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。SOFR−IORB：SOFR 与 IORB 的利差，单位 bp，用于观察短期融资压力；为 Dashboard 派生指标，不是 FRED 官方独立序列。",
+    1,
+)
 source = source.replace("东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新", "东方财富 7×24 全球直播 · 全量快讯 · 每60秒自动刷新")
 source = source.replace("东方财富红字焦点快讯", "东方财富 7×24 全球直播")
 source = source.replace("Eastmoney 7×24 Focus News", "Eastmoney 7×24 Global Live News")
