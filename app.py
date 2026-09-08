@@ -6,23 +6,22 @@ import streamlit as st
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Render each chart on a fixed, full-width canvas. Legends are deliberately split:
-# left-axis parameters stay on the left, right-axis parameters stay on the far right.
+# Render charts on a fixed canvas. Legend layout is intentionally two-row:
+# row 1: left-axis parameters at the left + right-axis parameters at the far right
+# row 2: the remaining left-axis parameter(s) underneath, without shrinking the plot.
 def _render_chart_with_state(fig, desc_index):
     chart_id = f"macro-chart-{desc_index}"
     for trace in fig.data:
         if getattr(trace, "name", None):
             trace.uid = f"{chart_id}:{trace.name}"
 
-    # Re-apply the split legend geometry AFTER app_base's apply_chart_style().
-    # The right-axis legend is anchored to the right edge, leaving a clear gap.
     fig.update_layout(
         width=None,
         height=390,
-        margin=dict(l=58, r=58, t=86, b=42),
+        margin=dict(l=58, r=58, t=112, b=42),
         legend=dict(
             orientation="h",
-            yanchor="bottom", y=1.04,
+            yanchor="bottom", y=1.12,
             xanchor="left", x=0.02,
             xref="paper",
             font=dict(size=10),
@@ -31,8 +30,17 @@ def _render_chart_with_state(fig, desc_index):
         ),
         legend2=dict(
             orientation="h",
-            yanchor="bottom", y=1.04,
+            yanchor="bottom", y=1.12,
             xanchor="right", x=0.98,
+            xref="paper",
+            font=dict(size=10),
+            bgcolor="rgba(255,255,255,0)",
+            traceorder="normal",
+        ),
+        legend3=dict(
+            orientation="h",
+            yanchor="bottom", y=1.035,
+            xanchor="left", x=0.02,
             xref="paper",
             font=dict(size=10),
             bgcolor="rgba(255,255,255,0)",
@@ -71,7 +79,7 @@ Plotly.newPlot(gd,fig.data||[],fig.layout||{{}},{{displayModeBar:false,scrollZoo
 }});
 </script></body></html>
 """
-    st.iframe(html, height=440)
+    st.iframe(html, height=462)
 
 render_call = 'st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index)'
 render_replacement = '_render_chart_with_state(builder(date_range), desc_index); show_parameter_description(desc_index)'
@@ -88,12 +96,15 @@ def _clean_chart_frame(frame, column):
     return frame.dropna(subset=["observation_date", column]).sort_values("observation_date")[["observation_date", column]]
 
 
-def _apply_split_legends(fig, right_names=()):
+def _apply_split_legends(fig, right_names=(), second_row_names=()):
     for name in right_names:
         fig.update_traces(selector=dict(name=name), legend="legend2")
+    for name in second_row_names:
+        fig.update_traces(selector=dict(name=name), legend="legend3")
     fig.update_layout(
-        legend=dict(orientation="h", yanchor="bottom", y=1.04, xanchor="left", x=0.02, xref="paper", font=dict(size=10), traceorder="normal"),
-        legend2=dict(orientation="h", yanchor="bottom", y=1.04, xanchor="right", x=0.98, xref="paper", font=dict(size=10), traceorder="normal"),
+        legend=dict(orientation="h", yanchor="bottom", y=1.12, xanchor="left", x=0.02, xref="paper", font=dict(size=10), traceorder="normal"),
+        legend2=dict(orientation="h", yanchor="bottom", y=1.12, xanchor="right", x=0.98, xref="paper", font=dict(size=10), traceorder="normal"),
+        legend3=dict(orientation="h", yanchor="bottom", y=1.035, xanchor="left", x=0.02, xref="paper", font=dict(size=10), traceorder="normal"),
     )
 
 
@@ -110,7 +121,7 @@ def build_fig1(date_range):
     fig = go.Figure()
     for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
     add_line(fig, data, "SOFR_minus_IORB_bp", "SOFR−IORB", 2.2, "dot", "y2", " bp")
-    _apply_split_legends(fig, ["SOFR−IORB"])
+    _apply_split_legends(fig, ["SOFR−IORB"], ["ON RRP"])
     fig.update_layout(yaxis=dict(title="Rate (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="x", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True))
     fig.update_traces(selector=dict(name="SOFR−IORB"), hovertemplate="SOFR−IORB: %{y:.1f} bp<extra></extra>")
     return apply_chart_style(fig, chart_height(285, 470))
@@ -123,6 +134,7 @@ def build_fig2(date_range):
     data = filter_range(data.sort_values("observation_date"), date_range)
     fig = go.Figure()
     for column, name, width, dash in [("DGS10", "10Y Nominal", 2.8, None), ("DFII10", "10Y Real", 2.6, None), ("T10YIE", "10Y Breakeven", 2.5, "dot")]: add_line(fig, data, column, name, width, dash)
+    _apply_split_legends(fig, [], ["10Y Real"])
     fig.update_layout(yaxis_title="Yield (%)")
     return apply_chart_style(fig, chart_height(285, 470))
 
@@ -138,7 +150,7 @@ def build_fig3(date_range):
     for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8)]: add_line(fig, data, column, name, width)
     add_line(fig, data, "T10Y2Y_bp", "10Y−2Y", 2.2, "dot", "y2", " bp")
     add_line(fig, data, "T10Y3M_bp", "10Y−3M", 2.2, "dash", "y2", " bp")
-    _apply_split_legends(fig, ["10Y−2Y", "10Y−3M"])
+    _apply_split_legends(fig, ["10Y−2Y", "10Y−3M"], ["2Y"])
     fig.update_traces(selector=dict(name="10Y−2Y"), hovertemplate="10Y−2Y: %{y:.1f} bp<extra></extra>")
     fig.update_traces(selector=dict(name="10Y−3M"), hovertemplate="10Y−3M: %{y:.1f} bp<extra></extra>")
     fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="x", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True))
@@ -159,6 +171,7 @@ def build_fig4(date_range):
     data = filter_range(data, date_range)
     fig = go.Figure()
     for column, name, width, dash in [("NetLiquidity", "Net Liquidity Proxy", 3.0, None), ("WRESBAL", "Reserve Balances", 2.3, None), ("WTREGEN", "TGA", 2.1, "dash"), ("RRPONTSYD", "ON RRP", 2.1, "dot")]: add_line(fig, data, column, name, width, dash, unit=" T")
+    _apply_split_legends(fig, [], ["Reserve Balances"])
     fig.update_layout(yaxis_title="$T")
     return apply_chart_style(fig, chart_height(285, 470))
 '''
