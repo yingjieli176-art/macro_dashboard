@@ -3,55 +3,34 @@ from pathlib import Path
 base_path = Path(__file__).with_name("app_base.py")
 source = base_path.read_text(encoding="utf-8")
 
-# Parameter UI: use native HTML <details> so opening/closing the parameter
-# panel is purely client-side and never depends on Streamlit reruns.
+# Keep parameter information collapsed by default, with a native HTML
+# details control that does not trigger a Streamlit rerun when opened/closed.
 old_parameter_fn = '''def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)'''
 new_parameter_fn = '''def show_parameter_description(index):
+    text = html.escape(PARAM_DESCRIPTIONS[index])
     st.markdown(
-        f'''<details class="parameter-details">\n<summary>参数</summary>\n<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>\n</details>''',
+        f'<details class="parameter-details"><summary>参数</summary><div class="mini-description">{text}</div></details>',
         unsafe_allow_html=True,
     )'''
 if old_parameter_fn not in source:
     raise RuntimeError("parameter function not found")
 source = source.replace(old_parameter_fn, new_parameter_fn, 1)
 
-# Keep each chart's range selector isolated. The parameter control itself is
-# plain HTML, so clicking it works independently for every chart/month range.
-fragment_helper = '''
-def _render_chart_fragment(column, title, description, key, builder, sources, desc_index, divider=False):
-    container = column if column is not None else st
-    with container:
-        st.markdown(title, unsafe_allow_html=True)
-        st.markdown(description, unsafe_allow_html=True)
-        date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed")
-        st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True)
-        st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG)
-        show_parameter_description(desc_index)
-        add_sources(sources)
-        if divider:
-            st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+# Native details styling: each chart owns its own parameter panel and the
+# browser handles open/close locally, so changing any time-range radio cannot
+# cause parameter descriptions from other charts to appear.
+source = source.replace(
+    '''.mini-description {''',
+    '''.parameter-details { margin: 4px 0 8px 0; }
+.parameter-details summary { cursor: pointer; font-size: 13px; font-weight: 600; padding: 2px 0; list-style: none; }
+.parameter-details summary::-webkit-details-marker { display: none; }
+.parameter-details summary::before { content: "▸ "; }
+.parameter-details[open] summary::before { content: "▾ "; }
+.mini-description {''',
+    1,
+)
 
-if hasattr(st, "fragment"):
-    _render_chart_fragment = st.fragment(_render_chart_fragment)
-'''
-marker = '\ncompact_mode = True\n'
-if marker not in source:
-    raise RuntimeError("compact mode marker not found")
-source = source.replace(marker, fragment_helper + marker, 1)
-
-old_compact_loop = '''        for column, title, description, key, builder, sources, desc_index in configs:\n            with column:\n                st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)\n'''
-new_compact_loop = '''        for column, title, description, key, builder, sources, desc_index in configs:\n            _render_chart_fragment(column, title, description, key, builder, sources, desc_index)\n'''
-if old_compact_loop not in source:
-    raise RuntimeError("compact render loop not found")
-source = source.replace(old_compact_loop, new_compact_loop, 1)
-
-old_normal_loop = '''        for title, description, key, builder, sources, desc_index, divider in configs:\n            st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)\n            if divider: st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)\n'''
-new_normal_loop = '''        for title, description, key, builder, sources, desc_index, divider in configs:\n            _render_chart_fragment(None, title, description, key, builder, sources, desc_index, divider)\n'''
-if old_normal_loop not in source:
-    raise RuntimeError("normal render loop not found")
-source = source.replace(old_normal_loop, new_normal_loop, 1)
-
-# Chart 1: retain the four official series and add the derived SOFR−IORB spread.
+# Chart 1: retain official series and add the derived SOFR−IORB spread.
 start = source.index("def build_fig1(date_range):")
 end = source.index("\ndef build_fig2(date_range):", start)
 block = source[start:end]
