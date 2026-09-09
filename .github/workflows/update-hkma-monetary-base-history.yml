@@ -1,0 +1,57 @@
+name: Update HKMA monetary base history
+
+on:
+  schedule:
+    - cron: '35 22 * * 1-5'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/update_hkma_monetary_base_history.py
+      - .github/workflows/update-hkma-monetary-base-history.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hkma-monetary-base-history
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests pandas plotly
+      - name: Refresh official HKMA monetary-base history
+        run: python scripts/update_hkma_monetary_base_history.py
+      - name: Validate 5Y monetary base and aggregate balance
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          import macro_platform.hk_liquidity as hk
+          data=hk.load_hk_liquidity()
+          for col in ('Monetary Base MoM','Aggregate Balance'):
+              series=data[['observation_date',col]].dropna()
+              latest=series['observation_date'].max()
+              five=series[series['observation_date'] >= latest-pd.DateOffset(years=5)]
+              print(col,len(five),five['observation_date'].min(),latest)
+              assert len(five)>=58, (col,len(five))
+          PY
+      - name: Commit refreshed official history
+        run: |
+          git add data_snapshots/hkma_monetary_statistics.json
+          if git diff --cached --quiet; then
+            echo "HKMA monetary-base history unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Refresh five-year HKMA monetary-base history"
+          git pull --rebase origin main
+          git push origin main
