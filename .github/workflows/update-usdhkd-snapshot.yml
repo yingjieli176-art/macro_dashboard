@@ -1,0 +1,57 @@
+name: Update USDHKD snapshot
+
+on:
+  schedule:
+    - cron: '20 23 * * 1-5'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/update_usdhkd_snapshot.py
+      - .github/workflows/update-usdhkd-snapshot.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: usdhkd-snapshot
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pandas requests
+      - name: Refresh FRED DEXHKUS history
+        run: python scripts/update_usdhkd_snapshot.py
+      - name: Validate 5Y coverage
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('data_snapshots/usdhkd_daily.json').read_text())
+          rows=p.get('records') or []
+          assert p.get('series')=='DEXHKUS'
+          assert len(rows)>=1000, len(rows)
+          assert rows[0]['observation_date'] <= '2021-09-30', rows[0]
+          assert rows[-1]['observation_date'] >= '2026-08-01', rows[-1]
+          print('USDHKD snapshot OK',len(rows),rows[0],rows[-1])
+          PY
+      - name: Commit refreshed snapshot
+        run: |
+          if git diff --quiet -- data_snapshots/usdhkd_daily.json; then
+            echo "USDHKD snapshot unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data_snapshots/usdhkd_daily.json
+          git commit -m "Refresh five-year USDHKD snapshot"
+          git pull --rebase origin main
+          git push origin main
