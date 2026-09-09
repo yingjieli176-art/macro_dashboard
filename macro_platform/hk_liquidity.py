@@ -488,7 +488,7 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         zerolinecolor="#cbd5e1",
         fixedrange=True,
     )
-    style(money, "HK Money Supply")
+    style(money, "5-1. HK Money Supply")
 
     # 5B · Banking-system liquidity
     balance = go.Figure()
@@ -501,7 +501,7 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         zeroline=False,
         fixedrange=True,
     )
-    style(balance, "Banking-system Liquidity")
+    style(balance, "5-2. Banking-system Liquidity")
 
     # 5C · HKD funding; spread is the only right-axis parameter.
     funding = make_subplots(specs=[[{"secondary_y": True}]])
@@ -536,7 +536,7 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         zerolinecolor="#cbd5e1",
         fixedrange=True,
     )
-    style(funding, "HKD Funding", height=430, right_axis=True)
+    style(funding, "5-3. HKD Funding", height=430, right_axis=True)
 
     # 5D · Convertibility band
     fx = go.Figure()
@@ -552,7 +552,7 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         zeroline=False,
         fixedrange=True,
     )
-    style(fx, "USD/HKD Convertibility Band")
+    style(fx, "5-4. USD/HKD Convertibility Band")
 
     return [money, balance, funding, fx]
 
