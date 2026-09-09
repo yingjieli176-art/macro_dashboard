@@ -1,0 +1,264 @@
+{
+  "symbol": "HSTECH",
+  "name": "Hang Seng TECH Index",
+  "source": "Sina Finance Hong Kong Index History",
+  "source_page": "https://stock.finance.sina.com.cn/hkstock/quotes/HSTECH.html",
+  "updated_at": "2026-09-09T08:26:03.037512+00:00",
+  "record_count": 63,
+  "coverage_start": "2021-07-01",
+  "coverage_end": "2026-09-01",
+  "records": [
+    {
+      "observation_date": "2021-07-01",
+      "close": 6780.97
+    },
+    {
+      "observation_date": "2021-08-01",
+      "close": 6607.77979
+    },
+    {
+      "observation_date": "2021-09-01",
+      "close": 6101.52002
+    },
+    {
+      "observation_date": "2021-10-01",
+      "close": 6375.8501
+    },
+    {
+      "observation_date": "2021-11-01",
+      "close": 6028.62988
+    },
+    {
+      "observation_date": "2021-12-01",
+      "close": 5670.95996
+    },
+    {
+      "observation_date": "2022-01-01",
+      "close": 5416.29004
+    },
+    {
+      "observation_date": "2022-02-01",
+      "close": 5118.02002
+    },
+    {
+      "observation_date": "2022-03-01",
+      "close": 4557.99023
+    },
+    {
+      "observation_date": "2022-04-01",
+      "close": 4471.75
+    },
+    {
+      "observation_date": "2022-05-01",
+      "close": 4483.6001
+    },
+    {
+      "observation_date": "2022-06-01",
+      "close": 4870.29981
+    },
+    {
+      "observation_date": "2022-07-01",
+      "close": 4331.18994
+    },
+    {
+      "observation_date": "2022-08-01",
+      "close": 4273.68018
+    },
+    {
+      "observation_date": "2022-09-01",
+      "close": 3450.12012
+    },
+    {
+      "observation_date": "2022-10-01",
+      "close": 2852.57007
+    },
+    {
+      "observation_date": "2022-11-01",
+      "close": 3798.18994
+    },
+    {
+      "observation_date": "2022-12-01",
+      "close": 4128.79004
+    },
+    {
+      "observation_date": "2023-01-01",
+      "close": 4542.58008
+    },
+    {
+      "observation_date": "2023-02-01",
+      "close": 3925.06006
+    },
+    {
+      "observation_date": "2023-03-01",
+      "close": 4303.70996
+    },
+    {
+      "observation_date": "2023-04-01",
+      "close": 3901.52002
+    },
+    {
+      "observation_date": "2023-05-01",
+      "close": 3626.72998
+    },
+    {
+      "observation_date": "2023-06-01",
+      "close": 3911.31006
+    },
+    {
+      "observation_date": "2023-07-01",
+      "close": 4549.9502
+    },
+    {
+      "observation_date": "2023-08-01",
+      "close": 4179.49023
+    },
+    {
+      "observation_date": "2023-09-01",
+      "close": 3920.59009
+    },
+    {
+      "observation_date": "2023-10-01",
+      "close": 3759.15991
+    },
+    {
+      "observation_date": "2023-11-01",
+      "close": 3899.63989
+    },
+    {
+      "observation_date": "2023-12-01",
+      "close": 3764.29004
+    },
+    {
+      "observation_date": "2024-01-01",
+      "close": 3005.80005
+    },
+    {
+      "observation_date": "2024-02-01",
+      "close": 3431.30005
+    },
+    {
+      "observation_date": "2024-03-01",
+      "close": 3477.55005
+    },
+    {
+      "observation_date": "2024-04-01",
+      "close": 3700.66992
+    },
+    {
+      "observation_date": "2024-05-01",
+      "close": 3690.76001
+    },
+    {
+      "observation_date": "2024-06-01",
+      "close": 3554.44995
+    },
+    {
+      "observation_date": "2024-07-01",
+      "close": 3516.87012
+    },
+    {
+      "observation_date": "2024-08-01",
+      "close": 3560.61011
+    },
+    {
+      "observation_date": "2024-09-01",
+      "close": 4751.81006
+    },
+    {
+      "observation_date": "2024-10-01",
+      "close": 4499.1499
+    },
+    {
+      "observation_date": "2024-11-01",
+      "close": 4353.54981
+    },
+    {
+      "observation_date": "2024-12-01",
+      "close": 4468.10986
+    },
+    {
+      "observation_date": "2025-01-01",
+      "close": 4723.62988
+    },
+    {
+      "observation_date": "2025-02-01",
+      "close": 5568.14014
+    },
+    {
+      "observation_date": "2025-03-01",
+      "close": 5394.72022
+    },
+    {
+      "observation_date": "2025-04-01",
+      "close": 5087.41992
+    },
+    {
+      "observation_date": "2025-05-01",
+      "close": 5170.43018
+    },
+    {
+      "observation_date": "2025-06-01",
+      "close": 5302.81982
+    },
+    {
+      "observation_date": "2025-07-01",
+      "close": 5453.14014
+    },
+    {
+      "observation_date": "2025-08-01",
+      "close": 5674.31006
+    },
+    {
+      "observation_date": "2025-09-01",
+      "close": 6465.66016
+    },
+    {
+      "observation_date": "2025-10-01",
+      "close": 5908.08008
+    },
+    {
+      "observation_date": "2025-11-01",
+      "close": 5599.10986
+    },
+    {
+      "observation_date": "2025-12-01",
+      "close": 5515.97998
+    },
+    {
+      "observation_date": "2026-01-01",
+      "close": 5718.18018
+    },
+    {
+      "observation_date": "2026-02-01",
+      "close": 5137.83984
+    },
+    {
+      "observation_date": "2026-03-01",
+      "close": 4649.81982
+    },
+    {
+      "observation_date": "2026-04-01",
+      "close": 4871.31982
+    },
+    {
+      "observation_date": "2026-05-01",
+      "close": 4884.22998
+    },
+    {
+      "observation_date": "2026-06-01",
+      "close": 4472.22998
+    },
+    {
+      "observation_date": "2026-07-01",
+      "close": 4829.22022
+    },
+    {
+      "observation_date": "2026-08-01",
+      "close": 4619.87012
+    },
+    {
+      "observation_date": "2026-09-01",
+      "close": 4454.8501
+    }
+  ]
+}

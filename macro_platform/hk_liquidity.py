@@ -13,6 +13,7 @@ from plotly.subplots import make_subplots
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_monetary_statistics.json"
 DAILY_BANKING_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_banking_liquidity_daily.json"
+HSTECH_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hstech_monthly.json"
 DAILY_BANKING_COLUMNS = [
     "observation_date",
     "Opening Aggregate Balance",
@@ -196,6 +197,44 @@ def load_hk_banking_liquidity_daily() -> pd.DataFrame:
         .drop_duplicates("observation_date", keep="last")
     )
     return frame[DAILY_BANKING_COLUMNS]
+
+
+def load_hk_funding_daily() -> pd.DataFrame:
+    """Load O/N HIBOR, 3M HIBOR and Base Rate from the daily HKMA snapshot.
+
+    If the daily snapshot is unavailable, use the monthly official series. The
+    chart title separately labels this as a monthly fallback so freshness is
+    never overstated.
+    """
+    columns = ["observation_date", "HIBOR O/N", "HIBOR 3M", "HKMA Base Rate", "O/N-3M Spread"]
+    try:
+        payload = json.loads(DAILY_BANKING_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+        rows = payload.get("records") if isinstance(payload, dict) else payload
+        frame = pd.DataFrame(rows or [])
+    except Exception:
+        frame = pd.DataFrame()
+    if not frame.empty and "end_of_date" in frame.columns:
+        frame["observation_date"] = pd.to_datetime(frame["end_of_date"], errors="coerce")
+        frame["HIBOR O/N"] = pd.to_numeric(frame.get("hibor_overnight"), errors="coerce")
+        frame["HIBOR 3M"] = pd.to_numeric(frame.get("hibor_3m"), errors="coerce")
+        frame["HKMA Base Rate"] = pd.to_numeric(frame.get("disc_win_base_rate"), errors="coerce")
+        frame["O/N-3M Spread"] = (frame["HIBOR O/N"] - frame["HIBOR 3M"]) * 100.0
+        frame = frame.dropna(subset=["observation_date"]).sort_values("observation_date").drop_duplicates("observation_date", keep="last")
+        if frame[["HIBOR O/N", "HIBOR 3M", "HKMA Base Rate"]].notna().any(axis=1).sum() >= 10:
+            return frame[columns]
+    monthly = load_hk_liquidity()
+    if monthly.empty:
+        return pd.DataFrame(columns=columns)
+    return monthly[columns].copy()
+
+
+def _daily_snapshot_available() -> bool:
+    try:
+        payload = json.loads(DAILY_BANKING_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+        rows = payload.get("records") if isinstance(payload, dict) else payload
+        return isinstance(rows, list) and len(rows) >= 10
+    except Exception:
+        return False
 
 
 def snapshot_metadata() -> dict[str, Any]:
@@ -436,7 +475,26 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
     return fig
 
 
+def _hstech_snapshot_monthly(label: str) -> pd.DataFrame:
+    try:
+        payload = json.loads(HSTECH_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+        rows = payload.get("records") if isinstance(payload, dict) else payload
+        frame = pd.DataFrame(rows or [])
+    except Exception:
+        return pd.DataFrame(columns=["observation_date", label])
+    if frame.empty or "observation_date" not in frame.columns or "close" not in frame.columns:
+        return pd.DataFrame(columns=["observation_date", label])
+    frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
+    frame[label] = pd.to_numeric(frame["close"], errors="coerce")
+    frame = frame.dropna(subset=["observation_date", label]).sort_values("observation_date")
+    return frame[["observation_date", label]].drop_duplicates("observation_date", keep="last")
+
+
 def _market_monthly_close(symbol: str, label: str) -> pd.DataFrame:
+    if str(symbol).upper() in {"HSTECH.HK", "^HSTECH", "HSTECH"}:
+        snapshot = _hstech_snapshot_monthly(label)
+        if len(snapshot) >= 48:
+            return snapshot
     """Fetch up to five years of month-end market levels.
 
     Yahoo market history is enrichment only. Try both public chart hosts and,
@@ -530,6 +588,7 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
     all_data = load_hk_liquidity()
     data = _slice_range(all_data, date_range)
     banking_data = _slice_range(load_hk_banking_liquidity_daily(), date_range)
+    funding_data = _slice_range(load_hk_funding_daily(), date_range)
     meta = snapshot_metadata()
     latest_text = meta.get("latest_observation") or "--"
 
@@ -668,17 +727,18 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         title_text="EFBN (HK$ bn)", secondary_y=True,
         showgrid=False, zeroline=False, fixedrange=True,
     )
-    style(balance, "5-2. Daily Banking-system Liquidity", height=450, right_axis=True)
+    style(balance, "5-2. Daily Banking-system Liquidity" if _daily_snapshot_available() else "5-2. Banking-system Liquidity · monthly fallback", height=450, right_axis=True)
     if not banking_data.empty:
         banking_latest = banking_data["observation_date"].max().strftime("%Y-%m-%d")
-        balance.update_layout(title_text=f"5-2. Daily Banking-system Liquidity · latest {banking_latest}")
+        balance_label = "5-2. Daily Banking-system Liquidity" if _daily_snapshot_available() else "5-2. Banking-system Liquidity · monthly fallback"
+        balance.update_layout(title_text=f"{balance_label} · latest {banking_latest}")
 
     # 5-3 · HKD funding.
     funding = make_subplots(specs=[[{"secondary_y": True}]])
-    add_line(funding, data, "HIBOR O/N", "O/N HIBOR", COLORS["on"], 2.0, secondary_y=False)
-    add_line(funding, data, "HIBOR 3M", "3M HIBOR", COLORS["h3m"], 2.3, "dash", secondary_y=False)
-    add_line(funding, data, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot", secondary_y=False)
-    add_line(funding, data, "O/N-3M Spread", "O/N−3M Spread (R)", COLORS["spread"], 1.7, "dashdot", " bp", secondary_y=True)
+    add_line(funding, funding_data, "HIBOR O/N", "O/N HIBOR", COLORS["on"], 2.0, secondary_y=False)
+    add_line(funding, funding_data, "HIBOR 3M", "3M HIBOR", COLORS["h3m"], 2.3, "dash", secondary_y=False)
+    add_line(funding, funding_data, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot", secondary_y=False)
+    add_line(funding, funding_data, "O/N-3M Spread", "O/N−3M Spread (R)", COLORS["spread"], 1.7, "dashdot", " bp", secondary_y=True)
     funding.update_yaxes(
         title_text="Rate (%)", secondary_y=False,
         showgrid=True, gridcolor="#e5e7eb", griddash="dot",
@@ -688,7 +748,11 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         title_text="Spread (bp)", secondary_y=True,
         showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
-    style(funding, "5-3. HKD Funding", right_axis=True)
+    style(funding, "5-3. HKD Funding · Daily" if _daily_snapshot_available() else "5-3. HKD Funding · monthly fallback", right_axis=True)
+    if not funding_data.empty:
+        funding_latest = funding_data["observation_date"].max().strftime("%Y-%m-%d" if _daily_snapshot_available() else "%Y-%m")
+        funding_label = "5-3. HKD Funding · Daily" if _daily_snapshot_available() else "5-3. HKD Funding · monthly fallback"
+        funding.update_layout(title_text=f"{funding_label} · latest {funding_latest}")
 
     # 5-4 · Convertibility band + market reaction.
     fx = make_subplots(specs=[[{"secondary_y": True}]])
