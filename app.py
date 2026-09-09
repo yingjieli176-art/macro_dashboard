@@ -173,7 +173,6 @@ def _quote_meta(row, market=""):
 @st.cache_data(ttl=60, show_spinner=False)
 def _get_watchlist_quote(symbol): return _get_yahoo_quote_safe(symbol)
 
-@st.fragment(run_every="60s")
 def render_market_groups():
     now = time.time(); snapshot = st.session_state.get("_market_quotes_snapshot"); snapshot_time = st.session_state.get("_market_quotes_snapshot_time", 0)
     if not isinstance(snapshot, dict) or now - snapshot_time >= 60:
@@ -291,11 +290,11 @@ def add_line(fig, data, column, name, width=2.5, dash=None, yaxis=None, unit="%"
 
 def _xaxis_config(date_range):
     cfg = {
-        "5Y": {"dtick": "M3", "tickformat": "%Y-%m"},
-        "1Y": {"dtick": "M1", "tickformat": "%Y-%m"},
-        "6M": {"dtick": "M1", "tickformat": "%Y-%m"},
-        "3M": {"dtick": "D7", "tickformat": "%m/%d"},
-        "1M": {"dtick": "D3", "tickformat": "%m/%d"},
+        "5Y": {"dtick": "M3", "tickformat": "%b %Y", "tickformatstops": [{"dtickrange": ["M3", "M12"], "value": "%b"}]},
+        "1Y": {"dtick": "M1", "tickformat": "%b %Y", "tickformatstops": [{"dtickrange": ["M1", "M2"], "value": "%b"}]},
+        "6M": {"dtick": "M1", "tickformat": "%b %Y", "tickformatstops": [{"dtickrange": ["M1", "M2"], "value": "%b"}]},
+        "3M": {"dtick": "D7", "tickformat": "%b %d"},
+        "1M": {"dtick": "D3", "tickformat": "%b %d"},
     }[date_range]
     return dict(showgrid=True, gridcolor="#eef2f7", griddash="dot", showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True, hoverformat="%Y-%m-%d", tickfont=dict(size=11), tickangle=-20, ticklabelstandoff=6, automargin=True, **cfg)
 
