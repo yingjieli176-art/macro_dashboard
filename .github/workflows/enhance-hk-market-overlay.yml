@@ -1,0 +1,70 @@
+name: Enhance Hong Kong market overlay
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/enhance_hk_market_overlay.py
+      - .github/workflows/enhance-hk-market-overlay.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+      - name: Apply Hong Kong market overlay enhancement
+        run: python scripts/enhance_hk_market_overlay.py
+      - name: Validate Python
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py
+      - name: Validate Chart 5 structure
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          app = Path('app.py').read_text()
+          hk = Path('macro_platform/hk_liquidity.py').read_text()
+          assert 'liquidity_status_html(), unsafe_allow_html=True' not in app
+          assert 'HKEX Price Change（R）' in app
+          assert 'HSTECH Change（R）' in app
+          assert 'Linked Rate Center 7.80' in app
+          assert 'Linked Rate Center 7.80' in hk
+          assert '7.75–7.85 LERS band' in hk
+          assert '_market_monthly_change("0388.HK"' in hk
+          assert '_market_monthly_change("HSTECH.HK"' in hk
+          print('source-level Chart 5 enhancement validation OK')
+          PY
+      - name: Validate Chart 5 rendering without market network
+        run: |
+          python - <<'PY'
+          import macro_platform.hk_liquidity as hk
+          import pandas as pd
+          original = hk._market_monthly_change
+          hk._market_monthly_change = lambda symbol, label: pd.DataFrame(columns=['observation_date', label])
+          figs = hk.build_hk_liquidity_figures('1Y')
+          hk._market_monthly_change = original
+          assert len(figs) == 4
+          assert figs[0].layout.yaxis2.title.text == 'Market Change (%)'
+          assert figs[3].layout.yaxis2.title.text == 'Market Change (%)'
+          assert any(getattr(t, 'name', '') == 'Linked Rate Center 7.80' for t in figs[3].data)
+          assert len(figs[3].layout.shapes) >= 1, 'LERS shaded band missing'
+          print('network-independent Chart 5 rendering validation OK')
+          PY
+      - name: Commit migrated files
+        run: |
+          if git diff --quiet -- app.py macro_platform/hk_liquidity.py; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/hk_liquidity.py
+          git commit -m "Add Hong Kong market overlays and LERS reference band"
+          git push
