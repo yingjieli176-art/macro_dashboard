@@ -291,13 +291,13 @@ def add_line(fig, data, column, name, width=2.5, dash=None, yaxis=None, unit="%"
 
 def _xaxis_config(date_range):
     cfg = {
-        "5Y": {"dtick": "M6", "tickformat": "%Y-%m"},
-        "1Y": {"dtick": "M2", "tickformat": "%Y-%m"},
-        "6M": {"dtick": "M2", "tickformat": "%Y-%m"},
-        "3M": {"dtick": "D14", "tickformat": "%m/%d"},
-        "1M": {"dtick": "D7", "tickformat": "%m/%d"},
+        "5Y": {"dtick": "M3", "tickformat": "%Y-%m"},
+        "1Y": {"dtick": "M1", "tickformat": "%Y-%m"},
+        "6M": {"dtick": "M1", "tickformat": "%Y-%m"},
+        "3M": {"dtick": "D7", "tickformat": "%m/%d"},
+        "1M": {"dtick": "D3", "tickformat": "%m/%d"},
     }[date_range]
-    return dict(showgrid=True, gridcolor="#eef2f7", griddash="dot", showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True, hoverformat="%Y-%m-%d", tickfont=dict(size=9), tickangle=-20, ticklabelstandoff=5, automargin=True, **cfg)
+    return dict(showgrid=True, gridcolor="#eef2f7", griddash="dot", showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True, hoverformat="%Y-%m-%d", tickfont=dict(size=11), tickangle=-20, ticklabelstandoff=6, automargin=True, **cfg)
 
 def apply_chart_style(fig, height, date_range):
     fig.update_layout(
@@ -310,7 +310,7 @@ def apply_chart_style(fig, height, date_range):
         hoverlabel=dict(bgcolor="white", font_size=11),
         font=dict(size=11 if compact_mode else 12),
         xaxis=_xaxis_config(date_range),
-        yaxis=dict(showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=False, showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True, tickfont=dict(size=9), automargin=True),
+        yaxis=dict(showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=False, showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True, tickfont=dict(size=11), automargin=True, nticks=8),
         plot_bgcolor="#ffffff",
         paper_bgcolor="#ffffff",
     )
