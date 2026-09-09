@@ -439,11 +439,101 @@ def get_market_snapshot():
 
 
 # =========================================================
-# EXPORT
+# PLOTLY CHART AXIS PATCH
 # =========================================================
+# app.py keeps the chart construction in one file. This small compatibility
+# patch is loaded before app.py builds its figures, so all charts get the same
+# two-level date axis without duplicating chart-axis code in every figure.
+from plotly.basedatatypes import BaseFigure
 
-__all__ = [
-    "get_dgs3mo", "get_dgs2", "get_dgs10", "get_dfii10", "get_sofr",
-    "get_iorb", "get_effr", "get_rrp_rate", "get_eastmoney_news", "get_sina_news", "get_market_snapshot",
-    "get_wresbal", "get_wtre_gen", "get_rrp_daily", "_fred_series",
-]
+_original_update_layout = BaseFigure.update_layout
+
+
+def _update_layout_with_consistent_date_axes(self, *args, **kwargs):
+    xaxis = kwargs.get("xaxis")
+    if isinstance(xaxis, dict) and "hoverformat" in xaxis and self.data:
+        dates = []
+        for trace in self.data:
+            if trace.x is not None:
+                dates.extend(list(trace.x))
+        parsed = pd.Series(pd.to_datetime(dates, errors="coerce")).dropna().sort_values().drop_duplicates()
+        if not parsed.empty:
+            start = parsed.iloc[0]
+            end = parsed.iloc[-1]
+            span_days = max(0, (end - start).days)
+            if span_days > 1000:
+                freq = "QS"
+            elif span_days > 150:
+                freq = "MS"
+            elif span_days > 45:
+                freq = "7D"
+            else:
+                freq = "3D"
+
+            ticks = pd.date_range(start=start.normalize(), end=end.normalize(), freq=freq)
+            if len(ticks) == 0 or ticks[-1] < end.normalize():
+                ticks = ticks.append(pd.DatetimeIndex([end.normalize()]))
+            ticks = ticks[(ticks >= start.normalize()) & (ticks <= end.normalize())]
+
+            new_kwargs = dict(kwargs)
+            new_xaxis = dict(xaxis)
+            new_xaxis.update(
+                tickmode="array",
+                tickvals=ticks,
+                ticktext=[v.strftime("%m/%d") for v in ticks],
+                tickangle=0,
+                automargin=False,
+            )
+            new_kwargs["xaxis"] = new_xaxis
+
+            years = []
+            year_text = []
+            for year in sorted(parsed.dt.year.unique().tolist()):
+                year_dates = parsed[parsed.dt.year == year]
+                y0, y1 = year_dates.iloc[0], year_dates.iloc[-1]
+                years.append(y0 + (y1 - y0) / 2)
+                year_text.append(str(year))
+            new_kwargs["xaxis2"] = dict(
+                overlaying="x",
+                anchor="y",
+                side="top",
+                tickmode="array",
+                tickvals=years,
+                ticktext=year_text,
+                showgrid=False,
+                showline=False,
+                ticks="",
+                fixedrange=True,
+                tickfont=dict(size=11),
+                tickangle=0,
+                automargin=False,
+            )
+
+            margin = dict(new_kwargs.get("margin") or {})
+            margin.update(l=72, r=72, t=88, b=62)
+            new_kwargs["margin"] = margin
+
+            legend = new_kwargs.get("legend")
+            if isinstance(legend, dict):
+                legend = dict(legend)
+                legend["y"] = 1.10
+                new_kwargs["legend"] = legend
+
+            yaxis = new_kwargs.get("yaxis")
+            if isinstance(yaxis, dict):
+                yaxis = dict(yaxis)
+                yaxis["automargin"] = False
+                new_kwargs["yaxis"] = yaxis
+            for axis_name in ("yaxis2", "yaxis3"):
+                axis = new_kwargs.get(axis_name)
+                if isinstance(axis, dict):
+                    axis = dict(axis)
+                    axis["automargin"] = False
+                    new_kwargs[axis_name] = axis
+
+            kwargs = new_kwargs
+
+    return _original_update_layout(self, *args, **kwargs)
+
+
+BaseFigure.update_layout = _update_layout_with_consistent_date_axes
