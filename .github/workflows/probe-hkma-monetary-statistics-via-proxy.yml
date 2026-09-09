@@ -1,0 +1,31 @@
+name: Probe HKMA monetary statistics via proxy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/probe-hkma-monetary-statistics-via-proxy.yml
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch 100 months of official HKMA monetary statistics
+        run: |
+          python - <<'PY'
+          import json, requests
+          target='https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics?pagesize=100&offset=0&sortby=end_of_month&sortorder=desc'
+          url='https://r.jina.ai/https://' + target.split('://',1)[1]
+          r=requests.get(url,headers={'User-Agent':'MacroDashboard/1.0'},timeout=50)
+          print('status',r.status_code,'bytes',len(r.content))
+          r.raise_for_status()
+          text=r.text
+          start=text.find('{"header"')
+          assert start>=0, text[:1000]
+          p=json.loads(text[start:])
+          rows=((p.get('result') or {}).get('records') or [])
+          print('rows',len(rows),'first',rows[:1],'last',rows[-1:])
+          assert len(rows)>=60
+          required=('end_of_month','m2_hkd','m3_hkd','monetary_base_total','aggr_balance','hibor_fixing_overnight','hibor_fixing_3m','discount_window_base_rate','exrate_hkd_usd')
+          assert all(k in rows[0] for k in required), rows[0].keys()
+          PY
