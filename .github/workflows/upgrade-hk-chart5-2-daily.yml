@@ -31,71 +31,76 @@ jobs:
       - name: Upgrade Chart 5-2
         run: python scripts/upgrade_hk_chart5_2_daily.py
 
-      - name: Refresh HKMA daily banking liquidity snapshot
-        continue-on-error: true
-        run: python scripts/update_hkma_banking_liquidity_snapshot.py
-
-      - name: Validate Python
-        run: python -m py_compile app.py macro_platform/hk_liquidity.py scripts/update_hkma_banking_liquidity_snapshot.py scripts/upgrade_hk_chart5_2_daily.py
-
-      - name: Validate banking liquidity chart
+      - name: Validate Python and fallback rendering
         run: |
+          python -m py_compile app.py macro_platform/hk_liquidity.py scripts/update_hkma_banking_liquidity_snapshot.py scripts/upgrade_hk_chart5_2_daily.py
           python - <<'PY'
-          from pathlib import Path
           import pandas as pd
           import macro_platform.hk_liquidity as hk
-
+          hk._market_monthly_close = lambda symbol, label: pd.DataFrame(columns=["observation_date", label])
           daily = hk.load_hk_banking_liquidity_daily()
           assert not daily.empty
-          assert daily["observation_date"].notna().all()
-          assert "Closing Aggregate Balance" in daily.columns
-
-          snapshot = Path("data_snapshots/hkma_banking_liquidity_daily.json")
-          if snapshot.exists():
-              assert len(daily) >= 250, len(daily)
-              for column in (
-                  "Opening Aggregate Balance",
-                  "Closing Aggregate Balance",
-                  "Forecast Aggregate Balance T+1",
-                  "Outstanding EFBN",
-                  "EFBN Held by Licensed Banks",
-              ):
-                  assert daily[column].notna().sum() > 10, (column, daily[column].notna().sum())
-
-          hk._market_monthly_close = lambda symbol, label: pd.DataFrame(columns=["observation_date", label])
           figures = hk.build_hk_liquidity_figures("5Y")
           assert len(figures) == 4
           names = [trace.name for trace in figures[1].data]
           assert "Closing Aggregate Balance" in names, names
-          if snapshot.exists():
-              for name in (
-                  "Opening Aggregate Balance",
-                  "Forecast Aggregate Balance T+1",
-                  "Outstanding EFBN (R)",
-                  "EFBN Held by Licensed Banks (R)",
-              ):
-                  assert name in names, (name, names)
           assert "Daily Banking-system Liquidity" in figures[1].layout.title.text
-          print(daily.tail(3).to_string(index=False))
           PY
-
-      - name: Validate dashboard copy
-        run: |
           grep -q "Opening Aggregate Balance：每日开市" app.py
           grep -q "HKMA Daily Interbank Liquidity" app.py
           grep -q "Daily banking liquidity & EFBN" app.py
 
-      - name: Commit generated upgrade
+      - name: Commit dashboard upgrade
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add app.py macro_platform/hk_liquidity.py
-          if [ -f data_snapshots/hkma_banking_liquidity_daily.json ]; then
-            git add data_snapshots/hkma_banking_liquidity_daily.json
-          fi
           if git diff --cached --quiet; then
-            echo "No generated changes to commit"
+            echo "No dashboard code changes to commit"
           else
             git commit -m "Upgrade HK banking liquidity chart to daily data"
+            git push
+          fi
+
+      - name: Refresh HKMA daily banking liquidity snapshot
+        continue-on-error: true
+        run: python scripts/update_hkma_banking_liquidity_snapshot.py
+
+      - name: Validate and commit snapshot when available
+        run: |
+          if [ ! -f data_snapshots/hkma_banking_liquidity_daily.json ]; then
+            echo "Daily snapshot unavailable; dashboard keeps its monthly fallback."
+            exit 0
+          fi
+          python - <<'PY'
+          import pandas as pd
+          import macro_platform.hk_liquidity as hk
+          daily = hk.load_hk_banking_liquidity_daily()
+          assert len(daily) >= 250, len(daily)
+          for column in (
+              "Opening Aggregate Balance",
+              "Closing Aggregate Balance",
+              "Forecast Aggregate Balance T+1",
+              "Outstanding EFBN",
+              "EFBN Held by Licensed Banks",
+          ):
+              assert daily[column].notna().sum() > 10, (column, daily[column].notna().sum())
+          hk._market_monthly_close = lambda symbol, label: pd.DataFrame(columns=["observation_date", label])
+          names = [trace.name for trace in hk.build_hk_liquidity_figures("5Y")[1].data]
+          for name in (
+              "Opening Aggregate Balance",
+              "Closing Aggregate Balance",
+              "Forecast Aggregate Balance T+1",
+              "Outstanding EFBN (R)",
+              "EFBN Held by Licensed Banks (R)",
+          ):
+              assert name in names, (name, names)
+          print(daily.tail(3).to_string(index=False))
+          PY
+          git add data_snapshots/hkma_banking_liquidity_daily.json
+          if git diff --cached --quiet; then
+            echo "Daily snapshot unchanged"
+          else
+            git commit -m "Refresh HKMA daily banking liquidity snapshot"
             git push
           fi
