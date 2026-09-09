@@ -1,0 +1,74 @@
+name: axis fix
+on:
+  push:
+    branches: [main]
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch adaptive axes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('app.py'); s=p.read_text(encoding='utf-8')
+          start=s.index('def _xaxis_config(date_range):')
+          end=s.index('\ndef apply_chart_style', start)
+          new='''def _xaxis_config(date_range):
+    # Use tickformatstops so the axis density follows the actual visible
+    # time span instead of forcing one fixed tick interval. This prevents
+    # labels from colliding when a chart is narrow or the user zooms.
+    if compact_mode:
+        font_size = 9
+    else:
+        font_size = 11
+    return dict(
+        type="date", showgrid=True, gridcolor="#eef2f7", griddash="dot",
+        showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=False,
+        hoverformat="%Y-%m-%d", tickfont=dict(size=font_size), tickangle=0,
+        ticklabelstandoff=5, automargin=False,
+        tickformatstops=[
+            {"dtickrange": [None, 86400000], "value": "%m/%d %H:%M"},
+            {"dtickrange": [86400000, 604800000], "value": "%m/%d"},
+            {"dtickrange": [604800000, 2592000000], "value": "%m/%d"},
+            {"dtickrange": [2592000000, 7776000000], "value": "%b"},
+            {"dtickrange": [7776000000, 15552000000], "value": "%b"},
+            {"dtickrange": [15552000000, 31536000000], "value": "%b"},
+            {"dtickrange": [31536000000, 63072000000], "value": "%b"},
+            {"dtickrange": [63072000000, None], "value": "%Y"},
+        ],
+        dtick="M1",
+    )
+
+def _year_axis_config():
+    # A dedicated top axis carries only years. The lower axis can therefore
+    # stay focused on month/day detail without repeating years in every tick.
+    return dict(
+        type="date", overlaying="x", side="top", position=1,
+        showgrid=False, showline=False, ticks="",
+        tickfont=dict(size=10 if compact_mode else 11),
+        tickformat="%Y", dtick="M12", ticklabelstandoff=3,
+        fixedrange=False, automargin=False,
+    )
+'''
+          s=s[:start]+new+s[end:]
+          marker='''        xaxis=_xaxis_config(date_range),\n        yaxis=dict('''
+          repl='''        xaxis=_xaxis_config(date_range),\n        xaxis2=_year_axis_config(),\n        yaxis=dict('''
+          if marker not in s: raise SystemExit('layout marker not found')
+          s=s.replace(marker,repl,1)
+          # Give the chart a little more vertical room for the two-level X axis.
+          s=s.replace('margin=dict(l=52, r=right_margin, t=top_margin, b=64 if compact_mode else 52, pad=2),','margin=dict(l=52, r=right_margin, t=(top_margin + 18), b=64 if compact_mode else 52, pad=2),',1)
+          # Restore actual Plotly zoom controls while keeping scroll zoom off.
+          s=s.replace('PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False}','PLOTLY_CONFIG = {"displayModeBar": True, "scrollZoom": False, "doubleClick": "reset", "editable": False, "displaylogo": False, "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"]}',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py
+          git diff --cached --quiet && exit 0
+          git commit -m 'Add adaptive multi-level chart date axes'
+          git push
