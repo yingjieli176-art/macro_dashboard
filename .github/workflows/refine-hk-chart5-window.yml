@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - scripts/refine_hk_chart5_window.py
+      - scripts/refine_hk_chart5_window_v2.py
       - .github/workflows/refine-hk-chart5-window.yml
   workflow_dispatch:
 
@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Apply publication-window refinement
-        run: python scripts/refine_hk_chart5_window.py
+        run: python scripts/refine_hk_chart5_window_v2.py
       - name: Syntax check
         run: python -m py_compile app.py
       - name: Commit app.py
