@@ -1,0 +1,51 @@
+name: temporary chart layout fix
+on:
+  push:
+    branches: [main]
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Patch app.py
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app.py')
+          s = p.read_text(encoding='utf-8')
+          old = '''    if compact_mode:\n        cfg = {\n            "5Y": {"dtick": "M6", "tickformat": "%Y"},\n            "1Y": {"dtick": "M2", "tickformat": "%b'%y"},\n            "6M": {"dtick": "M1", "tickformat": "%b"},\n            "3M": {"dtick": "D14", "tickformat": "%m/%d"},\n            "1M": {"dtick": "D7", "tickformat": "%m/%d"},\n        }[date_range]\n        tickangle, tick_size = -40, 9\n'''
+          new = '''    if compact_mode:\n        cfg = {\n            "5Y": {"dtick": "M6", "tickformat": "%Y"},\n            "1Y": {"dtick": "M2", "tickformat": "%b\\n%Y"},\n            "6M": {"dtick": "M1", "tickformat": "%b"},\n            "3M": {"dtick": "D14", "tickformat": "%m/%d"},\n            "1M": {"dtick": "D7", "tickformat": "%m/%d"},\n        }[date_range]\n        tickangle, tick_size = 0, 10\n'''
+          if old not in s: raise SystemExit('xaxis block not found')
+          s = s.replace(old, new, 1)
+          old = '''        ticklabelstandoff=6, automargin=False,\n'''
+          new = '''        ticklabelstandoff=4, automargin=False,\n'''
+          if old not in s: raise SystemExit('ticklabelstandoff not found')
+          s = s.replace(old, new, 1)
+          old = '''    right_margin = 76 if has_secondary else 44\n'''
+          new = '''    # Keep the plot-area width identical across all four compact modules.\n    # Secondary-axis charts need the extra right-side room, so every compact\n    # chart reserves it rather than making modules 3/4 narrower than 1/2.\n    right_margin = 76 if compact_mode else (76 if has_secondary else 44)\n'''
+          if old not in s: raise SystemExit('right margin block not found')
+          s = s.replace(old, new, 1)
+          old = '''        margin=dict(l=52, r=right_margin, t=top_margin, b=52, pad=2),\n'''
+          new = '''        margin=dict(l=52, r=right_margin, t=top_margin, b=64 if compact_mode else 52, pad=2),\n'''
+          if old not in s: raise SystemExit('margin block not found')
+          s = s.replace(old, new, 1)
+          old = '''        cols = st.columns(2, gap="large")\n'''
+          new = '''        cols = st.columns(2, gap="medium")\n'''
+          if old not in s: raise SystemExit('columns block not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit patched app.py
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix compact chart dates and module alignment'
+          git push
