@@ -1,0 +1,49 @@
+name: Add HK market history fallback
+
+on:
+  push:
+    paths:
+      - "scripts/add_hk_market_history_fallback.py"
+      - ".github/workflows/add-hk-market-history-fallback.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install pandas plotly requests
+      - name: Apply fallback
+        run: python scripts/add_hk_market_history_fallback.py
+      - name: Validate Python
+        run: python -m py_compile macro_platform/hk_liquidity.py
+      - name: Validate live HK market history channels
+        run: |
+          python - <<'PY'
+          import macro_platform.hk_liquidity as hk
+          for symbol, label in (("0388.HK", "HKEX Price"), ("HSTECH.HK", "HSTECH Index")):
+              frame = hk._market_monthly_close(symbol, label)
+              print(symbol, len(frame), frame.head(1).to_dict('records'), frame.tail(1).to_dict('records'))
+              assert len(frame) >= 48, (symbol, len(frame))
+              assert frame[label].notna().sum() >= 48
+          PY
+      - name: Commit generated fallback
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add macro_platform/hk_liquidity.py
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit"
+          else
+            git commit -m "Add resilient five-year Hong Kong market history"
+            git push
+          fi
