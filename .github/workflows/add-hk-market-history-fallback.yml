@@ -21,11 +21,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install dependencies
-        run: pip install pandas plotly requests
+        run: pip install pandas plotly requests streamlit
       - name: Apply fallback
         run: python scripts/add_hk_market_history_fallback.py
       - name: Validate Python
-        run: python -m py_compile macro_platform/hk_liquidity.py
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py
       - name: Validate live HK market history channels
         run: |
           python - <<'PY'
@@ -36,11 +36,12 @@ jobs:
               assert len(frame) >= 48, (symbol, len(frame))
               assert frame[label].notna().sum() >= 48
           PY
+          grep -q 'return "124.HSTECH"' app.py
       - name: Commit generated fallback
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add macro_platform/hk_liquidity.py
+          git add macro_platform/hk_liquidity.py app.py
           if git diff --cached --quiet; then
             echo "No generated changes to commit"
           else
