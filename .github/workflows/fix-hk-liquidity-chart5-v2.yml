@@ -26,11 +26,11 @@ jobs:
       - name: HKMA monthly API smoke test
         run: |
           python - <<'PY'
-          import requests
-          url = 'https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics'
-          r = requests.get(url, params={'pagesize': 20}, timeout=(4, 20))
-          r.raise_for_status()
-          payload = r.json()
+          import json
+          import urllib.request
+          url = 'https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics?pagesize=20'
+          with urllib.request.urlopen(url, timeout=20) as response:
+              payload = json.loads(response.read().decode('utf-8'))
           rows = ((payload.get('result') or {}).get('records') or [])
           assert rows, 'HKMA monetary-statistics returned no records'
           required = {'end_of_month', 'aggr_balance', 'm2_hkd', 'm3_hkd', 'hibor_fixing_overnight', 'hibor_fixing_3m', 'discount_window_base_rate', 'exrate_hkd_usd'}
