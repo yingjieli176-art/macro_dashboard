@@ -1,0 +1,22 @@
+{
+  "source": "HKMA Monetary Statistics",
+  "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics",
+  "updated_at": "2026-09-09T00:00:00Z",
+  "records": [
+    {"end_of_month":"2026-07","aggr_balance":54108,"monetary_base_total":2080135,"m2_hkd":null,"m3_hkd":null,"exrate_hkd_usd":7.842,"hibor_fixing_overnight":2.52536,"hibor_fixing_3m":2.92964,"discount_window_base_rate":4},
+    {"end_of_month":"2026-06","aggr_balance":53981,"monetary_base_total":2075020,"m2_hkd":9283574.65,"m3_hkd":9295676.592,"exrate_hkd_usd":7.844,"hibor_fixing_overnight":3.84024,"hibor_fixing_3m":2.96679,"discount_window_base_rate":4},
+    {"end_of_month":"2026-05","aggr_balance":53997,"monetary_base_total":2072088,"m2_hkd":9214013.05,"m3_hkd":9224978.799,"exrate_hkd_usd":7.8385,"hibor_fixing_overnight":3.02393,"hibor_fixing_3m":2.82708,"discount_window_base_rate":4},
+    {"end_of_month":"2026-04","aggr_balance":53862,"monetary_base_total":2072309,"m2_hkd":9113652.486,"m3_hkd":9125304.403,"exrate_hkd_usd":7.836,"hibor_fixing_overnight":2.89071,"hibor_fixing_3m":2.60494,"discount_window_base_rate":4},
+    {"end_of_month":"2026-03","aggr_balance":53773,"monetary_base_total":2065066,"m2_hkd":8998459.3,"m3_hkd":9010718.093,"exrate_hkd_usd":7.839,"hibor_fixing_overnight":2.77012,"hibor_fixing_3m":2.35661,"discount_window_base_rate":4},
+    {"end_of_month":"2026-02","aggr_balance":53904,"monetary_base_total":2071590,"m2_hkd":8943629.605,"m3_hkd":8956883.676,"exrate_hkd_usd":7.8245,"hibor_fixing_overnight":2.55191,"hibor_fixing_3m":2.58363,"discount_window_base_rate":4},
+    {"end_of_month":"2026-01","aggr_balance":53835,"monetary_base_total":2058689,"m2_hkd":8929546.025,"m3_hkd":8943513.9,"exrate_hkd_usd":7.8135,"hibor_fixing_overnight":2.17964,"hibor_fixing_3m":2.82595,"discount_window_base_rate":4},
+    {"end_of_month":"2025-12","aggr_balance":53948,"monetary_base_total":2040126,"m2_hkd":8830871.38,"m3_hkd":8844257.173,"exrate_hkd_usd":7.784,"hibor_fixing_overnight":4.38226,"hibor_fixing_3m":2.93244,"discount_window_base_rate":4},
+    {"end_of_month":"2025-11","aggr_balance":53995,"monetary_base_total":2031902,"m2_hkd":8792873.682,"m3_hkd":8806557.812,"exrate_hkd_usd":7.787,"hibor_fixing_overnight":3.0869,"hibor_fixing_3m":3.17167,"discount_window_base_rate":4.25},
+    {"end_of_month":"2025-10","aggr_balance":54053,"monetary_base_total":2026796,"m2_hkd":8776052.544,"m3_hkd":8789082.784,"exrate_hkd_usd":7.771,"hibor_fixing_overnight":3.85667,"hibor_fixing_3m":3.54899,"discount_window_base_rate":4.25},
+    {"end_of_month":"2025-09","aggr_balance":54208,"monetary_base_total":2020238,"m2_hkd":8830159.634,"m3_hkd":8843703.577,"exrate_hkd_usd":7.782,"hibor_fixing_overnight":5.01798,"hibor_fixing_3m":3.52571,"discount_window_base_rate":4.5},
+    {"end_of_month":"2025-08","aggr_balance":54061,"monetary_base_total":2014028,"m2_hkd":8711490.988,"m3_hkd":8725519.544,"exrate_hkd_usd":7.7965,"hibor_fixing_overnight":4.00012,"hibor_fixing_3m":3.29583,"discount_window_base_rate":4.75},
+    {"end_of_month":"2025-07","aggr_balance":86477,"monetary_base_total":2042616,"m2_hkd":8879999.392,"m3_hkd":8895408.792,"exrate_hkd_usd":7.852,"hibor_fixing_overnight":0.18506,"hibor_fixing_3m":1.6175,"discount_window_base_rate":4.75},
+    {"end_of_month":"2025-06","aggr_balance":164098,"monetary_base_total":2120253,"m2_hkd":9044195.795,"m3_hkd":9059766.718,"exrate_hkd_usd":7.8515,"hibor_fixing_overnight":0.02839,"hibor_fixing_3m":1.67958,"discount_window_base_rate":4.75},
+    {"end_of_month":"2025-05","aggr_balance":173434,"monetary_base_total":2124938,"m2_hkd":9116086.116,"m3_hkd":9132139.776,"exrate_hkd_usd":7.844,"hibor_fixing_overnight":0.03143,"hibor_fixing_3m":1.32286,"discount_window_base_rate":4.75}
+  ]
+}
