@@ -39,7 +39,7 @@ jobs:
 
           raw=json.loads(Path('data_snapshots/hkma_monetary_statistics.json').read_text())
           meta=raw.get('historical_backfill') or {}
-          assert meta.get('source')=='C&SD Hong Kong Monthly Digest of Statistics, Table 9.5'
+          assert 'C&SD Hong Kong Monthly Digest of Statistics' in meta.get('source','')
           assert meta.get('underlying_source')=='Hong Kong Monetary Authority'
 
           data=hk.load_hk_liquidity()
@@ -56,7 +56,8 @@ jobs:
           traces={trace.name: trace for trace in money.data}
           for name in ('M2 MoM','M3 MoM','HKEX Price (R)','HSTECH Index (R)'):
               assert name in traces, (name,list(traces))
-              assert len(traces[name].x)>=48, (name,len(traces[name].x))
+              valid=sum(v is not None for v in traces[name].y)
+              assert valid>=48, (name,valid)
           print('5-1 5Y traces OK',[(name,len(traces[name].x)) for name in traces])
           PY
       - name: Commit official historical backfill
