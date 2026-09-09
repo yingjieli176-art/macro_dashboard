@@ -8,6 +8,7 @@ import streamlit as st
 from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_wresbal, get_wtre_gen, get_rrp_daily, _fred_series)
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
+
 EASTMONEY_FOCUS_URL = "https://kuaixun.eastmoney.com/"
 EASTMONEY_QUOTE_URL = "https://push2.eastmoney.com/api/qt/stock/get"
 EASTMONEY_SEARCH_URL = "https://searchapi.eastmoney.com/api/suggest/get"
@@ -87,6 +88,7 @@ def _save_watchlists():
         if not isinstance(items, list): items = []
         payload[key] = [item for item in items if isinstance(item, dict) and item.get("symbol")]
     st.query_params[WATCHLIST_PARAM] = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+
 _load_watchlists()
 
 def _empty_quote():
@@ -152,6 +154,7 @@ def _get_eastmoney_quote_safe(symbol):
     except Exception: return _empty_quote()
 
 def _market_state_text(row): return {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后", "CLOSED": "休市"}.get(row.get("market_state") or "", "")
+
 def _market_item_html(name, price, change_pct, meta=""):
     price_text = "--" if price is None else f"{price:,.2f}"; change_text = "--" if change_pct is None else f"{change_pct:+.2f}%"
     return f'<div class="market-item"><div class="market-name">{html.escape(name)}</div><div class="market-price">{html.escape(price_text)}</div><div class="market-change">{html.escape(change_text)}</div><div class="market-meta">{html.escape(meta)}</div></div>'
@@ -164,6 +167,7 @@ def _get_cached_quote(symbol, refresh_key=0):
     return _get_yahoo_quote_safe(symbol)
 
 def _quote_refresh_key(): return int(time.time() // 60)
+
 def _quote_meta(row, market=""):
     source = row.get("data_source") or row.get("quote_source") or ""; delayed = row.get("delayed_by"); state = _market_state_text(row); parts = [state] if state else []
     if delayed not in (None, 0, "0") and source == "Yahoo Finance": parts.append(f"延迟{delayed}分")
@@ -184,8 +188,8 @@ def render_market_groups():
     cards = []
     for title, items, grid_class in groups: cards.append(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>')
     st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
-render_market_groups()
 
+render_market_groups()
 st.caption(f"行情数据刷新时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
 
 @st.cache_data(ttl=20, show_spinner=False)
@@ -245,6 +249,7 @@ def render_watchlist_refresh_control():
     with refresh_col:
         if st.button("↻ 刷新股价", key="refresh_watchlist_quotes", use_container_width=True, help="立即重新获取已添加模块的最新报价"):
             _get_watchlist_quote.clear(); st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
+
 render_watchlist_refresh_control()
 
 @st.fragment(run_every="60s")
@@ -276,6 +281,7 @@ def render_watchlists():
                     st.radio("搜索结果", range(len(options)), format_func=lambda i: options[i], key=f"{key}_result_select", label_visibility="collapsed")
                     st.button("确认添加", key=f"{key}_confirm_selected", use_container_width=True, on_click=_confirm_selected, args=(key,), type="primary")
                 elif st.session_state.get(key, "").strip() and f"{key}_results" in st.session_state: st.caption("没有找到匹配的股票，请检查名称或代码。")
+
 render_watchlists()
 
 def add_sources(sources):
@@ -296,55 +302,25 @@ def _xaxis_config(date_range):
         showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=False,
         hoverformat="%Y-%m-%d", tickfont=dict(size=9 if compact_mode else 11),
         tickangle=0, ticklabelstandoff=5, automargin=False,
-        tickformatstops=[
-            {"dtickrange": [None, 86400000], "value": "%m/%d %H:%M"},
-            {"dtickrange": [86400000, 604800000], "value": "%m/%d"},
-            {"dtickrange": [604800000, 2592000000], "value": "%m/%d"},
-            {"dtickrange": [2592000000, 7776000000], "value": "%b"},
-            {"dtickrange": [7776000000, 31536000000], "value": "%b"},
-            {"dtickrange": [31536000000, 63072000000], "value": "%b"},
-            {"dtickrange": [63072000000, None], "value": "%Y"},
-        ],
         tickmode="auto", nticks=7 if compact_mode else 10,
-    )
-
-def _year_axis_config():
-    return dict(
-        type="date",
-        overlaying="x",
-        matches="x",
-        anchor="y",
-        side="top",
-        position=1,
-        showgrid=False,
-        showline=True,
-        linecolor="#9ca3af",
-        linewidth=1,
-        ticks="outside",
-        ticklen=4,
-        tickwidth=1,
-        tickcolor="#9ca3af",
-        showticklabels=True,
-        tickfont=dict(size=10 if compact_mode else 11),
-        tickformat="%Y",
-        dtick="M12",
-        ticklabelstandoff=4,
-        fixedrange=True,
-        automargin=False,
-        layer="above traces",
     )
 
 def apply_chart_style(fig, height, date_range):
     yaxis2 = getattr(fig.layout, "yaxis2", None)
     has_secondary = yaxis2 is not None and yaxis2.overlaying is not None
-    top_margin = 96 if compact_mode else 68
-    right_margin = 76 if compact_mode else (76 if has_secondary else 44)
+    
+    # 统一边距，确保四个图表严格对齐
+    base_left = 60
+    base_right = 76 if has_secondary else 20
+    base_top = 50
+    base_bottom = 40
+
     fig.update_layout(
         height=height,
         template="plotly_white",
         hovermode="closest" if compact_mode else "x unified",
         dragmode=False,
-        margin=dict(l=52, r=right_margin, t=top_margin + 18, b=64 if compact_mode else 52, pad=2),
+        margin=dict(l=base_left, r=base_right, t=base_top, b=base_bottom, pad=2),
         legend=dict(
             orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0,
             font=dict(size=9 if compact_mode else 11), traceorder="normal",
@@ -353,7 +329,6 @@ def apply_chart_style(fig, height, date_range):
         hoverlabel=dict(bgcolor="white", font_size=11, bordercolor="#e5e7eb"),
         font=dict(size=10 if compact_mode else 12),
         xaxis=_xaxis_config(date_range),
-        xaxis2=_year_axis_config(),
         yaxis=dict(
             showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=False,
             showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True,
@@ -375,7 +350,9 @@ def apply_chart_style(fig, height, date_range):
 
 def get_start_date(date_range):
     end = pd.Timestamp.today().normalize(); return {"5Y": end - pd.DateOffset(years=5), "1Y": end - pd.DateOffset(years=1), "6M": end - pd.DateOffset(months=6), "3M": end - pd.DateOffset(months=3), "1M": end - pd.DateOffset(months=1)}[date_range]
+
 def filter_range(data, date_range): return data[data["observation_date"] >= get_start_date(date_range)].copy()
+
 def chart_height(compact, normal): return compact if compact_mode else normal
 
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -419,7 +396,9 @@ def build_fig3(date_range):
     fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True, tickfont=dict(size=9))); return apply_chart_style(fig, chart_height(340, 500), date_range)
 
 PARAM_DESCRIPTIONS = ["IORB（Interest on Reserve Balances）：美联储对存放在美联储的准备金余额支付的利率。ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具的利率。EFFR（Effective Federal Funds Rate）：美国联邦基金市场的有效隔夜利率。SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。", "10Y Nominal：10年期美国国债名义收益率。10Y Real：10年期美国国债实际收益率，通常指10年期TIPS实际收益率。Breakeven：FRED官方10年期盈亏平衡通胀率（T10YIE）。", "3M：3个月期美国国债收益率。2Y：2年期美国国债收益率。10Y：10年期美国国债收益率。10Y−2Y：FRED官方10年期与2年期美国国债收益率利差（T10Y2Y）。10Y−3M：FRED官方10年期与3个月期美国国债收益率利差（T10Y3M）。", "Net Liquidity Proxy：Reserve Balances − TGA − ON RRP，用于观察美国金融市场流动性方向的分析指标，不是美联储官方命名指标。Reserve Balances：存款机构在美联储的准备金余额。TGA：美国财政部在美联储的总账户。ON RRP：隔夜逆回购余额。"]
+
 def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
+
 compact_mode = False
 
 def render_core_charts():
@@ -437,11 +416,13 @@ def render_core_charts():
         for title, description, key, builder, sources, desc_index, divider in configs:
             st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
             if divider: st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-render_core_charts()
 
+render_core_charts()
 st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-description">东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新</div>', unsafe_allow_html=True)
+
 def render_news_panel():
     col1, col2 = st.columns([1, 5])
     with col1:
@@ -459,5 +440,6 @@ def render_news_panel():
         st.warning("暂时无法取得东方财富红字焦点快讯。")
         if news_error: st.caption(f"错误：{news_error}")
     add_sources([("东方财富红字焦点快讯", EASTMONEY_FOCUS_URL)])
+
 render_news_panel()
 st.markdown(f'<div class="source-text">Source: <a href="{EASTMONEY_FOCUS_URL}" target="_blank" rel="noopener noreferrer">Eastmoney 7×24 Focus News</a></div>', unsafe_allow_html=True)
