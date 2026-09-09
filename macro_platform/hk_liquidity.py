@@ -259,7 +259,7 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
         rows=4,
         cols=1,
         shared_xaxes=True,
-        vertical_spacing=0.075,
+        vertical_spacing=0.085,
         row_heights=[0.27, 0.18, 0.29, 0.26],
         specs=[[{}], [{}], [{"secondary_y": True}], [{}]],
     )
@@ -274,8 +274,10 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
             showarrow=False,
             font=dict(size=14),
         )
-        fig.update_layout(height=650 if compact_mode else 820, template="plotly_white")
+        fig.update_layout(height=900, template="plotly_white")
         return fig
+
+    legend_map = {1: "legend", 2: "legend2", 3: "legend3", 4: "legend4"}
 
     def add_trace(
         row: int,
@@ -297,10 +299,13 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
                 x=data["observation_date"],
                 y=data[column],
                 name=name,
-                mode="lines",
+                mode="lines+markers",
                 line=line,
+                marker=dict(symbol="circle", size=4.5, color=color),
                 connectgaps=False,
-                showlegend=False,
+                showlegend=True,
+                legend=legend_map[row],
+                legendrank=100 + row,
                 hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>",
             ),
             row=row,
@@ -308,8 +313,9 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
             secondary_y=secondary_y,
         )
 
-    add_trace(1, "M2 MoM", "HKD M2 MoM", COLORS["m2"], 2.8)
-    add_trace(1, "M3 MoM", "HKD M3 MoM", COLORS["m3"], 2.3, "dash")
+    # Order is analytical reading order and is mirrored by each local legend.
+    add_trace(1, "M2 MoM", "M2 MoM", COLORS["m2"], 2.8)
+    add_trace(1, "M3 MoM", "M3 MoM", COLORS["m3"], 2.3, "dash")
     add_trace(1, "Monetary Base MoM", "Monetary Base MoM", COLORS["base"], 1.8, "dot")
 
     add_trace(2, "Aggregate Balance", "Aggregate Balance", COLORS["balance"], 2.8, unit=" HK$ bn")
@@ -317,116 +323,62 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
     add_trace(3, "HIBOR O/N", "O/N HIBOR", COLORS["on"], 2.0)
     add_trace(3, "HIBOR 3M", "3M HIBOR", COLORS["h3m"], 2.3, "dash")
     add_trace(3, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot")
-    add_trace(
-        3,
-        "O/N-3M Spread",
-        "O/N−3M Spread (R)",
-        COLORS["spread"],
-        1.7,
-        "dashdot",
-        " bp",
-        secondary_y=True,
-    )
+    add_trace(3, "O/N-3M Spread", "O/N−3M Spread (R)", COLORS["spread"], 1.7, "dashdot", " bp", secondary_y=True)
 
     add_trace(4, "USD/HKD", "USD/HKD", COLORS["fx"], 2.6, unit="")
-    add_trace(4, "Strong-side CU", "Strong-side CU 7.75", COLORS["strong"], 1.4, "dot", unit="")
-    add_trace(4, "Weak-side CU", "Weak-side CU 7.85", COLORS["weak"], 1.4, "dot", unit="")
+    add_trace(4, "Strong-side CU", "Strong-side 7.75", COLORS["strong"], 1.4, "dot", unit="")
+    add_trace(4, "Weak-side CU", "Weak-side 7.85", COLORS["weak"], 1.4, "dot", unit="")
 
     state = liquidity_state(all_data)
     meta = snapshot_metadata()
     latest_text = meta.get("latest_observation") or "--"
     fig.update_layout(
-        height=735 if compact_mode else 930,
+        height=960,
         template="plotly_white",
         hovermode="x unified",
         dragmode=False,
-        margin=dict(l=62, r=62, t=66, b=42, pad=2),
-        showlegend=False,
+        margin=dict(l=62, r=70, t=74, b=42, pad=2),
         title=dict(
             text=f"Hong Kong Liquidity · {state['label']} · latest {latest_text}",
             x=0.01,
             xanchor="left",
-            font=dict(size=14 if compact_mode else 16),
+            font=dict(size=16),
         ),
         hoverlabel=dict(bgcolor="white", font_size=11, bordercolor="#e5e7eb"),
-        font=dict(size=10 if compact_mode else 11),
+        font=dict(size=11),
         plot_bgcolor="#ffffff",
         paper_bgcolor="#ffffff",
+        legend=dict(traceorder="normal", groupclick="toggleitem", itemclick="toggle", itemdoubleclick="toggleothers"),
     )
 
     grid = dict(showgrid=True, gridcolor="#e5e7eb", griddash="dot", fixedrange=True)
     fig.update_yaxes(title_text="MoM (%)", row=1, col=1, zeroline=True, zerolinecolor="#cbd5e1", **grid)
     fig.update_yaxes(title_text="HK$ bn", row=2, col=1, zeroline=False, **grid)
     fig.update_yaxes(title_text="Rate (%)", row=3, col=1, secondary_y=False, zeroline=True, zerolinecolor="#cbd5e1", **grid)
-    fig.update_yaxes(
-        title_text="Spread (bp)",
-        row=3,
-        col=1,
-        secondary_y=True,
-        showgrid=False,
-        zeroline=True,
-        zerolinecolor="#cbd5e1",
-        fixedrange=True,
-    )
+    fig.update_yaxes(title_text="Spread (bp)", row=3, col=1, secondary_y=True, showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True)
     fig.update_yaxes(title_text="USD/HKD", row=4, col=1, range=[7.73, 7.87], zeroline=False, **grid)
-    fig.update_xaxes(
-        showgrid=True,
-        gridcolor="#eef2f7",
-        griddash="dot",
-        fixedrange=True,
-        tickformat="%Y-%m",
-        row=4,
-        col=1,
-    )
+    fig.update_xaxes(showgrid=True, gridcolor="#eef2f7", griddash="dot", fixedrange=True, tickformat="%Y-%m", row=4, col=1)
 
-    # Local legend/header for each subplot: parameters stay with the chart they belong to.
-    local_headers = [
-        (
-            "Money supply",
-            [("M2 MoM", COLORS["m2"]), ("M3 MoM", COLORS["m3"]), ("Monetary Base MoM", COLORS["base"])],
-            fig.layout.yaxis.domain[1],
-        ),
-        (
-            "Banking-system liquidity",
-            [("Aggregate Balance", COLORS["balance"])],
-            fig.layout.yaxis2.domain[1],
-        ),
-        (
-            "HKD funding",
-            [
-                ("O/N HIBOR", COLORS["on"]),
-                ("3M HIBOR", COLORS["h3m"]),
-                ("HKMA Base Rate", COLORS["policy"]),
-                ("O/N−3M Spread (R)", COLORS["spread"]),
-            ],
-            fig.layout.yaxis3.domain[1],
-        ),
-        (
-            "Convertibility band",
-            [
-                ("USD/HKD", COLORS["fx"]),
-                ("Strong-side 7.75", COLORS["strong"]),
-                ("Weak-side 7.85", COLORS["weak"]),
-            ],
-            fig.layout.yaxis5.domain[1],
-        ),
-    ]
-    for title, items, y_top in local_headers:
-        fig.add_annotation(
-            x=0.0,
-            y=min(0.995, y_top + 0.018),
-            xref="paper",
-            yref="paper",
-            xanchor="left",
-            yanchor="bottom",
-            showarrow=False,
-            align="left",
-            text=f"<b>{title}</b>&nbsp;&nbsp;{_legend_text(items)}",
-            font=dict(size=9 if compact_mode else 10, color="#374151"),
-        )
+    legend_style = dict(
+        orientation="h",
+        x=0.0,
+        xanchor="left",
+        yanchor="bottom",
+        bgcolor="rgba(255,255,255,0.88)",
+        borderwidth=0,
+        font=dict(size=10, color="#374151"),
+        itemsizing="constant",
+        traceorder="normal",
+    )
+    # Multiple Plotly legends keep each parameter selector next to its own subplot.
+    domains = [fig.layout.yaxis.domain, fig.layout.yaxis2.domain, fig.layout.yaxis3.domain, fig.layout.yaxis5.domain]
+    for idx, domain in enumerate(domains, start=1):
+        key = "legend" if idx == 1 else f"legend{idx}"
+        cfg = dict(legend_style)
+        cfg["y"] = min(0.995, float(domain[1]) + 0.012)
+        fig.layout[key] = cfg
 
     return fig
-
 
 def liquidity_status_html() -> str:
     data = load_hk_liquidity()
