@@ -399,11 +399,9 @@ def _hkma_get_all(url, params=None, page_size=100, max_pages=60):
             batch = result.get("records") or result.get("data") or result.get("datas") or []
             if isinstance(batch, dict):
                 batch = batch.get("records") or batch.get("data") or batch.get("datas") or []
-            if not batch:
-                break
+            if not batch: break
             rows.extend(batch)
-            if len(batch) < page_size:
-                break
+            if len(batch) < page_size: break
         except Exception:
             break
     return rows
@@ -411,15 +409,11 @@ def _hkma_get_all(url, params=None, page_size=100, max_pages=60):
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_hk_liquidity():
     empty_cols = ["observation_date", "Aggregate Balance", "HIBOR O/N", "HIBOR 1M", "HIBOR 3M", "HKMA Base Rate", "M2 YoY", "M3 YoY", "USD/HKD", "Strong-side CU", "Linked Rate", "Weak-side CU"]
-
-    # Monthly HKMA statistics are used as the guaranteed base dataset.  This avoids
-    # making the whole chart disappear when the daily endpoint is temporarily slow.
     money_url = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
     money_rows = _hkma_get_all(money_url, page_size=100, max_pages=5)
     money = pd.DataFrame(money_rows)
     if money.empty:
         return pd.DataFrame(columns=empty_cols)
-
     money["observation_date"] = pd.to_datetime(money.get("end_of_month"), format="%Y-%m", errors="coerce")
     money["Aggregate Balance"] = pd.to_numeric(money.get("aggr_balance"), errors="coerce") / 1000.0
     money["HIBOR O/N"] = pd.to_numeric(money.get("hibor_fixing_overnight"), errors="coerce")
@@ -435,9 +429,6 @@ def get_hk_liquidity():
     money["Linked Rate"] = 7.80
     money["Weak-side CU"] = 7.85
     money["HIBOR 1M"] = pd.NA
-
-    # Overlay daily interbank data when available, mainly to provide daily 1M HIBOR
-    # and a more granular Aggregate Balance / Base Rate series. Failure is non-fatal.
     interbank_url = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity"
     daily_rows = _hkma_get_all(interbank_url, params={"sortby": "end_of_date", "sortorder": "desc"}, page_size=100, max_pages=1)
     if daily_rows:
@@ -456,11 +447,6 @@ def get_hk_liquidity():
         money = pd.merge_asof(daily, money.sort_values("observation_date"), on="observation_date", direction="backward", suffixes=("", "_monthly"))
         for col in ["Aggregate Balance", "HIBOR O/N", "HKMA Base Rate", "Strong-side CU", "Weak-side CU", "Linked Rate"]:
             money[col] = money[col].combine_first(money.get(f"{col}_monthly"))
-        money["HIBOR 3M"] = money["HIBOR 3M"]
-        money["M2 YoY"] = money["M2 YoY"]
-        money["M3 YoY"] = money["M3 YoY"]
-        money["USD/HKD"] = money["USD/HKD"]
-
     return money[empty_cols].sort_values("observation_date").drop_duplicates("observation_date")
 
 def build_fig5(date_range):
@@ -473,12 +459,7 @@ def build_fig5(date_range):
     add_line(fig, data, "Strong-side CU", "Strong-side CU 7.75", 1.2, "dot", "y3")
     add_line(fig, data, "Linked Rate", "Linked Rate 7.80", 1.2, "dash", "y3")
     add_line(fig, data, "Weak-side CU", "Weak-side CU 7.85", 1.2, "dot", "y3")
-    fig.update_layout(
-        yaxis=dict(title="M2/M3 YoY & Interest Rate (%)", fixedrange=True),
-        yaxis2=dict(title="Aggregate Balance (HK$ bn)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9)),
-        yaxis3=dict(title="USD/HKD", overlaying="y", side="right", anchor="free", position=0.94, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9)),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-    )
+    fig.update_layout(yaxis=dict(title="M2/M3 YoY & Interest Rate (%)", fixedrange=True), yaxis2=dict(title="Aggregate Balance (HK$ bn)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9)), yaxis3=dict(title="USD/HKD", overlaying="y", side="right", anchor="free", position=0.94, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9)), legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0))
     return apply_chart_style(fig, chart_height(430, 650), date_range)
 
 def build_fig1(date_range):
