@@ -6,6 +6,7 @@ from typing import Any
 
 import pandas as pd
 import plotly.graph_objects as go
+import requests
 from plotly.subplots import make_subplots
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -380,12 +381,53 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
     return fig
 
 
-def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> list[go.Figure]:
-    """Build four independent Hong Kong liquidity charts for the dashboard.
+def _market_monthly_change(symbol: str, label: str) -> pd.DataFrame:
+    """Fetch monthly close-to-close percentage change from Yahoo Finance.
 
-    The legacy combined-subplot builder is intentionally retained for backwards
-    compatibility and existing CI. The dashboard uses this split view.
+    Market overlays are enrichment only: a network/API failure returns an empty
+    frame and must never prevent the HKMA liquidity charts from rendering.
     """
+    try:
+        response = requests.get(
+            f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}",
+            params={
+                "range": "5y",
+                "interval": "1mo",
+                "includeAdjustedClose": "true",
+                "events": "div,splits",
+            },
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=3.5,
+        )
+        response.raise_for_status()
+        result = (((response.json() or {}).get("chart") or {}).get("result") or [])
+        if not result:
+            return pd.DataFrame(columns=["observation_date", label])
+        node = result[0] or {}
+        timestamps = node.get("timestamp") or []
+        indicators = node.get("indicators") or {}
+        adj = (indicators.get("adjclose") or [{}])[0].get("adjclose") or []
+        closes = adj if len(adj) == len(timestamps) else ((indicators.get("quote") or [{}])[0].get("close") or [])
+        if len(closes) != len(timestamps):
+            return pd.DataFrame(columns=["observation_date", label])
+        frame = pd.DataFrame(
+            {
+                "observation_date": pd.to_datetime(timestamps, unit="s", utc=True, errors="coerce").tz_convert(None),
+                "close": pd.to_numeric(closes, errors="coerce"),
+            }
+        ).dropna()
+        if frame.empty:
+            return pd.DataFrame(columns=["observation_date", label])
+        frame["observation_date"] = frame["observation_date"].dt.to_period("M").dt.to_timestamp()
+        frame = frame.sort_values("observation_date").drop_duplicates("observation_date", keep="last")
+        frame[label] = frame["close"].pct_change(fill_method=None) * 100.0
+        return frame[["observation_date", label]].dropna(subset=[label])
+    except Exception:
+        return pd.DataFrame(columns=["observation_date", label])
+
+
+def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> list[go.Figure]:
+    """Build four independent Hong Kong liquidity charts for the dashboard."""
     all_data = load_hk_liquidity()
     data = _slice_range(all_data, date_range)
     meta = snapshot_metadata()
@@ -395,18 +437,24 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         fig = go.Figure()
         fig.add_annotation(
             text="HKMA snapshot unavailable · data pipeline needs refresh",
-            x=0.5,
-            y=0.5,
-            xref="paper",
-            yref="paper",
-            showarrow=False,
+            x=0.5, y=0.5, xref="paper", yref="paper", showarrow=False,
             font=dict(size=14),
         )
         fig.update_layout(height=420, template="plotly_white")
         return [fig]
 
+    # Market overlays use monthly close-to-close percentage changes so they are
+    # directly comparable with the monthly liquidity impulse in 5-1.
+    hkex_change = _market_monthly_change("0388.HK", "HKEX Price Change")
+    hstech_change = _market_monthly_change("HSTECH.HK", "HSTECH Change")
+    market_data = data[["observation_date"]].copy()
+    for frame in (hkex_change, hstech_change):
+        if not frame.empty:
+            market_data = market_data.merge(frame, on="observation_date", how="left")
+
     def add_line(
         fig: go.Figure,
+        frame: pd.DataFrame,
         column: str,
         name: str,
         color: str,
@@ -415,18 +463,14 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         unit: str = "%",
         secondary_y: bool | None = None,
     ) -> None:
-        if column not in data.columns or data[column].notna().sum() == 0:
+        if column not in frame.columns or frame[column].notna().sum() == 0:
             return
         line: dict[str, Any] = {"width": width, "color": color}
         if dash:
             line["dash"] = dash
         trace = go.Scatter(
-            x=data["observation_date"],
-            y=data[column],
-            name=name,
-            mode="lines",
-            line=line,
-            connectgaps=False,
+            x=frame["observation_date"], y=frame[column], name=name, mode="lines",
+            line=line, connectgaps=False,
             hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>",
         )
         if secondary_y is None:
@@ -434,125 +478,117 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         else:
             fig.add_trace(trace, secondary_y=secondary_y)
 
-    def style(fig: go.Figure, title: str, height: int = 410, right_axis: bool = False) -> go.Figure:
+    def add_constant(
+        fig: go.Figure,
+        value: float,
+        name: str,
+        color: str,
+        dash: str = "dot",
+        width: float = 1.4,
+        secondary_y: bool | None = None,
+    ) -> None:
+        trace = go.Scatter(
+            x=data["observation_date"], y=[value] * len(data), name=name, mode="lines",
+            line=dict(width=width, color=color, dash=dash), connectgaps=True,
+            hovertemplate=f"{name}: %{{y:.3f}}<extra></extra>",
+        )
+        if secondary_y is None:
+            fig.add_trace(trace)
+        else:
+            fig.add_trace(trace, secondary_y=secondary_y)
+
+    def style(fig: go.Figure, title: str, height: int = 430, right_axis: bool = False) -> go.Figure:
         fig.update_layout(
             height=height,
             template="plotly_white",
             hovermode="x unified",
             dragmode=False,
-            margin=dict(l=62, r=76 if right_axis else 28, t=96, b=44, pad=2),
+            margin=dict(l=62, r=82 if right_axis else 28, t=96, b=44, pad=2),
             title=dict(text=f"{title} · latest {latest_text}", x=0.01, xanchor="left", font=dict(size=16)),
             legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.08,
-                xanchor="left",
-                x=0,
-                font=dict(size=11),
-                traceorder="normal",
-                itemwidth=30,
-                bgcolor="rgba(255,255,255,0)",
-                itemclick="toggle",
-                itemdoubleclick="toggleothers",
+                orientation="h", yanchor="bottom", y=1.08, xanchor="left", x=0,
+                font=dict(size=11), traceorder="normal", itemwidth=30,
+                bgcolor="rgba(255,255,255,0)", itemclick="toggle", itemdoubleclick="toggleothers",
             ),
             hoverlabel=dict(bgcolor="white", font_size=11, bordercolor="#e5e7eb"),
-            font=dict(size=12),
-            plot_bgcolor="#ffffff",
-            paper_bgcolor="#ffffff",
+            font=dict(size=12), plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
         )
         fig.update_xaxes(
-            showgrid=True,
-            gridcolor="#eef2f7",
-            griddash="dot",
-            showline=True,
-            linecolor="#9ca3af",
-            linewidth=1,
-            fixedrange=True,
-            tickformat="%Y-%m",
-            tickfont=dict(size=11),
-            automargin=False,
+            showgrid=True, gridcolor="#eef2f7", griddash="dot",
+            showline=True, linecolor="#9ca3af", linewidth=1,
+            fixedrange=True, tickformat="%Y-%m", tickfont=dict(size=11), automargin=False,
         )
         return fig
 
-    # 5A · Money supply
-    money = go.Figure()
-    add_line(money, "M2 MoM", "M2 MoM", COLORS["m2"], 2.8)
-    add_line(money, "M3 MoM", "M3 MoM", COLORS["m3"], 2.3, "dash")
-    add_line(money, "Monetary Base MoM", "Monetary Base MoM", COLORS["base"], 1.8, "dot")
+    # 5-1 · Money supply + Hong Kong equity market monthly changes.
+    money = make_subplots(specs=[[{"secondary_y": True}]])
+    add_line(money, data, "M2 MoM", "M2 MoM", COLORS["m2"], 2.8, secondary_y=False)
+    add_line(money, data, "M3 MoM", "M3 MoM", COLORS["m3"], 2.3, "dash", secondary_y=False)
+    add_line(money, data, "Monetary Base MoM", "Monetary Base MoM", COLORS["base"], 1.8, "dot", secondary_y=False)
+    add_line(money, market_data, "HKEX Price Change", "HKEX Price Change (R)", "#0891b2", 2.1, secondary_y=True)
+    add_line(money, market_data, "HSTECH Change", "HSTECH Change (R)", "#db2777", 2.1, "dash", secondary_y=True)
     money.update_yaxes(
-        title_text="MoM (%)",
-        showgrid=True,
-        gridcolor="#e5e7eb",
-        griddash="dot",
-        zeroline=True,
-        zerolinecolor="#cbd5e1",
-        fixedrange=True,
+        title_text="Money MoM (%)", secondary_y=False,
+        showgrid=True, gridcolor="#e5e7eb", griddash="dot",
+        zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
-    style(money, "5-1. HK Money Supply")
+    money.update_yaxes(
+        title_text="Market Change (%)", secondary_y=True,
+        showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
+    )
+    style(money, "5-1. HK Money Supply & Market Pulse", right_axis=True)
 
-    # 5B · Banking-system liquidity
+    # 5-2 · Banking-system liquidity.
     balance = go.Figure()
-    add_line(balance, "Aggregate Balance", "Aggregate Balance", COLORS["balance"], 2.8, unit=" HK$ bn")
+    add_line(balance, data, "Aggregate Balance", "Aggregate Balance", COLORS["balance"], 2.8, unit=" HK$ bn")
     balance.update_yaxes(
-        title_text="HK$ bn",
-        showgrid=True,
-        gridcolor="#e5e7eb",
-        griddash="dot",
-        zeroline=False,
-        fixedrange=True,
+        title_text="HK$ bn", showgrid=True, gridcolor="#e5e7eb", griddash="dot",
+        zeroline=False, fixedrange=True,
     )
     style(balance, "5-2. Banking-system Liquidity")
 
-    # 5C · HKD funding; spread is the only right-axis parameter.
+    # 5-3 · HKD funding.
     funding = make_subplots(specs=[[{"secondary_y": True}]])
-    add_line(funding, "HIBOR O/N", "O/N HIBOR", COLORS["on"], 2.0, secondary_y=False)
-    add_line(funding, "HIBOR 3M", "3M HIBOR", COLORS["h3m"], 2.3, "dash", secondary_y=False)
-    add_line(funding, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot", secondary_y=False)
-    add_line(
-        funding,
-        "O/N-3M Spread",
-        "O/N−3M Spread (R)",
-        COLORS["spread"],
-        1.7,
-        "dashdot",
-        " bp",
-        secondary_y=True,
+    add_line(funding, data, "HIBOR O/N", "O/N HIBOR", COLORS["on"], 2.0, secondary_y=False)
+    add_line(funding, data, "HIBOR 3M", "3M HIBOR", COLORS["h3m"], 2.3, "dash", secondary_y=False)
+    add_line(funding, data, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot", secondary_y=False)
+    add_line(funding, data, "O/N-3M Spread", "O/N−3M Spread (R)", COLORS["spread"], 1.7, "dashdot", " bp", secondary_y=True)
+    funding.update_yaxes(
+        title_text="Rate (%)", secondary_y=False,
+        showgrid=True, gridcolor="#e5e7eb", griddash="dot",
+        zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
     funding.update_yaxes(
-        title_text="Rate (%)",
-        secondary_y=False,
-        showgrid=True,
-        gridcolor="#e5e7eb",
-        griddash="dot",
-        zeroline=True,
-        zerolinecolor="#cbd5e1",
-        fixedrange=True,
+        title_text="Spread (bp)", secondary_y=True,
+        showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
-    funding.update_yaxes(
-        title_text="Spread (bp)",
-        secondary_y=True,
-        showgrid=False,
-        zeroline=True,
-        zerolinecolor="#cbd5e1",
-        fixedrange=True,
-    )
-    style(funding, "5-3. HKD Funding", height=430, right_axis=True)
+    style(funding, "5-3. HKD Funding", right_axis=True)
 
-    # 5D · Convertibility band
-    fx = go.Figure()
-    add_line(fx, "USD/HKD", "USD/HKD", COLORS["fx"], 2.6, unit="")
-    add_line(fx, "Strong-side CU", "Strong-side 7.75", COLORS["strong"], 1.4, "dot", unit="")
-    add_line(fx, "Weak-side CU", "Weak-side 7.85", COLORS["weak"], 1.4, "dot", unit="")
-    fx.update_yaxes(
-        title_text="USD/HKD",
-        range=[7.73, 7.87],
-        showgrid=True,
-        gridcolor="#e5e7eb",
-        griddash="dot",
-        zeroline=False,
-        fixedrange=True,
+    # 5-4 · Convertibility band + market reaction.
+    fx = make_subplots(specs=[[{"secondary_y": True}]])
+    add_line(fx, data, "USD/HKD", "USD/HKD", COLORS["fx"], 2.6, unit="", secondary_y=False)
+    add_constant(fx, 7.75, "Strong-side CU 7.75", COLORS["strong"], "dot", 1.4, secondary_y=False)
+    add_constant(fx, 7.80, "Linked Rate Center 7.80", "#64748b", "dash", 1.5, secondary_y=False)
+    add_constant(fx, 7.85, "Weak-side CU 7.85", COLORS["weak"], "dot", 1.4, secondary_y=False)
+    add_line(fx, market_data, "HKEX Price Change", "HKEX Price Change (R)", "#0891b2", 2.1, secondary_y=True)
+    add_line(fx, market_data, "HSTECH Change", "HSTECH Change (R)", "#db2777", 2.1, "dash", secondary_y=True)
+    fx.add_hrect(
+        y0=7.75, y1=7.85,
+        fillcolor="rgba(148,163,184,0.10)",
+        line_width=0, layer="below",
+        annotation_text="7.75–7.85 LERS band",
+        annotation_position="top left",
     )
-    style(fx, "5-4. USD/HKD Convertibility Band")
+    fx.update_yaxes(
+        title_text="USD/HKD", secondary_y=False, range=[7.73, 7.87],
+        showgrid=True, gridcolor="#e5e7eb", griddash="dot",
+        zeroline=False, fixedrange=True,
+    )
+    fx.update_yaxes(
+        title_text="Market Change (%)", secondary_y=True,
+        showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
+    )
+    style(fx, "5-4. USD/HKD Convertibility Band & Market", height=450, right_axis=True)
 
     return [money, balance, funding, fx]
 
