@@ -14,38 +14,86 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           p = Path('app.py')
           s = p.read_text(encoding='utf-8')
-          old = '''def _xaxis_config(date_range):
-    cfg = {
-        "5Y": {"dtick": "M3", "tickformat": "%b %Y", "tickformatstops": [{"dtickrange": ["M3", "M12"], "value": "%b"}]},
-        "1Y": {"dtick": "M1", "tickformat": "%b %Y", "tickformatstops": [{"dtickrange": ["M1", "M2"], "value": "%b"}]},
-        "6M": {"dtick": "M1", "tickformat": "%b %Y", "tickformatstops": [{"dtickrange": ["M1", "M2"], "value": "%b"}]},
-        "3M": {"dtick": "D7", "tickformat": "%b %d", "tickformatstops": [{"dtickrange": ["D7", "M1"], "value": "%b %d"}]},
-        "1M": {"dtick": "D3", "tickformat": "%b %d", "tickformatstops": [{"dtickrange": ["D3", "M1"], "value": "%b %d"}]},
-    }[date_range]
-    return dict(showgrid=True, gridcolor="#eef2f7", griddash="dot", showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True, hoverformat="%Y-%m-%d", tickfont=dict(size=11), tickangle=-20, ticklabelstandoff=6, automargin=True, **cfg)
-'''
+          pattern = r'def _xaxis_config\(date_range\):.*?\n(?=\ndef apply_chart_style)'
           new = '''def _xaxis_config(date_range):
     cfg = {
-        "5Y": {"dtick": "M3", "tickformat": "%b\n%Y"},
-        "1Y": {"dtick": "M1", "tickformat": "%b\n%Y"},
-        "6M": {"dtick": "M1", "tickformat": "%b\n%Y"},
-        "3M": {"dtick": "D7", "tickformat": "%b %d\n%Y"},
-        "1M": {"dtick": "D3", "tickformat": "%b %d\n%Y"},
+        "5Y": {"dtick": "M3", "tickformat": "%m/%d"},
+        "1Y": {"dtick": "M1", "tickformat": "%m/%d"},
+        "6M": {"dtick": "M1", "tickformat": "%m/%d"},
+        "3M": {"dtick": "D7", "tickformat": "%m/%d"},
+        "1M": {"dtick": "D3", "tickformat": "%m/%d"},
     }[date_range]
-    return dict(showgrid=True, gridcolor="#eef2f7", griddash="dot", showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True, hoverformat="%Y-%m-%d", tickfont=dict(size=11), tickangle=0, ticklabelstandoff=6, automargin=True, **cfg)
+    return dict(
+        showgrid=True,
+        gridcolor="#eef2f7",
+        griddash="dot",
+        showline=True,
+        linecolor="#9ca3af",
+        linewidth=1,
+        fixedrange=True,
+        hoverformat="%Y-%m-%d",
+        tickfont=dict(size=11),
+        tickangle=0,
+        ticklabelstandoff=6,
+        automargin=True,
+        **cfg
+    )
 '''
-          if old not in s:
+          if not re.search(pattern, s, flags=re.S):
               raise SystemExit('target function not found')
-          p.write_text(s.replace(old, new), encoding='utf-8')
+          s = re.sub(pattern, new, s, count=1, flags=re.S)
+          marker = '        xaxis=_xaxis_config(date_range),'
+          replacement = '''        xaxis=_xaxis_config(date_range),
+        xaxis2=dict(
+            overlaying="x",
+            side="top",
+            tickmode="array",
+            tickvals=None,
+            ticktext=None,
+            showgrid=False,
+            showline=False,
+            ticks="",
+            tickfont=dict(size=11),
+            fixedrange=True,
+            automargin=True,
+        ),'''
+          if marker not in s:
+              raise SystemExit('xaxis marker not found')
+          s = s.replace(marker, replacement, 1)
+          marker2 = '    fig.update_xaxes(fixedrange=True)'
+          replacement2 = '''    fig.update_xaxes(fixedrange=True)
+    # A dedicated top x-axis shows years only; the bottom axis stays numeric month/day.
+    if len(fig.data):
+        x_values = []
+        for trace in fig.data:
+            vals = list(trace.x) if trace.x is not None else []
+            x_values.extend(v for v in vals if v is not None)
+        if x_values:
+            dates = pd.to_datetime(x_values, errors="coerce").dropna().sort_values().drop_duplicates()
+            years = sorted(dates.dt.year.unique().tolist())
+            year_ticks = []
+            for year in years:
+                same_year = dates[dates.dt.year == year]
+                year_ticks.append(same_year.iloc[0])
+            fig.update_layout(xaxis2=dict(
+                overlaying="x", side="top", tickmode="array",
+                tickvals=year_ticks, ticktext=[str(v.year) for v in year_ticks],
+                showgrid=False, showline=False, ticks="", tickfont=dict(size=11), fixedrange=True
+            ))'''
+          if marker2 not in s:
+              raise SystemExit('update_xaxes marker not found')
+          s = s.replace(marker2, replacement2, 1)
+          p.write_text(s, encoding='utf-8')
           PY
       - name: Commit app.py
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add app.py
-          git commit -m 'Put years above date labels' || exit 0
+          git commit -m 'Add separate top year axis' || exit 0
           git push
       - name: Remove temporary workflow
         if: always()
