@@ -305,14 +305,39 @@ def _xaxis_config(date_range):
         tickmode="auto", nticks=7 if compact_mode else 10,
     )
 
+def _year_axis_config():
+    return dict(
+        type="date",
+        overlaying="x",
+        matches="x",
+        anchor="free",
+        side="top",
+        position=1.0,
+        showgrid=False,
+        showline=True,
+        linecolor="#6b7280",
+        linewidth=1.2,
+        ticks="outside",
+        ticklen=5,
+        tickwidth=1,
+        tickcolor="#6b7280",
+        showticklabels=True,
+        tickfont=dict(size=11 if compact_mode else 12),
+        tickformat="%Y",
+        dtick="M12",
+        ticklabelstandoff=6,
+        fixedrange=True,
+        automargin=True,
+        layer="above traces",
+        title=dict(text="X轴：年份", font=dict(size=11 if compact_mode else 12), standoff=8),
+    )
+
 def apply_chart_style(fig, height, date_range):
     yaxis2 = getattr(fig.layout, "yaxis2", None)
     has_secondary = yaxis2 is not None and yaxis2.overlaying is not None
-    
-    # 统一边距，确保四个图表严格对齐
     base_left = 60
     base_right = 76 if has_secondary else 20
-    base_top = 50
+    base_top = 115 if compact_mode else 105
     base_bottom = 40
 
     fig.update_layout(
@@ -322,13 +347,14 @@ def apply_chart_style(fig, height, date_range):
         dragmode=False,
         margin=dict(l=base_left, r=base_right, t=base_top, b=base_bottom, pad=2),
         legend=dict(
-            orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0,
+            orientation="h", yanchor="bottom", y=1.08, xanchor="left", x=0,
             font=dict(size=9 if compact_mode else 11), traceorder="normal",
             itemwidth=30, bgcolor="rgba(255,255,255,0)",
         ),
         hoverlabel=dict(bgcolor="white", font_size=11, bordercolor="#e5e7eb"),
         font=dict(size=10 if compact_mode else 12),
         xaxis=_xaxis_config(date_range),
+        xaxis2=_year_axis_config(),
         yaxis=dict(
             showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=False,
             showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True,
@@ -352,7 +378,6 @@ def get_start_date(date_range):
     end = pd.Timestamp.today().normalize(); return {"5Y": end - pd.DateOffset(years=5), "1Y": end - pd.DateOffset(years=1), "6M": end - pd.DateOffset(months=6), "3M": end - pd.DateOffset(months=3), "1M": end - pd.DateOffset(months=1)}[date_range]
 
 def filter_range(data, date_range): return data[data["observation_date"] >= get_start_date(date_range)].copy()
-
 def chart_height(compact, normal): return compact if compact_mode else normal
 
 @st.cache_data(ttl=3600, show_spinner=False)
