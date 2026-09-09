@@ -1,0 +1,85 @@
+name: Upgrade HK freshness and 5Y history
+
+on:
+  push:
+    paths:
+      - "scripts/upgrade_hk_freshness_and_history.py"
+      - ".github/workflows/upgrade-hk-freshness-history.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependencies
+        run: pip install pandas plotly requests
+
+      - name: Apply freshness upgrade
+        run: python scripts/upgrade_hk_freshness_and_history.py
+
+      - name: Validate Python
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py scripts/upgrade_hk_freshness_and_history.py
+
+      - name: Validate chart structure without external market network
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          import macro_platform.hk_liquidity as hk
+
+          # Deterministic 5Y synthetic market/FX inputs validate chart plumbing,
+          # not third-party availability from the CI runner.
+          dates = pd.date_range("2021-09-01", "2026-09-01", freq="MS")
+          hk._market_monthly_close = lambda symbol, label: pd.DataFrame({
+              "observation_date": dates,
+              label: range(100, 100 + len(dates)),
+          })
+          fx_dates = pd.date_range("2021-09-01", "2026-09-08", freq="B")
+          hk._fred_daily_series = lambda series_id, label: pd.DataFrame({
+              "observation_date": fx_dates,
+              label: [7.80] * len(fx_dates),
+          })
+          figs = hk.build_hk_liquidity_figures("5Y")
+          assert len(figs) == 4
+          names_51 = [t.name for t in figs[0].data]
+          assert "HKEX Price (R)" in names_51, names_51
+          assert "HSTECH Index (R)" in names_51, names_51
+          market_trace = next(t for t in figs[0].data if t.name == "HSTECH Index (R)")
+          assert min(pd.to_datetime(market_trace.x)) <= pd.Timestamp("2021-09-01")
+          names_54 = [t.name for t in figs[3].data]
+          for name in ("USD/HKD", "Strong-side CU 7.75", "Linked Rate Center 7.80", "Weak-side CU 7.85"):
+              assert name in names_54, names_54
+          assert list(figs[3].layout.yaxis.range) == [7.87, 7.73], figs[3].layout.yaxis.range
+          fx_trace = next(t for t in figs[3].data if t.name == "USD/HKD")
+          assert max(pd.to_datetime(fx_trace.x)) >= pd.Timestamp("2026-09-08")
+          print("5-1/5-4 freshness structure validated")
+          PY
+
+      - name: Validate copy and source links
+        run: |
+          grep -q "市场历史独立拉取 5Y" app.py
+          grep -q "7.75 强方兑换保证显示在上方" app.py
+          grep -q "FRED DEXHKUS" app.py
+          grep -q "Hang Seng Indexes · HSTECH" app.py
+
+      - name: Commit generated upgrade
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/hk_liquidity.py
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit"
+          else
+            git commit -m "Improve Hong Kong data freshness and five-year history"
+            git push
+          fi
