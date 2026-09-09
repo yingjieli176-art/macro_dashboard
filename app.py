@@ -16,10 +16,11 @@ EASTMONEY_UT = "bd1d9ddb04089700cf9c27f4f4961f5b"
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False}
 WATCHLIST_PARAM = "watchlist"
+REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
 
 st.markdown("""
 <style>
-.block-container { padding-top: 1.05rem; padding-bottom: 2.5rem; max-width: 1900px; }
+.block-container { padding-top: 0.85rem; padding-bottom: 3rem; max-width: 1760px; }
 html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "PingFang TC", "Segoe UI", sans-serif; }
 .dashboard-title { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.1rem; }
 .section-title { font-size: 1.35rem; font-weight: 650; letter-spacing: -0.01em; margin-top: 0.7rem; margin-bottom: 0.15rem; min-height: 32px; display: flex; align-items: center; }
@@ -62,10 +63,58 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .module-delete button { min-width: 24px !important; width: 24px !important; max-width: 24px !important; height: 24px !important; padding: 0 !important; margin: 0 !important; font-size: 14px !important; line-height: 24px !important; border: 0 !important; }
 .search-result .search-after, .search-result .search-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
+
+html { scroll-behavior: smooth; }
+.dashboard-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 4px 0 14px; margin-bottom: 14px; border-bottom: 1px solid #e5e7eb; }
+.dashboard-heading { min-width: 0; }
+.dashboard-eyebrow { color: #9ca3af; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; margin-bottom: 2px; }
+.dashboard-subtitle { color: #6b7280; font-size: 0.82rem; line-height: 1.5; margin-top: 2px; }
+.dashboard-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 620px; padding-top: 4px; }
+.dashboard-links a { color: #374151 !important; text-decoration: none !important; font-size: 0.76rem; line-height: 1; padding: 7px 10px; border: 1px solid #e5e7eb; border-radius: 999px; background: #fff; white-space: nowrap; }
+.dashboard-links a:hover { border-color: #9ca3af; background: #f9fafb; color: #111827 !important; }
+.dashboard-links a.external { font-weight: 650; }
+.section-anchor { height: 0; visibility: hidden; scroll-margin-top: 18px; }
+.section-kicker { color: #9ca3af; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; margin-top: 0.4rem; margin-bottom: -0.35rem; }
+.section-toolbar-note { color: #9ca3af; font-size: 0.72rem; margin-top: -0.15rem; margin-bottom: 0.5rem; }
+div[data-testid="stVerticalBlockBorderWrapper"] { border-color: #e5e7eb !important; border-radius: 12px !important; }
+div[data-testid="stPlotlyChart"] { border: 1px solid #eef2f7; border-radius: 12px; padding: 2px 4px 0; background: #fff; overflow: hidden; }
+.stButton > button { border-radius: 8px; }
+.source-text a { display: inline-block; padding: 1px 0; }
+.market-group { border-radius: 12px; padding: 9px 10px 8px; }
+.news-box { border-radius: 12px; padding: 8px 12px; }
+@media (max-width: 1100px) {
+  .dashboard-header { display: block; }
+  .dashboard-links { justify-content: flex-start; max-width: none; margin-top: 10px; }
+}
+@media (max-width: 700px) {
+  .block-container { padding-left: 0.75rem; padding-right: 0.75rem; }
+  .dashboard-links a { font-size: 0.72rem; padding: 6px 8px; }
+  .dashboard-title { font-size: 1.55rem; }
+  .section-title { font-size: 1.12rem; }
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="dashboard-title">Macro Dashboard</div>', unsafe_allow_html=True)
+st.markdown(
+    f"""
+    <div class="dashboard-header">
+      <div class="dashboard-heading">
+        <div class="dashboard-eyebrow">MACRO · LIQUIDITY · RATES</div>
+        <div class="dashboard-title">Macro Dashboard</div>
+        <div class="dashboard-subtitle">跨市场行情、利率、流动性与 7×24 财经信息面板</div>
+      </div>
+      <div class="dashboard-links">
+        <a href="#market-overview">市场概览</a>
+        <a href="#watchlist">自选观察</a>
+        <a href="#macro-charts">宏观图表</a>
+        <a href="#news">财经快讯</a>
+        <a class="external" href="{REPO_URL}" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 def _load_watchlists():
     if st.session_state.get("_watchlist_loaded"): return
@@ -189,6 +238,8 @@ def render_market_groups():
     for title, items, grid_class in groups: cards.append(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>')
     st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
 
+st.markdown('<div id="market-overview" class="section-anchor"></div><div class="section-kicker">MARKET OVERVIEW</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">市场概览</div><div class="section-description">美股、港股与 A 股主要指数 · 行情模块每 60 秒刷新</div>', unsafe_allow_html=True)
 render_market_groups()
 st.caption(f"行情数据刷新时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
 
@@ -245,11 +296,13 @@ def _cancel_search(key):
     st.session_state[f"{key}_open"] = False; st.session_state.pop(f"{key}_results", None)
 
 def render_watchlist_refresh_control():
-    refresh_col, _, _ = st.columns([1.2, 3.8, 1], vertical_alignment="top")
+    _, refresh_col = st.columns([5, 1], vertical_alignment="top")
     with refresh_col:
         if st.button("↻ 刷新股价", key="refresh_watchlist_quotes", use_container_width=True, help="立即重新获取已添加模块的最新报价"):
             _get_watchlist_quote.clear(); st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
 
+st.markdown('<div id="watchlist" class="section-anchor"></div><div class="section-kicker">WATCHLIST</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">自选观察</div><div class="section-description">按市场添加股票模块；刷新、搜索与删除操作集中在本区域</div>', unsafe_allow_html=True)
 render_watchlist_refresh_control()
 
 @st.fragment(run_every="60s")
@@ -590,15 +643,17 @@ def render_core_charts():
             if divider: st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
         st.markdown('<div class="section-title">5. Hong Kong Liquidity</div>', unsafe_allow_html=True); st.markdown('<div class="section-description">HK M2/M3、银行体系流动性、HIBOR、HKMA 利率走廊与 USD/HKD</div>', unsafe_allow_html=True); hk_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="normal_hk_liquidity_range", label_visibility="collapsed"); st.plotly_chart(build_fig5(hk_range), use_container_width=True, config=PLOTLY_CONFIG); st.markdown('<div class="mini-description"><b>参数概念：</b><br>1. Aggregate Balance：香港银行体系在金管局的结算余额，单位为 HK$ million；图中转换为 HK$ billion，月度值取当月每日收市总结余的平均值。<br>2. M2：香港港元广义货币供应量，主要反映公众持有的现金及银行存款等货币性资产。<br>3. M3：香港港元货币供应量的更广口径，在 M2 基础上包含更广泛的货币性项目。<br>4. M2 YoY：M2 相对 12 个月前同月的增长率，用来描述货币供应量的年度变化速度。<br>5. M3 YoY：M3 相对 12 个月前同月的增长率，定义与 M2 YoY 相同，但统计口径更广。<br>6. O/N HIBOR：港元隔夜银行间拆借利率，即隔夜期限的港元银行间资金价格。<br>7. 1M HIBOR：港元 1 个月 HIBOR，表示 1 个月期限的港元银行间资金价格。<br>8. 3M HIBOR：港元 3 个月 HIBOR，表示 3 个月期限的港元银行间资金价格。<br>9. HKMA Base Rate：香港金管局贴现窗基本利率，是香港利率体系中的政策参考利率之一。<br>10. USD/HKD：每 1 美元对应的港元价格；数值越高表示港元相对美元越弱。<br>11. Strong-side CU / Linked Rate / Weak-side CU：联系汇率制度下的 7.75 / 7.80 / 7.85 参考水平，其中 7.75 和 7.85 是强方及弱方兑换保证，7.80 是联系汇率中间水平。<br>12. 3M MA：3 个月移动平均，即当前月与前两个月数据的平均值；用于平滑月度曲线，不会创造新的原始数据点。</div>', unsafe_allow_html=True); add_sources([("HKMA Daily Figures of Interbank Liquidity", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity/")])
 
+st.markdown('<div id="macro-charts" class="section-anchor"></div><div class="section-kicker">MACRO CHARTS</div>', unsafe_allow_html=True)
 render_core_charts()
 st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
+st.markdown('<div id="news" class="section-anchor"></div><div class="section-kicker">NEWS</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-description">东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新</div>', unsafe_allow_html=True)
 
 def render_news_panel():
-    col1, col2 = st.columns([1, 5])
-    with col1:
+    _, action_col = st.columns([5, 1])
+    with action_col:
         if st.button("🔄 立即刷新", key="refresh_7x24", use_container_width=True): get_sina_news.clear()
     news_items, news_error = get_sina_news(limit=50)
     if news_items:
