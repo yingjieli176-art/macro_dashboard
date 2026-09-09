@@ -1,0 +1,59 @@
+name: Wire USDHKD snapshot
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/wire_usdhkd_snapshot.py
+      - .github/workflows/wire-usdhkd-snapshot.yml
+      - data_snapshots/usdhkd_daily.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wire-usdhkd-snapshot
+  cancel-in-progress: true
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pandas plotly requests
+      - name: Wire snapshot into chart core
+        run: python scripts/wire_usdhkd_snapshot.py
+      - name: Validate 5Y USDHKD chart coverage
+        run: |
+          python -m py_compile macro_platform/hk_liquidity.py
+          python - <<'PY'
+          import pandas as pd
+          import macro_platform.hk_liquidity as hk
+          fig=hk.build_hk_liquidity_figures('5Y')[3]
+          trace=next(t for t in fig.data if t.name=='USD/HKD')
+          xs=pd.to_datetime(list(trace.x),errors='coerce')
+          ys=pd.to_numeric(pd.Series(list(trace.y)),errors='coerce')
+          valid=xs.notna() & ys.notna().to_numpy()
+          print('USDHKD 5Y',int(valid.sum()),xs[valid].min(),xs[valid].max())
+          assert int(valid.sum()) >= 1000
+          assert xs[valid].min() <= pd.Timestamp('2021-10-01')
+          assert xs[valid].max() >= pd.Timestamp('2026-08-01')
+          PY
+      - name: Commit chart wiring
+        run: |
+          git add macro_platform/hk_liquidity.py
+          if git diff --cached --quiet; then
+            echo "USDHKD wiring already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Use persisted USDHKD history in Hong Kong chart"
+          git pull --rebase origin main
+          git push origin main
