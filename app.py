@@ -289,38 +289,32 @@ def add_line(fig, data, column, name, width=2.5, dash=None, yaxis=None, unit="%"
     fig.add_trace(trace)
 
 def _xaxis_config(date_range):
-    # Compact mode packs two charts into roughly half the page width, so it
-    # needs fewer and shorter tick labels plus a steeper angle to stay
-    # readable. Normal (full-width) mode can afford more, longer labels.
-    if compact_mode:
-        cfg = {
-            "5Y": {"dtick": "M6", "tickformat": "%Y"},
-            "1Y": {"dtick": "M2", "tickformat": "%b\n%Y"},
-            "6M": {"dtick": "M1", "tickformat": "%b"},
-            "3M": {"dtick": "D14", "tickformat": "%m/%d"},
-            "1M": {"dtick": "D7", "tickformat": "%m/%d"},
-        }[date_range]
-        tickangle, tick_size = 0, 10
-    else:
-        cfg = {
-            "5Y": {"dtick": "M6", "tickformat": "%Y"},
-            "1Y": {"dtick": "M1", "tickformat": "%b %Y"},
-            "6M": {"dtick": "M1", "tickformat": "%b %Y"},
-            "3M": {"dtick": "D14", "tickformat": "%b %d"},
-            "1M": {"dtick": "D3", "tickformat": "%b %d"},
-        }[date_range]
-        tickangle, tick_size = -30, 11
-    # automargin=False on purpose: a dynamic margin is exactly what was
-    # causing every chart to end up with a slightly different plot-area
-    # width, so axes never lined up between panels. A fixed margin (set in
-    # apply_chart_style) keeps every chart's plot area pixel-identical.
+    # Plotly adapts tick density to the visible span. Keep the lower axis
+    # focused on month/day detail and put year labels on a separate top axis.
     return dict(
-        showgrid=True, gridcolor="#eef2f7", griddash="dot",
-        showline=True, linecolor="#9ca3af", linewidth=1,
-        fixedrange=True, hoverformat="%Y-%m-%d",
-        tickfont=dict(size=tick_size), tickangle=tickangle,
-        ticklabelstandoff=4, automargin=False,
-        **cfg,
+        type="date", showgrid=True, gridcolor="#eef2f7", griddash="dot",
+        showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=False,
+        hoverformat="%Y-%m-%d", tickfont=dict(size=9 if compact_mode else 11),
+        tickangle=0, ticklabelstandoff=5, automargin=False,
+        tickformatstops=[
+            {"dtickrange": [None, 86400000], "value": "%m/%d %H:%M"},
+            {"dtickrange": [86400000, 604800000], "value": "%m/%d"},
+            {"dtickrange": [604800000, 2592000000], "value": "%m/%d"},
+            {"dtickrange": [2592000000, 7776000000], "value": "%b"},
+            {"dtickrange": [7776000000, 31536000000], "value": "%b"},
+            {"dtickrange": [31536000000, 63072000000], "value": "%b"},
+            {"dtickrange": [63072000000, None], "value": "%Y"},
+        ],
+        dtick="M1",
+    )
+
+def _year_axis_config():
+    return dict(
+        type="date", overlaying="x", side="top",
+        showgrid=False, showline=False, ticks="",
+        tickfont=dict(size=10 if compact_mode else 11),
+        tickformat="%Y", dtick="M12", ticklabelstandoff=3,
+        fixedrange=False, automargin=False,
     )
 
 def apply_chart_style(fig, height, date_range):
@@ -348,7 +342,7 @@ def apply_chart_style(fig, height, date_range):
         # tooltip pinned to the actual point instead.
         hovermode="closest" if compact_mode else "x unified",
         dragmode=False,
-        margin=dict(l=52, r=right_margin, t=top_margin, b=64 if compact_mode else 52, pad=2),
+        margin=dict(l=52, r=right_margin, t=top_margin + 18, b=64 if compact_mode else 52, pad=2),
         legend=dict(
             orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0,
             font=dict(size=9 if compact_mode else 11), traceorder="normal",
@@ -357,6 +351,7 @@ def apply_chart_style(fig, height, date_range):
         hoverlabel=dict(bgcolor="white", font_size=11, bordercolor="#e5e7eb"),
         font=dict(size=10 if compact_mode else 12),
         xaxis=_xaxis_config(date_range),
+        xaxis2=_year_axis_config(),
         yaxis=dict(
             showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=False,
             showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True,
