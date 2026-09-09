@@ -456,6 +456,28 @@ def get_hk_liquidity():
 def build_fig5(date_range):
     return build_hk_liquidity_figures(date_range, compact_mode=False)
 
+
+def apply_hk_chart_range(fig, date_range):
+    """Apply an independent viewport to one Hong Kong chart without refetching market data."""
+    hk_data = load_hk_liquidity()
+    if hk_data.empty:
+        return fig
+    latest = hk_data.loc[
+        hk_data.drop(columns=["observation_date"]).notna().any(axis=1), "observation_date"
+    ].max()
+    if pd.isna(latest):
+        latest = hk_data["observation_date"].max()
+    offsets = {
+        "5Y": pd.DateOffset(years=5),
+        "1Y": pd.DateOffset(years=1),
+        "6M": pd.DateOffset(months=6),
+        "3M": pd.DateOffset(months=3),
+        "1M": pd.DateOffset(months=1),
+    }
+    start = latest - offsets.get(date_range, offsets["1Y"])
+    fig.update_xaxes(range=[start, latest])
+    return fig
+
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
@@ -536,10 +558,28 @@ def render_core_charts():
 
     st.markdown('<div class="section-title">5. Hong Kong Liquidity</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-description">Money supply / HKEX price & HSTECH index / Aggregate Balance / HIBOR / USD-HKD / 7.75–7.85 LERS band</div>', unsafe_allow_html=True)
-    hk_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="normal_hk_liquidity_range", label_visibility="collapsed")
-    hk_figures = build_fig5(hk_range)
+    # Build the full data set once; each 5-x panel controls only its own visible X-axis window.
+    hk_figures = build_fig5("5Y")
+    hk_range_keys = [
+        "hk_5_1_range",
+        "hk_5_2_range",
+        "hk_5_3_range",
+        "hk_5_4_range",
+    ]
     for hk_index, hk_figure in enumerate(hk_figures):
-        st.plotly_chart(hk_figure, use_container_width=True, config=PLOTLY_CONFIG)
+        hk_range = st.radio(
+            "时间范围",
+            RANGES,
+            horizontal=True,
+            index=1,
+            key=hk_range_keys[hk_index],
+            label_visibility="collapsed",
+        )
+        st.plotly_chart(
+            apply_hk_chart_range(hk_figure, hk_range),
+            use_container_width=True,
+            config=PLOTLY_CONFIG,
+        )
         show_hk_parameter_description(hk_index)
         if hk_index < len(hk_figures) - 1:
             st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
