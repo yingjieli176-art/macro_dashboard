@@ -1,0 +1,34 @@
+name: Probe C&SD Table 9.5 layout
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/probe-censtat-table95-layout.yml
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests pdfplumber
+      - name: Print Table 9.5 text
+        run: |
+          python - <<'PY'
+          import io,re,requests,pdfplumber
+          for issue in ['2024MM12','2025MM12','2026MM06']:
+              url=f'https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B1010002{issue}B0100.pdf'
+              r=requests.get(url,headers={'User-Agent':'Mozilla/5.0'},timeout=40); r.raise_for_status()
+              print('\n===== ISSUE',issue,'=====',len(r.content))
+              with pdfplumber.open(io.BytesIO(r.content)) as pdf:
+                  hits=0
+                  for i,p in enumerate(pdf.pages):
+                      text=p.extract_text() or ''
+                      norm=re.sub(r'\s+',' ',text)
+                      if ('9.5' in norm or '9 .5' in norm or '9. 5' in norm) and ('swap deposits' in norm.lower() or 'money supply' in norm.lower()):
+                          print('\nPAGE',i+1,'\n',text[:9000])
+                          hits+=1
+                  print('hits',hits)
+          PY
