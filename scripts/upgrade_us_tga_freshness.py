@@ -7,6 +7,13 @@ APP = ROOT / "app.py"
 data = DATA.read_text(encoding="utf-8")
 app = APP.read_text(encoding="utf-8")
 
+# Allow non-FRED sources (Treasury FiscalData, Eastmoney, etc.) to work even
+# when the module is imported outside Streamlit with no secrets.toml.
+old_key = 'FRED_API_KEY = st.secrets.get("FRED_API_KEY", "")\n'
+new_key = '''try:\n    FRED_API_KEY = st.secrets.get("FRED_API_KEY", "")\nexcept Exception:\n    FRED_API_KEY = ""\n'''
+if old_key in data:
+    data = data.replace(old_key, new_key, 1)
+
 anchor = '@st.cache_data(ttl=3600)\ndef get_wtre_gen(): return _fred_series("WTREGEN")\n'
 insert = '''@st.cache_data(ttl=3600)
 def get_wtre_gen(): return _fred_series("WTREGEN")
@@ -40,7 +47,9 @@ def get_tga_daily():
         if frame.empty or "record_date" not in frame.columns:
             raise RuntimeError("Treasury FiscalData returned no TGA rows")
         frame["observation_date"] = pd.to_datetime(frame["record_date"], errors="coerce")
-        frame["account_type"] = frame.get("account_type", "").astype(str)
+        if "account_type" not in frame.columns:
+            frame["account_type"] = ""
+        frame["account_type"] = frame["account_type"].astype(str)
         for col in ("close_today_bal", "open_today_bal"):
             if col not in frame.columns:
                 frame[col] = pd.NA
