@@ -289,30 +289,86 @@ def add_line(fig, data, column, name, width=2.5, dash=None, yaxis=None, unit="%"
     fig.add_trace(trace)
 
 def _xaxis_config(date_range):
-    cfg = {
-        "5Y": {"dtick": "M3", "tickformat": "%b %Y", "tickformatstops": [{"dtickrange": ["M3", "M12"], "value": "%b"}]},
-        "1Y": {"dtick": "M1", "tickformat": "%b %Y", "tickformatstops": [{"dtickrange": ["M1", "M2"], "value": "%b"}]},
-        "6M": {"dtick": "M1", "tickformat": "%b %Y", "tickformatstops": [{"dtickrange": ["M1", "M2"], "value": "%b"}]},
-        "3M": {"dtick": "D7", "tickformat": "%b %d"},
-        "1M": {"dtick": "D3", "tickformat": "%b %d"},
-    }[date_range]
-    return dict(showgrid=True, gridcolor="#eef2f7", griddash="dot", showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True, hoverformat="%Y-%m-%d", tickfont=dict(size=11), tickangle=-20, ticklabelstandoff=6, automargin=True, **cfg)
+    # Compact mode packs two charts into roughly half the page width, so it
+    # needs fewer and shorter tick labels plus a steeper angle to stay
+    # readable. Normal (full-width) mode can afford more, longer labels.
+    if compact_mode:
+        cfg = {
+            "5Y": {"dtick": "M6", "tickformat": "%Y"},
+            "1Y": {"dtick": "M2", "tickformat": "%b'%y"},
+            "6M": {"dtick": "M1", "tickformat": "%b"},
+            "3M": {"dtick": "D14", "tickformat": "%m/%d"},
+            "1M": {"dtick": "D7", "tickformat": "%m/%d"},
+        }[date_range]
+        tickangle, tick_size = -40, 9
+    else:
+        cfg = {
+            "5Y": {"dtick": "M6", "tickformat": "%Y"},
+            "1Y": {"dtick": "M1", "tickformat": "%b %Y"},
+            "6M": {"dtick": "M1", "tickformat": "%b %Y"},
+            "3M": {"dtick": "D14", "tickformat": "%b %d"},
+            "1M": {"dtick": "D3", "tickformat": "%b %d"},
+        }[date_range]
+        tickangle, tick_size = -30, 11
+    # automargin=False on purpose: a dynamic margin is exactly what was
+    # causing every chart to end up with a slightly different plot-area
+    # width, so axes never lined up between panels. A fixed margin (set in
+    # apply_chart_style) keeps every chart's plot area pixel-identical.
+    return dict(
+        showgrid=True, gridcolor="#eef2f7", griddash="dot",
+        showline=True, linecolor="#9ca3af", linewidth=1,
+        fixedrange=True, hoverformat="%Y-%m-%d",
+        tickfont=dict(size=tick_size), tickangle=tickangle,
+        ticklabelstandoff=6, automargin=False,
+        **cfg,
+    )
 
 def apply_chart_style(fig, height, date_range):
+    # Detect a secondary (right-hand) y-axis without touching layout state
+    # that may not exist yet -- fig.layout.yaxis2 raises AttributeError on
+    # a fresh figure rather than returning None.
+    yaxis2 = getattr(fig.layout, "yaxis2", None)
+    has_secondary = yaxis2 is not None and yaxis2.overlaying is not None
+
+    # Fixed margins, identical in shape for every chart (only the right
+    # margin differs, and only because a second axis genuinely needs the
+    # room). This is what keeps chart 1/2/3/4's plot areas aligned with
+    # each other in both compact (side-by-side) and normal (stacked) mode.
+    top_margin = 96 if compact_mode else 68
+    right_margin = 76 if has_secondary else 44
+
     fig.update_layout(
         height=height,
         template="plotly_white",
-        hovermode="x unified",
+        # Unified hover boxes are wide and left-aligned; in a narrow compact
+        # column they can spill over the y-axis label. "closest" keeps the
+        # tooltip pinned to the actual point instead.
+        hovermode="closest" if compact_mode else "x unified",
         dragmode=False,
-        margin=dict(l=62, r=72, t=58, b=58),
-        legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="left", x=0, font=dict(size=10), traceorder="normal", itemwidth=70),
-        hoverlabel=dict(bgcolor="white", font_size=11),
-        font=dict(size=11 if compact_mode else 12),
+        margin=dict(l=52, r=right_margin, t=top_margin, b=52, pad=2),
+        legend=dict(
+            orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0,
+            font=dict(size=9 if compact_mode else 11), traceorder="normal",
+            itemwidth=30, bgcolor="rgba(255,255,255,0)",
+        ),
+        hoverlabel=dict(bgcolor="white", font_size=11, bordercolor="#e5e7eb"),
+        font=dict(size=10 if compact_mode else 12),
         xaxis=_xaxis_config(date_range),
-        yaxis=dict(showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=False, showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True, tickfont=dict(size=11), automargin=True, nticks=8),
+        yaxis=dict(
+            showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=False,
+            showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=True,
+            tickfont=dict(size=10 if compact_mode else 11), automargin=False,
+            nticks=5 if compact_mode else 7, title=dict(standoff=8),
+        ),
         plot_bgcolor="#ffffff",
         paper_bgcolor="#ffffff",
     )
+    if has_secondary:
+        fig.update_layout(yaxis2=dict(
+            automargin=False,
+            tickfont=dict(size=9 if compact_mode else 10),
+            title=dict(standoff=8),
+        ))
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
     return fig
@@ -329,12 +385,12 @@ def get_fred_series(series_id):
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
-    fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(285, 500), date_range)
+    fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(340, 500), date_range)
 
 def build_fig2(date_range):
     data = get_dgs10().merge(get_dfii10(), on="observation_date", how="outer").merge(get_fred_series("T10YIE"), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width, dash, yaxis in [("DGS10", "10Y Nominal", 2.8, None, None), ("DFII10", "10Y Real (R)", 2.6, None, "y2"), ("T10YIE", "10Y Breakeven (R)", 2.5, "dot", "y2")]: add_line(fig, data, column, name, width, dash, yaxis)
-    fig.update_layout(yaxis_title="Nominal Yield (%)", yaxis2=dict(title="Real / Breakeven (%)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9))); return apply_chart_style(fig, chart_height(285, 500), date_range)
+    fig.update_layout(yaxis_title="Nominal Yield (%)", yaxis2=dict(title="Real / Breakeven (%)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9))); return apply_chart_style(fig, chart_height(340, 500), date_range)
 
 def build_fig4(date_range):
     specs = [(get_wresbal, "WRESBAL"), (get_wtre_gen, "WTREGEN"), (get_rrp_daily, "RRPONTSYD")]
@@ -347,21 +403,21 @@ def build_fig4(date_range):
                 else: frame[column] = frame[column] / 1000000.0
                 series.append(frame)
         except Exception: continue
-    if not series: return apply_chart_style(go.Figure(), chart_height(285, 500), date_range)
+    if not series: return apply_chart_style(go.Figure(), chart_height(340, 500), date_range)
     data = series[0]
     for frame in series[1:]: data = data.merge(frame, on="observation_date", how="outer")
     data = data.sort_values("observation_date"); value_cols = [c for c in ["WRESBAL", "WTREGEN", "RRPONTSYD"] if c in data.columns]; data[value_cols] = data[value_cols].ffill()
     if all(c in data.columns for c in ["WRESBAL", "WTREGEN", "RRPONTSYD"]): data["NetLiquidity"] = data["WRESBAL"] - data["WTREGEN"] - data["RRPONTSYD"]
     data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width, dash in [("NetLiquidity", "Net Liquidity Proxy", 3.0, None), ("WRESBAL", "Reserve Balances", 2.3, None), ("WTREGEN", "TGA", 2.1, "dash"), ("RRPONTSYD", "ON RRP", 2.1, "dot")]: add_line(fig, data, column, name, width, dash, unit=" T")
-    fig.update_layout(yaxis_title="$T"); return apply_chart_style(fig, chart_height(285, 500), date_range)
+    fig.update_layout(yaxis_title="$T"); return apply_chart_style(fig, chart_height(340, 500), date_range)
 
 def build_fig3(date_range):
     data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").merge(get_fred_series("T10Y2Y"), on="observation_date", how="outer").merge(get_fred_series("T10Y3M"), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8)]: add_line(fig, data, column, name, width)
     data["T10Y2Y_bp"] = data["T10Y2Y"] * 100.0; data["T10Y3M_bp"] = data["T10Y3M"] * 100.0; add_line(fig, data, "T10Y2Y_bp", "10Y−2Y (R)", 2.2, "dot", "y2", " bp"); add_line(fig, data, "T10Y3M_bp", "10Y−3M (R)", 2.2, "dash", "y2", " bp")
     fig.update_traces(selector=dict(name="10Y−2Y (R)"), hovertemplate="10Y−2Y (R): %{y:.1f} bp<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M (R)"), hovertemplate="10Y−3M (R): %{y:.1f} bp<extra></extra>")
-    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True, tickfont=dict(size=9))); return apply_chart_style(fig, chart_height(285, 500), date_range)
+    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (bp)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True, tickfont=dict(size=9))); return apply_chart_style(fig, chart_height(340, 500), date_range)
 
 PARAM_DESCRIPTIONS = ["IORB（Interest on Reserve Balances）：美联储对存放在美联储的准备金余额支付的利率。ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具的利率。EFFR（Effective Federal Funds Rate）：美国联邦基金市场的有效隔夜利率。SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率。", "10Y Nominal：10年期美国国债名义收益率。10Y Real：10年期美国国债实际收益率，通常指10年期TIPS实际收益率。Breakeven：FRED官方10年期盈亏平衡通胀率（T10YIE）。", "3M：3个月期美国国债收益率。2Y：2年期美国国债收益率。10Y：10年期美国国债收益率。10Y−2Y：FRED官方10年期与2年期美国国债收益率利差（T10Y2Y）。10Y−3M：FRED官方10年期与3个月期美国国债收益率利差（T10Y3M）。", "Net Liquidity Proxy：Reserve Balances − TGA − ON RRP，用于观察美国金融市场流动性方向的分析指标，不是美联储官方命名指标。Reserve Balances：存款机构在美联储的准备金余额。TGA：美国财政部在美联储的总账户。ON RRP：隔夜逆回购余额。"]
 def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
