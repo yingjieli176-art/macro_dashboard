@@ -536,7 +536,20 @@ def get_hk_liquidity():
     return frame[columns]
 
 def build_fig5(date_range):
-    data = filter_range(get_hk_liquidity(), date_range).copy()
+    all_data = get_hk_liquidity().copy()
+    if all_data.empty:
+        data = all_data
+    else:
+        latest_published = all_data["observation_date"].max()
+        offsets = {
+            "5Y": pd.DateOffset(years=5),
+            "1Y": pd.DateOffset(years=1),
+            "6M": pd.DateOffset(months=6),
+            "3M": pd.DateOffset(months=3),
+            "1M": pd.DateOffset(months=1),
+        }
+        start = latest_published - offsets[date_range]
+        data = all_data[all_data["observation_date"] >= start].copy()
     fig = make_subplots(
         rows=4,
         cols=1,
@@ -676,7 +689,7 @@ def render_core_charts():
         for title, description, key, builder, sources, desc_index, divider in configs:
             st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
             if divider: st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">5. Hong Kong Liquidity</div>', unsafe_allow_html=True); st.markdown('<div class="section-description">HKD M2/M3、货币基础、银行体系总结余、HIBOR、HKMA Base Rate 与 USD/HKD 强弱方兑换保证</div>', unsafe_allow_html=True); hk_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="normal_hk_liquidity_range", label_visibility="collapsed"); st.plotly_chart(build_fig5(hk_range), use_container_width=True, config=PLOTLY_CONFIG); st.markdown('<div class="mini-description"><b>参数概念：</b><br>1. Aggregate Balance：香港银行体系在金管局的结算余额，单位为 HK$ million；图中转换为 HK$ billion，月度值取当月每日收市总结余的平均值。<br>2. M2：香港港元广义货币供应量，主要反映公众持有的现金及银行存款等货币性资产。<br>3. M3：香港港元货币供应量的更广口径，在 M2 基础上包含更广泛的货币性项目。<br>4. M2 YoY：M2 相对 12 个月前同月的增长率，用来描述货币供应量的年度变化速度。<br>5. M3 YoY：M3 相对 12 个月前同月的增长率，定义与 M2 YoY 相同，但统计口径更广。<br>6. O/N HIBOR：港元隔夜银行间拆借利率，即隔夜期限的港元银行间资金价格。<br>7. 1M HIBOR：港元 1 个月 HIBOR，表示 1 个月期限的港元银行间资金价格。<br>8. 3M HIBOR：港元 3 个月 HIBOR，表示 3 个月期限的港元银行间资金价格。<br>9. HKMA Base Rate：香港金管局贴现窗基本利率，是香港利率体系中的政策参考利率之一。<br>10. USD/HKD：每 1 美元对应的港元价格；数值越高表示港元相对美元越弱。<br>11. Strong-side CU / Linked Rate / Weak-side CU：联系汇率制度下的 7.75 / 7.80 / 7.85 参考水平，其中 7.75 和 7.85 是强方及弱方兑换保证，7.80 是联系汇率中间水平。<br>12. 3M MA：3 个月移动平均，即当前月与前两个月数据的平均值；用于平滑月度曲线，不会创造新的原始数据点。</div>', unsafe_allow_html=True); add_sources([("HKMA Monetary Statistics", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics/")])
+        st.markdown('<div class="section-title">5. Hong Kong Liquidity</div>', unsafe_allow_html=True); st.markdown('<div class="section-description">HKD M2/M3、货币基础、银行体系总结余、HIBOR、HKMA Base Rate 与 USD/HKD 强弱方兑换保证</div>', unsafe_allow_html=True); hk_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="normal_hk_liquidity_range", label_visibility="collapsed"); st.plotly_chart(build_fig5(hk_range), use_container_width=True, config=PLOTLY_CONFIG); st.markdown('<div class="mini-description"><b>参数概念：</b><br>1. HKD M2 YoY：港元 M2 相对 12 个月前的同比增速，用来观察广义港元货币扩张或收缩。<br>2. HKD M3 YoY：港元 M3 同比增速，统计口径较 M2 更广。<br>3. Monetary Base YoY：香港货币基础总量同比变化，用于观察基础货币层面的扩张与收缩。<br>4. Aggregate Balance：银行体系总结余，单位由 HK$ million 转为 HK$ billion；总结余下降通常代表银行体系可用港元流动性趋紧。<br>5. O/N HIBOR：隔夜港元银行同业拆息，反映最短端港元资金价格。<br>6. 3M HIBOR：3 个月港元银行同业拆息，用来观察更持续的港元融资成本。<br>7. HKMA Base Rate：香港金管局基本利率，是港元利率体系的重要政策参考。<br>8. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>9. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>10. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br><br><b>读取提示：</b>M2/M3 为月度统计，公布存在时滞；最新月份如果尚未公布不会向前填充。图表时间范围以 HKMA 最新已发布月份为基准，避免 1M/3M 因发布时间滞后被错误过滤为空。</div>', unsafe_allow_html=True); add_sources([("HKMA Monetary Statistics", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics/")])
 
 st.markdown('<div id="macro-charts" class="section-anchor"></div><div class="section-kicker">MACRO CHARTS</div>', unsafe_allow_html=True)
 render_core_charts()
