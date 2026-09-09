@@ -1,0 +1,38 @@
+name: Audit HK 5Y coverage
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/audit-hk-5y-coverage.yml
+      - macro_platform/hk_liquidity.py
+      - data_snapshots/**
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pandas plotly requests
+      - name: Audit figure trace coverage
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          import macro_platform.hk_liquidity as hk
+          figs=hk.build_hk_liquidity_figures('5Y')
+          for i,fig in enumerate(figs,1):
+              print(f'===== 5-{i} =====')
+              for tr in fig.data:
+                  xs=pd.to_datetime(list(tr.x),errors='coerce') if getattr(tr,'x',None) is not None else pd.DatetimeIndex([])
+                  ys=pd.to_numeric(pd.Series(list(tr.y)),errors='coerce') if getattr(tr,'y',None) is not None else pd.Series(dtype=float)
+                  valid=xs.notna() & ys.notna().to_numpy() if len(xs)==len(ys) else []
+                  count=int(sum(valid)) if len(valid) else 0
+                  if count:
+                      xv=xs[valid]
+                      print(tr.name,'valid',count,'start',xv.min(),'end',xv.max())
+                  else:
+                      print(tr.name,'valid',count)
+          PY
