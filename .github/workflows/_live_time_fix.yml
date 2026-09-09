@@ -15,17 +15,16 @@ jobs:
           from pathlib import Path
           p = Path('app.py')
           s = p.read_text()
-          s = s.replace('def _quote_refresh_key(): return int(time.time() // 300)', 'def _quote_refresh_key(): return int(time.time() // 60)')
-          marker = 'render_market_groups()\n\n@st.cache_data(ttl=20, show_spinner=False)'
-          replacement = 'render_market_groups()\n\nst.caption(f"行情数据刷新时间：{time.strftime(\"%Y-%m-%d %H:%M:%S\", time.localtime())}")\n\n@st.cache_data(ttl=20, show_spinner=False)'
-          s = s.replace(marker, replacement)
+          s = s.replace('st.caption(f"行情数据刷新时间：{time.strftime(\\"%Y-%m-%d %H:%M:%S\\", time.localtime())}")', 'st.caption(f"行情数据刷新时间：{time.strftime(\'%Y-%m-%d %H:%M:%S\', time.localtime())}")')
           p.write_text(s)
           PY
+      - name: Syntax check
+        run: python -m py_compile app.py
       - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add app.py
-          git diff --cached --quiet || git commit -m 'Fix live market refresh timestamp'
+          git diff --cached --quiet || git commit -m 'Fix live market timestamp syntax'
           git push
-# trigger second run
+# syntax-fix trigger
