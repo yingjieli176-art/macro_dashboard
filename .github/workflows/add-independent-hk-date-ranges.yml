@@ -1,0 +1,45 @@
+name: Add independent Hong Kong chart date ranges
+
+on:
+  push:
+    paths:
+      - 'scripts/add_independent_hk_date_ranges.py'
+      - '.github/workflows/add-independent-hk-date-ranges.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install runtime dependencies
+        run: pip install pandas plotly streamlit requests
+      - name: Apply independent date ranges
+        run: python scripts/add_independent_hk_date_ranges.py
+      - name: Validate Python
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py
+      - name: Validate independent range controls
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          for key in ['hk_5_1_range', 'hk_5_2_range', 'hk_5_3_range', 'hk_5_4_range']:
+              assert key in text, key
+          assert 'build_fig5("5Y")' in text
+          assert 'apply_hk_chart_range' in text
+          assert 'normal_hk_liquidity_range' not in text
+          print('independent HK ranges validated')
+          PY
+      - name: Commit migrated file
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          git diff --cached --quiet || git commit -m "Give each Hong Kong liquidity chart its own date range"
+          git push
