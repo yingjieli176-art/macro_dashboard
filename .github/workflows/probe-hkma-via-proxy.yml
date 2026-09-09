@@ -1,0 +1,29 @@
+name: Probe HKMA history via proxy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/probe-hkma-via-proxy.yml
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch official HKMA endpoint through text proxy
+        run: |
+          python - <<'PY'
+          import requests
+          target='https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod?pagesize=100&offset=0&sortby=end_of_month&sortorder=desc'
+          for prefix in ('https://r.jina.ai/https://','https://r.jina.ai/http://'):
+              url=prefix + target.split('://',1)[1]
+              try:
+                  r=requests.get(url,headers={'User-Agent':'MacroDashboard/1.0'},timeout=35)
+                  print('URL',url,'status',r.status_code,'bytes',len(r.content))
+                  print(r.text[:5000])
+                  if r.ok and 'aggr_balance_bf_disc_win' in r.text and 'end_of_month' in r.text:
+                      raise SystemExit(0)
+              except Exception as exc:
+                  print('ERR',repr(exc))
+          raise SystemExit('HKMA proxy did not return monetary-base fields')
+          PY
