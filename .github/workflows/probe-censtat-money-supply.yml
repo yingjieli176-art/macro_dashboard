@@ -1,0 +1,28 @@
+name: Probe C&SD money supply history
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/probe-censtat-money-supply.yml
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe full-series API
+        run: |
+          python - <<'PY'
+          import json, urllib.request
+          url='https://www.censtatd.gov.hk/api/get.php?id=340-45012&lang=en&full_series=1'
+          req=urllib.request.Request(url, headers={'User-Agent':'MacroDashboard/1.0','Accept':'application/json'})
+          with urllib.request.urlopen(req, timeout=25) as r:
+              body=r.read().decode('utf-8')
+          print('bytes',len(body))
+          payload=json.loads(body)
+          print('top keys',payload.keys())
+          print(json.dumps(payload,ensure_ascii=False)[:12000])
+          PY
