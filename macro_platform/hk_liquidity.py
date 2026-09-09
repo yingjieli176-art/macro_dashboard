@@ -11,6 +11,15 @@ from plotly.subplots import make_subplots
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_monetary_statistics.json"
+DAILY_BANKING_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_banking_liquidity_daily.json"
+DAILY_BANKING_COLUMNS = [
+    "observation_date",
+    "Opening Aggregate Balance",
+    "Closing Aggregate Balance",
+    "Forecast Aggregate Balance T+1",
+    "Outstanding EFBN",
+    "EFBN Held by Licensed Banks",
+]
 RANGE_OFFSETS = {
     "5Y": pd.DateOffset(years=5),
     "1Y": pd.DateOffset(years=1),
@@ -141,6 +150,51 @@ def load_hk_liquidity() -> pd.DataFrame:
     monthly["Strong-side CU"] = 7.75
     monthly["Weak-side CU"] = 7.85
     return monthly.reset_index()[OUTPUT_COLUMNS]
+
+
+
+def load_hk_banking_liquidity_daily() -> pd.DataFrame:
+    """Load daily HK banking-system liquidity from the repository snapshot.
+
+    Values are converted from HK$ million to HK$ billion. If the daily snapshot
+    is unavailable, fall back to the monthly Aggregate Balance so Chart 5-2
+    remains usable instead of failing the entire Hong Kong liquidity section.
+    """
+    try:
+        payload = json.loads(DAILY_BANKING_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+        rows = payload.get("records") if isinstance(payload, dict) else payload
+        frame = pd.DataFrame(rows or [])
+    except Exception:
+        frame = pd.DataFrame()
+
+    if frame.empty or "end_of_date" not in frame.columns:
+        monthly = load_hk_liquidity()
+        if monthly.empty:
+            return pd.DataFrame(columns=DAILY_BANKING_COLUMNS)
+        fallback = monthly[["observation_date", "Aggregate Balance"]].dropna().copy()
+        fallback = fallback.rename(columns={"Aggregate Balance": "Closing Aggregate Balance"})
+        fallback["Opening Aggregate Balance"] = fallback["Closing Aggregate Balance"]
+        fallback["Forecast Aggregate Balance T+1"] = fallback["Closing Aggregate Balance"]
+        fallback["Outstanding EFBN"] = pd.NA
+        fallback["EFBN Held by Licensed Banks"] = pd.NA
+        return fallback[DAILY_BANKING_COLUMNS]
+
+    frame["observation_date"] = pd.to_datetime(frame["end_of_date"], errors="coerce")
+    mapping = {
+        "opening_balance": "Opening Aggregate Balance",
+        "closing_balance": "Closing Aggregate Balance",
+        "forecast_aggregate_bal_t1": "Forecast Aggregate Balance T+1",
+        "outstanding_efbn": "Outstanding EFBN",
+        "ow_lb_bf_disc_win": "EFBN Held by Licensed Banks",
+    }
+    for source, target in mapping.items():
+        frame[target] = pd.to_numeric(frame.get(source), errors="coerce") / 1000.0
+    frame = (
+        frame.dropna(subset=["observation_date"])
+        .sort_values("observation_date")
+        .drop_duplicates("observation_date", keep="last")
+    )
+    return frame[DAILY_BANKING_COLUMNS]
 
 
 def snapshot_metadata() -> dict[str, Any]:
@@ -430,6 +484,7 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
     """Build four independent Hong Kong liquidity charts for the dashboard."""
     all_data = load_hk_liquidity()
     data = _slice_range(all_data, date_range)
+    banking_data = _slice_range(load_hk_banking_liquidity_daily(), date_range)
     meta = snapshot_metadata()
     latest_text = meta.get("latest_observation") or "--"
 
@@ -537,14 +592,26 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
     )
     style(money, "5-1. HK Money Supply & Market Pulse", right_axis=True)
 
-    # 5-2 · Banking-system liquidity.
-    balance = go.Figure()
-    add_line(balance, data, "Aggregate Balance", "Aggregate Balance", COLORS["balance"], 2.8, unit=" HK$ bn")
+    # 5-2 · Daily banking-system liquidity and monetary-base structure.
+    balance = make_subplots(specs=[[{"secondary_y": True}]])
+    add_line(balance, banking_data, "Opening Aggregate Balance", "Opening Aggregate Balance", "#64748b", 1.7, "dot", unit=" HK$ bn", secondary_y=False)
+    add_line(balance, banking_data, "Closing Aggregate Balance", "Closing Aggregate Balance", COLORS["balance"], 2.9, unit=" HK$ bn", secondary_y=False)
+    add_line(balance, banking_data, "Forecast Aggregate Balance T+1", "Forecast Aggregate Balance T+1", "#0284c7", 2.0, "dash", unit=" HK$ bn", secondary_y=False)
+    add_line(balance, banking_data, "Outstanding EFBN", "Outstanding EFBN (R)", "#7c3aed", 2.0, unit=" HK$ bn", secondary_y=True)
+    add_line(balance, banking_data, "EFBN Held by Licensed Banks", "EFBN Held by Licensed Banks (R)", "#c026d3", 1.8, "dash", unit=" HK$ bn", secondary_y=True)
     balance.update_yaxes(
-        title_text="HK$ bn", showgrid=True, gridcolor="#e5e7eb", griddash="dot",
+        title_text="Aggregate Balance (HK$ bn)", secondary_y=False,
+        showgrid=True, gridcolor="#e5e7eb", griddash="dot",
         zeroline=False, fixedrange=True,
     )
-    style(balance, "5-2. Banking-system Liquidity")
+    balance.update_yaxes(
+        title_text="EFBN (HK$ bn)", secondary_y=True,
+        showgrid=False, zeroline=False, fixedrange=True,
+    )
+    style(balance, "5-2. Daily Banking-system Liquidity", height=450, right_axis=True)
+    if not banking_data.empty:
+        banking_latest = banking_data["observation_date"].max().strftime("%Y-%m-%d")
+        balance.update_layout(title_text=f"5-2. Daily Banking-system Liquidity · latest {banking_latest}")
 
     # 5-3 · HKD funding.
     funding = make_subplots(specs=[[{"secondary_y": True}]])
