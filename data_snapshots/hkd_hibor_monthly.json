@@ -1,0 +1,504 @@
+{
+  "source": "C&SD Hong Kong Monthly Digest of Statistics Table 9.13",
+  "underlying_sources": [
+    "Hong Kong Association of Banks",
+    "Hong Kong Monetary Authority"
+  ],
+  "updated_at": "2026-09-09T10:18:58.055266+00:00",
+  "record_count": 61,
+  "coverage_start": "2021-07",
+  "coverage_end": "2026-07",
+  "source_urls": [
+    "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022022MM10B0100.pdf",
+    "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022022MM12B0100.pdf",
+    "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022023MM12B0100.pdf",
+    "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022024MM12B0100.pdf",
+    "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022025MM12B0100.pdf",
+    "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022026MM06B0100.pdf"
+  ],
+  "failed_issues": [],
+  "records": [
+    {
+      "end_of_month": "2021-07",
+      "hibor_overnight": 0.05,
+      "hibor_1w": 0.05,
+      "hibor_1m": 0.08,
+      "hibor_3m": 0.15,
+      "hibor_6m": 0.25
+    },
+    {
+      "end_of_month": "2021-08",
+      "hibor_overnight": 0.04,
+      "hibor_1w": 0.04,
+      "hibor_1m": 0.06,
+      "hibor_3m": 0.15,
+      "hibor_6m": 0.25
+    },
+    {
+      "end_of_month": "2021-09",
+      "hibor_overnight": 0.04,
+      "hibor_1w": 0.04,
+      "hibor_1m": 0.06,
+      "hibor_3m": 0.14,
+      "hibor_6m": 0.24
+    },
+    {
+      "end_of_month": "2021-10",
+      "hibor_overnight": 0.04,
+      "hibor_1w": 0.05,
+      "hibor_1m": 0.07,
+      "hibor_3m": 0.15,
+      "hibor_6m": 0.22
+    },
+    {
+      "end_of_month": "2021-11",
+      "hibor_overnight": 0.06,
+      "hibor_1w": 0.07,
+      "hibor_1m": 0.1,
+      "hibor_3m": 0.24,
+      "hibor_6m": 0.29
+    },
+    {
+      "end_of_month": "2021-12",
+      "hibor_overnight": 0.06,
+      "hibor_1w": 0.08,
+      "hibor_1m": 0.16,
+      "hibor_3m": 0.26,
+      "hibor_6m": 0.32
+    },
+    {
+      "end_of_month": "2022-01",
+      "hibor_overnight": 0.14,
+      "hibor_1w": 0.16,
+      "hibor_1m": 0.2,
+      "hibor_3m": 0.33,
+      "hibor_6m": 0.5
+    },
+    {
+      "end_of_month": "2022-02",
+      "hibor_overnight": 0.11,
+      "hibor_1w": 0.14,
+      "hibor_1m": 0.2,
+      "hibor_3m": 0.44,
+      "hibor_6m": 0.64
+    },
+    {
+      "end_of_month": "2022-03",
+      "hibor_overnight": 0.09,
+      "hibor_1w": 0.17,
+      "hibor_1m": 0.31,
+      "hibor_3m": 0.55,
+      "hibor_6m": 0.99
+    },
+    {
+      "end_of_month": "2022-04",
+      "hibor_overnight": 0.06,
+      "hibor_1w": 0.09,
+      "hibor_1m": 0.21,
+      "hibor_3m": 0.73,
+      "hibor_6m": 1.24
+    },
+    {
+      "end_of_month": "2022-05",
+      "hibor_overnight": 0.1,
+      "hibor_1w": 0.1,
+      "hibor_1m": 0.2,
+      "hibor_3m": 0.9,
+      "hibor_6m": 1.71
+    },
+    {
+      "end_of_month": "2022-06",
+      "hibor_overnight": 1.43,
+      "hibor_1w": 0.98,
+      "hibor_1m": 0.87,
+      "hibor_3m": 1.75,
+      "hibor_6m": 2.4
+    },
+    {
+      "end_of_month": "2022-07",
+      "hibor_overnight": 0.94,
+      "hibor_1w": 1.17,
+      "hibor_1m": 1.33,
+      "hibor_3m": 2.2,
+      "hibor_6m": 2.91
+    },
+    {
+      "end_of_month": "2022-08",
+      "hibor_overnight": 1.19,
+      "hibor_1w": 1.43,
+      "hibor_1m": 1.87,
+      "hibor_3m": 2.65,
+      "hibor_6m": 3.3
+    },
+    {
+      "end_of_month": "2022-09",
+      "hibor_overnight": 2.26,
+      "hibor_1w": 2.35,
+      "hibor_1m": 2.62,
+      "hibor_3m": 3.33,
+      "hibor_6m": 4.01
+    },
+    {
+      "end_of_month": "2022-10",
+      "hibor_overnight": 3.03,
+      "hibor_1w": 2.68,
+      "hibor_1m": 3.17,
+      "hibor_3m": 4.59,
+      "hibor_6m": 4.83
+    },
+    {
+      "end_of_month": "2022-11",
+      "hibor_overnight": 4.35,
+      "hibor_1w": 4.08,
+      "hibor_1m": 4.44,
+      "hibor_3m": 5.31,
+      "hibor_6m": 5.47
+    },
+    {
+      "end_of_month": "2022-12",
+      "hibor_overnight": 3.23,
+      "hibor_1w": 3.55,
+      "hibor_1m": 4.35,
+      "hibor_3m": 4.99,
+      "hibor_6m": 5.4
+    },
+    {
+      "end_of_month": "2023-01",
+      "hibor_overnight": 1.5,
+      "hibor_1w": 1.92,
+      "hibor_1m": 2.71,
+      "hibor_3m": 3.67,
+      "hibor_6m": 4.16
+    },
+    {
+      "end_of_month": "2023-02",
+      "hibor_overnight": 3.85,
+      "hibor_1w": 2.76,
+      "hibor_1m": 3.03,
+      "hibor_3m": 3.8,
+      "hibor_6m": 4.21
+    },
+    {
+      "end_of_month": "2023-03",
+      "hibor_overnight": 1.94,
+      "hibor_1w": 2.58,
+      "hibor_1m": 3.14,
+      "hibor_3m": 3.71,
+      "hibor_6m": 4.01
+    },
+    {
+      "end_of_month": "2023-04",
+      "hibor_overnight": 3.74,
+      "hibor_1w": 3.29,
+      "hibor_1m": 3.31,
+      "hibor_3m": 3.68,
+      "hibor_6m": 4.04
+    },
+    {
+      "end_of_month": "2023-05",
+      "hibor_overnight": 3.83,
+      "hibor_1w": 4.25,
+      "hibor_1m": 4.51,
+      "hibor_3m": 4.77,
+      "hibor_6m": 4.81
+    },
+    {
+      "end_of_month": "2023-06",
+      "hibor_overnight": 5.75,
+      "hibor_1w": 5.27,
+      "hibor_1m": 4.93,
+      "hibor_3m": 4.97,
+      "hibor_6m": 4.97
+    },
+    {
+      "end_of_month": "2023-07",
+      "hibor_overnight": 5.6,
+      "hibor_1w": 5.29,
+      "hibor_1m": 5.29,
+      "hibor_3m": 5.29,
+      "hibor_6m": 5.32
+    },
+    {
+      "end_of_month": "2023-08",
+      "hibor_overnight": 2.53,
+      "hibor_1w": 3.0,
+      "hibor_1m": 3.72,
+      "hibor_3m": 4.45,
+      "hibor_6m": 4.83
+    },
+    {
+      "end_of_month": "2023-09",
+      "hibor_overnight": 5.68,
+      "hibor_1w": 5.75,
+      "hibor_1m": 5.4,
+      "hibor_3m": 5.27,
+      "hibor_6m": 5.39
+    },
+    {
+      "end_of_month": "2023-10",
+      "hibor_overnight": 4.53,
+      "hibor_1w": 4.66,
+      "hibor_1m": 4.9,
+      "hibor_3m": 5.24,
+      "hibor_6m": 5.32
+    },
+    {
+      "end_of_month": "2023-11",
+      "hibor_overnight": 4.22,
+      "hibor_1w": 5.13,
+      "hibor_1m": 5.52,
+      "hibor_3m": 5.61,
+      "hibor_6m": 5.55
+    },
+    {
+      "end_of_month": "2023-12",
+      "hibor_overnight": 6.09,
+      "hibor_1w": 5.36,
+      "hibor_1m": 5.27,
+      "hibor_3m": 5.15,
+      "hibor_6m": 5.19
+    },
+    {
+      "end_of_month": "2024-01",
+      "hibor_overnight": 5.13,
+      "hibor_1w": 4.32,
+      "hibor_1m": 4.59,
+      "hibor_3m": 4.71,
+      "hibor_6m": 4.71
+    },
+    {
+      "end_of_month": "2024-02",
+      "hibor_overnight": 4.97,
+      "hibor_1w": 4.3,
+      "hibor_1m": 4.48,
+      "hibor_3m": 4.68,
+      "hibor_6m": 4.69
+    },
+    {
+      "end_of_month": "2024-03",
+      "hibor_overnight": 5.0,
+      "hibor_1w": 5.01,
+      "hibor_1m": 4.8,
+      "hibor_3m": 4.72,
+      "hibor_6m": 4.75
+    },
+    {
+      "end_of_month": "2024-04",
+      "hibor_overnight": 5.25,
+      "hibor_1w": 4.44,
+      "hibor_1m": 4.3,
+      "hibor_3m": 4.55,
+      "hibor_6m": 4.67
+    },
+    {
+      "end_of_month": "2024-05",
+      "hibor_overnight": 4.47,
+      "hibor_1w": 4.43,
+      "hibor_1m": 4.47,
+      "hibor_3m": 4.73,
+      "hibor_6m": 4.82
+    },
+    {
+      "end_of_month": "2024-06",
+      "hibor_overnight": 4.98,
+      "hibor_1w": 4.83,
+      "hibor_1m": 4.61,
+      "hibor_3m": 4.75,
+      "hibor_6m": 4.81
+    },
+    {
+      "end_of_month": "2024-07",
+      "hibor_overnight": 5.15,
+      "hibor_1w": 4.52,
+      "hibor_1m": 4.52,
+      "hibor_3m": 4.57,
+      "hibor_6m": 4.64
+    },
+    {
+      "end_of_month": "2024-08",
+      "hibor_overnight": 3.42,
+      "hibor_1w": 3.92,
+      "hibor_1m": 3.93,
+      "hibor_3m": 4.2,
+      "hibor_6m": 4.25
+    },
+    {
+      "end_of_month": "2024-09",
+      "hibor_overnight": 6.39,
+      "hibor_1w": 4.95,
+      "hibor_1m": 4.32,
+      "hibor_3m": 4.18,
+      "hibor_6m": 4.03
+    },
+    {
+      "end_of_month": "2024-10",
+      "hibor_overnight": 4.7,
+      "hibor_1w": 4.24,
+      "hibor_1m": 4.24,
+      "hibor_3m": 4.31,
+      "hibor_6m": 4.2
+    },
+    {
+      "end_of_month": "2024-11",
+      "hibor_overnight": 4.43,
+      "hibor_1w": 4.21,
+      "hibor_1m": 4.31,
+      "hibor_3m": 4.41,
+      "hibor_6m": 4.21
+    },
+    {
+      "end_of_month": "2024-12",
+      "hibor_overnight": 5.65,
+      "hibor_1w": 5.09,
+      "hibor_1m": 4.58,
+      "hibor_3m": 4.37,
+      "hibor_6m": 4.2
+    },
+    {
+      "end_of_month": "2025-01",
+      "hibor_overnight": 4.37,
+      "hibor_1w": 4.25,
+      "hibor_1m": 3.83,
+      "hibor_3m": 3.81,
+      "hibor_6m": 3.93
+    },
+    {
+      "end_of_month": "2025-02",
+      "hibor_overnight": 3.77,
+      "hibor_1w": 3.86,
+      "hibor_1m": 3.96,
+      "hibor_3m": 4.01,
+      "hibor_6m": 4.06
+    },
+    {
+      "end_of_month": "2025-03",
+      "hibor_overnight": 3.85,
+      "hibor_1w": 3.43,
+      "hibor_1m": 3.73,
+      "hibor_3m": 3.88,
+      "hibor_6m": 3.97
+    },
+    {
+      "end_of_month": "2025-04",
+      "hibor_overnight": 4.5,
+      "hibor_1w": 4.18,
+      "hibor_1m": 3.95,
+      "hibor_3m": 3.99,
+      "hibor_6m": 4.03
+    },
+    {
+      "end_of_month": "2025-05",
+      "hibor_overnight": 0.03143,
+      "hibor_1w": 0.16,
+      "hibor_1m": 0.59,
+      "hibor_3m": 1.32286,
+      "hibor_6m": 2.16
+    },
+    {
+      "end_of_month": "2025-06",
+      "hibor_overnight": 0.02839,
+      "hibor_1w": 0.16,
+      "hibor_1m": 0.73,
+      "hibor_3m": 1.67958,
+      "hibor_6m": 2.38
+    },
+    {
+      "end_of_month": "2025-07",
+      "hibor_overnight": 0.18506,
+      "hibor_1w": 0.62,
+      "hibor_1m": 1.03,
+      "hibor_3m": 1.6175,
+      "hibor_6m": 2.27
+    },
+    {
+      "end_of_month": "2025-08",
+      "hibor_overnight": 4.00012,
+      "hibor_1w": 3.61,
+      "hibor_1m": 3.3,
+      "hibor_3m": 3.29583,
+      "hibor_6m": 3.27
+    },
+    {
+      "end_of_month": "2025-09",
+      "hibor_overnight": 5.01798,
+      "hibor_1w": 4.18,
+      "hibor_1m": 3.54,
+      "hibor_3m": 3.52571,
+      "hibor_6m": 3.41
+    },
+    {
+      "end_of_month": "2025-10",
+      "hibor_overnight": 3.85667,
+      "hibor_1w": 3.44,
+      "hibor_1m": 3.43,
+      "hibor_3m": 3.54899,
+      "hibor_6m": 3.45
+    },
+    {
+      "end_of_month": "2025-11",
+      "hibor_overnight": 3.0869,
+      "hibor_1w": 2.86,
+      "hibor_1m": 3.18,
+      "hibor_3m": 3.17167,
+      "hibor_6m": 3.23
+    },
+    {
+      "end_of_month": "2025-12",
+      "hibor_overnight": 4.38226,
+      "hibor_1w": 4.03,
+      "hibor_1m": 3.08,
+      "hibor_3m": 2.93244,
+      "hibor_6m": 2.99
+    },
+    {
+      "end_of_month": "2026-01",
+      "hibor_overnight": 2.17964,
+      "hibor_1w": 2.3,
+      "hibor_1m": 2.61,
+      "hibor_3m": 2.82595,
+      "hibor_6m": 2.89
+    },
+    {
+      "end_of_month": "2026-02",
+      "hibor_overnight": 2.55191,
+      "hibor_1w": 2.41,
+      "hibor_1m": 2.41,
+      "hibor_3m": 2.58363,
+      "hibor_6m": 2.73
+    },
+    {
+      "end_of_month": "2026-03",
+      "hibor_overnight": 2.77012,
+      "hibor_1w": 2.32,
+      "hibor_1m": 2.24,
+      "hibor_3m": 2.35661,
+      "hibor_6m": 2.66
+    },
+    {
+      "end_of_month": "2026-04",
+      "hibor_overnight": 2.89071,
+      "hibor_1w": 2.59,
+      "hibor_1m": 2.44,
+      "hibor_3m": 2.60494,
+      "hibor_6m": 2.73
+    },
+    {
+      "end_of_month": "2026-05",
+      "hibor_overnight": 3.02393,
+      "hibor_1w": 2.51,
+      "hibor_1m": 2.61,
+      "hibor_3m": 2.82708,
+      "hibor_6m": 2.97
+    },
+    {
+      "end_of_month": "2026-06",
+      "hibor_overnight": 3.84024,
+      "hibor_3m": 2.96679
+    },
+    {
+      "end_of_month": "2026-07",
+      "hibor_overnight": 2.52536,
+      "hibor_3m": 2.92964
+    }
+  ]
+}
