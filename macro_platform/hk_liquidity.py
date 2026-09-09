@@ -381,7 +381,7 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
     return fig
 
 
-def _market_monthly_change(symbol: str, label: str) -> pd.DataFrame:
+def _market_monthly_close(symbol: str, label: str) -> pd.DataFrame:
     """Fetch monthly close-to-close percentage change from Yahoo Finance.
 
     Market overlays are enrichment only: a network/API failure returns an empty
@@ -420,7 +420,7 @@ def _market_monthly_change(symbol: str, label: str) -> pd.DataFrame:
             return pd.DataFrame(columns=["observation_date", label])
         frame["observation_date"] = frame["observation_date"].dt.to_period("M").dt.to_timestamp()
         frame = frame.sort_values("observation_date").drop_duplicates("observation_date", keep="last")
-        frame[label] = frame["close"].pct_change(fill_method=None) * 100.0
+        frame[label] = frame["close"]
         return frame[["observation_date", label]].dropna(subset=[label])
     except Exception:
         return pd.DataFrame(columns=["observation_date", label])
@@ -443,12 +443,11 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         fig.update_layout(height=420, template="plotly_white")
         return [fig]
 
-    # Market overlays use monthly close-to-close percentage changes so they are
-    # directly comparable with the monthly liquidity impulse in 5-1.
-    hkex_change = _market_monthly_change("0388.HK", "HKEX Price Change")
-    hstech_change = _market_monthly_change("HSTECH.HK", "HSTECH Change")
+    # Market overlays use month-end price/index levels. No percentage transformation is applied.
+    hkex_price = _market_monthly_close("0388.HK", "HKEX Price")
+    hstech_index = _market_monthly_close("HSTECH.HK", "HSTECH Index")
     market_data = data[["observation_date"]].copy()
-    for frame in (hkex_change, hstech_change):
+    for frame in (hkex_price, hstech_index):
         if not frame.empty:
             market_data = market_data.merge(frame, on="observation_date", how="left")
 
@@ -525,15 +524,15 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
     add_line(money, data, "M2 MoM", "M2 MoM", COLORS["m2"], 2.8, secondary_y=False)
     add_line(money, data, "M3 MoM", "M3 MoM", COLORS["m3"], 2.3, "dash", secondary_y=False)
     add_line(money, data, "Monetary Base MoM", "Monetary Base MoM", COLORS["base"], 1.8, "dot", secondary_y=False)
-    add_line(money, market_data, "HKEX Price Change", "HKEX Price Change (R)", "#0891b2", 2.1, secondary_y=True)
-    add_line(money, market_data, "HSTECH Change", "HSTECH Change (R)", "#db2777", 2.1, "dash", secondary_y=True)
+    add_line(money, market_data, "HKEX Price", "HKEX Price (R)", "#0891b2", 2.1, unit=" HKD", secondary_y=True)
+    add_line(money, market_data, "HSTECH Index", "HSTECH Index (R)", "#db2777", 2.1, "dash", unit=" pts", secondary_y=True)
     money.update_yaxes(
         title_text="Money MoM (%)", secondary_y=False,
         showgrid=True, gridcolor="#e5e7eb", griddash="dot",
         zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
     money.update_yaxes(
-        title_text="Market Change (%)", secondary_y=True,
+        title_text="Market Price / Index Level", secondary_y=True,
         showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
     style(money, "5-1. HK Money Supply & Market Pulse", right_axis=True)
@@ -570,8 +569,8 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
     add_constant(fx, 7.75, "Strong-side CU 7.75", COLORS["strong"], "dot", 1.4, secondary_y=False)
     add_constant(fx, 7.80, "Linked Rate Center 7.80", "#64748b", "dash", 1.5, secondary_y=False)
     add_constant(fx, 7.85, "Weak-side CU 7.85", COLORS["weak"], "dot", 1.4, secondary_y=False)
-    add_line(fx, market_data, "HKEX Price Change", "HKEX Price Change (R)", "#0891b2", 2.1, secondary_y=True)
-    add_line(fx, market_data, "HSTECH Change", "HSTECH Change (R)", "#db2777", 2.1, "dash", secondary_y=True)
+    add_line(fx, market_data, "HKEX Price", "HKEX Price (R)", "#0891b2", 2.1, unit=" HKD", secondary_y=True)
+    add_line(fx, market_data, "HSTECH Index", "HSTECH Index (R)", "#db2777", 2.1, "dash", unit=" pts", secondary_y=True)
     fx.add_hrect(
         y0=7.75, y1=7.85,
         fillcolor="rgba(148,163,184,0.10)",
@@ -585,7 +584,7 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         zeroline=False, fixedrange=True,
     )
     fx.update_yaxes(
-        title_text="Market Change (%)", secondary_y=True,
+        title_text="Market Price / Index Level", secondary_y=True,
         showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
     style(fx, "5-4. USD/HKD Convertibility Band & Market", height=450, right_axis=True)
