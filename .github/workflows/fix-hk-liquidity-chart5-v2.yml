@@ -1,0 +1,51 @@
+name: Fix HK liquidity chart 5 v2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/fix_hk_liquidity_chart5_v2.py
+      - .github/workflows/fix-hk-liquidity-chart5-v2.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply Chart 5 repair
+        run: python scripts/fix_hk_liquidity_chart5_v2.py
+      - name: Syntax check
+        run: python -m py_compile app.py
+      - name: HKMA monthly API smoke test
+        run: |
+          python - <<'PY'
+          import requests
+          url = 'https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics'
+          r = requests.get(url, params={'pagesize': 20}, timeout=(4, 20))
+          r.raise_for_status()
+          payload = r.json()
+          rows = ((payload.get('result') or {}).get('records') or [])
+          assert rows, 'HKMA monetary-statistics returned no records'
+          required = {'end_of_month', 'aggr_balance', 'm2_hkd', 'm3_hkd', 'hibor_fixing_overnight', 'hibor_fixing_3m', 'discount_window_base_rate', 'exrate_hkd_usd'}
+          missing = required - set(rows[0])
+          assert not missing, f'missing HKMA fields: {sorted(missing)}'
+          print('HKMA smoke test OK:', rows[0].get('end_of_month'))
+          PY
+      - name: Commit patched app.py
+        run: |
+          if git diff --quiet; then
+            echo "No patch needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          git commit -m "Repair Hong Kong liquidity chart 5"
+          git push
