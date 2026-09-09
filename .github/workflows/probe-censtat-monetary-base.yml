@@ -10,6 +10,8 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
+      - name: Install PDF text tools
+        run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
       - name: Locate Monetary Base / Aggregate Balance in official digests
         run: |
           set -e
@@ -18,5 +20,5 @@ jobs:
             echo "===== ${issue} ====="
             curl -L --retry 2 --max-time 60 -A 'Mozilla/5.0' "$url" -o /tmp/digest.pdf
             pdftotext -layout /tmp/digest.pdf /tmp/digest.txt
-            grep -n -i -E 'Monetary Base|Aggregate Balance|總結餘|貨幣基礎|Exchange Fund Bills|外匯基金票據' /tmp/digest.txt | head -80 || true
+            grep -n -i -E 'Monetary Base|Aggregate Balance|總結餘|貨幣基礎|Exchange Fund Bills|外匯基金票據' /tmp/digest.txt | head -100 || true
           done
