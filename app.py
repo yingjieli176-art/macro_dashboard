@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import requests
 import streamlit as st
+from macro_platform.hk_liquidity import build_hk_liquidity_figure, liquidity_status_html, load_hk_liquidity
 from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_wresbal, get_wtre_gen, get_rrp_daily, _fred_series)
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
@@ -93,6 +94,14 @@ div[data-testid="stPlotlyChart"] { border: 1px solid #eef2f7; border-radius: 12p
   .dashboard-title { font-size: 1.55rem; }
   .section-title { font-size: 1.12rem; }
 }
+
+
+.hk-liquidity-strip { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; margin:5px 0 10px; }
+.hk-liquidity-strip > div { border:1px solid #e5e7eb; border-radius:9px; background:#fff; padding:7px 9px; min-width:0; }
+.hk-liquidity-strip span { display:block; color:#9ca3af; font-size:.66rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hk-liquidity-strip strong { display:block; color:#111827; font-size:.82rem; font-weight:650; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+@media (max-width:1100px) { .hk-liquidity-strip { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+@media (max-width:700px) { .hk-liquidity-strip { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 
 </style>
 """, unsafe_allow_html=True)
@@ -440,190 +449,12 @@ def get_fred_series(series_id): return _fred_series(series_id)
 
 
 # === HK LIQUIDITY CHART 5 ===
-@st.cache_data(ttl=3600, show_spinner=False)
-def _hkma_get_all(url, params=None, page_size=250, max_pages=8):
-    rows = []
-    base_params = dict(params or {})
-    for page in range(max_pages):
-        batch = []
-        query = {**base_params, "offset": page * page_size, "pagesize": page_size}
-        for attempt in range(3):
-            try:
-                response = requests.get(url, params=query, timeout=(4, 20))
-                response.raise_for_status()
-                payload = response.json() or {}
-                header = payload.get("header") or {}
-                if header and header.get("success") is False:
-                    raise RuntimeError(header.get("err_msg") or "HKMA API returned an error")
-                result = payload.get("result") or {}
-                batch = result.get("records") or result.get("data") or result.get("datas") or []
-                if isinstance(batch, dict):
-                    batch = batch.get("records") or batch.get("data") or batch.get("datas") or []
-                break
-            except Exception:
-                if attempt == 2:
-                    batch = []
-        if not batch:
-            break
-        rows.extend(batch)
-        if len(batch) < page_size:
-            break
-    return rows
-
-@st.cache_data(ttl=3600, show_spinner=False)
 def get_hk_liquidity():
-    columns = [
-        "observation_date",
-        "M2 YoY",
-        "M3 YoY",
-        "Monetary Base YoY",
-        "Aggregate Balance",
-        "HIBOR O/N",
-        "HIBOR 3M",
-        "HKMA Base Rate",
-        "USD/HKD",
-        "Strong-side CU",
-        "Weak-side CU",
-    ]
-    url = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
-    end_month = pd.Timestamp.today().strftime("%Y-%m")
-    rows = _hkma_get_all(
-        url,
-        params={
-            "choose": "end_of_month",
-            "from": "2018-01",
-            "to": end_month,
-            "sortby": "end_of_month",
-            "sortorder": "asc",
-        },
-        page_size=250,
-        max_pages=2,
-    )
-    # Fallback for transient filter/query failures: the endpoint defaults to newest-first.
-    if not rows:
-        rows = _hkma_get_all(
-            url,
-            params={"sortby": "end_of_month", "sortorder": "desc"},
-            page_size=250,
-            max_pages=2,
-        )
-    frame = pd.DataFrame(rows)
-    if frame.empty or "end_of_month" not in frame.columns:
-        return pd.DataFrame(columns=columns)
+    return load_hk_liquidity()
 
-    raw_period = frame["end_of_month"].astype(str)
-    frame = frame[raw_period.str.match(r"^\d{4}-(0[1-9]|1[0-2])$")].copy()
-    frame["observation_date"] = pd.to_datetime(frame["end_of_month"], format="%Y-%m", errors="coerce")
-    frame = frame.dropna(subset=["observation_date"]).sort_values("observation_date").drop_duplicates("observation_date")
-
-    for col in [
-        "m2_hkd", "m3_hkd", "monetary_base_total", "aggr_balance",
-        "hibor_fixing_overnight", "hibor_fixing_3m",
-        "discount_window_base_rate", "exrate_hkd_usd",
-    ]:
-        frame[col] = pd.to_numeric(frame.get(col), errors="coerce")
-
-    frame["M2 YoY"] = frame["m2_hkd"].pct_change(12, fill_method=None) * 100.0
-    frame["M3 YoY"] = frame["m3_hkd"].pct_change(12, fill_method=None) * 100.0
-    frame["Monetary Base YoY"] = frame["monetary_base_total"].pct_change(12, fill_method=None) * 100.0
-    frame["Aggregate Balance"] = frame["aggr_balance"] / 1000.0
-    frame["HIBOR O/N"] = frame["hibor_fixing_overnight"]
-    frame["HIBOR 3M"] = frame["hibor_fixing_3m"]
-    frame["HKMA Base Rate"] = frame["discount_window_base_rate"]
-    frame["USD/HKD"] = frame["exrate_hkd_usd"]
-    frame["Strong-side CU"] = 7.75
-    frame["Weak-side CU"] = 7.85
-    return frame[columns]
 
 def build_fig5(date_range):
-    all_data = get_hk_liquidity().copy()
-    if all_data.empty:
-        data = all_data
-    else:
-        latest_published = all_data["observation_date"].max()
-        offsets = {
-            "5Y": pd.DateOffset(years=5),
-            "1Y": pd.DateOffset(years=1),
-            "6M": pd.DateOffset(months=6),
-            "3M": pd.DateOffset(months=3),
-            "1M": pd.DateOffset(months=1),
-        }
-        start = latest_published - offsets[date_range]
-        data = all_data[all_data["observation_date"] >= start].copy()
-    fig = make_subplots(
-        rows=4,
-        cols=1,
-        shared_xaxes=True,
-        vertical_spacing=0.055,
-        row_heights=[0.28, 0.18, 0.28, 0.26],
-        subplot_titles=(
-            "Money supply growth",
-            "Banking-system aggregate balance",
-            "HKD funding rates",
-            "USD/HKD and Convertibility Undertakings",
-        ),
-    )
-
-    def add_trace(row, column, name, width=2.3, dash=None, unit="%"):
-        if column not in data.columns or data[column].notna().sum() == 0:
-            return
-        line = {"width": width}
-        if dash:
-            line["dash"] = dash
-        fig.add_trace(
-            go.Scatter(
-                x=data["observation_date"],
-                y=data[column],
-                name=name,
-                mode="lines",
-                line=line,
-                hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>",
-            ),
-            row=row,
-            col=1,
-        )
-
-    add_trace(1, "M2 YoY", "HKD M2 YoY", 2.8)
-    add_trace(1, "M3 YoY", "HKD M3 YoY", 2.3, "dash")
-    add_trace(1, "Monetary Base YoY", "Monetary Base YoY", 1.8, "dot")
-
-    add_trace(2, "Aggregate Balance", "Aggregate Balance", 2.8, unit=" HK$ bn")
-
-    add_trace(3, "HIBOR O/N", "O/N HIBOR", 2.0)
-    add_trace(3, "HIBOR 3M", "3M HIBOR", 2.3, "dash")
-    add_trace(3, "HKMA Base Rate", "HKMA Base Rate", 2.0, "dot")
-
-    add_trace(4, "USD/HKD", "USD/HKD", 2.6, unit="")
-    add_trace(4, "Strong-side CU", "Strong-side CU 7.75", 1.4, "dot", unit="")
-    add_trace(4, "Weak-side CU", "Weak-side CU 7.85", 1.4, "dot", unit="")
-
-    height = chart_height(720, 900)
-    fig.update_layout(
-        height=height,
-        template="plotly_white",
-        hovermode="x unified",
-        dragmode=False,
-        margin=dict(l=60, r=25, t=72, b=42, pad=2),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.04,
-            xanchor="left",
-            x=0,
-            font=dict(size=9 if compact_mode else 10),
-            bgcolor="rgba(255,255,255,0)",
-        ),
-        hoverlabel=dict(bgcolor="white", font_size=11, bordercolor="#e5e7eb"),
-        font=dict(size=10 if compact_mode else 11),
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="#ffffff",
-    )
-    fig.update_yaxes(title_text="YoY (%)", row=1, col=1, showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True)
-    fig.update_yaxes(title_text="HK$ bn", row=2, col=1, showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=False, fixedrange=True)
-    fig.update_yaxes(title_text="Rate (%)", row=3, col=1, showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True)
-    fig.update_yaxes(title_text="USD/HKD", row=4, col=1, range=[7.73, 7.87], showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=False, fixedrange=True)
-    fig.update_xaxes(showgrid=True, gridcolor="#eef2f7", griddash="dot", fixedrange=True, tickformat="%Y-%m", row=4, col=1)
-    return fig
+    return build_hk_liquidity_figure(date_range, compact_mode=compact_mode)
 
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
@@ -683,13 +514,13 @@ def render_core_charts():
         for column, title, description, key, builder, sources, desc_index in configs:
             with column:
                 st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
-        st.markdown('<div class="compact-title">5. Hong Kong Liquidity</div>', unsafe_allow_html=True); st.markdown('<div class="compact-description">HKD M2/M3 / Monetary Base / Aggregate Balance / HIBOR / HKMA Base Rate / USD-HKD / 7.75-7.85 CU</div>', unsafe_allow_html=True); hk_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="compact_hk_liquidity_range", label_visibility="collapsed"); st.plotly_chart(build_fig5(hk_range), use_container_width=True, config=PLOTLY_CONFIG); add_sources([("HKMA Monetary Statistics", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics/"), ("HKMA Open API", "https://apidocs.hkma.gov.hk/")])
+        st.markdown('<div class="compact-title">5. Hong Kong Liquidity</div>', unsafe_allow_html=True); st.markdown('<div class="compact-description">HKD M2/M3 / Monetary Base / Aggregate Balance / HIBOR / HKMA Base Rate / USD-HKD / 7.75-7.85 CU</div>', unsafe_allow_html=True); hk_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="compact_hk_liquidity_range", label_visibility="collapsed"); st.plotly_chart(build_fig5(hk_range), use_container_width=True, config=PLOTLY_CONFIG); st.markdown(liquidity_status_html(), unsafe_allow_html=True); add_sources([("HKMA Monetary Statistics", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics/"), ("HKMA Open API", "https://apidocs.hkma.gov.hk/")])
     else:
         configs = [('<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>', '<div class="section-description">IORB、ON RRP Rate、EFFR 与 SOFR</div>', "normal_corridor_range", build_fig1, [("IORB (IORB)", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP Rate (RRPONTSYAWARD)", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR (EFFR)", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR (SOFR)", "https://fred.stlouisfed.org/series/SOFR")], 0, True), ('<div class="section-title">2. 10Y Yield Structure</div>', '<div class="section-description">10Y Nominal / 10Y Real / 10Y Breakeven</div>', "normal_yield10_range", build_fig2, [("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y Real (DFII10)", "https://fred.stlouisfed.org/series/DFII10"), ("10Y Breakeven (T10YIE)", "https://fred.stlouisfed.org/series/T10YIE")], 1, True), ('<div class="section-title">3. Treasury Yield & Curve Spread</div>', '<div class="section-description">3M、2Y、10Y Treasury Yield 与曲线利差</div>', "normal_treasury_range", build_fig3, [("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"), ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"), ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"), ("10Y−3M Spread (T10Y3M)", "https://fred.stlouisfed.org/series/T10Y3M")], 2, True), ('<div class="section-title">4. US Liquidity</div>', '<div class="section-description">Net Liquidity / Reserve Balances / TGA / ON RRP</div>', "normal_liquidity_range", build_fig4, [("Reserve Balances (WRESBAL)", "https://fred.stlouisfed.org/series/WRESBAL"), ("TGA (WTREGEN)", "https://fred.stlouisfed.org/series/WTREGEN"), ("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD")], 3, False)]
         for title, description, key, builder, sources, desc_index, divider in configs:
             st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
             if divider: st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">5. Hong Kong Liquidity</div>', unsafe_allow_html=True); st.markdown('<div class="section-description">HKD M2/M3、货币基础、银行体系总结余、HIBOR、HKMA Base Rate 与 USD/HKD 强弱方兑换保证</div>', unsafe_allow_html=True); hk_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="normal_hk_liquidity_range", label_visibility="collapsed"); st.plotly_chart(build_fig5(hk_range), use_container_width=True, config=PLOTLY_CONFIG); st.markdown('<div class="mini-description"><b>参数概念：</b><br>1. HKD M2 YoY：港元 M2 相对 12 个月前的同比增速，用来观察广义港元货币扩张或收缩。<br>2. HKD M3 YoY：港元 M3 同比增速，统计口径较 M2 更广。<br>3. Monetary Base YoY：香港货币基础总量同比变化，用于观察基础货币层面的扩张与收缩。<br>4. Aggregate Balance：银行体系总结余，单位由 HK$ million 转为 HK$ billion；总结余下降通常代表银行体系可用港元流动性趋紧。<br>5. O/N HIBOR：隔夜港元银行同业拆息，反映最短端港元资金价格。<br>6. 3M HIBOR：3 个月港元银行同业拆息，用来观察更持续的港元融资成本。<br>7. HKMA Base Rate：香港金管局基本利率，是港元利率体系的重要政策参考。<br>8. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>9. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>10. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br><br><b>读取提示：</b>M2/M3 为月度统计，公布存在时滞；最新月份如果尚未公布不会向前填充。图表时间范围以 HKMA 最新已发布月份为基准，避免 1M/3M 因发布时间滞后被错误过滤为空。</div>', unsafe_allow_html=True); add_sources([("HKMA Monetary Statistics", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics/")])
+        st.markdown('<div class="section-title">5. Hong Kong Liquidity</div>', unsafe_allow_html=True); st.markdown('<div class="section-description">HKD M2/M3、货币基础、银行体系总结余、HIBOR、HKMA Base Rate 与 USD/HKD 强弱方兑换保证</div>', unsafe_allow_html=True); hk_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="normal_hk_liquidity_range", label_visibility="collapsed"); st.plotly_chart(build_fig5(hk_range), use_container_width=True, config=PLOTLY_CONFIG); st.markdown(liquidity_status_html(), unsafe_allow_html=True); st.markdown('<div class="mini-description"><b>参数概念：</b><br>1. HKD M2 YoY：港元 M2 相对 12 个月前的同比增速，用来观察广义港元货币扩张或收缩。<br>2. HKD M3 YoY：港元 M3 同比增速，统计口径较 M2 更广。<br>3. Monetary Base YoY：香港货币基础总量同比变化，用于观察基础货币层面的扩张与收缩。<br>4. Aggregate Balance：银行体系总结余，单位由 HK$ million 转为 HK$ billion；总结余下降通常代表银行体系可用港元流动性趋紧。<br>5. O/N HIBOR：隔夜港元银行同业拆息，反映最短端港元资金价格。<br>6. 3M HIBOR：3 个月港元银行同业拆息，用来观察更持续的港元融资成本。<br>7. HKMA Base Rate：香港金管局基本利率，是港元利率体系的重要政策参考。<br>8. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>9. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>10. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br><br><b>读取提示：</b>M2/M3 为月度统计，公布存在时滞；最新月份如果尚未公布不会向前填充。图表时间范围以 HKMA 最新已发布月份为基准，避免 1M/3M 因发布时间滞后被错误过滤为空。</div>', unsafe_allow_html=True); add_sources([("HKMA Monetary Statistics", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics/")])
 
 st.markdown('<div id="macro-charts" class="section-anchor"></div><div class="section-kicker">MACRO CHARTS</div>', unsafe_allow_html=True)
 render_core_charts()
