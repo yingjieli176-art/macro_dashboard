@@ -3,6 +3,7 @@ import json
 import time
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import requests
 import streamlit as st
 from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_wresbal, get_wtre_gen, get_rrp_daily, _fred_series)
@@ -440,142 +441,176 @@ def get_fred_series(series_id): return _fred_series(series_id)
 
 # === HK LIQUIDITY CHART 5 ===
 @st.cache_data(ttl=3600, show_spinner=False)
-def _hkma_get_all(url, params=None, page_size=100, max_pages=60):
+def _hkma_get_all(url, params=None, page_size=250, max_pages=8):
     rows = []
     base_params = dict(params or {})
     for page in range(max_pages):
-        try:
-            query = {**base_params, "offset": page * page_size, "pagesize": page_size}
-            response = requests.get(url, params=query, timeout=10)
-            response.raise_for_status()
-            result = (response.json() or {}).get("result") or {}
-            batch = result.get("records") or result.get("data") or result.get("datas") or []
-            if isinstance(batch, dict):
-                batch = batch.get("records") or batch.get("data") or batch.get("datas") or []
-            if not batch:
+        batch = []
+        query = {**base_params, "offset": page * page_size, "pagesize": page_size}
+        for attempt in range(3):
+            try:
+                response = requests.get(url, params=query, timeout=(4, 20))
+                response.raise_for_status()
+                payload = response.json() or {}
+                header = payload.get("header") or {}
+                if header and header.get("success") is False:
+                    raise RuntimeError(header.get("err_msg") or "HKMA API returned an error")
+                result = payload.get("result") or {}
+                batch = result.get("records") or result.get("data") or result.get("datas") or []
+                if isinstance(batch, dict):
+                    batch = batch.get("records") or batch.get("data") or batch.get("datas") or []
                 break
-            rows.extend(batch)
-            if len(batch) < page_size:
-                break
-        except Exception:
+            except Exception:
+                if attempt == 2:
+                    batch = []
+        if not batch:
+            break
+        rows.extend(batch)
+        if len(batch) < page_size:
             break
     return rows
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_hk_liquidity():
-    empty_cols = ["observation_date", "Aggregate Balance", "HIBOR O/N", "HIBOR 1M", "HIBOR 3M", "HKMA Base Rate", "M2 YoY", "M3 YoY", "USD/HKD", "Strong-side CU", "Linked Rate", "Weak-side CU"]
-    money_url = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
-    # Use an explicit date window instead of relying on the endpoint's default page.
-    # This avoids losing the older monthly records when the API default page is small.
-    money_rows = _hkma_get_all(
-        money_url,
+    columns = [
+        "observation_date",
+        "M2 YoY",
+        "M3 YoY",
+        "Monetary Base YoY",
+        "Aggregate Balance",
+        "HIBOR O/N",
+        "HIBOR 3M",
+        "HKMA Base Rate",
+        "USD/HKD",
+        "Strong-side CU",
+        "Weak-side CU",
+    ]
+    url = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    end_month = pd.Timestamp.today().strftime("%Y-%m")
+    rows = _hkma_get_all(
+        url,
         params={
             "choose": "end_of_month",
-            "from": "2010-01",
-            "to": "2099-12",
+            "from": "2018-01",
+            "to": end_month,
             "sortby": "end_of_month",
             "sortorder": "asc",
         },
-        page_size=1000,
-        max_pages=3,
+        page_size=250,
+        max_pages=2,
     )
-    money = pd.DataFrame(money_rows)
-    if money.empty:
-        return pd.DataFrame(columns=empty_cols)
+    # Fallback for transient filter/query failures: the endpoint defaults to newest-first.
+    if not rows:
+        rows = _hkma_get_all(
+            url,
+            params={"sortby": "end_of_month", "sortorder": "desc"},
+            page_size=250,
+            max_pages=2,
+        )
+    frame = pd.DataFrame(rows)
+    if frame.empty or "end_of_month" not in frame.columns:
+        return pd.DataFrame(columns=columns)
 
-    money["observation_date"] = pd.to_datetime(money.get("end_of_month"), format="%Y-%m", errors="coerce")
-    # The API can include annual summary rows such as YYYY-00. They are not monthly observations.
-    money = money[money["observation_date"].notna()]
-    raw_period = money.get("end_of_month", pd.Series(index=money.index, dtype="object")).astype(str)
-    money = money[raw_period.str.match(r"^\d{4}-(0[1-9]|1[0-2])$")]
-    money["Aggregate Balance"] = pd.to_numeric(money.get("aggr_balance"), errors="coerce") / 1000.0
-    money["HIBOR O/N"] = pd.to_numeric(money.get("hibor_fixing_overnight"), errors="coerce")
-    money["HIBOR 3M"] = pd.to_numeric(money.get("hibor_fixing_3m"), errors="coerce")
-    money["HKMA Base Rate"] = pd.to_numeric(money.get("discount_window_base_rate"), errors="coerce")
-    money["M2"] = pd.to_numeric(money.get("m2_hkd"), errors="coerce")
-    money["M3"] = pd.to_numeric(money.get("m3_hkd"), errors="coerce")
-    money["USD/HKD"] = pd.to_numeric(money.get("exrate_hkd_usd"), errors="coerce")
-    money = money.sort_values("observation_date").drop_duplicates("observation_date")
-    money["M2 YoY"] = money["M2"].pct_change(12) * 100.0
-    money["M3 YoY"] = money["M3"].pct_change(12) * 100.0
-    money["Strong-side CU"] = 7.75
-    money["Linked Rate"] = 7.80
-    money["Weak-side CU"] = 7.85
-    money["HIBOR 1M"] = pd.NA
+    raw_period = frame["end_of_month"].astype(str)
+    frame = frame[raw_period.str.match(r"^\d{4}-(0[1-9]|1[0-2])$")].copy()
+    frame["observation_date"] = pd.to_datetime(frame["end_of_month"], format="%Y-%m", errors="coerce")
+    frame = frame.dropna(subset=["observation_date"]).sort_values("observation_date").drop_duplicates("observation_date")
 
-    # Daily interbank data is aggregated to calendar-month averages so the chart is genuinely monthly.
-    interbank_url = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity"
-    daily_rows = _hkma_get_all(
-        interbank_url,
-        params={
-            "choose": "end_of_date",
-            "from": "2010-01-01",
-            "to": "2099-12-31",
-            "sortby": "end_of_date",
-            "sortorder": "asc",
-        },
-        page_size=1000,
-        max_pages=8,
-    )
-    if daily_rows:
-        daily = pd.DataFrame(daily_rows)
-        daily["observation_date"] = pd.to_datetime(daily.get("end_of_date"), errors="coerce")
-        daily = daily[daily["observation_date"].notna()].copy()
-        daily["Aggregate Balance"] = pd.to_numeric(daily.get("closing_balance"), errors="coerce") / 1000.0
-        daily["HIBOR O/N"] = pd.to_numeric(daily.get("hibor_overnight"), errors="coerce")
-        daily["HIBOR 1M"] = pd.to_numeric(daily.get("hibor_fixing_1m"), errors="coerce")
-        daily["HKMA Base Rate"] = pd.to_numeric(daily.get("disc_win_base_rate"), errors="coerce")
-        daily["Strong-side CU"] = pd.to_numeric(daily.get("cu_strongside"), errors="coerce")
-        daily["Weak-side CU"] = pd.to_numeric(daily.get("cu_weakside"), errors="coerce")
-        daily["Linked Rate"] = 7.80
-        daily["month"] = daily["observation_date"].dt.to_period("M").dt.to_timestamp()
-        monthly_daily = daily.groupby("month", as_index=False).agg({
-            "Aggregate Balance": "mean",
-            "HIBOR O/N": "mean",
-            "HIBOR 1M": "mean",
-            "HKMA Base Rate": "last",
-            "Strong-side CU": "last",
-            "Linked Rate": "last",
-            "Weak-side CU": "last",
-        }).rename(columns={"month": "observation_date"})
-        money = pd.merge(money, monthly_daily, on="observation_date", how="outer", suffixes=("_monthly", ""))
-        for col in ["Aggregate Balance", "HIBOR O/N", "HIBOR 1M", "HKMA Base Rate", "Strong-side CU", "Linked Rate", "Weak-side CU"]:
-            money[col] = money[col].combine_first(money.get(f"{col}_monthly"))
+    for col in [
+        "m2_hkd", "m3_hkd", "monetary_base_total", "aggr_balance",
+        "hibor_fixing_overnight", "hibor_fixing_3m",
+        "discount_window_base_rate", "exrate_hkd_usd",
+    ]:
+        frame[col] = pd.to_numeric(frame.get(col), errors="coerce")
 
-    money = money.sort_values("observation_date").drop_duplicates("observation_date")
-    return money[empty_cols]
+    frame["M2 YoY"] = frame["m2_hkd"].pct_change(12, fill_method=None) * 100.0
+    frame["M3 YoY"] = frame["m3_hkd"].pct_change(12, fill_method=None) * 100.0
+    frame["Monetary Base YoY"] = frame["monetary_base_total"].pct_change(12, fill_method=None) * 100.0
+    frame["Aggregate Balance"] = frame["aggr_balance"] / 1000.0
+    frame["HIBOR O/N"] = frame["hibor_fixing_overnight"]
+    frame["HIBOR 3M"] = frame["hibor_fixing_3m"]
+    frame["HKMA Base Rate"] = frame["discount_window_base_rate"]
+    frame["USD/HKD"] = frame["exrate_hkd_usd"]
+    frame["Strong-side CU"] = 7.75
+    frame["Weak-side CU"] = 7.85
+    return frame[columns]
 
 def build_fig5(date_range):
     data = filter_range(get_hk_liquidity(), date_range).copy()
-    fig = go.Figure()
-    # Chart 5 is intentionally monthly: Aggregate Balance is monthly-average and monetary aggregates are monthly.
-    # A 3-month moving average gives a readable macro liquidity trend without inventing observations.
-    smooth_cols = ["M2 YoY", "M3 YoY", "Aggregate Balance", "HIBOR O/N", "HIBOR 1M", "HIBOR 3M", "HKMA Base Rate", "USD/HKD"]
-    for col in smooth_cols:
-        if col in data.columns:
-            data[col] = pd.to_numeric(data[col], errors="coerce").rolling(3, min_periods=1).mean()
-
-    for col, name, width, dash in [
-        ("M2 YoY", "M2 YoY · 3M MA", 3.0, None),
-        ("M3 YoY", "M3 YoY · 3M MA", 2.6, "dash"),
-        ("HIBOR O/N", "O/N HIBOR · 3M MA", 1.8, "dot"),
-        ("HIBOR 1M", "1M HIBOR · 3M MA", 1.8, "dashdot"),
-        ("HIBOR 3M", "3M HIBOR · 3M MA", 1.8, "longdash"),
-        ("HKMA Base Rate", "HKMA Base Rate · 3M MA", 2.2, "solid"),
-    ]:
-        add_line(fig, data, col, name, width, dash)
-    add_line(fig, data, "Aggregate Balance", "Aggregate Balance · monthly avg · 3M MA", 3.0, "solid", "y2", unit=" HK$ bn")
-    add_line(fig, data, "USD/HKD", "USD/HKD · 3M MA", 2.0, "solid", "y3")
-    add_line(fig, data, "Strong-side CU", "Strong-side CU 7.75", 1.2, "dot", "y3")
-    add_line(fig, data, "Linked Rate", "Linked Rate 7.80", 1.2, "dash", "y3")
-    add_line(fig, data, "Weak-side CU", "Weak-side CU 7.85", 1.2, "dot", "y3")
-    fig.update_layout(
-        yaxis=dict(title="M2/M3 YoY & Interest Rate (%)", fixedrange=True),
-        yaxis2=dict(title="Aggregate Balance (HK$ bn)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9)),
-        yaxis3=dict(title="USD/HKD", overlaying="y", side="right", anchor="free", position=0.94, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9)),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    fig = make_subplots(
+        rows=4,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.055,
+        row_heights=[0.28, 0.18, 0.28, 0.26],
+        subplot_titles=(
+            "Money supply growth",
+            "Banking-system aggregate balance",
+            "HKD funding rates",
+            "USD/HKD and Convertibility Undertakings",
+        ),
     )
-    return apply_chart_style(fig, chart_height(430, 650), date_range)
+
+    def add_trace(row, column, name, width=2.3, dash=None, unit="%"):
+        if column not in data.columns or data[column].notna().sum() == 0:
+            return
+        line = {"width": width}
+        if dash:
+            line["dash"] = dash
+        fig.add_trace(
+            go.Scatter(
+                x=data["observation_date"],
+                y=data[column],
+                name=name,
+                mode="lines",
+                line=line,
+                hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>",
+            ),
+            row=row,
+            col=1,
+        )
+
+    add_trace(1, "M2 YoY", "HKD M2 YoY", 2.8)
+    add_trace(1, "M3 YoY", "HKD M3 YoY", 2.3, "dash")
+    add_trace(1, "Monetary Base YoY", "Monetary Base YoY", 1.8, "dot")
+
+    add_trace(2, "Aggregate Balance", "Aggregate Balance", 2.8, unit=" HK$ bn")
+
+    add_trace(3, "HIBOR O/N", "O/N HIBOR", 2.0)
+    add_trace(3, "HIBOR 3M", "3M HIBOR", 2.3, "dash")
+    add_trace(3, "HKMA Base Rate", "HKMA Base Rate", 2.0, "dot")
+
+    add_trace(4, "USD/HKD", "USD/HKD", 2.6, unit="")
+    add_trace(4, "Strong-side CU", "Strong-side CU 7.75", 1.4, "dot", unit="")
+    add_trace(4, "Weak-side CU", "Weak-side CU 7.85", 1.4, "dot", unit="")
+
+    height = chart_height(720, 900)
+    fig.update_layout(
+        height=height,
+        template="plotly_white",
+        hovermode="x unified",
+        dragmode=False,
+        margin=dict(l=60, r=25, t=72, b=42, pad=2),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.04,
+            xanchor="left",
+            x=0,
+            font=dict(size=9 if compact_mode else 10),
+            bgcolor="rgba(255,255,255,0)",
+        ),
+        hoverlabel=dict(bgcolor="white", font_size=11, bordercolor="#e5e7eb"),
+        font=dict(size=10 if compact_mode else 11),
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+    )
+    fig.update_yaxes(title_text="YoY (%)", row=1, col=1, showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True)
+    fig.update_yaxes(title_text="HK$ bn", row=2, col=1, showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=False, fixedrange=True)
+    fig.update_yaxes(title_text="Rate (%)", row=3, col=1, showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True)
+    fig.update_yaxes(title_text="USD/HKD", row=4, col=1, range=[7.73, 7.87], showgrid=True, gridcolor="#e5e7eb", griddash="dot", zeroline=False, fixedrange=True)
+    fig.update_xaxes(showgrid=True, gridcolor="#eef2f7", griddash="dot", fixedrange=True, tickformat="%Y-%m", row=4, col=1)
+    return fig
 
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
@@ -635,13 +670,13 @@ def render_core_charts():
         for column, title, description, key, builder, sources, desc_index in configs:
             with column:
                 st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
-        st.markdown('<div class="compact-title">5. Hong Kong Liquidity</div>', unsafe_allow_html=True); st.markdown('<div class="compact-description">HK M2/M3 / Aggregate Balance / HIBOR / HKMA Rate Corridor / USD-HKD</div>', unsafe_allow_html=True); hk_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="compact_hk_liquidity_range", label_visibility="collapsed"); st.plotly_chart(build_fig5(hk_range), use_container_width=True, config=PLOTLY_CONFIG); add_sources([("HKMA Daily Figures of Interbank Liquidity", "https://www.hkma.gov.hk/eng/statistics/monetary-statistics/monetary-base/"), ("HKMA Open API", "https://apidocs.hkma.gov.hk/")])
+        st.markdown('<div class="compact-title">5. Hong Kong Liquidity</div>', unsafe_allow_html=True); st.markdown('<div class="compact-description">HKD M2/M3 / Monetary Base / Aggregate Balance / HIBOR / HKMA Base Rate / USD-HKD / 7.75-7.85 CU</div>', unsafe_allow_html=True); hk_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="compact_hk_liquidity_range", label_visibility="collapsed"); st.plotly_chart(build_fig5(hk_range), use_container_width=True, config=PLOTLY_CONFIG); add_sources([("HKMA Monetary Statistics", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics/"), ("HKMA Open API", "https://apidocs.hkma.gov.hk/")])
     else:
         configs = [('<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>', '<div class="section-description">IORB、ON RRP Rate、EFFR 与 SOFR</div>', "normal_corridor_range", build_fig1, [("IORB (IORB)", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP Rate (RRPONTSYAWARD)", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR (EFFR)", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR (SOFR)", "https://fred.stlouisfed.org/series/SOFR")], 0, True), ('<div class="section-title">2. 10Y Yield Structure</div>', '<div class="section-description">10Y Nominal / 10Y Real / 10Y Breakeven</div>', "normal_yield10_range", build_fig2, [("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y Real (DFII10)", "https://fred.stlouisfed.org/series/DFII10"), ("10Y Breakeven (T10YIE)", "https://fred.stlouisfed.org/series/T10YIE")], 1, True), ('<div class="section-title">3. Treasury Yield & Curve Spread</div>', '<div class="section-description">3M、2Y、10Y Treasury Yield 与曲线利差</div>', "normal_treasury_range", build_fig3, [("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"), ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"), ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"), ("10Y−3M Spread (T10Y3M)", "https://fred.stlouisfed.org/series/T10Y3M")], 2, True), ('<div class="section-title">4. US Liquidity</div>', '<div class="section-description">Net Liquidity / Reserve Balances / TGA / ON RRP</div>', "normal_liquidity_range", build_fig4, [("Reserve Balances (WRESBAL)", "https://fred.stlouisfed.org/series/WRESBAL"), ("TGA (WTREGEN)", "https://fred.stlouisfed.org/series/WTREGEN"), ("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD")], 3, False)]
         for title, description, key, builder, sources, desc_index, divider in configs:
             st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
             if divider: st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">5. Hong Kong Liquidity</div>', unsafe_allow_html=True); st.markdown('<div class="section-description">HK M2/M3、银行体系流动性、HIBOR、HKMA 利率走廊与 USD/HKD</div>', unsafe_allow_html=True); hk_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="normal_hk_liquidity_range", label_visibility="collapsed"); st.plotly_chart(build_fig5(hk_range), use_container_width=True, config=PLOTLY_CONFIG); st.markdown('<div class="mini-description"><b>参数概念：</b><br>1. Aggregate Balance：香港银行体系在金管局的结算余额，单位为 HK$ million；图中转换为 HK$ billion，月度值取当月每日收市总结余的平均值。<br>2. M2：香港港元广义货币供应量，主要反映公众持有的现金及银行存款等货币性资产。<br>3. M3：香港港元货币供应量的更广口径，在 M2 基础上包含更广泛的货币性项目。<br>4. M2 YoY：M2 相对 12 个月前同月的增长率，用来描述货币供应量的年度变化速度。<br>5. M3 YoY：M3 相对 12 个月前同月的增长率，定义与 M2 YoY 相同，但统计口径更广。<br>6. O/N HIBOR：港元隔夜银行间拆借利率，即隔夜期限的港元银行间资金价格。<br>7. 1M HIBOR：港元 1 个月 HIBOR，表示 1 个月期限的港元银行间资金价格。<br>8. 3M HIBOR：港元 3 个月 HIBOR，表示 3 个月期限的港元银行间资金价格。<br>9. HKMA Base Rate：香港金管局贴现窗基本利率，是香港利率体系中的政策参考利率之一。<br>10. USD/HKD：每 1 美元对应的港元价格；数值越高表示港元相对美元越弱。<br>11. Strong-side CU / Linked Rate / Weak-side CU：联系汇率制度下的 7.75 / 7.80 / 7.85 参考水平，其中 7.75 和 7.85 是强方及弱方兑换保证，7.80 是联系汇率中间水平。<br>12. 3M MA：3 个月移动平均，即当前月与前两个月数据的平均值；用于平滑月度曲线，不会创造新的原始数据点。</div>', unsafe_allow_html=True); add_sources([("HKMA Daily Figures of Interbank Liquidity", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity/")])
+        st.markdown('<div class="section-title">5. Hong Kong Liquidity</div>', unsafe_allow_html=True); st.markdown('<div class="section-description">HKD M2/M3、货币基础、银行体系总结余、HIBOR、HKMA Base Rate 与 USD/HKD 强弱方兑换保证</div>', unsafe_allow_html=True); hk_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="normal_hk_liquidity_range", label_visibility="collapsed"); st.plotly_chart(build_fig5(hk_range), use_container_width=True, config=PLOTLY_CONFIG); st.markdown('<div class="mini-description"><b>参数概念：</b><br>1. Aggregate Balance：香港银行体系在金管局的结算余额，单位为 HK$ million；图中转换为 HK$ billion，月度值取当月每日收市总结余的平均值。<br>2. M2：香港港元广义货币供应量，主要反映公众持有的现金及银行存款等货币性资产。<br>3. M3：香港港元货币供应量的更广口径，在 M2 基础上包含更广泛的货币性项目。<br>4. M2 YoY：M2 相对 12 个月前同月的增长率，用来描述货币供应量的年度变化速度。<br>5. M3 YoY：M3 相对 12 个月前同月的增长率，定义与 M2 YoY 相同，但统计口径更广。<br>6. O/N HIBOR：港元隔夜银行间拆借利率，即隔夜期限的港元银行间资金价格。<br>7. 1M HIBOR：港元 1 个月 HIBOR，表示 1 个月期限的港元银行间资金价格。<br>8. 3M HIBOR：港元 3 个月 HIBOR，表示 3 个月期限的港元银行间资金价格。<br>9. HKMA Base Rate：香港金管局贴现窗基本利率，是香港利率体系中的政策参考利率之一。<br>10. USD/HKD：每 1 美元对应的港元价格；数值越高表示港元相对美元越弱。<br>11. Strong-side CU / Linked Rate / Weak-side CU：联系汇率制度下的 7.75 / 7.80 / 7.85 参考水平，其中 7.75 和 7.85 是强方及弱方兑换保证，7.80 是联系汇率中间水平。<br>12. 3M MA：3 个月移动平均，即当前月与前两个月数据的平均值；用于平滑月度曲线，不会创造新的原始数据点。</div>', unsafe_allow_html=True); add_sources([("HKMA Monetary Statistics", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics/")])
 
 st.markdown('<div id="macro-charts" class="section-anchor"></div><div class="section-kicker">MACRO CHARTS</div>', unsafe_allow_html=True)
 render_core_charts()
