@@ -1,0 +1,55 @@
+name: Update C&SD money supply snapshot
+
+on:
+  schedule:
+    - cron: '45 22 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/update_censtat_money_supply.py
+      - .github/workflows/update-censtat-money-supply.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: censtat-money-supply
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Refresh official C&SD M2/M3 snapshot
+        run: python scripts/update_censtat_money_supply.py
+      - name: Validate five-year coverage
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('data_snapshots/censtat_hkd_money_supply.json').read_text())
+          rows=d.get('records') or []
+          complete=[r for r in rows if r.get('m2_hkd') is not None and r.get('m3_hkd') is not None]
+          assert len(complete)>=60, len(complete)
+          print('C&SD M2/M3 OK', len(complete), d.get('coverage_start'), d.get('coverage_end'))
+          print('latest', complete[0])
+          PY
+      - name: Commit refreshed snapshot
+        run: |
+          if git diff --quiet -- data_snapshots/censtat_hkd_money_supply.json; then
+            echo "Snapshot unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data_snapshots/censtat_hkd_money_supply.json
+          git commit -m "Refresh C&SD HKD money supply snapshot"
+          git pull --rebase origin main
+          git push origin main
