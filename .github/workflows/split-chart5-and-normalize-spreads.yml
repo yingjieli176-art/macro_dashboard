@@ -1,0 +1,71 @@
+name: Split Chart 5 and normalize spread units
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/split_hk_liquidity_chart5.py
+      - scripts/convert_treasury_spreads_to_percent.py
+      - .github/workflows/split-chart5-and-normalize-spreads.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+      - name: Split Hong Kong liquidity chart
+        run: python scripts/split_hk_liquidity_chart5.py
+      - name: Normalize Treasury spread units
+        run: python scripts/convert_treasury_spreads_to_percent.py
+      - name: Validate Python
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py
+      - name: Validate split Chart 5
+        run: |
+          python - <<'PY'
+          from macro_platform.hk_liquidity import build_hk_liquidity_figures
+          figs = build_hk_liquidity_figures('1Y')
+          assert len(figs) == 4, f'expected 4 HK liquidity figures, got {len(figs)}'
+          expected = [
+              {'M2 MoM', 'M3 MoM', 'Monetary Base MoM'},
+              {'Aggregate Balance'},
+              {'O/N HIBOR', '3M HIBOR', 'HKMA Base Rate', 'O/N−3M Spread (R)'},
+              {'USD/HKD', 'Strong-side 7.75', 'Weak-side 7.85'},
+          ]
+          for fig, names in zip(figs, expected):
+              actual = {getattr(t, 'name', '') for t in fig.data}
+              assert names.issubset(actual), (names, actual)
+              assert all(getattr(t, 'mode', None) == 'lines' for t in fig.data)
+          print('split Chart 5 validation OK')
+          PY
+      - name: Validate Treasury spread percent display
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text()
+          assert 'T10Y2Y_bp' not in text
+          assert 'T10Y3M_bp' not in text
+          assert 'Spread (%)' in text
+          assert '10Y−2Y (R): %{y:.3f}%<extra></extra>' in text
+          assert '10Y−3M (R): %{y:.3f}%<extra></extra>' in text
+          print('Treasury spread percent validation OK')
+          PY
+      - name: Commit migrated files
+        run: |
+          if git diff --quiet -- app.py macro_platform/hk_liquidity.py; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/hk_liquidity.py
+          git commit -m "Split Hong Kong liquidity charts and normalize spread units"
+          git push
