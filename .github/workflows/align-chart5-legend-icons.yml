@@ -1,0 +1,48 @@
+name: Align Chart 5 legend icons
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/align_chart5_legend_icons.py
+      - .github/workflows/align-chart5-legend-icons.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  align:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+      - name: Apply legend icon alignment
+        run: python scripts/align_chart5_legend_icons.py
+      - name: Validate Python
+        run: python -m py_compile macro_platform/hk_liquidity.py
+      - name: Validate Chart 5 legend style
+        run: |
+          python - <<'PY'
+          from macro_platform.hk_liquidity import build_hk_liquidity_figure
+          fig = build_hk_liquidity_figure('1Y')
+          assert len(fig.data) >= 8, f'expected Chart 5 traces, got {len(fig.data)}'
+          assert all(getattr(t, 'mode', None) == 'lines' for t in fig.data), 'Chart 5 must use the same line-only legend glyph style as Charts 1-4'
+          assert any(getattr(t, 'name', '') == 'O/N−3M Spread (R)' for t in fig.data)
+          print('Chart 5 legend style aligned:', len(fig.data), 'line traces')
+          PY
+      - name: Commit Chart 5 core
+        run: |
+          if git diff --quiet -- macro_platform/hk_liquidity.py; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add macro_platform/hk_liquidity.py
+          git commit -m "Match Chart 5 legend icons to Charts 1-4"
+          git push
