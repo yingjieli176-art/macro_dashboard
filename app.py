@@ -295,12 +295,12 @@ def _xaxis_config(date_range):
     if compact_mode:
         cfg = {
             "5Y": {"dtick": "M6", "tickformat": "%Y"},
-            "1Y": {"dtick": "M2", "tickformat": "%b'%y"},
+            "1Y": {"dtick": "M2", "tickformat": "%b\n%Y"},
             "6M": {"dtick": "M1", "tickformat": "%b"},
             "3M": {"dtick": "D14", "tickformat": "%m/%d"},
             "1M": {"dtick": "D7", "tickformat": "%m/%d"},
         }[date_range]
-        tickangle, tick_size = -40, 9
+        tickangle, tick_size = 0, 10
     else:
         cfg = {
             "5Y": {"dtick": "M6", "tickformat": "%Y"},
@@ -319,7 +319,7 @@ def _xaxis_config(date_range):
         showline=True, linecolor="#9ca3af", linewidth=1,
         fixedrange=True, hoverformat="%Y-%m-%d",
         tickfont=dict(size=tick_size), tickangle=tickangle,
-        ticklabelstandoff=6, automargin=False,
+        ticklabelstandoff=4, automargin=False,
         **cfg,
     )
 
@@ -335,7 +335,10 @@ def apply_chart_style(fig, height, date_range):
     # room). This is what keeps chart 1/2/3/4's plot areas aligned with
     # each other in both compact (side-by-side) and normal (stacked) mode.
     top_margin = 96 if compact_mode else 68
-    right_margin = 76 if has_secondary else 44
+    # Keep the plot-area width identical across all four compact modules.
+    # Secondary-axis charts need the extra right-side room, so every compact
+    # chart reserves it rather than making modules 3/4 narrower than 1/2.
+    right_margin = 76 if compact_mode else (76 if has_secondary else 44)
 
     fig.update_layout(
         height=height,
@@ -345,7 +348,7 @@ def apply_chart_style(fig, height, date_range):
         # tooltip pinned to the actual point instead.
         hovermode="closest" if compact_mode else "x unified",
         dragmode=False,
-        margin=dict(l=52, r=right_margin, t=top_margin, b=52, pad=2),
+        margin=dict(l=52, r=right_margin, t=top_margin, b=64 if compact_mode else 52, pad=2),
         legend=dict(
             orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0,
             font=dict(size=9 if compact_mode else 11), traceorder="normal",
@@ -428,7 +431,7 @@ def render_core_charts():
     st.markdown('<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>', unsafe_allow_html=True); toggle_col, _ = st.columns([1, 5])
     with toggle_col: compact_mode = st.toggle("缩小图表 / 快速浏览", value=False, key="compact_mode", help="开启后，图表1、2并排，图表3、4并排。关闭后显示完整图表。")
     if compact_mode:
-        cols = st.columns(2, gap="large")
+        cols = st.columns(2, gap="medium")
         configs = [(cols[0], '<div class="compact-title">🏦 1. Fed Policy Rate</div>', '<div class="compact-description">IORB / ON RRP / EFFR / SOFR</div>', "compact_corridor_range", build_fig1, [("IORB (IORB)", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP Rate (RRPONTSYAWARD)", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR (EFFR)", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR (SOFR)", "https://fred.stlouisfed.org/series/SOFR")], 0), (cols[1], '<div class="compact-title">2. 10Y Yield Structure</div>', '<div class="compact-description">10Y Nominal / Real / Breakeven</div>', "compact_yield10_range", build_fig2, [("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y Real (DFII10)", "https://fred.stlouisfed.org/series/DFII10"), ("10Y Breakeven (T10YIE)", "https://fred.stlouisfed.org/series/T10YIE")], 1), (cols[0], '<div class="compact-title">3. Treasury Yield</div>', '<div class="compact-description">3M / 2Y / 10Y / 10Y−2Y / 10Y−3M</div>', "compact_treasury_range", build_fig3, [("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"), ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"), ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"), ("10Y−3M Spread (T10Y3M)", "https://fred.stlouisfed.org/series/T10Y3M")], 2), (cols[1], '<div class="compact-title">4. US Liquidity</div>', '<div class="compact-description">Net Liquidity / Reserve Balances / TGA / ON RRP</div>', "compact_debt_range", build_fig4, [("Reserve Balances (WRESBAL)", "https://fred.stlouisfed.org/series/WRESBAL"), ("TGA (WTREGEN)", "https://fred.stlouisfed.org/series/WTREGEN"), ("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD")], 3)]
         for column, title, description, key, builder, sources, desc_index in configs:
             with column:
