@@ -1,0 +1,59 @@
+name: Upgrade US TGA freshness
+
+on:
+  push:
+    paths:
+      - "scripts/upgrade_us_tga_freshness.py"
+      - ".github/workflows/upgrade-us-tga-freshness.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install runtime dependencies
+        run: pip install pandas plotly requests streamlit
+      - name: Apply TGA source upgrade
+        run: python scripts/upgrade_us_tga_freshness.py
+      - name: Validate Python
+        run: python -m py_compile app.py data.py scripts/upgrade_us_tga_freshness.py
+      - name: Validate Treasury daily TGA source
+        env:
+          FRED_API_KEY: ""
+        run: |
+          python - <<'PY'
+          import types, sys
+          # data.py reads st.secrets; importing under Actions is okay after Streamlit install.
+          import data
+          frame = data.get_tga_daily()
+          assert not frame.empty
+          assert "TGA_DAILY" in frame.columns
+          assert frame["TGA_DAILY"].notna().sum() > 10
+          print(frame.tail(5).to_string(index=False))
+          PY
+      - name: Validate dashboard source wiring
+        run: |
+          grep -q 'get_tga_daily' app.py
+          grep -q 'TGA · Daily' app.py
+          grep -q 'Daily Treasury Statement' app.py
+          grep -q 'fiscaldata.treasury.gov' app.py
+      - name: Commit generated upgrade
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py data.py
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit"
+          else
+            git commit -m "Use daily Treasury data for TGA"
+            git push
+          fi
