@@ -1,0 +1,29 @@
+name: axis fix 3
+on: push
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: Patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('app.py'); s=p.read_text(encoding='utf-8')
+          old='''        ],\n        dtick="M1",\n    )\n'''
+          new='''        ],\n        tickmode="auto",\n        nticks=7 if compact_mode else 10,\n    )\n'''
+          if old not in s: raise SystemExit('dtick marker not found')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add app.py
+          git diff --cached --quiet && exit 0
+          git commit -m 'Let X axis density adapt to zoom and range'
+          git push
