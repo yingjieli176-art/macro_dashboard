@@ -180,13 +180,13 @@ def render_market_groups():
         snapshot = {"nasdaq": _get_cached_quote("^IXIC", refresh_key), "sp500": _get_cached_quote("^GSPC", refresh_key), "dow": _get_cached_quote("^DJI", refresh_key), "hsi": _get_cached_quote("^HSI", refresh_key), "hstech": _get_cached_quote("HSTECH.HK", refresh_key), "sh": _get_cached_quote("000001.SS", refresh_key), "sz": _get_cached_quote("399001.SZ", refresh_key), "csi300": _get_cached_quote("000300.SS", refresh_key)}
         st.session_state["_market_quotes_snapshot"] = snapshot; st.session_state["_market_quotes_snapshot_time"] = now
     q = snapshot
-    groups = [("🇺🇸 美股", [_market_item_html("纳斯达克", q["nasdaq"].get("price"), q["nasdaq"].get("change_pct"), _quote_meta(q["nasdaq"])), _market_item_html("标普500", q["sp500"].get("price"), q["sp500"].get("change_pct"), _quote_meta(q["sp500"])), _market_item_html("道琼斯", q["dow"].get("price"), q["dow"].get("change_pct"), _quote_meta(q["dow"]))], "three"), ("🇭🇰 港股", [_market_item_html("恒生指数", q["hsi"].get("price"), q["hsi"].get("change_pct"), _quote_meta(q["hsi"])), _market_item_html("恒生科技", q["hstech"].get("price"), q["hstech"].get("change_pct"), _quote_meta(q["hstech"]))], "two"), ("🇨🇳 A股", [_market_item_html("上证指数", q["sh"].get("price"), q["sh"].get("change_pct"), _quote_meta(q["sh"])), _market_item_html("深证成指", q["sz"].get("price"), q["sz"].get("change_pct"), _quote_meta(q["sz"])), _market_item_html("沪深300", q["csi300"].get("price"), q["csi300"].get("change_pct"), _quote_meta(q["csi300"]))], "three")]
+    groups = [("🇺🇸 美股", [_market_item_html("纳斯达克", q["nasdaq"].get("price"), q["nasdaq"].get("change_pct"), _quote_meta(q["nasdaq"])), _market_item_html("标普500", q["sp500"].get("price"), q["sp500"].get("change_pct"), _quote_meta(q["sp500"])), _market_item_html("道琼斯", q["dow"].get("price"), q["dow"].get("change_pct"), _quote_meta(q["dow"]))], "three"), ("🇭🇰 港股", [_market_item_html("恒生指数", q["hsi"].get("price"), q["hsi"].get("change_pct"), _quote_meta(q["hsi"])), _market_item_html("恒生科技", q["hstech"].get("price"), q["hstech"].get("change_pct"), _quote_meta(q["hstech"]))], "two"), ("🇨🇳 A股", [_market_item_html("上证指数", q["sh"].get("price"), q["sh"].get("change_pct"), _quote_meta(q["sh"])), _market_item_html("深证成指", q["sz"].get("price"), q["sz"].get("change_pct"), _quote_meta(q["sz"])) , _market_item_html("沪深300", q["csi300"].get("price"), q["csi300"].get("change_pct"), _quote_meta(q["csi300"]))], "three")]
     cards = []
     for title, items, grid_class in groups: cards.append(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>')
     st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
 render_market_groups()
 
-st.caption(f"行情数据刷新时间：{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}")
+st.caption(f"行情数据刷新时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
 
 @st.cache_data(ttl=20, show_spinner=False)
 def _search_yahoo(market, query):
@@ -291,8 +291,6 @@ def add_line(fig, data, column, name, width=2.5, dash=None, yaxis=None, unit="%"
     fig.add_trace(trace)
 
 def _xaxis_config(date_range):
-    # Plotly adapts tick density to the visible span. Keep the lower axis
-    # focused on month/day detail and put year labels on a separate top axis.
     return dict(
         type="date", showgrid=True, gridcolor="#eef2f7", griddash="dot",
         showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=False,
@@ -307,42 +305,43 @@ def _xaxis_config(date_range):
             {"dtickrange": [31536000000, 63072000000], "value": "%b"},
             {"dtickrange": [63072000000, None], "value": "%Y"},
         ],
-        tickmode="auto",
-        nticks=7 if compact_mode else 10,
+        tickmode="auto", nticks=7 if compact_mode else 10,
     )
 
 def _year_axis_config():
     return dict(
-        type="date", overlaying="x", side="top",
-        showgrid=False, showline=False, ticks="",
+        type="date",
+        overlaying="x",
+        matches="x",
+        anchor="y",
+        side="top",
+        position=1,
+        showgrid=False,
+        showline=True,
+        linecolor="#9ca3af",
+        linewidth=1,
+        ticks="outside",
+        ticklen=4,
+        tickwidth=1,
+        tickcolor="#9ca3af",
+        showticklabels=True,
         tickfont=dict(size=10 if compact_mode else 11),
-        tickformat="%Y", dtick="M12", ticklabelstandoff=3,
-        fixedrange=False, automargin=False,
+        tickformat="%Y",
+        dtick="M12",
+        ticklabelstandoff=4,
+        fixedrange=True,
+        automargin=False,
+        layer="above traces",
     )
 
 def apply_chart_style(fig, height, date_range):
-    # Detect a secondary (right-hand) y-axis without touching layout state
-    # that may not exist yet -- fig.layout.yaxis2 raises AttributeError on
-    # a fresh figure rather than returning None.
     yaxis2 = getattr(fig.layout, "yaxis2", None)
     has_secondary = yaxis2 is not None and yaxis2.overlaying is not None
-
-    # Fixed margins, identical in shape for every chart (only the right
-    # margin differs, and only because a second axis genuinely needs the
-    # room). This is what keeps chart 1/2/3/4's plot areas aligned with
-    # each other in both compact (side-by-side) and normal (stacked) mode.
     top_margin = 96 if compact_mode else 68
-    # Keep the plot-area width identical across all four compact modules.
-    # Secondary-axis charts need the extra right-side room, so every compact
-    # chart reserves it rather than making modules 3/4 narrower than 1/2.
     right_margin = 76 if compact_mode else (76 if has_secondary else 44)
-
     fig.update_layout(
         height=height,
         template="plotly_white",
-        # Unified hover boxes are wide and left-aligned; in a narrow compact
-        # column they can spill over the y-axis label. "closest" keeps the
-        # tooltip pinned to the actual point instead.
         hovermode="closest" if compact_mode else "x unified",
         dragmode=False,
         margin=dict(l=52, r=right_margin, t=top_margin + 18, b=64 if compact_mode else 52, pad=2),
@@ -380,8 +379,7 @@ def filter_range(data, date_range): return data[data["observation_date"] >= get_
 def chart_height(compact, normal): return compact if compact_mode else normal
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def get_fred_series(series_id):
-    return _fred_series(series_id)
+def get_fred_series(series_id): return _fred_series(series_id)
 
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
@@ -458,7 +456,7 @@ def render_news_panel():
             news_html += f'<div class="news-item"><span class="news-index">{idx}.</span><span class="news-time">{news_time}</span><div class="news-content"><a href="{news_url}" target="_blank" rel="noopener noreferrer">{body}</a></div></div>'
         st.markdown(news_html + "</div>", unsafe_allow_html=True)
     else:
-        st.warning("暂时无法取得东方财富红字焦点快讯。");
+        st.warning("暂时无法取得东方财富红字焦点快讯。")
         if news_error: st.caption(f"错误：{news_error}")
     add_sources([("东方财富红字焦点快讯", EASTMONEY_FOCUS_URL)])
 render_news_panel()
