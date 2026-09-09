@@ -530,10 +530,10 @@ PARAM_DESCRIPTIONS = [
 def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
 
 HK_PARAMETER_DESCRIPTIONS = [
-    '<b>参数概念：</b><br>1. HKD M2 MoM：港元 M2 月环比增速，用来观察广义港元货币的边际扩张或收缩。<br>2. HKD M3 MoM：港元 M3 月环比增速，统计口径较 M2 更广，用于交叉确认广义货币边际变化。<br>3. Monetary Base MoM：香港货币基础总量月环比变化。<br>4. HKEX Price（R）：港交所 0388.HK 月末收盘价，右轴单位 HKD；用于观察香港交易所股价与货币流动性变化之间的市场映射。<br>5. HSTECH Index（R）：恒生科技指数 HSTECH.HK 月末指数点位，右轴单位 points；用于观察高贝塔科技资产价格水平与香港流动性环境的关系。',
+    '<b>参数概念：</b><br>1. HKD M2 MoM：港元 M2 月环比增速，用来观察广义港元货币的边际扩张或收缩。<br>2. HKD M3 MoM：港元 M3 月环比增速，统计口径较 M2 更广，用于交叉确认广义货币边际变化。<br>3. Monetary Base MoM：香港货币基础总量月环比变化。<br>4. HKEX Price（R）：港交所 0388.HK 月末收盘价，右轴单位 HKD；用于观察香港交易所股价与货币流动性变化之间的市场映射。<br>5. HSTECH Index（R）：恒生科技指数 HSTECH.HK 月末指数点位，右轴单位 points；市场历史独立拉取 5Y，不再被 HKMA 月度快照长度裁断。',
     '<b>参数概念：</b><br>1. Opening Aggregate Balance：每日开市银行体系总结余，单位 HK$ billion。<br>2. Closing Aggregate Balance：每日收市银行体系总结余，是观察即时港元银行体系流动性的核心指标。<br>3. Forecast Aggregate Balance T+1：HKMA 公布的下一交易日预计总结余，用于提前观察已知外汇交易、市场操作及贴现窗逆转后的流动性变化。<br>4. Outstanding EFBN（R）：外汇基金票据及债券未偿还总额，右轴单位 HK$ billion；EFBN 是香港货币基础的重要组成部分。<br>5. EFBN Held by Licensed Banks（R）：其中由持牌银行持有的 EFBN，右轴单位 HK$ billion，用于观察银行体系持有的高流动性港元资产规模。<br><br><b>读取提示：</b>5-2 改为 HKMA 每日数据；Opening 与 Closing 的差异反映当日总结余变化，Forecast T+1 提供前瞻信息，EFBN 两条线用于观察货币基础结构。',
     '<b>参数概念：</b><br>1. O/N HIBOR：隔夜港元银行同业拆息，反映最短端港元资金价格。<br>2. 3M HIBOR：3 个月港元银行同业拆息，用来观察更持续的港元融资成本。<br>3. HKMA Base Rate：香港金管局基本利率，是港元利率体系的重要政策参考。<br>4. O/N−3M Spread（R）：隔夜 HIBOR 减 3M HIBOR，右轴单位 bp；显著转正通常代表短端资金压力上升。',
-    '<b>参数概念：</b><br>1. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>2. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>3. Linked Rate Center 7.80：7.75–7.85 兑换保证区间的中点参考线，用于快速判断港元当前处在偏强侧还是偏弱侧；不是额外的兑换保证触发水平。<br>4. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br>5. HKEX Price（R）：港交所 0388.HK 月末收盘价，右轴单位 HKD。<br>6. HSTECH Index（R）：恒生科技指数 HSTECH.HK 月末指数点位，右轴单位 points。<br><br><b>读取提示：</b>灰色淡色区域表示 7.75–7.85 联系汇率兑换保证区间；7.80 为区间中点参考。市场价格水平用于对照汇率位置与香港风险资产表现。',
+    '<b>参数概念：</b><br>1. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>2. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>3. Linked Rate Center 7.80：7.75–7.85 兑换保证区间的中点参考线，用于快速判断港元当前处在偏强侧还是偏弱侧；不是额外的兑换保证触发水平。<br>4. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br>5. HKEX Price（R）：港交所 0388.HK 月末收盘价，右轴单位 HKD。<br>6. HSTECH Index（R）：恒生科技指数 HSTECH.HK 月末指数点位，右轴单位 points。<br><br><b>读取提示：</b>USD/HKD 左轴已反向：7.75 强方兑换保证显示在上方、7.85 弱方兑换保证显示在下方，因此视觉方向直接对应“港元偏强/流动性偏强 → 港元偏弱/流动性偏弱”。灰色区域仍表示 7.75–7.85 联系汇率区间；USD/HKD 优先使用 FRED DEXHKUS 日频 5Y 历史，HKMA 月度汇率作为回退。',
 ]
 
 def show_hk_parameter_description(index):
@@ -592,7 +592,9 @@ def render_core_charts():
         ("HKMA Daily Interbank Liquidity", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity/"),
         ("HKMA Daily Monetary Base", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/daily-monetary-statistics/daily-figures-monetary-base/"),
         ("HKMA Open API", "https://apidocs.hkma.gov.hk/"),
-        ("Yahoo Finance Market Data", "https://finance.yahoo.com/"),
+        ("Hang Seng Indexes · HSTECH", "https://www.hsi.com.hk/eng/indexes/all-indexes/hstech"),
+        ("FRED DEXHKUS · Daily USD/HKD", "https://fred.stlouisfed.org/series/DEXHKUS"),
+        ("Yahoo Finance Market History", "https://finance.yahoo.com/"),
     ])
 
 st.markdown('<div id="macro-charts" class="section-anchor"></div><div class="section-kicker">MACRO CHARTS</div>', unsafe_allow_html=True)

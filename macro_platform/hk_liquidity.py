@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from io import StringIO
 from pathlib import Path
 from typing import Any
 
@@ -436,46 +437,90 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
 
 
 def _market_monthly_close(symbol: str, label: str) -> pd.DataFrame:
-    """Fetch monthly close-to-close percentage change from Yahoo Finance.
+    """Fetch up to five years of month-end market levels.
 
-    Market overlays are enrichment only: a network/API failure returns an empty
-    frame and must never prevent the HKMA liquidity charts from rendering.
+    Yahoo market history is enrichment only. Try both public chart hosts and,
+    for Hang Seng TECH, a secondary symbol alias. A failure must never blank
+    the HKMA liquidity charts.
     """
+    symbols = [symbol]
+    if str(symbol).upper() == "HSTECH.HK":
+        symbols.append("^HSTECH")
+    hosts = (
+        "https://query1.finance.yahoo.com/v8/finance/chart/",
+        "https://query2.finance.yahoo.com/v8/finance/chart/",
+    )
+    for market_symbol in symbols:
+        for host in hosts:
+            try:
+                response = requests.get(
+                    host + market_symbol,
+                    params={
+                        "range": "5y",
+                        "interval": "1mo",
+                        "includeAdjustedClose": "true",
+                        "events": "div,splits",
+                    },
+                    headers={"User-Agent": "Mozilla/5.0"},
+                    timeout=4.0,
+                )
+                response.raise_for_status()
+                result = (((response.json() or {}).get("chart") or {}).get("result") or [])
+                if not result:
+                    continue
+                node = result[0] or {}
+                timestamps = node.get("timestamp") or []
+                indicators = node.get("indicators") or {}
+                quote_close = (indicators.get("quote") or [{}])[0].get("close") or []
+                adj_close = (indicators.get("adjclose") or [{}])[0].get("adjclose") or []
+                closes = adj_close if len(adj_close) == len(timestamps) else quote_close
+                if len(closes) != len(timestamps):
+                    continue
+                frame = pd.DataFrame(
+                    {
+                        "observation_date": pd.to_datetime(
+                            timestamps, unit="s", utc=True, errors="coerce"
+                        ).tz_convert(None),
+                        label: pd.to_numeric(closes, errors="coerce"),
+                    }
+                ).dropna(subset=["observation_date", label])
+                if frame.empty:
+                    continue
+                frame["observation_date"] = (
+                    frame["observation_date"].dt.to_period("M").dt.to_timestamp()
+                )
+                return (
+                    frame.sort_values("observation_date")
+                    .drop_duplicates("observation_date", keep="last")
+                    [["observation_date", label]]
+                )
+            except Exception:
+                continue
+    return pd.DataFrame(columns=["observation_date", label])
+
+
+def _fred_daily_series(series_id: str, label: str) -> pd.DataFrame:
+    """Load a public FRED daily series without requiring an API key."""
     try:
         response = requests.get(
-            f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}",
-            params={
-                "range": "5y",
-                "interval": "1mo",
-                "includeAdjustedClose": "true",
-                "events": "div,splits",
-            },
+            "https://fred.stlouisfed.org/graph/fredgraph.csv",
+            params={"id": series_id},
             headers={"User-Agent": "Mozilla/5.0"},
-            timeout=3.5,
+            timeout=4.0,
         )
         response.raise_for_status()
-        result = (((response.json() or {}).get("chart") or {}).get("result") or [])
-        if not result:
+        frame = pd.read_csv(StringIO(response.text))
+        if frame.empty or len(frame.columns) < 2:
             return pd.DataFrame(columns=["observation_date", label])
-        node = result[0] or {}
-        timestamps = node.get("timestamp") or []
-        indicators = node.get("indicators") or {}
-        adj = (indicators.get("adjclose") or [{}])[0].get("adjclose") or []
-        closes = adj if len(adj) == len(timestamps) else ((indicators.get("quote") or [{}])[0].get("close") or [])
-        if len(closes) != len(timestamps):
-            return pd.DataFrame(columns=["observation_date", label])
-        frame = pd.DataFrame(
-            {
-                "observation_date": pd.to_datetime(timestamps, unit="s", utc=True, errors="coerce").tz_convert(None),
-                "close": pd.to_numeric(closes, errors="coerce"),
-            }
-        ).dropna()
+        date_col = frame.columns[0]
+        value_col = series_id if series_id in frame.columns else frame.columns[1]
+        frame["observation_date"] = pd.to_datetime(frame[date_col], errors="coerce")
+        frame[label] = pd.to_numeric(frame[value_col], errors="coerce")
+        frame = frame.dropna(subset=["observation_date", label]).sort_values("observation_date")
         if frame.empty:
             return pd.DataFrame(columns=["observation_date", label])
-        frame["observation_date"] = frame["observation_date"].dt.to_period("M").dt.to_timestamp()
-        frame = frame.sort_values("observation_date").drop_duplicates("observation_date", keep="last")
-        frame[label] = frame["close"]
-        return frame[["observation_date", label]].dropna(subset=[label])
+        cutoff = frame["observation_date"].max() - pd.DateOffset(years=5)
+        return frame.loc[frame["observation_date"] >= cutoff, ["observation_date", label]].copy()
     except Exception:
         return pd.DataFrame(columns=["observation_date", label])
 
@@ -501,10 +546,20 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
     # Market overlays use month-end price/index levels. No percentage transformation is applied.
     hkex_price = _market_monthly_close("0388.HK", "HKEX Price")
     hstech_index = _market_monthly_close("HSTECH.HK", "HSTECH Index")
-    market_data = data[["observation_date"]].copy()
+    market_data = pd.DataFrame(columns=["observation_date"])
     for frame in (hkex_price, hstech_index):
-        if not frame.empty:
-            market_data = market_data.merge(frame, on="observation_date", how="left")
+        if frame.empty:
+            continue
+        if market_data.empty:
+            market_data = frame.copy()
+        else:
+            market_data = market_data.merge(frame, on="observation_date", how="outer")
+    if not market_data.empty:
+        market_data = market_data.sort_values("observation_date")
+
+    # Monthly HKMA FX is useful for consistency, but DEXHKUS gives a much fresher
+    # daily five-year USD/HKD history for the convertibility-band panel.
+    fx_daily = _fred_daily_series("DEXHKUS", "USD/HKD")
 
     def add_line(
         fig: go.Figure,
@@ -540,9 +595,11 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         dash: str = "dot",
         width: float = 1.4,
         secondary_y: bool | None = None,
+        x_frame: pd.DataFrame | None = None,
     ) -> None:
+        base = data if x_frame is None or x_frame.empty else x_frame
         trace = go.Scatter(
-            x=data["observation_date"], y=[value] * len(data), name=name, mode="lines",
+            x=base["observation_date"], y=[value] * len(base), name=name, mode="lines",
             line=dict(width=width, color=color, dash=dash), connectgaps=True,
             hovertemplate=f"{name}: %{{y:.3f}}<extra></extra>",
         )
@@ -591,6 +648,9 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
     style(money, "5-1. HK Money Supply & Market Pulse", right_axis=True)
+    if not market_data.empty:
+        market_latest = market_data["observation_date"].max().strftime("%Y-%m")
+        money.update_layout(title_text=f"5-1. HK Money Supply & Market Pulse · market latest {market_latest}")
 
     # 5-2 · Daily banking-system liquidity and monetary-base structure.
     balance = make_subplots(specs=[[{"secondary_y": True}]])
@@ -632,10 +692,11 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
 
     # 5-4 · Convertibility band + market reaction.
     fx = make_subplots(specs=[[{"secondary_y": True}]])
-    add_line(fx, data, "USD/HKD", "USD/HKD", COLORS["fx"], 2.6, unit="", secondary_y=False)
-    add_constant(fx, 7.75, "Strong-side CU 7.75", COLORS["strong"], "dot", 1.4, secondary_y=False)
-    add_constant(fx, 7.80, "Linked Rate Center 7.80", "#64748b", "dash", 1.5, secondary_y=False)
-    add_constant(fx, 7.85, "Weak-side CU 7.85", COLORS["weak"], "dot", 1.4, secondary_y=False)
+    fx_source = fx_daily if not fx_daily.empty else data[["observation_date", "USD/HKD"]].dropna().copy()
+    add_line(fx, fx_source, "USD/HKD", "USD/HKD", COLORS["fx"], 2.6, unit="", secondary_y=False)
+    add_constant(fx, 7.75, "Strong-side CU 7.75", COLORS["strong"], "dot", 1.4, secondary_y=False, x_frame=fx_source)
+    add_constant(fx, 7.80, "Linked Rate Center 7.80", "#64748b", "dash", 1.5, secondary_y=False, x_frame=fx_source)
+    add_constant(fx, 7.85, "Weak-side CU 7.85", COLORS["weak"], "dot", 1.4, secondary_y=False, x_frame=fx_source)
     add_line(fx, market_data, "HKEX Price", "HKEX Price (R)", "#0891b2", 2.1, unit=" HKD", secondary_y=True)
     add_line(fx, market_data, "HSTECH Index", "HSTECH Index (R)", "#db2777", 2.1, "dash", unit=" pts", secondary_y=True)
     fx.add_hrect(
@@ -646,7 +707,7 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         annotation_position="top left",
     )
     fx.update_yaxes(
-        title_text="USD/HKD", secondary_y=False, range=[7.73, 7.87],
+        title_text="USD/HKD · Strong ↑ / Weak ↓", secondary_y=False, range=[7.87, 7.73],
         showgrid=True, gridcolor="#e5e7eb", griddash="dot",
         zeroline=False, fixedrange=True,
     )
@@ -655,6 +716,9 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
     style(fx, "5-4. USD/HKD Convertibility Band & Market", height=450, right_axis=True)
+    if not fx_source.empty:
+        fx_latest = fx_source["observation_date"].max().strftime("%Y-%m-%d")
+        fx.update_layout(title_text=f"5-4. USD/HKD Convertibility Band & Market · FX latest {fx_latest}")
 
     return [money, balance, funding, fx]
 
