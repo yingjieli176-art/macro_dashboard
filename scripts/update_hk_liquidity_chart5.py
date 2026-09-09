@@ -6,68 +6,89 @@ start = text.index('# === HK LIQUIDITY CHART 5 ===')
 end = text.index('def build_fig1(date_range):', start)
 new_block = '''# === HK LIQUIDITY CHART 5 ===
 @st.cache_data(ttl=3600, show_spinner=False)
-def _hkma_get_all(url, page_size=100, max_pages=60):
+def _hkma_get_all(url, params=None, page_size=100, max_pages=60):
     rows = []
+    base_params = dict(params or {})
     for page in range(max_pages):
         try:
-            response = requests.get(url, params={"offset": page * page_size}, timeout=8)
+            query = {**base_params, "offset": page * page_size, "pagesize": page_size}
+            response = requests.get(url, params=query, timeout=8)
             response.raise_for_status()
             result = (response.json() or {}).get("result") or {}
             batch = result.get("records") or result.get("data") or result.get("datas") or []
             if isinstance(batch, dict):
                 batch = batch.get("records") or batch.get("data") or batch.get("datas") or []
-            if not batch: break
+            if not batch:
+                break
             rows.extend(batch)
-            if len(batch) < page_size: break
+            if len(batch) < page_size:
+                break
         except Exception:
             break
     return rows
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_hk_liquidity():
-    interbank_url = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity"
-    rows = _hkma_get_all(interbank_url)
-    if not rows:
-        return pd.DataFrame(columns=["observation_date", "Aggregate Balance", "HIBOR O/N", "HIBOR 1M", "HIBOR 3M", "HKMA Base Rate", "M2 YoY", "M3 YoY", "USD/HKD", "Strong-side CU", "Linked Rate", "Weak-side CU"])
-    frame = pd.DataFrame(rows)
-    frame["observation_date"] = pd.to_datetime(frame.get("end_of_date"), errors="coerce")
-    frame["Aggregate Balance"] = pd.to_numeric(frame.get("closing_balance"), errors="coerce") / 1000.0
-    frame["HIBOR O/N"] = pd.to_numeric(frame.get("hibor_overnight"), errors="coerce")
-    frame["HIBOR 1M"] = pd.to_numeric(frame.get("hibor_fixing_1m"), errors="coerce")
-    frame["HKMA Base Rate"] = pd.to_numeric(frame.get("disc_win_base_rate"), errors="coerce")
-    frame["Strong-side CU"] = pd.to_numeric(frame.get("cu_strongside"), errors="coerce")
-    frame["Weak-side CU"] = pd.to_numeric(frame.get("cu_weakside"), errors="coerce")
-    frame["Linked Rate"] = 7.80
+    empty_cols = ["observation_date", "Aggregate Balance", "HIBOR O/N", "HIBOR 1M", "HIBOR 3M", "HKMA Base Rate", "M2 YoY", "M3 YoY", "USD/HKD", "Strong-side CU", "Linked Rate", "Weak-side CU"]
 
+    # Monthly HKMA statistics are used as the guaranteed base dataset.  This avoids
+    # making the whole chart disappear when the daily endpoint is temporarily slow.
     money_url = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
-    money_rows = _hkma_get_all(money_url)
+    money_rows = _hkma_get_all(money_url, page_size=100, max_pages=5)
     money = pd.DataFrame(money_rows)
-    if not money.empty:
-        money["observation_date"] = pd.to_datetime(money.get("end_of_month"), errors="coerce")
-        money["HIBOR 3M"] = pd.to_numeric(money.get("hibor_fixing_3m"), errors="coerce")
-        money["M2"] = pd.to_numeric(money.get("m2_hkd"), errors="coerce")
-        money["M3"] = pd.to_numeric(money.get("m3_hkd"), errors="coerce")
-        money["USD/HKD"] = pd.to_numeric(money.get("exrate_hkd_usd"), errors="coerce")
-        money = money[["observation_date", "HIBOR 3M", "M2", "M3", "USD/HKD"]].dropna(subset=["observation_date"]).sort_values("observation_date")
-        money["M2 YoY"] = money["M2"].pct_change(12) * 100.0
-        money["M3 YoY"] = money["M3"].pct_change(12) * 100.0
-        frame = pd.merge_asof(frame.sort_values("observation_date"), money[["observation_date", "HIBOR 3M", "M2 YoY", "M3 YoY", "USD/HKD"]], on="observation_date", direction="backward")
-    else:
-        frame["HIBOR 3M"] = pd.NA; frame["M2 YoY"] = pd.NA; frame["M3 YoY"] = pd.NA; frame["USD/HKD"] = pd.NA
-    cols = ["observation_date", "Aggregate Balance", "HIBOR O/N", "HIBOR 1M", "HIBOR 3M", "HKMA Base Rate", "M2 YoY", "M3 YoY", "USD/HKD", "Strong-side CU", "Linked Rate", "Weak-side CU"]
-    return frame[cols].dropna(subset=["observation_date"]).sort_values("observation_date").drop_duplicates("observation_date")
+    if money.empty:
+        return pd.DataFrame(columns=empty_cols)
+
+    money["observation_date"] = pd.to_datetime(money.get("end_of_month"), format="%Y-%m", errors="coerce")
+    money["Aggregate Balance"] = pd.to_numeric(money.get("aggr_balance"), errors="coerce") / 1000.0
+    money["HIBOR O/N"] = pd.to_numeric(money.get("hibor_fixing_overnight"), errors="coerce")
+    money["HIBOR 3M"] = pd.to_numeric(money.get("hibor_fixing_3m"), errors="coerce")
+    money["HKMA Base Rate"] = pd.to_numeric(money.get("discount_window_base_rate"), errors="coerce")
+    money["M2"] = pd.to_numeric(money.get("m2_hkd"), errors="coerce")
+    money["M3"] = pd.to_numeric(money.get("m3_hkd"), errors="coerce")
+    money["USD/HKD"] = pd.to_numeric(money.get("exrate_hkd_usd"), errors="coerce")
+    money = money.dropna(subset=["observation_date"]).sort_values("observation_date").drop_duplicates("observation_date")
+    money["M2 YoY"] = money["M2"].pct_change(12) * 100.0
+    money["M3 YoY"] = money["M3"].pct_change(12) * 100.0
+    money["Strong-side CU"] = 7.75
+    money["Linked Rate"] = 7.80
+    money["Weak-side CU"] = 7.85
+    money["HIBOR 1M"] = pd.NA
+
+    # Overlay daily interbank data when available, mainly to provide daily 1M HIBOR
+    # and a more granular Aggregate Balance / Base Rate series. Failure is non-fatal.
+    interbank_url = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity"
+    daily_rows = _hkma_get_all(interbank_url, params={"sortby": "end_of_date", "sortorder": "desc"}, page_size=100, max_pages=1)
+    if daily_rows:
+        daily = pd.DataFrame(daily_rows)
+        daily["observation_date"] = pd.to_datetime(daily.get("end_of_date"), errors="coerce")
+        daily["Aggregate Balance"] = pd.to_numeric(daily.get("closing_balance"), errors="coerce") / 1000.0
+        daily["HIBOR O/N"] = pd.to_numeric(daily.get("hibor_overnight"), errors="coerce")
+        daily["HIBOR 1M"] = pd.to_numeric(daily.get("hibor_fixing_1m"), errors="coerce")
+        daily["HKMA Base Rate"] = pd.to_numeric(daily.get("disc_win_base_rate"), errors="coerce")
+        daily["Strong-side CU"] = pd.to_numeric(daily.get("cu_strongside"), errors="coerce")
+        daily["Weak-side CU"] = pd.to_numeric(daily.get("cu_weakside"), errors="coerce")
+        daily["Linked Rate"] = 7.80
+        daily = daily.dropna(subset=["observation_date"]).sort_values("observation_date")
+        daily_cols = ["observation_date", "Aggregate Balance", "HIBOR O/N", "HIBOR 1M", "HKMA Base Rate", "Strong-side CU", "Linked Rate", "Weak-side CU"]
+        daily = daily[daily_cols].drop_duplicates("observation_date")
+        money = pd.merge_asof(daily, money.sort_values("observation_date"), on="observation_date", direction="backward", suffixes=("", "_monthly"))
+        for col in ["Aggregate Balance", "HIBOR O/N", "HKMA Base Rate", "Strong-side CU", "Weak-side CU", "Linked Rate"]:
+            money[col] = money[col].combine_first(money.get(f"{col}_monthly"))
+        money["HIBOR 3M"] = money["HIBOR 3M"]
+        money["M2 YoY"] = money["M2 YoY"]
+        money["M3 YoY"] = money["M3 YoY"]
+        money["USD/HKD"] = money["USD/HKD"]
+
+    return money[empty_cols].sort_values("observation_date").drop_duplicates("observation_date")
 
 def build_fig5(date_range):
     data = filter_range(get_hk_liquidity(), date_range)
     fig = go.Figure()
-    add_line(fig, data, "M2 YoY", "M2 YoY", 3.0)
-    add_line(fig, data, "M3 YoY", "M3 YoY", 3.0, "dash")
-    add_line(fig, data, "HIBOR O/N", "O/N HIBOR", 1.8, "dot")
-    add_line(fig, data, "HIBOR 1M", "1M HIBOR", 1.8, "dashdot")
-    add_line(fig, data, "HIBOR 3M", "3M HIBOR", 1.8, "longdash")
-    add_line(fig, data, "HKMA Base Rate", "HKMA Base Rate", 2.2, "solid")
+    for col, name, width, dash in [("M2 YoY", "M2 YoY", 3.0, None), ("M3 YoY", "M3 YoY", 3.0, "dash"), ("HIBOR O/N", "O/N HIBOR", 1.8, "dot"), ("HIBOR 1M", "1M HIBOR", 1.8, "dashdot"), ("HIBOR 3M", "3M HIBOR", 1.8, "longdash"), ("HKMA Base Rate", "HKMA Base Rate", 2.2, "solid")]:
+        add_line(fig, data, col, name, width, dash)
     add_line(fig, data, "Aggregate Balance", "Aggregate Balance", 2.8, "solid", "y2", unit=" HK$ bn")
-    add_line(fig, data, "USD/HKD", "USD/HKD (monthly)", 2.0, "solid", "y3")
+    add_line(fig, data, "USD/HKD", "USD/HKD", 2.0, "solid", "y3")
     add_line(fig, data, "Strong-side CU", "Strong-side CU 7.75", 1.2, "dot", "y3")
     add_line(fig, data, "Linked Rate", "Linked Rate 7.80", 1.2, "dash", "y3")
     add_line(fig, data, "Weak-side CU", "Weak-side CU 7.85", 1.2, "dot", "y3")
