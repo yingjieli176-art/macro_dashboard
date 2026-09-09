@@ -409,14 +409,16 @@ def get_hk_liquidity():
     interbank_url = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity"
     rows = _hkma_get_all(interbank_url)
     if not rows:
-        return pd.DataFrame(columns=["observation_date", "Aggregate Balance", "HIBOR O/N", "HIBOR 1M", "HIBOR 3M", "HKMA Base Rate", "USD/HKD"])
+        return pd.DataFrame(columns=["observation_date", "Aggregate Balance", "HIBOR O/N", "HIBOR 1M", "HIBOR 3M", "HKMA Base Rate", "M2 YoY", "M3 YoY", "USD/HKD", "Strong-side CU", "Linked Rate", "Weak-side CU"])
     frame = pd.DataFrame(rows)
     frame["observation_date"] = pd.to_datetime(frame.get("end_of_date"), errors="coerce")
     frame["Aggregate Balance"] = pd.to_numeric(frame.get("closing_balance"), errors="coerce") / 1000.0
     frame["HIBOR O/N"] = pd.to_numeric(frame.get("hibor_overnight"), errors="coerce")
     frame["HIBOR 1M"] = pd.to_numeric(frame.get("hibor_fixing_1m"), errors="coerce")
     frame["HKMA Base Rate"] = pd.to_numeric(frame.get("disc_win_base_rate"), errors="coerce")
-    frame["USD/HKD"] = pd.to_numeric(frame.get("cu_weakside"), errors="coerce")
+    frame["Strong-side CU"] = pd.to_numeric(frame.get("cu_strongside"), errors="coerce")
+    frame["Weak-side CU"] = pd.to_numeric(frame.get("cu_weakside"), errors="coerce")
+    frame["Linked Rate"] = 7.80
 
     money_url = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
     money_rows = _hkma_get_all(money_url)
@@ -426,13 +428,14 @@ def get_hk_liquidity():
         money["HIBOR 3M"] = pd.to_numeric(money.get("hibor_fixing_3m"), errors="coerce")
         money["M2"] = pd.to_numeric(money.get("m2_hkd"), errors="coerce")
         money["M3"] = pd.to_numeric(money.get("m3_hkd"), errors="coerce")
-        money = money[["observation_date", "HIBOR 3M", "M2", "M3"]].dropna(subset=["observation_date"]).sort_values("observation_date")
+        money["USD/HKD"] = pd.to_numeric(money.get("exrate_hkd_usd"), errors="coerce")
+        money = money[["observation_date", "HIBOR 3M", "M2", "M3", "USD/HKD"]].dropna(subset=["observation_date"]).sort_values("observation_date")
         money["M2 YoY"] = money["M2"].pct_change(12) * 100.0
         money["M3 YoY"] = money["M3"].pct_change(12) * 100.0
-        frame = pd.merge_asof(frame.sort_values("observation_date"), money[["observation_date", "HIBOR 3M", "M2 YoY", "M3 YoY"]], on="observation_date", direction="backward")
+        frame = pd.merge_asof(frame.sort_values("observation_date"), money[["observation_date", "HIBOR 3M", "M2 YoY", "M3 YoY", "USD/HKD"]], on="observation_date", direction="backward")
     else:
-        frame["HIBOR 3M"] = pd.NA; frame["M2 YoY"] = pd.NA; frame["M3 YoY"] = pd.NA
-    cols = ["observation_date", "Aggregate Balance", "HIBOR O/N", "HIBOR 1M", "HIBOR 3M", "HKMA Base Rate", "M2 YoY", "M3 YoY", "USD/HKD"]
+        frame["HIBOR 3M"] = pd.NA; frame["M2 YoY"] = pd.NA; frame["M3 YoY"] = pd.NA; frame["USD/HKD"] = pd.NA
+    cols = ["observation_date", "Aggregate Balance", "HIBOR O/N", "HIBOR 1M", "HIBOR 3M", "HKMA Base Rate", "M2 YoY", "M3 YoY", "USD/HKD", "Strong-side CU", "Linked Rate", "Weak-side CU"]
     return frame[cols].dropna(subset=["observation_date"]).sort_values("observation_date").drop_duplicates("observation_date")
 
 def build_fig5(date_range):
@@ -445,11 +448,17 @@ def build_fig5(date_range):
     add_line(fig, data, "HIBOR 3M", "3M HIBOR", 1.8, "longdash")
     add_line(fig, data, "HKMA Base Rate", "HKMA Base Rate", 2.2, "solid")
     add_line(fig, data, "Aggregate Balance", "Aggregate Balance", 2.8, "solid", "y2", unit=" HK$ bn")
+    add_line(fig, data, "USD/HKD", "USD/HKD (monthly)", 2.0, "solid", "y3")
+    add_line(fig, data, "Strong-side CU", "Strong-side CU 7.75", 1.2, "dot", "y3")
+    add_line(fig, data, "Linked Rate", "Linked Rate 7.80", 1.2, "dash", "y3")
+    add_line(fig, data, "Weak-side CU", "Weak-side CU 7.85", 1.2, "dot", "y3")
     fig.update_layout(
         yaxis=dict(title="M2/M3 YoY & Interest Rate (%)", fixedrange=True),
         yaxis2=dict(title="Aggregate Balance (HK$ bn)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9)),
+        yaxis3=dict(title="USD/HKD", overlaying="y", side="right", anchor="free", position=0.94, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9)),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
     )
-    return apply_chart_style(fig, chart_height(390, 560), date_range)
+    return apply_chart_style(fig, chart_height(430, 650), date_range)
 
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
