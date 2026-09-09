@@ -1,0 +1,39 @@
+name: Probe C&SD PDF money table
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/probe-censtat-pdf-money.yml
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install parser
+        run: pip install requests pdfplumber
+      - name: Parse Table 9.3 from official digest
+        run: |
+          python - <<'PY'
+          import io, requests, pdfplumber
+          url='https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022024MM12B0100.pdf'
+          r=requests.get(url,headers={'User-Agent':'Mozilla/5.0'},timeout=30); r.raise_for_status()
+          print('pdf bytes',len(r.content))
+          with pdfplumber.open(io.BytesIO(r.content)) as pdf:
+              hits=[]
+              for i,p in enumerate(pdf.pages):
+                  text=p.extract_text() or ''
+                  if 'Table 9.3 (cont' in text or 'Table 9.3  (cont' in text or ('Currency in circulation and money supply' in text and 'M2' in text and 'M3' in text):
+                      print('PAGE',i+1,'TEXT\n',text[:6000])
+                      tables=p.extract_tables()
+                      print('TABLE COUNT',len(tables))
+                      for ti,t in enumerate(tables):
+                          print('TABLE',ti,'ROWS',len(t))
+                          for row in t[:30]: print(repr(row))
+                      hits.append(i)
+              print('hits',hits)
+              assert hits, 'money table page not found'
+          PY
