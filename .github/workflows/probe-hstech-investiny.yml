@@ -1,0 +1,43 @@
+name: Probe HSTECH investiny history
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/probe-hstech-investiny.yml"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install investiny
+        run: pip install investiny pandas
+      - name: Search and fetch HSTECH
+        run: |
+          python - <<'PY'
+          from investiny import search_assets, historical_data
+          import pandas as pd
+          queries=['Hang Seng TECH','HSTECH']
+          results=[]
+          for q in queries:
+              try:
+                  r=search_assets(query=q, limit=10)
+                  print('SEARCH',q,r)
+                  results.extend(r or [])
+              except Exception as e:
+                  print('SEARCH_ERR',q,repr(e))
+          seen=set()
+          for item in results:
+              iid=item.get('ticker') or item.get('id') or item.get('investing_id') or item.get('pair_id')
+              if iid in seen or iid is None: continue
+              seen.add(iid)
+              try:
+                  d=historical_data(investing_id=int(iid), from_date='09/01/2021', to_date='09/09/2026')
+                  print('HIST',iid,'keys',d.keys() if isinstance(d,dict) else type(d),'len',len(next(iter(d.values()))) if isinstance(d,dict) and d else len(d))
+                  print(str(d)[:2000])
+              except Exception as e:
+                  print('HIST_ERR',iid,repr(e))
+          PY
