@@ -25,65 +25,83 @@ BASE_FIELDS = [
 ]
 
 
-def _request(url: str, params: dict[str, object]) -> list[dict]:
-    query = urllib.parse.urlencode(params)
+def _decode_payload(raw: bytes) -> dict:
+    text = raw.decode("utf-8", errors="replace").strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        start, end = text.find("{"), text.rfind("}")
+        if start >= 0 and end > start:
+            return json.loads(text[start : end + 1])
+        raise
+
+
+def _fetch_bytes(url: str, timeout: int) -> bytes:
     request = urllib.request.Request(
-        f"{url}?{query}",
+        url,
         headers={
             "User-Agent": "MacroDashboard/1.0 (+https://github.com/yingjieli176-art/macro_dashboard)",
-            "Accept": "application/json",
+            "Accept": "application/json,text/plain,*/*",
         },
     )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return response.read()
+
+
+def _request(url: str, params: dict[str, object]) -> list[dict]:
+    query = urllib.parse.urlencode(params)
+    official = f"{url}?{query}"
+    proxy = "https://r.jina.ai/http://" + official.removeprefix("https://")
     last_error: Exception | None = None
-    for attempt in range(4):
-        try:
-            with urllib.request.urlopen(request, timeout=25) as response:
-                payload = json.load(response)
-            header = payload.get("header") or {}
-            if header.get("success") is False:
-                raise RuntimeError(header.get("err_msg") or "HKMA API returned failure")
-            result = payload.get("result") or {}
-            records = result.get("records") or []
-            if not isinstance(records, list):
-                raise RuntimeError("HKMA result.records is not a list")
-            return records
-        except Exception as exc:
-            last_error = exc
-            if attempt < 3:
-                time.sleep(2 ** attempt)
+
+    # GitHub-hosted runners have intermittently timed out against api.hkma.gov.hk.
+    # The proxy is transport-only; the underlying dataset and field definitions remain HKMA.
+    for candidate, timeout in ((proxy, 35), (official, 10)):
+        for attempt in range(2):
+            try:
+                payload = _decode_payload(_fetch_bytes(candidate, timeout))
+                header = payload.get("header") or {}
+                if header.get("success") is False:
+                    raise RuntimeError(header.get("err_msg") or "HKMA API returned failure")
+                result = payload.get("result") or {}
+                records = result.get("records") or []
+                if not isinstance(records, list):
+                    raise RuntimeError("HKMA result.records is not a list")
+                return records
+            except Exception as exc:
+                last_error = exc
+                if attempt == 0:
+                    time.sleep(1)
     raise RuntimeError(f"HKMA request failed: {last_error}")
 
 
-def _year_windows(years: int = 5) -> list[tuple[str, str]]:
+def _five_year_start() -> str:
     today = date.today()
-    start_year = today.year - years
-    windows: list[tuple[str, str]] = []
-    for year in range(start_year, today.year + 1):
-        start = date(year, 1, 1)
-        end = date(year, 12, 31)
-        if year == start_year:
-            start = date(start_year, today.month, min(today.day, 28))
-        if year == today.year:
-            end = today
-        if start <= end:
-            windows.append((start.isoformat(), end.isoformat()))
-    return windows
+    try:
+        return today.replace(year=today.year - 5).isoformat()
+    except ValueError:
+        return today.replace(year=today.year - 5, day=28).isoformat()
 
 
 def _fetch_range(url: str, fields: list[str]) -> list[dict]:
     rows: list[dict] = []
-    for start, end in _year_windows(5):
+    page_size = 1000
+    for offset in (0, 1000):
         params = {
             "choose": "end_of_date",
-            "from": start,
-            "to": end,
+            "from": _five_year_start(),
+            "to": date.today().isoformat(),
             "sortby": "end_of_date",
             "sortorder": "asc",
-            "pagesize": 1000,
+            "pagesize": page_size,
             "fields": ",".join(fields),
-            "offset": 0,
+            "offset": offset,
         }
-        rows.extend(_request(url, params))
+        batch = _request(url, params)
+        rows.extend(batch)
+        if len(batch) < page_size:
+            break
+
     dedup: dict[str, dict] = {}
     for row in rows:
         day = str(row.get("end_of_date") or "")
@@ -113,6 +131,7 @@ def main() -> None:
     payload = {
         "source": "HKMA Daily Interbank Liquidity + Daily Monetary Base",
         "source_urls": [INTERBANK_URL, MONETARY_BASE_URL],
+        "transport_fallback": "r.jina.ai when direct HKMA access is unavailable from CI",
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "record_count": len(records),
         "records": records,
