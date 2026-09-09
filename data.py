@@ -2,7 +2,6 @@ import html
 import json
 import re
 import time
-
 import pandas as pd
 import requests
 import streamlit as st
@@ -145,6 +144,7 @@ def get_eastmoney_news(limit=50):
         if not news_items: return [], "东方财富 7×24 全球直播接口返回数据，但没有解析出有效新闻。"
         return news_items[:limit], None
     except Exception as exc: return [], f"东方财富 7×24 全球直播：{exc}"
+
 get_sina_news = get_eastmoney_news
 
 YAHOO_CHART_API = "https://query1.finance.yahoo.com/v8/finance/chart/"
@@ -173,28 +173,44 @@ def get_market_snapshot():
     return rows
 
 # =========================================================
-# PLOTLY DATE AXIS PATCH
+# PLOTLY DATE AXIS PATCH（已修改：双轴分层 + 对齐修复）
 # =========================================================
 from plotly.basedatatypes import BaseFigure
 _original_update_layout = BaseFigure.update_layout
 
 def _date_ticks(start, end):
     span_days = max(0, (end - start).days)
-    if span_days > 1500: freq, fmt = "6MS", "%Y-%m"
-    elif span_days > 730: freq, fmt = "3MS", "%Y-%m"
-    elif span_days > 330: freq, fmt = "2MS", "%Y-%m"
-    elif span_days > 150: freq, fmt = "MS", "%b"
-    elif span_days > 75: freq, fmt = "2W", "%m/%d"
-    elif span_days > 35: freq, fmt = "7D", "%m/%d"
-    elif span_days > 14: freq, fmt = "4D", "%m/%d"
-    elif span_days > 7: freq, fmt = "2D", "%m/%d"
-    else: freq, fmt = "1D", "%m/%d"
+    # 底部主X轴：全程不显示年份，只显示月份/日期
+    if span_days > 1500:
+        freq, fmt = "6MS", "%m"    # 5年以上：每半年刻度，仅显示月份数字
+    elif span_days > 730:
+        freq, fmt = "3MS", "%m"    # 2-5年：每季度刻度，仅显示月份数字
+    elif span_days > 330:
+        freq, fmt = "2MS", "%b"    # 1-2年：每两月刻度，显示月份缩写
+    elif span_days > 150:
+        freq, fmt = "MS", "%b"     # 5月-1年：每月刻度，显示月份缩写
+    elif span_days > 75:
+        freq, fmt = "2W", "%m/%d"  # 2.5-5月：每两周刻度，显示月/日
+    elif span_days > 35:
+        freq, fmt = "7D", "%m/%d"  # 1-2.5月：每周刻度，显示月/日
+    elif span_days > 14:
+        freq, fmt = "4D", "%m/%d"  # 2周-1月：每4天刻度，显示月/日
+    elif span_days > 7:
+        freq, fmt = "2D", "%m/%d"  # 1-2周：每2天刻度，显示月/日
+    else:
+        freq, fmt = "1D", "%m/%d"  # 1周内：每天刻度，显示月/日
+
     ticks = pd.date_range(start=start.normalize(), end=end.normalize(), freq=freq)
-    if len(ticks) == 0 or ticks[-1] < end.normalize(): ticks = ticks.append(pd.DatetimeIndex([end.normalize()]))
+    if len(ticks) == 0 or ticks[-1] < end.normalize():
+        ticks = ticks.append(pd.DatetimeIndex([end.normalize()]))
     ticks = ticks[(ticks >= start.normalize()) & (ticks <= end.normalize())]
+    
+    # 统一控制最大刻度数，避免拥挤
     if len(ticks) > 12:
-        step = max(1, (len(ticks) - 1) // 11); ticks = ticks[::step]
-        if ticks[-1] != end.normalize(): ticks = ticks.append(pd.DatetimeIndex([end.normalize()]))
+        step = max(1, (len(ticks) - 1) // 11)
+        ticks = ticks[::step]
+        if ticks[-1] != end.normalize():
+            ticks = ticks.append(pd.DatetimeIndex([end.normalize()]))
     return ticks, fmt
 
 def _update_layout_with_consistent_date_axes(self, *args, **kwargs):
@@ -202,24 +218,77 @@ def _update_layout_with_consistent_date_axes(self, *args, **kwargs):
     if isinstance(xaxis, dict) and "hoverformat" in xaxis and self.data:
         dates = []
         for trace in self.data:
-            if trace.x is not None: dates.extend(list(trace.x))
+            if trace.x is not None:
+                dates.extend(list(trace.x))
         parsed = pd.Series(pd.to_datetime(dates, errors="coerce")).dropna().sort_values().drop_duplicates()
+        
         if not parsed.empty:
-            start, end = parsed.iloc[0], parsed.iloc[-1]; ticks, tick_fmt = _date_ticks(start, end)
-            new_kwargs = dict(kwargs); new_xaxis = dict(xaxis)
-            new_xaxis.update(tickmode="array", tickvals=ticks, ticktext=[v.strftime(tick_fmt) for v in ticks], tickangle=0, tickfont=dict(size=9), automargin=False, ticklabeloverflow="hide past div")
+            start, end = parsed.iloc[0], parsed.iloc[-1]
+            ticks, tick_fmt = _date_ticks(start, end)
+            new_kwargs = dict(kwargs)
+            new_xaxis = dict(xaxis)
+            
+            # 主X轴配置：仅显示月/日，刻度水平排列
+            new_xaxis.update(
+                tickmode="array",
+                tickvals=ticks,
+                ticktext=[v.strftime(tick_fmt) for v in ticks],
+                tickangle=0,
+                tickfont=dict(size=9),
+                automargin=False,
+                ticklabeloverflow="hide past div",
+                showline=True,
+                mirror=False
+            )
             new_kwargs["xaxis"] = new_xaxis
-            # Do not overwrite an explicitly configured top year axis.
+
+            # 顶部年份轴：仅显示年份，居中对齐，和主轴完全分层
             if "xaxis2" not in kwargs:
-                years = []; year_text = []
-                for year in sorted(parsed.dt.year.unique().tolist()):
-                    year_dates = parsed[parsed.dt.year == year]; y0, y1 = year_dates.iloc[0], year_dates.iloc[-1]
-                    years.append(y0 + (y1 - y0) / 2); year_text.append(str(year))
-                new_kwargs["xaxis2"] = dict(overlaying="x", anchor="y", side="top", tickmode="array", tickvals=years, ticktext=year_text, showgrid=False, showline=False, ticks="", fixedrange=True, tickfont=dict(size=9), tickangle=0, automargin=False)
-            margin = dict(new_kwargs.get("margin") or {}); margin.update(l=max(56, margin.get("l", 0)), r=max(64, margin.get("r", 0)), t=max(76, margin.get("t", 0)), b=max(48, margin.get("b", 0))); new_kwargs["margin"] = margin
+                years = []
+                year_text = []
+                unique_years = sorted(parsed.dt.year.unique().tolist())
+                for year in unique_years:
+                    year_dates = parsed[parsed.dt.year == year]
+                    y0, y1 = year_dates.iloc[0], year_dates.iloc[-1]
+                    # 年份标签放在当年中间位置
+                    years.append(y0 + (y1 - y0) / 2)
+                    year_text.append(str(year))
+                
+                new_kwargs["xaxis2"] = dict(
+                    overlaying="x",
+                    anchor="y",
+                    side="top",
+                    tickmode="array",
+                    tickvals=years,
+                    ticktext=year_text,
+                    showgrid=False,
+                    showline=False,
+                    ticks="",
+                    fixedrange=True,
+                    tickfont=dict(size=9, color="#6b7280"),
+                    tickangle=0,
+                    automargin=False,
+                    ticklabelposition="outside top"
+                )
+
+            # 统一固定边距：确保四个图表绘图区域严格对齐
+            margin = dict(new_kwargs.get("margin") or {})
+            margin.update(
+                l=60,    # 固定左边距，兼容Y轴标签
+                r=20,    # 固定右边距
+                t=50,    # 顶部预留年份轴空间
+                b=40     # 底部主X轴空间
+            )
+            new_kwargs["margin"] = margin
+
+            # 统一图例位置，避免挤压图表
             legend = new_kwargs.get("legend")
             if isinstance(legend, dict):
-                legend = dict(legend); legend["y"] = min(1.08, float(legend.get("y", 1.02))); new_kwargs["legend"] = legend
+                legend = dict(legend)
+                legend["y"] = 1.02
+                legend["x"] = 0
+                new_kwargs["legend"] = legend
+
             kwargs = new_kwargs
     return _original_update_layout(self, *args, **kwargs)
 
