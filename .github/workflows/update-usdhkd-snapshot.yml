@@ -45,13 +45,13 @@ jobs:
           PY
       - name: Commit refreshed snapshot
         run: |
-          if git diff --quiet -- data_snapshots/usdhkd_daily.json; then
+          git add data_snapshots/usdhkd_daily.json
+          if git diff --cached --quiet; then
             echo "USDHKD snapshot unchanged"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data_snapshots/usdhkd_daily.json
           git commit -m "Refresh five-year USDHKD snapshot"
           git pull --rebase origin main
           git push origin main
