@@ -6,7 +6,6 @@ permissions:
   contents: write
 jobs:
   adjust:
-    if: github.event.head_commit.message != 'Adjust enlarged chart axis detail'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,5 +28,5 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add app.py .github/workflows/axis-detail.yml
-          git commit -m "Adjust enlarged chart axis detail"
+          git commit -m "Apply enlarged chart axis detail"
           git push
