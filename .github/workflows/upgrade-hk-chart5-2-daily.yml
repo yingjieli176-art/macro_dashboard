@@ -1,0 +1,95 @@
+name: Upgrade HK Chart 5-2 daily liquidity
+
+on:
+  push:
+    paths:
+      - "scripts/update_hkma_banking_liquidity_snapshot.py"
+      - "scripts/upgrade_hk_chart5_2_daily.py"
+      - ".github/workflows/upgrade-hk-chart5-2-daily.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "30 10 * * 1-5"
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependencies
+        run: pip install pandas plotly requests
+
+      - name: Refresh HKMA daily banking liquidity snapshot
+        run: python scripts/update_hkma_banking_liquidity_snapshot.py
+
+      - name: Upgrade Chart 5-2
+        run: python scripts/upgrade_hk_chart5_2_daily.py
+
+      - name: Validate Python
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py scripts/update_hkma_banking_liquidity_snapshot.py scripts/upgrade_hk_chart5_2_daily.py
+
+      - name: Validate daily banking liquidity chart
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          import macro_platform.hk_liquidity as hk
+
+          daily = hk.load_hk_banking_liquidity_daily()
+          assert len(daily) >= 250, len(daily)
+          assert daily["observation_date"].notna().all()
+          for column in (
+              "Opening Aggregate Balance",
+              "Closing Aggregate Balance",
+              "Forecast Aggregate Balance T+1",
+              "Outstanding EFBN",
+              "EFBN Held by Licensed Banks",
+          ):
+              assert column in daily.columns, column
+              assert daily[column].notna().sum() > 10, (column, daily[column].notna().sum())
+
+          hk._market_monthly_close = lambda symbol, label: pd.DataFrame(columns=["observation_date", label])
+          figures = hk.build_hk_liquidity_figures("5Y")
+          assert len(figures) == 4
+          names = [trace.name for trace in figures[1].data]
+          expected = [
+              "Opening Aggregate Balance",
+              "Closing Aggregate Balance",
+              "Forecast Aggregate Balance T+1",
+              "Outstanding EFBN (R)",
+              "EFBN Held by Licensed Banks (R)",
+          ]
+          for name in expected:
+              assert name in names, (name, names)
+          right = {trace.name: getattr(trace, "yaxis", None) for trace in figures[1].data}
+          assert right["Outstanding EFBN (R)"] == "y2"
+          assert right["EFBN Held by Licensed Banks (R)"] == "y2"
+          assert "Daily Banking-system Liquidity" in figures[1].layout.title.text
+          print(daily.tail(3).to_string(index=False))
+          PY
+
+      - name: Validate dashboard copy
+        run: |
+          grep -q "Opening Aggregate Balance：每日开市" app.py
+          grep -q "HKMA Daily Interbank Liquidity" app.py
+          grep -q "Daily banking liquidity & EFBN" app.py
+
+      - name: Commit generated upgrade
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/hk_liquidity.py data_snapshots/hkma_banking_liquidity_daily.json
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit"
+          else
+            git commit -m "Upgrade HK banking liquidity chart to daily data"
+            git push
+          fi
