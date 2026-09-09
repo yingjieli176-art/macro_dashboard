@@ -20,9 +20,6 @@ FRED_API_KEY = st.secrets.get("FRED_API_KEY", "")
 # NEWS
 # =========================================================
 
-# 官方东方财富 7×24 全球直播接口。
-# fastColumn=102 = 7×24 全球快讯全量。
-# 不再经过第三方聚合/代理接口，避免把第三方数据冒充东方财富官方来源。
 EASTMONEY_FOCUS_API = (
     "https://np-weblist.eastmoney.com/comm/web/getFastNewsList"
 )
@@ -347,7 +344,6 @@ def get_eastmoney_news(limit=50):
         return [], f"东方财富 7×24 全球直播：{exc}"
 
 
-# Backward-compatible alias. The data source is Eastmoney, not Sina.
 get_sina_news = get_eastmoney_news
 
 
@@ -439,14 +435,62 @@ def get_market_snapshot():
 
 
 # =========================================================
-# PLOTLY CHART AXIS PATCH
+# PLOTLY DATE AXIS PATCH
 # =========================================================
-# app.py keeps the chart construction in one file. This small compatibility
-# patch is loaded before app.py builds its figures, so all charts get the same
-# two-level date axis without duplicating chart-axis code in every figure.
+# Keep this compatibility layer in data.py because app.py imports it before
+# creating every figure.  The previous version used fixed 3D/7D ticks and
+# could easily produce overlapping labels.  This version caps the number of
+# labels and uses a finer cadence only for short ranges.
 from plotly.basedatatypes import BaseFigure
 
 _original_update_layout = BaseFigure.update_layout
+
+
+def _date_ticks(start, end):
+    span_days = max(0, (end - start).days)
+
+    # Target roughly 8–12 labels so dates remain readable at normal width.
+    if span_days > 1500:
+        freq = "6MS"
+        fmt = "%Y-%m"
+    elif span_days > 730:
+        freq = "3MS"
+        fmt = "%Y-%m"
+    elif span_days > 330:
+        freq = "2MS"
+        fmt = "%Y-%m"
+    elif span_days > 150:
+        freq = "MS"
+        fmt = "%b"
+    elif span_days > 75:
+        freq = "2W"
+        fmt = "%m/%d"
+    elif span_days > 35:
+        freq = "7D"
+        fmt = "%m/%d"
+    elif span_days > 14:
+        freq = "4D"
+        fmt = "%m/%d"
+    elif span_days > 7:
+        freq = "2D"
+        fmt = "%m/%d"
+    else:
+        freq = "1D"
+        fmt = "%m/%d"
+
+    ticks = pd.date_range(start=start.normalize(), end=end.normalize(), freq=freq)
+    if len(ticks) == 0 or ticks[-1] < end.normalize():
+        ticks = ticks.append(pd.DatetimeIndex([end.normalize()]))
+    ticks = ticks[(ticks >= start.normalize()) & (ticks <= end.normalize())]
+
+    # Hard cap protects compact two-column mode from crowded labels.
+    if len(ticks) > 12:
+        step = max(1, (len(ticks) - 1) // 11)
+        ticks = ticks[::step]
+        if ticks[-1] != end.normalize():
+            ticks = ticks.append(pd.DatetimeIndex([end.normalize()]))
+
+    return ticks, fmt
 
 
 def _update_layout_with_consistent_date_axes(self, *args, **kwargs):
@@ -456,36 +500,28 @@ def _update_layout_with_consistent_date_axes(self, *args, **kwargs):
         for trace in self.data:
             if trace.x is not None:
                 dates.extend(list(trace.x))
+
         parsed = pd.Series(pd.to_datetime(dates, errors="coerce")).dropna().sort_values().drop_duplicates()
         if not parsed.empty:
             start = parsed.iloc[0]
             end = parsed.iloc[-1]
-            span_days = max(0, (end - start).days)
-            if span_days > 1000:
-                freq = "QS"
-            elif span_days > 150:
-                freq = "MS"
-            elif span_days > 45:
-                freq = "7D"
-            else:
-                freq = "3D"
-
-            ticks = pd.date_range(start=start.normalize(), end=end.normalize(), freq=freq)
-            if len(ticks) == 0 or ticks[-1] < end.normalize():
-                ticks = ticks.append(pd.DatetimeIndex([end.normalize()]))
-            ticks = ticks[(ticks >= start.normalize()) & (ticks <= end.normalize())]
+            ticks, tick_fmt = _date_ticks(start, end)
 
             new_kwargs = dict(kwargs)
             new_xaxis = dict(xaxis)
             new_xaxis.update(
                 tickmode="array",
                 tickvals=ticks,
-                ticktext=[v.strftime("%m/%d") for v in ticks],
+                ticktext=[v.strftime(tick_fmt) for v in ticks],
                 tickangle=0,
+                tickfont=dict(size=9),
                 automargin=False,
+                ticklabeloverflow="hide past div",
             )
             new_kwargs["xaxis"] = new_xaxis
 
+            # Keep the year guide at the top, but remove the old centered
+            # year labels that visually collided with the bottom date labels.
             years = []
             year_text = []
             for year in sorted(parsed.dt.year.unique().tolist()):
@@ -504,32 +540,20 @@ def _update_layout_with_consistent_date_axes(self, *args, **kwargs):
                 showline=False,
                 ticks="",
                 fixedrange=True,
-                tickfont=dict(size=11),
+                tickfont=dict(size=9),
                 tickangle=0,
                 automargin=False,
             )
 
             margin = dict(new_kwargs.get("margin") or {})
-            margin.update(l=72, r=72, t=88, b=62)
+            margin.update(l=max(56, margin.get("l", 0)), r=max(64, margin.get("r", 0)), t=max(76, margin.get("t", 0)), b=max(48, margin.get("b", 0)))
             new_kwargs["margin"] = margin
 
             legend = new_kwargs.get("legend")
             if isinstance(legend, dict):
                 legend = dict(legend)
-                legend["y"] = 1.10
+                legend["y"] = min(1.08, float(legend.get("y", 1.02)))
                 new_kwargs["legend"] = legend
-
-            yaxis = new_kwargs.get("yaxis")
-            if isinstance(yaxis, dict):
-                yaxis = dict(yaxis)
-                yaxis["automargin"] = False
-                new_kwargs["yaxis"] = yaxis
-            for axis_name in ("yaxis2", "yaxis3"):
-                axis = new_kwargs.get(axis_name)
-                if isinstance(axis, dict):
-                    axis = dict(axis)
-                    axis["automargin"] = False
-                    new_kwargs[axis_name] = axis
 
             kwargs = new_kwargs
 
@@ -537,3 +561,15 @@ def _update_layout_with_consistent_date_axes(self, *args, **kwargs):
 
 
 BaseFigure.update_layout = _update_layout_with_consistent_date_axes
+
+
+# Wider Streamlit content area. Plotly already uses the available container
+# width, so this directly fixes the dashboard's overly narrow desktop charts.
+st.markdown(
+    """
+    <style>
+    .block-container { max-width: 2200px !important; width: 100% !important; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
