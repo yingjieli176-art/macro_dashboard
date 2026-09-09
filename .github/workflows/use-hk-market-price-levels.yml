@@ -1,0 +1,66 @@
+name: Use Hong Kong market price levels
+
+on:
+  push:
+    paths:
+      - "scripts/use_hk_market_price_levels.py"
+      - ".github/workflows/use-hk-market-price-levels.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install runtime dependencies
+        run: pip install pandas plotly requests
+      - name: Apply market price level migration
+        run: python scripts/use_hk_market_price_levels.py
+      - name: Validate Python
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py
+      - name: Validate price-level implementation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          hk = Path('macro_platform/hk_liquidity.py').read_text(encoding='utf-8')
+          app = Path('app.py').read_text(encoding='utf-8')
+          assert 'def _market_monthly_close(' in hk
+          assert 'pct_change(fill_method=None) * 100.0' not in hk[hk.index('def _market_monthly_close('):hk.index('def build_hk_liquidity_figures(')]
+          assert 'HKEX Price (R)' in hk
+          assert 'HSTECH Index (R)' in hk
+          assert 'Market Price / Index Level' in hk
+          assert 'HKEX Price Change (R)' not in hk
+          assert 'HSTECH Change (R)' not in hk
+          assert 'HKEX Price（R）' in app
+          assert 'HSTECH Index（R）' in app
+          assert 'Yahoo Finance Market Data' in app
+          PY
+      - name: Validate rendering without market network
+        run: |
+          python - <<'PY'
+          import macro_platform.hk_liquidity as hk
+          import pandas as pd
+
+          hk._market_monthly_close = lambda symbol, label: pd.DataFrame(columns=['observation_date', label])
+          figs = hk.build_hk_liquidity_figures('1Y')
+          assert len(figs) == 4
+          assert '5-1.' in (figs[0].layout.title.text or '')
+          assert '5-4.' in (figs[3].layout.title.text or '')
+          PY
+      - name: Commit migrated files
+        run: |
+          if git diff --quiet -- app.py macro_platform/hk_liquidity.py; then
+            echo "No migration changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/hk_liquidity.py
+          git commit -m "Use Hong Kong market price levels"
+          git push
