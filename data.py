@@ -7,7 +7,10 @@ import requests
 import streamlit as st
 
 FRED_API_URL = "https://api.stlouisfed.org/fred/series/observations"
-FRED_API_KEY = st.secrets.get("FRED_API_KEY", "")
+try:
+    FRED_API_KEY = st.secrets.get("FRED_API_KEY", "")
+except Exception:
+    FRED_API_KEY = ""
 EASTMONEY_FOCUS_API = "https://np-weblist.eastmoney.com/comm/web/getFastNewsList"
 EASTMONEY_NEWS_URL = "https://kuaixun.eastmoney.com/"
 NEWS_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36", "Referer": EASTMONEY_NEWS_URL, "Accept": "application/json, text/plain, */*"}
@@ -60,6 +63,72 @@ def get_walcl(): return _fred_series("WALCL")
 def get_wresbal(): return _fred_series("WRESBAL")
 @st.cache_data(ttl=3600)
 def get_wtre_gen(): return _fred_series("WTREGEN")
+
+@st.cache_data(ttl=3600)
+def get_tga_daily():
+    """Daily Treasury General Account balance from the U.S. Treasury DTS.
+
+    The DTS schema has changed account labels/fields over time. Prefer the TGA
+    closing-balance row, then Total Operating Balance, and accept the numeric
+    value from close_today_bal or open_today_bal. If FiscalData is unavailable,
+    fall back to the weekly Federal Reserve WTREGEN series.
+    """
+    url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/dts/operating_cash_balance"
+    cutoff = (pd.Timestamp.today().normalize() - pd.DateOffset(years=5, months=1)).strftime("%Y-%m-%d")
+    try:
+        response = requests.get(
+            url,
+            params={
+                "filter": f"record_date:gte:{cutoff}",
+                "sort": "record_date",
+                "page[size]": 10000,
+                "format": "json",
+            },
+            headers={"User-Agent": "MacroDashboard/1.0"},
+            timeout=8,
+        )
+        response.raise_for_status()
+        rows = (response.json() or {}).get("data") or []
+        frame = pd.DataFrame(rows)
+        if frame.empty or "record_date" not in frame.columns:
+            raise RuntimeError("Treasury FiscalData returned no TGA rows")
+        frame["observation_date"] = pd.to_datetime(frame["record_date"], errors="coerce")
+        if "account_type" not in frame.columns:
+            frame["account_type"] = ""
+        frame["account_type"] = frame["account_type"].astype(str)
+        for col in ("close_today_bal", "open_today_bal"):
+            if col not in frame.columns:
+                frame[col] = pd.NA
+            frame[col] = pd.to_numeric(frame[col], errors="coerce")
+        frame["_value"] = frame["close_today_bal"].combine_first(frame["open_today_bal"])
+        frame = frame.dropna(subset=["observation_date", "_value"])
+        if frame.empty:
+            raise RuntimeError("Treasury FiscalData returned no numeric TGA balances")
+
+        def _priority(label):
+            text = str(label).lower()
+            if "treasury general account" in text and "closing" in text:
+                return 0
+            if "total operating balance" in text:
+                return 1
+            if "treasury general account" in text:
+                return 2
+            if "federal reserve account" in text:
+                return 3
+            return 9
+
+        frame["_priority"] = frame["account_type"].map(_priority)
+        frame = frame[frame["_priority"] < 9].sort_values(["observation_date", "_priority"])
+        frame = frame.drop_duplicates("observation_date", keep="first")
+        if frame.empty:
+            raise RuntimeError("Treasury FiscalData TGA account labels were not recognized")
+        # DTS balances are USD millions; dashboard chart uses USD trillions.
+        frame["TGA_DAILY"] = frame["_value"] / 1_000_000.0
+        return frame[["observation_date", "TGA_DAILY"]].sort_values("observation_date")
+    except Exception:
+        weekly = _fred_series("WTREGEN").copy()
+        weekly["TGA_DAILY"] = pd.to_numeric(weekly["WTREGEN"], errors="coerce") / 1_000_000.0
+        return weekly[["observation_date", "TGA_DAILY"]].dropna().sort_values("observation_date")
 @st.cache_data(ttl=3600)
 def get_rrp_daily(): return _fred_series("RRPONTSYD")
 
