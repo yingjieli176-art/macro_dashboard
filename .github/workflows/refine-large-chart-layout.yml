@@ -1,0 +1,59 @@
+name: Refine large chart layout
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/refine_large_chart_layout.py
+      - .github/workflows/refine-large-chart-layout.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+      - name: Apply layout refinement
+        run: python scripts/refine_large_chart_layout.py
+      - name: Validate Python
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py
+      - name: Validate Chart 5 legends and rendering
+        run: |
+          python - <<'PY'
+          from macro_platform.hk_liquidity import build_hk_liquidity_figure
+          fig = build_hk_liquidity_figure('1Y')
+          assert len(fig.data) >= 8, f'expected visible Chart 5 traces, got {len(fig.data)}'
+          assert all(getattr(t, 'marker', None).symbol == 'circle' for t in fig.data), 'legend/trace markers must be circles'
+          assert any(getattr(t, 'name', '') == 'O/N−3M Spread (R)' for t in fig.data)
+          assert any(getattr(t, 'legend', None) == 'legend3' for t in fig.data), 'row-local legend missing'
+          print('Chart 5 render/legend validation OK:', len(fig.data), 'traces')
+          PY
+      - name: Validate full-size-only UI
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text()
+          assert '缩小图表 / 快速浏览' not in text
+          assert 'show_parameter_description(4)' in text
+          assert 'normal_hk_liquidity_range' in text
+          print('full-size UI validation OK')
+          PY
+      - name: Commit refined files
+        run: |
+          if git diff --quiet -- app.py macro_platform/hk_liquidity.py; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/hk_liquidity.py
+          git commit -m "Refine full-size macro chart layout and legends"
+          git push
