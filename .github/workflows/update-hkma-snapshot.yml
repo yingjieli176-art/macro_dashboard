@@ -1,0 +1,55 @@
+name: Update HKMA data snapshot
+
+on:
+  schedule:
+    - cron: '15 22 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/update_hkma_snapshot.py
+      - .github/workflows/update-hkma-snapshot.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hkma-snapshot
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Refresh HKMA snapshot
+        run: python scripts/update_hkma_snapshot.py
+      - name: Validate platform core
+        run: |
+          python -m py_compile macro_platform/hk_liquidity.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('data_snapshots/hkma_monetary_statistics.json')
+          data = json.loads(p.read_text())
+          rows = data.get('records') or []
+          assert len(rows) >= 24
+          assert any(r.get('m2_hkd') is not None for r in rows[:15])
+          assert any(r.get('aggr_balance') is not None for r in rows[:5])
+          print('snapshot validation OK:', len(rows), 'records')
+          PY
+      - name: Commit refreshed snapshot
+        run: |
+          if git diff --quiet -- data_snapshots/hkma_monetary_statistics.json; then
+            echo "Snapshot unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data_snapshots/hkma_monetary_statistics.json
+          git commit -m "Refresh HKMA monetary statistics snapshot"
+          git push
