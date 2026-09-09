@@ -2,7 +2,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 HK = ROOT / "macro_platform" / "hk_liquidity.py"
+APP = ROOT / "app.py"
 text = HK.read_text(encoding="utf-8")
+app = APP.read_text(encoding="utf-8")
 
 marker = 'def _market_monthly_close(symbol: str, label: str) -> pd.DataFrame:\n'
 if marker not in text:
@@ -52,8 +54,7 @@ helper = '''def _eastmoney_monthly_close(secid: str, label: str) -> pd.DataFrame
 text = text.replace(marker, helper + marker, 1)
 
 # Yahoo occasionally resolves HSTECH.HK but returns only the current month.
-# A non-empty response is not enough for a 5Y chart: require at least four
-# years of monthly observations before accepting it as the primary history.
+# Require at least four years of monthly observations before accepting it.
 old_return = '''                return (
                     frame.sort_values("observation_date")
                     .drop_duplicates("observation_date", keep="last")
@@ -70,15 +71,13 @@ new_return = '''                frame = (
                 )
                 if len(frame) >= 48:
                     return frame
-                # Treat a one-month/short Yahoo response as incomplete and
-                # continue through the alternate symbol/host and Eastmoney.
                 continue
             except Exception:
                 continue
     secid = {
         "0388.HK": "116.00388",
-        "HSTECH.HK": "100.HSTECH",
-        "^HSTECH": "100.HSTECH",
+        "HSTECH.HK": "124.HSTECH",
+        "^HSTECH": "124.HSTECH",
     }.get(str(symbol).upper())
     if secid:
         fallback = _eastmoney_monthly_close(secid, label)
@@ -90,5 +89,13 @@ if old_return not in text:
     raise RuntimeError("market history return block not found")
 text = text.replace(old_return, new_return, 1)
 
+# Fix the same market identifier in the real-time quote router.
+app = app.replace(
+    'if raw in ("HSTECH.HK", "^HSTECH"): return "100.HSTECH"',
+    'if raw in ("HSTECH.HK", "^HSTECH"): return "124.HSTECH"',
+    1,
+)
+
 HK.write_text(text, encoding="utf-8")
-print("added resilient Eastmoney 5Y fallback for HKEX/HSTECH market history")
+APP.write_text(app, encoding="utf-8")
+print("added resilient 5Y HKEX/HSTECH history using Eastmoney 124.HSTECH fallback")
