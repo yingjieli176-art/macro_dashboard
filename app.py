@@ -383,6 +383,53 @@ def chart_height(compact, normal): return compact if compact_mode else normal
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_fred_series(series_id): return _fred_series(series_id)
 
+
+
+# === HK LIQUIDITY CHART 5 ===
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_hk_liquidity():
+    url = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity"
+    rows = []
+    for offset in range(0, 5000, 100):
+        try:
+            response = requests.get(url, params={"offset": offset}, timeout=8)
+            response.raise_for_status()
+            payload = response.json()
+            result = payload.get("result") or {}
+            batch = result.get("records") or result.get("data") or result.get("datas") or []
+            if isinstance(batch, dict):
+                batch = batch.get("records") or batch.get("data") or batch.get("datas") or []
+            if not batch:
+                break
+            rows.extend(batch)
+            if len(batch) < 100:
+                break
+        except Exception:
+            break
+    if not rows:
+        return pd.DataFrame(columns=["observation_date", "Aggregate Balance", "HIBOR O/N", "HIBOR 1M"])
+    frame = pd.DataFrame(rows)
+    date_col = next((c for c in ["end_of_date", "end_of_day", "date"] if c in frame.columns), None)
+    if date_col is None:
+        return pd.DataFrame(columns=["observation_date", "Aggregate Balance", "HIBOR O/N", "HIBOR 1M"])
+    frame["observation_date"] = pd.to_datetime(frame[date_col], errors="coerce")
+    frame["Aggregate Balance"] = pd.to_numeric(frame.get("closing_balance"), errors="coerce") / 1000.0
+    frame["HIBOR O/N"] = pd.to_numeric(frame.get("hibor_overnight"), errors="coerce")
+    frame["HIBOR 1M"] = pd.to_numeric(frame.get("hibor_fixing_1m"), errors="coerce")
+    return frame.dropna(subset=["observation_date"]).sort_values("observation_date").drop_duplicates("observation_date")[["observation_date", "Aggregate Balance", "HIBOR O/N", "HIBOR 1M"]]
+
+def build_fig5(date_range):
+    data = filter_range(get_hk_liquidity(), date_range)
+    fig = go.Figure()
+    add_line(fig, data, "Aggregate Balance", "Aggregate Balance", 2.8, unit=" HK$ bn")
+    add_line(fig, data, "HIBOR O/N", "HIBOR O/N (R)", 2.2, "dot", "y2")
+    add_line(fig, data, "HIBOR 1M", "HIBOR 1M (R)", 2.2, "dash", "y2")
+    fig.update_layout(
+        yaxis=dict(title="Aggregate Balance (HK$ bn)", fixedrange=True),
+        yaxis2=dict(title="HIBOR (%)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9)),
+    )
+    return apply_chart_style(fig, chart_height(340, 500), date_range)
+
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
@@ -436,11 +483,13 @@ def render_core_charts():
         for column, title, description, key, builder, sources, desc_index in configs:
             with column:
                 st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
+        st.markdown('<div class="compact-title">5. Hong Kong Liquidity</div>', unsafe_allow_html=True); st.markdown('<div class="compact-description">Aggregate Balance / Overnight HIBOR / 1M HIBOR</div>', unsafe_allow_html=True); hk_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="compact_hk_liquidity_range", label_visibility="collapsed"); st.plotly_chart(build_fig5(hk_range), use_container_width=True, config=PLOTLY_CONFIG); add_sources([("HKMA Daily Figures of Interbank Liquidity", "https://www.hkma.gov.hk/eng/statistics/monetary-statistics/monetary-base/"), ("HKMA Open API", "https://apidocs.hkma.gov.hk/")])
     else:
         configs = [('<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>', '<div class="section-description">IORB、ON RRP Rate、EFFR 与 SOFR</div>', "normal_corridor_range", build_fig1, [("IORB (IORB)", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP Rate (RRPONTSYAWARD)", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR (EFFR)", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR (SOFR)", "https://fred.stlouisfed.org/series/SOFR")], 0, True), ('<div class="section-title">2. 10Y Yield Structure</div>', '<div class="section-description">10Y Nominal / 10Y Real / 10Y Breakeven</div>', "normal_yield10_range", build_fig2, [("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y Real (DFII10)", "https://fred.stlouisfed.org/series/DFII10"), ("10Y Breakeven (T10YIE)", "https://fred.stlouisfed.org/series/T10YIE")], 1, True), ('<div class="section-title">3. Treasury Yield & Curve Spread</div>', '<div class="section-description">3M、2Y、10Y Treasury Yield 与曲线利差</div>', "normal_treasury_range", build_fig3, [("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"), ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"), ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"), ("10Y−3M Spread (T10Y3M)", "https://fred.stlouisfed.org/series/T10Y3M")], 2, True), ('<div class="section-title">4. US Liquidity</div>', '<div class="section-description">Net Liquidity / Reserve Balances / TGA / ON RRP</div>', "normal_liquidity_range", build_fig4, [("Reserve Balances (WRESBAL)", "https://fred.stlouisfed.org/series/WRESBAL"), ("TGA (WTREGEN)", "https://fred.stlouisfed.org/series/WTREGEN"), ("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD")], 3, False)]
         for title, description, key, builder, sources, desc_index, divider in configs:
             st.markdown(title, unsafe_allow_html=True); st.markdown(description, unsafe_allow_html=True); date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed"); st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG); show_parameter_description(desc_index); add_sources(sources)
             if divider: st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">5. Hong Kong Liquidity</div>', unsafe_allow_html=True); st.markdown('<div class="section-description">Aggregate Balance、隔夜 HIBOR 与 1M HIBOR</div>', unsafe_allow_html=True); hk_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key="normal_hk_liquidity_range", label_visibility="collapsed"); st.plotly_chart(build_fig5(hk_range), use_container_width=True, config=PLOTLY_CONFIG); st.markdown('<div class="mini-description">Aggregate Balance 是香港银行在金管局结算账户的总余额，用于观察香港银行体系流动性；HIBOR 用于观察港元银行间资金价格。</div>', unsafe_allow_html=True); add_sources([("HKMA Daily Figures of Interbank Liquidity", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity/")])
 
 render_core_charts()
 st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
