@@ -1,0 +1,56 @@
+name: Backfill HK HIBOR history
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/backfill_hk_hibor_from_censtat_digests.py
+      - .github/workflows/backfill-hk-hibor-history.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hk-hibor-history
+  cancel-in-progress: true
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests pdfplumber
+      - name: Backfill official monthly HIBOR history
+        run: python scripts/backfill_hk_hibor_from_censtat_digests.py
+      - name: Validate five-year HIBOR history
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('data_snapshots/hkd_hibor_monthly.json').read_text())
+          rows=p.get('records') or []
+          assert len(rows)>=60, len(rows)
+          assert rows[0]['end_of_month'] <= '2021-09', rows[0]
+          assert rows[-1]['end_of_month'] >= '2026-06', rows[-1]
+          assert all(r.get('hibor_overnight') is not None and r.get('hibor_3m') is not None for r in rows)
+          print('HIBOR 5Y OK',len(rows),rows[0],rows[-1])
+          PY
+      - name: Commit HIBOR snapshot
+        run: |
+          git add data_snapshots/hkd_hibor_monthly.json
+          if git diff --cached --quiet; then
+            echo "HIBOR snapshot unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Backfill five-year Hong Kong HIBOR history"
+          git pull --rebase origin main
+          git push origin main
