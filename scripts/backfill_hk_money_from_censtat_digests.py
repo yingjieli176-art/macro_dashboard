@@ -12,9 +12,10 @@ import requests
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT = ROOT / "data_snapshots" / "hkma_monetary_statistics.json"
 
-# Overlapping official C&SD monthly digests. Table 9.5 is sourced from HKMA and
-# uses the same adjusted-for-FX-swap-deposits HKD M2/M3 concept as the current
-# HKMA monetary-statistics endpoint. Overlap is intentional for revision safety.
+# Overlapping official C&SD monthly digests. The adjusted-money table is sourced
+# from HKMA and uses the same adjusted-for-FX-swap-deposits HKD M2/M3 concept as
+# the current HKMA monetary-statistics endpoint. Overlap is intentional because
+# HKMA revises historical banking statistics.
 ISSUES = [
     "2022MM10",
     "2022MM12",
@@ -33,49 +34,25 @@ def _number(value: str) -> float:
     return float(value.replace(",", ""))
 
 
-def _extract_issue(issue: str) -> tuple[dict[str, dict], str]:
-    url = URL_TEMPLATE.format(issue=issue)
-    response = requests.get(url, headers={"User-Agent": "MacroDashboard/1.0"}, timeout=40)
-    response.raise_for_status()
-    print(issue, "downloaded", len(response.content), "bytes")
+def _parse_adjusted_money_page(text: str) -> tuple[dict[str, dict], int]:
+    """Parse one digest page and return adjusted monthly HKD M2/M3 rows.
 
-    found: dict[str, dict] = {}
-    with pdfplumber.open(io.BytesIO(response.content)) as pdf:
-        page_text = None
-        # Finance tables sit around this region in the digest. Restricting the
-        # scan keeps the CI backfill much faster than parsing all ~300 pages.
-        start = min(145, max(0, len(pdf.pages) - 1))
-        stop = min(len(pdf.pages), 225)
-        for page in pdf.pages[start:stop]:
-            text = page.extract_text() or ""
-            normalized = re.sub(r"\s+", " ", text)
-            if (
-                "Table 9.5" in normalized
-                and "Money supply" in normalized
-                and "currency swap deposits" in normalized
-            ):
-                page_text = text
-                break
-        if page_text is None:
-            # Page numbering shifted in some older issues: use a full scan only
-            # as a fallback.
-            for page in pdf.pages:
-                text = page.extract_text() or ""
-                normalized = re.sub(r"\s+", " ", text)
-                if (
-                    "Table 9.5" in normalized
-                    and "Money supply" in normalized
-                    and "currency swap deposits" in normalized
-                ):
-                    page_text = text
-                    break
-    if page_text is None:
-        raise RuntimeError(f"{issue}: Table 9.5 not found")
+    C&SD changed typography/table-title extraction across digest vintages, so
+    the parser intentionally identifies the table from its row structure rather
+    than a brittle literal title. In the adjusted-money table:
+      * M2 monthly rows contain 6 tokens: year, month, swap, HKD M2, FC M2, total.
+      * M3 monthly rows contain 8 tokens: year, month, HKD M3, FC M3, total,
+        adjusted customer-deposit HKD, FC, total.
+    A nearby unadjusted Table 9.3 has 8-token rows only, so requiring matched
+    6- and 8-token rows for the same month cleanly distinguishes Table 9.5.
+    """
+    m2: dict[str, float] = {}
+    m3: dict[str, float] = {}
 
-    for raw in page_text.splitlines():
+    for raw in text.splitlines():
         line = re.sub(r"\s+", " ", raw.strip())
         parts = line.split(" ")
-        if len(parts) not in (6, 7):
+        if len(parts) not in (6, 8):
             continue
         if not re.fullmatch(r"20\d{2}", parts[0]):
             continue
@@ -83,24 +60,50 @@ def _extract_issue(issue: str) -> tuple[dict[str, dict], str]:
             continue
         if not all(re.fullmatch(r"[\d,]+", token) for token in parts[2:]):
             continue
+
         month = f"{int(parts[0]):04d}-{int(parts[1]):02d}"
-        target = found.setdefault(month, {"end_of_month": month})
         if len(parts) == 6:
             # year, month, FX-swap deposits, adjusted HKD M2, adjusted FC M2, total M2
-            target["m2_hkd"] = _number(parts[3])
-        elif len(parts) == 7:
+            m2[month] = _number(parts[3])
+        else:
             # year, month, adjusted HKD M3, adjusted FC M3, total M3,
-            # adjusted HKD customer deposits, total customer deposits
-            target["m3_hkd"] = _number(parts[2])
+            # adjusted HKD customer deposits, adjusted FC deposits, total deposits
+            m3[month] = _number(parts[2])
 
-    complete = sum(
-        row.get("m2_hkd") is not None and row.get("m3_hkd") is not None
-        for row in found.values()
-    )
-    print(issue, "Table 9.5 months", len(found), "complete", complete)
-    if complete < 4:
-        raise RuntimeError(f"{issue}: too few complete Table 9.5 months ({complete})")
-    return found, url
+    months = sorted(set(m2) & set(m3))
+    rows = {
+        month: {
+            "end_of_month": month,
+            "m2_hkd": m2[month],
+            "m3_hkd": m3[month],
+        }
+        for month in months
+    }
+    return rows, len(months)
+
+
+def _extract_issue(issue: str) -> tuple[dict[str, dict], str]:
+    url = URL_TEMPLATE.format(issue=issue)
+    response = requests.get(url, headers={"User-Agent": "MacroDashboard/1.0"}, timeout=45)
+    response.raise_for_status()
+    print(issue, "downloaded", len(response.content), "bytes")
+
+    best_rows: dict[str, dict] = {}
+    best_page = None
+    with pdfplumber.open(io.BytesIO(response.content)) as pdf:
+        # Finance tables usually sit in the latter half, but scan every page so
+        # older editions with shifted numbering remain supported.
+        for page_number, page in enumerate(pdf.pages, start=1):
+            text = page.extract_text() or ""
+            rows, complete = _parse_adjusted_money_page(text)
+            if complete > len(best_rows):
+                best_rows = rows
+                best_page = page_number
+
+    print(issue, "best adjusted-money page", best_page, "complete months", len(best_rows))
+    if len(best_rows) < 4:
+        raise RuntimeError(f"{issue}: adjusted M2/M3 table not found or too short ({len(best_rows)})")
+    return best_rows, url
 
 
 def _month_range(start: str, end: str) -> list[str]:
@@ -142,15 +145,14 @@ def main() -> None:
 
     for month, source_row in extracted.items():
         target = merged.setdefault(month, {"end_of_month": month})
-        # Preserve the current API snapshot where it already has a published
-        # value; use digest history only to fill absent older months.
+        # Preserve precise current API values where already published. Digest
+        # history (rounded to HK$ million) fills only absent historical months.
         for key in ("m2_hkd", "m3_hkd"):
             if target.get(key) is None and source_row.get(key) is not None:
                 target[key] = source_row[key]
 
-    # 5Y chart is anchored to the latest published complete M2/M3 month. We
-    # require one extra month before the visible 5Y window so the first MoM
-    # point can be calculated instead of appearing blank.
+    # 5Y chart is anchored to the latest complete M2/M3 month. Keep one extra
+    # month before the visible window so the first visible MoM can be computed.
     complete_months = sorted(
         month
         for month, row in merged.items()
@@ -167,7 +169,7 @@ def main() -> None:
     if missing:
         raise RuntimeError(
             f"Official digest backfill still misses {len(missing)} months "
-            f"inside {required_start}..{latest}: {missing[:12]}; failures={failures}"
+            f"inside {required_start}..{latest}: {missing[:18]}; failures={failures}"
         )
 
     records = list(merged.values())
@@ -177,7 +179,7 @@ def main() -> None:
     payload["coverage_start"] = records[-1]["end_of_month"]
     payload["coverage_end"] = records[0]["end_of_month"]
     payload["historical_backfill"] = {
-        "source": "C&SD Hong Kong Monthly Digest of Statistics, Table 9.5",
+        "source": "C&SD Hong Kong Monthly Digest of Statistics, adjusted money-supply table",
         "underlying_source": "Hong Kong Monetary Authority",
         "concept": "HKD M2/M3 adjusted for foreign currency swap deposits",
         "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -188,14 +190,8 @@ def main() -> None:
     }
     SNAPSHOT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(
-        "backfill complete:",
-        required_start,
-        "through",
-        latest,
-        "months",
-        len(required),
-        "snapshot rows",
-        len(records),
+        "backfill complete:", required_start, "through", latest,
+        "months", len(required), "snapshot rows", len(records),
     )
 
 
