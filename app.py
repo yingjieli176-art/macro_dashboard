@@ -163,7 +163,7 @@ def _get_cached_quote(symbol, refresh_key=0):
         if row.get("price") is not None: return row
     return _get_yahoo_quote_safe(symbol)
 
-def _quote_refresh_key(): return int(time.time() // 300)
+def _quote_refresh_key(): return int(time.time() // 60)
 def _quote_meta(row, market=""):
     source = row.get("data_source") or row.get("quote_source") or ""; delayed = row.get("delayed_by"); state = _market_state_text(row); parts = [state] if state else []
     if delayed not in (None, 0, "0") and source == "Yahoo Finance": parts.append(f"延迟{delayed}分")
@@ -185,6 +185,8 @@ def render_market_groups():
     for title, items, grid_class in groups: cards.append(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>')
     st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
 render_market_groups()
+
+st.caption(f"行情数据刷新时间：{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}")
 
 @st.cache_data(ttl=20, show_spinner=False)
 def _search_yahoo(market, query):
