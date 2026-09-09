@@ -1,0 +1,34 @@
+name: Probe HSTECH Sina history
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/probe-hstech-sina-history.yml
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install AKShare
+        run: pip install akshare
+      - name: Fetch HSTECH via Sina history
+        run: |
+          python - <<'PY'
+          import akshare as ak
+          import pandas as pd
+          df=ak.stock_hk_index_daily_sina(symbol='HSTECH')
+          print('rows',len(df),'cols',list(df.columns))
+          print(df.head(3).to_string(index=False))
+          print(df.tail(5).to_string(index=False))
+          assert len(df)>=800, len(df)
+          dates=pd.to_datetime(df['date'])
+          assert dates.min() <= pd.Timestamp('2021-09-30'), dates.min()
+          assert dates.max() >= pd.Timestamp('2026-08-01'), dates.max()
+          monthly=df.assign(date=dates).set_index('date').resample('MS').last().dropna(subset=['close'])
+          print('monthly',len(monthly),'start',monthly.index.min(),'end',monthly.index.max())
+          assert len(monthly)>=48
+          PY
