@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - scripts/update_hstech_snapshot.py
+      - scripts/apply_hk_freshness_v3.py
       - .github/workflows/update-hstech-snapshot.yml
 
 permissions:
@@ -28,31 +29,45 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install snapshot dependencies
-        run: pip install akshare pandas
+        run: pip install akshare pandas plotly requests
       - name: Refresh exact HSTECH history
         run: python scripts/update_hstech_snapshot.py
-      - name: Validate five-year HSTECH coverage
+      - name: Wire snapshot into Hong Kong charts
+        run: python scripts/apply_hk_freshness_v3.py
+      - name: Validate Python
+        run: python -m py_compile macro_platform/hk_liquidity.py scripts/update_hstech_snapshot.py scripts/apply_hk_freshness_v3.py
+      - name: Validate five-year HSTECH coverage and dashboard wiring
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
+          import macro_platform.hk_liquidity as hk
           data=json.loads(Path('data_snapshots/hstech_monthly.json').read_text())
           rows=data.get('records') or []
           assert data.get('symbol')=='HSTECH'
           assert len(rows)>=60, len(rows)
           assert rows[0]['observation_date'] <= '2021-09-01', rows[0]
           assert rows[-1]['observation_date'] >= '2026-08-01', rows[-1]
-          print('HSTECH snapshot OK',len(rows),rows[0],rows[-1])
+          frame=hk._market_monthly_close('HSTECH.HK','HSTECH Index')
+          assert len(frame)>=60, len(frame)
+          assert frame['observation_date'].min() <= hk.pd.Timestamp('2021-09-01')
+          assert frame['observation_date'].max() >= hk.pd.Timestamp('2026-08-01')
+          figs=hk.build_hk_liquidity_figures('5Y')
+          assert len(figs)==4
+          names=[trace.name for trace in figs[0].data]
+          assert 'HSTECH Index (R)' in names, names
+          print('HSTECH dashboard OK',len(frame),frame.head(1).to_dict('records'),frame.tail(1).to_dict('records'))
+          print('5-1 traces',names)
           PY
-      - name: Commit refreshed snapshot
+      - name: Commit refreshed platform data
         run: |
-          if git diff --quiet -- data_snapshots/hstech_monthly.json; then
-            echo "HSTECH snapshot unchanged"
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data_snapshots/hstech_monthly.json
-          git commit -m "Refresh HSTECH five-year snapshot"
+          git add data_snapshots/hstech_monthly.json macro_platform/hk_liquidity.py
+          if git diff --cached --quiet; then
+            echo "HSTECH snapshot and wiring unchanged"
+            exit 0
+          fi
+          git commit -m "Add exact HSTECH five-year history"
           git pull --rebase origin main
           git push origin main
