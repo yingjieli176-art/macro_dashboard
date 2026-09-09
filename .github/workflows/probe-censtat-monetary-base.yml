@@ -1,0 +1,22 @@
+name: Probe C&SD monetary base history
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/probe-censtat-monetary-base.yml
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Locate Monetary Base / Aggregate Balance in official digests
+        run: |
+          set -e
+          for issue in 2022MM12 2023MM12 2024MM12 2025MM12 2026MM06; do
+            url="https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B1010002${issue}B0100.pdf"
+            echo "===== ${issue} ====="
+            curl -L --retry 2 --max-time 60 -A 'Mozilla/5.0' "$url" -o /tmp/digest.pdf
+            pdftotext -layout /tmp/digest.pdf /tmp/digest.txt
+            grep -n -i -E 'Monetary Base|Aggregate Balance|總結餘|貨幣基礎|Exchange Fund Bills|外匯基金票據' /tmp/digest.txt | head -80 || true
+          done
