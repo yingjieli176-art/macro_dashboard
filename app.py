@@ -305,7 +305,8 @@ def _xaxis_config(date_range):
             {"dtickrange": [31536000000, 63072000000], "value": "%b"},
             {"dtickrange": [63072000000, None], "value": "%Y"},
         ],
-        dtick="M1",
+        tickmode="auto",
+        nticks=7 if compact_mode else 10,
     )
 
 def _year_axis_config():
