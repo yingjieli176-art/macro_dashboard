@@ -20,6 +20,9 @@ RANGE_OFFSETS = {
 
 OUTPUT_COLUMNS = [
     "observation_date",
+    "M2 MoM",
+    "M3 MoM",
+    "Monetary Base MoM",
     "M2 YoY",
     "M3 YoY",
     "Monetary Base YoY",
@@ -27,10 +30,25 @@ OUTPUT_COLUMNS = [
     "HIBOR O/N",
     "HIBOR 3M",
     "HKMA Base Rate",
+    "O/N-3M Spread",
     "USD/HKD",
     "Strong-side CU",
     "Weak-side CU",
 ]
+
+COLORS = {
+    "m2": "#2563eb",
+    "m3": "#7c3aed",
+    "base": "#64748b",
+    "balance": "#0f766e",
+    "on": "#ea580c",
+    "h3m": "#dc2626",
+    "policy": "#475569",
+    "spread": "#9333ea",
+    "fx": "#2563eb",
+    "strong": "#16a34a",
+    "weak": "#dc2626",
+}
 
 
 def _empty_frame() -> pd.DataFrame:
@@ -93,21 +111,31 @@ def load_hk_liquidity() -> pd.DataFrame:
             frame[col] = pd.NA
         frame[col] = pd.to_numeric(frame[col], errors="coerce")
 
-    # Reindex monthly before pct_change so year-over-year means exactly 12 months.
+    # Reindex to a true monthly grid before growth-rate calculations.
     monthly = frame.set_index("observation_date").sort_index()
     full_index = pd.date_range(monthly.index.min(), monthly.index.max(), freq="MS")
     monthly = monthly.reindex(full_index)
     monthly.index.name = "observation_date"
 
+    # MoM is the primary dashboard signal because it reacts faster to marginal liquidity changes.
+    monthly["M2 MoM"] = monthly["m2_hkd"].pct_change(1, fill_method=None) * 100.0
+    monthly["M3 MoM"] = monthly["m3_hkd"].pct_change(1, fill_method=None) * 100.0
+    monthly["Monetary Base MoM"] = (
+        monthly["monetary_base_total"].pct_change(1, fill_method=None) * 100.0
+    )
+
+    # Keep YoY in the data model for context / future switchable views, but do not use it as the primary chart signal.
     monthly["M2 YoY"] = monthly["m2_hkd"].pct_change(12, fill_method=None) * 100.0
     monthly["M3 YoY"] = monthly["m3_hkd"].pct_change(12, fill_method=None) * 100.0
     monthly["Monetary Base YoY"] = (
         monthly["monetary_base_total"].pct_change(12, fill_method=None) * 100.0
     )
+
     monthly["Aggregate Balance"] = monthly["aggr_balance"] / 1000.0
     monthly["HIBOR O/N"] = monthly["hibor_fixing_overnight"]
     monthly["HIBOR 3M"] = monthly["hibor_fixing_3m"]
     monthly["HKMA Base Rate"] = monthly["discount_window_base_rate"]
+    monthly["O/N-3M Spread"] = (monthly["HIBOR O/N"] - monthly["HIBOR 3M"]) * 100.0
     monthly["USD/HKD"] = monthly["exrate_hkd_usd"]
     monthly["Strong-side CU"] = 7.75
     monthly["Weak-side CU"] = 7.85
@@ -129,6 +157,19 @@ def _latest_value(data: pd.DataFrame, column: str) -> float | None:
     return float(series.iloc[-1]) if not series.empty else None
 
 
+def _recent_money_momentum(data: pd.DataFrame) -> float | None:
+    if data.empty:
+        return None
+    candidates = []
+    for column in ("M2 MoM", "M3 MoM"):
+        series = pd.to_numeric(data[column], errors="coerce").dropna().tail(3)
+        if not series.empty:
+            candidates.append(float(series.mean()))
+    if not candidates:
+        return None
+    return sum(candidates) / len(candidates)
+
+
 def liquidity_state(data: pd.DataFrame | None = None) -> dict[str, Any]:
     data = load_hk_liquidity() if data is None else data.copy()
     if data.empty:
@@ -139,7 +180,7 @@ def liquidity_state(data: pd.DataFrame | None = None) -> dict[str, Any]:
             "components": {},
         }
 
-    m2 = _latest_value(data, "M2 YoY")
+    money_momentum = _recent_money_momentum(data)
     balance = _latest_value(data, "Aggregate Balance")
     on = _latest_value(data, "HIBOR O/N")
     h3m = _latest_value(data, "HIBOR 3M")
@@ -148,10 +189,11 @@ def liquidity_state(data: pd.DataFrame | None = None) -> dict[str, Any]:
     components: dict[str, dict[str, Any]] = {}
     score = 0
 
-    if m2 is not None:
-        money_score = 1 if m2 >= 3 else (0 if m2 >= 0 else -1)
+    if money_momentum is not None:
+        # 3M average of monthly M2/M3 growth: faster than YoY, but less noisy than a single MoM print.
+        money_score = 1 if money_momentum >= 0.30 else (-1 if money_momentum <= -0.30 else 0)
         score += money_score
-        components["money"] = {"value": m2, "score": money_score}
+        components["money"] = {"value": money_momentum, "score": money_score}
 
     balance_series = pd.to_numeric(data["Aggregate Balance"], errors="coerce").dropna()
     if balance is not None and len(balance_series) >= 6:
@@ -176,7 +218,7 @@ def liquidity_state(data: pd.DataFrame | None = None) -> dict[str, Any]:
         }
 
     if fx is not None:
-        # 7.80 is neutral center; approaching 7.85 implies weaker HKD / tighter HKD funding pressure.
+        # 7.80 is the center of the convertibility band; proximity to 7.85 indicates weaker HKD / tighter HKD funding pressure.
         fx_score = -1 if fx >= 7.835 else (1 if fx <= 7.765 else 0)
         score += fx_score
         components["fx"] = {"value": fx, "score": fx_score}
@@ -193,12 +235,20 @@ def liquidity_state(data: pd.DataFrame | None = None) -> dict[str, Any]:
 def _slice_range(data: pd.DataFrame, date_range: str) -> pd.DataFrame:
     if data.empty:
         return data
-    latest = data.loc[data.drop(columns=["observation_date"]).notna().any(axis=1), "observation_date"].max()
+    latest = data.loc[
+        data.drop(columns=["observation_date"]).notna().any(axis=1), "observation_date"
+    ].max()
     if pd.isna(latest):
         latest = data["observation_date"].max()
     offset = RANGE_OFFSETS.get(date_range, RANGE_OFFSETS["1Y"])
     start = latest - offset
     return data[data["observation_date"] >= start].copy()
+
+
+def _legend_text(items: list[tuple[str, str]]) -> str:
+    return " &nbsp; ".join(
+        f"<span style='color:{color}'>●</span> {label}" for label, color in items
+    )
 
 
 def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go.Figure:
@@ -209,14 +259,9 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
         rows=4,
         cols=1,
         shared_xaxes=True,
-        vertical_spacing=0.055,
-        row_heights=[0.28, 0.18, 0.28, 0.26],
-        subplot_titles=(
-            "Money supply growth",
-            "Banking-system aggregate balance",
-            "HKD funding rates",
-            "USD/HKD and Convertibility Undertakings",
-        ),
+        vertical_spacing=0.075,
+        row_heights=[0.27, 0.18, 0.29, 0.26],
+        specs=[[{}], [{}], [{"secondary_y": True}], [{}]],
     )
 
     if data.empty:
@@ -232,10 +277,19 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
         fig.update_layout(height=650 if compact_mode else 820, template="plotly_white")
         return fig
 
-    def add_trace(row: int, column: str, name: str, width: float = 2.3, dash: str | None = None, unit: str = "%") -> None:
+    def add_trace(
+        row: int,
+        column: str,
+        name: str,
+        color: str,
+        width: float = 2.3,
+        dash: str | None = None,
+        unit: str = "%",
+        secondary_y: bool = False,
+    ) -> None:
         if column not in data.columns or data[column].notna().sum() == 0:
             return
-        line: dict[str, Any] = {"width": width}
+        line: dict[str, Any] = {"width": width, "color": color}
         if dash:
             line["dash"] = dash
         fig.add_trace(
@@ -246,41 +300,48 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
                 mode="lines",
                 line=line,
                 connectgaps=False,
+                showlegend=False,
                 hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>",
             ),
             row=row,
             col=1,
+            secondary_y=secondary_y,
         )
 
-    add_trace(1, "M2 YoY", "HKD M2 YoY", 2.8)
-    add_trace(1, "M3 YoY", "HKD M3 YoY", 2.3, "dash")
-    add_trace(1, "Monetary Base YoY", "Monetary Base YoY", 1.8, "dot")
-    add_trace(2, "Aggregate Balance", "Aggregate Balance", 2.8, unit=" HK$ bn")
-    add_trace(3, "HIBOR O/N", "O/N HIBOR", 2.0)
-    add_trace(3, "HIBOR 3M", "3M HIBOR", 2.3, "dash")
-    add_trace(3, "HKMA Base Rate", "HKMA Base Rate", 2.0, "dot")
-    add_trace(4, "USD/HKD", "USD/HKD", 2.6, unit="")
-    add_trace(4, "Strong-side CU", "Strong-side CU 7.75", 1.4, "dot", unit="")
-    add_trace(4, "Weak-side CU", "Weak-side CU 7.85", 1.4, "dot", unit="")
+    add_trace(1, "M2 MoM", "HKD M2 MoM", COLORS["m2"], 2.8)
+    add_trace(1, "M3 MoM", "HKD M3 MoM", COLORS["m3"], 2.3, "dash")
+    add_trace(1, "Monetary Base MoM", "Monetary Base MoM", COLORS["base"], 1.8, "dot")
+
+    add_trace(2, "Aggregate Balance", "Aggregate Balance", COLORS["balance"], 2.8, unit=" HK$ bn")
+
+    add_trace(3, "HIBOR O/N", "O/N HIBOR", COLORS["on"], 2.0)
+    add_trace(3, "HIBOR 3M", "3M HIBOR", COLORS["h3m"], 2.3, "dash")
+    add_trace(3, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot")
+    add_trace(
+        3,
+        "O/N-3M Spread",
+        "O/N−3M Spread (R)",
+        COLORS["spread"],
+        1.7,
+        "dashdot",
+        " bp",
+        secondary_y=True,
+    )
+
+    add_trace(4, "USD/HKD", "USD/HKD", COLORS["fx"], 2.6, unit="")
+    add_trace(4, "Strong-side CU", "Strong-side CU 7.75", COLORS["strong"], 1.4, "dot", unit="")
+    add_trace(4, "Weak-side CU", "Weak-side CU 7.85", COLORS["weak"], 1.4, "dot", unit="")
 
     state = liquidity_state(all_data)
     meta = snapshot_metadata()
     latest_text = meta.get("latest_observation") or "--"
     fig.update_layout(
-        height=720 if compact_mode else 900,
+        height=735 if compact_mode else 930,
         template="plotly_white",
         hovermode="x unified",
         dragmode=False,
-        margin=dict(l=60, r=25, t=88, b=42, pad=2),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.04,
-            xanchor="left",
-            x=0,
-            font=dict(size=9 if compact_mode else 10),
-            bgcolor="rgba(255,255,255,0)",
-        ),
+        margin=dict(l=62, r=62, t=66, b=42, pad=2),
+        showlegend=False,
         title=dict(
             text=f"Hong Kong Liquidity · {state['label']} · latest {latest_text}",
             x=0.01,
@@ -292,12 +353,78 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
         plot_bgcolor="#ffffff",
         paper_bgcolor="#ffffff",
     )
+
     grid = dict(showgrid=True, gridcolor="#e5e7eb", griddash="dot", fixedrange=True)
-    fig.update_yaxes(title_text="YoY (%)", row=1, col=1, zeroline=True, zerolinecolor="#cbd5e1", **grid)
+    fig.update_yaxes(title_text="MoM (%)", row=1, col=1, zeroline=True, zerolinecolor="#cbd5e1", **grid)
     fig.update_yaxes(title_text="HK$ bn", row=2, col=1, zeroline=False, **grid)
-    fig.update_yaxes(title_text="Rate (%)", row=3, col=1, zeroline=True, zerolinecolor="#cbd5e1", **grid)
+    fig.update_yaxes(title_text="Rate (%)", row=3, col=1, secondary_y=False, zeroline=True, zerolinecolor="#cbd5e1", **grid)
+    fig.update_yaxes(
+        title_text="Spread (bp)",
+        row=3,
+        col=1,
+        secondary_y=True,
+        showgrid=False,
+        zeroline=True,
+        zerolinecolor="#cbd5e1",
+        fixedrange=True,
+    )
     fig.update_yaxes(title_text="USD/HKD", row=4, col=1, range=[7.73, 7.87], zeroline=False, **grid)
-    fig.update_xaxes(showgrid=True, gridcolor="#eef2f7", griddash="dot", fixedrange=True, tickformat="%Y-%m", row=4, col=1)
+    fig.update_xaxes(
+        showgrid=True,
+        gridcolor="#eef2f7",
+        griddash="dot",
+        fixedrange=True,
+        tickformat="%Y-%m",
+        row=4,
+        col=1,
+    )
+
+    # Local legend/header for each subplot: parameters stay with the chart they belong to.
+    local_headers = [
+        (
+            "Money supply",
+            [("M2 MoM", COLORS["m2"]), ("M3 MoM", COLORS["m3"]), ("Monetary Base MoM", COLORS["base"])],
+            fig.layout.yaxis.domain[1],
+        ),
+        (
+            "Banking-system liquidity",
+            [("Aggregate Balance", COLORS["balance"])],
+            fig.layout.yaxis2.domain[1],
+        ),
+        (
+            "HKD funding",
+            [
+                ("O/N HIBOR", COLORS["on"]),
+                ("3M HIBOR", COLORS["h3m"]),
+                ("HKMA Base Rate", COLORS["policy"]),
+                ("O/N−3M Spread (R)", COLORS["spread"]),
+            ],
+            fig.layout.yaxis3.domain[1],
+        ),
+        (
+            "Convertibility band",
+            [
+                ("USD/HKD", COLORS["fx"]),
+                ("Strong-side 7.75", COLORS["strong"]),
+                ("Weak-side 7.85", COLORS["weak"]),
+            ],
+            fig.layout.yaxis5.domain[1],
+        ),
+    ]
+    for title, items, y_top in local_headers:
+        fig.add_annotation(
+            x=0.0,
+            y=min(0.995, y_top + 0.018),
+            xref="paper",
+            yref="paper",
+            xanchor="left",
+            yanchor="bottom",
+            showarrow=False,
+            align="left",
+            text=f"<b>{title}</b>&nbsp;&nbsp;{_legend_text(items)}",
+            font=dict(size=9 if compact_mode else 10, color="#374151"),
+        )
+
     return fig
 
 
@@ -307,7 +434,8 @@ def liquidity_status_html() -> str:
     meta = snapshot_metadata()
     latest = meta.get("latest_observation", "--")
 
-    m2 = _latest_value(data, "M2 YoY")
+    m2 = _latest_value(data, "M2 MoM")
+    m3 = _latest_value(data, "M3 MoM")
     balance = _latest_value(data, "Aggregate Balance")
     on = _latest_value(data, "HIBOR O/N")
     h3m = _latest_value(data, "HIBOR 3M")
@@ -318,10 +446,10 @@ def liquidity_status_html() -> str:
 
     return f'''<div class="hk-liquidity-strip">
       <div><span>Liquidity</span><strong>{state['label']}</strong></div>
-      <div><span>M2 YoY</span><strong>{fmt(m2, '%')}</strong></div>
+      <div><span>M2 MoM</span><strong>{fmt(m2, '%')}</strong></div>
+      <div><span>M3 MoM</span><strong>{fmt(m3, '%')}</strong></div>
       <div><span>Aggregate Balance</span><strong>{fmt(balance, ' bn')}</strong></div>
       <div><span>O/N HIBOR</span><strong>{fmt(on, '%')}</strong></div>
-      <div><span>3M HIBOR</span><strong>{fmt(h3m, '%')}</strong></div>
       <div><span>USD/HKD</span><strong>{fmt(fx)}</strong></div>
       <div><span>Latest</span><strong>{latest}</strong></div>
     </div>'''
