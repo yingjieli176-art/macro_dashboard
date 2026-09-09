@@ -4,6 +4,15 @@
   "updated_at": "2026-09-09T00:00:00Z",
   "records": [
     {
+      "end_of_month": "2026-08",
+      "cert_of_indebt": 656595,
+      "gov_notes_coins_circulation": 13255,
+      "aggr_balance": 54190,
+      "outstanding_efbn": 1356240,
+      "ow_lb_bf_disc_win": 1175940,
+      "monetary_base_total": 2080280
+    },
+    {
       "end_of_month": "2026-07",
       "aggr_balance": 54108,
       "monetary_base_total": 2080135,
@@ -12,7 +21,11 @@
       "exrate_hkd_usd": 7.842,
       "hibor_fixing_overnight": 2.52536,
       "hibor_fixing_3m": 2.92964,
-      "discount_window_base_rate": 4
+      "discount_window_base_rate": 4,
+      "cert_of_indebt": 659355,
+      "gov_notes_coins_circulation": 13247,
+      "outstanding_efbn": 1353425,
+      "ow_lb_bf_disc_win": 1190006
     },
     {
       "end_of_month": "2026-06",
@@ -23,7 +36,11 @@
       "exrate_hkd_usd": 7.844,
       "hibor_fixing_overnight": 3.84024,
       "hibor_fixing_3m": 2.96679,
-      "discount_window_base_rate": 4
+      "discount_window_base_rate": 4,
+      "cert_of_indebt": 656855,
+      "gov_notes_coins_circulation": 13242,
+      "outstanding_efbn": 1350942,
+      "ow_lb_bf_disc_win": 1185764
     },
     {
       "end_of_month": "2026-05",
@@ -34,7 +51,11 @@
       "exrate_hkd_usd": 7.8385,
       "hibor_fixing_overnight": 3.02393,
       "hibor_fixing_3m": 2.82708,
-      "discount_window_base_rate": 4
+      "discount_window_base_rate": 4,
+      "cert_of_indebt": 656855,
+      "gov_notes_coins_circulation": 13256,
+      "outstanding_efbn": 1347980,
+      "ow_lb_bf_disc_win": 1181266
     },
     {
       "end_of_month": "2026-04",
@@ -45,7 +66,11 @@
       "exrate_hkd_usd": 7.836,
       "hibor_fixing_overnight": 2.89071,
       "hibor_fixing_3m": 2.60494,
-      "discount_window_base_rate": 4
+      "discount_window_base_rate": 4,
+      "cert_of_indebt": 659305,
+      "gov_notes_coins_circulation": 13284,
+      "outstanding_efbn": 1345858,
+      "ow_lb_bf_disc_win": 1174245
     },
     {
       "end_of_month": "2026-03",
@@ -56,7 +81,11 @@
       "exrate_hkd_usd": 7.839,
       "hibor_fixing_overnight": 2.77012,
       "hibor_fixing_3m": 2.35661,
-      "discount_window_base_rate": 4
+      "discount_window_base_rate": 4,
+      "cert_of_indebt": 653365,
+      "gov_notes_coins_circulation": 13322,
+      "outstanding_efbn": 1344606,
+      "ow_lb_bf_disc_win": 1177029
     },
     {
       "end_of_month": "2026-02",
@@ -67,7 +96,11 @@
       "exrate_hkd_usd": 7.8245,
       "hibor_fixing_overnight": 2.55191,
       "hibor_fixing_3m": 2.58363,
-      "discount_window_base_rate": 4
+      "discount_window_base_rate": 4,
+      "cert_of_indebt": 662875,
+      "gov_notes_coins_circulation": 13401,
+      "outstanding_efbn": 1341410,
+      "ow_lb_bf_disc_win": 1180379
     },
     {
       "end_of_month": "2026-01",
@@ -78,7 +111,11 @@
       "exrate_hkd_usd": 7.8135,
       "hibor_fixing_overnight": 2.17964,
       "hibor_fixing_3m": 2.82595,
-      "discount_window_base_rate": 4
+      "discount_window_base_rate": 4,
+      "cert_of_indebt": 652165,
+      "gov_notes_coins_circulation": 13419,
+      "outstanding_efbn": 1339270,
+      "ow_lb_bf_disc_win": 1174266
     },
     {
       "end_of_month": "2025-12",
@@ -89,7 +126,11 @@
       "exrate_hkd_usd": 7.784,
       "hibor_fixing_overnight": 4.38226,
       "hibor_fixing_3m": 2.93244,
-      "discount_window_base_rate": 4
+      "discount_window_base_rate": 4,
+      "cert_of_indebt": 636375,
+      "gov_notes_coins_circulation": 13226,
+      "outstanding_efbn": 1336577,
+      "ow_lb_bf_disc_win": 1180303
     },
     {
       "end_of_month": "2025-11",
@@ -100,7 +141,11 @@
       "exrate_hkd_usd": 7.787,
       "hibor_fixing_overnight": 3.0869,
       "hibor_fixing_3m": 3.17167,
-      "discount_window_base_rate": 4.25
+      "discount_window_base_rate": 4.25,
+      "cert_of_indebt": 632555,
+      "gov_notes_coins_circulation": 13171,
+      "outstanding_efbn": 1332181,
+      "ow_lb_bf_disc_win": 1155290
     },
     {
       "end_of_month": "2025-10",
@@ -111,7 +156,11 @@
       "exrate_hkd_usd": 7.771,
       "hibor_fixing_overnight": 3.85667,
       "hibor_fixing_3m": 3.54899,
-      "discount_window_base_rate": 4.25
+      "discount_window_base_rate": 4.25,
+      "cert_of_indebt": 631535,
+      "gov_notes_coins_circulation": 13178,
+      "outstanding_efbn": 1328030,
+      "ow_lb_bf_disc_win": 1168957
     },
     {
       "end_of_month": "2025-09",
@@ -122,7 +171,11 @@
       "exrate_hkd_usd": 7.782,
       "hibor_fixing_overnight": 5.01798,
       "hibor_fixing_3m": 3.52571,
-      "discount_window_base_rate": 4.5
+      "discount_window_base_rate": 4.5,
+      "cert_of_indebt": 628365,
+      "gov_notes_coins_circulation": 13185,
+      "outstanding_efbn": 1324480,
+      "ow_lb_bf_disc_win": 1170669
     },
     {
       "end_of_month": "2025-08",
@@ -133,7 +186,11 @@
       "exrate_hkd_usd": 7.7965,
       "hibor_fixing_overnight": 4.00012,
       "hibor_fixing_3m": 3.29583,
-      "discount_window_base_rate": 4.75
+      "discount_window_base_rate": 4.75,
+      "cert_of_indebt": 624765,
+      "gov_notes_coins_circulation": 13168,
+      "outstanding_efbn": 1322034,
+      "ow_lb_bf_disc_win": 1205496
     },
     {
       "end_of_month": "2025-07",
@@ -144,7 +201,11 @@
       "exrate_hkd_usd": 7.852,
       "hibor_fixing_overnight": 0.18506,
       "hibor_fixing_3m": 1.6175,
-      "discount_window_base_rate": 4.75
+      "discount_window_base_rate": 4.75,
+      "cert_of_indebt": 618715,
+      "gov_notes_coins_circulation": 13163,
+      "outstanding_efbn": 1324261,
+      "ow_lb_bf_disc_win": 1202262
     },
     {
       "end_of_month": "2025-06",
@@ -155,7 +216,11 @@
       "exrate_hkd_usd": 7.8515,
       "hibor_fixing_overnight": 0.02839,
       "hibor_fixing_3m": 1.67958,
-      "discount_window_base_rate": 4.75
+      "discount_window_base_rate": 4.75,
+      "cert_of_indebt": 619045,
+      "gov_notes_coins_circulation": 13169,
+      "outstanding_efbn": 1323941,
+      "ow_lb_bf_disc_win": 1211228
     },
     {
       "end_of_month": "2025-05",
@@ -166,252 +231,868 @@
       "exrate_hkd_usd": 7.844,
       "hibor_fixing_overnight": 0.03143,
       "hibor_fixing_3m": 1.32286,
-      "discount_window_base_rate": 4.75
+      "discount_window_base_rate": 4.75,
+      "cert_of_indebt": 615415,
+      "gov_notes_coins_circulation": 13192,
+      "outstanding_efbn": 1322897,
+      "ow_lb_bf_disc_win": 1219593
     },
     {
       "end_of_month": "2025-04",
       "m2_hkd": 8835732.0,
-      "m3_hkd": 8851746.0
+      "m3_hkd": 8851746.0,
+      "cert_of_indebt": 611155,
+      "gov_notes_coins_circulation": 13204,
+      "aggr_balance": 44611,
+      "outstanding_efbn": 1313813,
+      "ow_lb_bf_disc_win": 1199052,
+      "monetary_base_total": 1982783
     },
     {
       "end_of_month": "2025-03",
       "m2_hkd": 8890247.0,
-      "m3_hkd": 8906242.0
+      "m3_hkd": 8906242.0,
+      "cert_of_indebt": 608025,
+      "gov_notes_coins_circulation": 13227,
+      "aggr_balance": 44621,
+      "outstanding_efbn": 1311244,
+      "ow_lb_bf_disc_win": 1204331,
+      "monetary_base_total": 1977117
     },
     {
       "end_of_month": "2025-02",
       "m2_hkd": 8759421.0,
-      "m3_hkd": 8774608.0
+      "m3_hkd": 8774608.0,
+      "cert_of_indebt": 611335,
+      "gov_notes_coins_circulation": 13276,
+      "aggr_balance": 44700,
+      "outstanding_efbn": 1306605,
+      "ow_lb_bf_disc_win": 1204408,
+      "monetary_base_total": 1975916
     },
     {
       "end_of_month": "2025-01",
       "m2_hkd": 8600791.0,
-      "m3_hkd": 8618343.0
+      "m3_hkd": 8618343.0,
+      "cert_of_indebt": 633625,
+      "gov_notes_coins_circulation": 13387,
+      "aggr_balance": 44637,
+      "outstanding_efbn": 1302882,
+      "ow_lb_bf_disc_win": 1205033,
+      "monetary_base_total": 1994531
     },
     {
       "end_of_month": "2024-12",
       "m2_hkd": 8474517.0,
-      "m3_hkd": 8490464.0
+      "m3_hkd": 8490464.0,
+      "cert_of_indebt": 601415,
+      "gov_notes_coins_circulation": 13300,
+      "aggr_balance": 44802,
+      "outstanding_efbn": 1297986,
+      "ow_lb_bf_disc_win": 1198751,
+      "monetary_base_total": 1957503
     },
     {
       "end_of_month": "2024-11",
       "m2_hkd": 8411012.0,
-      "m3_hkd": 8427256.0
+      "m3_hkd": 8427256.0,
+      "cert_of_indebt": 598375,
+      "gov_notes_coins_circulation": 13240,
+      "aggr_balance": 44793,
+      "outstanding_efbn": 1293539,
+      "ow_lb_bf_disc_win": 1197391,
+      "monetary_base_total": 1949947
     },
     {
       "end_of_month": "2024-10",
       "m2_hkd": 8476507.0,
-      "m3_hkd": 8491623.0
+      "m3_hkd": 8491623.0,
+      "cert_of_indebt": 589715,
+      "gov_notes_coins_circulation": 13096,
+      "aggr_balance": 44726,
+      "outstanding_efbn": 1290096,
+      "ow_lb_bf_disc_win": 1181086,
+      "monetary_base_total": 1937633
     },
     {
       "end_of_month": "2024-09",
       "m2_hkd": 8450647.0,
-      "m3_hkd": 8465626.0
+      "m3_hkd": 8465626.0,
+      "cert_of_indebt": 596755,
+      "gov_notes_coins_circulation": 13100,
+      "aggr_balance": 44765,
+      "outstanding_efbn": 1286805,
+      "ow_lb_bf_disc_win": 1171887,
+      "monetary_base_total": 1941425
     },
     {
       "end_of_month": "2024-08",
       "m2_hkd": 8377650.0,
-      "m3_hkd": 8391240.0
+      "m3_hkd": 8391240.0,
+      "cert_of_indebt": 594175,
+      "gov_notes_coins_circulation": 13103,
+      "aggr_balance": 44891,
+      "outstanding_efbn": 1282574,
+      "ow_lb_bf_disc_win": 1166637,
+      "monetary_base_total": 1934743
     },
     {
       "end_of_month": "2024-07",
       "m2_hkd": 8364413.0,
-      "m3_hkd": 8377654.0
+      "m3_hkd": 8377654.0,
+      "cert_of_indebt": 587965,
+      "gov_notes_coins_circulation": 13105,
+      "aggr_balance": 45012,
+      "outstanding_efbn": 1277022,
+      "ow_lb_bf_disc_win": 1194729,
+      "monetary_base_total": 1923104
     },
     {
       "end_of_month": "2024-06",
       "m2_hkd": 8341838.0,
-      "m3_hkd": 8355640.0
+      "m3_hkd": 8355640.0,
+      "cert_of_indebt": 597355,
+      "gov_notes_coins_circulation": 13121,
+      "aggr_balance": 44960,
+      "outstanding_efbn": 1271491,
+      "ow_lb_bf_disc_win": 1197392,
+      "monetary_base_total": 1926927
     },
     {
       "end_of_month": "2024-05",
       "m2_hkd": 8323536.0,
-      "m3_hkd": 8336756.0
+      "m3_hkd": 8336756.0,
+      "cert_of_indebt": 593355,
+      "gov_notes_coins_circulation": 13140,
+      "aggr_balance": 44867,
+      "outstanding_efbn": 1267496,
+      "ow_lb_bf_disc_win": 1185184,
+      "monetary_base_total": 1918858
     },
     {
       "end_of_month": "2024-04",
       "m2_hkd": 8294065.0,
-      "m3_hkd": 8307180.0
+      "m3_hkd": 8307180.0,
+      "cert_of_indebt": 594615,
+      "gov_notes_coins_circulation": 13177,
+      "aggr_balance": 44705,
+      "outstanding_efbn": 1263433,
+      "ow_lb_bf_disc_win": 1174213,
+      "monetary_base_total": 1915930
     },
     {
       "end_of_month": "2024-03",
       "m2_hkd": 8253008.0,
-      "m3_hkd": 8265805.0
+      "m3_hkd": 8265805.0,
+      "cert_of_indebt": 601135,
+      "gov_notes_coins_circulation": 13238,
+      "aggr_balance": 44830,
+      "outstanding_efbn": 1258331,
+      "ow_lb_bf_disc_win": 1156837,
+      "monetary_base_total": 1917534
     },
     {
       "end_of_month": "2024-02",
       "m2_hkd": 8205436.0,
-      "m3_hkd": 8218720.0
+      "m3_hkd": 8218720.0,
+      "cert_of_indebt": 596575,
+      "gov_notes_coins_circulation": 13333,
+      "aggr_balance": 44785,
+      "outstanding_efbn": 1254883,
+      "ow_lb_bf_disc_win": 1145968,
+      "monetary_base_total": 1909576
     },
     {
       "end_of_month": "2024-01",
       "m2_hkd": 8231186.0,
-      "m3_hkd": 8245139.0
+      "m3_hkd": 8245139.0,
+      "cert_of_indebt": 601295,
+      "gov_notes_coins_circulation": 13416,
+      "aggr_balance": 44750,
+      "outstanding_efbn": 1251017,
+      "ow_lb_bf_disc_win": 1141650,
+      "monetary_base_total": 1910478
     },
     {
       "end_of_month": "2023-12",
       "m2_hkd": 8250109.0,
-      "m3_hkd": 8262831.0
+      "m3_hkd": 8262831.0,
+      "cert_of_indebt": 592585,
+      "gov_notes_coins_circulation": 13180,
+      "aggr_balance": 44950,
+      "outstanding_efbn": 1245147,
+      "ow_lb_bf_disc_win": 1177288,
+      "monetary_base_total": 1895862
     },
     {
       "end_of_month": "2023-11",
       "m2_hkd": 8220104.0,
-      "m3_hkd": 8232849.0
+      "m3_hkd": 8232849.0,
+      "cert_of_indebt": 580975,
+      "gov_notes_coins_circulation": 13109,
+      "aggr_balance": 44999,
+      "outstanding_efbn": 1239319,
+      "ow_lb_bf_disc_win": 1172688,
+      "monetary_base_total": 1878402
     },
     {
       "end_of_month": "2023-10",
       "m2_hkd": 8175120.0,
-      "m3_hkd": 8188556.0
+      "m3_hkd": 8188556.0,
+      "cert_of_indebt": 582265,
+      "gov_notes_coins_circulation": 13081,
+      "aggr_balance": 45014,
+      "outstanding_efbn": 1234476,
+      "ow_lb_bf_disc_win": 1169426,
+      "monetary_base_total": 1874836
     },
     {
       "end_of_month": "2023-09",
       "m2_hkd": 8206059.0,
-      "m3_hkd": 8219643.0
+      "m3_hkd": 8219643.0,
+      "cert_of_indebt": 593155,
+      "gov_notes_coins_circulation": 13076,
+      "aggr_balance": 45175,
+      "outstanding_efbn": 1229211,
+      "ow_lb_bf_disc_win": 1173567,
+      "monetary_base_total": 1880617
     },
     {
       "end_of_month": "2023-08",
       "m2_hkd": 8225177.0,
-      "m3_hkd": 8238066.0
+      "m3_hkd": 8238066.0,
+      "cert_of_indebt": 590265,
+      "gov_notes_coins_circulation": 13072,
+      "aggr_balance": 44872,
+      "outstanding_efbn": 1228049,
+      "ow_lb_bf_disc_win": 1166258,
+      "monetary_base_total": 1876258
     },
     {
       "end_of_month": "2023-07",
       "m2_hkd": 8199712.0,
-      "m3_hkd": 8212820.0
+      "m3_hkd": 8212820.0,
+      "cert_of_indebt": 590195,
+      "gov_notes_coins_circulation": 13080,
+      "aggr_balance": 44692,
+      "outstanding_efbn": 1221376,
+      "ow_lb_bf_disc_win": 1162986,
+      "monetary_base_total": 1869343
     },
     {
       "end_of_month": "2023-06",
       "m2_hkd": 8217612.0,
-      "m3_hkd": 8230408.0
+      "m3_hkd": 8230408.0,
+      "cert_of_indebt": 595445,
+      "gov_notes_coins_circulation": 13077,
+      "aggr_balance": 44895,
+      "outstanding_efbn": 1217635,
+      "ow_lb_bf_disc_win": 1156115,
+      "monetary_base_total": 1871052
     },
     {
       "end_of_month": "2023-05",
       "m2_hkd": 8199255.0,
-      "m3_hkd": 8212388.0
+      "m3_hkd": 8212388.0,
+      "cert_of_indebt": 594725,
+      "gov_notes_coins_circulation": 13106,
+      "aggr_balance": 44800,
+      "outstanding_efbn": 1214116,
+      "ow_lb_bf_disc_win": 1148839,
+      "monetary_base_total": 1866747
     },
     {
       "end_of_month": "2023-04",
       "m2_hkd": 8254440.0,
-      "m3_hkd": 8267009.0
+      "m3_hkd": 8267009.0,
+      "cert_of_indebt": 604595,
+      "gov_notes_coins_circulation": 13173,
+      "aggr_balance": 49079,
+      "outstanding_efbn": 1212289,
+      "ow_lb_bf_disc_win": 1155947,
+      "monetary_base_total": 1879136
     },
     {
       "end_of_month": "2023-03",
       "m2_hkd": 8285625.0,
-      "m3_hkd": 8298864.0
+      "m3_hkd": 8298864.0,
+      "cert_of_indebt": 602715,
+      "gov_notes_coins_circulation": 13185,
+      "aggr_balance": 76939,
+      "outstanding_efbn": 1210724,
+      "ow_lb_bf_disc_win": 1144009,
+      "monetary_base_total": 1903563
     },
     {
       "end_of_month": "2023-02",
       "m2_hkd": 8193376.0,
-      "m3_hkd": 8206635.0
+      "m3_hkd": 8206635.0,
+      "cert_of_indebt": 599505,
+      "gov_notes_coins_circulation": 13304,
+      "aggr_balance": 77086,
+      "outstanding_efbn": 1206496,
+      "ow_lb_bf_disc_win": 1147270,
+      "monetary_base_total": 1896391
     },
     {
       "end_of_month": "2023-01",
       "m2_hkd": 8290449.0,
-      "m3_hkd": 8303100.0
+      "m3_hkd": 8303100.0,
+      "cert_of_indebt": 612135,
+      "gov_notes_coins_circulation": 13418,
+      "aggr_balance": 95875,
+      "outstanding_efbn": 1205724,
+      "ow_lb_bf_disc_win": 1143032,
+      "monetary_base_total": 1927152
     },
     {
       "end_of_month": "2022-12",
       "m2_hkd": 8095990.0,
-      "m3_hkd": 8108473.0
+      "m3_hkd": 8108473.0,
+      "cert_of_indebt": 605575,
+      "gov_notes_coins_circulation": 13404,
+      "aggr_balance": 96250,
+      "outstanding_efbn": 1200943,
+      "ow_lb_bf_disc_win": 1137517,
+      "monetary_base_total": 1916172
     },
     {
       "end_of_month": "2022-11",
       "m2_hkd": 8008413.0,
-      "m3_hkd": 8020907.0
+      "m3_hkd": 8020907.0,
+      "cert_of_indebt": 590155,
+      "gov_notes_coins_circulation": 13136,
+      "aggr_balance": 96405,
+      "outstanding_efbn": 1192677,
+      "ow_lb_bf_disc_win": 1130574,
+      "monetary_base_total": 1892373
     },
     {
       "end_of_month": "2022-10",
       "m2_hkd": 7914302.0,
-      "m3_hkd": 7928236.0
+      "m3_hkd": 7928236.0,
+      "cert_of_indebt": 596365,
+      "gov_notes_coins_circulation": 13105,
+      "aggr_balance": 100151,
+      "outstanding_efbn": 1192482,
+      "ow_lb_bf_disc_win": 1131938,
+      "monetary_base_total": 1902103
     },
     {
       "end_of_month": "2022-09",
       "m2_hkd": 8020725.0,
-      "m3_hkd": 8034409.0
+      "m3_hkd": 8034409.0,
+      "cert_of_indebt": 605125,
+      "gov_notes_coins_circulation": 13127,
+      "aggr_balance": 123336,
+      "outstanding_efbn": 1189978,
+      "ow_lb_bf_disc_win": 1138367,
+      "monetary_base_total": 1931566
     },
     {
       "end_of_month": "2022-08",
       "m2_hkd": 8109954.0,
-      "m3_hkd": 8123196.0
+      "m3_hkd": 8123196.0,
+      "cert_of_indebt": 603545,
+      "gov_notes_coins_circulation": 13126,
+      "aggr_balance": 125024,
+      "outstanding_efbn": 1188629,
+      "ow_lb_bf_disc_win": 1142354,
+      "monetary_base_total": 1930324
     },
     {
       "end_of_month": "2022-07",
       "m2_hkd": 8178848.0,
-      "m3_hkd": 8190288.0
+      "m3_hkd": 8190288.0,
+      "cert_of_indebt": 610765,
+      "gov_notes_coins_circulation": 13153,
+      "aggr_balance": 165158,
+      "outstanding_efbn": 1188492,
+      "ow_lb_bf_disc_win": 1139314,
+      "monetary_base_total": 1977568
     },
     {
       "end_of_month": "2022-06",
       "m2_hkd": 8226610.0,
-      "m3_hkd": 8239057.0
+      "m3_hkd": 8239057.0,
+      "cert_of_indebt": 613605,
+      "gov_notes_coins_circulation": 13188,
+      "aggr_balance": 233493,
+      "outstanding_efbn": 1188176,
+      "ow_lb_bf_disc_win": 1142598,
+      "monetary_base_total": 2048462
     },
     {
       "end_of_month": "2022-05",
       "m2_hkd": 8121452.0,
-      "m3_hkd": 8133617.0
+      "m3_hkd": 8133617.0,
+      "cert_of_indebt": 606035,
+      "gov_notes_coins_circulation": 13236,
+      "aggr_balance": 319972,
+      "outstanding_efbn": 1189154,
+      "ow_lb_bf_disc_win": 1138098,
+      "monetary_base_total": 2128397
     },
     {
       "end_of_month": "2022-04",
       "m2_hkd": 8178724.0,
-      "m3_hkd": 8191017.0
+      "m3_hkd": 8191017.0,
+      "cert_of_indebt": 613645,
+      "gov_notes_coins_circulation": 13280,
+      "aggr_balance": 337532,
+      "outstanding_efbn": 1188732,
+      "ow_lb_bf_disc_win": 1142429,
+      "monetary_base_total": 2153189
     },
     {
       "end_of_month": "2022-03",
       "m2_hkd": 8210310.0,
-      "m3_hkd": 8223237.0
+      "m3_hkd": 8223237.0,
+      "cert_of_indebt": 607755,
+      "gov_notes_coins_circulation": 13318,
+      "aggr_balance": 337551,
+      "outstanding_efbn": 1188912,
+      "ow_lb_bf_disc_win": 1142041,
+      "monetary_base_total": 2147536
     },
     {
       "end_of_month": "2022-02",
       "m2_hkd": 8184645.0,
-      "m3_hkd": 8197647.0
+      "m3_hkd": 8197647.0,
+      "cert_of_indebt": 609815,
+      "gov_notes_coins_circulation": 13377,
+      "aggr_balance": 337552,
+      "outstanding_efbn": 1188749,
+      "ow_lb_bf_disc_win": 1148663,
+      "monetary_base_total": 2149493
     },
     {
       "end_of_month": "2022-01",
       "m2_hkd": 8159919.0,
-      "m3_hkd": 8173007.0
+      "m3_hkd": 8173007.0,
+      "cert_of_indebt": 621565,
+      "gov_notes_coins_circulation": 13475,
+      "aggr_balance": 357496,
+      "outstanding_efbn": 1168793,
+      "ow_lb_bf_disc_win": 1127155,
+      "monetary_base_total": 2161329
     },
     {
       "end_of_month": "2021-12",
       "m2_hkd": 8043994.0,
-      "m3_hkd": 8057408.0
+      "m3_hkd": 8057408.0,
+      "cert_of_indebt": 592645,
+      "gov_notes_coins_circulation": 13385,
+      "aggr_balance": 377516,
+      "outstanding_efbn": 1148732,
+      "ow_lb_bf_disc_win": 1094669,
+      "monetary_base_total": 2132278
     },
     {
       "end_of_month": "2021-11",
       "m2_hkd": 8097979.0,
-      "m3_hkd": 8110892.0
+      "m3_hkd": 8110892.0,
+      "cert_of_indebt": 580865,
+      "gov_notes_coins_circulation": 13167,
+      "aggr_balance": 397456,
+      "outstanding_efbn": 1128735,
+      "ow_lb_bf_disc_win": 1083823,
+      "monetary_base_total": 2120223
     },
     {
       "end_of_month": "2021-10",
       "m2_hkd": 8095045.0,
-      "m3_hkd": 8108849.0
+      "m3_hkd": 8108849.0,
+      "cert_of_indebt": 577705,
+      "gov_notes_coins_circulation": 13179,
+      "aggr_balance": 417460,
+      "outstanding_efbn": 1108912,
+      "ow_lb_bf_disc_win": 1060398,
+      "monetary_base_total": 2117256
     },
     {
       "end_of_month": "2021-09",
       "m2_hkd": 8085088.0,
-      "m3_hkd": 8098753.0
+      "m3_hkd": 8098753.0,
+      "cert_of_indebt": 578965,
+      "gov_notes_coins_circulation": 13188,
+      "aggr_balance": 437459,
+      "outstanding_efbn": 1089053,
+      "ow_lb_bf_disc_win": 1039051,
+      "monetary_base_total": 2118665
     },
     {
       "end_of_month": "2021-08",
       "m2_hkd": 8056309.0,
-      "m3_hkd": 8070041.0
+      "m3_hkd": 8070041.0,
+      "cert_of_indebt": 575665,
+      "gov_notes_coins_circulation": 13200,
+      "aggr_balance": 457494,
+      "outstanding_efbn": 1069128,
+      "ow_lb_bf_disc_win": 1019430,
+      "monetary_base_total": 2115487
     },
     {
       "end_of_month": "2021-07",
       "m2_hkd": 8081344.0,
-      "m3_hkd": 8095721.0
+      "m3_hkd": 8095721.0,
+      "cert_of_indebt": 575995,
+      "gov_notes_coins_circulation": 13216,
+      "aggr_balance": 457456,
+      "outstanding_efbn": 1069227,
+      "ow_lb_bf_disc_win": 1024238,
+      "monetary_base_total": 2115894
     },
     {
       "end_of_month": "2021-06",
       "m2_hkd": 8461821.0,
-      "m3_hkd": 8477737.0
+      "m3_hkd": 8477737.0,
+      "cert_of_indebt": 579345,
+      "gov_notes_coins_circulation": 13221,
+      "aggr_balance": 457459,
+      "outstanding_efbn": 1069089,
+      "ow_lb_bf_disc_win": 1019807,
+      "monetary_base_total": 2119114
     },
     {
       "end_of_month": "2021-05",
       "m2_hkd": 8125343.0,
-      "m3_hkd": 8141589.0
+      "m3_hkd": 8141589.0,
+      "cert_of_indebt": 571765,
+      "gov_notes_coins_circulation": 13251,
+      "aggr_balance": 457435,
+      "outstanding_efbn": 1069150,
+      "ow_lb_bf_disc_win": 1016573,
+      "monetary_base_total": 2111601
+    },
+    {
+      "end_of_month": "2021-04",
+      "cert_of_indebt": 572875,
+      "gov_notes_coins_circulation": 13282,
+      "aggr_balance": 457459,
+      "outstanding_efbn": 1069099,
+      "ow_lb_bf_disc_win": 1017443,
+      "monetary_base_total": 2112715
+    },
+    {
+      "end_of_month": "2021-03",
+      "cert_of_indebt": 569095,
+      "gov_notes_coins_circulation": 13349,
+      "aggr_balance": 457462,
+      "outstanding_efbn": 1068981,
+      "ow_lb_bf_disc_win": 1015102,
+      "monetary_base_total": 2108887
+    },
+    {
+      "end_of_month": "2021-02",
+      "cert_of_indebt": 573635,
+      "gov_notes_coins_circulation": 13461,
+      "aggr_balance": 457463,
+      "outstanding_efbn": 1068974,
+      "ow_lb_bf_disc_win": 1012278,
+      "monetary_base_total": 2113533
+    },
+    {
+      "end_of_month": "2021-01",
+      "cert_of_indebt": 572445,
+      "gov_notes_coins_circulation": 13494,
+      "aggr_balance": 457463,
+      "outstanding_efbn": 1069115,
+      "ow_lb_bf_disc_win": 1014483,
+      "monetary_base_total": 2112517
+    },
+    {
+      "end_of_month": "2020-12",
+      "cert_of_indebt": 559515,
+      "gov_notes_coins_circulation": 13173,
+      "aggr_balance": 457466,
+      "outstanding_efbn": 1069154,
+      "ow_lb_bf_disc_win": 997386,
+      "monetary_base_total": 2099308
+    },
+    {
+      "end_of_month": "2020-11",
+      "cert_of_indebt": 571075,
+      "gov_notes_coins_circulation": 13141,
+      "aggr_balance": 457431,
+      "outstanding_efbn": 1069211,
+      "ow_lb_bf_disc_win": 1014838,
+      "monetary_base_total": 2110858
+    },
+    {
+      "end_of_month": "2020-10",
+      "cert_of_indebt": 566225,
+      "gov_notes_coins_circulation": 13142,
+      "aggr_balance": 457463,
+      "outstanding_efbn": 1069203,
+      "ow_lb_bf_disc_win": 972839,
+      "monetary_base_total": 2106033
+    },
+    {
+      "end_of_month": "2020-09",
+      "cert_of_indebt": 571525,
+      "gov_notes_coins_circulation": 13138,
+      "aggr_balance": 243531,
+      "outstanding_efbn": 1069342,
+      "ow_lb_bf_disc_win": 964277,
+      "monetary_base_total": 1897536
+    },
+    {
+      "end_of_month": "2020-08",
+      "cert_of_indebt": 544585,
+      "gov_notes_coins_circulation": 13134,
+      "aggr_balance": 193067,
+      "outstanding_efbn": 1069029,
+      "ow_lb_bf_disc_win": 1003078,
+      "monetary_base_total": 1819815
+    },
+    {
+      "end_of_month": "2020-07",
+      "cert_of_indebt": 536855,
+      "gov_notes_coins_circulation": 13146,
+      "aggr_balance": 183356,
+      "outstanding_efbn": 1069172,
+      "ow_lb_bf_disc_win": 1004135,
+      "monetary_base_total": 1802529
+    },
+    {
+      "end_of_month": "2020-06",
+      "cert_of_indebt": 536435,
+      "gov_notes_coins_circulation": 13145,
+      "aggr_balance": 131609,
+      "outstanding_efbn": 1068834,
+      "ow_lb_bf_disc_win": 970780,
+      "monetary_base_total": 1750023
+    },
+    {
+      "end_of_month": "2020-05",
+      "cert_of_indebt": 530765,
+      "gov_notes_coins_circulation": 13157,
+      "aggr_balance": 94757,
+      "outstanding_efbn": 1067477,
+      "ow_lb_bf_disc_win": 952511,
+      "monetary_base_total": 1706156
+    },
+    {
+      "end_of_month": "2020-04",
+      "cert_of_indebt": 534335,
+      "gov_notes_coins_circulation": 13179,
+      "aggr_balance": 84713,
+      "outstanding_efbn": 1077649,
+      "ow_lb_bf_disc_win": 950964,
+      "monetary_base_total": 1709876
+    },
+    {
+      "end_of_month": "2020-03",
+      "cert_of_indebt": 527465,
+      "gov_notes_coins_circulation": 13210,
+      "aggr_balance": 54054,
+      "outstanding_efbn": 1086330,
+      "ow_lb_bf_disc_win": 953122,
+      "monetary_base_total": 1681059
+    },
+    {
+      "end_of_month": "2020-02",
+      "cert_of_indebt": 532245,
+      "gov_notes_coins_circulation": 13302,
+      "aggr_balance": 54259,
+      "outstanding_efbn": 1083927,
+      "ow_lb_bf_disc_win": 953170,
+      "monetary_base_total": 1683733
+    },
+    {
+      "end_of_month": "2020-01",
+      "cert_of_indebt": 540555,
+      "gov_notes_coins_circulation": 13485,
+      "aggr_balance": 54235,
+      "outstanding_efbn": 1081109,
+      "ow_lb_bf_disc_win": 1003601,
+      "monetary_base_total": 1689384
+    },
+    {
+      "end_of_month": "2019-12",
+      "cert_of_indebt": 516605,
+      "gov_notes_coins_circulation": 13254,
+      "aggr_balance": 54288,
+      "outstanding_efbn": 1078736,
+      "ow_lb_bf_disc_win": 995967,
+      "monetary_base_total": 1662883
+    },
+    {
+      "end_of_month": "2019-11",
+      "cert_of_indebt": 505565,
+      "gov_notes_coins_circulation": 12987,
+      "aggr_balance": 54390,
+      "outstanding_efbn": 1077197,
+      "ow_lb_bf_disc_win": 990406,
+      "monetary_base_total": 1650139
+    },
+    {
+      "end_of_month": "2019-10",
+      "cert_of_indebt": 503915,
+      "gov_notes_coins_circulation": 12981,
+      "aggr_balance": 54334,
+      "outstanding_efbn": 1075695,
+      "ow_lb_bf_disc_win": 987094,
+      "monetary_base_total": 1646925
+    },
+    {
+      "end_of_month": "2019-09",
+      "cert_of_indebt": 504105,
+      "gov_notes_coins_circulation": 12984,
+      "aggr_balance": 54272,
+      "outstanding_efbn": 1073913,
+      "ow_lb_bf_disc_win": 984987,
+      "monetary_base_total": 1645274
+    },
+    {
+      "end_of_month": "2019-08",
+      "cert_of_indebt": 499715,
+      "gov_notes_coins_circulation": 12981,
+      "aggr_balance": 54359,
+      "outstanding_efbn": 1072176,
+      "ow_lb_bf_disc_win": 984373,
+      "monetary_base_total": 1639231
+    },
+    {
+      "end_of_month": "2019-07",
+      "cert_of_indebt": 496395,
+      "gov_notes_coins_circulation": 12975,
+      "aggr_balance": 54243,
+      "outstanding_efbn": 1070232,
+      "ow_lb_bf_disc_win": 986372,
+      "monetary_base_total": 1633845
+    },
+    {
+      "end_of_month": "2019-06",
+      "cert_of_indebt": 491605,
+      "gov_notes_coins_circulation": 12977,
+      "aggr_balance": 54268,
+      "outstanding_efbn": 1066335,
+      "ow_lb_bf_disc_win": 973975,
+      "monetary_base_total": 1625185
+    },
+    {
+      "end_of_month": "2019-05",
+      "cert_of_indebt": 490265,
+      "gov_notes_coins_circulation": 12981,
+      "aggr_balance": 54295,
+      "outstanding_efbn": 1066726,
+      "ow_lb_bf_disc_win": 975615,
+      "monetary_base_total": 1624267
+    },
+    {
+      "end_of_month": "2019-04",
+      "cert_of_indebt": 498485,
+      "gov_notes_coins_circulation": 12999,
+      "aggr_balance": 54441,
+      "outstanding_efbn": 1064531,
+      "ow_lb_bf_disc_win": 972115,
+      "monetary_base_total": 1630456
+    },
+    {
+      "end_of_month": "2019-03",
+      "cert_of_indebt": 492935,
+      "gov_notes_coins_circulation": 13039,
+      "aggr_balance": 64753,
+      "outstanding_efbn": 1064608,
+      "ow_lb_bf_disc_win": 977567,
+      "monetary_base_total": 1635335
+    },
+    {
+      "end_of_month": "2019-02",
+      "cert_of_indebt": 493925,
+      "gov_notes_coins_circulation": 13176,
+      "aggr_balance": 76314,
+      "outstanding_efbn": 1063539,
+      "ow_lb_bf_disc_win": 978995,
+      "monetary_base_total": 1646954
+    },
+    {
+      "end_of_month": "2019-01",
+      "cert_of_indebt": 503745,
+      "gov_notes_coins_circulation": 13338,
+      "aggr_balance": 76242,
+      "outstanding_efbn": 1062784,
+      "ow_lb_bf_disc_win": 978247,
+      "monetary_base_total": 1656109
+    },
+    {
+      "end_of_month": "2018-12",
+      "cert_of_indebt": 483845,
+      "gov_notes_coins_circulation": 12845,
+      "aggr_balance": 76398,
+      "outstanding_efbn": 1059784,
+      "ow_lb_bf_disc_win": 980744,
+      "monetary_base_total": 1632872
+    },
+    {
+      "end_of_month": "2018-11",
+      "cert_of_indebt": 469815,
+      "gov_notes_coins_circulation": 12767,
+      "aggr_balance": 76501,
+      "outstanding_efbn": 1057794,
+      "ow_lb_bf_disc_win": 981373,
+      "monetary_base_total": 1616877
+    },
+    {
+      "end_of_month": "2018-10",
+      "cert_of_indebt": 468845,
+      "gov_notes_coins_circulation": 12751,
+      "aggr_balance": 76405,
+      "outstanding_efbn": 1056741,
+      "ow_lb_bf_disc_win": 973202,
+      "monetary_base_total": 1614742
+    },
+    {
+      "end_of_month": "2018-09",
+      "cert_of_indebt": 468905,
+      "gov_notes_coins_circulation": 12737,
+      "aggr_balance": 76394,
+      "outstanding_efbn": 1054130,
+      "ow_lb_bf_disc_win": 974856,
+      "monetary_base_total": 1612166
+    },
+    {
+      "end_of_month": "2018-08",
+      "cert_of_indebt": 468095,
+      "gov_notes_coins_circulation": 12707,
+      "aggr_balance": 76350,
+      "outstanding_efbn": 1053892,
+      "ow_lb_bf_disc_win": 976834,
+      "monetary_base_total": 1611044
+    },
+    {
+      "end_of_month": "2018-07",
+      "cert_of_indebt": 469825,
+      "gov_notes_coins_circulation": 12700,
+      "aggr_balance": 109546,
+      "outstanding_efbn": 1052903,
+      "ow_lb_bf_disc_win": 979584,
+      "monetary_base_total": 1644974
+    },
+    {
+      "end_of_month": "2018-06",
+      "cert_of_indebt": 471565,
+      "gov_notes_coins_circulation": 12697,
+      "aggr_balance": 109451,
+      "outstanding_efbn": 1051120,
+      "ow_lb_bf_disc_win": 978338,
+      "monetary_base_total": 1644833
+    },
+    {
+      "end_of_month": "2018-05",
+      "cert_of_indebt": 471285,
+      "gov_notes_coins_circulation": 12705,
+      "aggr_balance": 109435,
+      "outstanding_efbn": 1050666,
+      "ow_lb_bf_disc_win": 974453,
+      "monetary_base_total": 1644091
     }
   ],
-  "record_count": 63,
-  "coverage_start": "2021-05",
-  "coverage_end": "2026-07",
+  "record_count": 100,
+  "coverage_start": "2018-05",
+  "coverage_end": "2026-08",
   "historical_backfill": {
     "source": "C&SD Hong Kong Monthly Digest of Statistics, adjusted money-supply table",
     "underlying_source": "Hong Kong Monetary Authority",
@@ -428,5 +1109,22 @@
     "failed_issues": [],
     "complete_5y_start": "2021-05",
     "complete_5y_end": "2026-06"
+  },
+  "monetary_base_history": {
+    "source": "Hong Kong Monetary Authority Monetary Base end-of-period API",
+    "official_source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod?pagesize=100&offset=0&sortby=end_of_month&sortorder=desc",
+    "transport": "r.jina.ai text transport used only by repository snapshot job",
+    "updated_at": "2026-09-09T10:20:59.101443+00:00",
+    "record_count": 100,
+    "coverage_start": "2018-05",
+    "coverage_end": "2026-08",
+    "fields": [
+      "cert_of_indebt",
+      "gov_notes_coins_circulation",
+      "aggr_balance",
+      "outstanding_efbn",
+      "ow_lb_bf_disc_win",
+      "monetary_base_total"
+    ]
   }
 }
