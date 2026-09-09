@@ -1,0 +1,59 @@
+name: Update HKMA daily liquidity snapshot
+
+on:
+  schedule:
+    - cron: '15 11 * * 1-5'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/update_hkma_daily_snapshot.py
+      - .github/workflows/update-hkma-daily-snapshot.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hkma-daily-snapshot
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Refresh HKMA daily snapshot
+        run: python scripts/update_hkma_daily_snapshot.py
+      - name: Validate daily snapshot
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('data_snapshots/hkma_banking_liquidity_daily.json')
+          data=json.loads(p.read_text())
+          rows=data.get('records') or []
+          funding=[r for r in rows if r.get('hibor_overnight') is not None and r.get('hibor_3m') is not None]
+          balance=[r for r in rows if r.get('closing_balance') is not None]
+          assert len(rows) >= 200, len(rows)
+          assert len(funding) >= 200, len(funding)
+          assert len(balance) >= 200, len(balance)
+          print('daily snapshot OK', len(rows), data.get('coverage_start'), data.get('coverage_end'))
+          PY
+      - name: Commit refreshed snapshot
+        run: |
+          if git diff --quiet -- data_snapshots/hkma_banking_liquidity_daily.json; then
+            echo "Daily snapshot unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data_snapshots/hkma_banking_liquidity_daily.json
+          git commit -m "Refresh HKMA daily liquidity snapshot"
+          git pull --rebase origin main
+          git push origin main
