@@ -1,0 +1,34 @@
+name: axis fix 2
+on: push
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: Patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('app.py')
+          s=p.read_text(encoding='utf-8')
+          old='''def _xaxis_config(date_range):\n    # Compact mode packs two charts into roughly half the page width, so it\n    # needs fewer and shorter tick labels plus a steeper angle to stay\n    # readable. Normal (full-width) mode can afford more, longer labels.\n    if compact_mode:\n        cfg = {\n            "5Y": {"dtick": "M6", "tickformat": "%Y"},\n            "1Y": {"dtick": "M2", "tickformat": "%b\\n%Y"},\n            "6M": {"dtick": "M1", "tickformat": "%b"},\n            "3M": {"dtick": "D14", "tickformat": "%m/%d"},\n            "1M": {"dtick": "D7", "tickformat": "%m/%d"},\n        }[date_range]\n        tickangle, tick_size = 0, 10\n    else:\n        cfg = {\n            "5Y": {"dtick": "M6", "tickformat": "%Y"},\n            "1Y": {"dtick": "M1", "tickformat": "%b %Y"},\n            "6M": {"dtick": "M1", "tickformat": "%b %Y"},\n            "3M": {"dtick": "D14", "tickformat": "%b %d"},\n            "1M": {"dtick": "D3", "tickformat": "%b %d"},\n        }[date_range]\n        tickangle, tick_size = -30, 11\n    # automargin=False on purpose: a dynamic margin is exactly what was\n    # causing every chart to end up with a slightly different plot-area\n    # width, so axes never lined up between panels. A fixed margin (set in\n    # apply_chart_style) keeps every chart's plot area pixel-identical.\n    return dict(\n        showgrid=True, gridcolor="#eef2f7", griddash="dot",\n        showline=True, linecolor="#9ca3af", linewidth=1,\n        fixedrange=True, hoverformat="%Y-%m-%d",\n        tickfont=dict(size=tick_size), tickangle=tickangle,\n        ticklabelstandoff=4, automargin=False,\n        **cfg,\n    )\n'''
+          new='''def _xaxis_config(date_range):\n    # Plotly adapts tick density to the visible span. Keep the lower axis\n    # focused on month/day detail and put year labels on a separate top axis.\n    return dict(\n        type="date", showgrid=True, gridcolor="#eef2f7", griddash="dot",\n        showline=True, linecolor="#9ca3af", linewidth=1, fixedrange=False,\n        hoverformat="%Y-%m-%d", tickfont=dict(size=9 if compact_mode else 11),\n        tickangle=0, ticklabelstandoff=5, automargin=False,\n        tickformatstops=[\n            {"dtickrange": [None, 86400000], "value": "%m/%d %H:%M"},\n            {"dtickrange": [86400000, 604800000], "value": "%m/%d"},\n            {"dtickrange": [604800000, 2592000000], "value": "%m/%d"},\n            {"dtickrange": [2592000000, 7776000000], "value": "%b"},\n            {"dtickrange": [7776000000, 31536000000], "value": "%b"},\n            {"dtickrange": [31536000000, 63072000000], "value": "%b"},\n            {"dtickrange": [63072000000, None], "value": "%Y"},\n        ],\n        dtick="M1",\n    )\n\ndef _year_axis_config():\n    return dict(\n        type="date", overlaying="x", side="top",\n        showgrid=False, showline=False, ticks="",\n        tickfont=dict(size=10 if compact_mode else 11),\n        tickformat="%Y", dtick="M12", ticklabelstandoff=3,\n        fixedrange=False, automargin=False,\n    )\n'''
+          if old not in s: raise SystemExit('xaxis block mismatch')
+          s=s.replace(old,new,1)
+          marker='        xaxis=_xaxis_config(date_range),\n        yaxis=dict('
+          if marker not in s: raise SystemExit('layout marker mismatch')
+          s=s.replace(marker,'        xaxis=_xaxis_config(date_range),\n        xaxis2=_year_axis_config(),\n        yaxis=dict(',1)
+          s=s.replace('margin=dict(l=52, r=right_margin, t=top_margin, b=64 if compact_mode else 52, pad=2),','margin=dict(l=52, r=right_margin, t=top_margin + 18, b=64 if compact_mode else 52, pad=2),',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add app.py
+          git diff --cached --quiet && exit 0
+          git commit -m 'Make chart X axis adaptive with top year axis'
+          git push
