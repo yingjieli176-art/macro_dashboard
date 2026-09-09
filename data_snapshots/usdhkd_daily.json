@@ -1,0 +1,5212 @@
+{
+  "symbol": "HKD=X",
+  "name": "USD/HKD spot exchange rate",
+  "source": "Yahoo Finance market history",
+  "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/HKD%3DX",
+  "updated_at": "2026-09-09T10:12:41.819506+00:00",
+  "record_count": 1300,
+  "coverage_start": "2021-09-08",
+  "coverage_end": "2026-09-09",
+  "records": [
+    {
+      "observation_date": "2021-09-08",
+      "value": 7.775489807128906
+    },
+    {
+      "observation_date": "2021-09-09",
+      "value": 7.777239799499512
+    },
+    {
+      "observation_date": "2021-09-12",
+      "value": 7.777910232543945
+    },
+    {
+      "observation_date": "2021-09-13",
+      "value": 7.779339790344238
+    },
+    {
+      "observation_date": "2021-09-14",
+      "value": 7.779600143432617
+    },
+    {
+      "observation_date": "2021-09-15",
+      "value": 7.781199932098389
+    },
+    {
+      "observation_date": "2021-09-16",
+      "value": 7.782820224761963
+    },
+    {
+      "observation_date": "2021-09-19",
+      "value": 7.781929969787598
+    },
+    {
+      "observation_date": "2021-09-20",
+      "value": 7.78685998916626
+    },
+    {
+      "observation_date": "2021-09-21",
+      "value": 7.786320209503174
+    },
+    {
+      "observation_date": "2021-09-22",
+      "value": 7.785600185394287
+    },
+    {
+      "observation_date": "2021-09-23",
+      "value": 7.784969806671143
+    },
+    {
+      "observation_date": "2021-09-26",
+      "value": 7.785299777984619
+    },
+    {
+      "observation_date": "2021-09-27",
+      "value": 7.782700061798096
+    },
+    {
+      "observation_date": "2021-09-28",
+      "value": 7.7829999923706055
+    },
+    {
+      "observation_date": "2021-09-29",
+      "value": 7.784890174865723
+    },
+    {
+      "observation_date": "2021-09-30",
+      "value": 7.786139965057373
+    },
+    {
+      "observation_date": "2021-10-03",
+      "value": 7.785299777984619
+    },
+    {
+      "observation_date": "2021-10-04",
+      "value": 7.787399768829346
+    },
+    {
+      "observation_date": "2021-10-05",
+      "value": 7.78508996963501
+    },
+    {
+      "observation_date": "2021-10-06",
+      "value": 7.786280155181885
+    },
+    {
+      "observation_date": "2021-10-07",
+      "value": 7.784860134124756
+    },
+    {
+      "observation_date": "2021-10-10",
+      "value": 7.784299850463867
+    },
+    {
+      "observation_date": "2021-10-11",
+      "value": 7.7786102294921875
+    },
+    {
+      "observation_date": "2021-10-12",
+      "value": 7.780980110168457
+    },
+    {
+      "observation_date": "2021-10-13",
+      "value": 7.778900146484375
+    },
+    {
+      "observation_date": "2021-10-14",
+      "value": 7.7793498039245605
+    },
+    {
+      "observation_date": "2021-10-17",
+      "value": 7.77810001373291
+    },
+    {
+      "observation_date": "2021-10-18",
+      "value": 7.7771501541137695
+    },
+    {
+      "observation_date": "2021-10-19",
+      "value": 7.7749199867248535
+    },
+    {
+      "observation_date": "2021-10-20",
+      "value": 7.77370023727417
+    },
+    {
+      "observation_date": "2021-10-21",
+      "value": 7.775109767913818
+    },
+    {
+      "observation_date": "2021-10-24",
+      "value": 7.7725701332092285
+    },
+    {
+      "observation_date": "2021-10-25",
+      "value": 7.774250030517578
+    },
+    {
+      "observation_date": "2021-10-26",
+      "value": 7.776000022888184
+    },
+    {
+      "observation_date": "2021-10-27",
+      "value": 7.778299808502197
+    },
+    {
+      "observation_date": "2021-10-28",
+      "value": 7.7779998779296875
+    },
+    {
+      "observation_date": "2021-11-01",
+      "value": 7.7802300453186035
+    },
+    {
+      "observation_date": "2021-11-02",
+      "value": 7.7823100090026855
+    },
+    {
+      "observation_date": "2021-11-03",
+      "value": 7.781280040740967
+    },
+    {
+      "observation_date": "2021-11-04",
+      "value": 7.783199787139893
+    },
+    {
+      "observation_date": "2021-11-05",
+      "value": 7.7829999923706055
+    },
+    {
+      "observation_date": "2021-11-08",
+      "value": 7.783740043640137
+    },
+    {
+      "observation_date": "2021-11-09",
+      "value": 7.788380146026611
+    },
+    {
+      "observation_date": "2021-11-10",
+      "value": 7.789999961853027
+    },
+    {
+      "observation_date": "2021-11-11",
+      "value": 7.790890216827393
+    },
+    {
+      "observation_date": "2021-11-12",
+      "value": 7.7916998863220215
+    },
+    {
+      "observation_date": "2021-11-15",
+      "value": 7.791749954223633
+    },
+    {
+      "observation_date": "2021-11-16",
+      "value": 7.788859844207764
+    },
+    {
+      "observation_date": "2021-11-17",
+      "value": 7.787300109863281
+    },
+    {
+      "observation_date": "2021-11-18",
+      "value": 7.788899898529053
+    },
+    {
+      "observation_date": "2021-11-19",
+      "value": 7.788909912109375
+    },
+    {
+      "observation_date": "2021-11-22",
+      "value": 7.790939807891846
+    },
+    {
+      "observation_date": "2021-11-23",
+      "value": 7.79040002822876
+    },
+    {
+      "observation_date": "2021-11-24",
+      "value": 7.793700218200684
+    },
+    {
+      "observation_date": "2021-11-25",
+      "value": 7.798389911651611
+    },
+    {
+      "observation_date": "2021-11-26",
+      "value": 7.796299934387207
+    },
+    {
+      "observation_date": "2021-11-29",
+      "value": 7.797920227050781
+    },
+    {
+      "observation_date": "2021-11-30",
+      "value": 7.799530029296875
+    },
+    {
+      "observation_date": "2021-12-01",
+      "value": 7.797399997711182
+    },
+    {
+      "observation_date": "2021-12-02",
+      "value": 7.793489933013916
+    },
+    {
+      "observation_date": "2021-12-03",
+      "value": 7.7916998863220215
+    },
+    {
+      "observation_date": "2021-12-06",
+      "value": 7.795400142669678
+    },
+    {
+      "observation_date": "2021-12-07",
+      "value": 7.801539897918701
+    },
+    {
+      "observation_date": "2021-12-08",
+      "value": 7.798500061035156
+    },
+    {
+      "observation_date": "2021-12-09",
+      "value": 7.797800064086914
+    },
+    {
+      "observation_date": "2021-12-10",
+      "value": 7.796750068664551
+    },
+    {
+      "observation_date": "2021-12-13",
+      "value": 7.79863977432251
+    },
+    {
+      "observation_date": "2021-12-14",
+      "value": 7.801499843597412
+    },
+    {
+      "observation_date": "2021-12-15",
+      "value": 7.800899982452393
+    },
+    {
+      "observation_date": "2021-12-16",
+      "value": 7.802800178527832
+    },
+    {
+      "observation_date": "2021-12-17",
+      "value": 7.803249835968018
+    },
+    {
+      "observation_date": "2021-12-20",
+      "value": 7.8021697998046875
+    },
+    {
+      "observation_date": "2021-12-21",
+      "value": 7.800899982452393
+    },
+    {
+      "observation_date": "2021-12-22",
+      "value": 7.801080226898193
+    },
+    {
+      "observation_date": "2021-12-23",
+      "value": 7.799689769744873
+    },
+    {
+      "observation_date": "2021-12-24",
+      "value": 7.798500061035156
+    },
+    {
+      "observation_date": "2021-12-27",
+      "value": 7.799349784851074
+    },
+    {
+      "observation_date": "2021-12-28",
+      "value": 7.798500061035156
+    },
+    {
+      "observation_date": "2021-12-29",
+      "value": 7.797999858856201
+    },
+    {
+      "observation_date": "2021-12-30",
+      "value": 7.7965497970581055
+    },
+    {
+      "observation_date": "2021-12-31",
+      "value": 7.797560214996338
+    },
+    {
+      "observation_date": "2022-01-03",
+      "value": 7.795919895172119
+    },
+    {
+      "observation_date": "2022-01-04",
+      "value": 7.797699928283691
+    },
+    {
+      "observation_date": "2022-01-05",
+      "value": 7.793499946594238
+    },
+    {
+      "observation_date": "2022-01-06",
+      "value": 7.795199871063232
+    },
+    {
+      "observation_date": "2022-01-07",
+      "value": 7.800620079040527
+    },
+    {
+      "observation_date": "2022-01-10",
+      "value": 7.79817008972168
+    },
+    {
+      "observation_date": "2022-01-11",
+      "value": 7.795499801635742
+    },
+    {
+      "observation_date": "2022-01-12",
+      "value": 7.796000003814697
+    },
+    {
+      "observation_date": "2022-01-13",
+      "value": 7.791790008544922
+    },
+    {
+      "observation_date": "2022-01-14",
+      "value": 7.7878899574279785
+    },
+    {
+      "observation_date": "2022-01-17",
+      "value": 7.784180164337158
+    },
+    {
+      "observation_date": "2022-01-18",
+      "value": 7.789899826049805
+    },
+    {
+      "observation_date": "2022-01-19",
+      "value": 7.792449951171875
+    },
+    {
+      "observation_date": "2022-01-20",
+      "value": 7.791319847106934
+    },
+    {
+      "observation_date": "2022-01-21",
+      "value": 7.786019802093506
+    },
+    {
+      "observation_date": "2022-01-24",
+      "value": 7.787059783935547
+    },
+    {
+      "observation_date": "2022-01-25",
+      "value": 7.786190032958984
+    },
+    {
+      "observation_date": "2022-01-26",
+      "value": 7.785369873046875
+    },
+    {
+      "observation_date": "2022-01-27",
+      "value": 7.786489963531494
+    },
+    {
+      "observation_date": "2022-01-28",
+      "value": 7.789400100708008
+    },
+    {
+      "observation_date": "2022-01-31",
+      "value": 7.79355001449585
+    },
+    {
+      "observation_date": "2022-02-01",
+      "value": 7.797289848327637
+    },
+    {
+      "observation_date": "2022-02-02",
+      "value": 7.794139862060547
+    },
+    {
+      "observation_date": "2022-02-03",
+      "value": 7.795499801635742
+    },
+    {
+      "observation_date": "2022-02-04",
+      "value": 7.7930498123168945
+    },
+    {
+      "observation_date": "2022-02-07",
+      "value": 7.787899971008301
+    },
+    {
+      "observation_date": "2022-02-08",
+      "value": 7.791989803314209
+    },
+    {
+      "observation_date": "2022-02-09",
+      "value": 7.793300151824951
+    },
+    {
+      "observation_date": "2022-02-10",
+      "value": 7.791130065917969
+    },
+    {
+      "observation_date": "2022-02-11",
+      "value": 7.79656982421875
+    },
+    {
+      "observation_date": "2022-02-14",
+      "value": 7.800829887390137
+    },
+    {
+      "observation_date": "2022-02-15",
+      "value": 7.802599906921387
+    },
+    {
+      "observation_date": "2022-02-16",
+      "value": 7.801259994506836
+    },
+    {
+      "observation_date": "2022-02-17",
+      "value": 7.799499988555908
+    },
+    {
+      "observation_date": "2022-02-18",
+      "value": 7.799099922180176
+    },
+    {
+      "observation_date": "2022-02-21",
+      "value": 7.799739837646484
+    },
+    {
+      "observation_date": "2022-02-22",
+      "value": 7.800899982452393
+    },
+    {
+      "observation_date": "2022-02-23",
+      "value": 7.801599979400635
+    },
+    {
+      "observation_date": "2022-02-24",
+      "value": 7.805069923400879
+    },
+    {
+      "observation_date": "2022-02-25",
+      "value": 7.807499885559082
+    },
+    {
+      "observation_date": "2022-02-28",
+      "value": 7.8074798583984375
+    },
+    {
+      "observation_date": "2022-03-01",
+      "value": 7.813260078430176
+    },
+    {
+      "observation_date": "2022-03-02",
+      "value": 7.815899848937988
+    },
+    {
+      "observation_date": "2022-03-03",
+      "value": 7.813720226287842
+    },
+    {
+      "observation_date": "2022-03-04",
+      "value": 7.8155999183654785
+    },
+    {
+      "observation_date": "2022-03-07",
+      "value": 7.814599990844727
+    },
+    {
+      "observation_date": "2022-03-08",
+      "value": 7.818299770355225
+    },
+    {
+      "observation_date": "2022-03-09",
+      "value": 7.818600177764893
+    },
+    {
+      "observation_date": "2022-03-10",
+      "value": 7.819069862365723
+    },
+    {
+      "observation_date": "2022-03-11",
+      "value": 7.822770118713379
+    },
+    {
+      "observation_date": "2022-03-14",
+      "value": 7.828020095825195
+    },
+    {
+      "observation_date": "2022-03-15",
+      "value": 7.828949928283691
+    },
+    {
+      "observation_date": "2022-03-16",
+      "value": 7.826700210571289
+    },
+    {
+      "observation_date": "2022-03-17",
+      "value": 7.820419788360596
+    },
+    {
+      "observation_date": "2022-03-18",
+      "value": 7.818270206451416
+    },
+    {
+      "observation_date": "2022-03-21",
+      "value": 7.823939800262451
+    },
+    {
+      "observation_date": "2022-03-22",
+      "value": 7.8250298500061035
+    },
+    {
+      "observation_date": "2022-03-23",
+      "value": 7.826670169830322
+    },
+    {
+      "observation_date": "2022-03-24",
+      "value": 7.823659896850586
+    },
+    {
+      "observation_date": "2022-03-25",
+      "value": 7.823400020599365
+    },
+    {
+      "observation_date": "2022-03-27",
+      "value": 7.8284101486206055
+    },
+    {
+      "observation_date": "2022-03-28",
+      "value": 7.828800201416016
+    },
+    {
+      "observation_date": "2022-03-29",
+      "value": 7.827199935913086
+    },
+    {
+      "observation_date": "2022-03-30",
+      "value": 7.82705020904541
+    },
+    {
+      "observation_date": "2022-03-31",
+      "value": 7.833479881286621
+    },
+    {
+      "observation_date": "2022-04-03",
+      "value": 7.83459997177124
+    },
+    {
+      "observation_date": "2022-04-04",
+      "value": 7.8344597816467285
+    },
+    {
+      "observation_date": "2022-04-05",
+      "value": 7.833759784698486
+    },
+    {
+      "observation_date": "2022-04-06",
+      "value": 7.8371100425720215
+    },
+    {
+      "observation_date": "2022-04-07",
+      "value": 7.836470127105713
+    },
+    {
+      "observation_date": "2022-04-10",
+      "value": 7.838860034942627
+    },
+    {
+      "observation_date": "2022-04-11",
+      "value": 7.837800025939941
+    },
+    {
+      "observation_date": "2022-04-12",
+      "value": 7.837430000305176
+    },
+    {
+      "observation_date": "2022-04-13",
+      "value": 7.838759899139404
+    },
+    {
+      "observation_date": "2022-04-14",
+      "value": 7.842619895935059
+    },
+    {
+      "observation_date": "2022-04-17",
+      "value": 7.843599796295166
+    },
+    {
+      "observation_date": "2022-04-18",
+      "value": 7.8414998054504395
+    },
+    {
+      "observation_date": "2022-04-19",
+      "value": 7.841899871826172
+    },
+    {
+      "observation_date": "2022-04-20",
+      "value": 7.843900203704834
+    },
+    {
+      "observation_date": "2022-04-21",
+      "value": 7.844600200653076
+    },
+    {
+      "observation_date": "2022-04-24",
+      "value": 7.846290111541748
+    },
+    {
+      "observation_date": "2022-04-25",
+      "value": 7.847109794616699
+    },
+    {
+      "observation_date": "2022-04-26",
+      "value": 7.845600128173828
+    },
+    {
+      "observation_date": "2022-04-27",
+      "value": 7.84630012512207
+    },
+    {
+      "observation_date": "2022-04-28",
+      "value": 7.846700191497803
+    },
+    {
+      "observation_date": "2022-05-01",
+      "value": 7.8470001220703125
+    },
+    {
+      "observation_date": "2022-05-02",
+      "value": 7.847499847412109
+    },
+    {
+      "observation_date": "2022-05-03",
+      "value": 7.847259998321533
+    },
+    {
+      "observation_date": "2022-05-04",
+      "value": 7.8480000495910645
+    },
+    {
+      "observation_date": "2022-05-05",
+      "value": 7.8491997718811035
+    },
+    {
+      "observation_date": "2022-05-08",
+      "value": 7.849649906158447
+    },
+    {
+      "observation_date": "2022-05-09",
+      "value": 7.849400043487549
+    },
+    {
+      "observation_date": "2022-05-10",
+      "value": 7.849649906158447
+    },
+    {
+      "observation_date": "2022-05-11",
+      "value": 7.849760055541992
+    },
+    {
+      "observation_date": "2022-05-12",
+      "value": 7.84984016418457
+    },
+    {
+      "observation_date": "2022-05-15",
+      "value": 7.849730014801025
+    },
+    {
+      "observation_date": "2022-05-16",
+      "value": 7.849999904632568
+    },
+    {
+      "observation_date": "2022-05-17",
+      "value": 7.849380016326904
+    },
+    {
+      "observation_date": "2022-05-18",
+      "value": 7.848800182342529
+    },
+    {
+      "observation_date": "2022-05-19",
+      "value": 7.847899913787842
+    },
+    {
+      "observation_date": "2022-05-22",
+      "value": 7.84827995300293
+    },
+    {
+      "observation_date": "2022-05-23",
+      "value": 7.849100112915039
+    },
+    {
+      "observation_date": "2022-05-24",
+      "value": 7.84906005859375
+    },
+    {
+      "observation_date": "2022-05-25",
+      "value": 7.8495001792907715
+    },
+    {
+      "observation_date": "2022-05-26",
+      "value": 7.8491997718811035
+    },
+    {
+      "observation_date": "2022-05-29",
+      "value": 7.84906005859375
+    },
+    {
+      "observation_date": "2022-05-30",
+      "value": 7.848189830780029
+    },
+    {
+      "observation_date": "2022-05-31",
+      "value": 7.847219944000244
+    },
+    {
+      "observation_date": "2022-06-01",
+      "value": 7.847430229187012
+    },
+    {
+      "observation_date": "2022-06-02",
+      "value": 7.844759941101074
+    },
+    {
+      "observation_date": "2022-06-05",
+      "value": 7.845729827880859
+    },
+    {
+      "observation_date": "2022-06-06",
+      "value": 7.845600128173828
+    },
+    {
+      "observation_date": "2022-06-07",
+      "value": 7.845359802246094
+    },
+    {
+      "observation_date": "2022-06-08",
+      "value": 7.847839832305908
+    },
+    {
+      "observation_date": "2022-06-09",
+      "value": 7.848800182342529
+    },
+    {
+      "observation_date": "2022-06-12",
+      "value": 7.849309921264648
+    },
+    {
+      "observation_date": "2022-06-13",
+      "value": 7.849800109863281
+    },
+    {
+      "observation_date": "2022-06-14",
+      "value": 7.849899768829346
+    },
+    {
+      "observation_date": "2022-06-15",
+      "value": 7.848599910736084
+    },
+    {
+      "observation_date": "2022-06-16",
+      "value": 7.8491997718811035
+    },
+    {
+      "observation_date": "2022-06-19",
+      "value": 7.849679946899414
+    },
+    {
+      "observation_date": "2022-06-20",
+      "value": 7.849699974060059
+    },
+    {
+      "observation_date": "2022-06-21",
+      "value": 7.849730014801025
+    },
+    {
+      "observation_date": "2022-06-22",
+      "value": 7.8495001792907715
+    },
+    {
+      "observation_date": "2022-06-23",
+      "value": 7.849400043487549
+    },
+    {
+      "observation_date": "2022-06-26",
+      "value": 7.849090099334717
+    },
+    {
+      "observation_date": "2022-06-27",
+      "value": 7.84660005569458
+    },
+    {
+      "observation_date": "2022-06-28",
+      "value": 7.845799922943115
+    },
+    {
+      "observation_date": "2022-06-29",
+      "value": 7.845990180969238
+    },
+    {
+      "observation_date": "2022-06-30",
+      "value": 7.847099781036377
+    },
+    {
+      "observation_date": "2022-07-03",
+      "value": 7.846799850463867
+    },
+    {
+      "observation_date": "2022-07-04",
+      "value": 7.8460001945495605
+    },
+    {
+      "observation_date": "2022-07-05",
+      "value": 7.846620082855225
+    },
+    {
+      "observation_date": "2022-07-06",
+      "value": 7.84689998626709
+    },
+    {
+      "observation_date": "2022-07-07",
+      "value": 7.847489833831787
+    },
+    {
+      "observation_date": "2022-07-10",
+      "value": 7.848810195922852
+    },
+    {
+      "observation_date": "2022-07-11",
+      "value": 7.849699974060059
+    },
+    {
+      "observation_date": "2022-07-12",
+      "value": 7.849699974060059
+    },
+    {
+      "observation_date": "2022-07-13",
+      "value": 7.849299907684326
+    },
+    {
+      "observation_date": "2022-07-14",
+      "value": 7.8496599197387695
+    },
+    {
+      "observation_date": "2022-07-17",
+      "value": 7.849599838256836
+    },
+    {
+      "observation_date": "2022-07-18",
+      "value": 7.849800109863281
+    },
+    {
+      "observation_date": "2022-07-19",
+      "value": 7.850500106811523
+    },
+    {
+      "observation_date": "2022-07-20",
+      "value": 7.849589824676514
+    },
+    {
+      "observation_date": "2022-07-21",
+      "value": 7.848599910736084
+    },
+    {
+      "observation_date": "2022-07-24",
+      "value": 7.849440097808838
+    },
+    {
+      "observation_date": "2022-07-25",
+      "value": 7.849130153656006
+    },
+    {
+      "observation_date": "2022-07-26",
+      "value": 7.849259853363037
+    },
+    {
+      "observation_date": "2022-07-27",
+      "value": 7.849100112915039
+    },
+    {
+      "observation_date": "2022-07-28",
+      "value": 7.8495001792907715
+    },
+    {
+      "observation_date": "2022-07-31",
+      "value": 7.849440097808838
+    },
+    {
+      "observation_date": "2022-08-01",
+      "value": 7.849800109863281
+    },
+    {
+      "observation_date": "2022-08-02",
+      "value": 7.849699974060059
+    },
+    {
+      "observation_date": "2022-08-03",
+      "value": 7.849400043487549
+    },
+    {
+      "observation_date": "2022-08-04",
+      "value": 7.8495001792907715
+    },
+    {
+      "observation_date": "2022-08-07",
+      "value": 7.849800109863281
+    },
+    {
+      "observation_date": "2022-08-08",
+      "value": 7.8497700691223145
+    },
+    {
+      "observation_date": "2022-08-09",
+      "value": 7.849699974060059
+    },
+    {
+      "observation_date": "2022-08-10",
+      "value": 7.84660005569458
+    },
+    {
+      "observation_date": "2022-08-11",
+      "value": 7.842800140380859
+    },
+    {
+      "observation_date": "2022-08-14",
+      "value": 7.838600158691406
+    },
+    {
+      "observation_date": "2022-08-15",
+      "value": 7.837900161743164
+    },
+    {
+      "observation_date": "2022-08-16",
+      "value": 7.84089994430542
+    },
+    {
+      "observation_date": "2022-08-17",
+      "value": 7.84250020980835
+    },
+    {
+      "observation_date": "2022-08-18",
+      "value": 7.843500137329102
+    },
+    {
+      "observation_date": "2022-08-21",
+      "value": 7.846199989318848
+    },
+    {
+      "observation_date": "2022-08-22",
+      "value": 7.846199989318848
+    },
+    {
+      "observation_date": "2022-08-23",
+      "value": 7.846399784088135
+    },
+    {
+      "observation_date": "2022-08-24",
+      "value": 7.845799922943115
+    },
+    {
+      "observation_date": "2022-08-25",
+      "value": 7.84630012512207
+    },
+    {
+      "observation_date": "2022-08-28",
+      "value": 7.847700119018555
+    },
+    {
+      "observation_date": "2022-08-29",
+      "value": 7.8471999168396
+    },
+    {
+      "observation_date": "2022-08-30",
+      "value": 7.848899841308594
+    },
+    {
+      "observation_date": "2022-08-31",
+      "value": 7.848060131072998
+    },
+    {
+      "observation_date": "2022-09-01",
+      "value": 7.8480000495910645
+    },
+    {
+      "observation_date": "2022-09-04",
+      "value": 7.84867000579834
+    },
+    {
+      "observation_date": "2022-09-05",
+      "value": 7.848800182342529
+    },
+    {
+      "observation_date": "2022-09-06",
+      "value": 7.8495001792907715
+    },
+    {
+      "observation_date": "2022-09-07",
+      "value": 7.849279880523682
+    },
+    {
+      "observation_date": "2022-09-08",
+      "value": 7.848999977111816
+    },
+    {
+      "observation_date": "2022-09-11",
+      "value": 7.848800182342529
+    },
+    {
+      "observation_date": "2022-09-12",
+      "value": 7.848659992218018
+    },
+    {
+      "observation_date": "2022-09-13",
+      "value": 7.8495001792907715
+    },
+    {
+      "observation_date": "2022-09-14",
+      "value": 7.84876012802124
+    },
+    {
+      "observation_date": "2022-09-15",
+      "value": 7.848999977111816
+    },
+    {
+      "observation_date": "2022-09-18",
+      "value": 7.849160194396973
+    },
+    {
+      "observation_date": "2022-09-19",
+      "value": 7.848899841308594
+    },
+    {
+      "observation_date": "2022-09-20",
+      "value": 7.849279880523682
+    },
+    {
+      "observation_date": "2022-09-21",
+      "value": 7.849679946899414
+    },
+    {
+      "observation_date": "2022-09-22",
+      "value": 7.848899841308594
+    },
+    {
+      "observation_date": "2022-09-25",
+      "value": 7.849579811096191
+    },
+    {
+      "observation_date": "2022-09-26",
+      "value": 7.849279880523682
+    },
+    {
+      "observation_date": "2022-09-27",
+      "value": 7.849599838256836
+    },
+    {
+      "observation_date": "2022-09-28",
+      "value": 7.848800182342529
+    },
+    {
+      "observation_date": "2022-09-29",
+      "value": 7.849599838256836
+    },
+    {
+      "observation_date": "2022-10-02",
+      "value": 7.8496599197387695
+    },
+    {
+      "observation_date": "2022-10-03",
+      "value": 7.85099983215332
+    },
+    {
+      "observation_date": "2022-10-04",
+      "value": 7.849629878997803
+    },
+    {
+      "observation_date": "2022-10-05",
+      "value": 7.849440097808838
+    },
+    {
+      "observation_date": "2022-10-06",
+      "value": 7.849899768829346
+    },
+    {
+      "observation_date": "2022-10-09",
+      "value": 7.849629878997803
+    },
+    {
+      "observation_date": "2022-10-10",
+      "value": 7.849689960479736
+    },
+    {
+      "observation_date": "2022-10-11",
+      "value": 7.849800109863281
+    },
+    {
+      "observation_date": "2022-10-12",
+      "value": 7.849480152130127
+    },
+    {
+      "observation_date": "2022-10-13",
+      "value": 7.849579811096191
+    },
+    {
+      "observation_date": "2022-10-16",
+      "value": 7.849400043487549
+    },
+    {
+      "observation_date": "2022-10-17",
+      "value": 7.8491997718811035
+    },
+    {
+      "observation_date": "2022-10-18",
+      "value": 7.849490165710449
+    },
+    {
+      "observation_date": "2022-10-19",
+      "value": 7.8491997718811035
+    },
+    {
+      "observation_date": "2022-10-20",
+      "value": 7.848569869995117
+    },
+    {
+      "observation_date": "2022-10-23",
+      "value": 7.849400043487549
+    },
+    {
+      "observation_date": "2022-10-24",
+      "value": 7.849629878997803
+    },
+    {
+      "observation_date": "2022-10-25",
+      "value": 7.849299907684326
+    },
+    {
+      "observation_date": "2022-10-26",
+      "value": 7.849299907684326
+    },
+    {
+      "observation_date": "2022-10-27",
+      "value": 7.849299907684326
+    },
+    {
+      "observation_date": "2022-10-31",
+      "value": 7.848740100860596
+    },
+    {
+      "observation_date": "2022-11-01",
+      "value": 7.849480152130127
+    },
+    {
+      "observation_date": "2022-11-02",
+      "value": 7.849629878997803
+    },
+    {
+      "observation_date": "2022-11-03",
+      "value": 7.8496599197387695
+    },
+    {
+      "observation_date": "2022-11-04",
+      "value": 7.849760055541992
+    },
+    {
+      "observation_date": "2022-11-07",
+      "value": 7.849510192871094
+    },
+    {
+      "observation_date": "2022-11-08",
+      "value": 7.849999904632568
+    },
+    {
+      "observation_date": "2022-11-09",
+      "value": 7.849100112915039
+    },
+    {
+      "observation_date": "2022-11-10",
+      "value": 7.849370002746582
+    },
+    {
+      "observation_date": "2022-11-11",
+      "value": 7.845399856567383
+    },
+    {
+      "observation_date": "2022-11-14",
+      "value": 7.835639953613281
+    },
+    {
+      "observation_date": "2022-11-15",
+      "value": 7.835999965667725
+    },
+    {
+      "observation_date": "2022-11-16",
+      "value": 7.819900035858154
+    },
+    {
+      "observation_date": "2022-11-17",
+      "value": 7.82420015335083
+    },
+    {
+      "observation_date": "2022-11-18",
+      "value": 7.826469898223877
+    },
+    {
+      "observation_date": "2022-11-21",
+      "value": 7.8191399574279785
+    },
+    {
+      "observation_date": "2022-11-22",
+      "value": 7.804299831390381
+    },
+    {
+      "observation_date": "2022-11-23",
+      "value": 7.817399978637695
+    },
+    {
+      "observation_date": "2022-11-24",
+      "value": 7.8180999755859375
+    },
+    {
+      "observation_date": "2022-11-25",
+      "value": 7.8084001541137695
+    },
+    {
+      "observation_date": "2022-11-28",
+      "value": 7.8080902099609375
+    },
+    {
+      "observation_date": "2022-11-29",
+      "value": 7.813419818878174
+    },
+    {
+      "observation_date": "2022-11-30",
+      "value": 7.8107500076293945
+    },
+    {
+      "observation_date": "2022-12-01",
+      "value": 7.80472993850708
+    },
+    {
+      "observation_date": "2022-12-02",
+      "value": 7.7795000076293945
+    },
+    {
+      "observation_date": "2022-12-05",
+      "value": 7.785140037536621
+    },
+    {
+      "observation_date": "2022-12-06",
+      "value": 7.768899917602539
+    },
+    {
+      "observation_date": "2022-12-07",
+      "value": 7.775259971618652
+    },
+    {
+      "observation_date": "2022-12-08",
+      "value": 7.791500091552734
+    },
+    {
+      "observation_date": "2022-12-09",
+      "value": 7.783840179443359
+    },
+    {
+      "observation_date": "2022-12-12",
+      "value": 7.7868499755859375
+    },
+    {
+      "observation_date": "2022-12-13",
+      "value": 7.774799823760986
+    },
+    {
+      "observation_date": "2022-12-14",
+      "value": 7.774799823760986
+    },
+    {
+      "observation_date": "2022-12-15",
+      "value": 7.775599956512451
+    },
+    {
+      "observation_date": "2022-12-16",
+      "value": 7.775760173797607
+    },
+    {
+      "observation_date": "2022-12-19",
+      "value": 7.778550148010254
+    },
+    {
+      "observation_date": "2022-12-20",
+      "value": 7.780300140380859
+    },
+    {
+      "observation_date": "2022-12-21",
+      "value": 7.787899971008301
+    },
+    {
+      "observation_date": "2022-12-22",
+      "value": 7.79610013961792
+    },
+    {
+      "observation_date": "2022-12-23",
+      "value": 7.795300006866455
+    },
+    {
+      "observation_date": "2022-12-26",
+      "value": 7.8035101890563965
+    },
+    {
+      "observation_date": "2022-12-27",
+      "value": 7.805099964141846
+    },
+    {
+      "observation_date": "2022-12-28",
+      "value": 7.8003997802734375
+    },
+    {
+      "observation_date": "2022-12-29",
+      "value": 7.79380989074707
+    },
+    {
+      "observation_date": "2022-12-30",
+      "value": 7.794400215148926
+    },
+    {
+      "observation_date": "2023-01-02",
+      "value": 7.79925012588501
+    },
+    {
+      "observation_date": "2023-01-03",
+      "value": 7.805500030517578
+    },
+    {
+      "observation_date": "2023-01-04",
+      "value": 7.813199996948242
+    },
+    {
+      "observation_date": "2023-01-05",
+      "value": 7.815710067749023
+    },
+    {
+      "observation_date": "2023-01-06",
+      "value": 7.811500072479248
+    },
+    {
+      "observation_date": "2023-01-09",
+      "value": 7.807819843292236
+    },
+    {
+      "observation_date": "2023-01-10",
+      "value": 7.804800033569336
+    },
+    {
+      "observation_date": "2023-01-11",
+      "value": 7.808499813079834
+    },
+    {
+      "observation_date": "2023-01-12",
+      "value": 7.811100006103516
+    },
+    {
+      "observation_date": "2023-01-13",
+      "value": 7.8082499504089355
+    },
+    {
+      "observation_date": "2023-01-16",
+      "value": 7.810210227966309
+    },
+    {
+      "observation_date": "2023-01-17",
+      "value": 7.810420036315918
+    },
+    {
+      "observation_date": "2023-01-18",
+      "value": 7.818160057067871
+    },
+    {
+      "observation_date": "2023-01-19",
+      "value": 7.823440074920654
+    },
+    {
+      "observation_date": "2023-01-20",
+      "value": 7.829800128936768
+    },
+    {
+      "observation_date": "2023-01-23",
+      "value": 7.827439785003662
+    },
+    {
+      "observation_date": "2023-01-24",
+      "value": 7.830999851226807
+    },
+    {
+      "observation_date": "2023-01-25",
+      "value": 7.831500053405762
+    },
+    {
+      "observation_date": "2023-01-26",
+      "value": 7.829500198364258
+    },
+    {
+      "observation_date": "2023-01-27",
+      "value": 7.828080177307129
+    },
+    {
+      "observation_date": "2023-01-30",
+      "value": 7.828519821166992
+    },
+    {
+      "observation_date": "2023-01-31",
+      "value": 7.835130214691162
+    },
+    {
+      "observation_date": "2023-02-01",
+      "value": 7.839660167694092
+    },
+    {
+      "observation_date": "2023-02-02",
+      "value": 7.839000225067139
+    },
+    {
+      "observation_date": "2023-02-03",
+      "value": 7.844399929046631
+    },
+    {
+      "observation_date": "2023-02-06",
+      "value": 7.846330165863037
+    },
+    {
+      "observation_date": "2023-02-07",
+      "value": 7.846759796142578
+    },
+    {
+      "observation_date": "2023-02-08",
+      "value": 7.848499774932861
+    },
+    {
+      "observation_date": "2023-02-09",
+      "value": 7.848700046539307
+    },
+    {
+      "observation_date": "2023-02-10",
+      "value": 7.849699974060059
+    },
+    {
+      "observation_date": "2023-02-13",
+      "value": 7.849289894104004
+    },
+    {
+      "observation_date": "2023-02-14",
+      "value": 7.849740028381348
+    },
+    {
+      "observation_date": "2023-02-15",
+      "value": 7.848800182342529
+    },
+    {
+      "observation_date": "2023-02-16",
+      "value": 7.846409797668457
+    },
+    {
+      "observation_date": "2023-02-17",
+      "value": 7.84896993637085
+    },
+    {
+      "observation_date": "2023-02-20",
+      "value": 7.84453010559082
+    },
+    {
+      "observation_date": "2023-02-21",
+      "value": 7.833899974822998
+    },
+    {
+      "observation_date": "2023-02-22",
+      "value": 7.844799995422363
+    },
+    {
+      "observation_date": "2023-02-23",
+      "value": 7.845160007476807
+    },
+    {
+      "observation_date": "2023-02-24",
+      "value": 7.846839904785156
+    },
+    {
+      "observation_date": "2023-02-27",
+      "value": 7.847780227661133
+    },
+    {
+      "observation_date": "2023-02-28",
+      "value": 7.844900131225586
+    },
+    {
+      "observation_date": "2023-03-01",
+      "value": 7.849020004272461
+    },
+    {
+      "observation_date": "2023-03-02",
+      "value": 7.848100185394287
+    },
+    {
+      "observation_date": "2023-03-03",
+      "value": 7.849400043487549
+    },
+    {
+      "observation_date": "2023-03-06",
+      "value": 7.84945011138916
+    },
+    {
+      "observation_date": "2023-03-07",
+      "value": 7.849420070648193
+    },
+    {
+      "observation_date": "2023-03-08",
+      "value": 7.849689960479736
+    },
+    {
+      "observation_date": "2023-03-09",
+      "value": 7.849460124969482
+    },
+    {
+      "observation_date": "2023-03-10",
+      "value": 7.849579811096191
+    },
+    {
+      "observation_date": "2023-03-13",
+      "value": 7.847519874572754
+    },
+    {
+      "observation_date": "2023-03-14",
+      "value": 7.844600200653076
+    },
+    {
+      "observation_date": "2023-03-15",
+      "value": 7.8480000495910645
+    },
+    {
+      "observation_date": "2023-03-16",
+      "value": 7.848050117492676
+    },
+    {
+      "observation_date": "2023-03-17",
+      "value": 7.849219799041748
+    },
+    {
+      "observation_date": "2023-03-20",
+      "value": 7.848849773406982
+    },
+    {
+      "observation_date": "2023-03-21",
+      "value": 7.842800140380859
+    },
+    {
+      "observation_date": "2023-03-22",
+      "value": 7.845620155334473
+    },
+    {
+      "observation_date": "2023-03-23",
+      "value": 7.847030162811279
+    },
+    {
+      "observation_date": "2023-03-24",
+      "value": 7.849400043487549
+    },
+    {
+      "observation_date": "2023-03-26",
+      "value": 7.849530220031738
+    },
+    {
+      "observation_date": "2023-03-27",
+      "value": 7.849699974060059
+    },
+    {
+      "observation_date": "2023-03-28",
+      "value": 7.849699974060059
+    },
+    {
+      "observation_date": "2023-03-29",
+      "value": 7.849899768829346
+    },
+    {
+      "observation_date": "2023-03-30",
+      "value": 7.849569797515869
+    },
+    {
+      "observation_date": "2023-04-02",
+      "value": 7.849599838256836
+    },
+    {
+      "observation_date": "2023-04-03",
+      "value": 7.8468098640441895
+    },
+    {
+      "observation_date": "2023-04-04",
+      "value": 7.849299907684326
+    },
+    {
+      "observation_date": "2023-04-05",
+      "value": 7.849800109863281
+    },
+    {
+      "observation_date": "2023-04-06",
+      "value": 7.849740028381348
+    },
+    {
+      "observation_date": "2023-04-09",
+      "value": 7.849699974060059
+    },
+    {
+      "observation_date": "2023-04-10",
+      "value": 7.849400043487549
+    },
+    {
+      "observation_date": "2023-04-11",
+      "value": 7.849800109863281
+    },
+    {
+      "observation_date": "2023-04-12",
+      "value": 7.847209930419922
+    },
+    {
+      "observation_date": "2023-04-13",
+      "value": 7.849699974060059
+    },
+    {
+      "observation_date": "2023-04-16",
+      "value": 7.849279880523682
+    },
+    {
+      "observation_date": "2023-04-17",
+      "value": 7.849279880523682
+    },
+    {
+      "observation_date": "2023-04-18",
+      "value": 7.849170207977295
+    },
+    {
+      "observation_date": "2023-04-19",
+      "value": 7.84896993637085
+    },
+    {
+      "observation_date": "2023-04-20",
+      "value": 7.848790168762207
+    },
+    {
+      "observation_date": "2023-04-23",
+      "value": 7.847899913787842
+    },
+    {
+      "observation_date": "2023-04-24",
+      "value": 7.849100112915039
+    },
+    {
+      "observation_date": "2023-04-25",
+      "value": 7.849599838256836
+    },
+    {
+      "observation_date": "2023-04-26",
+      "value": 7.849699974060059
+    },
+    {
+      "observation_date": "2023-04-27",
+      "value": 7.849899768829346
+    },
+    {
+      "observation_date": "2023-04-30",
+      "value": 7.849899768829346
+    },
+    {
+      "observation_date": "2023-05-01",
+      "value": 7.849629878997803
+    },
+    {
+      "observation_date": "2023-05-02",
+      "value": 7.849760055541992
+    },
+    {
+      "observation_date": "2023-05-03",
+      "value": 7.848790168762207
+    },
+    {
+      "observation_date": "2023-05-04",
+      "value": 7.847099781036377
+    },
+    {
+      "observation_date": "2023-05-07",
+      "value": 7.847179889678955
+    },
+    {
+      "observation_date": "2023-05-08",
+      "value": 7.84867000579834
+    },
+    {
+      "observation_date": "2023-05-09",
+      "value": 7.841700077056885
+    },
+    {
+      "observation_date": "2023-05-10",
+      "value": 7.832149982452393
+    },
+    {
+      "observation_date": "2023-05-11",
+      "value": 7.8368000984191895
+    },
+    {
+      "observation_date": "2023-05-14",
+      "value": 7.842400074005127
+    },
+    {
+      "observation_date": "2023-05-15",
+      "value": 7.838319778442383
+    },
+    {
+      "observation_date": "2023-05-16",
+      "value": 7.8383002281188965
+    },
+    {
+      "observation_date": "2023-05-17",
+      "value": 7.829699993133545
+    },
+    {
+      "observation_date": "2023-05-18",
+      "value": 7.827300071716309
+    },
+    {
+      "observation_date": "2023-05-21",
+      "value": 7.816800117492676
+    },
+    {
+      "observation_date": "2023-05-22",
+      "value": 7.828499794006348
+    },
+    {
+      "observation_date": "2023-05-23",
+      "value": 7.836820125579834
+    },
+    {
+      "observation_date": "2023-05-24",
+      "value": 7.829899787902832
+    },
+    {
+      "observation_date": "2023-05-25",
+      "value": 7.835000038146973
+    },
+    {
+      "observation_date": "2023-05-28",
+      "value": 7.834549903869629
+    },
+    {
+      "observation_date": "2023-05-29",
+      "value": 7.828000068664551
+    },
+    {
+      "observation_date": "2023-05-30",
+      "value": 7.834070205688477
+    },
+    {
+      "observation_date": "2023-05-31",
+      "value": 7.831210136413574
+    },
+    {
+      "observation_date": "2023-06-01",
+      "value": 7.831500053405762
+    },
+    {
+      "observation_date": "2023-06-04",
+      "value": 7.837470054626465
+    },
+    {
+      "observation_date": "2023-06-05",
+      "value": 7.837860107421875
+    },
+    {
+      "observation_date": "2023-06-06",
+      "value": 7.8429999351501465
+    },
+    {
+      "observation_date": "2023-06-07",
+      "value": 7.839739799499512
+    },
+    {
+      "observation_date": "2023-06-08",
+      "value": 7.836780071258545
+    },
+    {
+      "observation_date": "2023-06-11",
+      "value": 7.838799953460693
+    },
+    {
+      "observation_date": "2023-06-12",
+      "value": 7.834420204162598
+    },
+    {
+      "observation_date": "2023-06-13",
+      "value": 7.833310127258301
+    },
+    {
+      "observation_date": "2023-06-14",
+      "value": 7.830900192260742
+    },
+    {
+      "observation_date": "2023-06-15",
+      "value": 7.822569847106934
+    },
+    {
+      "observation_date": "2023-06-18",
+      "value": 7.8211798667907715
+    },
+    {
+      "observation_date": "2023-06-19",
+      "value": 7.8171000480651855
+    },
+    {
+      "observation_date": "2023-06-20",
+      "value": 7.825799942016602
+    },
+    {
+      "observation_date": "2023-06-21",
+      "value": 7.8282999992370605
+    },
+    {
+      "observation_date": "2023-06-22",
+      "value": 7.830100059509277
+    },
+    {
+      "observation_date": "2023-06-25",
+      "value": 7.829730033874512
+    },
+    {
+      "observation_date": "2023-06-26",
+      "value": 7.8302001953125
+    },
+    {
+      "observation_date": "2023-06-27",
+      "value": 7.8331098556518555
+    },
+    {
+      "observation_date": "2023-06-28",
+      "value": 7.832940101623535
+    },
+    {
+      "observation_date": "2023-06-29",
+      "value": 7.838799953460693
+    },
+    {
+      "observation_date": "2023-07-02",
+      "value": 7.837299823760986
+    },
+    {
+      "observation_date": "2023-07-03",
+      "value": 7.834099769592285
+    },
+    {
+      "observation_date": "2023-07-04",
+      "value": 7.831399917602539
+    },
+    {
+      "observation_date": "2023-07-05",
+      "value": 7.8221001625061035
+    },
+    {
+      "observation_date": "2023-07-06",
+      "value": 7.820400238037109
+    },
+    {
+      "observation_date": "2023-07-09",
+      "value": 7.827300071716309
+    },
+    {
+      "observation_date": "2023-07-10",
+      "value": 7.828199863433838
+    },
+    {
+      "observation_date": "2023-07-11",
+      "value": 7.8267998695373535
+    },
+    {
+      "observation_date": "2023-07-12",
+      "value": 7.8254899978637695
+    },
+    {
+      "observation_date": "2023-07-13",
+      "value": 7.821400165557861
+    },
+    {
+      "observation_date": "2023-07-16",
+      "value": 7.814700126647949
+    },
+    {
+      "observation_date": "2023-07-17",
+      "value": 7.81397008895874
+    },
+    {
+      "observation_date": "2023-07-18",
+      "value": 7.813899993896484
+    },
+    {
+      "observation_date": "2023-07-19",
+      "value": 7.8084001541137695
+    },
+    {
+      "observation_date": "2023-07-20",
+      "value": 7.813700199127197
+    },
+    {
+      "observation_date": "2023-07-23",
+      "value": 7.817070007324219
+    },
+    {
+      "observation_date": "2023-07-24",
+      "value": 7.813469886779785
+    },
+    {
+      "observation_date": "2023-07-25",
+      "value": 7.811200141906738
+    },
+    {
+      "observation_date": "2023-07-26",
+      "value": 7.802000045776367
+    },
+    {
+      "observation_date": "2023-07-27",
+      "value": 7.8029398918151855
+    },
+    {
+      "observation_date": "2023-07-30",
+      "value": 7.7964701652526855
+    },
+    {
+      "observation_date": "2023-07-31",
+      "value": 7.797920227050781
+    },
+    {
+      "observation_date": "2023-08-01",
+      "value": 7.7941999435424805
+    },
+    {
+      "observation_date": "2023-08-02",
+      "value": 7.8018798828125
+    },
+    {
+      "observation_date": "2023-08-03",
+      "value": 7.808199882507324
+    },
+    {
+      "observation_date": "2023-08-06",
+      "value": 7.811500072479248
+    },
+    {
+      "observation_date": "2023-08-07",
+      "value": 7.807400226593018
+    },
+    {
+      "observation_date": "2023-08-08",
+      "value": 7.8140997886657715
+    },
+    {
+      "observation_date": "2023-08-09",
+      "value": 7.820419788360596
+    },
+    {
+      "observation_date": "2023-08-10",
+      "value": 7.8196001052856445
+    },
+    {
+      "observation_date": "2023-08-13",
+      "value": 7.817599773406982
+    },
+    {
+      "observation_date": "2023-08-14",
+      "value": 7.819300174713135
+    },
+    {
+      "observation_date": "2023-08-15",
+      "value": 7.824100017547607
+    },
+    {
+      "observation_date": "2023-08-16",
+      "value": 7.831299781799316
+    },
+    {
+      "observation_date": "2023-08-17",
+      "value": 7.829699993133545
+    },
+    {
+      "observation_date": "2023-08-20",
+      "value": 7.832640171051025
+    },
+    {
+      "observation_date": "2023-08-21",
+      "value": 7.839000225067139
+    },
+    {
+      "observation_date": "2023-08-22",
+      "value": 7.8378801345825195
+    },
+    {
+      "observation_date": "2023-08-23",
+      "value": 7.840799808502197
+    },
+    {
+      "observation_date": "2023-08-24",
+      "value": 7.841300010681152
+    },
+    {
+      "observation_date": "2023-08-27",
+      "value": 7.843339920043945
+    },
+    {
+      "observation_date": "2023-08-28",
+      "value": 7.84591007232666
+    },
+    {
+      "observation_date": "2023-08-29",
+      "value": 7.846199989318848
+    },
+    {
+      "observation_date": "2023-08-30",
+      "value": 7.845860004425049
+    },
+    {
+      "observation_date": "2023-08-31",
+      "value": 7.842400074005127
+    },
+    {
+      "observation_date": "2023-09-03",
+      "value": 7.845590114593506
+    },
+    {
+      "observation_date": "2023-09-04",
+      "value": 7.835700035095215
+    },
+    {
+      "observation_date": "2023-09-05",
+      "value": 7.841599941253662
+    },
+    {
+      "observation_date": "2023-09-06",
+      "value": 7.842599868774414
+    },
+    {
+      "observation_date": "2023-09-07",
+      "value": 7.836880207061768
+    },
+    {
+      "observation_date": "2023-09-10",
+      "value": 7.840419769287109
+    },
+    {
+      "observation_date": "2023-09-11",
+      "value": 7.831860065460205
+    },
+    {
+      "observation_date": "2023-09-12",
+      "value": 7.827400207519531
+    },
+    {
+      "observation_date": "2023-09-13",
+      "value": 7.826300144195557
+    },
+    {
+      "observation_date": "2023-09-14",
+      "value": 7.82919979095459
+    },
+    {
+      "observation_date": "2023-09-17",
+      "value": 7.8254499435424805
+    },
+    {
+      "observation_date": "2023-09-18",
+      "value": 7.81820011138916
+    },
+    {
+      "observation_date": "2023-09-19",
+      "value": 7.820899963378906
+    },
+    {
+      "observation_date": "2023-09-20",
+      "value": 7.823800086975098
+    },
+    {
+      "observation_date": "2023-09-21",
+      "value": 7.821000099182129
+    },
+    {
+      "observation_date": "2023-09-24",
+      "value": 7.820409774780273
+    },
+    {
+      "observation_date": "2023-09-25",
+      "value": 7.816359996795654
+    },
+    {
+      "observation_date": "2023-09-26",
+      "value": 7.821300029754639
+    },
+    {
+      "observation_date": "2023-09-27",
+      "value": 7.821080207824707
+    },
+    {
+      "observation_date": "2023-09-28",
+      "value": 7.829349994659424
+    },
+    {
+      "observation_date": "2023-10-01",
+      "value": 7.831600189208984
+    },
+    {
+      "observation_date": "2023-10-02",
+      "value": 7.831900119781494
+    },
+    {
+      "observation_date": "2023-10-03",
+      "value": 7.832600116729736
+    },
+    {
+      "observation_date": "2023-10-04",
+      "value": 7.828800201416016
+    },
+    {
+      "observation_date": "2023-10-05",
+      "value": 7.831099987030029
+    },
+    {
+      "observation_date": "2023-10-08",
+      "value": 7.831459999084473
+    },
+    {
+      "observation_date": "2023-10-09",
+      "value": 7.828700065612793
+    },
+    {
+      "observation_date": "2023-10-10",
+      "value": 7.819240093231201
+    },
+    {
+      "observation_date": "2023-10-11",
+      "value": 7.819699764251709
+    },
+    {
+      "observation_date": "2023-10-12",
+      "value": 7.823800086975098
+    },
+    {
+      "observation_date": "2023-10-15",
+      "value": 7.823309898376465
+    },
+    {
+      "observation_date": "2023-10-16",
+      "value": 7.817500114440918
+    },
+    {
+      "observation_date": "2023-10-17",
+      "value": 7.8242998123168945
+    },
+    {
+      "observation_date": "2023-10-18",
+      "value": 7.828589916229248
+    },
+    {
+      "observation_date": "2023-10-19",
+      "value": 7.8236799240112305
+    },
+    {
+      "observation_date": "2023-10-22",
+      "value": 7.825240135192871
+    },
+    {
+      "observation_date": "2023-10-23",
+      "value": 7.8238701820373535
+    },
+    {
+      "observation_date": "2023-10-24",
+      "value": 7.823550224304199
+    },
+    {
+      "observation_date": "2023-10-25",
+      "value": 7.821899890899658
+    },
+    {
+      "observation_date": "2023-10-26",
+      "value": 7.820400238037109
+    },
+    {
+      "observation_date": "2023-10-30",
+      "value": 7.821569919586182
+    },
+    {
+      "observation_date": "2023-10-31",
+      "value": 7.820700168609619
+    },
+    {
+      "observation_date": "2023-11-01",
+      "value": 7.82436990737915
+    },
+    {
+      "observation_date": "2023-11-02",
+      "value": 7.822189807891846
+    },
+    {
+      "observation_date": "2023-11-03",
+      "value": 7.824520111083984
+    },
+    {
+      "observation_date": "2023-11-06",
+      "value": 7.824120044708252
+    },
+    {
+      "observation_date": "2023-11-07",
+      "value": 7.820899963378906
+    },
+    {
+      "observation_date": "2023-11-08",
+      "value": 7.819699764251709
+    },
+    {
+      "observation_date": "2023-11-09",
+      "value": 7.81466007232666
+    },
+    {
+      "observation_date": "2023-11-10",
+      "value": 7.808899879455566
+    },
+    {
+      "observation_date": "2023-11-13",
+      "value": 7.811180114746094
+    },
+    {
+      "observation_date": "2023-11-14",
+      "value": 7.808599948883057
+    },
+    {
+      "observation_date": "2023-11-15",
+      "value": 7.805319786071777
+    },
+    {
+      "observation_date": "2023-11-16",
+      "value": 7.807069778442383
+    },
+    {
+      "observation_date": "2023-11-17",
+      "value": 7.8023600578308105
+    },
+    {
+      "observation_date": "2023-11-20",
+      "value": 7.7954301834106445
+    },
+    {
+      "observation_date": "2023-11-21",
+      "value": 7.792290210723877
+    },
+    {
+      "observation_date": "2023-11-22",
+      "value": 7.795599937438965
+    },
+    {
+      "observation_date": "2023-11-23",
+      "value": 7.796500205993652
+    },
+    {
+      "observation_date": "2023-11-24",
+      "value": 7.798299789428711
+    },
+    {
+      "observation_date": "2023-11-27",
+      "value": 7.7916998863220215
+    },
+    {
+      "observation_date": "2023-11-28",
+      "value": 7.788690090179443
+    },
+    {
+      "observation_date": "2023-11-29",
+      "value": 7.7945098876953125
+    },
+    {
+      "observation_date": "2023-11-30",
+      "value": 7.804100036621094
+    },
+    {
+      "observation_date": "2023-12-01",
+      "value": 7.810259819030762
+    },
+    {
+      "observation_date": "2023-12-04",
+      "value": 7.814080238342285
+    },
+    {
+      "observation_date": "2023-12-05",
+      "value": 7.815529823303223
+    },
+    {
+      "observation_date": "2023-12-06",
+      "value": 7.8190999031066895
+    },
+    {
+      "observation_date": "2023-12-07",
+      "value": 7.810770034790039
+    },
+    {
+      "observation_date": "2023-12-08",
+      "value": 7.811500072479248
+    },
+    {
+      "observation_date": "2023-12-11",
+      "value": 7.809460163116455
+    },
+    {
+      "observation_date": "2023-12-12",
+      "value": 7.80620002746582
+    },
+    {
+      "observation_date": "2023-12-13",
+      "value": 7.809500217437744
+    },
+    {
+      "observation_date": "2023-12-14",
+      "value": 7.811399936676025
+    },
+    {
+      "observation_date": "2023-12-15",
+      "value": 7.8069000244140625
+    },
+    {
+      "observation_date": "2023-12-18",
+      "value": 7.802299976348877
+    },
+    {
+      "observation_date": "2023-12-19",
+      "value": 7.795100212097168
+    },
+    {
+      "observation_date": "2023-12-20",
+      "value": 7.799600124359131
+    },
+    {
+      "observation_date": "2023-12-21",
+      "value": 7.806859970092773
+    },
+    {
+      "observation_date": "2023-12-22",
+      "value": 7.8095598220825195
+    },
+    {
+      "observation_date": "2023-12-25",
+      "value": 7.809879779815674
+    },
+    {
+      "observation_date": "2023-12-26",
+      "value": 7.809899806976318
+    },
+    {
+      "observation_date": "2023-12-27",
+      "value": 7.80679988861084
+    },
+    {
+      "observation_date": "2023-12-28",
+      "value": 7.809899806976318
+    },
+    {
+      "observation_date": "2023-12-29",
+      "value": 7.811800003051758
+    },
+    {
+      "observation_date": "2024-01-01",
+      "value": 7.808000087738037
+    },
+    {
+      "observation_date": "2024-01-02",
+      "value": 7.809659957885742
+    },
+    {
+      "observation_date": "2024-01-03",
+      "value": 7.814929962158203
+    },
+    {
+      "observation_date": "2024-01-04",
+      "value": 7.807499885559082
+    },
+    {
+      "observation_date": "2024-01-05",
+      "value": 7.809100151062012
+    },
+    {
+      "observation_date": "2024-01-08",
+      "value": 7.811240196228027
+    },
+    {
+      "observation_date": "2024-01-09",
+      "value": 7.806000232696533
+    },
+    {
+      "observation_date": "2024-01-10",
+      "value": 7.815820217132568
+    },
+    {
+      "observation_date": "2024-01-11",
+      "value": 7.819900035858154
+    },
+    {
+      "observation_date": "2024-01-12",
+      "value": 7.817800045013428
+    },
+    {
+      "observation_date": "2024-01-15",
+      "value": 7.81997013092041
+    },
+    {
+      "observation_date": "2024-01-16",
+      "value": 7.822720050811768
+    },
+    {
+      "observation_date": "2024-01-17",
+      "value": 7.826300144195557
+    },
+    {
+      "observation_date": "2024-01-18",
+      "value": 7.822490215301514
+    },
+    {
+      "observation_date": "2024-01-19",
+      "value": 7.821310043334961
+    },
+    {
+      "observation_date": "2024-01-22",
+      "value": 7.8170599937438965
+    },
+    {
+      "observation_date": "2024-01-23",
+      "value": 7.817440032958984
+    },
+    {
+      "observation_date": "2024-01-24",
+      "value": 7.822000026702881
+    },
+    {
+      "observation_date": "2024-01-25",
+      "value": 7.817699909210205
+    },
+    {
+      "observation_date": "2024-01-26",
+      "value": 7.818399906158447
+    },
+    {
+      "observation_date": "2024-01-29",
+      "value": 7.813119888305664
+    },
+    {
+      "observation_date": "2024-01-30",
+      "value": 7.813799858093262
+    },
+    {
+      "observation_date": "2024-01-31",
+      "value": 7.816999912261963
+    },
+    {
+      "observation_date": "2024-02-01",
+      "value": 7.817500114440918
+    },
+    {
+      "observation_date": "2024-02-02",
+      "value": 7.820099830627441
+    },
+    {
+      "observation_date": "2024-02-05",
+      "value": 7.821340084075928
+    },
+    {
+      "observation_date": "2024-02-06",
+      "value": 7.821599960327148
+    },
+    {
+      "observation_date": "2024-02-07",
+      "value": 7.822229862213135
+    },
+    {
+      "observation_date": "2024-02-08",
+      "value": 7.8190999031066895
+    },
+    {
+      "observation_date": "2024-02-09",
+      "value": 7.821300029754639
+    },
+    {
+      "observation_date": "2024-02-12",
+      "value": 7.819580078125
+    },
+    {
+      "observation_date": "2024-02-13",
+      "value": 7.8176798820495605
+    },
+    {
+      "observation_date": "2024-02-14",
+      "value": 7.81935977935791
+    },
+    {
+      "observation_date": "2024-02-15",
+      "value": 7.81810998916626
+    },
+    {
+      "observation_date": "2024-02-16",
+      "value": 7.820030212402344
+    },
+    {
+      "observation_date": "2024-02-19",
+      "value": 7.8206000328063965
+    },
+    {
+      "observation_date": "2024-02-20",
+      "value": 7.820899963378906
+    },
+    {
+      "observation_date": "2024-02-21",
+      "value": 7.8209099769592285
+    },
+    {
+      "observation_date": "2024-02-22",
+      "value": 7.820650100708008
+    },
+    {
+      "observation_date": "2024-02-23",
+      "value": 7.822500228881836
+    },
+    {
+      "observation_date": "2024-02-26",
+      "value": 7.823939800262451
+    },
+    {
+      "observation_date": "2024-02-27",
+      "value": 7.824220180511475
+    },
+    {
+      "observation_date": "2024-02-28",
+      "value": 7.82450008392334
+    },
+    {
+      "observation_date": "2024-02-29",
+      "value": 7.8277997970581055
+    },
+    {
+      "observation_date": "2024-03-01",
+      "value": 7.828390121459961
+    },
+    {
+      "observation_date": "2024-03-04",
+      "value": 7.8282999992370605
+    },
+    {
+      "observation_date": "2024-03-05",
+      "value": 7.824900150299072
+    },
+    {
+      "observation_date": "2024-03-06",
+      "value": 7.824379920959473
+    },
+    {
+      "observation_date": "2024-03-07",
+      "value": 7.823999881744385
+    },
+    {
+      "observation_date": "2024-03-08",
+      "value": 7.820400238037109
+    },
+    {
+      "observation_date": "2024-03-11",
+      "value": 7.82036018371582
+    },
+    {
+      "observation_date": "2024-03-12",
+      "value": 7.821400165557861
+    },
+    {
+      "observation_date": "2024-03-13",
+      "value": 7.824039936065674
+    },
+    {
+      "observation_date": "2024-03-14",
+      "value": 7.823080062866211
+    },
+    {
+      "observation_date": "2024-03-15",
+      "value": 7.82204008102417
+    },
+    {
+      "observation_date": "2024-03-18",
+      "value": 7.82181978225708
+    },
+    {
+      "observation_date": "2024-03-19",
+      "value": 7.819429874420166
+    },
+    {
+      "observation_date": "2024-03-20",
+      "value": 7.822700023651123
+    },
+    {
+      "observation_date": "2024-03-21",
+      "value": 7.822999954223633
+    },
+    {
+      "observation_date": "2024-03-22",
+      "value": 7.820799827575684
+    },
+    {
+      "observation_date": "2024-03-25",
+      "value": 7.82144021987915
+    },
+    {
+      "observation_date": "2024-03-26",
+      "value": 7.821420192718506
+    },
+    {
+      "observation_date": "2024-03-27",
+      "value": 7.822969913482666
+    },
+    {
+      "observation_date": "2024-03-28",
+      "value": 7.823500156402588
+    },
+    {
+      "observation_date": "2024-03-29",
+      "value": 7.825699806213379
+    },
+    {
+      "observation_date": "2024-03-31",
+      "value": 7.825510025024414
+    },
+    {
+      "observation_date": "2024-04-01",
+      "value": 7.825200080871582
+    },
+    {
+      "observation_date": "2024-04-02",
+      "value": 7.828400135040283
+    },
+    {
+      "observation_date": "2024-04-03",
+      "value": 7.828479766845703
+    },
+    {
+      "observation_date": "2024-04-04",
+      "value": 7.82919979095459
+    },
+    {
+      "observation_date": "2024-04-07",
+      "value": 7.828579902648926
+    },
+    {
+      "observation_date": "2024-04-08",
+      "value": 7.831699848175049
+    },
+    {
+      "observation_date": "2024-04-09",
+      "value": 7.8304901123046875
+    },
+    {
+      "observation_date": "2024-04-10",
+      "value": 7.835299968719482
+    },
+    {
+      "observation_date": "2024-04-11",
+      "value": 7.837800025939941
+    },
+    {
+      "observation_date": "2024-04-14",
+      "value": 7.837279796600342
+    },
+    {
+      "observation_date": "2024-04-15",
+      "value": 7.82889986038208
+    },
+    {
+      "observation_date": "2024-04-16",
+      "value": 7.831920146942139
+    },
+    {
+      "observation_date": "2024-04-17",
+      "value": 7.830090045928955
+    },
+    {
+      "observation_date": "2024-04-18",
+      "value": 7.831500053405762
+    },
+    {
+      "observation_date": "2024-04-21",
+      "value": 7.831709861755371
+    },
+    {
+      "observation_date": "2024-04-22",
+      "value": 7.83558988571167
+    },
+    {
+      "observation_date": "2024-04-23",
+      "value": 7.834199905395508
+    },
+    {
+      "observation_date": "2024-04-24",
+      "value": 7.830699920654297
+    },
+    {
+      "observation_date": "2024-04-25",
+      "value": 7.827700138092041
+    },
+    {
+      "observation_date": "2024-04-28",
+      "value": 7.828869819641113
+    },
+    {
+      "observation_date": "2024-04-29",
+      "value": 7.825500011444092
+    },
+    {
+      "observation_date": "2024-04-30",
+      "value": 7.823599815368652
+    },
+    {
+      "observation_date": "2024-05-01",
+      "value": 7.821770191192627
+    },
+    {
+      "observation_date": "2024-05-02",
+      "value": 7.81387996673584
+    },
+    {
+      "observation_date": "2024-05-05",
+      "value": 7.809969902038574
+    },
+    {
+      "observation_date": "2024-05-06",
+      "value": 7.818260192871094
+    },
+    {
+      "observation_date": "2024-05-07",
+      "value": 7.820610046386719
+    },
+    {
+      "observation_date": "2024-05-08",
+      "value": 7.8165998458862305
+    },
+    {
+      "observation_date": "2024-05-09",
+      "value": 7.8140997886657715
+    },
+    {
+      "observation_date": "2024-05-12",
+      "value": 7.815000057220459
+    },
+    {
+      "observation_date": "2024-05-13",
+      "value": 7.812399864196777
+    },
+    {
+      "observation_date": "2024-05-14",
+      "value": 7.811600208282471
+    },
+    {
+      "observation_date": "2024-05-15",
+      "value": 7.807549953460693
+    },
+    {
+      "observation_date": "2024-05-16",
+      "value": 7.801270008087158
+    },
+    {
+      "observation_date": "2024-05-19",
+      "value": 7.802249908447266
+    },
+    {
+      "observation_date": "2024-05-20",
+      "value": 7.798699855804443
+    },
+    {
+      "observation_date": "2024-05-21",
+      "value": 7.804520130157471
+    },
+    {
+      "observation_date": "2024-05-22",
+      "value": 7.8038201332092285
+    },
+    {
+      "observation_date": "2024-05-23",
+      "value": 7.808509826660156
+    },
+    {
+      "observation_date": "2024-05-26",
+      "value": 7.81220006942749
+    },
+    {
+      "observation_date": "2024-05-27",
+      "value": 7.806819915771484
+    },
+    {
+      "observation_date": "2024-05-28",
+      "value": 7.811110019683838
+    },
+    {
+      "observation_date": "2024-05-29",
+      "value": 7.813570022583008
+    },
+    {
+      "observation_date": "2024-05-30",
+      "value": 7.817200183868408
+    },
+    {
+      "observation_date": "2024-06-02",
+      "value": 7.819699764251709
+    },
+    {
+      "observation_date": "2024-06-03",
+      "value": 7.819900035858154
+    },
+    {
+      "observation_date": "2024-06-04",
+      "value": 7.813899993896484
+    },
+    {
+      "observation_date": "2024-06-05",
+      "value": 7.809999942779541
+    },
+    {
+      "observation_date": "2024-06-06",
+      "value": 7.809319972991943
+    },
+    {
+      "observation_date": "2024-06-09",
+      "value": 7.811600208282471
+    },
+    {
+      "observation_date": "2024-06-10",
+      "value": 7.8119001388549805
+    },
+    {
+      "observation_date": "2024-06-11",
+      "value": 7.811920166015625
+    },
+    {
+      "observation_date": "2024-06-12",
+      "value": 7.808300018310547
+    },
+    {
+      "observation_date": "2024-06-13",
+      "value": 7.810359954833984
+    },
+    {
+      "observation_date": "2024-06-16",
+      "value": 7.811950206756592
+    },
+    {
+      "observation_date": "2024-06-17",
+      "value": 7.810500144958496
+    },
+    {
+      "observation_date": "2024-06-18",
+      "value": 7.8073601722717285
+    },
+    {
+      "observation_date": "2024-06-19",
+      "value": 7.8061299324035645
+    },
+    {
+      "observation_date": "2024-06-20",
+      "value": 7.804810047149658
+    },
+    {
+      "observation_date": "2024-06-23",
+      "value": 7.803299903869629
+    },
+    {
+      "observation_date": "2024-06-24",
+      "value": 7.808000087738037
+    },
+    {
+      "observation_date": "2024-06-25",
+      "value": 7.808899879455566
+    },
+    {
+      "observation_date": "2024-06-26",
+      "value": 7.808700084686279
+    },
+    {
+      "observation_date": "2024-06-27",
+      "value": 7.809000015258789
+    },
+    {
+      "observation_date": "2024-06-30",
+      "value": 7.808629989624023
+    },
+    {
+      "observation_date": "2024-07-01",
+      "value": 7.812260150909424
+    },
+    {
+      "observation_date": "2024-07-02",
+      "value": 7.813499927520752
+    },
+    {
+      "observation_date": "2024-07-03",
+      "value": 7.8084001541137695
+    },
+    {
+      "observation_date": "2024-07-04",
+      "value": 7.809100151062012
+    },
+    {
+      "observation_date": "2024-07-07",
+      "value": 7.8126301765441895
+    },
+    {
+      "observation_date": "2024-07-08",
+      "value": 7.809830188751221
+    },
+    {
+      "observation_date": "2024-07-09",
+      "value": 7.811800003051758
+    },
+    {
+      "observation_date": "2024-07-10",
+      "value": 7.810800075531006
+    },
+    {
+      "observation_date": "2024-07-11",
+      "value": 7.807459831237793
+    },
+    {
+      "observation_date": "2024-07-14",
+      "value": 7.807350158691406
+    },
+    {
+      "observation_date": "2024-07-15",
+      "value": 7.8069000244140625
+    },
+    {
+      "observation_date": "2024-07-16",
+      "value": 7.807469844818115
+    },
+    {
+      "observation_date": "2024-07-17",
+      "value": 7.806700229644775
+    },
+    {
+      "observation_date": "2024-07-18",
+      "value": 7.809999942779541
+    },
+    {
+      "observation_date": "2024-07-21",
+      "value": 7.809450149536133
+    },
+    {
+      "observation_date": "2024-07-22",
+      "value": 7.806700229644775
+    },
+    {
+      "observation_date": "2024-07-23",
+      "value": 7.807700157165527
+    },
+    {
+      "observation_date": "2024-07-24",
+      "value": 7.808800220489502
+    },
+    {
+      "observation_date": "2024-07-25",
+      "value": 7.806700229644775
+    },
+    {
+      "observation_date": "2024-07-28",
+      "value": 7.806700229644775
+    },
+    {
+      "observation_date": "2024-07-29",
+      "value": 7.810299873352051
+    },
+    {
+      "observation_date": "2024-07-30",
+      "value": 7.8125901222229
+    },
+    {
+      "observation_date": "2024-07-31",
+      "value": 7.81279993057251
+    },
+    {
+      "observation_date": "2024-08-01",
+      "value": 7.814199924468994
+    },
+    {
+      "observation_date": "2024-08-04",
+      "value": 7.804969787597656
+    },
+    {
+      "observation_date": "2024-08-05",
+      "value": 7.792900085449219
+    },
+    {
+      "observation_date": "2024-08-06",
+      "value": 7.7947001457214355
+    },
+    {
+      "observation_date": "2024-08-07",
+      "value": 7.792200088500977
+    },
+    {
+      "observation_date": "2024-08-08",
+      "value": 7.793839931488037
+    },
+    {
+      "observation_date": "2024-08-11",
+      "value": 7.798399925231934
+    },
+    {
+      "observation_date": "2024-08-12",
+      "value": 7.791540145874023
+    },
+    {
+      "observation_date": "2024-08-13",
+      "value": 7.788700103759766
+    },
+    {
+      "observation_date": "2024-08-14",
+      "value": 7.791600227355957
+    },
+    {
+      "observation_date": "2024-08-15",
+      "value": 7.796899795532227
+    },
+    {
+      "observation_date": "2024-08-18",
+      "value": 7.7941999435424805
+    },
+    {
+      "observation_date": "2024-08-19",
+      "value": 7.7889299392700195
+    },
+    {
+      "observation_date": "2024-08-20",
+      "value": 7.788300037384033
+    },
+    {
+      "observation_date": "2024-08-21",
+      "value": 7.792640209197998
+    },
+    {
+      "observation_date": "2024-08-22",
+      "value": 7.796800136566162
+    },
+    {
+      "observation_date": "2024-08-25",
+      "value": 7.796899795532227
+    },
+    {
+      "observation_date": "2024-08-26",
+      "value": 7.796800136566162
+    },
+    {
+      "observation_date": "2024-08-27",
+      "value": 7.801799774169922
+    },
+    {
+      "observation_date": "2024-08-28",
+      "value": 7.800020217895508
+    },
+    {
+      "observation_date": "2024-08-29",
+      "value": 7.796860218048096
+    },
+    {
+      "observation_date": "2024-09-01",
+      "value": 7.797689914703369
+    },
+    {
+      "observation_date": "2024-09-02",
+      "value": 7.796370029449463
+    },
+    {
+      "observation_date": "2024-09-03",
+      "value": 7.798299789428711
+    },
+    {
+      "observation_date": "2024-09-04",
+      "value": 7.7957000732421875
+    },
+    {
+      "observation_date": "2024-09-05",
+      "value": 7.793580055236816
+    },
+    {
+      "observation_date": "2024-09-08",
+      "value": 7.7953901290893555
+    },
+    {
+      "observation_date": "2024-09-09",
+      "value": 7.796500205993652
+    },
+    {
+      "observation_date": "2024-09-10",
+      "value": 7.7972002029418945
+    },
+    {
+      "observation_date": "2024-09-11",
+      "value": 7.797510147094727
+    },
+    {
+      "observation_date": "2024-09-12",
+      "value": 7.802519798278809
+    },
+    {
+      "observation_date": "2024-09-15",
+      "value": 7.7982001304626465
+    },
+    {
+      "observation_date": "2024-09-16",
+      "value": 7.792300224304199
+    },
+    {
+      "observation_date": "2024-09-17",
+      "value": 7.793700218200684
+    },
+    {
+      "observation_date": "2024-09-18",
+      "value": 7.793700218200684
+    },
+    {
+      "observation_date": "2024-09-19",
+      "value": 7.79394006729126
+    },
+    {
+      "observation_date": "2024-09-22",
+      "value": 7.790900230407715
+    },
+    {
+      "observation_date": "2024-09-23",
+      "value": 7.786499977111816
+    },
+    {
+      "observation_date": "2024-09-24",
+      "value": 7.7825398445129395
+    },
+    {
+      "observation_date": "2024-09-25",
+      "value": 7.786300182342529
+    },
+    {
+      "observation_date": "2024-09-26",
+      "value": 7.779379844665527
+    },
+    {
+      "observation_date": "2024-09-29",
+      "value": 7.773280143737793
+    },
+    {
+      "observation_date": "2024-09-30",
+      "value": 7.774099826812744
+    },
+    {
+      "observation_date": "2024-10-01",
+      "value": 7.771679878234863
+    },
+    {
+      "observation_date": "2024-10-02",
+      "value": 7.762670040130615
+    },
+    {
+      "observation_date": "2024-10-03",
+      "value": 7.765379905700684
+    },
+    {
+      "observation_date": "2024-10-06",
+      "value": 7.766600131988525
+    },
+    {
+      "observation_date": "2024-10-07",
+      "value": 7.766089916229248
+    },
+    {
+      "observation_date": "2024-10-08",
+      "value": 7.774700164794922
+    },
+    {
+      "observation_date": "2024-10-09",
+      "value": 7.772600173950195
+    },
+    {
+      "observation_date": "2024-10-10",
+      "value": 7.769559860229492
+    },
+    {
+      "observation_date": "2024-10-13",
+      "value": 7.772240161895752
+    },
+    {
+      "observation_date": "2024-10-14",
+      "value": 7.7626800537109375
+    },
+    {
+      "observation_date": "2024-10-15",
+      "value": 7.7677998542785645
+    },
+    {
+      "observation_date": "2024-10-16",
+      "value": 7.770470142364502
+    },
+    {
+      "observation_date": "2024-10-17",
+      "value": 7.773600101470947
+    },
+    {
+      "observation_date": "2024-10-20",
+      "value": 7.76993989944458
+    },
+    {
+      "observation_date": "2024-10-21",
+      "value": 7.77370023727417
+    },
+    {
+      "observation_date": "2024-10-22",
+      "value": 7.77209997177124
+    },
+    {
+      "observation_date": "2024-10-23",
+      "value": 7.769400119781494
+    },
+    {
+      "observation_date": "2024-10-24",
+      "value": 7.77016019821167
+    },
+    {
+      "observation_date": "2024-10-28",
+      "value": 7.770730018615723
+    },
+    {
+      "observation_date": "2024-10-29",
+      "value": 7.771900177001953
+    },
+    {
+      "observation_date": "2024-10-30",
+      "value": 7.771100044250488
+    },
+    {
+      "observation_date": "2024-10-31",
+      "value": 7.77131986618042
+    },
+    {
+      "observation_date": "2024-11-01",
+      "value": 7.77377986907959
+    },
+    {
+      "observation_date": "2024-11-04",
+      "value": 7.776189804077148
+    },
+    {
+      "observation_date": "2024-11-05",
+      "value": 7.77269983291626
+    },
+    {
+      "observation_date": "2024-11-06",
+      "value": 7.771420001983643
+    },
+    {
+      "observation_date": "2024-11-07",
+      "value": 7.77603006362915
+    },
+    {
+      "observation_date": "2024-11-08",
+      "value": 7.770999908447266
+    },
+    {
+      "observation_date": "2024-11-11",
+      "value": 7.774839878082275
+    },
+    {
+      "observation_date": "2024-11-12",
+      "value": 7.775899887084961
+    },
+    {
+      "observation_date": "2024-11-13",
+      "value": 7.778200149536133
+    },
+    {
+      "observation_date": "2024-11-14",
+      "value": 7.781139850616455
+    },
+    {
+      "observation_date": "2024-11-15",
+      "value": 7.7814202308654785
+    },
+    {
+      "observation_date": "2024-11-18",
+      "value": 7.786349773406982
+    },
+    {
+      "observation_date": "2024-11-19",
+      "value": 7.783520221710205
+    },
+    {
+      "observation_date": "2024-11-20",
+      "value": 7.7833099365234375
+    },
+    {
+      "observation_date": "2024-11-21",
+      "value": 7.7829999923706055
+    },
+    {
+      "observation_date": "2024-11-22",
+      "value": 7.782800197601318
+    },
+    {
+      "observation_date": "2024-11-25",
+      "value": 7.783160209655762
+    },
+    {
+      "observation_date": "2024-11-26",
+      "value": 7.782320022583008
+    },
+    {
+      "observation_date": "2024-11-27",
+      "value": 7.782700061798096
+    },
+    {
+      "observation_date": "2024-11-28",
+      "value": 7.781030178070068
+    },
+    {
+      "observation_date": "2024-11-29",
+      "value": 7.783599853515625
+    },
+    {
+      "observation_date": "2024-12-02",
+      "value": 7.781519889831543
+    },
+    {
+      "observation_date": "2024-12-03",
+      "value": 7.781370162963867
+    },
+    {
+      "observation_date": "2024-12-04",
+      "value": 7.7829999923706055
+    },
+    {
+      "observation_date": "2024-12-05",
+      "value": 7.784299850463867
+    },
+    {
+      "observation_date": "2024-12-06",
+      "value": 7.781589984893799
+    },
+    {
+      "observation_date": "2024-12-09",
+      "value": 7.77977991104126
+    },
+    {
+      "observation_date": "2024-12-10",
+      "value": 7.774240016937256
+    },
+    {
+      "observation_date": "2024-12-11",
+      "value": 7.774069786071777
+    },
+    {
+      "observation_date": "2024-12-12",
+      "value": 7.774750232696533
+    },
+    {
+      "observation_date": "2024-12-13",
+      "value": 7.775100231170654
+    },
+    {
+      "observation_date": "2024-12-16",
+      "value": 7.775320053100586
+    },
+    {
+      "observation_date": "2024-12-17",
+      "value": 7.774219989776611
+    },
+    {
+      "observation_date": "2024-12-18",
+      "value": 7.770299911499023
+    },
+    {
+      "observation_date": "2024-12-19",
+      "value": 7.771599769592285
+    },
+    {
+      "observation_date": "2024-12-20",
+      "value": 7.769999980926514
+    },
+    {
+      "observation_date": "2024-12-23",
+      "value": 7.772759914398193
+    },
+    {
+      "observation_date": "2024-12-24",
+      "value": 7.769800186157227
+    },
+    {
+      "observation_date": "2024-12-25",
+      "value": 7.767399787902832
+    },
+    {
+      "observation_date": "2024-12-26",
+      "value": 7.765999794006348
+    },
+    {
+      "observation_date": "2024-12-27",
+      "value": 7.768199920654297
+    },
+    {
+      "observation_date": "2024-12-30",
+      "value": 7.763319969177246
+    },
+    {
+      "observation_date": "2024-12-31",
+      "value": 7.763500213623047
+    },
+    {
+      "observation_date": "2025-01-02",
+      "value": 7.767930030822754
+    },
+    {
+      "observation_date": "2025-01-03",
+      "value": 7.776800155639648
+    },
+    {
+      "observation_date": "2025-01-06",
+      "value": 7.777550220489502
+    },
+    {
+      "observation_date": "2025-01-07",
+      "value": 7.775310039520264
+    },
+    {
+      "observation_date": "2025-01-08",
+      "value": 7.77646017074585
+    },
+    {
+      "observation_date": "2025-01-09",
+      "value": 7.77918004989624
+    },
+    {
+      "observation_date": "2025-01-10",
+      "value": 7.782110214233398
+    },
+    {
+      "observation_date": "2025-01-13",
+      "value": 7.786099910736084
+    },
+    {
+      "observation_date": "2025-01-14",
+      "value": 7.785029888153076
+    },
+    {
+      "observation_date": "2025-01-15",
+      "value": 7.7870001792907715
+    },
+    {
+      "observation_date": "2025-01-16",
+      "value": 7.785039901733398
+    },
+    {
+      "observation_date": "2025-01-17",
+      "value": 7.787700176239014
+    },
+    {
+      "observation_date": "2025-01-20",
+      "value": 7.7842698097229
+    },
+    {
+      "observation_date": "2025-01-21",
+      "value": 7.780489921569824
+    },
+    {
+      "observation_date": "2025-01-22",
+      "value": 7.785699844360352
+    },
+    {
+      "observation_date": "2025-01-23",
+      "value": 7.787650108337402
+    },
+    {
+      "observation_date": "2025-01-24",
+      "value": 7.789209842681885
+    },
+    {
+      "observation_date": "2025-01-27",
+      "value": 7.787749767303467
+    },
+    {
+      "observation_date": "2025-01-28",
+      "value": 7.788219928741455
+    },
+    {
+      "observation_date": "2025-01-29",
+      "value": 7.79010009765625
+    },
+    {
+      "observation_date": "2025-01-30",
+      "value": 7.792300224304199
+    },
+    {
+      "observation_date": "2025-01-31",
+      "value": 7.7916998863220215
+    },
+    {
+      "observation_date": "2025-02-03",
+      "value": 7.794960021972656
+    },
+    {
+      "observation_date": "2025-02-04",
+      "value": 7.7932000160217285
+    },
+    {
+      "observation_date": "2025-02-05",
+      "value": 7.786900043487549
+    },
+    {
+      "observation_date": "2025-02-06",
+      "value": 7.786099910736084
+    },
+    {
+      "observation_date": "2025-02-07",
+      "value": 7.786499977111816
+    },
+    {
+      "observation_date": "2025-02-10",
+      "value": 7.790339946746826
+    },
+    {
+      "observation_date": "2025-02-11",
+      "value": 7.789100170135498
+    },
+    {
+      "observation_date": "2025-02-12",
+      "value": 7.791729927062988
+    },
+    {
+      "observation_date": "2025-02-13",
+      "value": 7.789430141448975
+    },
+    {
+      "observation_date": "2025-02-14",
+      "value": 7.788000106811523
+    },
+    {
+      "observation_date": "2025-02-17",
+      "value": 7.78272008895874
+    },
+    {
+      "observation_date": "2025-02-18",
+      "value": 7.780119895935059
+    },
+    {
+      "observation_date": "2025-02-19",
+      "value": 7.774400234222412
+    },
+    {
+      "observation_date": "2025-02-20",
+      "value": 7.777820110321045
+    },
+    {
+      "observation_date": "2025-02-21",
+      "value": 7.775619983673096
+    },
+    {
+      "observation_date": "2025-02-24",
+      "value": 7.769529819488525
+    },
+    {
+      "observation_date": "2025-02-25",
+      "value": 7.773890018463135
+    },
+    {
+      "observation_date": "2025-02-26",
+      "value": 7.773220062255859
+    },
+    {
+      "observation_date": "2025-02-27",
+      "value": 7.773019790649414
+    },
+    {
+      "observation_date": "2025-02-28",
+      "value": 7.776810169219971
+    },
+    {
+      "observation_date": "2025-03-03",
+      "value": 7.7777299880981445
+    },
+    {
+      "observation_date": "2025-03-04",
+      "value": 7.777170181274414
+    },
+    {
+      "observation_date": "2025-03-05",
+      "value": 7.7724199295043945
+    },
+    {
+      "observation_date": "2025-03-06",
+      "value": 7.770400047302246
+    },
+    {
+      "observation_date": "2025-03-07",
+      "value": 7.77239990234375
+    },
+    {
+      "observation_date": "2025-03-10",
+      "value": 7.771200180053711
+    },
+    {
+      "observation_date": "2025-03-11",
+      "value": 7.769199848175049
+    },
+    {
+      "observation_date": "2025-03-12",
+      "value": 7.770500183105469
+    },
+    {
+      "observation_date": "2025-03-13",
+      "value": 7.7692999839782715
+    },
+    {
+      "observation_date": "2025-03-14",
+      "value": 7.771609783172607
+    },
+    {
+      "observation_date": "2025-03-17",
+      "value": 7.772719860076904
+    },
+    {
+      "observation_date": "2025-03-18",
+      "value": 7.770299911499023
+    },
+    {
+      "observation_date": "2025-03-19",
+      "value": 7.769700050354004
+    },
+    {
+      "observation_date": "2025-03-20",
+      "value": 7.769909858703613
+    },
+    {
+      "observation_date": "2025-03-21",
+      "value": 7.772600173950195
+    },
+    {
+      "observation_date": "2025-03-24",
+      "value": 7.773039817810059
+    },
+    {
+      "observation_date": "2025-03-25",
+      "value": 7.77400016784668
+    },
+    {
+      "observation_date": "2025-03-26",
+      "value": 7.7758002281188965
+    },
+    {
+      "observation_date": "2025-03-27",
+      "value": 7.7758002281188965
+    },
+    {
+      "observation_date": "2025-03-28",
+      "value": 7.776199817657471
+    },
+    {
+      "observation_date": "2025-03-30",
+      "value": 7.77869987487793
+    },
+    {
+      "observation_date": "2025-03-31",
+      "value": 7.7795000076293945
+    },
+    {
+      "observation_date": "2025-04-01",
+      "value": 7.781499862670898
+    },
+    {
+      "observation_date": "2025-04-02",
+      "value": 7.78380012512207
+    },
+    {
+      "observation_date": "2025-04-03",
+      "value": 7.7779998779296875
+    },
+    {
+      "observation_date": "2025-04-06",
+      "value": 7.771890163421631
+    },
+    {
+      "observation_date": "2025-04-07",
+      "value": 7.768489837646484
+    },
+    {
+      "observation_date": "2025-04-08",
+      "value": 7.769700050354004
+    },
+    {
+      "observation_date": "2025-04-09",
+      "value": 7.761099815368652
+    },
+    {
+      "observation_date": "2025-04-10",
+      "value": 7.757530212402344
+    },
+    {
+      "observation_date": "2025-04-13",
+      "value": 7.754940032958984
+    },
+    {
+      "observation_date": "2025-04-14",
+      "value": 7.7559099197387695
+    },
+    {
+      "observation_date": "2025-04-15",
+      "value": 7.756899833679199
+    },
+    {
+      "observation_date": "2025-04-16",
+      "value": 7.761750221252441
+    },
+    {
+      "observation_date": "2025-04-21",
+      "value": 7.759399890899658
+    },
+    {
+      "observation_date": "2025-04-22",
+      "value": 7.758399963378906
+    },
+    {
+      "observation_date": "2025-04-23",
+      "value": 7.759399890899658
+    },
+    {
+      "observation_date": "2025-04-24",
+      "value": 7.758309841156006
+    },
+    {
+      "observation_date": "2025-04-27",
+      "value": 7.756919860839844
+    },
+    {
+      "observation_date": "2025-04-28",
+      "value": 7.7565999031066895
+    },
+    {
+      "observation_date": "2025-04-29",
+      "value": 7.758800029754639
+    },
+    {
+      "observation_date": "2025-04-30",
+      "value": 7.755149841308594
+    },
+    {
+      "observation_date": "2025-05-01",
+      "value": 7.7571001052856445
+    },
+    {
+      "observation_date": "2025-05-04",
+      "value": 7.750400066375732
+    },
+    {
+      "observation_date": "2025-05-05",
+      "value": 7.750400066375732
+    },
+    {
+      "observation_date": "2025-05-06",
+      "value": 7.7515997886657715
+    },
+    {
+      "observation_date": "2025-05-07",
+      "value": 7.758689880371094
+    },
+    {
+      "observation_date": "2025-05-08",
+      "value": 7.774970054626465
+    },
+    {
+      "observation_date": "2025-05-11",
+      "value": 7.777140140533447
+    },
+    {
+      "observation_date": "2025-05-12",
+      "value": 7.790989875793457
+    },
+    {
+      "observation_date": "2025-05-13",
+      "value": 7.796840190887451
+    },
+    {
+      "observation_date": "2025-05-14",
+      "value": 7.803380012512207
+    },
+    {
+      "observation_date": "2025-05-15",
+      "value": 7.8053998947143555
+    },
+    {
+      "observation_date": "2025-05-18",
+      "value": 7.8138298988342285
+    },
+    {
+      "observation_date": "2025-05-19",
+      "value": 7.821199893951416
+    },
+    {
+      "observation_date": "2025-05-20",
+      "value": 7.828400135040283
+    },
+    {
+      "observation_date": "2025-05-21",
+      "value": 7.82843017578125
+    },
+    {
+      "observation_date": "2025-05-22",
+      "value": 7.828179836273193
+    },
+    {
+      "observation_date": "2025-05-25",
+      "value": 7.830580234527588
+    },
+    {
+      "observation_date": "2025-05-26",
+      "value": 7.836900234222412
+    },
+    {
+      "observation_date": "2025-05-27",
+      "value": 7.838399887084961
+    },
+    {
+      "observation_date": "2025-05-28",
+      "value": 7.834489822387695
+    },
+    {
+      "observation_date": "2025-05-29",
+      "value": 7.841100215911865
+    },
+    {
+      "observation_date": "2025-06-01",
+      "value": 7.842100143432617
+    },
+    {
+      "observation_date": "2025-06-02",
+      "value": 7.844600200653076
+    },
+    {
+      "observation_date": "2025-06-03",
+      "value": 7.845160007476807
+    },
+    {
+      "observation_date": "2025-06-04",
+      "value": 7.843739986419678
+    },
+    {
+      "observation_date": "2025-06-05",
+      "value": 7.846199989318848
+    },
+    {
+      "observation_date": "2025-06-08",
+      "value": 7.84689998626709
+    },
+    {
+      "observation_date": "2025-06-09",
+      "value": 7.847519874572754
+    },
+    {
+      "observation_date": "2025-06-10",
+      "value": 7.847789764404297
+    },
+    {
+      "observation_date": "2025-06-11",
+      "value": 7.848599910736084
+    },
+    {
+      "observation_date": "2025-06-12",
+      "value": 7.848939895629883
+    },
+    {
+      "observation_date": "2025-06-15",
+      "value": 7.8491997718811035
+    },
+    {
+      "observation_date": "2025-06-16",
+      "value": 7.849599838256836
+    },
+    {
+      "observation_date": "2025-06-17",
+      "value": 7.849599838256836
+    },
+    {
+      "observation_date": "2025-06-18",
+      "value": 7.849689960479736
+    },
+    {
+      "observation_date": "2025-06-19",
+      "value": 7.8495001792907715
+    },
+    {
+      "observation_date": "2025-06-22",
+      "value": 7.849629878997803
+    },
+    {
+      "observation_date": "2025-06-23",
+      "value": 7.849669933319092
+    },
+    {
+      "observation_date": "2025-06-24",
+      "value": 7.849850177764893
+    },
+    {
+      "observation_date": "2025-06-25",
+      "value": 7.848700046539307
+    },
+    {
+      "observation_date": "2025-06-26",
+      "value": 7.849160194396973
+    },
+    {
+      "observation_date": "2025-06-29",
+      "value": 7.8495001792907715
+    },
+    {
+      "observation_date": "2025-06-30",
+      "value": 7.849899768829346
+    },
+    {
+      "observation_date": "2025-07-01",
+      "value": 7.847760200500488
+    },
+    {
+      "observation_date": "2025-07-02",
+      "value": 7.849800109863281
+    },
+    {
+      "observation_date": "2025-07-03",
+      "value": 7.847700119018555
+    },
+    {
+      "observation_date": "2025-07-06",
+      "value": 7.849800109863281
+    },
+    {
+      "observation_date": "2025-07-07",
+      "value": 7.849800109863281
+    },
+    {
+      "observation_date": "2025-07-08",
+      "value": 7.849639892578125
+    },
+    {
+      "observation_date": "2025-07-09",
+      "value": 7.849800109863281
+    },
+    {
+      "observation_date": "2025-07-10",
+      "value": 7.849599838256836
+    },
+    {
+      "observation_date": "2025-07-13",
+      "value": 7.849629878997803
+    },
+    {
+      "observation_date": "2025-07-14",
+      "value": 7.8498101234436035
+    },
+    {
+      "observation_date": "2025-07-15",
+      "value": 7.849699974060059
+    },
+    {
+      "observation_date": "2025-07-16",
+      "value": 7.849800109863281
+    },
+    {
+      "observation_date": "2025-07-17",
+      "value": 7.848499774932861
+    },
+    {
+      "observation_date": "2025-07-20",
+      "value": 7.848299980163574
+    },
+    {
+      "observation_date": "2025-07-21",
+      "value": 7.84935998916626
+    },
+    {
+      "observation_date": "2025-07-22",
+      "value": 7.849689960479736
+    },
+    {
+      "observation_date": "2025-07-23",
+      "value": 7.849430084228516
+    },
+    {
+      "observation_date": "2025-07-24",
+      "value": 7.849899768829346
+    },
+    {
+      "observation_date": "2025-07-27",
+      "value": 7.8495001792907715
+    },
+    {
+      "observation_date": "2025-07-28",
+      "value": 7.849180221557617
+    },
+    {
+      "observation_date": "2025-07-29",
+      "value": 7.849599838256836
+    },
+    {
+      "observation_date": "2025-07-30",
+      "value": 7.849289894104004
+    },
+    {
+      "observation_date": "2025-07-31",
+      "value": 7.849899768829346
+    },
+    {
+      "observation_date": "2025-08-03",
+      "value": 7.849410057067871
+    },
+    {
+      "observation_date": "2025-08-04",
+      "value": 7.849239826202393
+    },
+    {
+      "observation_date": "2025-08-05",
+      "value": 7.849800109863281
+    },
+    {
+      "observation_date": "2025-08-06",
+      "value": 7.849400043487549
+    },
+    {
+      "observation_date": "2025-08-07",
+      "value": 7.849319934844971
+    },
+    {
+      "observation_date": "2025-08-10",
+      "value": 7.849599838256836
+    },
+    {
+      "observation_date": "2025-08-11",
+      "value": 7.849679946899414
+    },
+    {
+      "observation_date": "2025-08-12",
+      "value": 7.848380088806152
+    },
+    {
+      "observation_date": "2025-08-13",
+      "value": 7.8491997718811035
+    },
+    {
+      "observation_date": "2025-08-14",
+      "value": 7.83459997177124
+    },
+    {
+      "observation_date": "2025-08-17",
+      "value": 7.824709892272949
+    },
+    {
+      "observation_date": "2025-08-18",
+      "value": 7.819920063018799
+    },
+    {
+      "observation_date": "2025-08-19",
+      "value": 7.799499988555908
+    },
+    {
+      "observation_date": "2025-08-20",
+      "value": 7.81220006942749
+    },
+    {
+      "observation_date": "2025-08-21",
+      "value": 7.813899993896484
+    },
+    {
+      "observation_date": "2025-08-24",
+      "value": 7.8155999183654785
+    },
+    {
+      "observation_date": "2025-08-25",
+      "value": 7.812699794769287
+    },
+    {
+      "observation_date": "2025-08-26",
+      "value": 7.793580055236816
+    },
+    {
+      "observation_date": "2025-08-27",
+      "value": 7.784210205078125
+    },
+    {
+      "observation_date": "2025-08-28",
+      "value": 7.794129848480225
+    },
+    {
+      "observation_date": "2025-08-31",
+      "value": 7.795499801635742
+    },
+    {
+      "observation_date": "2025-09-01",
+      "value": 7.796510219573975
+    },
+    {
+      "observation_date": "2025-09-02",
+      "value": 7.807499885559082
+    },
+    {
+      "observation_date": "2025-09-03",
+      "value": 7.800389766693115
+    },
+    {
+      "observation_date": "2025-09-04",
+      "value": 7.800220012664795
+    },
+    {
+      "observation_date": "2025-09-07",
+      "value": 7.798399925231934
+    },
+    {
+      "observation_date": "2025-09-08",
+      "value": 7.793300151824951
+    },
+    {
+      "observation_date": "2025-09-09",
+      "value": 7.787390232086182
+    },
+    {
+      "observation_date": "2025-09-10",
+      "value": 7.789599895477295
+    },
+    {
+      "observation_date": "2025-09-11",
+      "value": 7.788599967956543
+    },
+    {
+      "observation_date": "2025-09-14",
+      "value": 7.780200004577637
+    },
+    {
+      "observation_date": "2025-09-15",
+      "value": 7.779990196228027
+    },
+    {
+      "observation_date": "2025-09-16",
+      "value": 7.78046989440918
+    },
+    {
+      "observation_date": "2025-09-17",
+      "value": 7.776989936828613
+    },
+    {
+      "observation_date": "2025-09-18",
+      "value": 7.7771100997924805
+    },
+    {
+      "observation_date": "2025-09-21",
+      "value": 7.774439811706543
+    },
+    {
+      "observation_date": "2025-09-22",
+      "value": 7.769320011138916
+    },
+    {
+      "observation_date": "2025-09-23",
+      "value": 7.7754597663879395
+    },
+    {
+      "observation_date": "2025-09-24",
+      "value": 7.7778401374816895
+    },
+    {
+      "observation_date": "2025-09-25",
+      "value": 7.782700061798096
+    },
+    {
+      "observation_date": "2025-09-28",
+      "value": 7.780399799346924
+    },
+    {
+      "observation_date": "2025-09-29",
+      "value": 7.7829999923706055
+    },
+    {
+      "observation_date": "2025-09-30",
+      "value": 7.7819600105285645
+    },
+    {
+      "observation_date": "2025-10-01",
+      "value": 7.780990123748779
+    },
+    {
+      "observation_date": "2025-10-02",
+      "value": 7.782470226287842
+    },
+    {
+      "observation_date": "2025-10-05",
+      "value": 7.781099796295166
+    },
+    {
+      "observation_date": "2025-10-06",
+      "value": 7.782649993896484
+    },
+    {
+      "observation_date": "2025-10-07",
+      "value": 7.78318977355957
+    },
+    {
+      "observation_date": "2025-10-08",
+      "value": 7.781599998474121
+    },
+    {
+      "observation_date": "2025-10-09",
+      "value": 7.782299995422363
+    },
+    {
+      "observation_date": "2025-10-12",
+      "value": 7.782299995422363
+    },
+    {
+      "observation_date": "2025-10-13",
+      "value": 7.779139995574951
+    },
+    {
+      "observation_date": "2025-10-14",
+      "value": 7.77370023727417
+    },
+    {
+      "observation_date": "2025-10-15",
+      "value": 7.775000095367432
+    },
+    {
+      "observation_date": "2025-10-16",
+      "value": 7.770790100097656
+    },
+    {
+      "observation_date": "2025-10-19",
+      "value": 7.767099857330322
+    },
+    {
+      "observation_date": "2025-10-20",
+      "value": 7.7678399085998535
+    },
+    {
+      "observation_date": "2025-10-21",
+      "value": 7.771200180053711
+    },
+    {
+      "observation_date": "2025-10-22",
+      "value": 7.770400047302246
+    },
+    {
+      "observation_date": "2025-10-23",
+      "value": 7.7718000411987305
+    },
+    {
+      "observation_date": "2025-10-27",
+      "value": 7.769390106201172
+    },
+    {
+      "observation_date": "2025-10-28",
+      "value": 7.767489910125732
+    },
+    {
+      "observation_date": "2025-10-29",
+      "value": 7.767879962921143
+    },
+    {
+      "observation_date": "2025-10-30",
+      "value": 7.771100044250488
+    },
+    {
+      "observation_date": "2025-10-31",
+      "value": 7.769139766693115
+    },
+    {
+      "observation_date": "2025-11-03",
+      "value": 7.770770072937012
+    },
+    {
+      "observation_date": "2025-11-04",
+      "value": 7.771900177001953
+    },
+    {
+      "observation_date": "2025-11-05",
+      "value": 7.773890018463135
+    },
+    {
+      "observation_date": "2025-11-06",
+      "value": 7.774799823760986
+    },
+    {
+      "observation_date": "2025-11-07",
+      "value": 7.775599956512451
+    },
+    {
+      "observation_date": "2025-11-10",
+      "value": 7.776509761810303
+    },
+    {
+      "observation_date": "2025-11-11",
+      "value": 7.7731099128723145
+    },
+    {
+      "observation_date": "2025-11-12",
+      "value": 7.771470069885254
+    },
+    {
+      "observation_date": "2025-11-13",
+      "value": 7.770420074462891
+    },
+    {
+      "observation_date": "2025-11-14",
+      "value": 7.770999908447266
+    },
+    {
+      "observation_date": "2025-11-17",
+      "value": 7.771510124206543
+    },
+    {
+      "observation_date": "2025-11-18",
+      "value": 7.773900032043457
+    },
+    {
+      "observation_date": "2025-11-19",
+      "value": 7.78410005569458
+    },
+    {
+      "observation_date": "2025-11-20",
+      "value": 7.786280155181885
+    },
+    {
+      "observation_date": "2025-11-21",
+      "value": 7.7835001945495605
+    },
+    {
+      "observation_date": "2025-11-24",
+      "value": 7.7823100090026855
+    },
+    {
+      "observation_date": "2025-11-25",
+      "value": 7.781630039215088
+    },
+    {
+      "observation_date": "2025-11-26",
+      "value": 7.7753400802612305
+    },
+    {
+      "observation_date": "2025-11-27",
+      "value": 7.7778000831604
+    },
+    {
+      "observation_date": "2025-11-28",
+      "value": 7.77869987487793
+    },
+    {
+      "observation_date": "2025-12-01",
+      "value": 7.784780025482178
+    },
+    {
+      "observation_date": "2025-12-02",
+      "value": 7.7881999015808105
+    },
+    {
+      "observation_date": "2025-12-03",
+      "value": 7.78439998626709
+    },
+    {
+      "observation_date": "2025-12-04",
+      "value": 7.783269882202148
+    },
+    {
+      "observation_date": "2025-12-05",
+      "value": 7.7817702293396
+    },
+    {
+      "observation_date": "2025-12-08",
+      "value": 7.783959865570068
+    },
+    {
+      "observation_date": "2025-12-09",
+      "value": 7.780399799346924
+    },
+    {
+      "observation_date": "2025-12-10",
+      "value": 7.782320022583008
+    },
+    {
+      "observation_date": "2025-12-11",
+      "value": 7.7790398597717285
+    },
+    {
+      "observation_date": "2025-12-12",
+      "value": 7.7820000648498535
+    },
+    {
+      "observation_date": "2025-12-15",
+      "value": 7.784249782562256
+    },
+    {
+      "observation_date": "2025-12-16",
+      "value": 7.7820000648498535
+    },
+    {
+      "observation_date": "2025-12-17",
+      "value": 7.779900074005127
+    },
+    {
+      "observation_date": "2025-12-18",
+      "value": 7.779240131378174
+    },
+    {
+      "observation_date": "2025-12-19",
+      "value": 7.781000137329102
+    },
+    {
+      "observation_date": "2025-12-22",
+      "value": 7.781109809875488
+    },
+    {
+      "observation_date": "2025-12-23",
+      "value": 7.78000020980835
+    },
+    {
+      "observation_date": "2025-12-24",
+      "value": 7.776899814605713
+    },
+    {
+      "observation_date": "2025-12-26",
+      "value": 7.776100158691406
+    },
+    {
+      "observation_date": "2025-12-29",
+      "value": 7.770880222320557
+    },
+    {
+      "observation_date": "2025-12-30",
+      "value": 7.773029804229736
+    },
+    {
+      "observation_date": "2025-12-31",
+      "value": 7.780660152435303
+    },
+    {
+      "observation_date": "2026-01-02",
+      "value": 7.785339832305908
+    },
+    {
+      "observation_date": "2026-01-05",
+      "value": 7.790559768676758
+    },
+    {
+      "observation_date": "2026-01-06",
+      "value": 7.785600185394287
+    },
+    {
+      "observation_date": "2026-01-07",
+      "value": 7.786900043487549
+    },
+    {
+      "observation_date": "2026-01-08",
+      "value": 7.785999774932861
+    },
+    {
+      "observation_date": "2026-01-09",
+      "value": 7.791999816894531
+    },
+    {
+      "observation_date": "2026-01-12",
+      "value": 7.794149875640869
+    },
+    {
+      "observation_date": "2026-01-13",
+      "value": 7.79640007019043
+    },
+    {
+      "observation_date": "2026-01-14",
+      "value": 7.800779819488525
+    },
+    {
+      "observation_date": "2026-01-15",
+      "value": 7.797699928283691
+    },
+    {
+      "observation_date": "2026-01-16",
+      "value": 7.797399997711182
+    },
+    {
+      "observation_date": "2026-01-19",
+      "value": 7.797239780426025
+    },
+    {
+      "observation_date": "2026-01-20",
+      "value": 7.7967000007629395
+    },
+    {
+      "observation_date": "2026-01-21",
+      "value": 7.799200057983398
+    },
+    {
+      "observation_date": "2026-01-22",
+      "value": 7.797100067138672
+    },
+    {
+      "observation_date": "2026-01-23",
+      "value": 7.7967400550842285
+    },
+    {
+      "observation_date": "2026-01-26",
+      "value": 7.79472017288208
+    },
+    {
+      "observation_date": "2026-01-27",
+      "value": 7.7971601486206055
+    },
+    {
+      "observation_date": "2026-01-28",
+      "value": 7.80010986328125
+    },
+    {
+      "observation_date": "2026-01-29",
+      "value": 7.801799774169922
+    },
+    {
+      "observation_date": "2026-01-30",
+      "value": 7.805530071258545
+    },
+    {
+      "observation_date": "2026-02-02",
+      "value": 7.80974006652832
+    },
+    {
+      "observation_date": "2026-02-03",
+      "value": 7.810090065002441
+    },
+    {
+      "observation_date": "2026-02-04",
+      "value": 7.813399791717529
+    },
+    {
+      "observation_date": "2026-02-05",
+      "value": 7.81220006942749
+    },
+    {
+      "observation_date": "2026-02-06",
+      "value": 7.813700199127197
+    },
+    {
+      "observation_date": "2026-02-09",
+      "value": 7.812469959259033
+    },
+    {
+      "observation_date": "2026-02-10",
+      "value": 7.814640045166016
+    },
+    {
+      "observation_date": "2026-02-11",
+      "value": 7.817800045013428
+    },
+    {
+      "observation_date": "2026-02-12",
+      "value": 7.815999984741211
+    },
+    {
+      "observation_date": "2026-02-13",
+      "value": 7.816500186920166
+    },
+    {
+      "observation_date": "2026-02-16",
+      "value": 7.815899848937988
+    },
+    {
+      "observation_date": "2026-02-17",
+      "value": 7.815899848937988
+    },
+    {
+      "observation_date": "2026-02-18",
+      "value": 7.815499782562256
+    },
+    {
+      "observation_date": "2026-02-19",
+      "value": 7.815700054168701
+    },
+    {
+      "observation_date": "2026-02-20",
+      "value": 7.814899921417236
+    },
+    {
+      "observation_date": "2026-02-23",
+      "value": 7.813469886779785
+    },
+    {
+      "observation_date": "2026-02-24",
+      "value": 7.818900108337402
+    },
+    {
+      "observation_date": "2026-02-25",
+      "value": 7.822519779205322
+    },
+    {
+      "observation_date": "2026-02-26",
+      "value": 7.8196001052856445
+    },
+    {
+      "observation_date": "2026-02-27",
+      "value": 7.823279857635498
+    },
+    {
+      "observation_date": "2026-03-02",
+      "value": 7.8225998878479
+    },
+    {
+      "observation_date": "2026-03-03",
+      "value": 7.82105016708374
+    },
+    {
+      "observation_date": "2026-03-04",
+      "value": 7.8047099113464355
+    },
+    {
+      "observation_date": "2026-03-05",
+      "value": 7.817200183868408
+    },
+    {
+      "observation_date": "2026-03-06",
+      "value": 7.819210052490234
+    },
+    {
+      "observation_date": "2026-03-09",
+      "value": 7.816470146179199
+    },
+    {
+      "observation_date": "2026-03-10",
+      "value": 7.820509910583496
+    },
+    {
+      "observation_date": "2026-03-11",
+      "value": 7.823800086975098
+    },
+    {
+      "observation_date": "2026-03-12",
+      "value": 7.825399875640869
+    },
+    {
+      "observation_date": "2026-03-13",
+      "value": 7.827300071716309
+    },
+    {
+      "observation_date": "2026-03-16",
+      "value": 7.827079772949219
+    },
+    {
+      "observation_date": "2026-03-17",
+      "value": 7.829840183258057
+    },
+    {
+      "observation_date": "2026-03-18",
+      "value": 7.83650016784668
+    },
+    {
+      "observation_date": "2026-03-19",
+      "value": 7.836100101470947
+    },
+    {
+      "observation_date": "2026-03-20",
+      "value": 7.833600044250488
+    },
+    {
+      "observation_date": "2026-03-23",
+      "value": 7.833640098571777
+    },
+    {
+      "observation_date": "2026-03-24",
+      "value": 7.834799766540527
+    },
+    {
+      "observation_date": "2026-03-25",
+      "value": 7.827610015869141
+    },
+    {
+      "observation_date": "2026-03-26",
+      "value": 7.818059921264648
+    },
+    {
+      "observation_date": "2026-03-27",
+      "value": 7.825699806213379
+    },
+    {
+      "observation_date": "2026-03-29",
+      "value": 7.83213996887207
+    },
+    {
+      "observation_date": "2026-03-30",
+      "value": 7.835700035095215
+    },
+    {
+      "observation_date": "2026-03-31",
+      "value": 7.838399887084961
+    },
+    {
+      "observation_date": "2026-04-01",
+      "value": 7.837100028991699
+    },
+    {
+      "observation_date": "2026-04-02",
+      "value": 7.836900234222412
+    },
+    {
+      "observation_date": "2026-04-05",
+      "value": 7.837200164794922
+    },
+    {
+      "observation_date": "2026-04-06",
+      "value": 7.836730003356934
+    },
+    {
+      "observation_date": "2026-04-07",
+      "value": 7.8337202072143555
+    },
+    {
+      "observation_date": "2026-04-08",
+      "value": 7.832250118255615
+    },
+    {
+      "observation_date": "2026-04-09",
+      "value": 7.833199977874756
+    },
+    {
+      "observation_date": "2026-04-12",
+      "value": 7.8322601318359375
+    },
+    {
+      "observation_date": "2026-04-13",
+      "value": 7.829800128936768
+    },
+    {
+      "observation_date": "2026-04-14",
+      "value": 7.833580017089844
+    },
+    {
+      "observation_date": "2026-04-15",
+      "value": 7.832429885864258
+    },
+    {
+      "observation_date": "2026-04-16",
+      "value": 7.822559833526611
+    },
+    {
+      "observation_date": "2026-04-19",
+      "value": 7.831180095672607
+    },
+    {
+      "observation_date": "2026-04-20",
+      "value": 7.829929828643799
+    },
+    {
+      "observation_date": "2026-04-21",
+      "value": 7.830349922180176
+    },
+    {
+      "observation_date": "2026-04-22",
+      "value": 7.8319501876831055
+    },
+    {
+      "observation_date": "2026-04-23",
+      "value": 7.832339763641357
+    },
+    {
+      "observation_date": "2026-04-26",
+      "value": 7.83489990234375
+    },
+    {
+      "observation_date": "2026-04-27",
+      "value": 7.836699962615967
+    },
+    {
+      "observation_date": "2026-04-28",
+      "value": 7.835599899291992
+    },
+    {
+      "observation_date": "2026-04-29",
+      "value": 7.836900234222412
+    },
+    {
+      "observation_date": "2026-04-30",
+      "value": 7.832670211791992
+    },
+    {
+      "observation_date": "2026-05-03",
+      "value": 7.83489990234375
+    },
+    {
+      "observation_date": "2026-05-04",
+      "value": 7.833049774169922
+    },
+    {
+      "observation_date": "2026-05-05",
+      "value": 7.8356499671936035
+    },
+    {
+      "observation_date": "2026-05-06",
+      "value": 7.834080219268799
+    },
+    {
+      "observation_date": "2026-05-07",
+      "value": 7.833779811859131
+    },
+    {
+      "observation_date": "2026-05-10",
+      "value": 7.828690052032471
+    },
+    {
+      "observation_date": "2026-05-11",
+      "value": 7.828199863433838
+    },
+    {
+      "observation_date": "2026-05-12",
+      "value": 7.828179836273193
+    },
+    {
+      "observation_date": "2026-05-13",
+      "value": 7.82919979095459
+    },
+    {
+      "observation_date": "2026-05-14",
+      "value": 7.8322601318359375
+    },
+    {
+      "observation_date": "2026-05-17",
+      "value": 7.830140113830566
+    },
+    {
+      "observation_date": "2026-05-18",
+      "value": 7.830289840698242
+    },
+    {
+      "observation_date": "2026-05-19",
+      "value": 7.832699775695801
+    },
+    {
+      "observation_date": "2026-05-20",
+      "value": 7.831399917602539
+    },
+    {
+      "observation_date": "2026-05-21",
+      "value": 7.83390998840332
+    },
+    {
+      "observation_date": "2026-05-24",
+      "value": 7.834670066833496
+    },
+    {
+      "observation_date": "2026-05-25",
+      "value": 7.834270000457764
+    },
+    {
+      "observation_date": "2026-05-26",
+      "value": 7.83581018447876
+    },
+    {
+      "observation_date": "2026-05-27",
+      "value": 7.833680152893066
+    },
+    {
+      "observation_date": "2026-05-28",
+      "value": 7.8333001136779785
+    },
+    {
+      "observation_date": "2026-05-31",
+      "value": 7.83581018447876
+    },
+    {
+      "observation_date": "2026-06-01",
+      "value": 7.836999893188477
+    },
+    {
+      "observation_date": "2026-06-02",
+      "value": 7.836900234222412
+    },
+    {
+      "observation_date": "2026-06-03",
+      "value": 7.835740089416504
+    },
+    {
+      "observation_date": "2026-06-04",
+      "value": 7.8343000411987305
+    },
+    {
+      "observation_date": "2026-06-07",
+      "value": 7.834129810333252
+    },
+    {
+      "observation_date": "2026-06-08",
+      "value": 7.836120128631592
+    },
+    {
+      "observation_date": "2026-06-09",
+      "value": 7.837299823760986
+    },
+    {
+      "observation_date": "2026-06-10",
+      "value": 7.835549831390381
+    },
+    {
+      "observation_date": "2026-06-11",
+      "value": 7.8356099128723145
+    },
+    {
+      "observation_date": "2026-06-14",
+      "value": 7.834630012512207
+    },
+    {
+      "observation_date": "2026-06-15",
+      "value": 7.834499835968018
+    },
+    {
+      "observation_date": "2026-06-16",
+      "value": 7.832590103149414
+    },
+    {
+      "observation_date": "2026-06-17",
+      "value": 7.834959983825684
+    },
+    {
+      "observation_date": "2026-06-18",
+      "value": 7.836810111999512
+    },
+    {
+      "observation_date": "2026-06-21",
+      "value": 7.836450099945068
+    },
+    {
+      "observation_date": "2026-06-22",
+      "value": 7.839300155639648
+    },
+    {
+      "observation_date": "2026-06-23",
+      "value": 7.840400218963623
+    },
+    {
+      "observation_date": "2026-06-24",
+      "value": 7.8389201164245605
+    },
+    {
+      "observation_date": "2026-06-25",
+      "value": 7.839550018310547
+    },
+    {
+      "observation_date": "2026-06-28",
+      "value": 7.84181022644043
+    },
+    {
+      "observation_date": "2026-06-29",
+      "value": 7.8403000831604
+    },
+    {
+      "observation_date": "2026-06-30",
+      "value": 7.842450141906738
+    },
+    {
+      "observation_date": "2026-07-01",
+      "value": 7.843800067901611
+    },
+    {
+      "observation_date": "2026-07-02",
+      "value": 7.842810153961182
+    },
+    {
+      "observation_date": "2026-07-05",
+      "value": 7.842820167541504
+    },
+    {
+      "observation_date": "2026-07-06",
+      "value": 7.842299938201904
+    },
+    {
+      "observation_date": "2026-07-07",
+      "value": 7.841599941253662
+    },
+    {
+      "observation_date": "2026-07-08",
+      "value": 7.838799953460693
+    },
+    {
+      "observation_date": "2026-07-09",
+      "value": 7.8358001708984375
+    },
+    {
+      "observation_date": "2026-07-12",
+      "value": 7.8394598960876465
+    },
+    {
+      "observation_date": "2026-07-13",
+      "value": 7.837500095367432
+    },
+    {
+      "observation_date": "2026-07-14",
+      "value": 7.837490081787109
+    },
+    {
+      "observation_date": "2026-07-15",
+      "value": 7.838260173797607
+    },
+    {
+      "observation_date": "2026-07-16",
+      "value": 7.8404998779296875
+    },
+    {
+      "observation_date": "2026-07-19",
+      "value": 7.839719772338867
+    },
+    {
+      "observation_date": "2026-07-20",
+      "value": 7.8406500816345215
+    },
+    {
+      "observation_date": "2026-07-21",
+      "value": 7.841370105743408
+    },
+    {
+      "observation_date": "2026-07-22",
+      "value": 7.839900016784668
+    },
+    {
+      "observation_date": "2026-07-23",
+      "value": 7.841100215911865
+    },
+    {
+      "observation_date": "2026-07-26",
+      "value": 7.841780185699463
+    },
+    {
+      "observation_date": "2026-07-27",
+      "value": 7.841660022735596
+    },
+    {
+      "observation_date": "2026-07-28",
+      "value": 7.8407301902771
+    },
+    {
+      "observation_date": "2026-07-29",
+      "value": 7.84197998046875
+    },
+    {
+      "observation_date": "2026-07-30",
+      "value": 7.842800140380859
+    },
+    {
+      "observation_date": "2026-08-02",
+      "value": 7.84181022644043
+    },
+    {
+      "observation_date": "2026-08-03",
+      "value": 7.841710090637207
+    },
+    {
+      "observation_date": "2026-08-04",
+      "value": 7.842199802398682
+    },
+    {
+      "observation_date": "2026-08-05",
+      "value": 7.843299865722656
+    },
+    {
+      "observation_date": "2026-08-06",
+      "value": 7.844299793243408
+    },
+    {
+      "observation_date": "2026-08-09",
+      "value": 7.845190048217773
+    },
+    {
+      "observation_date": "2026-08-10",
+      "value": 7.845119953155518
+    },
+    {
+      "observation_date": "2026-08-11",
+      "value": 7.846409797668457
+    },
+    {
+      "observation_date": "2026-08-12",
+      "value": 7.84630012512207
+    },
+    {
+      "observation_date": "2026-08-13",
+      "value": 7.8471999168396
+    },
+    {
+      "observation_date": "2026-08-16",
+      "value": 7.846560001373291
+    },
+    {
+      "observation_date": "2026-08-17",
+      "value": 7.84404993057251
+    },
+    {
+      "observation_date": "2026-08-18",
+      "value": 7.843709945678711
+    },
+    {
+      "observation_date": "2026-08-19",
+      "value": 7.840030193328857
+    },
+    {
+      "observation_date": "2026-08-20",
+      "value": 7.843470096588135
+    },
+    {
+      "observation_date": "2026-08-23",
+      "value": 7.839200019836426
+    },
+    {
+      "observation_date": "2026-08-24",
+      "value": 7.836009979248047
+    },
+    {
+      "observation_date": "2026-08-25",
+      "value": 7.838039875030518
+    },
+    {
+      "observation_date": "2026-08-26",
+      "value": 7.838799953460693
+    },
+    {
+      "observation_date": "2026-08-27",
+      "value": 7.83853006362915
+    },
+    {
+      "observation_date": "2026-08-30",
+      "value": 7.839749813079834
+    },
+    {
+      "observation_date": "2026-08-31",
+      "value": 7.838900089263916
+    },
+    {
+      "observation_date": "2026-09-01",
+      "value": 7.8406901359558105
+    },
+    {
+      "observation_date": "2026-09-02",
+      "value": 7.841599941253662
+    },
+    {
+      "observation_date": "2026-09-03",
+      "value": 7.840000152587891
+    },
+    {
+      "observation_date": "2026-09-06",
+      "value": 7.84060001373291
+    },
+    {
+      "observation_date": "2026-09-07",
+      "value": 7.839900016784668
+    },
+    {
+      "observation_date": "2026-09-09",
+      "value": 7.8414998054504395
+    }
+  ]
+}
