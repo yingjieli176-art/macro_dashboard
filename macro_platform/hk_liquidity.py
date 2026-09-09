@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_monetary_statistics.json"
 DAILY_BANKING_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_banking_liquidity_daily.json"
 HSTECH_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hstech_monthly.json"
+USDHKD_SNAPSHOT_PATH = ROOT / "data_snapshots" / "usdhkd_daily.json"
 DAILY_BANKING_COLUMNS = [
     "observation_date",
     "Opening Aggregate Balance",
@@ -557,8 +558,37 @@ def _market_monthly_close(symbol: str, label: str) -> pd.DataFrame:
     return pd.DataFrame(columns=["observation_date", label])
 
 
+def _usdhkd_snapshot_daily(label: str) -> pd.DataFrame:
+    """Load repository-persisted USD/HKD daily history.
+
+    The snapshot is refreshed from Yahoo HKD=X by GitHub Actions so the chart
+    does not depend on a live FRED request during a Streamlit page render.
+    """
+    try:
+        payload = json.loads(USDHKD_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+        rows = payload.get("records") if isinstance(payload, dict) else payload
+        frame = pd.DataFrame(rows or [])
+    except Exception:
+        return pd.DataFrame(columns=["observation_date", label])
+    if frame.empty or "observation_date" not in frame.columns or "value" not in frame.columns:
+        return pd.DataFrame(columns=["observation_date", label])
+    frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
+    frame[label] = pd.to_numeric(frame["value"], errors="coerce")
+    frame = (
+        frame.dropna(subset=["observation_date", label])
+        .sort_values("observation_date")
+        .drop_duplicates("observation_date", keep="last")
+    )
+    return frame[["observation_date", label]]
+
+
 def _fred_daily_series(series_id: str, label: str) -> pd.DataFrame:
-    """Load a public FRED daily series without requiring an API key."""
+    """Load a daily series, preferring a repository snapshot for USD/HKD."""
+    if series_id == "DEXHKUS":
+        snapshot = _usdhkd_snapshot_daily(label)
+        if len(snapshot) >= 1000:
+            cutoff = snapshot["observation_date"].max() - pd.DateOffset(years=5)
+            return snapshot.loc[snapshot["observation_date"] >= cutoff].copy()
     try:
         response = requests.get(
             "https://fred.stlouisfed.org/graph/fredgraph.csv",
