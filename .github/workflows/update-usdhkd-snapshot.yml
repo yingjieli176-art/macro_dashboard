@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pandas requests
-      - name: Refresh FRED DEXHKUS history
+      - name: Refresh Yahoo HKD=X history
         run: python scripts/update_usdhkd_snapshot.py
       - name: Validate 5Y coverage
         run: |
@@ -37,7 +37,7 @@ jobs:
           from pathlib import Path
           p=json.loads(Path('data_snapshots/usdhkd_daily.json').read_text())
           rows=p.get('records') or []
-          assert p.get('series')=='DEXHKUS'
+          assert p.get('symbol')=='HKD=X'
           assert len(rows)>=1000, len(rows)
           assert rows[0]['observation_date'] <= '2021-09-30', rows[0]
           assert rows[-1]['observation_date'] >= '2026-08-01', rows[-1]
