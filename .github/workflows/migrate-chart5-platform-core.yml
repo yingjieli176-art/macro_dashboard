@@ -1,0 +1,56 @@
+name: Migrate Chart 5 to platform core
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/migrate_chart5_to_platform_core.py
+      - macro_platform/hk_liquidity.py
+      - data_snapshots/hkma_monetary_statistics.json
+      - .github/workflows/migrate-chart5-platform-core.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: chart5-platform-core
+  cancel-in-progress: true
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+      - name: Apply migration
+        run: python scripts/migrate_chart5_to_platform_core.py
+      - name: Validate Python
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py
+      - name: Validate Chart 5 snapshot rendering
+        run: |
+          python - <<'PY'
+          from macro_platform.hk_liquidity import load_hk_liquidity, build_hk_liquidity_figure, snapshot_metadata
+          data = load_hk_liquidity()
+          assert not data.empty, 'HK liquidity snapshot is empty'
+          assert data['Aggregate Balance'].notna().sum() >= 6
+          fig = build_hk_liquidity_figure('1Y', compact_mode=False)
+          assert len(fig.data) >= 6, f'expected visible Chart 5 traces, got {len(fig.data)}'
+          print('Chart 5 OK:', len(fig.data), 'traces', snapshot_metadata())
+          PY
+      - name: Commit app.py migration
+        run: |
+          if git diff --quiet -- app.py; then
+            echo "app.py already migrated"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          git commit -m "Move Hong Kong liquidity chart to platform core"
+          git push
