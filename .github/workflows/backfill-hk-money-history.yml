@@ -1,0 +1,73 @@
+name: Backfill HK money history
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/backfill_hk_money_from_censtat_digests.py
+      - .github/workflows/backfill-hk-money-history.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hk-money-history-backfill
+  cancel-in-progress: true
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PDF backfill dependencies
+        run: pip install requests pdfplumber pandas plotly
+      - name: Backfill adjusted HKD M2/M3 from official monthly digests
+        run: python scripts/backfill_hk_money_from_censtat_digests.py
+      - name: Validate snapshot and 5Y chart
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import macro_platform.hk_liquidity as hk
+
+          raw=json.loads(Path('data_snapshots/hkma_monetary_statistics.json').read_text())
+          meta=raw.get('historical_backfill') or {}
+          assert meta.get('source')=='C&SD Hong Kong Monthly Digest of Statistics, Table 9.5'
+          assert meta.get('underlying_source')=='Hong Kong Monetary Authority'
+
+          data=hk.load_hk_liquidity()
+          complete=data.dropna(subset=['M2 MoM','M3 MoM'])
+          assert not complete.empty
+          latest=complete['observation_date'].max()
+          cutoff=latest-hk.pd.DateOffset(years=5)
+          five=complete[complete['observation_date']>=cutoff]
+          print('M2/M3 complete 5Y points',len(five),'from',five['observation_date'].min(),'to',latest)
+          assert len(five)>=58, len(five)
+
+          figs=hk.build_hk_liquidity_figures('5Y')
+          money=figs[0]
+          traces={trace.name: trace for trace in money.data}
+          for name in ('M2 MoM','M3 MoM','HKEX Price (R)','HSTECH Index (R)'):
+              assert name in traces, (name,list(traces))
+              assert len(traces[name].x)>=48, (name,len(traces[name].x))
+          print('5-1 5Y traces OK',[(name,len(traces[name].x)) for name in traces])
+          PY
+      - name: Commit official historical backfill
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data_snapshots/hkma_monetary_statistics.json
+          if git diff --cached --quiet; then
+            echo "Historical snapshot unchanged"
+            exit 0
+          fi
+          git commit -m "Backfill five-year Hong Kong money history"
+          git pull --rebase origin main
+          git push origin main
