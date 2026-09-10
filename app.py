@@ -7,6 +7,7 @@ from plotly.subplots import make_subplots
 import requests
 import streamlit as st
 from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, load_hk_liquidity
+from macro_platform.chart_axes import apply_time_axis
 from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_wresbal, get_wtre_gen, get_tga_daily, get_rrp_daily, _fred_series)
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
@@ -400,7 +401,8 @@ def apply_chart_style(fig, height, date_range):
     has_secondary = yaxis2 is not None and yaxis2.overlaying is not None
     base_left = 60
     base_right = 76 if has_secondary else 20
-    base_top = 115 if compact_mode else 105
+    # Reserve separate vertical bands for the top year axis and legend.
+    base_top = 128 if compact_mode else 124
     base_bottom = 40
 
     fig.update_layout(
@@ -410,7 +412,7 @@ def apply_chart_style(fig, height, date_range):
         dragmode=False,
         margin=dict(l=base_left, r=base_right, t=base_top, b=base_bottom, pad=2),
         legend=dict(
-            orientation="h", yanchor="bottom", y=1.08, xanchor="left", x=0,
+            orientation="h", yanchor="bottom", y=1.17, xanchor="left", x=0,
             font=dict(size=9 if compact_mode else 11), traceorder="normal",
             itemwidth=30, bgcolor="rgba(255,255,255,0)",
         ),
@@ -435,7 +437,8 @@ def apply_chart_style(fig, height, date_range):
         ))
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
-    return fig
+    # Shared adaptive lower axis + centered upper year axis for charts 1-4.
+    return apply_time_axis(fig, date_range)
 
 def get_start_date(date_range):
     end = pd.Timestamp.today().normalize(); return {"5Y": end - pd.DateOffset(years=5), "1Y": end - pd.DateOffset(years=1), "6M": end - pd.DateOffset(months=6), "3M": end - pd.DateOffset(months=3), "1M": end - pd.DateOffset(months=1)}[date_range]
@@ -458,29 +461,8 @@ def build_fig5(date_range):
 
 
 def apply_hk_chart_range(fig, date_range):
-    """Apply an independent viewport using the newest observation in that figure."""
-    latest_candidates = []
-    for trace in fig.data:
-        values = getattr(trace, "x", None)
-        if values is None:
-            continue
-        parsed = pd.to_datetime(list(values), errors="coerce")
-        parsed = parsed[~pd.isna(parsed)]
-        if len(parsed):
-            latest_candidates.append(parsed.max())
-    if not latest_candidates:
-        return fig
-    latest = max(latest_candidates)
-    offsets = {
-        "5Y": pd.DateOffset(years=5),
-        "1Y": pd.DateOffset(years=1),
-        "6M": pd.DateOffset(months=6),
-        "3M": pd.DateOffset(months=3),
-        "1M": pd.DateOffset(months=1),
-    }
-    start = latest - offsets.get(date_range, offsets["1Y"])
-    fig.update_xaxes(range=[start, latest])
-    return fig
+    """Apply the same dashboard-wide adaptive time axis to charts 5-8."""
+    return apply_time_axis(fig, date_range)
 
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()

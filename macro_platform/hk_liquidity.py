@@ -10,6 +10,8 @@ import plotly.graph_objects as go
 import requests
 from plotly.subplots import make_subplots
 
+from macro_platform.chart_axes import apply_time_axis
+
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_monetary_statistics.json"
 DAILY_BANKING_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_banking_liquidity_daily.json"
@@ -784,9 +786,10 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
             template="plotly_white",
             hovermode="x unified",
             dragmode=False,
-            margin=dict(l=62, r=82 if right_axis else 28, t=96, b=44, pad=2),
+            # Top margin has two dedicated rows: centered year labels, then legend.
+            margin=dict(l=62, r=82 if right_axis else 28, t=124, b=54, pad=2),
             legend=dict(
-                orientation="h", yanchor="bottom", y=1.08, xanchor="left", x=0,
+                orientation="h", yanchor="bottom", y=1.17, xanchor="left", x=0,
                 font=dict(size=11), traceorder="normal", itemwidth=30,
                 bgcolor="rgba(255,255,255,0)", itemclick="toggle", itemdoubleclick="toggleothers",
             ),
@@ -798,7 +801,8 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
             showline=True, linecolor="#9ca3af", linewidth=1,
             fixedrange=True, tickformat="%Y-%m", tickfont=dict(size=11), automargin=False,
         )
-        return fig
+        # Initialize charts 5-8 with the same two-level time axis as charts 1-4.
+        return apply_time_axis(fig, date_range)
 
     # 5-1 · Money supply + Hong Kong equity market monthly changes.
     money = make_subplots(specs=[[{"secondary_y": True}]])
