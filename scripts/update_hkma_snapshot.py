@@ -1,32 +1,50 @@
 from __future__ import annotations
 
 import json
+import re
 import time
-import urllib.parse
-import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
+
+import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data_snapshots" / "hkma_monetary_statistics.json"
-URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
-FIELDS = ",".join(
-    [
-        "end_of_month",
-        "notes_coins_circulation",
-        "aggr_balance",
-        "ef_bills_notes",
-        "monetary_base_total",
-        "m1_hkd",
-        "m2_hkd",
-        "m3_hkd",
-        "exrate_hkd_usd",
-        "nominal_eff_exrate_index",
-        "hibor_fixing_overnight",
-        "hibor_fixing_3m",
-        "discount_window_base_rate",
-    ]
+MONETARY_URL = (
+    "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/"
+    "financial/monetary-statistics"
 )
+MONETARY_BASE_URL = (
+    "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/"
+    "monetary-operation/monetary-base-endperiod"
+)
+PROXY_PREFIX = "https://r.jina.ai/https://"
+MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+KEEP_MONTHS = 78
+
+MONETARY_FIELDS = [
+    "notes_coins_circulation",
+    "aggr_balance",
+    "ef_bills_notes",
+    "monetary_base_total",
+    "m1_hkd",
+    "m2_hkd",
+    "m3_hkd",
+    "exrate_hkd_usd",
+    "nominal_eff_exrate_index",
+    "hibor_fixing_overnight",
+    "hibor_fixing_3m",
+    "discount_window_base_rate",
+]
+BASE_FIELD_MAP = {
+    "cert_of_indebt": "cert_of_indebt",
+    "gov_notes_coins_circulation": "gov_notes_coins_circulation",
+    "aggr_balance_bf_disc_win": "aggr_balance",
+    "outstanding_efbn": "outstanding_efbn",
+    "ow_lb_bf_disc_win": "ow_lb_bf_disc_win",
+    "mb_bf_disc_win_total": "monetary_base_total",
+}
 
 
 def _month_add(period: str, months: int) -> str:
@@ -35,126 +53,188 @@ def _month_add(period: str, months: int) -> str:
     return f"{value // 12:04d}-{value % 12 + 1:02d}"
 
 
-def _month_min(a: str, b: str) -> str:
-    return a if a <= b else b
+def _proxy_url(official_url: str, params: dict[str, Any]) -> str:
+    request = requests.Request("GET", official_url, params=params).prepare()
+    return PROXY_PREFIX + request.url.split("://", 1)[1]
 
 
-def fetch_window(start: str, end: str) -> list[dict]:
-    """Fetch a small HKMA month window to avoid long-range upstream timeouts."""
-    params = {
-        "choose": "end_of_month",
-        "from": start,
-        "to": end,
-        "fields": FIELDS,
-        "sortby": "end_of_month",
-        "sortorder": "asc",
-        "pagesize": 100,
-    }
-    query = urllib.parse.urlencode(params)
-    request = urllib.request.Request(
-        f"{URL}?{query}",
-        headers={
-            "User-Agent": "MacroDashboard/1.0 (+https://github.com/yingjieli176-art/macro_dashboard)",
-            "Accept": "application/json",
-        },
-    )
-    last_error = None
-    for attempt in range(4):
+def _parse_proxy_json(text: str) -> dict[str, Any]:
+    start = text.find('{"header"')
+    if start < 0:
+        raise RuntimeError("HKMA JSON body not found in transport response")
+    payload = json.loads(text[start:])
+    header = payload.get("header") or {}
+    if header.get("success") is False:
+        raise RuntimeError(header.get("err_msg") or "HKMA API reported failure")
+    return payload
+
+
+def _fetch_proxy_records(official_url: str, params: dict[str, Any]) -> list[dict[str, Any]]:
+    url = _proxy_url(official_url, params)
+    last_error: Exception | None = None
+    for attempt in range(3):
         try:
-            with urllib.request.urlopen(request, timeout=18) as response:
-                payload = json.load(response)
-            header = payload.get("header") or {}
-            if header.get("success") is False:
-                raise RuntimeError(header.get("err_msg") or "HKMA API returned failure")
-            result = payload.get("result") or {}
-            records = result.get("records") or []
+            response = requests.get(
+                url,
+                headers={"User-Agent": "MacroDashboard/1.0"},
+                timeout=50,
+            )
+            response.raise_for_status()
+            payload = _parse_proxy_json(response.text)
+            records = ((payload.get("result") or {}).get("records") or [])
             if not isinstance(records, list):
                 raise RuntimeError("HKMA result.records is not a list")
-            return records
+            return [row for row in records if isinstance(row, dict)]
         except Exception as exc:
             last_error = exc
-            if attempt < 3:
+            if attempt < 2:
                 time.sleep(1.5 * (attempt + 1))
-    raise RuntimeError(f"HKMA fetch failed for {start}..{end}: {last_error}")
+    raise RuntimeError(f"HKMA proxy fetch failed: {last_error}")
 
 
-def load_existing() -> dict[str, dict]:
+def fetch_monetary_history() -> list[dict[str, Any]]:
+    """Fetch enough paginated monthly-statistics rows for a real five-year chart.
+
+    HKMA currently caps this endpoint at 20 rows per response even when a larger
+    pagesize is requested. Offsets are therefore explicit rather than assuming
+    one large response contains the whole history.
+    """
+    merged: dict[str, dict[str, Any]] = {}
+    for offset in range(0, 140, 20):
+        rows = _fetch_proxy_records(
+            MONETARY_URL,
+            {
+                "pagesize": 100,
+                "offset": offset,
+                "sortby": "end_of_month",
+                "sortorder": "desc",
+            },
+        )
+        print(f"HKMA monetary-statistics offset={offset}: {len(rows)} rows")
+        for row in rows:
+            period = str(row.get("end_of_month") or "")
+            if MONTH_RE.match(period):
+                merged[period] = row
+        if not rows:
+            break
+        time.sleep(0.35)
+    return [merged[key] for key in sorted(merged, reverse=True)]
+
+
+def fetch_monetary_base_history() -> list[dict[str, Any]]:
+    rows = _fetch_proxy_records(
+        MONETARY_BASE_URL,
+        {
+            "pagesize": 100,
+            "offset": 0,
+            "sortby": "end_of_month",
+            "sortorder": "desc",
+        },
+    )
+    monthly = [row for row in rows if MONTH_RE.match(str(row.get("end_of_month") or ""))]
+    print(f"HKMA monetary-base-endperiod: {len(monthly)} monthly rows")
+    return monthly
+
+
+def load_existing() -> dict[str, dict[str, Any]]:
     if not OUT.exists():
         return {}
     try:
         payload = json.loads(OUT.read_text(encoding="utf-8"))
     except Exception:
         return {}
-    out: dict[str, dict] = {}
+    merged: dict[str, dict[str, Any]] = {}
     for row in payload.get("records") or []:
+        if not isinstance(row, dict):
+            continue
         period = str(row.get("end_of_month") or "")
-        if len(period) == 7 and period[4] == "-":
-            out[period] = row
-    return out
+        if MONTH_RE.match(period):
+            merged[period] = dict(row)
+    return merged
+
+
+def _merge_non_null(target: dict[str, Any], source: dict[str, Any], fields: list[str]) -> None:
+    for field in fields:
+        value = source.get(field)
+        if value is not None:
+            target[field] = value
+
+
+def _valid_count(records: list[dict[str, Any]], field: str) -> int:
+    return sum(row.get(field) is not None for row in records)
 
 
 def main() -> None:
-    # Keep >6 years. The extra history lets 5Y MoM/YoY charts calculate the
-    # first visible points without artificial gaps at the left edge.
-    now = datetime.now(timezone.utc)
-    latest_month = f"{now.year:04d}-{now.month:02d}"
-    start_month = _month_add(latest_month, -76)
+    existing = load_existing()
+    monetary = fetch_monetary_history()
+    base = fetch_monetary_base_history()
 
-    merged = load_existing()
-    successes = 0
-    failures: list[str] = []
+    merged = {period: dict(row) for period, row in existing.items()}
 
-    # Six-month chunks are intentionally small: the HKMA endpoint has been
-    # unreliable for large range pulls from US-hosted CI runners.
-    cursor = start_month
-    while cursor <= latest_month:
-        end = _month_min(_month_add(cursor, 5), latest_month)
-        try:
-            batch = fetch_window(cursor, end)
-            successes += 1
-            print(f"HKMA {cursor}..{end}: {len(batch)} rows")
-            for row in batch:
-                period = str(row.get("end_of_month") or "")
-                if len(period) == 7 and period[4] == "-" and period >= start_month:
-                    merged[period] = row
-        except Exception as exc:
-            failures.append(f"{cursor}..{end}: {exc}")
-            print(f"WARN {failures[-1]}")
-        cursor = _month_add(end, 1)
+    # Field-level merge is deliberate: historical M2/M3 repaired from official
+    # C&SD digests and monetary-base structural fields must survive refreshes.
+    for row in monetary:
+        period = str(row.get("end_of_month") or "")
+        target = merged.setdefault(period, {"end_of_month": period})
+        _merge_non_null(target, row, MONETARY_FIELDS)
 
-    monthly = [row for period, row in merged.items() if period >= start_month]
-    monthly.sort(key=lambda item: item.get("end_of_month", ""), reverse=True)
+    for row in base:
+        period = str(row.get("end_of_month") or "")
+        target = merged.setdefault(period, {"end_of_month": period})
+        for source_field, target_field in BASE_FIELD_MAP.items():
+            value = row.get(source_field)
+            if value is not None:
+                target[target_field] = value
 
-    # Do not overwrite the repository snapshot with a partial backfill.
-    valid_money = [
-        row
-        for row in monthly
-        if row.get("m2_hkd") is not None and row.get("m3_hkd") is not None
+    if not merged:
+        raise RuntimeError("No HKMA monthly history available after merge")
+
+    latest = max(merged)
+    cutoff = _month_add(latest, -(KEEP_MONTHS - 1))
+    records = [
+        merged[period]
+        for period in sorted(merged, reverse=True)
+        if period >= cutoff and MONTH_RE.match(period)
     ]
-    if len(monthly) < 60 or len(valid_money) < 60:
-        raise RuntimeError(
-            f"HKMA 5Y backfill incomplete: rows={len(monthly)}, "
-            f"M2/M3 rows={len(valid_money)}, windows_ok={successes}, failures={len(failures)}"
-        )
+
+    required_minimums = {
+        "m2_hkd": 58,
+        "m3_hkd": 58,
+        "monetary_base_total": 60,
+        "aggr_balance": 60,
+        "hibor_fixing_overnight": 58,
+        "hibor_fixing_3m": 58,
+        "discount_window_base_rate": 58,
+        "exrate_hkd_usd": 58,
+        "outstanding_efbn": 60,
+        "ow_lb_bf_disc_win": 60,
+    }
+    coverage = {field: _valid_count(records, field) for field in required_minimums}
+    for field, minimum in required_minimums.items():
+        if coverage[field] < minimum:
+            raise RuntimeError(
+                f"HKMA 5Y coverage incomplete for {field}: {coverage[field]} < {minimum}"
+            )
 
     payload = {
-        "source": "HKMA Monetary Statistics",
-        "source_url": URL,
+        "source": "HKMA Monetary Statistics + Monetary Base end-of-period",
+        "source_url": MONETARY_URL,
+        "monetary_base_source_url": MONETARY_BASE_URL,
         "updated_at": datetime.now(timezone.utc).isoformat(),
-        "record_count": len(monthly),
-        "coverage_start": monthly[-1].get("end_of_month"),
-        "coverage_end": monthly[0].get("end_of_month"),
-        "fetch_strategy": "six-month range chunks merged with last good snapshot",
-        "records": monthly,
+        "record_count": len(records),
+        "coverage_start": records[-1]["end_of_month"],
+        "coverage_end": records[0]["end_of_month"],
+        "fetch_strategy": "HKMA official APIs via repository-only text transport; paginated field-level merge",
+        "coverage_counts": coverage,
+        "records": records,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(
-        f"wrote {len(monthly)} HKMA monthly records to {OUT}; "
-        f"coverage {payload['coverage_start']}..{payload['coverage_end']}"
+        "wrote", len(records), "HKMA monthly records;",
+        payload["coverage_start"], "to", payload["coverage_end"],
     )
-    if failures:
-        print(f"completed with {len(failures)} failed windows preserved from last good snapshot")
+    print("coverage", coverage)
 
 
 if __name__ == "__main__":
