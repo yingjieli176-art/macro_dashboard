@@ -140,10 +140,12 @@ def _apply_year_band(fig: go.Figure, start: pd.Timestamp, end: pd.Timestamp) -> 
             )
         )
 
-    fig.update_layout(
-        shapes=existing_shapes + year_shapes,
-        annotations=existing_annotations + year_annotations,
-    )
+    # Direct tuple assignment is intentional. Plotly's update_layout can merge
+    # shape arrays by index, which leaves stale 5Y cells behind when switching
+    # to 1M. Assignment replaces the old year-band cells completely while
+    # preserving non-year shapes such as the 7.75–7.85 LERS hrect.
+    fig.layout.shapes = tuple(existing_shapes + year_shapes)
+    fig.layout.annotations = tuple(existing_annotations + year_annotations)
 
 
 def apply_time_axis(
@@ -195,9 +197,6 @@ def apply_time_axis(
             zeroline=False,
             minor=dict(showgrid=False, ticks="outside", ticklen=2),
         ),
-        # Hide the previous experimental upper x-axis. The year band below is
-        # rendered with shapes/annotations and therefore always appears even
-        # when no trace is explicitly assigned to x2.
         xaxis2=dict(
             visible=False,
             showgrid=False,
