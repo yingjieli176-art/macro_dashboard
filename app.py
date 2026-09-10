@@ -1106,18 +1106,17 @@ def build_fig2(date_range):
     fig.update_layout(yaxis_title="Nominal Yield (%)", yaxis2=dict(title="Real / Breakeven (%)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9))); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 def build_fig4(date_range):
-    """US liquidity dashboard in consistent USD-trillion units.
+    """US liquidity chart with separate scales for unlike balance magnitudes.
 
-    Net Liquidity uses WALCL - TGA - ON RRP. Reserve balances are displayed as
-    a separate banking-liquidity series rather than used as the proxy base.
+    L: Net Liquidity = WALCL - TGA - ON RRP, USD trillions.
+    R1: Reserve Balances and TGA, USD trillions.
+    R2: ON RRP, USD billions.
     """
-    # FRED publishes WALCL/WRESBAL in USD millions and RRPONTSYD in USD
-    # billions. TGA_DAILY is already normalized to USD trillions by data.py.
     specs = [
         (get_walcl, "WALCL", 1_000_000.0),
         (get_wresbal, "WRESBAL", 1_000_000.0),
         (get_tga_daily, "TGA_DAILY", 1.0),
-        (get_rrp_daily, "RRPONTSYD", 1_000.0),
+        (get_rrp_daily, "RRPONTSYD", 1.0),
     ]
     raw_series = {}
     tga_is_fallback = False
@@ -1134,14 +1133,15 @@ def build_fig4(date_range):
         except Exception:
             continue
 
+    fig = go.Figure()
     if not raw_series:
-        fig = go.Figure()
-        for name in ("Net Liquidity Proxy", "Reserve Balances · Weekly", "TGA", "ON RRP · Daily"):
+        for name in ("Net Liquidity", "Reserve Balances", "TGA", "ON RRP"):
             _mark_missing_series(fig, name)
-        return apply_chart_style(fig, chart_height(310, 420), date_range)
+        return apply_chart_style(fig, chart_height(320, 430), date_range)
 
-    # Forward-fill only inside the mixed-frequency calculation. The displayed
-    # component lines retain their actual publication frequency.
+    # Calculate the proxy on a union calendar. Forward filling is only used
+    # inside the mixed-frequency calculation; displayed source traces remain
+    # at their native observation dates.
     calc = None
     for column in ("WALCL", "TGA_DAILY", "RRPONTSYD"):
         frame = raw_series.get(column)
@@ -1153,32 +1153,60 @@ def build_fig4(date_range):
     if component_cols:
         calc[component_cols] = calc[component_cols].ffill()
     if all(c in calc.columns for c in ("WALCL", "TGA_DAILY", "RRPONTSYD")):
-        calc["NetLiquidity"] = calc["WALCL"] - calc["TGA_DAILY"] - calc["RRPONTSYD"]
+        calc["NetLiquidity"] = calc["WALCL"] - calc["TGA_DAILY"] - calc["RRPONTSYD"] / 1000.0
     calc = filter_range(calc, date_range)
 
-    fig = go.Figure()
-    net_name = "Net Liquidity · WALCL−TGA−ON RRP"
-    net_name += " · weekly TGA fallback" if tga_is_fallback else " · mixed frequency"
-    add_line(fig, calc, "NetLiquidity", net_name, 3.0, unit=" T")
+    add_line(fig, calc, "NetLiquidity", "Net Liquidity", 3.0, unit=" T")
 
-    observed_names = {
-        "WRESBAL": "Reserve Balances · Weekly",
-        "TGA_DAILY": "TGA · Weekly fallback" if tga_is_fallback else "TGA · Daily",
-        "RRPONTSYD": "ON RRP · Daily",
-    }
-    dash_map = {"WRESBAL": None, "TGA_DAILY": "dash", "RRPONTSYD": "dot"}
-    width_map = {"WRESBAL": 2.3, "TGA_DAILY": 2.1, "RRPONTSYD": 2.1}
-    for column in ("WRESBAL", "TGA_DAILY", "RRPONTSYD"):
-        frame = raw_series.get(column)
-        if frame is None:
-            _mark_missing_series(fig, observed_names[column])
-            continue
-        add_line(fig, filter_range(frame, date_range), column, observed_names[column], width_map[column], dash_map[column], unit=" T")
+    reserve = raw_series.get("WRESBAL")
+    if reserve is not None:
+        add_line(fig, filter_range(reserve, date_range), "WRESBAL", "Reserve Balances", 2.4, yaxis="y2", unit=" T")
+    else:
+        _mark_missing_series(fig, "Reserve Balances")
 
-    # Force human-readable trillion ticks; raw FRED millions must never leak
-    # through as Plotly's misleading 1M/2M/3M axis labels.
-    fig.update_layout(yaxis_title="USD trillions", yaxis_tickformat=".1f")
-    return apply_chart_style(fig, chart_height(310, 420), date_range)
+    tga = raw_series.get("TGA_DAILY")
+    if tga is not None:
+        tga_name = "TGA · Weekly fallback" if tga_is_fallback else "TGA"
+        add_line(fig, filter_range(tga, date_range), "TGA_DAILY", tga_name, 2.2, "dash", "y2", " T")
+    else:
+        _mark_missing_series(fig, "TGA")
+
+    rrp = raw_series.get("RRPONTSYD")
+    if rrp is not None:
+        add_line(fig, filter_range(rrp, date_range), "RRPONTSYD", "ON RRP", 2.2, "dot", "y3", " B")
+    else:
+        _mark_missing_series(fig, "ON RRP")
+
+    # Predeclare secondary axes so apply_chart_style reserves enough space.
+    fig.update_layout(
+        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86),
+        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.97),
+    )
+    fig = apply_chart_style(fig, chart_height(320, 430), date_range)
+    fig.update_layout(
+        margin=dict(l=64, r=164, t=72, b=34, pad=2),
+        legend=dict(y=1.09, x=0.01),
+        xaxis=dict(domain=[0.0, 0.82]),
+        yaxis=dict(
+            title="Net Liquidity · USD T",
+            showgrid=True, gridcolor="#e5e7eb", griddash="dot",
+            zeroline=False, fixedrange=True, tickformat=".1f",
+        ),
+        yaxis2=dict(
+            title="R1 · Reserve / TGA · USD T",
+            overlaying="y", side="right", anchor="free", position=0.86,
+            showgrid=False, zeroline=False, fixedrange=True,
+            tickformat=".1f", tickfont=dict(size=10),
+        ),
+        yaxis3=dict(
+            title="R2 · ON RRP · USD B",
+            overlaying="y", side="right", anchor="free", position=0.97,
+            showgrid=False, zeroline=True, zerolinecolor="#94a3b8",
+            zerolinewidth=1, fixedrange=True, tickformat=".0f",
+            tickfont=dict(size=10),
+        ),
+    )
+    return fig
 
 
 def build_fig3(date_range):
@@ -1265,11 +1293,131 @@ def build_fig9(date_range):
     )
     return fig
 
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_yahoo_daily_history(symbol):
+    """Fetch five years of completed daily closes from Yahoo chart API."""
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{requests.utils.quote(symbol, safe='')}"
+    response = requests.get(
+        url,
+        params={"range": "5y", "interval": "1d", "includePrePost": "false", "events": "div,splits"},
+        headers={"User-Agent": "Mozilla/5.0 (compatible; MacroDashboard/1.0)"},
+        timeout=(3.0, 8.0),
+    )
+    response.raise_for_status()
+    result = ((response.json() or {}).get("chart") or {}).get("result") or []
+    if not result:
+        return pd.DataFrame(columns=["observation_date", "close"])
+    node = result[0]
+    timestamps = node.get("timestamp") or []
+    quotes = (((node.get("indicators") or {}).get("quote") or [{}])[0]).get("close") or []
+    if not timestamps or not quotes:
+        return pd.DataFrame(columns=["observation_date", "close"])
+    size = min(len(timestamps), len(quotes))
+    dates = pd.to_datetime(timestamps[:size], unit="s", utc=True)
+    tz_name = (node.get("meta") or {}).get("exchangeTimezoneName") or "America/New_York"
+    try:
+        dates = dates.tz_convert(tz_name).tz_localize(None).normalize()
+    except Exception:
+        dates = dates.tz_convert("America/New_York").tz_localize(None).normalize()
+    frame = pd.DataFrame({"observation_date": dates, "close": pd.to_numeric(quotes[:size], errors="coerce")})
+    frame = frame.dropna(subset=["observation_date", "close"]).sort_values("observation_date")
+    return frame.drop_duplicates("observation_date", keep="last")
+
+
+def _rebase_100(series):
+    values = pd.to_numeric(series, errors="coerce")
+    valid = values.dropna()
+    if valid.empty or float(valid.iloc[0]) == 0:
+        return values * pd.NA
+    return values / float(valid.iloc[0]) * 100.0
+
+
+def build_fig10(date_range, market_mode="Rebased 100"):
+    """Precious metals: gold, silver, gold/silver ratio, and GVZ."""
+    frames = []
+    for symbol, column in (("GC=F", "Gold"), ("SI=F", "Silver")):
+        try:
+            frame = get_yahoo_daily_history(symbol).rename(columns={"close": column})
+            if not frame.empty:
+                frames.append(frame[["observation_date", column]])
+        except Exception:
+            pass
+    try:
+        gvz = get_fred_series("GVZCLS").copy()
+        gvz["observation_date"] = pd.to_datetime(gvz["observation_date"], errors="coerce")
+        gvz["GVZCLS"] = pd.to_numeric(gvz["GVZCLS"], errors="coerce")
+        gvz = gvz.dropna(subset=["observation_date", "GVZCLS"])[["observation_date", "GVZCLS"]]
+        if not gvz.empty:
+            frames.append(gvz)
+    except Exception:
+        pass
+
+    if frames:
+        data = frames[0]
+        for frame in frames[1:]:
+            data = data.merge(frame, on="observation_date", how="outer")
+        data = data.sort_values("observation_date")
+    else:
+        data = pd.DataFrame(columns=["observation_date"])
+
+    if "Gold" in data.columns and "Silver" in data.columns:
+        gold = pd.to_numeric(data["Gold"], errors="coerce")
+        silver = pd.to_numeric(data["Silver"], errors="coerce")
+        data["GoldSilverRatio"] = gold.where(silver > 0) / silver.where(silver > 0)
+    data = filter_range(data, date_range)
+
+    fig = go.Figure()
+    if market_mode == "Rebased 100":
+        if "Gold" in data.columns:
+            data["Gold_R100"] = _rebase_100(data["Gold"])
+        if "Silver" in data.columns:
+            data["Silver_R100"] = _rebase_100(data["Silver"])
+        add_line(fig, data, "Gold_R100", "Gold · R100", 2.8, unit="")
+        add_line(fig, data, "Silver_R100", "Silver · R100", 2.5, unit="")
+        add_line(fig, data, "GoldSilverRatio", "Gold/Silver Ratio", 2.2, "dash", "y2", "x")
+        add_line(fig, data, "GVZCLS", "Gold Volatility · GVZ", 2.2, "dot", "y3", "")
+        fig.update_layout(
+            yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.87),
+            yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.98),
+        )
+        fig = apply_chart_style(fig, chart_height(320, 440), date_range)
+        fig.update_layout(
+            margin=dict(l=62, r=150, t=72, b=34, pad=2),
+            legend=dict(y=1.09, x=0.01),
+            xaxis=dict(domain=[0.0, 0.84]),
+            yaxis=dict(title="Gold / Silver · Rebased 100", tickformat=".1f"),
+            yaxis2=dict(title="R1 · Gold/Silver Ratio", overlaying="y", side="right", anchor="free", position=0.87, showgrid=False, fixedrange=True, tickformat=".1f"),
+            yaxis3=dict(title="R2 · GVZ", overlaying="y", side="right", anchor="free", position=0.98, showgrid=False, fixedrange=True, tickformat=".1f"),
+        )
+        return fig
+
+    add_line(fig, data, "Gold", "Gold", 2.8, unit=" USD/oz")
+    add_line(fig, data, "Silver", "Silver", 2.5, None, "y2", " USD/oz")
+    add_line(fig, data, "GoldSilverRatio", "Gold/Silver Ratio", 2.2, "dash", "y3", "x")
+    add_line(fig, data, "GVZCLS", "Gold Volatility · GVZ", 2.2, "dot", "y4", "")
+    fig.update_layout(
+        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.78),
+        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.88),
+        yaxis4=dict(overlaying="y", side="right", anchor="free", position=0.98),
+    )
+    fig = apply_chart_style(fig, chart_height(330, 450), date_range)
+    fig.update_layout(
+        margin=dict(l=68, r=220, t=72, b=34, pad=2),
+        legend=dict(y=1.09, x=0.01),
+        xaxis=dict(domain=[0.0, 0.75]),
+        yaxis=dict(title="Gold · USD/oz", tickformat=",.0f"),
+        yaxis2=dict(title="R1 · Silver · USD/oz", overlaying="y", side="right", anchor="free", position=0.78, showgrid=False, fixedrange=True, tickformat=".1f"),
+        yaxis3=dict(title="R2 · Gold/Silver", overlaying="y", side="right", anchor="free", position=0.88, showgrid=False, fixedrange=True, tickformat=".1f"),
+        yaxis4=dict(title="R3 · GVZ", overlaying="y", side="right", anchor="free", position=0.98, showgrid=False, fixedrange=True, tickformat=".1f"),
+    )
+    return fig
+
 PARAM_DESCRIPTIONS = [
     '<b>参数概念：</b><br>1. IORB（Interest on Reserve Balances）：美联储向存款机构准备金余额支付的利率，是美国准备金利率体系的重要基准。<br>2. ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具利率，金融机构可通过该工具进行隔夜资金配置。<br>3. EFFR（Effective Federal Funds Rate）：美国联邦基金市场实际成交形成的有效隔夜利率，反映银行间短期无担保资金价格。<br>4. SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率，是美元有担保短期融资的重要基准。',
     '<b>参数概念：</b><br>1. 10Y Nominal：10 年期美国国债名义收益率，包含实际利率与通胀预期等因素。<br>2. 10Y Real：10 年期美国国债实际收益率，通常由通胀保值国债（TIPS）市场反映。<br>3. 10Y Breakeven：10 年期盈亏平衡通胀率，是名义国债收益率与实际收益率之间的差值，用于观察市场隐含的长期通胀预期。',
     '<b>参数概念：</b><br>1. 3M：3 个月期美国国债收益率，代表较短期限的美元无风险利率。<br>2. 2Y：2 年期美国国债收益率，通常对美联储政策路径及短中期利率预期较敏感。<br>3. 10Y：10 年期美国国债收益率，是全球金融市场重要的长期无风险利率参考。<br>4. 10Y−2Y：10 年期减 2 年期国债收益率利差，图中直接以百分比（%）显示，无需自行换算 bp。<br>5. 10Y−3M：10 年期减 3 个月期国债收益率利差，图中直接以百分比（%）显示，无需自行换算 bp。',
-    '<b>参数概念：</b><br>1. Net Liquidity Proxy：WALCL（美联储总资产）− TGA − ON RRP 的常用资产负债表流动性代理，单位统一为 USD trillion；不是美联储官方指标。WALCL 为周频，计算时只在代理内部沿用至下一次公布。<br>2. Reserve Balances：存款机构存放在美联储的准备金余额；WRESBAL 为周频公布，图中的原始线只保留实际周频观测，不再用前值填充伪装成日频。<br>3. TGA（Treasury General Account）：优先使用美国财政部 Daily Treasury Statement 的日频 Operating Cash Balance；财政资金进出会直接影响银行体系准备金。FiscalData 不可用时自动回退到 FRED WTREGEN 周频数据。<br>4. ON RRP Balance：美联储隔夜逆回购工具的余额，反映资金进入该工具的规模。',
+    '<b>参数概念：</b><br>1. Net Liquidity Proxy：WALCL（美联储总资产）− TGA − ON RRP 的常用资产负债表流动性代理，左轴单位 USD trillion；不是美联储官方指标。WALCL 为周频，计算时只在代理内部沿用至下一次公布。<br>2. Reserve Balances：存款机构存放在美联储的准备金余额；WRESBAL 为周频公布，使用右轴 R1，单位 USD trillion。图中的原始线只保留实际周频观测。<br>3. TGA（Treasury General Account）：优先使用美国财政部 Daily Treasury Statement 的日频 Operating Cash Balance；财政资金进出会直接影响银行体系准备金。FiscalData 不可用时自动回退到 FRED WTREGEN 周频数据。<br>4. ON RRP Balance：美联储隔夜逆回购工具余额，使用右轴 R2，单位 USD billion；单独设轴避免当前低余额被压在零线附近。',
     '<b>参数概念：</b><br>1. HKD M2 YoY：港元 M2 同比增速，M2 覆盖公众持有的现金、活期/储蓄/定期存款及相应货币工具，用于观察广义港元货币的中期扩张趋势。<br>2. HKD M3 YoY：港元 M3 同比增速，M3 在 M2 基础上进一步纳入限制牌照银行及接受存款公司的相关存款与可转让存款证，因此口径更广，但通常与 M2 高度同步。<br>3. Monetary Base YoY：香港货币基础总量同比变化，用于观察基础货币层面的中期扩张与收缩。<br>4. Aggregate Balance：银行体系总结余，单位 HK$ billion；总结余下降通常代表银行体系可用港元流动性趋紧。<br>5. O/N HIBOR：隔夜港元银行同业拆息，反映最短端港元资金价格。<br>6. 3M HIBOR：3 个月港元银行同业拆息，用来观察更持续的港元融资成本。<br>7. HKMA Base Rate：香港金管局基本利率，是港元利率体系的重要政策参考。<br>8. O/N−3M Spread（R）：隔夜 HIBOR 减 3M HIBOR，右轴单位 bp；显著转正通常代表短端资金压力上升。<br>9. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>10. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>11. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br><br><b>读取提示：</b>M2/M3 为月度统计，公布存在时滞；图 5 使用 YoY 观察中期货币趋势并降低单月噪声。流动性评分内部仍使用最近 3 个月 M2/M3 MoM 均值，以保留对边际拐点的敏感度。',
 ]
 
@@ -1288,6 +1436,9 @@ def show_hk_parameter_description(index):
 
 US_EQUITY_RISK_DESCRIPTION = '<b>参数概念：</b><br>1. VIX：基于 S&P 500 指数期权的约 30 天隐含波动率，反映指数层面的近端风险定价。<br>2. VIXEQ：Cboe S&P 500 Constituent Volatility Index，衡量一篮子标普 500 成分股按市值加权的约 30 天隐含波动率；它使用单股期权，因此与 VIX 并非同一个指标。<br>3. S&P 500（R1）：标普 500 指数点位，用来观察风险价格与现货大盘的同步/背离。<br>4. VIX3M−VIX（R2）：3 个月 VIX 减约 30 天 VIX。通常为正代表期限结构较正常；快速收窄或转负表示近端隐含波动率高于远端，常见于短期压力上升阶段。<br><br><b>读取提示：</b>VIX 与 VIXEQ 同时上升代表指数与成分股隐含波动率共同抬升；若 VIXEQ 相对 VIX 更强，通常意味着单股波动/分化风险更突出。VIXEQ 于 2024-11-04 正式开始实时发布；Cboe 官方历史文件提供回溯序列，图表使用官方历史值，不自行外推。'
 
+
+PRECIOUS_METALS_DESCRIPTION = '<b>参数概念：</b><br>1. Gold：COMEX 黄金连续近月期货 GC=F 日收盘价，单位 USD/oz。<br>2. Silver：COMEX 白银连续近月期货 SI=F 日收盘价，单位 USD/oz。<br>3. Gold/Silver Ratio：金价 ÷ 银价；上升表示黄金相对白银更强，下降表示白银相对更强。<br>4. Gold Volatility / GVZ：Cboe Gold ETF Volatility Index，反映黄金相关期权的隐含波动率。<br><br><b>读取提示：</b>默认 Rebased 100 用于比较金银相对强弱；Raw 模式保留金银绝对价格，并为 Silver、金银比和 GVZ 使用独立右轴，避免不同量纲互相压缩。'
+
 compact_mode = False
 
 def render_core_charts():
@@ -1297,7 +1448,7 @@ def render_core_charts():
         ('<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>', '<div class="section-description">IORB / ON RRP Rate / EFFR / SOFR</div>', "normal_corridor_range", build_fig1, [("IORB (IORB)", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP Rate (RRPONTSYAWARD)", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR (EFFR)", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR (SOFR)", "https://fred.stlouisfed.org/series/SOFR")], 0),
         ('<div class="section-title">2. 10Y Yield Structure</div>', '<div class="section-description">10Y Nominal / 10Y Real (R) / 10Y Breakeven (R)</div>', "normal_yield10_range", build_fig2, [("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y Real (DFII10)", "https://fred.stlouisfed.org/series/DFII10"), ("10Y Breakeven (T10YIE)", "https://fred.stlouisfed.org/series/T10YIE")], 1),
         ('<div class="section-title">3. Treasury Yield & Curve Spread</div>', '<div class="section-description">3M / 2Y / 10Y / 10Y−2Y (R) / 10Y−3M (R)</div>', "normal_treasury_range", build_fig3, [("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"), ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"), ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"), ("10Y−3M Spread (T10Y3M)", "https://fred.stlouisfed.org/series/T10Y3M")], 2),
-        ('<div class="section-title">4. US Liquidity</div>', '<div class="section-description">Net Liquidity / Reserve Balances / TGA / ON RRP</div>', "normal_liquidity_range", build_fig4, [("Fed Total Assets (WALCL)", "https://fred.stlouisfed.org/series/WALCL"), ("Reserve Balances (WRESBAL)", "https://fred.stlouisfed.org/series/WRESBAL"), ("TGA · Daily Treasury Statement", "https://fiscaldata.treasury.gov/datasets/daily-treasury-statement/operating-cash-balance"), ("TGA fallback (WTREGEN)", "https://fred.stlouisfed.org/series/WTREGEN"), ("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD")], 3),
+        ('<div class="section-title">4. US Liquidity</div>', '<div class="section-description">Net Liquidity (L) · Reserve Balances / TGA (R1) · ON RRP (R2)</div>', "normal_liquidity_range", build_fig4, [("Fed Total Assets (WALCL)", "https://fred.stlouisfed.org/series/WALCL"), ("Reserve Balances (WRESBAL)", "https://fred.stlouisfed.org/series/WRESBAL"), ("TGA · Daily Treasury Statement", "https://fiscaldata.treasury.gov/datasets/daily-treasury-statement/operating-cash-balance"), ("TGA fallback (WTREGEN)", "https://fred.stlouisfed.org/series/WTREGEN"), ("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD")], 3),
     ]
 
     for title, description, key, builder, sources, desc_index in configs:
@@ -1409,6 +1560,30 @@ def render_core_charts():
         ("Cboe VIXEQ / Dispersion", "https://www.cboe.com/us/indices/dispersion/"),
         ("FRED VIX3M (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),
         ("FRED S&P 500 (SP500)", "https://fred.stlouisfed.org/series/SP500"),
+    ])
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+    st.markdown(
+        '<div class="section-kicker">PRECIOUS METALS</div>'
+        '<div class="section-title">10. Precious Metals</div>'
+        '<div class="section-description">Gold / Silver · Gold/Silver Ratio (R1) · Gold Volatility GVZ (R2/R3)</div>',
+        unsafe_allow_html=True,
+    )
+    metals_range = st.radio(
+        "时间范围", RANGES, horizontal=True, index=1,
+        key="precious_metals_range", label_visibility="collapsed",
+    )
+    metals_mode = st.radio(
+        "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
+        key="precious_metals_mode", label_visibility="collapsed",
+    )
+    st.plotly_chart(build_fig10(metals_range, metals_mode), use_container_width=True, config=PLOTLY_CONFIG)
+    st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
+    add_sources([
+        ("Yahoo Finance · Gold Futures GC=F", "https://finance.yahoo.com/quote/GC=F/history/"),
+        ("Yahoo Finance · Silver Futures SI=F", "https://finance.yahoo.com/quote/SI=F/history/"),
+        ("FRED · Cboe Gold ETF Volatility Index (GVZCLS)", "https://fred.stlouisfed.org/series/GVZCLS"),
+        ("Cboe · Gold Volatility", "https://www.cboe.com/tradable_products/vix/vix_historical_data/"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
