@@ -1,0 +1,115 @@
+name: Upgrade HK market terminal
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/upgrade_hk_market_terminal.py
+      - .github/workflows/upgrade-hk-market-terminal.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: upgrade-hk-market-terminal
+  cancel-in-progress: true
+
+jobs:
+  migrate-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install validation dependencies
+        run: pip install pandas plotly requests
+      - name: Apply market terminal migration
+        run: python scripts/upgrade_hk_market_terminal.py
+      - name: Compile application
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py macro_platform/chart_axes.py scripts/upgrade_hk_market_terminal.py
+      - name: Validate durable history and adaptive density
+        run: |
+          python - <<'PY'
+          from macro_platform.hk_liquidity import _market_snapshot_history
+
+          specs = [('0700.HK','Tencent Price'),('0388.HK','HKEX Price'),('HSTECH','HSTECH Index'),('^HSI','HSI Index')]
+          for symbol, label in specs:
+              daily = _market_snapshot_history(symbol, label, '1M')
+              weekly = _market_snapshot_history(symbol, label, '5Y')
+              assert len(daily) >= 10, (symbol, '1M', len(daily))
+              assert len(weekly) >= 200, (symbol, '5Y', len(weekly))
+              assert daily['observation_date'].nunique() == len(daily)
+              print(symbol, '1M=', len(daily), '5Y weekly=', len(weekly))
+          PY
+      - name: Validate Raw R1/R2 and weak-side pressure zone
+        run: |
+          python - <<'PY'
+          from macro_platform.hk_liquidity import build_hk_liquidity_figures
+
+          figs = build_hk_liquidity_figures('5Y', market_mode='Raw')
+          assert len(figs) == 4
+          required = {
+              'Tencent Price (R1)': 'y2',
+              'HKEX Price (R1)': 'y2',
+              'HSTECH Index (R2)': 'y3',
+              'HSI Index (R2)': 'y3',
+          }
+          for idx in (0, 3):
+              traces = {str(t.name): t for t in figs[idx].data}
+              for name, axis in required.items():
+                  assert name in traces, (idx, name, list(traces))
+                  assert traces[name].yaxis == axis, (idx, name, traces[name].yaxis)
+              assert figs[idx].layout.yaxis2.title.text == 'R1 · HKD Price'
+              assert figs[idx].layout.yaxis3.title.text == 'R2 · Index Level'
+          fx = figs[3]
+          pressure = [s for s in (fx.layout.shapes or []) if getattr(s, 'type', None) == 'rect' and float(getattr(s, 'y0', -1)) == 7.84 and float(getattr(s, 'y1', -1)) == 7.85]
+          assert pressure, 'missing 7.84-7.85 weak-side pressure zone'
+          print('Raw R1/R2 and pressure zone OK')
+          PY
+      - name: Validate Rebased 100 mode
+        run: |
+          python - <<'PY'
+          import math
+          from macro_platform.hk_liquidity import build_hk_liquidity_figures
+
+          figs = build_hk_liquidity_figures('1M', market_mode='Rebased 100')
+          required = ['Tencent (R)', 'HKEX (R)', 'HSTECH (R)', 'HSI (R)']
+          for idx in (0, 3):
+              traces = {str(t.name): t for t in figs[idx].data}
+              for name in required:
+                  assert name in traces, (idx, name, list(traces))
+                  vals = [float(v) for v in traces[name].y if v is not None and not math.isnan(float(v))]
+                  assert len(vals) >= 10, (idx, name, len(vals))
+                  assert abs(vals[0] - 100.0) < 1e-8, (idx, name, vals[0])
+                  assert traces[name].yaxis == 'y2', (idx, name, traces[name].yaxis)
+              assert figs[idx].layout.yaxis2.title.text == 'Market · Rebased 100'
+          print('Rebased 100 mode OK')
+          PY
+      - name: Validate dashboard controls and notes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          assert text.count('Rebased 100') >= 3
+          assert 'Tencent / HKEX (R1)' in text
+          assert 'HSTECH / HSI (R2)' in text
+          assert 'Weak-side pressure 7.84–7.85' in text
+          assert 'hk_figures = build_fig5("5Y")' not in text
+          print('dashboard controls and descriptions OK')
+          PY
+      - name: Commit upgraded application
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/hk_liquidity.py
+          if git diff --cached --quiet; then
+            echo "Hong Kong market terminal already upgraded"
+            exit 0
+          fi
+          git commit -m "Upgrade Hong Kong market overlays and persistence"
+          git pull --rebase origin main
+          git push origin main
