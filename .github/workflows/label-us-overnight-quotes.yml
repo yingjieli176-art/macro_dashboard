@@ -1,0 +1,66 @@
+name: Label US overnight quotes
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/label_us_overnight_quotes.py
+      - .github/workflows/label-us-overnight-quotes.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: label-us-overnight-quotes
+  cancel-in-progress: true
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply patch
+        run: python scripts/label_us_overnight_quotes.py
+
+      - name: Compile
+        run: python -m py_compile app.py scripts/label_us_overnight_quotes.py
+
+      - name: Validate overnight semantics
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          required = (
+              'overnightMarketTime',
+              'overnight_market_time',
+              'overnight_fresh = 0 <= time.time() - float(overnight_time) <= 18 * 3600',
+              '夜盘 {overnight_price:,.2f}',
+              '%H:%M HKT',
+          )
+          for token in required:
+              assert token in text, token
+          assert 'return price, pct, market_time' in text
+          assert 'return None, None, None' in text
+          print('overnight quote labeling OK')
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          if git diff --cached --quiet; then
+            echo "Already applied"
+            exit 0
+          fi
+          git commit -m "Label fresh US overnight quotes"
+          git pull --rebase origin main
+          git push origin main
