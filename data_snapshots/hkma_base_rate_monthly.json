@@ -1,0 +1,411 @@
+{
+  "source": "Hong Kong Monetary Authority Discount Window Base Rate — end of period",
+  "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/disc-win-liquid-adj-win-rates-endperiod",
+  "transport": "r.jina.ai text transport used only by repository snapshot job",
+  "updated_at": "2026-09-10T00:35:59.925559+00:00",
+  "record_count": 100,
+  "coverage_start": "2018-05",
+  "coverage_end": "2026-08",
+  "records": [
+    {
+      "end_of_month": "2018-05",
+      "disc_win_base_rate": 2
+    },
+    {
+      "end_of_month": "2018-06",
+      "disc_win_base_rate": 2.25
+    },
+    {
+      "end_of_month": "2018-07",
+      "disc_win_base_rate": 2.25
+    },
+    {
+      "end_of_month": "2018-08",
+      "disc_win_base_rate": 2.25
+    },
+    {
+      "end_of_month": "2018-09",
+      "disc_win_base_rate": 2.5
+    },
+    {
+      "end_of_month": "2018-10",
+      "disc_win_base_rate": 2.5
+    },
+    {
+      "end_of_month": "2018-11",
+      "disc_win_base_rate": 2.5
+    },
+    {
+      "end_of_month": "2018-12",
+      "disc_win_base_rate": 2.75
+    },
+    {
+      "end_of_month": "2019-01",
+      "disc_win_base_rate": 2.75
+    },
+    {
+      "end_of_month": "2019-02",
+      "disc_win_base_rate": 2.75
+    },
+    {
+      "end_of_month": "2019-03",
+      "disc_win_base_rate": 2.75
+    },
+    {
+      "end_of_month": "2019-04",
+      "disc_win_base_rate": 2.75
+    },
+    {
+      "end_of_month": "2019-05",
+      "disc_win_base_rate": 2.75
+    },
+    {
+      "end_of_month": "2019-06",
+      "disc_win_base_rate": 2.75
+    },
+    {
+      "end_of_month": "2019-07",
+      "disc_win_base_rate": 2.75
+    },
+    {
+      "end_of_month": "2019-08",
+      "disc_win_base_rate": 2.5
+    },
+    {
+      "end_of_month": "2019-09",
+      "disc_win_base_rate": 2.25
+    },
+    {
+      "end_of_month": "2019-10",
+      "disc_win_base_rate": 2
+    },
+    {
+      "end_of_month": "2019-11",
+      "disc_win_base_rate": 2
+    },
+    {
+      "end_of_month": "2019-12",
+      "disc_win_base_rate": 2.49
+    },
+    {
+      "end_of_month": "2020-01",
+      "disc_win_base_rate": 2
+    },
+    {
+      "end_of_month": "2020-02",
+      "disc_win_base_rate": 2
+    },
+    {
+      "end_of_month": "2020-03",
+      "disc_win_base_rate": 1.65
+    },
+    {
+      "end_of_month": "2020-04",
+      "disc_win_base_rate": 1.11
+    },
+    {
+      "end_of_month": "2020-05",
+      "disc_win_base_rate": 0.62
+    },
+    {
+      "end_of_month": "2020-06",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2020-07",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2020-08",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2020-09",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2020-10",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2020-11",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2020-12",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2021-01",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2021-02",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2021-03",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2021-04",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2021-05",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2021-06",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2021-07",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2021-08",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2021-09",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2021-10",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2021-11",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2021-12",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2022-01",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2022-02",
+      "disc_win_base_rate": 0.5
+    },
+    {
+      "end_of_month": "2022-03",
+      "disc_win_base_rate": 0.75
+    },
+    {
+      "end_of_month": "2022-04",
+      "disc_win_base_rate": 0.75
+    },
+    {
+      "end_of_month": "2022-05",
+      "disc_win_base_rate": 1.25
+    },
+    {
+      "end_of_month": "2022-06",
+      "disc_win_base_rate": 2
+    },
+    {
+      "end_of_month": "2022-07",
+      "disc_win_base_rate": 2.75
+    },
+    {
+      "end_of_month": "2022-08",
+      "disc_win_base_rate": 2.75
+    },
+    {
+      "end_of_month": "2022-09",
+      "disc_win_base_rate": 3.5
+    },
+    {
+      "end_of_month": "2022-10",
+      "disc_win_base_rate": 3.5
+    },
+    {
+      "end_of_month": "2022-11",
+      "disc_win_base_rate": 4.25
+    },
+    {
+      "end_of_month": "2022-12",
+      "disc_win_base_rate": 4.75
+    },
+    {
+      "end_of_month": "2023-01",
+      "disc_win_base_rate": 4.75
+    },
+    {
+      "end_of_month": "2023-02",
+      "disc_win_base_rate": 5
+    },
+    {
+      "end_of_month": "2023-03",
+      "disc_win_base_rate": 5.25
+    },
+    {
+      "end_of_month": "2023-04",
+      "disc_win_base_rate": 5.25
+    },
+    {
+      "end_of_month": "2023-05",
+      "disc_win_base_rate": 5.5
+    },
+    {
+      "end_of_month": "2023-06",
+      "disc_win_base_rate": 5.5
+    },
+    {
+      "end_of_month": "2023-07",
+      "disc_win_base_rate": 5.75
+    },
+    {
+      "end_of_month": "2023-08",
+      "disc_win_base_rate": 5.75
+    },
+    {
+      "end_of_month": "2023-09",
+      "disc_win_base_rate": 5.75
+    },
+    {
+      "end_of_month": "2023-10",
+      "disc_win_base_rate": 5.75
+    },
+    {
+      "end_of_month": "2023-11",
+      "disc_win_base_rate": 5.75
+    },
+    {
+      "end_of_month": "2023-12",
+      "disc_win_base_rate": 5.75
+    },
+    {
+      "end_of_month": "2024-01",
+      "disc_win_base_rate": 5.75
+    },
+    {
+      "end_of_month": "2024-02",
+      "disc_win_base_rate": 5.75
+    },
+    {
+      "end_of_month": "2024-03",
+      "disc_win_base_rate": 5.75
+    },
+    {
+      "end_of_month": "2024-04",
+      "disc_win_base_rate": 5.75
+    },
+    {
+      "end_of_month": "2024-05",
+      "disc_win_base_rate": 5.75
+    },
+    {
+      "end_of_month": "2024-06",
+      "disc_win_base_rate": 5.75
+    },
+    {
+      "end_of_month": "2024-07",
+      "disc_win_base_rate": 5.75
+    },
+    {
+      "end_of_month": "2024-08",
+      "disc_win_base_rate": 5.75
+    },
+    {
+      "end_of_month": "2024-09",
+      "disc_win_base_rate": 5.25
+    },
+    {
+      "end_of_month": "2024-10",
+      "disc_win_base_rate": 5.25
+    },
+    {
+      "end_of_month": "2024-11",
+      "disc_win_base_rate": 5
+    },
+    {
+      "end_of_month": "2024-12",
+      "disc_win_base_rate": 4.75
+    },
+    {
+      "end_of_month": "2025-01",
+      "disc_win_base_rate": 4.75
+    },
+    {
+      "end_of_month": "2025-02",
+      "disc_win_base_rate": 4.75
+    },
+    {
+      "end_of_month": "2025-03",
+      "disc_win_base_rate": 4.75
+    },
+    {
+      "end_of_month": "2025-04",
+      "disc_win_base_rate": 4.75
+    },
+    {
+      "end_of_month": "2025-05",
+      "disc_win_base_rate": 4.75
+    },
+    {
+      "end_of_month": "2025-06",
+      "disc_win_base_rate": 4.75
+    },
+    {
+      "end_of_month": "2025-07",
+      "disc_win_base_rate": 4.75
+    },
+    {
+      "end_of_month": "2025-08",
+      "disc_win_base_rate": 4.75
+    },
+    {
+      "end_of_month": "2025-09",
+      "disc_win_base_rate": 4.5
+    },
+    {
+      "end_of_month": "2025-10",
+      "disc_win_base_rate": 4.25
+    },
+    {
+      "end_of_month": "2025-11",
+      "disc_win_base_rate": 4.25
+    },
+    {
+      "end_of_month": "2025-12",
+      "disc_win_base_rate": 4
+    },
+    {
+      "end_of_month": "2026-01",
+      "disc_win_base_rate": 4
+    },
+    {
+      "end_of_month": "2026-02",
+      "disc_win_base_rate": 4
+    },
+    {
+      "end_of_month": "2026-03",
+      "disc_win_base_rate": 4
+    },
+    {
+      "end_of_month": "2026-04",
+      "disc_win_base_rate": 4
+    },
+    {
+      "end_of_month": "2026-05",
+      "disc_win_base_rate": 4
+    },
+    {
+      "end_of_month": "2026-06",
+      "disc_win_base_rate": 4
+    },
+    {
+      "end_of_month": "2026-07",
+      "disc_win_base_rate": 4
+    },
+    {
+      "end_of_month": "2026-08",
+      "disc_win_base_rate": 4
+    }
+  ]
+}
