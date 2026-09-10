@@ -785,7 +785,6 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
             hovermode="x unified",
             dragmode=False,
             margin=dict(l=62, r=82 if right_axis else 28, t=96, b=44, pad=2),
-            title=dict(text=f"{title} · latest {latest_text}", x=0.01, xanchor="left", font=dict(size=16)),
             legend=dict(
                 orientation="h", yanchor="bottom", y=1.08, xanchor="left", x=0,
                 font=dict(size=11), traceorder="normal", itemwidth=30,
@@ -817,10 +816,9 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         title_text="Market Price / Index Level", secondary_y=True,
         showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
-    style(money, "5-1. HK Money Supply & Market Pulse", right_axis=True)
+    style(money, "5. HK Money Supply & Market Pulse", right_axis=True)
     if not market_data.empty:
         market_latest = market_data["observation_date"].max().strftime("%Y-%m")
-        money.update_layout(title_text=f"5-1. HK Money Supply & Market Pulse · market latest {market_latest}")
 
     # 5-2 · Daily banking-system liquidity and monetary-base structure.
     balance = make_subplots(specs=[[{"secondary_y": True}]])
@@ -838,11 +836,10 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         title_text="EFBN (HK$ bn)", secondary_y=True,
         showgrid=False, zeroline=False, fixedrange=True,
     )
-    style(balance, "5-2. Daily Banking-system Liquidity" if _daily_snapshot_available() else "5-2. Banking-system Liquidity · monthly fallback", height=450, right_axis=True)
+    style(balance, "6. Daily Banking-system Liquidity" if _daily_snapshot_available() else "6. Banking-system Liquidity · monthly fallback", height=450, right_axis=True)
     if not banking_data.empty:
         banking_latest = banking_data["observation_date"].max().strftime("%Y-%m-%d")
-        balance_label = "5-2. Daily Banking-system Liquidity" if _daily_snapshot_available() else "5-2. Banking-system Liquidity · monthly fallback"
-        balance.update_layout(title_text=f"{balance_label} · latest {banking_latest}")
+        balance_label = "6. Daily Banking-system Liquidity" if _daily_snapshot_available() else "6. Banking-system Liquidity · monthly fallback"
 
     # 5-3 · HKD funding.
     funding = make_subplots(specs=[[{"secondary_y": True}]])
@@ -859,11 +856,10 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         title_text="Spread (bp)", secondary_y=True,
         showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
-    style(funding, "5-3. HKD Funding · Daily" if _daily_snapshot_available() else "5-3. HKD Funding · monthly fallback", right_axis=True)
+    style(funding, "7. HKD Funding · Daily" if _daily_snapshot_available() else "7. HKD Funding · monthly fallback", right_axis=True)
     if not funding_data.empty:
         funding_latest = funding_data["observation_date"].max().strftime("%Y-%m-%d" if _daily_snapshot_available() else "%Y-%m")
-        funding_label = "5-3. HKD Funding · Daily" if _daily_snapshot_available() else "5-3. HKD Funding · monthly fallback"
-        funding.update_layout(title_text=f"{funding_label} · latest {funding_latest}")
+        funding_label = "7. HKD Funding · Daily" if _daily_snapshot_available() else "7. HKD Funding · monthly fallback"
 
     # 5-4 · Convertibility band + market reaction.
     fx = make_subplots(specs=[[{"secondary_y": True}]])
@@ -890,10 +886,9 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         title_text="Market Price / Index Level", secondary_y=True,
         showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
-    style(fx, "5-4. USD/HKD Convertibility Band & Market", height=450, right_axis=True)
+    style(fx, "8. USD/HKD Convertibility Band & Market", height=450, right_axis=True)
     if not fx_source.empty:
         fx_latest = fx_source["observation_date"].max().strftime("%Y-%m-%d")
-        fx.update_layout(title_text=f"5-4. USD/HKD Convertibility Band & Market · FX latest {fx_latest}")
 
     return [money, balance, funding, fx]
 
