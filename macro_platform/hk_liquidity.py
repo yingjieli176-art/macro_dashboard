@@ -58,6 +58,7 @@ OUTPUT_COLUMNS = [
 
 COLORS = {
     "m2": "#2563eb",
+    "m2_mom": "#0ea5e9",
     "m3": "#7c3aed",
     "base": "#64748b",
     "balance": "#0f766e",
@@ -492,7 +493,7 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
 
     # Order is analytical reading order and is mirrored by each local legend.
     add_trace(1, "M2 YoY", "M2 YoY", COLORS["m2"], 2.8)
-    add_trace(1, "M3 YoY", "M3 YoY", COLORS["m3"], 2.3, "dash")
+    add_trace(1, "M2 MoM", "M2 MoM", COLORS["m2_mom"], 2.1, "dash")
     add_trace(1, "Monetary Base YoY", "Monetary Base YoY", COLORS["base"], 1.8, "dot")
 
     add_trace(2, "Aggregate Balance", "Aggregate Balance", COLORS["balance"], 2.8, unit=" HK$ bn")
@@ -529,7 +530,7 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
     )
 
     grid = dict(showgrid=True, gridcolor="#e5e7eb", griddash="dot", fixedrange=True)
-    fig.update_yaxes(title_text="YoY (%)", row=1, col=1, zeroline=True, zerolinecolor="#cbd5e1", **grid)
+    fig.update_yaxes(title_text="Money Growth (%)", row=1, col=1, zeroline=True, zerolinecolor="#cbd5e1", **grid)
     fig.update_yaxes(title_text="HK$ bn", row=2, col=1, zeroline=False, **grid)
     fig.update_yaxes(title_text="Rate (%)", row=3, col=1, secondary_y=False, zeroline=True, zerolinecolor="#cbd5e1", **grid)
     fig.update_yaxes(title_text="Spread (bp)", row=3, col=1, secondary_y=True, showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True)
@@ -886,7 +887,7 @@ def build_hk_liquidity_figures(
     # onto one comparable relative-performance axis.
     money = make_subplots(specs=[[{"secondary_y": True}]])
     add_line(money, data, "M2 YoY", "M2 YoY", COLORS["m2"], 2.8, secondary_y=False)
-    add_line(money, data, "M3 YoY", "M3 YoY", COLORS["m3"], 2.3, "dash", secondary_y=False)
+    add_line(money, data, "M2 MoM", "M2 MoM", COLORS["m2_mom"], 2.1, "dash", secondary_y=False)
     add_line(money, data, "Monetary Base YoY", "Monetary Base YoY", COLORS["base"], 1.8, "dot", secondary_y=False)
     if raw_market:
         add_line(money, market_data, "Tencent Price", "Tencent Price (R1)", "#111827", 2.3, unit=" HKD", secondary_y=True)
@@ -899,7 +900,7 @@ def build_hk_liquidity_figures(
         add_line(money, market_data, "HSTECH Index", "HSTECH (R)", "#db2777", 2.1, "dash", unit="", secondary_y=True)
         add_line(money, market_data, "HSI Index", "HSI (R)", "#d97706", 2.0, "dot", unit="", secondary_y=True)
     money.update_yaxes(
-        title_text="Money YoY (%)", secondary_y=False,
+        title_text="Money Growth (%)", secondary_y=False,
         showgrid=True, gridcolor="#e5e7eb", griddash="dot",
         zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
