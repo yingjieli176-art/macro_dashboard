@@ -285,11 +285,13 @@ def _get_eastmoney_quote_safe(symbol):
         if not data: return _empty_quote()
         price_raw, prev_raw, pct_raw = data.get("f43"), data.get("f60"), data.get("f170")
         if price_raw in (None, "-", ""): return _empty_quote()
-        divisor = 1 if str(symbol).upper() in ("^HSI", "HSTECH.HK", "^HSTECH", "000001.SS", "399001.SZ", "000300.SS") else 100
-        price = float(price_raw) / divisor; previous = None if prev_raw in (None, "-") else float(prev_raw) / divisor
+        # fltt=2 asks Eastmoney to return formatted decimal values already in
+        # native price units. Do not divide stock prices by 100 a second time.
+        price = float(price_raw)
+        previous = None if prev_raw in (None, "-") else float(prev_raw)
         change_pct = None if pct_raw in (None, "-") else float(pct_raw)
         if change_pct is None and previous not in (None, 0): change_pct = (price - previous) / previous * 100
-        return {"price": price, "change_pct": change_pct, "market_state": "REGULAR", "currency": ("HKD" if str(symbol).upper().endswith(".HK") else "CNY"), "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": data.get("f86"), "post_market_time": None, "pre_market_time": None, "quote_source": "Eastmoney", "delayed_by": 0, "data_source": "东方财富"}
+        return {"price": price, "change_pct": change_pct, "market_state": "REGULAR", "currency": ("HKD" if str(symbol).upper().endswith(".HK") or str(symbol).upper() in ("^HSI", "^HSTECH", "HSTECH.HK") else "CNY"), "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": data.get("f86"), "post_market_time": None, "pre_market_time": None, "quote_source": "Eastmoney", "delayed_by": 0, "data_source": "东方财富"}
     except Exception: return _empty_quote()
 
 def _market_state_text(row): return {"REGULAR": "交易中", "PRE": "盘前", "POST": "盘后", "CLOSED": "休市"}.get(row.get("market_state") or "", "")
@@ -404,6 +406,7 @@ def _render_quote_block(item):
         elif market_state == "POST" and pp is not None: after = f'<div class="search-after">盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
         elif pp is not None and row.get("post_market_time"): after = f'<div class="search-after">最近盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
     source = row.get("data_source") or row.get("quote_source") or ""; delay = row.get("delayed_by"); source_text = f"{source} · 延迟{delay}分" if delay not in (None, 0, "0") and source == "Yahoo Finance" else source
+    if row.get("_stale"): source_text = (source_text + " · 上次有效报价").strip(" ·")
     if row.get("_stale"): source_text = (source_text + " · 上次有效报价").strip(" ·")
     return f'<div class="search-result"><div class="search-result-label">{html.escape(item["name"])} <span class="search-result-symbol">· {html.escape(item["symbol"])} · {html.escape(item.get("exchange", ""))}</span></div><div class="search-price">{html.escape(price_text)} <span class="market-change">{html.escape(change_text)} {html.escape(state)}</span></div>{after}<div class="search-hint">{html.escape(source_text)}</div></div>'
 
