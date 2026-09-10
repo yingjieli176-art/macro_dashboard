@@ -23,6 +23,16 @@ jobs:
           python-version: '3.12'
       - name: Apply dashboard changes
         run: python scripts/apply_precious_metals_and_liquidity_axes.py
+      - name: Normalize generated description newlines
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app.py')
+          text = p.read_text(encoding='utf-8')
+          text = text.replace('\\n\\nPRECIOUS_METALS_DESCRIPTION =', '\n\nPRECIOUS_METALS_DESCRIPTION =')
+          text = text.replace("互相压缩。'\\n", "互相压缩。'\n")
+          p.write_text(text, encoding='utf-8')
+          PY
       - name: Compile app
         run: python -m py_compile app.py data.py
       - name: Validate chart definitions
