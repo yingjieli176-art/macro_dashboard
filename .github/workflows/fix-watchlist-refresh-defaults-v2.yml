@@ -1,0 +1,101 @@
+name: Fix watchlist refresh defaults v2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/fix_watchlist_refresh_defaults_v2.py
+      - .github/workflows/fix-watchlist-refresh-defaults-v2.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fix-watchlist-refresh-defaults-v2
+  cancel-in-progress: true
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply patch
+        run: python scripts/fix_watchlist_refresh_defaults_v2.py
+
+      - name: Compile
+        run: python -m py_compile app.py macro_platform/watchlist_state.py scripts/fix_watchlist_refresh_defaults_v2.py
+
+      - name: Validate default migration semantics
+        run: |
+          python - <<'PY'
+          import base64, json, zlib
+          from macro_platform.watchlist_state import decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
+
+          compact = {
+              'v': 3,
+              'd': 1,
+              'u': [['NVDA', 'NVIDIA Corporation']],
+              'h': [['0700.HK', 'Tencent Holdings Limited']],
+              'c': [['600021.SS', 'Shanghai Electric Power']],
+          }
+          raw = json.dumps(compact, ensure_ascii=False, separators=(',', ':')).encode()
+          token = 'v3.' + base64.urlsafe_b64encode(zlib.compress(raw, 9)).decode().rstrip('=')
+          assert watchlist_needs_default_migration(token)
+          migrated = merge_default_watchlists(decode_watchlists(token))
+          assert [x['symbol'] for x in migrated['market_search_us']] == ['NVDA', 'NBIS', '^NDX']
+          assert [x['symbol'] for x in migrated['market_search_hk']] == ['0700.HK', '0189.HK']
+          assert [x['symbol'] for x in migrated['market_search_cn']] == ['600021.SS', '600160.SS']
+          assert migrated['market_search_us'][0]['name'] == '英伟达'
+          assert migrated['market_search_hk'][0]['name'] == '腾讯控股'
+          assert migrated['market_search_cn'][0]['name'] == '上海电力'
+
+          encoded = encode_watchlists(migrated)
+          assert not watchlist_needs_default_migration(encoded)
+          deleted = decode_watchlists(encoded)
+          deleted['market_search_us'] = [x for x in deleted['market_search_us'] if x['symbol'] != 'NBIS']
+          encoded_after_delete = encode_watchlists(deleted)
+          assert not watchlist_needs_default_migration(encoded_after_delete)
+          assert 'NBIS' not in [x['symbol'] for x in decode_watchlists(encoded_after_delete)['market_search_us']]
+          print('default migration v2 OK')
+          PY
+
+      - name: Validate fragment-only refresh and HKT timestamp
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          assert 'DASHBOARD_TZ = ZoneInfo("Asia/Hong_Kong")' in text
+          assert '行情数据刷新时间（HKT）' in text
+          assert 'return snapshot_time' in text
+          start = text.index('@st.fragment(run_every="60s")\ndef render_watchlists():')
+          end = text.index('\nrender_watchlists()', start)
+          fragment = text[start:end]
+          assert 'st.button("↻ 刷新"' in fragment
+          assert '只刷新下方自选模块报价，不刷新市场概览' in fragment
+          assert '_get_cached_quote.clear()' not in fragment
+          assert 'use_container_width=True' not in fragment.split('st.button("↻ 刷新"', 1)[1].split(')', 1)[0]
+          assert 'if st.session_state.get("_watchlist_loaded"):' in text
+          assert 'if needs_migration:' in text
+          print('fragment-only refresh + HKT timestamp OK')
+          PY
+
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/watchlist_state.py
+          if git diff --cached --quiet; then
+            echo "Fix already applied"
+            exit 0
+          fi
+          git commit -m "Fix watchlist refresh scope, time zone, and defaults"
+          git pull --rebase origin main
+          git push origin main
