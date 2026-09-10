@@ -50,7 +50,7 @@ jobs:
           }
           dates = pd.date_range('2021-01-01', '2026-09-09', freq='D')
           for date_range, (dtick, tickformat) in expected.items():
-              fig = go.Figure(go.Scatter(x=dates, y=range(len(dates))))
+              fig = go.Figure(go.Scatter(x=dates, y=list(range(len(dates)))))
               apply_time_axis(fig, date_range)
               assert fig.layout.xaxis.dtick == dtick, (date_range, fig.layout.xaxis.dtick)
               assert fig.layout.xaxis.tickformat == tickformat
@@ -61,7 +61,6 @@ jobs:
               assert len(fig.layout.xaxis2.ticktext) <= 6, (date_range, fig.layout.xaxis2.ticktext)
               print(date_range, 'bottom=', dtick, tickformat, 'years=', list(fig.layout.xaxis2.ticktext))
 
-          # Real HK charts must also carry the common upper-year axis.
           figures = build_hk_liquidity_figures('5Y')
           assert len(figures) == 4
           for i, fig in enumerate(figures, start=5):
