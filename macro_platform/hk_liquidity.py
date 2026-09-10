@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_monetary_statistics.json"
 DAILY_BANKING_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_banking_liquidity_daily.json"
 HSTECH_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hstech_monthly.json"
+HK_MARKET_DAILY_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hk_market_daily.json"
 USDHKD_SNAPSHOT_PATH = ROOT / "data_snapshots" / "usdhkd_daily.json"
 HIBOR_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkd_hibor_monthly.json"
 BASE_RATE_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_base_rate_monthly.json"
@@ -572,6 +573,69 @@ def _hstech_snapshot_monthly(label: str) -> pd.DataFrame:
     return frame[["observation_date", label]].drop_duplicates("observation_date", keep="last")
 
 
+def _market_snapshot_history(symbol: str, label: str, date_range: str) -> pd.DataFrame:
+    """Load persisted daily Hong Kong market history and adapt density by window.
+
+    1M/3M/6M/1Y retain trading-day observations. 5Y is reduced to weekly
+    closes to keep Plotly responsive without destroying the shape of the cycle.
+    """
+    try:
+        payload = json.loads(HK_MARKET_DAILY_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+        node = ((payload.get("series") or {}).get(symbol) or {})
+        frame = pd.DataFrame(node.get("records") or [])
+    except Exception:
+        return pd.DataFrame(columns=["observation_date", label])
+    if frame.empty or "observation_date" not in frame.columns or "close" not in frame.columns:
+        return pd.DataFrame(columns=["observation_date", label])
+    frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
+    frame[label] = pd.to_numeric(frame["close"], errors="coerce")
+    frame = (
+        frame.dropna(subset=["observation_date", label])
+        .sort_values("observation_date")
+        .drop_duplicates("observation_date", keep="last")
+    )
+    if frame.empty:
+        return pd.DataFrame(columns=["observation_date", label])
+    start = frame["observation_date"].max() - RANGE_OFFSETS.get(date_range, RANGE_OFFSETS["1Y"])
+    frame = frame.loc[frame["observation_date"] >= start, ["observation_date", label]].copy()
+    if date_range == "5Y" and not frame.empty:
+        frame = (
+            frame.set_index("observation_date")[label]
+            .resample("W-FRI")
+            .last()
+            .dropna()
+            .rename(label)
+            .reset_index()
+        )
+    return frame
+
+
+def _market_history(symbol: str, label: str, date_range: str) -> pd.DataFrame:
+    snapshot_symbol = "HSTECH" if str(symbol).upper() in {"HSTECH", "HSTECH.HK", "^HSTECH"} else symbol
+    snapshot = _market_snapshot_history(snapshot_symbol, label, date_range)
+    minimum = 200 if date_range == "5Y" else 10
+    if len(snapshot) >= minimum:
+        return snapshot
+    # Emergency fallback only. Normal dashboard renders should never need live
+    # history because GitHub Actions maintains the last-known-good snapshot.
+    monthly = _market_monthly_close(symbol, label)
+    if monthly.empty:
+        return monthly
+    return _slice_range(monthly, date_range)
+
+
+def _rebase_market_data(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    rebased = frame.copy()
+    for column in columns:
+        if column not in rebased.columns:
+            continue
+        valid = pd.to_numeric(rebased[column], errors="coerce").dropna()
+        if valid.empty or float(valid.iloc[0]) == 0:
+            continue
+        rebased[column] = pd.to_numeric(rebased[column], errors="coerce") / float(valid.iloc[0]) * 100.0
+    return rebased
+
+
 def _market_monthly_close(symbol: str, label: str) -> pd.DataFrame:
     if str(symbol).upper() in {"HSTECH.HK", "^HSTECH", "HSTECH"}:
         snapshot = _hstech_snapshot_monthly(label)
@@ -694,7 +758,9 @@ def _fred_daily_series(series_id: str, label: str) -> pd.DataFrame:
         return pd.DataFrame(columns=["observation_date", label])
 
 
-def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> list[go.Figure]:
+def build_hk_liquidity_figures(
+    date_range: str, compact_mode: bool = False, market_mode: str = "Raw"
+) -> list[go.Figure]:
     """Build four independent Hong Kong liquidity charts for the dashboard."""
     all_data = load_hk_liquidity()
     data = _slice_range(all_data, date_range)
@@ -715,12 +781,15 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         fig.update_layout(height=420, template="plotly_white")
         return [fig]
 
-    # Market overlays use month-end price/index levels. No percentage transformation is applied.
-    hkex_price = _market_monthly_close("0388.HK", "HKEX Price")
-    hstech_index = _market_monthly_close("HSTECH.HK", "HSTECH Index")
-    hsi_index = _market_monthly_close("^HSI", "HSI Index")
+    # Market overlays are persisted as daily last-known-good history. Short
+    # windows retain daily detail; the 5Y view is sampled to weekly closes.
+    tencent_price = _market_history("0700.HK", "Tencent Price", date_range)
+    hkex_price = _market_history("0388.HK", "HKEX Price", date_range)
+    hstech_index = _market_history("HSTECH", "HSTECH Index", date_range)
+    hsi_index = _market_history("^HSI", "HSI Index", date_range)
+    market_columns = ["Tencent Price", "HKEX Price", "HSTECH Index", "HSI Index"]
     market_data = pd.DataFrame(columns=["observation_date"])
-    for frame in (hkex_price, hstech_index, hsi_index):
+    for frame in (tencent_price, hkex_price, hstech_index, hsi_index):
         if frame.empty:
             continue
         if market_data.empty:
@@ -729,6 +798,9 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
             market_data = market_data.merge(frame, on="observation_date", how="outer")
     if not market_data.empty:
         market_data = market_data.sort_values("observation_date")
+    raw_market = str(market_mode).strip().lower() == "raw"
+    if not raw_market and not market_data.empty:
+        market_data = _rebase_market_data(market_data, market_columns)
 
     # Monthly HKMA FX is useful for consistency, but DEXHKUS gives a much fresher
     # daily five-year USD/HKD history for the convertibility-band panel.
@@ -744,6 +816,7 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         dash: str | None = None,
         unit: str = "%",
         secondary_y: bool | None = None,
+        axis: str | None = None,
     ) -> None:
         if column not in frame.columns or frame[column].notna().sum() == 0:
             return
@@ -755,7 +828,10 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
             line=line, connectgaps=False,
             hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>",
         )
-        if secondary_y is None:
+        if axis is not None:
+            trace.update(yaxis=axis)
+            fig.add_trace(trace)
+        elif secondary_y is None:
             fig.add_trace(trace)
         else:
             fig.add_trace(trace, secondary_y=secondary_y)
@@ -805,26 +881,48 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         # Initialize charts 5-8 with the same two-level time axis as charts 1-4.
         return apply_time_axis(fig, date_range)
 
-    # 5-1 · Money supply + Hong Kong equity market monthly changes.
+    # 5 · Money supply + Hong Kong equity market. Raw mode separates stock
+    # prices (R1) from index levels (R2); Rebased 100 puts all market assets
+    # onto one comparable relative-performance axis.
     money = make_subplots(specs=[[{"secondary_y": True}]])
     add_line(money, data, "M2 MoM", "M2 MoM", COLORS["m2"], 2.8, secondary_y=False)
     add_line(money, data, "M3 MoM", "M3 MoM", COLORS["m3"], 2.3, "dash", secondary_y=False)
     add_line(money, data, "Monetary Base MoM", "Monetary Base MoM", COLORS["base"], 1.8, "dot", secondary_y=False)
-    add_line(money, market_data, "HKEX Price", "HKEX Price (R)", "#0891b2", 2.1, unit=" HKD", secondary_y=True)
-    add_line(money, market_data, "HSTECH Index", "HSTECH Index (R)", "#db2777", 2.1, "dash", unit=" pts", secondary_y=True)
-    add_line(money, market_data, "HSI Index", "HSI Index (R)", "#d97706", 2.0, "dot", unit=" pts", secondary_y=True)
+    if raw_market:
+        add_line(money, market_data, "Tencent Price", "Tencent Price (R1)", "#111827", 2.3, unit=" HKD", secondary_y=True)
+        add_line(money, market_data, "HKEX Price", "HKEX Price (R1)", "#0891b2", 2.0, "dash", unit=" HKD", secondary_y=True)
+        add_line(money, market_data, "HSTECH Index", "HSTECH Index (R2)", "#db2777", 2.1, "dash", unit=" pts", axis="y3")
+        add_line(money, market_data, "HSI Index", "HSI Index (R2)", "#d97706", 2.0, "dot", unit=" pts", axis="y3")
+    else:
+        add_line(money, market_data, "Tencent Price", "Tencent (R)", "#111827", 2.3, unit="", secondary_y=True)
+        add_line(money, market_data, "HKEX Price", "HKEX (R)", "#0891b2", 2.0, "dash", unit="", secondary_y=True)
+        add_line(money, market_data, "HSTECH Index", "HSTECH (R)", "#db2777", 2.1, "dash", unit="", secondary_y=True)
+        add_line(money, market_data, "HSI Index", "HSI (R)", "#d97706", 2.0, "dot", unit="", secondary_y=True)
     money.update_yaxes(
         title_text="Money MoM (%)", secondary_y=False,
         showgrid=True, gridcolor="#e5e7eb", griddash="dot",
         zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
     money.update_yaxes(
-        title_text="Market Price / Index Level", secondary_y=True,
-        showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
+        title_text="R1 · HKD Price" if raw_market else "Market · Rebased 100", secondary_y=True,
+        showgrid=False, zeroline=False, fixedrange=True,
     )
     style(money, "5. HK Money Supply & Market Pulse", right_axis=True)
+    if raw_market:
+        money.update_layout(
+            margin=dict(l=62, r=142, t=124, b=54, pad=2),
+            xaxis=dict(domain=[0.0, 0.84]),
+            yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86, title="R1 · HKD Price", showgrid=False, fixedrange=True, tickfont=dict(size=10)),
+            yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.97, title="R2 · Index Level", showgrid=False, fixedrange=True, tickfont=dict(size=10)),
+        )
+    else:
+        money.update_layout(
+            margin=dict(l=62, r=94, t=124, b=54, pad=2),
+            xaxis=dict(domain=[0.0, 0.91]),
+            yaxis2=dict(title="Market · Rebased 100", showgrid=False, fixedrange=True),
+        )
     if not market_data.empty:
-        market_latest = market_data["observation_date"].max().strftime("%Y-%m")
+        market_latest = market_data["observation_date"].max().strftime("%Y-%m-%d")
 
     # 5-2 · Daily banking-system liquidity and monetary-base structure.
     balance = make_subplots(specs=[[{"secondary_y": True}]])
@@ -867,22 +965,36 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         funding_latest = funding_data["observation_date"].max().strftime("%Y-%m-%d" if _daily_snapshot_available() else "%Y-%m")
         funding_label = "7. HKD Funding · Daily" if _daily_snapshot_available() else "7. HKD Funding · monthly fallback"
 
-    # 5-4 · Convertibility band + market reaction.
+    # 8 · Convertibility band + market reaction.
     fx = make_subplots(specs=[[{"secondary_y": True}]])
     fx_source = fx_daily if not fx_daily.empty else data[["observation_date", "USD/HKD"]].dropna().copy()
     add_line(fx, fx_source, "USD/HKD", "USD/HKD", COLORS["fx"], 2.6, unit="", secondary_y=False)
     add_constant(fx, 7.75, "Strong-side CU 7.75", COLORS["strong"], "dot", 1.4, secondary_y=False, x_frame=fx_source)
     add_constant(fx, 7.80, "Linked Rate Center 7.80", "#64748b", "dash", 1.5, secondary_y=False, x_frame=fx_source)
     add_constant(fx, 7.85, "Weak-side CU 7.85", COLORS["weak"], "dot", 1.4, secondary_y=False, x_frame=fx_source)
-    add_line(fx, market_data, "HKEX Price", "HKEX Price (R)", "#0891b2", 2.1, unit=" HKD", secondary_y=True)
-    add_line(fx, market_data, "HSTECH Index", "HSTECH Index (R)", "#db2777", 2.1, "dash", unit=" pts", secondary_y=True)
-    add_line(fx, market_data, "HSI Index", "HSI Index (R)", "#d97706", 2.0, "dot", unit=" pts", secondary_y=True)
+    if raw_market:
+        add_line(fx, market_data, "Tencent Price", "Tencent Price (R1)", "#111827", 2.3, unit=" HKD", secondary_y=True)
+        add_line(fx, market_data, "HKEX Price", "HKEX Price (R1)", "#0891b2", 2.0, "dash", unit=" HKD", secondary_y=True)
+        add_line(fx, market_data, "HSTECH Index", "HSTECH Index (R2)", "#db2777", 2.1, "dash", unit=" pts", axis="y3")
+        add_line(fx, market_data, "HSI Index", "HSI Index (R2)", "#d97706", 2.0, "dot", unit=" pts", axis="y3")
+    else:
+        add_line(fx, market_data, "Tencent Price", "Tencent (R)", "#111827", 2.3, unit="", secondary_y=True)
+        add_line(fx, market_data, "HKEX Price", "HKEX (R)", "#0891b2", 2.0, "dash", unit="", secondary_y=True)
+        add_line(fx, market_data, "HSTECH Index", "HSTECH (R)", "#db2777", 2.1, "dash", unit="", secondary_y=True)
+        add_line(fx, market_data, "HSI Index", "HSI (R)", "#d97706", 2.0, "dot", unit="", secondary_y=True)
     fx.add_hrect(
         y0=7.75, y1=7.85,
-        fillcolor="rgba(148,163,184,0.10)",
+        fillcolor="rgba(148,163,184,0.08)",
         line_width=0, layer="below",
         annotation_text="7.75–7.85 LERS band",
         annotation_position="top left",
+    )
+    fx.add_hrect(
+        y0=7.84, y1=7.85,
+        fillcolor="rgba(220,38,38,0.09)",
+        line_width=0, layer="below",
+        annotation_text="Weak-side Pressure 7.84–7.85",
+        annotation_position="bottom left",
     )
     fx.update_yaxes(
         title_text="USD/HKD · Strong ↑ / Weak ↓", secondary_y=False, range=[7.87, 7.73],
@@ -890,10 +1002,23 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
         zeroline=False, fixedrange=True,
     )
     fx.update_yaxes(
-        title_text="Market Price / Index Level", secondary_y=True,
-        showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
+        title_text="R1 · HKD Price" if raw_market else "Market · Rebased 100", secondary_y=True,
+        showgrid=False, zeroline=False, fixedrange=True,
     )
-    style(fx, "8. USD/HKD Convertibility Band & Market", height=450, right_axis=True)
+    style(fx, "8. USD/HKD Convertibility Band & Market", height=470, right_axis=True)
+    if raw_market:
+        fx.update_layout(
+            margin=dict(l=62, r=142, t=124, b=54, pad=2),
+            xaxis=dict(domain=[0.0, 0.84]),
+            yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86, title="R1 · HKD Price", showgrid=False, fixedrange=True, tickfont=dict(size=10)),
+            yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.97, title="R2 · Index Level", showgrid=False, fixedrange=True, tickfont=dict(size=10)),
+        )
+    else:
+        fx.update_layout(
+            margin=dict(l=62, r=94, t=124, b=54, pad=2),
+            xaxis=dict(domain=[0.0, 0.91]),
+            yaxis2=dict(title="Market · Rebased 100", showgrid=False, fixedrange=True),
+        )
     if not fx_source.empty:
         fx_latest = fx_source["observation_date"].max().strftime("%Y-%m-%d")
 

@@ -456,8 +456,8 @@ def get_hk_liquidity():
     return load_hk_liquidity()
 
 
-def build_fig5(date_range):
-    return build_hk_liquidity_figures(date_range, compact_mode=False)
+def build_fig5(date_range, market_mode="Raw"):
+    return build_hk_liquidity_figures(date_range, compact_mode=False, market_mode=market_mode)
 
 
 def apply_hk_chart_range(fig, date_range):
@@ -512,10 +512,10 @@ PARAM_DESCRIPTIONS = [
 def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
 
 HK_PARAMETER_DESCRIPTIONS = [
-    '<b>参数概念：</b><br>1. HKD M2 MoM：港元 M2 月环比增速，用来观察广义港元货币的边际扩张或收缩。<br>2. HKD M3 MoM：港元 M3 月环比增速，统计口径较 M2 更广，用于交叉确认广义货币边际变化。<br>3. Monetary Base MoM：香港货币基础总量月环比变化。<br>4. HKEX Price（R）：港交所 0388.HK 月末收盘价，右轴单位 HKD；用于观察香港交易所股价与货币流动性变化之间的市场映射。<br>5. HSTECH Index（R）：恒生科技指数 HSTECH.HK 月末指数点位，右轴单位 points；市场历史独立拉取 5Y，不再被 HKMA 月度快照长度裁断。<br>6. HSI Index（R）：恒生指数月末指数点位，右轴单位 points；使用 ^HSI 的 5Y 市场历史，用于对照香港大盘与流动性变化。',
+    '<b>参数概念：</b><br>1. HKD M2 MoM：港元 M2 月环比增速，用来观察广义港元货币的边际扩张或收缩。<br>2. HKD M3 MoM：港元 M3 月环比增速，统计口径较 M2 更广，用于交叉确认广义货币边际变化。<br>3. Monetary Base MoM：香港货币基础总量月环比变化。<br>4. HKEX Price（R1）：港交所 0388.HK 月末收盘价，右轴单位 HKD；用于观察香港交易所股价与货币流动性变化之间的市场映射。<br>5. HSTECH Index（R2）：恒生科技指数 HSTECH.HK 月末指数点位，右轴单位 points；市场历史独立拉取 5Y，不再被 HKMA 月度快照长度裁断。<br>6. HSI Index（R2）：恒生指数月末指数点位，右轴单位 points；使用 ^HSI 的 5Y 市场历史，用于对照香港大盘与流动性变化。<br>7. Tencent Price（R1）：腾讯控股 0700.HK 股价，Raw 模式与港交所共用 R1 港元价格轴；Rebased 100 模式把可视区间首个有效值归一到 100，便于比较相对弹性。<br><br><b>市场显示：</b>Raw 模式把股票价格放在 R1、指数点位放在 R2；Rebased 100 模式把 Tencent / HKEX / HSTECH / HSI 统一归一化，用于比较涨跌幅而不是绝对点位。',
     '<b>参数概念：</b><br>1. Closing Aggregate Balance：银行体系期末总结余，单位 HK$ billion；5Y 视图使用 HKMA 月度期末历史，数值下降通常代表可用港元流动性收紧。<br>2. Outstanding EFBN（R）：外汇基金票据及债券未偿还总额，右轴单位 HK$ billion，是香港货币基础的重要结构项。<br>3. EFBN Held by Licensed Banks（R）：由持牌银行持有的 EFBN，右轴单位 HK$ billion，用于观察银行体系持有的高流动性港元资产规模。<br><br><b>读取提示：</b>5Y 历史只展示 HKMA 实际公布的月度期末字段，不再用 Closing Aggregate Balance 复制生成 Opening 或 Forecast。若未来日频快照可用，短周期视图仍可显示真实 Opening / Closing / Forecast T+1。',
     '<b>参数概念：</b><br>1. O/N HIBOR：隔夜港元银行同业拆息，5Y 月度历史来自 C&SD 月刊（底层来源 HKAB / HKMA），反映最短端港元资金价格。<br>2. 3M HIBOR：3 个月港元银行同业拆息，用来观察更持续的港元融资成本。<br>3. HKMA Base Rate：香港金管局贴现窗基本利率；5Y 历史直接来自 HKMA 月末官方序列。<br>4. O/N−3M Spread（R）：隔夜 HIBOR 减 3M HIBOR，右轴单位 bp；显著转正通常代表短端资金压力上升。',
-    '<b>参数概念：</b><br>1. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>2. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>3. Linked Rate Center 7.80：7.75–7.85 兑换保证区间的中点参考线，用于快速判断港元当前处在偏强侧还是偏弱侧；不是额外的兑换保证触发水平。<br>4. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br>5. HKEX Price（R）：港交所 0388.HK 月末收盘价，右轴单位 HKD。<br>6. HSTECH Index（R）：恒生科技指数 HSTECH.HK 月末指数点位，右轴单位 points。<br>7. HSI Index（R）：恒生指数月末指数点位，右轴单位 points。<br><br><b>读取提示：</b>USD/HKD 左轴已反向：7.75 强方兑换保证显示在上方、7.85 弱方兑换保证显示在下方，因此视觉方向直接对应“港元偏强/流动性偏强 → 港元偏弱/流动性偏弱”。灰色区域仍表示 7.75–7.85 联系汇率区间；USD/HKD 优先使用仓库持久化的 Yahoo HKD=X 日频 5Y 快照，HKMA 月度汇率作为回退。',
+    '<b>参数概念：</b><br>1. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>2. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>3. Linked Rate Center 7.80：7.75–7.85 兑换保证区间的中点参考线，用于快速判断港元当前处在偏强侧还是偏弱侧；不是额外的兑换保证触发水平。<br>4. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br>5. HKEX Price（R1）：港交所 0388.HK 月末收盘价，右轴单位 HKD。<br>6. HSTECH Index（R2）：恒生科技指数 HSTECH.HK 月末指数点位，右轴单位 points。<br>7. HSI Index（R2）：恒生指数点位，Raw 模式对应 R2。<br>8. Tencent Price（R1）：腾讯控股 0700.HK 股价，Raw 模式对应 R1 港元价格轴。<br><br><b>市场显示：</b>Raw 模式保留真实价格/点位；Rebased 100 模式把四条市场资产在可视区间首个有效值归一到 100，用来比较谁更强、谁更弱。<br><br><b>读取提示：</b>USD/HKD 左轴已反向：7.75 强方兑换保证显示在上方、7.85 弱方兑换保证显示在下方，因此视觉方向直接对应“港元偏强/流动性偏强 → 港元偏弱/流动性偏弱”。灰色区域表示 7.75–7.85 联系汇率区间；其中 7.84–7.85 的淡红区域为 Weak-side Pressure Zone，用于提示接近弱方兑换保证的压力阶段；USD/HKD 优先使用仓库持久化的 Yahoo HKD=X 日频 5Y 快照，HKMA 月度汇率作为回退。',
 ]
 
 def show_hk_parameter_description(index):
@@ -546,11 +546,10 @@ def render_core_charts():
     # Build the full Hong Kong data set once. Charts 5-8 then behave exactly
     # like charts 1-4: external title, description, independent range control,
     # chart, local parameter notes, local sources, divider.
-    hk_figures = build_fig5("5Y")
     hk_configs = [
         (
             '<div class="section-title">5. HK Money Supply & Market Pulse</div>',
-            '<div class="section-description">HKD M2 / M3 / Monetary Base MoM · HKEX Price (R) · HSTECH Index (R) · HSI Index (R)</div>',
+            '<div class="section-description">HKD M2 / M3 / Monetary Base MoM · Tencent / HKEX (R1) · HSTECH / HSI (R2)</div>',
             "hk_5_range",
             [
                 ("HKMA Monetary Statistics", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics/"),
@@ -579,7 +578,7 @@ def render_core_charts():
         ),
         (
             '<div class="section-title">8. USD/HKD Convertibility Band & Market</div>',
-            '<div class="section-description">USD/HKD · Strong-side 7.75 · Center 7.80 · Weak-side 7.85 · HKEX / HSTECH / HSI (R)</div>',
+            '<div class="section-description">USD/HKD · Weak-side pressure 7.84–7.85 · Tencent / HKEX (R1) · HSTECH / HSI (R2)</div>',
             "hk_8_range",
             [
                 ("HKMA Linked Exchange Rate System", "https://www.hkma.gov.hk/eng/key-functions/money/linked-exchange-rate-system/"),
@@ -601,8 +600,19 @@ def render_core_charts():
             key=key,
             label_visibility="collapsed",
         )
+        hk_market_mode = "Raw"
+        if hk_index in (0, 3):
+            hk_market_mode = st.radio(
+                "市场显示",
+                ["Raw", "Rebased 100"],
+                horizontal=True,
+                index=0,
+                key=f"{key}_market_mode",
+                label_visibility="collapsed",
+            )
+        hk_figure = build_fig5(hk_range, market_mode=hk_market_mode)[hk_index]
         st.plotly_chart(
-            apply_hk_chart_range(hk_figures[hk_index], hk_range),
+            hk_figure,
             use_container_width=True,
             config=PLOTLY_CONFIG,
         )
