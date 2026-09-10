@@ -199,7 +199,7 @@ def _save_watchlists():
 _load_watchlists()
 
 def _empty_quote():
-    return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": None, "post_market_time": None, "pre_market_time": None, "quote_source": "", "delayed_by": None, "data_source": ""}
+    return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "overnight_market_time": None, "regular_market_time": None, "post_market_time": None, "pre_market_time": None, "quote_source": "", "delayed_by": None, "data_source": ""}
 
 
 YAHOO_CHART_BASES = (
@@ -231,13 +231,14 @@ def _get_yahoo_overnight_safe(symbol, previous=None):
             item = rows[0]
             price = item.get("overnightMarketPrice")
             pct = item.get("overnightChangePercent")
+            market_time = item.get("overnightMarketTime")
             if price is not None:
                 if pct is None and previous not in (None, 0):
                     pct = (price - previous) / previous * 100
-                return price, pct
+                return price, pct, market_time
         except Exception:
             continue
-    return None, None
+    return None, None, None
 
 def _get_yahoo_quote_safe(symbol):
     for base in YAHOO_CHART_BASES:
@@ -290,7 +291,7 @@ def _get_yahoo_quote_safe(symbol):
                 post_change_pct = (post_price - previous) / previous * 100
             if pre_change_pct is None and pre_price is not None and previous not in (None, 0):
                 pre_change_pct = (pre_price - previous) / previous * 100
-            overnight_price, overnight_change_pct = _get_yahoo_overnight_safe(symbol, previous)
+            overnight_price, overnight_change_pct, overnight_market_time = _get_yahoo_overnight_safe(symbol, previous)
             row = _empty_quote()
             row.update({
                 "price": price,
@@ -303,6 +304,7 @@ def _get_yahoo_quote_safe(symbol):
                 "pre_change_pct": pre_change_pct,
                 "overnight_price": overnight_price,
                 "overnight_change_pct": overnight_change_pct,
+                "overnight_market_time": overnight_market_time,
                 "regular_market_time": meta.get("regularMarketTime"),
                 "post_market_time": meta.get("postMarketTime"),
                 "pre_market_time": meta.get("preMarketTime"),
@@ -465,9 +467,22 @@ def _render_quote_block(item):
         pp, pc = row.get("post_price"), row.get("post_change_pct")
         pre_price, pre_change = row.get("pre_price"), row.get("pre_change_pct")
         overnight_price, overnight_change = row.get("overnight_price"), row.get("overnight_change_pct")
+        overnight_time = row.get("overnight_market_time")
         market_state = row.get("market_state")
-        if market_state in ("POSTPOST", "CLOSED") and overnight_price is not None:
-            session_text = f'夜盘 {overnight_price:,.2f} · {"--" if overnight_change is None else f"{overnight_change:+.2f}%"}'
+        overnight_fresh = True
+        if overnight_time not in (None, ""):
+            try:
+                overnight_fresh = 0 <= time.time() - float(overnight_time) <= 18 * 3600
+            except (TypeError, ValueError):
+                overnight_fresh = False
+        if market_state in ("POSTPOST", "CLOSED") and overnight_price is not None and overnight_fresh:
+            time_label = ""
+            if overnight_time not in (None, ""):
+                try:
+                    time_label = " · " + datetime.fromtimestamp(float(overnight_time), DASHBOARD_TZ).strftime("%H:%M HKT")
+                except (TypeError, ValueError, OSError):
+                    pass
+            session_text = f'夜盘 {overnight_price:,.2f} · {"--" if overnight_change is None else f"{overnight_change:+.2f}%"}{time_label}'
         elif market_state in ("PRE", "PREPRE") and pre_price is not None:
             session_text = f'盘前 {pre_price:,.2f} · {"--" if pre_change is None else f"{pre_change:+.2f}%"}'
         elif market_state == "POST" and pp is not None:
