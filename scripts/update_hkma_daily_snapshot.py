@@ -15,7 +15,6 @@ HIBOR_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-s
 
 
 def _date_add(date_text: str, months: int) -> str:
-    from datetime import date
     y, m, d = map(int, date_text.split("-"))
     value = y * 12 + (m - 1) + months
     ny, nm = value // 12, value % 12 + 1
@@ -51,10 +50,16 @@ def _request(url: str, params: dict[str, str]) -> list[dict]:
 
 
 def _fetch_windows(url: str, date_field: str, fields: str, start: str, end: str, extra: dict[str, str] | None = None) -> list[dict]:
+    """Fetch HKMA history in conservative six-month windows.
+
+    HKMA endpoints can become slow or reject broad date ranges even when the
+    row count is modest. Six-month chunks match the proven monthly-snapshot
+    strategy and keep each request bounded enough for GitHub Actions.
+    """
     rows: list[dict] = []
     cursor = start
     while cursor <= end:
-        window_end = min(_date_add(cursor, 12), end)
+        window_end = min(_date_add(cursor, 6), end)
         params = {
             "choose": date_field,
             "from": cursor,
@@ -69,7 +74,7 @@ def _fetch_windows(url: str, date_field: str, fields: str, start: str, end: str,
         batch = _request(url, params)
         print(url.rsplit('/', 1)[-1], cursor, window_end, len(batch))
         rows.extend(batch)
-        cursor = _date_add(cursor, 12)
+        cursor = _date_add(cursor, 6)
     return rows
 
 
