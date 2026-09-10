@@ -22,10 +22,11 @@ def main() -> None:
     response.raise_for_status()
     frame = pd.read_csv(io.StringIO(response.text))
     columns = {str(col).strip().upper(): col for col in frame.columns}
-    if "DATE" not in columns or "CLOSE" not in columns:
+    value_key = "VIXEQ" if "VIXEQ" in columns else ("CLOSE" if "CLOSE" in columns else None)
+    if "DATE" not in columns or value_key is None:
         raise RuntimeError(f"Unexpected VIXEQ CSV columns: {list(frame.columns)}")
 
-    out = frame[[columns["DATE"], columns["CLOSE"]]].copy()
+    out = frame[[columns["DATE"], columns[value_key]]].copy()
     out.columns = ["observation_date", "close"]
     out["observation_date"] = pd.to_datetime(out["observation_date"], errors="coerce")
     out["close"] = pd.to_numeric(out["close"], errors="coerce")
