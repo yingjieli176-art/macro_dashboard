@@ -517,7 +517,7 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
         dragmode=False,
         margin=dict(l=62, r=70, t=74, b=42, pad=2),
         title=dict(
-            text=f"Hong Kong Liquidity · {state['label']} · latest {latest_text}",
+            text=f"Hong Kong Liquidity · monthly signal {state['label']} · through {latest_text}",
             x=0.01,
             xanchor="left",
             font=dict(size=16),
@@ -759,6 +759,18 @@ def _fred_daily_series(series_id: str, label: str) -> pd.DataFrame:
         return pd.DataFrame(columns=["observation_date", label])
 
 
+
+def _frame_is_daily(frame: pd.DataFrame) -> bool:
+    if frame is None or frame.empty or "observation_date" not in frame.columns:
+        return False
+    dates = pd.to_datetime(frame["observation_date"], errors="coerce").dropna().drop_duplicates().sort_values()
+    if len(dates) < 3:
+        return False
+    gaps = dates.diff().dropna().dt.total_seconds() / 86400.0
+    if gaps.empty:
+        return False
+    return float(gaps.median()) <= 7.0 and float((gaps <= 7.0).mean()) >= 0.60
+
 def build_hk_liquidity_figures(
     date_range: str, compact_mode: bool = False, market_mode: str = "Raw"
 ) -> list[go.Figure]:
@@ -767,6 +779,8 @@ def build_hk_liquidity_figures(
     data = _slice_range(all_data, date_range)
     banking_source = load_hk_banking_liquidity_monthly() if date_range == "5Y" else load_hk_banking_liquidity_daily()
     funding_source = load_hk_funding_monthly() if date_range == "5Y" else load_hk_funding_daily()
+    banking_is_daily = _frame_is_daily(banking_source)
+    funding_is_daily = _frame_is_daily(funding_source)
     banking_data = _slice_range(banking_source, date_range)
     funding_data = _slice_range(funding_source, date_range)
     meta = snapshot_metadata()
@@ -941,10 +955,8 @@ def build_hk_liquidity_figures(
         title_text="EFBN (HK$ bn)", secondary_y=True,
         showgrid=False, zeroline=False, fixedrange=True,
     )
-    style(balance, "6. Daily Banking-system Liquidity" if _daily_snapshot_available() else "6. Banking-system Liquidity · monthly fallback", height=450, right_axis=True)
-    if not banking_data.empty:
-        banking_latest = banking_data["observation_date"].max().strftime("%Y-%m-%d")
-        balance_label = "6. Daily Banking-system Liquidity" if _daily_snapshot_available() else "6. Banking-system Liquidity · monthly fallback"
+    banking_frequency_label = "Daily" if banking_is_daily else ("Monthly" if date_range == "5Y" else "Monthly fallback")
+    style(balance, f"6. Banking-system Liquidity · {banking_frequency_label}", height=450, right_axis=True)
 
     # 5-3 · HKD funding.
     funding = make_subplots(specs=[[{"secondary_y": True}]])
@@ -961,10 +973,8 @@ def build_hk_liquidity_figures(
         title_text="Spread (bp)", secondary_y=True,
         showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
-    style(funding, "7. HKD Funding · Daily" if _daily_snapshot_available() else "7. HKD Funding · monthly fallback", right_axis=True)
-    if not funding_data.empty:
-        funding_latest = funding_data["observation_date"].max().strftime("%Y-%m-%d" if _daily_snapshot_available() else "%Y-%m")
-        funding_label = "7. HKD Funding · Daily" if _daily_snapshot_available() else "7. HKD Funding · monthly fallback"
+    funding_frequency_label = "Daily" if funding_is_daily else ("Monthly" if date_range == "5Y" else "Monthly fallback")
+    style(funding, f"7. HKD Funding · {funding_frequency_label}", right_axis=True)
 
     # 8 · Convertibility band + market reaction.
     fx = make_subplots(specs=[[{"secondary_y": True}]])
@@ -1048,5 +1058,5 @@ def liquidity_status_html() -> str:
       <div><span>Aggregate Balance</span><strong>{fmt(balance, ' bn')}</strong></div>
       <div><span>O/N HIBOR</span><strong>{fmt(on, '%')}</strong></div>
       <div><span>USD/HKD</span><strong>{fmt(fx)}</strong></div>
-      <div><span>Latest</span><strong>{latest}</strong></div>
+      <div><span>HKMA monthly through</span><strong>{latest}</strong></div>
     </div>'''

@@ -124,11 +124,15 @@ def get_tga_daily():
             raise RuntimeError("Treasury FiscalData TGA account labels were not recognized")
         # DTS balances are USD millions; dashboard chart uses USD trillions.
         frame["TGA_DAILY"] = frame["_value"] / 1_000_000.0
-        return frame[["observation_date", "TGA_DAILY"]].sort_values("observation_date")
+        result = frame[["observation_date", "TGA_DAILY"]].sort_values("observation_date")
+        result.attrs.update({"source": "U.S. Treasury Daily Treasury Statement", "frequency": "daily", "is_fallback": False})
+        return result
     except Exception:
         weekly = _fred_series("WTREGEN").copy()
         weekly["TGA_DAILY"] = pd.to_numeric(weekly["WTREGEN"], errors="coerce") / 1_000_000.0
-        return weekly[["observation_date", "TGA_DAILY"]].dropna().sort_values("observation_date")
+        result = weekly[["observation_date", "TGA_DAILY"]].dropna().sort_values("observation_date")
+        result.attrs.update({"source": "FRED WTREGEN", "frequency": "weekly", "is_fallback": True})
+        return result
 @st.cache_data(ttl=3600)
 def get_rrp_daily(): return _fred_series("RRPONTSYD")
 
@@ -172,9 +176,41 @@ def _extract_content(item):
 
 def _extract_time(item):
     text = _clean_text(_get_field(item, ["showTime", "ShowTime", "time", "Time", "createTime", "CreateTime", "create_time", "updateTime", "UpdateTime", "publishTime", "PublishTime", "ctime", "Ctime"]))
-    if not text: return ""
-    match = re.search(r"(\d{1,2}:\d{2}(?::\d{2})?)", text)
-    return match.group(1) if match else text
+    if not text:
+        return ""
+
+    now_hkt = pd.Timestamp.now(tz="Asia/Hong_Kong")
+
+    # Some feeds return Unix seconds/milliseconds. Convert them before display
+    # instead of leaking a raw epoch value into the UI.
+    if re.fullmatch(r"\d{10,13}", text):
+        try:
+            raw = int(text)
+            unit = "ms" if len(text) >= 13 else "s"
+            dt = pd.to_datetime(raw, unit=unit, utc=True, errors="coerce")
+            if not pd.isna(dt):
+                dt = dt.tz_convert("Asia/Hong_Kong")
+                return dt.strftime("%H:%M:%S") if dt.date() == now_hkt.date() else dt.strftime("%m-%d %H:%M")
+        except Exception:
+            pass
+
+    # Preserve the source date. The old parser discarded it, which could make
+    # a prior-day item look as if it had been published today.
+    full = re.search(r"(\d{4}[-/.]\d{1,2}[-/.]\d{1,2})[ T]+(\d{1,2}:\d{2}(?::\d{2})?)", text)
+    if full:
+        normalized = full.group(1).replace("/", "-").replace(".", "-") + " " + full.group(2)
+        dt = pd.to_datetime(normalized, errors="coerce")
+        if not pd.isna(dt):
+            return dt.strftime("%H:%M:%S") if dt.date() == now_hkt.date() else dt.strftime("%m-%d %H:%M")
+
+    short = re.search(r"(\d{1,2}[-/.]\d{1,2})[ T]+(\d{1,2}:\d{2}(?::\d{2})?)", text)
+    if short:
+        date_part = short.group(1).replace("/", "-").replace(".", "-")
+        return f"{date_part} {short.group(2)[:5]}"
+
+    clock = re.search(r"(\d{1,2}:\d{2}(?::\d{2})?)", text)
+    return clock.group(1) if clock else text
+
 
 def _extract_url(item):
     url = _clean_text(_get_field(item, ["url", "URL", "Url", "newsUrl", "NewsUrl", "articleUrl", "ArticleUrl", "url_h5", "urlH5", "link", "Link"]))

@@ -493,6 +493,20 @@ def _get_watchlist_quote(symbol):
     manual_key = st.session_state.get("_watchlist_refresh_key", 0)
     return _stable_quote(symbol, f"{_quote_refresh_key()}:{manual_key}")
 
+
+def _active_quote_values(row, market=""):
+    """Return price/change from the same session named by the status label."""
+    market = str(market or "").upper()
+    if market == "US":
+        state, _ = _quote_session_context(row, market)
+        if state == "夜盘" and row.get("overnight_price") is not None:
+            return row.get("overnight_price"), row.get("overnight_change_pct")
+        if state == "盘前" and row.get("pre_price") is not None:
+            return row.get("pre_price"), row.get("pre_change_pct")
+        if state == "盘后" and row.get("post_price") is not None:
+            return row.get("post_price"), row.get("post_change_pct")
+    return row.get("price"), row.get("change_pct")
+
 def render_market_groups():
     now = time.time(); snapshot = st.session_state.get("_market_quotes_snapshot"); snapshot_time = st.session_state.get("_market_quotes_snapshot_time", 0)
     if not isinstance(snapshot, dict) or now - snapshot_time >= 60:
@@ -500,13 +514,22 @@ def render_market_groups():
         snapshot = {"nasdaq": _stable_quote("^IXIC", refresh_key), "sp500": _stable_quote("^GSPC", refresh_key), "dow": _stable_quote("^DJI", refresh_key), "hsi": _stable_quote("^HSI", refresh_key), "hstech": _stable_quote("HSTECH.HK", refresh_key), "sh": _stable_quote("000001.SS", refresh_key), "sz": _stable_quote("399001.SZ", refresh_key), "csi300": _stable_quote("000300.SS", refresh_key)}
         st.session_state["_market_quotes_snapshot"] = snapshot; st.session_state["_market_quotes_snapshot_time"] = now
     q = snapshot
-    groups = [("🇺🇸 美股", [_market_item_html("纳斯达克", q["nasdaq"].get("price"), q["nasdaq"].get("change_pct"), _quote_meta(q["nasdaq"], "US")), _market_item_html("标普500", q["sp500"].get("price"), q["sp500"].get("change_pct"), _quote_meta(q["sp500"], "US")), _market_item_html("道琼斯", q["dow"].get("price"), q["dow"].get("change_pct"), _quote_meta(q["dow"], "US"))], "three"), ("🇭🇰 港股", [_market_item_html("恒生指数", q["hsi"].get("price"), q["hsi"].get("change_pct"), _quote_meta(q["hsi"], "HK")), _market_item_html("恒生科技", q["hstech"].get("price"), q["hstech"].get("change_pct"), _quote_meta(q["hstech"], "HK"))], "two"), ("🇨🇳 A股", [_market_item_html("上证指数", q["sh"].get("price"), q["sh"].get("change_pct"), _quote_meta(q["sh"], "CN")), _market_item_html("深证成指", q["sz"].get("price"), q["sz"].get("change_pct"), _quote_meta(q["sz"], "CN")) , _market_item_html("沪深300", q["csi300"].get("price"), q["csi300"].get("change_pct"), _quote_meta(q["csi300"], "CN"))], "three")]
+
+    def overview_item(name, row, market):
+        price, change = _active_quote_values(row, market)
+        return _market_item_html(name, price, change, _quote_meta(row, market))
+
+    groups = [
+        ("🇺🇸 美股", [overview_item("纳斯达克", q["nasdaq"], "US"), overview_item("标普500", q["sp500"], "US"), overview_item("道琼斯", q["dow"], "US")], "three"),
+        ("🇭🇰 港股", [overview_item("恒生指数", q["hsi"], "HK"), overview_item("恒生科技", q["hstech"], "HK")], "two"),
+        ("🇨🇳 A股", [overview_item("上证指数", q["sh"], "CN"), overview_item("深证成指", q["sz"], "CN"), overview_item("沪深300", q["csi300"], "CN")], "three"),
+    ]
     cards = []
     for title, items, grid_class in groups: cards.append(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>')
     st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
 
 st.markdown('<div id="market-overview" class="section-anchor"></div><div class="section-kicker">MARKET OVERVIEW</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">市场概览</div><div class="section-description">美股、港股与 A 股主要指数 · 状态与报价时间来自行情源 · 60 秒刷新</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">市场概览</div><div class="section-description">美股、港股与 A 股主要指数 · 报价时间来自行情源 · 交易状态按市场时段与报价日期判定 · 60 秒刷新</div>', unsafe_allow_html=True)
 
 @st.fragment(run_every="60s")
 def render_market_overview():
@@ -800,7 +823,8 @@ def apply_chart_style(fig, height, date_range):
     return apply_time_axis(fig, date_range)
 
 def get_start_date(date_range):
-    end = pd.Timestamp.today().normalize(); return {"5Y": end - pd.DateOffset(years=5), "1Y": end - pd.DateOffset(years=1), "6M": end - pd.DateOffset(months=6), "3M": end - pd.DateOffset(months=3), "1M": end - pd.DateOffset(months=1)}[date_range]
+    end = pd.Timestamp.now(tz="Asia/Hong_Kong").tz_localize(None).normalize()
+    return {"5Y": end - pd.DateOffset(years=5), "1Y": end - pd.DateOffset(years=1), "6M": end - pd.DateOffset(months=6), "3M": end - pd.DateOffset(months=3), "1M": end - pd.DateOffset(months=1)}[date_range]
 
 def filter_range(data, date_range): return data[data["observation_date"] >= get_start_date(date_range)].copy()
 def chart_height(compact, normal): return compact if compact_mode else normal
@@ -836,22 +860,43 @@ def build_fig2(date_range):
 def build_fig4(date_range):
     specs = [(get_wresbal, "WRESBAL"), (get_tga_daily, "TGA_DAILY"), (get_rrp_daily, "RRPONTSYD")]
     series = []
+    tga_is_fallback = False
     for getter, column in specs:
         try:
-            frame = getter().copy(); frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce"); frame[column] = pd.to_numeric(frame[column], errors="coerce"); frame = frame.dropna(subset=["observation_date", column]).sort_values("observation_date")[["observation_date", column]]
+            frame = getter().copy()
+            if column == "TGA_DAILY":
+                tga_is_fallback = bool(frame.attrs.get("is_fallback", False))
+            frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
+            frame[column] = pd.to_numeric(frame[column], errors="coerce")
+            frame = frame.dropna(subset=["observation_date", column]).sort_values("observation_date")[["observation_date", column]]
             if not frame.empty:
-                if column == "RRPONTSYD": frame[column] = frame[column] / 1000.0; frame = frame.set_index("observation_date")[column].resample("W-WED").mean().rename(column).reset_index()
-                elif column == "WRESBAL": frame[column] = frame[column] / 1000000.0
                 series.append(frame)
-        except Exception: continue
-    if not series: return apply_chart_style(go.Figure(), chart_height(340, 500), date_range)
+        except Exception:
+            continue
+    if not series:
+        return apply_chart_style(go.Figure(), chart_height(340, 500), date_range)
     data = series[0]
-    for frame in series[1:]: data = data.merge(frame, on="observation_date", how="outer")
-    data = data.sort_values("observation_date"); value_cols = [c for c in ["WRESBAL", "TGA_DAILY", "RRPONTSYD"] if c in data.columns]; data[value_cols] = data[value_cols].ffill()
-    if all(c in data.columns for c in ["WRESBAL", "TGA_DAILY", "RRPONTSYD"]): data["NetLiquidity"] = data["WRESBAL"] - data["TGA_DAILY"] - data["RRPONTSYD"]
-    data = filter_range(data, date_range); fig = go.Figure()
-    for column, name, width, dash in [("NetLiquidity", "Net Liquidity Proxy", 3.0, None), ("WRESBAL", "Reserve Balances", 2.3, None), ("TGA_DAILY", "TGA · Daily", 2.1, "dash"), ("RRPONTSYD", "ON RRP", 2.1, "dot")]: add_line(fig, data, column, name, width, dash, unit=" T")
-    fig.update_layout(yaxis_title="$T"); return apply_chart_style(fig, chart_height(340, 500), date_range)
+    for frame in series[1:]:
+        data = data.merge(frame, on="observation_date", how="outer")
+    data = data.sort_values("observation_date")
+    value_cols = [c for c in ["WRESBAL", "TGA_DAILY", "RRPONTSYD"] if c in data.columns]
+    data[value_cols] = data[value_cols].ffill()
+    if all(c in data.columns for c in ["WRESBAL", "TGA_DAILY", "RRPONTSYD"]):
+        data["NetLiquidity"] = data["WRESBAL"] - data["TGA_DAILY"] - data["RRPONTSYD"]
+    data = filter_range(data, date_range)
+    fig = go.Figure()
+    net_name = "Net Liquidity Proxy · weekly TGA fallback" if tga_is_fallback else "Net Liquidity Proxy"
+    tga_name = "TGA · Weekly fallback" if tga_is_fallback else "TGA · Daily"
+    for column, name, width, dash in [
+        ("NetLiquidity", net_name, 3.0, None),
+        ("WRESBAL", "Reserve Balances", 2.3, None),
+        ("TGA_DAILY", tga_name, 2.1, "dash"),
+        ("RRPONTSYD", "ON RRP", 2.1, "dot"),
+    ]:
+        add_line(fig, data, column, name, width, dash, unit=" T")
+    fig.update_layout(yaxis_title="$T")
+    return apply_chart_style(fig, chart_height(340, 500), date_range)
+
 
 def build_fig3(date_range):
     data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").merge(get_fred_series("T10Y2Y"), on="observation_date", how="outer").merge(get_fred_series("T10Y3M"), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
@@ -1076,8 +1121,9 @@ st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 st.markdown('<div id="news" class="section-anchor"></div><div class="section-kicker">NEWS</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-description">东方财富「红字焦点快讯」 · 平台已筛选重点 · 每60秒自动刷新</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-description">东方财富「红字焦点快讯」 · 源端焦点流 · 每60秒自动刷新</div>', unsafe_allow_html=True)
 
+@st.fragment(run_every="60s")
 def render_news_panel():
     _, action_col = st.columns([5, 1])
     with action_col:
