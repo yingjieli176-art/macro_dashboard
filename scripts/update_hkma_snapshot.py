@@ -53,6 +53,10 @@ def _month_add(period: str, months: int) -> str:
     return f"{value // 12:04d}-{value % 12 + 1:02d}"
 
 
+def _month_min(a: str, b: str) -> str:
+    return a if a <= b else b
+
+
 def _proxy_url(official_url: str, params: dict[str, Any]) -> str:
     request = requests.Request("GET", official_url, params=params).prepare()
     return PROXY_PREFIX + request.url.split("://", 1)[1]
@@ -93,31 +97,44 @@ def _fetch_proxy_records(official_url: str, params: dict[str, Any]) -> list[dict
 
 
 def fetch_monetary_history() -> list[dict[str, Any]]:
-    """Fetch enough paginated monthly-statistics rows for a real five-year chart.
+    """Fetch real monthly observations in bounded date windows.
 
-    HKMA currently caps this endpoint at 20 rows per response even when a larger
-    pagesize is requested. Offsets are therefore explicit rather than assuming
-    one large response contains the whole history.
+    The monetary-statistics endpoint mixes recent monthly rows with annual
+    summary rows when queried without a date range, and offset pagination is
+    not reliable for older monthly observations. Explicit month ranges avoid
+    both behaviours and preserve the original HKMA field definitions.
     """
+    now = datetime.now(timezone.utc)
+    latest_month = f"{now.year:04d}-{now.month:02d}"
+    start_month = _month_add(latest_month, -(KEEP_MONTHS + 2))
     merged: dict[str, dict[str, Any]] = {}
-    for offset in range(0, 140, 20):
+    cursor = start_month
+    fields = ",".join(["end_of_month", *MONETARY_FIELDS])
+
+    while cursor <= latest_month:
+        end = _month_min(_month_add(cursor, 11), latest_month)
         rows = _fetch_proxy_records(
             MONETARY_URL,
             {
-                "pagesize": 100,
-                "offset": offset,
+                "choose": "end_of_month",
+                "from": cursor,
+                "to": end,
+                "fields": fields,
                 "sortby": "end_of_month",
-                "sortorder": "desc",
+                "sortorder": "asc",
+                "pagesize": 100,
             },
         )
-        print(f"HKMA monetary-statistics offset={offset}: {len(rows)} rows")
+        monthly_rows = 0
         for row in rows:
             period = str(row.get("end_of_month") or "")
             if MONTH_RE.match(period):
                 merged[period] = row
-        if not rows:
-            break
+                monthly_rows += 1
+        print(f"HKMA monetary-statistics {cursor}..{end}: {monthly_rows} monthly rows")
+        cursor = _month_add(end, 1)
         time.sleep(0.35)
+
     return [merged[key] for key in sorted(merged, reverse=True)]
 
 
@@ -224,7 +241,7 @@ def main() -> None:
         "record_count": len(records),
         "coverage_start": records[-1]["end_of_month"],
         "coverage_end": records[0]["end_of_month"],
-        "fetch_strategy": "HKMA official APIs via repository-only text transport; paginated field-level merge",
+        "fetch_strategy": "HKMA official APIs via repository-only text transport; 12-month windows + field-level merge",
         "coverage_counts": coverage,
         "records": records,
     }
