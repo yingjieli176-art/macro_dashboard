@@ -49,17 +49,17 @@ def _fetch_recent(
     end: str,
     extra: dict[str, str] | None = None,
 ) -> list[dict]:
-    """Page backwards from the latest HKMA records and stop after five years.
+    """Page newest-first using small requests and keep a two-year daily buffer.
 
-    HKMA documents offset/pagesize as the canonical pagination path. Pulling
-    newest-first avoids expensive broad date-range queries that can time out on
-    daily datasets while still retaining the full rolling five-year window.
+    Charts 6/7 intentionally use the monthly dataset for the 5Y view, so daily
+    history only needs to cover 1Y plus a generous buffer. Small pages are more
+    reliable on HKMA's daily endpoints than large date-range or 500-row calls.
     """
     rows: list[dict] = []
     offset = 0
-    page_size = 500
+    page_size = 100
     seen: set[tuple[str, str]] = set()
-    for _ in range(12):
+    for _ in range(8):
         params = {
             "offset": str(offset),
             "pagesize": str(page_size),
@@ -70,7 +70,7 @@ def _fetch_recent(
         if extra:
             params.update(extra)
         batch = _request(url, params)
-        print(url.rsplit('/', 1)[-1], "offset", offset, len(batch))
+        print(url.rsplit('/', 1)[-1], "offset", offset, len(batch), flush=True)
         if not batch:
             break
 
@@ -103,7 +103,9 @@ def _fetch_recent(
 def main() -> None:
     now = datetime.now(timezone.utc)
     end = now.strftime("%Y-%m-%d")
-    start = f"{now.year - 5:04d}-{now.month:02d}-01"
+    # The dashboard uses monthly official history for 5Y. Two years of daily
+    # observations comfortably cover every short-range view and validation.
+    start = f"{now.year - 2:04d}-{now.month:02d}-01"
 
     liquidity = _fetch_recent(
         LIQ_URL,
@@ -160,7 +162,7 @@ def main() -> None:
         "coverage_start": records[0]["end_of_date"],
         "coverage_end": records[-1]["end_of_date"],
         "record_count": len(records),
-        "fetch_strategy": "newest-first offset pagination, 500 rows per page",
+        "fetch_strategy": "newest-first offset pagination, 100 rows per page, rolling two-year daily buffer",
         "records": records,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
