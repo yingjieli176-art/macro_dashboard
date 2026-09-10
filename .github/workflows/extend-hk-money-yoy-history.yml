@@ -1,0 +1,85 @@
+name: Extend HK money YoY history
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/extend_hk_money_yoy_history.py
+      - .github/workflows/extend-hk-money-yoy-history.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: extend-hk-money-yoy-history
+  cancel-in-progress: true
+
+jobs:
+  extend-migrate-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install pandas plotly requests pdfplumber
+      - name: Extend official M2/M3 comparison history
+        run: python scripts/extend_hk_money_yoy_history.py
+      - name: Apply YoY chart migration
+        run: python scripts/switch_hk_money_chart_to_yoy.py
+      - name: Compile application
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py scripts/extend_hk_money_yoy_history.py scripts/switch_hk_money_chart_to_yoy.py
+      - name: Validate full five-year YoY display
+        run: |
+          python - <<'PY'
+          from macro_platform.hk_liquidity import build_hk_liquidity_figures, load_hk_liquidity, liquidity_state
+
+          data = load_hk_liquidity()
+          latest = data[['observation_date','M2 YoY','M3 YoY']].dropna().observation_date.max()
+          cutoff = latest - __import__('pandas').DateOffset(years=5)
+          for col in ('M2 YoY', 'M3 YoY', 'Monetary Base YoY'):
+              valid = data[['observation_date', col]].dropna()
+              five = valid[valid.observation_date >= cutoff]
+              print(col, len(five), five.observation_date.min(), '->', five.observation_date.max())
+              assert len(five) >= 58, (col, len(five))
+
+          fig = build_hk_liquidity_figures('5Y', market_mode='Raw')[0]
+          names = [str(t.name) for t in fig.data]
+          for name in ('M2 YoY', 'M3 YoY', 'Monetary Base YoY'):
+              assert name in names, (name, names)
+          for old in ('M2 MoM', 'M3 MoM', 'Monetary Base MoM'):
+              assert old not in names, (old, names)
+          assert fig.layout.yaxis.title.text == 'Money YoY (%)'
+          state = liquidity_state(data)
+          assert state.get('label') in {'偏宽松', '中性', '偏紧'}, state
+          print('Full 5Y YoY chart OK; MoM-based liquidity state still operational:', state)
+          PY
+      - name: Validate descriptions
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          assert 'HKD M2 YoY' in text
+          assert 'HKD M3 YoY' in text
+          assert 'Monetary Base YoY' in text
+          assert '图 5 使用 YoY' in text
+          assert '流动性评分内部仍使用最近 3 个月 M2/M3 MoM 均值' in text
+          print('Descriptions OK')
+          PY
+      - name: Commit completed YoY upgrade
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data_snapshots/hkma_monetary_statistics.json app.py macro_platform/hk_liquidity.py
+          if git diff --cached --quiet; then
+            echo "YoY history/display already complete"
+            exit 0
+          fi
+          git commit -m "Use full five-year YoY Hong Kong money growth"
+          git pull --rebase origin main
+          git push origin main
