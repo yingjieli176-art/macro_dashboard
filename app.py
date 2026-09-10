@@ -313,6 +313,7 @@ def _quote_meta(row, market=""):
     source = row.get("data_source") or row.get("quote_source") or ""; delayed = row.get("delayed_by"); state = _market_state_text(row); parts = [state] if state else []
     if delayed not in (None, 0, "0") and source == "Yahoo Finance": parts.append(f"延迟{delayed}分")
     elif source: parts.append(source)
+    if row.get("_stale"): parts.append("上次有效报价")
     return " · ".join(parts)
 
 @st.cache_resource(show_spinner=False)
@@ -406,7 +407,6 @@ def _render_quote_block(item):
         elif market_state == "POST" and pp is not None: after = f'<div class="search-after">盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
         elif pp is not None and row.get("post_market_time"): after = f'<div class="search-after">最近盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
     source = row.get("data_source") or row.get("quote_source") or ""; delay = row.get("delayed_by"); source_text = f"{source} · 延迟{delay}分" if delay not in (None, 0, "0") and source == "Yahoo Finance" else source
-    if row.get("_stale"): source_text = (source_text + " · 上次有效报价").strip(" ·")
     if row.get("_stale"): source_text = (source_text + " · 上次有效报价").strip(" ·")
     return f'<div class="search-result"><div class="search-result-label">{html.escape(item["name"])} <span class="search-result-symbol">· {html.escape(item["symbol"])} · {html.escape(item.get("exchange", ""))}</span></div><div class="search-price">{html.escape(price_text)} <span class="market-change">{html.escape(change_text)} {html.escape(state)}</span></div>{after}<div class="search-hint">{html.escape(source_text)}</div></div>'
 
