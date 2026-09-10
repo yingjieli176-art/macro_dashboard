@@ -1,0 +1,67 @@
+name: Tighten equity risk layout
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/tighten_equity_risk_layout.py
+      - .github/workflows/tighten-equity-risk-layout.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tighten-equity-risk-layout
+  cancel-in-progress: true
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply layout patch
+        run: python scripts/tighten_equity_risk_layout.py
+
+      - name: Compile application
+        run: python -m py_compile app.py scripts/tighten_equity_risk_layout.py
+
+      - name: Validate tightened layout
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          text = Path('app.py').read_text(encoding='utf-8')
+          required = (
+              '.chart-divider { margin: 0.30rem 0 0.55rem;',
+              'margin-top: 0.12rem; margin-bottom: 0.04rem; line-height: 1.1;',
+              'margin=dict(l=62, r=144, t=72, b=44, pad=2)',
+              'legend=dict(y=1.095)',
+              'if hk_index < len(hk_configs) - 1:',
+              "'<div class=\"section-kicker\">US EQUITY RISK</div>'",
+          )
+          for token in required:
+              assert token in text, token
+          assert 'margin=dict(l=62, r=144, t=124, b=44, pad=2)' not in text
+          print('tightened equity risk layout validation passed')
+          PY
+
+      - name: Commit application patch
+        run: |
+          if git diff --quiet -- app.py; then
+            echo 'Layout patch already applied'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py
+          git commit -m 'Tighten US equity risk section spacing'
+          git pull --rebase origin main
+          git push origin main
