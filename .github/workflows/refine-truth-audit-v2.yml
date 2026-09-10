@@ -1,0 +1,69 @@
+name: Refine truth audit v2
+
+on:
+  push:
+    paths:
+      - 'scripts/refine_truth_audit_v2.py'
+      - '.github/workflows/refine-truth-audit-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+      - name: Apply second truth audit
+        run: python scripts/refine_truth_audit_v2.py
+      - name: Compile
+        run: python -m py_compile app.py data.py macro_platform/hk_liquidity.py
+      - name: Validate second-pass semantics
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          import data
+          import macro_platform.hk_liquidity as hk
+
+          app = Path('app.py').read_text(encoding='utf-8')
+          assert 'Reserve Balances · Weekly' in app
+          assert 'Net Liquidity Proxy · mixed frequency' in app
+          assert 'data[value_cols] = data[value_cols].ffill()' not in app
+          assert '正常盘最近价' in app
+          assert 'America/New_York' in app
+          assert 'if source:\n        parts.append(source)' in app
+          assert 'WRESBAL 为周频公布' in app
+
+          assert data._extract_time({'showTime': '0'}) == ''
+          assert data._extract_time({'showTime': '12345'}) == ''
+          assert data._extract_time({'showTime': '2026-09-09 23:58:01'}).startswith('09-09 ')
+
+          daily = pd.DataFrame({'observation_date': pd.date_range('2026-09-01', periods=10, freq='B')})
+          weekly = pd.DataFrame({'observation_date': pd.date_range('2026-07-03', periods=10, freq='W-FRI')})
+          assert hk._frame_is_daily(daily)
+          assert not hk._frame_is_daily(weekly)
+
+          hk_text = Path('macro_platform/hk_liquidity.py').read_text(encoding='utf-8')
+          assert 'USD/HKD · Monthly fallback' in hk_text
+          print('second-pass truth audit validation passed')
+          PY
+      - name: Commit generated fixes
+        run: |
+          if git diff --quiet -- app.py data.py macro_platform/hk_liquidity.py; then
+            echo 'No generated changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py data.py macro_platform/hk_liquidity.py
+          git commit -m 'Tighten quote and frequency truthfulness'
+          git push
