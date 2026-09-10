@@ -769,7 +769,9 @@ def _frame_is_daily(frame: pd.DataFrame) -> bool:
     gaps = dates.diff().dropna().dt.total_seconds() / 86400.0
     if gaps.empty:
         return False
-    return float(gaps.median()) <= 7.0 and float((gaps <= 7.0).mean()) >= 0.60
+    # Business-daily observations usually have 1-3 day gaps; a weekly
+    # series must never be promoted to "Daily" merely because its gap is 7 days.
+    return float(gaps.median()) <= 4.0 and float((gaps <= 4.0).mean()) >= 0.80
 
 def build_hk_liquidity_figures(
     date_range: str, compact_mode: bool = False, market_mode: str = "Raw"
@@ -978,8 +980,10 @@ def build_hk_liquidity_figures(
 
     # 8 · Convertibility band + market reaction.
     fx = make_subplots(specs=[[{"secondary_y": True}]])
-    fx_source = fx_daily if not fx_daily.empty else data[["observation_date", "USD/HKD"]].dropna().copy()
-    add_line(fx, fx_source, "USD/HKD", "USD/HKD", COLORS["fx"], 2.6, unit="", secondary_y=False)
+    fx_is_daily = not fx_daily.empty
+    fx_source = fx_daily if fx_is_daily else data[["observation_date", "USD/HKD"]].dropna().copy()
+    fx_trace_name = "USD/HKD" if fx_is_daily else "USD/HKD · Monthly fallback"
+    add_line(fx, fx_source, "USD/HKD", fx_trace_name, COLORS["fx"], 2.6, unit="", secondary_y=False)
     add_constant(fx, 7.75, "Strong-side CU 7.75", COLORS["strong"], "dot", 1.4, secondary_y=False, x_frame=fx_source)
     add_constant(fx, 7.80, "Linked Rate Center 7.80", "#64748b", "dash", 1.5, secondary_y=False, x_frame=fx_source)
     add_constant(fx, 7.85, "Weak-side CU 7.85", COLORS["weak"], "dot", 1.4, secondary_y=False, x_frame=fx_source)

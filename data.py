@@ -181,18 +181,23 @@ def _extract_time(item):
 
     now_hkt = pd.Timestamp.now(tz="Asia/Hong_Kong")
 
-    # Some feeds return Unix seconds/milliseconds. Convert them before display
-    # instead of leaking a raw epoch value into the UI.
-    if re.fullmatch(r"\d{10,13}", text):
+    # Numeric time fields are treated as Unix timestamps only. Reject epoch-zero,
+    # corrupt or implausible values instead of printing them as if they were a clock.
+    if re.fullmatch(r"\d+", text):
+        if len(text) not in {10, 13}:
+            return ""
         try:
             raw = int(text)
-            unit = "ms" if len(text) >= 13 else "s"
+            unit = "ms" if len(text) == 13 else "s"
             dt = pd.to_datetime(raw, unit=unit, utc=True, errors="coerce")
-            if not pd.isna(dt):
-                dt = dt.tz_convert("Asia/Hong_Kong")
-                return dt.strftime("%H:%M:%S") if dt.date() == now_hkt.date() else dt.strftime("%m-%d %H:%M")
+            if pd.isna(dt):
+                return ""
+            dt = dt.tz_convert("Asia/Hong_Kong")
+            if dt.year < 2000 or dt > now_hkt + pd.Timedelta(days=1):
+                return ""
+            return dt.strftime("%H:%M:%S") if dt.date() == now_hkt.date() else dt.strftime("%m-%d %H:%M")
         except Exception:
-            pass
+            return ""
 
     # Preserve the source date. The old parser discarded it, which could make
     # a prior-day item look as if it had been published today.

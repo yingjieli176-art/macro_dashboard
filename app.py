@@ -394,41 +394,52 @@ def _asia_session_state(market, quote_time):
     return ""
 
 
+def _us_overnight_window_now():
+    ny = datetime.now(ZoneInfo("America/New_York"))
+    minute = ny.hour * 60 + ny.minute
+    # Overnight US equity venues generally cover Sunday-Thursday evenings
+    # and the following weekday early-morning session. Source market-state and
+    # a fresh overnight timestamp are still required before displaying a quote.
+    return (ny.weekday() in {6, 0, 1, 2, 3} and minute >= 20 * 60) or (ny.weekday() in {0, 1, 2, 3, 4} and minute < 4 * 60)
+
+
 def _quote_session_context(row, market=""):
     market = str(market or "").upper()
     state = str(row.get("market_state") or "").upper()
     now_ts = time.time()
 
     if market == "US":
+        regular_ts = _valid_market_timestamp(row.get("regular_market_time"))
+        pre_ts = _valid_market_timestamp(row.get("pre_market_time"))
+        post_ts = _valid_market_timestamp(row.get("post_market_time"))
         overnight_ts = _valid_market_timestamp(row.get("overnight_market_time"))
         overnight_fresh = (
             row.get("overnight_price") is not None
             and overnight_ts is not None
             and 0 <= now_ts - overnight_ts <= 18 * 3600
         )
-        if state in {"PREPRE", "POSTPOST", "CLOSED"} and overnight_fresh:
+        overnight_active = overnight_fresh and (
+            state in {"PREPRE", "POSTPOST"} or (state == "CLOSED" and _us_overnight_window_now())
+        )
+        if overnight_active:
             return "夜盘", overnight_ts
+        if state in {"PREPRE", "POSTPOST"}:
+            return "夜盘时段 · 正常盘最近价", regular_ts
         if state == "PRE":
-            return "盘前", _valid_market_timestamp(row.get("pre_market_time")) or _valid_market_timestamp(row.get("regular_market_time"))
+            if row.get("pre_price") is not None:
+                return "盘前", pre_ts
+            return "盘前时段 · 正常盘最近价", regular_ts
         if state == "REGULAR":
-            return "交易中", _valid_market_timestamp(row.get("regular_market_time"))
+            return "交易中", regular_ts
         if state == "POST":
-            return "盘后", _valid_market_timestamp(row.get("post_market_time")) or _valid_market_timestamp(row.get("regular_market_time"))
+            if row.get("post_price") is not None:
+                return "盘后", post_ts
+            return "盘后时段 · 正常盘最近价", regular_ts
         if state == "CLOSED":
-            candidates = [
-                _valid_market_timestamp(row.get("post_market_time")),
-                _valid_market_timestamp(row.get("regular_market_time")),
-            ]
-            candidates = [x for x in candidates if x is not None]
+            candidates = [x for x in (post_ts, regular_ts) if x is not None]
             return "休市", max(candidates) if candidates else None
-        candidates = [
-            _valid_market_timestamp(row.get("overnight_market_time")),
-            _valid_market_timestamp(row.get("pre_market_time")),
-            _valid_market_timestamp(row.get("post_market_time")),
-            _valid_market_timestamp(row.get("regular_market_time")),
-        ]
-        candidates = [x for x in candidates if x is not None]
-        return ("状态未知", max(candidates) if candidates else None)
+        candidates = [x for x in (overnight_ts, pre_ts, post_ts, regular_ts) if x is not None]
+        return "状态未知", max(candidates) if candidates else None
 
     quote_ts = _valid_market_timestamp(row.get("regular_market_time"))
     return _asia_session_state(market, quote_ts), quote_ts
@@ -458,10 +469,10 @@ def _quote_meta(row, market=""):
     parts = [state] if state else []
     time_label = _market_time_label(quote_ts)
     parts.append(time_label if time_label else "时间暂缺")
+    if source:
+        parts.append(source)
     if delayed not in (None, 0, "0") and source == "Yahoo Finance":
         parts.append(f"延迟{delayed}分")
-    elif source:
-        parts.append(source)
     if row.get("_stale"):
         parts.append("上次有效报价")
     return " · ".join(parts)
@@ -592,28 +603,16 @@ def _render_quote_block(item):
         pp, pc = row.get("post_price"), row.get("post_change_pct")
         pre_price, pre_change = row.get("pre_price"), row.get("pre_change_pct")
         overnight_price, overnight_change = row.get("overnight_price"), row.get("overnight_change_pct")
-        overnight_time = row.get("overnight_market_time")
-        market_state = row.get("market_state")
-        overnight_fresh = True
-        if overnight_time not in (None, ""):
-            try:
-                overnight_fresh = 0 <= time.time() - float(overnight_time) <= 18 * 3600
-            except (TypeError, ValueError):
-                overnight_fresh = False
-        if market_state in ("POSTPOST", "CLOSED") and overnight_price is not None and overnight_fresh:
-            time_label = ""
-            if overnight_time not in (None, ""):
-                try:
-                    time_label = " · " + datetime.fromtimestamp(float(overnight_time), DASHBOARD_TZ).strftime("%H:%M HKT")
-                except (TypeError, ValueError, OSError):
-                    pass
-            session_text = f'夜盘 {overnight_price:,.2f} · {"--" if overnight_change is None else f"{overnight_change:+.2f}%"}{time_label}'
-        elif market_state in ("PRE", "PREPRE") and pre_price is not None:
-            session_text = f'盘前 {pre_price:,.2f} · {"--" if pre_change is None else f"{pre_change:+.2f}%"}'
-        elif market_state == "POST" and pp is not None:
-            session_text = f'盘后 {pp:,.2f} · {"--" if pc is None else f"{pc:+.2f}%"}'
-        elif pp is not None and row.get("post_market_time"):
-            session_text = f'最近盘后 {pp:,.2f} · {"--" if pc is None else f"{pc:+.2f}%"}'
+        state_label, _ = _quote_session_context(row, "US")
+        if state_label == "夜盘" and overnight_price is not None:
+            time_label = _market_time_label(row.get("overnight_market_time"))
+            session_text = f'夜盘 {overnight_price:,.2f} · {"--" if overnight_change is None else f"{overnight_change:+.2f}%"}' + (f" · {time_label}" if time_label else "")
+        elif state_label == "盘前" and pre_price is not None:
+            time_label = _market_time_label(row.get("pre_market_time"))
+            session_text = f'盘前 {pre_price:,.2f} · {"--" if pre_change is None else f"{pre_change:+.2f}%"}' + (f" · {time_label}" if time_label else "")
+        elif state_label == "盘后" and pp is not None:
+            time_label = _market_time_label(row.get("post_market_time"))
+            session_text = f'盘后 {pp:,.2f} · {"--" if pc is None else f"{pc:+.2f}%"}' + (f" · {time_label}" if time_label else "")
 
     meta = _quote_meta(row, item.get("market", ""))
     name = html.escape(str(item.get("name") or item.get("symbol") or ""))
@@ -859,7 +858,7 @@ def build_fig2(date_range):
 
 def build_fig4(date_range):
     specs = [(get_wresbal, "WRESBAL"), (get_tga_daily, "TGA_DAILY"), (get_rrp_daily, "RRPONTSYD")]
-    series = []
+    raw_series = {}
     tga_is_fallback = False
     for getter, column in specs:
         try:
@@ -870,30 +869,39 @@ def build_fig4(date_range):
             frame[column] = pd.to_numeric(frame[column], errors="coerce")
             frame = frame.dropna(subset=["observation_date", column]).sort_values("observation_date")[["observation_date", column]]
             if not frame.empty:
-                series.append(frame)
+                raw_series[column] = frame
         except Exception:
             continue
-    if not series:
+    if not raw_series:
         return apply_chart_style(go.Figure(), chart_height(340, 500), date_range)
-    data = series[0]
-    for frame in series[1:]:
-        data = data.merge(frame, on="observation_date", how="outer")
-    data = data.sort_values("observation_date")
-    value_cols = [c for c in ["WRESBAL", "TGA_DAILY", "RRPONTSYD"] if c in data.columns]
-    data[value_cols] = data[value_cols].ffill()
-    if all(c in data.columns for c in ["WRESBAL", "TGA_DAILY", "RRPONTSYD"]):
-        data["NetLiquidity"] = data["WRESBAL"] - data["TGA_DAILY"] - data["RRPONTSYD"]
-    data = filter_range(data, date_range)
+
+    aligned = None
+    for frame in raw_series.values():
+        aligned = frame.copy() if aligned is None else aligned.merge(frame, on="observation_date", how="outer")
+    aligned = aligned.sort_values("observation_date")
+    value_cols = [c for c in ["WRESBAL", "TGA_DAILY", "RRPONTSYD"] if c in aligned.columns]
+    calc = aligned.copy()
+    calc[value_cols] = calc[value_cols].ffill()
+    if all(c in calc.columns for c in ["WRESBAL", "TGA_DAILY", "RRPONTSYD"]):
+        calc["NetLiquidity"] = calc["WRESBAL"] - calc["TGA_DAILY"] - calc["RRPONTSYD"]
+    calc = filter_range(calc, date_range)
+
     fig = go.Figure()
-    net_name = "Net Liquidity Proxy · weekly TGA fallback" if tga_is_fallback else "Net Liquidity Proxy"
-    tga_name = "TGA · Weekly fallback" if tga_is_fallback else "TGA · Daily"
-    for column, name, width, dash in [
-        ("NetLiquidity", net_name, 3.0, None),
-        ("WRESBAL", "Reserve Balances", 2.3, None),
-        ("TGA_DAILY", tga_name, 2.1, "dash"),
-        ("RRPONTSYD", "ON RRP", 2.1, "dot"),
-    ]:
-        add_line(fig, data, column, name, width, dash, unit=" T")
+    net_name = "Net Liquidity Proxy · weekly TGA fallback" if tga_is_fallback else "Net Liquidity Proxy · mixed frequency"
+    add_line(fig, calc, "NetLiquidity", net_name, 3.0, unit=" T")
+
+    observed_names = {
+        "WRESBAL": "Reserve Balances · Weekly",
+        "TGA_DAILY": "TGA · Weekly fallback" if tga_is_fallback else "TGA · Daily",
+        "RRPONTSYD": "ON RRP · Daily",
+    }
+    dash_map = {"WRESBAL": None, "TGA_DAILY": "dash", "RRPONTSYD": "dot"}
+    width_map = {"WRESBAL": 2.3, "TGA_DAILY": 2.1, "RRPONTSYD": 2.1}
+    for column in ("WRESBAL", "TGA_DAILY", "RRPONTSYD"):
+        frame = raw_series.get(column)
+        if frame is None:
+            continue
+        add_line(fig, filter_range(frame, date_range), column, observed_names[column], width_map[column], dash_map[column], unit=" T")
     fig.update_layout(yaxis_title="$T")
     return apply_chart_style(fig, chart_height(340, 500), date_range)
 
@@ -975,7 +983,7 @@ PARAM_DESCRIPTIONS = [
     '<b>参数概念：</b><br>1. IORB（Interest on Reserve Balances）：美联储向存款机构准备金余额支付的利率，是美国准备金利率体系的重要基准。<br>2. ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具利率，金融机构可通过该工具进行隔夜资金配置。<br>3. EFFR（Effective Federal Funds Rate）：美国联邦基金市场实际成交形成的有效隔夜利率，反映银行间短期无担保资金价格。<br>4. SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率，是美元有担保短期融资的重要基准。',
     '<b>参数概念：</b><br>1. 10Y Nominal：10 年期美国国债名义收益率，包含实际利率与通胀预期等因素。<br>2. 10Y Real：10 年期美国国债实际收益率，通常由通胀保值国债（TIPS）市场反映。<br>3. 10Y Breakeven：10 年期盈亏平衡通胀率，是名义国债收益率与实际收益率之间的差值，用于观察市场隐含的长期通胀预期。',
     '<b>参数概念：</b><br>1. 3M：3 个月期美国国债收益率，代表较短期限的美元无风险利率。<br>2. 2Y：2 年期美国国债收益率，通常对美联储政策路径及短中期利率预期较敏感。<br>3. 10Y：10 年期美国国债收益率，是全球金融市场重要的长期无风险利率参考。<br>4. 10Y−2Y：10 年期减 2 年期国债收益率利差，图中直接以百分比（%）显示，无需自行换算 bp。<br>5. 10Y−3M：10 年期减 3 个月期国债收益率利差，图中直接以百分比（%）显示，无需自行换算 bp。',
-    '<b>参数概念：</b><br>1. Net Liquidity Proxy：Reserve Balances − TGA − ON RRP 的组合指标，用于描述美国金融体系中可观察的流动性变化方向；不是美联储官方指标。<br>2. Reserve Balances：存款机构存放在美联储的准备金余额，属于银行体系流动性的重要组成部分。<br>3. TGA（Treasury General Account）：优先使用美国财政部 Daily Treasury Statement 的日频 Operating Cash Balance；财政资金进出会直接影响银行体系准备金。FiscalData 不可用时自动回退到 FRED WTREGEN 周频数据。<br>4. ON RRP Balance：美联储隔夜逆回购工具的余额，反映资金进入该工具的规模。',
+    '<b>参数概念：</b><br>1. Net Liquidity Proxy：Reserve Balances − TGA − ON RRP 的组合指标，用于描述美国金融体系中可观察的流动性变化方向；不是美联储官方指标。该代理为混合频率计算，周频准备金余额只在代理计算内部沿用至下一次公布，不代表每天都有新的准备金观测。<br>2. Reserve Balances：存款机构存放在美联储的准备金余额；WRESBAL 为周频公布，图中的原始线只保留实际周频观测，不再用前值填充伪装成日频。<br>3. TGA（Treasury General Account）：优先使用美国财政部 Daily Treasury Statement 的日频 Operating Cash Balance；财政资金进出会直接影响银行体系准备金。FiscalData 不可用时自动回退到 FRED WTREGEN 周频数据。<br>4. ON RRP Balance：美联储隔夜逆回购工具的余额，反映资金进入该工具的规模。',
     '<b>参数概念：</b><br>1. HKD M2 YoY：港元 M2 同比增速，M2 覆盖公众持有的现金、活期/储蓄/定期存款及相应货币工具，用于观察广义港元货币的中期扩张趋势。<br>2. HKD M3 YoY：港元 M3 同比增速，M3 在 M2 基础上进一步纳入限制牌照银行及接受存款公司的相关存款与可转让存款证，因此口径更广，但通常与 M2 高度同步。<br>3. Monetary Base YoY：香港货币基础总量同比变化，用于观察基础货币层面的中期扩张与收缩。<br>4. Aggregate Balance：银行体系总结余，单位 HK$ billion；总结余下降通常代表银行体系可用港元流动性趋紧。<br>5. O/N HIBOR：隔夜港元银行同业拆息，反映最短端港元资金价格。<br>6. 3M HIBOR：3 个月港元银行同业拆息，用来观察更持续的港元融资成本。<br>7. HKMA Base Rate：香港金管局基本利率，是港元利率体系的重要政策参考。<br>8. O/N−3M Spread（R）：隔夜 HIBOR 减 3M HIBOR，右轴单位 bp；显著转正通常代表短端资金压力上升。<br>9. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>10. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>11. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br><br><b>读取提示：</b>M2/M3 为月度统计，公布存在时滞；图 5 使用 YoY 观察中期货币趋势并降低单月噪声。流动性评分内部仍使用最近 3 个月 M2/M3 MoM 均值，以保留对边际拐点的敏感度。',
 ]
 
