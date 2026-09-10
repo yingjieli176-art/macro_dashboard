@@ -140,14 +140,14 @@ def load_hk_liquidity() -> pd.DataFrame:
     monthly = monthly.reindex(full_index)
     monthly.index.name = "observation_date"
 
-    # MoM is the primary dashboard signal because it reacts faster to marginal liquidity changes.
+    # MoM remains the fast signal used by the liquidity-state logic because it reacts quickly to marginal changes.
     monthly["M2 MoM"] = monthly["m2_hkd"].pct_change(1, fill_method=None) * 100.0
     monthly["M3 MoM"] = monthly["m3_hkd"].pct_change(1, fill_method=None) * 100.0
     monthly["Monetary Base MoM"] = (
         monthly["monetary_base_total"].pct_change(1, fill_method=None) * 100.0
     )
 
-    # Keep YoY in the data model for context / future switchable views, but do not use it as the primary chart signal.
+    # YoY is the primary Chart 5 display because it is smoother and better suited to medium-term money-growth trends.
     monthly["M2 YoY"] = monthly["m2_hkd"].pct_change(12, fill_method=None) * 100.0
     monthly["M3 YoY"] = monthly["m3_hkd"].pct_change(12, fill_method=None) * 100.0
     monthly["Monetary Base YoY"] = (
@@ -491,9 +491,9 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
         )
 
     # Order is analytical reading order and is mirrored by each local legend.
-    add_trace(1, "M2 MoM", "M2 MoM", COLORS["m2"], 2.8)
-    add_trace(1, "M3 MoM", "M3 MoM", COLORS["m3"], 2.3, "dash")
-    add_trace(1, "Monetary Base MoM", "Monetary Base MoM", COLORS["base"], 1.8, "dot")
+    add_trace(1, "M2 YoY", "M2 YoY", COLORS["m2"], 2.8)
+    add_trace(1, "M3 YoY", "M3 YoY", COLORS["m3"], 2.3, "dash")
+    add_trace(1, "Monetary Base YoY", "Monetary Base YoY", COLORS["base"], 1.8, "dot")
 
     add_trace(2, "Aggregate Balance", "Aggregate Balance", COLORS["balance"], 2.8, unit=" HK$ bn")
 
@@ -529,7 +529,7 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
     )
 
     grid = dict(showgrid=True, gridcolor="#e5e7eb", griddash="dot", fixedrange=True)
-    fig.update_yaxes(title_text="MoM (%)", row=1, col=1, zeroline=True, zerolinecolor="#cbd5e1", **grid)
+    fig.update_yaxes(title_text="YoY (%)", row=1, col=1, zeroline=True, zerolinecolor="#cbd5e1", **grid)
     fig.update_yaxes(title_text="HK$ bn", row=2, col=1, zeroline=False, **grid)
     fig.update_yaxes(title_text="Rate (%)", row=3, col=1, secondary_y=False, zeroline=True, zerolinecolor="#cbd5e1", **grid)
     fig.update_yaxes(title_text="Spread (bp)", row=3, col=1, secondary_y=True, showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True)
@@ -885,9 +885,9 @@ def build_hk_liquidity_figures(
     # prices (R1) from index levels (R2); Rebased 100 puts all market assets
     # onto one comparable relative-performance axis.
     money = make_subplots(specs=[[{"secondary_y": True}]])
-    add_line(money, data, "M2 MoM", "M2 MoM", COLORS["m2"], 2.8, secondary_y=False)
-    add_line(money, data, "M3 MoM", "M3 MoM", COLORS["m3"], 2.3, "dash", secondary_y=False)
-    add_line(money, data, "Monetary Base MoM", "Monetary Base MoM", COLORS["base"], 1.8, "dot", secondary_y=False)
+    add_line(money, data, "M2 YoY", "M2 YoY", COLORS["m2"], 2.8, secondary_y=False)
+    add_line(money, data, "M3 YoY", "M3 YoY", COLORS["m3"], 2.3, "dash", secondary_y=False)
+    add_line(money, data, "Monetary Base YoY", "Monetary Base YoY", COLORS["base"], 1.8, "dot", secondary_y=False)
     if raw_market:
         add_line(money, market_data, "Tencent Price", "Tencent Price (R1)", "#111827", 2.3, unit=" HKD", secondary_y=True)
         add_line(money, market_data, "HKEX Price", "HKEX Price (R1)", "#0891b2", 2.0, "dash", unit=" HKD", secondary_y=True)
@@ -899,7 +899,7 @@ def build_hk_liquidity_figures(
         add_line(money, market_data, "HSTECH Index", "HSTECH (R)", "#db2777", 2.1, "dash", unit="", secondary_y=True)
         add_line(money, market_data, "HSI Index", "HSI (R)", "#d97706", 2.0, "dot", unit="", secondary_y=True)
     money.update_yaxes(
-        title_text="Money MoM (%)", secondary_y=False,
+        title_text="Money YoY (%)", secondary_y=False,
         showgrid=True, gridcolor="#e5e7eb", griddash="dot",
         zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )

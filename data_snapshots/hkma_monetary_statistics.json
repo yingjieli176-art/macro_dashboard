@@ -842,7 +842,9 @@
       "aggr_balance": 457459,
       "outstanding_efbn": 1069099,
       "ow_lb_bf_disc_win": 1017443,
-      "monetary_base_total": 2112715
+      "monetary_base_total": 2112715,
+      "m2_hkd": 8080041.0,
+      "m3_hkd": 8095371.0
     },
     {
       "end_of_month": "2021-03",
@@ -851,7 +853,9 @@
       "aggr_balance": 457462,
       "outstanding_efbn": 1068981,
       "ow_lb_bf_disc_win": 1015102,
-      "monetary_base_total": 2108887
+      "monetary_base_total": 2108887,
+      "m2_hkd": 8128388.0,
+      "m3_hkd": 8143300.0
     },
     {
       "end_of_month": "2021-02",
@@ -860,7 +864,9 @@
       "aggr_balance": 457463,
       "outstanding_efbn": 1068974,
       "ow_lb_bf_disc_win": 1012278,
-      "monetary_base_total": 2113533
+      "monetary_base_total": 2113533,
+      "m2_hkd": 8276695.0,
+      "m3_hkd": 8291190.0
     },
     {
       "end_of_month": "2021-01",
@@ -869,7 +875,9 @@
       "aggr_balance": 457463,
       "outstanding_efbn": 1069115,
       "ow_lb_bf_disc_win": 1014483,
-      "monetary_base_total": 2112517
+      "monetary_base_total": 2112517,
+      "m2_hkd": 9292550.0,
+      "m3_hkd": 9307825.0
     },
     {
       "end_of_month": "2020-12",
@@ -878,7 +886,9 @@
       "aggr_balance": 457466,
       "outstanding_efbn": 1069154,
       "ow_lb_bf_disc_win": 997386,
-      "monetary_base_total": 2099308
+      "monetary_base_total": 2099308,
+      "m2_hkd": 7922089.0,
+      "m3_hkd": 7937038.0
     },
     {
       "end_of_month": "2020-11",
@@ -887,7 +897,9 @@
       "aggr_balance": 457431,
       "outstanding_efbn": 1069211,
       "ow_lb_bf_disc_win": 1014838,
-      "monetary_base_total": 2110858
+      "monetary_base_total": 2110858,
+      "m2_hkd": 7949837.0,
+      "m3_hkd": 7964856.0
     },
     {
       "end_of_month": "2020-10",
@@ -896,7 +908,9 @@
       "aggr_balance": 457463,
       "outstanding_efbn": 1069203,
       "ow_lb_bf_disc_win": 972839,
-      "monetary_base_total": 2106033
+      "monetary_base_total": 2106033,
+      "m2_hkd": 8999851.0,
+      "m3_hkd": 9014327.0
     },
     {
       "end_of_month": "2020-09",
@@ -905,7 +919,9 @@
       "aggr_balance": 243531,
       "outstanding_efbn": 1069342,
       "ow_lb_bf_disc_win": 964277,
-      "monetary_base_total": 1897536
+      "monetary_base_total": 1897536,
+      "m2_hkd": 8243060.0,
+      "m3_hkd": 8258067.0
     },
     {
       "end_of_month": "2020-08",
@@ -914,7 +930,9 @@
       "aggr_balance": 193067,
       "outstanding_efbn": 1069029,
       "ow_lb_bf_disc_win": 1003078,
-      "monetary_base_total": 1819815
+      "monetary_base_total": 1819815,
+      "m2_hkd": 8300652.0,
+      "m3_hkd": 8317023.0
     },
     {
       "end_of_month": "2020-07",
@@ -923,7 +941,9 @@
       "aggr_balance": 183356,
       "outstanding_efbn": 1069172,
       "ow_lb_bf_disc_win": 1004135,
-      "monetary_base_total": 1802529
+      "monetary_base_total": 1802529,
+      "m2_hkd": 7940990.0,
+      "m3_hkd": 7957865.0
     },
     {
       "end_of_month": "2020-06",
@@ -932,7 +952,9 @@
       "aggr_balance": 131609,
       "outstanding_efbn": 1068834,
       "ow_lb_bf_disc_win": 970780,
-      "monetary_base_total": 1750023
+      "monetary_base_total": 1750023,
+      "m2_hkd": 7629436.0,
+      "m3_hkd": 7645848.0
     },
     {
       "end_of_month": "2020-05",
@@ -941,7 +963,9 @@
       "aggr_balance": 94757,
       "outstanding_efbn": 1067477,
       "ow_lb_bf_disc_win": 952511,
-      "monetary_base_total": 1706156
+      "monetary_base_total": 1706156,
+      "m2_hkd": 7487691.0,
+      "m3_hkd": 7504828.0
     },
     {
       "end_of_month": "2020-04",
@@ -950,7 +974,9 @@
       "aggr_balance": 84713,
       "outstanding_efbn": 1077649,
       "ow_lb_bf_disc_win": 950964,
-      "monetary_base_total": 1709876
+      "monetary_base_total": 1709876,
+      "m2_hkd": 7477673.0,
+      "m3_hkd": 7495200.0
     },
     {
       "end_of_month": "2020-03",
@@ -959,7 +985,9 @@
       "aggr_balance": 54054,
       "outstanding_efbn": 1086330,
       "ow_lb_bf_disc_win": 953122,
-      "monetary_base_total": 1681059
+      "monetary_base_total": 1681059,
+      "m2_hkd": 7444053.0,
+      "m3_hkd": 7461444.0
     },
     {
       "end_of_month": "2020-02",
@@ -968,7 +996,9 @@
       "aggr_balance": 54259,
       "outstanding_efbn": 1083927,
       "ow_lb_bf_disc_win": 953170,
-      "monetary_base_total": 1683733
+      "monetary_base_total": 1683733,
+      "m2_hkd": 7499120.0,
+      "m3_hkd": 7515413.0
     },
     {
       "end_of_month": "2020-01",
@@ -977,7 +1007,9 @@
       "aggr_balance": 54235,
       "outstanding_efbn": 1081109,
       "ow_lb_bf_disc_win": 1003601,
-      "monetary_base_total": 1689384
+      "monetary_base_total": 1689384,
+      "m2_hkd": 7537431.0,
+      "m3_hkd": 7553080.0
     },
     {
       "end_of_month": "2019-12",
@@ -986,7 +1018,9 @@
       "aggr_balance": 54288,
       "outstanding_efbn": 1078736,
       "ow_lb_bf_disc_win": 995967,
-      "monetary_base_total": 1662883
+      "monetary_base_total": 1662883,
+      "m2_hkd": 7438789.0,
+      "m3_hkd": 7454655.0
     },
     {
       "end_of_month": "2019-11",
@@ -995,7 +1029,9 @@
       "aggr_balance": 54390,
       "outstanding_efbn": 1077197,
       "ow_lb_bf_disc_win": 990406,
-      "monetary_base_total": 1650139
+      "monetary_base_total": 1650139,
+      "m2_hkd": 7465211.0,
+      "m3_hkd": 7480962.0
     },
     {
       "end_of_month": "2019-10",
@@ -1004,7 +1040,9 @@
       "aggr_balance": 54334,
       "outstanding_efbn": 1075695,
       "ow_lb_bf_disc_win": 987094,
-      "monetary_base_total": 1646925
+      "monetary_base_total": 1646925,
+      "m2_hkd": 7468588.0,
+      "m3_hkd": 7483793.0
     },
     {
       "end_of_month": "2019-09",
@@ -1013,7 +1051,9 @@
       "aggr_balance": 54272,
       "outstanding_efbn": 1073913,
       "ow_lb_bf_disc_win": 984987,
-      "monetary_base_total": 1645274
+      "monetary_base_total": 1645274,
+      "m2_hkd": 7441069.0,
+      "m3_hkd": 7457142.0
     },
     {
       "end_of_month": "2019-08",
@@ -1022,7 +1062,9 @@
       "aggr_balance": 54359,
       "outstanding_efbn": 1072176,
       "ow_lb_bf_disc_win": 984373,
-      "monetary_base_total": 1639231
+      "monetary_base_total": 1639231,
+      "m2_hkd": 7395896.0,
+      "m3_hkd": 7417032.0
     },
     {
       "end_of_month": "2019-07",
@@ -1031,7 +1073,9 @@
       "aggr_balance": 54243,
       "outstanding_efbn": 1070232,
       "ow_lb_bf_disc_win": 986372,
-      "monetary_base_total": 1633845
+      "monetary_base_total": 1633845,
+      "m2_hkd": 7505594.0,
+      "m3_hkd": 7525970.0
     },
     {
       "end_of_month": "2019-06",
@@ -1182,5 +1226,23 @@
       "ow_lb_bf_disc_win",
       "monetary_base_total"
     ]
+  },
+  "yoy_history_backfill": {
+    "source": "C&SD Hong Kong Monthly Digest of Statistics, adjusted money-supply table",
+    "underlying_source": "Hong Kong Monetary Authority",
+    "concept": "HKD M2/M3 adjusted for foreign currency swap deposits",
+    "purpose": "Provide 12-month comparison base for a full five-year YoY display",
+    "updated_at": "2026-09-10T02:29:33.994042+00:00",
+    "source_urls": [
+      "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022020MM12B0100.pdf",
+      "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022021MM06B0100.pdf",
+      "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022021MM10B0100.pdf",
+      "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022021MM12B0100.pdf",
+      "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022022MM06B0100.pdf"
+    ],
+    "failed_issues": [],
+    "complete_start": "2020-07",
+    "complete_end": "2026-07",
+    "complete_months": 73
   }
 }
