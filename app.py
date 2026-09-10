@@ -39,7 +39,7 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .source-text a { color: #6b7280; text-decoration: none !important; white-space: nowrap; }
 .source-text a:hover { color: #374151; text-decoration: underline !important; }
 .source-sep { color: #d1d5db; margin: 0 5px; }
-.chart-divider { margin: 0.65rem 0 1rem; border-top: 1px solid #e5e7eb; }
+.chart-divider { margin: 0.30rem 0 0.55rem; border-top: 1px solid #e5e7eb; }
 .compact-title { font-size: 0.98rem; font-weight: 650; margin-bottom: 0.15rem; min-height: 25px; display: flex; align-items: center; }
 .compact-description { color: #6b7280; font-size: 0.73rem; line-height: 1.35; margin-bottom: 0.35rem; min-height: 20px; display: flex; align-items: center; }
 .news-status { color: #6b7280; font-size: 0.75rem; margin-bottom: 0.5rem; }
@@ -108,7 +108,7 @@ html { scroll-behavior: smooth; }
 .dashboard-links a:hover { border-color: #9ca3af; background: #f9fafb; color: #111827 !important; }
 .dashboard-links a.external { font-weight: 650; }
 .section-anchor { height: 0; visibility: hidden; scroll-margin-top: 18px; }
-.section-kicker { color: #9ca3af; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; margin-top: 0.4rem; margin-bottom: -0.35rem; }
+.section-kicker { color: #9ca3af; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; margin-top: 0.12rem; margin-bottom: 0.04rem; line-height: 1.1; }
 .section-toolbar-note { color: #9ca3af; font-size: 0.72rem; margin-top: -0.15rem; margin-bottom: 0.5rem; }
 div[data-testid="stVerticalBlockBorderWrapper"] { border-color: #e5e7eb !important; border-radius: 12px !important; }
 div[data-testid="stPlotlyChart"] { border: 1px solid #eef2f7; border-radius: 12px; padding: 2px 4px 0; background: #fff; overflow: hidden; }
@@ -1174,7 +1174,8 @@ def build_fig9(date_range):
     )
     fig = apply_chart_style(fig, chart_height(360, 520), date_range)
     fig.update_layout(
-        margin=dict(l=62, r=144, t=124, b=44, pad=2),
+        margin=dict(l=62, r=144, t=72, b=44, pad=2),
+        legend=dict(y=1.095),
         xaxis=dict(domain=[0.0, 0.84]),
         yaxis=dict(
             title="VIX / VIXEQ",
@@ -1315,12 +1316,15 @@ def render_core_charts():
         )
         show_hk_parameter_description(hk_index)
         add_sources(sources)
-        st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+        if hk_index < len(hk_configs) - 1:
+            st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
-
-    st.markdown('<div class="section-kicker">US EQUITY RISK</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">9. US Equity Risk & Volatility Structure</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIX3M−VIX (R2)</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-kicker">US EQUITY RISK</div>'
+        '<div class="section-title">9. US Equity Risk & Volatility Structure</div>'
+        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIX3M−VIX (R2)</div>',
+        unsafe_allow_html=True,
+    )
     risk_range = st.radio(
         "时间范围",
         RANGES,
