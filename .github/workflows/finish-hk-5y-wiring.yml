@@ -1,0 +1,90 @@
+name: Finish Hong Kong 5Y wiring
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/finish_hk_5y_wiring.py
+      - .github/workflows/finish-hk-5y-wiring.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finish-hk-5y-wiring
+  cancel-in-progress: true
+
+jobs:
+  apply-and-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install validation dependencies
+        run: python -m pip install --disable-pip-version-check pandas plotly requests
+      - name: Apply final 5Y wiring
+        run: python scripts/finish_hk_5y_wiring.py
+      - name: Compile application
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py
+      - name: Audit actual Chart 5 traces
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          from macro_platform.hk_liquidity import build_hk_liquidity_figures
+
+          figures = build_hk_liquidity_figures('5Y')
+          assert len(figures) == 4, len(figures)
+
+          stats = {}
+          for fig_index, fig in enumerate(figures, start=1):
+              print(f'--- 5-{fig_index} ---')
+              for trace in fig.data:
+                  name = str(trace.name)
+                  x = pd.to_datetime(pd.Series(list(trace.x)), errors='coerce')
+                  y = pd.to_numeric(pd.Series(list(trace.y)), errors='coerce')
+                  valid = x.notna() & y.notna()
+                  count = int(valid.sum())
+                  start = x[valid].min() if count else None
+                  end = x[valid].max() if count else None
+                  stats[(fig_index, name)] = (count, start, end)
+                  print(name, 'count=', count, 'start=', start, 'end=', end)
+
+          minimums = {
+              (1, 'M2 MoM'): 58,
+              (1, 'M3 MoM'): 58,
+              (1, 'Monetary Base MoM'): 58,
+              (2, 'Closing Aggregate Balance'): 58,
+              (2, 'Outstanding EFBN (R)'): 58,
+              (2, 'EFBN Held by Licensed Banks (R)'): 58,
+              (3, 'O/N HIBOR'): 58,
+              (3, '3M HIBOR'): 58,
+              (3, 'HKMA Base Rate'): 58,
+              (3, 'O/N−3M Spread (R)'): 58,
+              (4, 'USD/HKD'): 1000,
+          }
+          for key, minimum in minimums.items():
+              assert key in stats, f'missing trace: {key}'
+              count, start, end = stats[key]
+              assert count >= minimum, f'{key} too short: {count} < {minimum}'
+              if key != (4, 'USD/HKD'):
+                  assert start <= pd.Timestamp('2021-10-01'), f'{key} starts too late: {start}'
+          print('Chart 5 five-year coverage audit PASSED')
+          PY
+      - name: Commit final wiring
+        run: |
+          git add app.py macro_platform/hk_liquidity.py
+          if git diff --cached --quiet; then
+            echo "5Y wiring already applied"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Complete Hong Kong liquidity five-year history wiring"
+          git pull --rebase origin main
+          git push origin main
