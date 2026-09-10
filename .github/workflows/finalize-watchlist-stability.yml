@@ -1,0 +1,52 @@
+name: Finalize watchlist stability
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/finalize_watchlist_stability.py
+      - .github/workflows/finalize-watchlist-stability.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Finalize watchlist behavior
+        run: python scripts/finalize_watchlist_stability.py
+      - name: Compile
+        run: python -m py_compile app.py scripts/finalize_watchlist_stability.py macro_platform/watchlist_state.py
+      - name: Validate no duplicate stale labels
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          duplicate = 'if row.get("_stale"): source_text = (source_text + " · 上次有效报价").strip(" ·")\n    if row.get("_stale"): source_text = (source_text + " · 上次有效报价").strip(" ·")'
+          assert duplicate not in text
+          assert 'if row.get("_stale"): parts.append("上次有效报价")' in text
+          assert 'price = float(price_raw)' in text
+          assert 'def _stable_quote(symbol, refresh_key=0):' in text
+          print('final watchlist stability validation OK')
+          PY
+      - name: Commit cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          if git diff --cached --quiet; then
+            echo "Already finalized"
+            exit 0
+          fi
+          git commit -m "Finalize watchlist quote stability"
+          git pull --rebase origin main
+          git push origin main
