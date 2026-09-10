@@ -21,7 +21,7 @@ YEAR_DIVIDER_SHAPE_NAME = "__dashboard_year_divider__"
 def _tick_profile(date_range: str) -> dict[str, Any]:
     """Readable lower-axis cadence for every supported viewport."""
     return {
-        "5Y": {"dtick": "M6", "tickformat": "%m月"},
+        "5Y": {"dtick": "M12", "tickformat": "%Y"},
         "1Y": {"dtick": "M2", "tickformat": "%m月"},
         "6M": {"dtick": "M1", "tickformat": "%m月"},
         "3M": {"dtick": 14 * 24 * 60 * 60 * 1000, "tickformat": "%m-%d"},
@@ -29,10 +29,39 @@ def _tick_profile(date_range: str) -> dict[str, Any]:
     }.get(date_range, {"dtick": "M2", "tickformat": "%m月"})
 
 
-def _tick0(start: pd.Timestamp, date_range: str) -> pd.Timestamp:
-    if date_range in {"5Y", "1Y", "6M"}:
-        return pd.Timestamp(year=start.year, month=1, day=1)
-    return start.normalize()
+def _axis_ticks(
+    start: pd.Timestamp,
+    end: pd.Timestamp,
+    date_range: str,
+) -> list[pd.Timestamp]:
+    """Build deterministic labels so Plotly never appends a crowded range-end tick."""
+    start = pd.Timestamp(start)
+    end = pd.Timestamp(end)
+
+    if date_range == "5Y":
+        ticks = pd.date_range(start=start, end=end, freq="YS")
+    elif date_range == "1Y":
+        ticks = pd.date_range(start=start, end=end, freq="2MS")
+    elif date_range == "6M":
+        ticks = pd.date_range(start=start, end=end, freq="MS")
+    elif date_range == "3M":
+        ticks = pd.date_range(start=start.normalize(), end=end, freq="14D")
+    elif date_range == "1M":
+        ticks = pd.date_range(start=start.normalize(), end=end, freq="5D")
+    else:
+        ticks = pd.date_range(start=start, end=end, freq="2MS")
+
+    return [pd.Timestamp(value) for value in ticks if start <= value <= end]
+
+
+def _axis_end_with_padding(start: pd.Timestamp, latest: pd.Timestamp) -> pd.Timestamp:
+    """Leave a small right gutter so the final regular tick is not pinned to the frame."""
+    span = latest - start
+    if span <= pd.Timedelta(0):
+        return latest
+    padding = max(pd.Timedelta(days=1), span * 0.015)
+    padding = min(padding, pd.Timedelta(days=7))
+    return latest + padding
 
 
 def _figure_latest(fig: go.Figure) -> pd.Timestamp | None:
@@ -188,9 +217,9 @@ def apply_time_axis(
 ) -> go.Figure:
     """Apply the dashboard-wide time axis.
 
-    Bottom axis: adaptive month/day detail with bounded label density.
-    Top: a subtle shaded calendar-year band centered within each visible year,
-    with dotted vertical separators at cross-year boundaries.
+    Bottom axis: deterministic adaptive labels with bounded density and no
+    synthetic latest-date label. Top: a subtle shaded calendar-year band
+    centered within each visible year, with dotted cross-year separators.
     """
     latest = pd.Timestamp(latest) if latest is not None else _figure_latest(fig)
     if latest is None or pd.isna(latest):
@@ -204,10 +233,14 @@ def apply_time_axis(
         start = latest - pd.Timedelta(days=1)
 
     profile = _tick_profile(date_range)
+    tickvals = _axis_ticks(start, latest, date_range)
+    ticktext = [tick.strftime(profile["tickformat"]) for tick in tickvals]
+    axis_end = _axis_end_with_padding(start, latest)
+
     fig.update_layout(
         xaxis=dict(
             type="date",
-            range=[start, latest],
+            range=[start, axis_end],
             showgrid=True,
             gridcolor="#eef2f7",
             griddash="dot",
@@ -223,8 +256,10 @@ def apply_time_axis(
             ticklabeloverflow="hide past div",
             automargin=True,
             fixedrange=True,
+            tickmode="array",
+            tickvals=tickvals,
+            ticktext=ticktext,
             dtick=profile["dtick"],
-            tick0=_tick0(start, date_range),
             tickformat=profile["tickformat"],
             title=None,
             zeroline=False,
