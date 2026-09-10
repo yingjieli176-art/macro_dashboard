@@ -15,6 +15,8 @@ SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_monetary_statistics.json"
 DAILY_BANKING_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_banking_liquidity_daily.json"
 HSTECH_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hstech_monthly.json"
 USDHKD_SNAPSHOT_PATH = ROOT / "data_snapshots" / "usdhkd_daily.json"
+HIBOR_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkd_hibor_monthly.json"
+BASE_RATE_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_base_rate_monthly.json"
 DAILY_BANKING_COLUMNS = [
     "observation_date",
     "Opening Aggregate Balance",
@@ -40,6 +42,8 @@ OUTPUT_COLUMNS = [
     "M3 YoY",
     "Monetary Base YoY",
     "Aggregate Balance",
+    "Outstanding EFBN",
+    "EFBN Held by Licensed Banks",
     "HIBOR O/N",
     "HIBOR 3M",
     "HKMA Base Rate",
@@ -114,6 +118,9 @@ def load_hk_liquidity() -> pd.DataFrame:
         "m3_hkd",
         "monetary_base_total",
         "aggr_balance",
+        "ef_bills_notes",
+        "outstanding_efbn",
+        "ow_lb_bf_disc_win",
         "hibor_fixing_overnight",
         "hibor_fixing_3m",
         "discount_window_base_rate",
@@ -145,6 +152,13 @@ def load_hk_liquidity() -> pd.DataFrame:
     )
 
     monthly["Aggregate Balance"] = monthly["aggr_balance"] / 1000.0
+    # Monetary-base structure is stored in HK$ million by HKMA.
+    # Prefer the dedicated end-period field and fall back to the equivalent
+    # monetary-statistics EF Bills & Notes field if needed.
+    monthly["Outstanding EFBN"] = monthly["outstanding_efbn"].combine_first(
+        monthly["ef_bills_notes"]
+    ) / 1000.0
+    monthly["EFBN Held by Licensed Banks"] = monthly["ow_lb_bf_disc_win"] / 1000.0
     monthly["HIBOR O/N"] = monthly["hibor_fixing_overnight"]
     monthly["HIBOR 3M"] = monthly["hibor_fixing_3m"]
     monthly["HKMA Base Rate"] = monthly["discount_window_base_rate"]
@@ -154,6 +168,31 @@ def load_hk_liquidity() -> pd.DataFrame:
     monthly["Weak-side CU"] = 7.85
     return monthly.reset_index()[OUTPUT_COLUMNS]
 
+
+
+def load_hk_banking_liquidity_monthly() -> pd.DataFrame:
+    """Return real monthly HKMA banking-liquidity history for long windows."""
+    monthly = load_hk_liquidity()
+    if monthly.empty:
+        return pd.DataFrame(columns=DAILY_BANKING_COLUMNS)
+    fallback = monthly[[
+        "observation_date",
+        "Aggregate Balance",
+        "Outstanding EFBN",
+        "EFBN Held by Licensed Banks",
+    ]].copy()
+    fallback = fallback.rename(columns={"Aggregate Balance": "Closing Aggregate Balance"})
+    # HKMA monthly history does not publish the daily opening balance or T+1
+    # forecast. Keep them empty rather than cloning the closing balance.
+    fallback["Opening Aggregate Balance"] = pd.NA
+    fallback["Forecast Aggregate Balance T+1"] = pd.NA
+    value_cols = [
+        "Closing Aggregate Balance",
+        "Outstanding EFBN",
+        "EFBN Held by Licensed Banks",
+    ]
+    fallback = fallback.dropna(how="all", subset=value_cols)
+    return fallback[DAILY_BANKING_COLUMNS]
 
 
 def load_hk_banking_liquidity_daily() -> pd.DataFrame:
@@ -171,16 +210,7 @@ def load_hk_banking_liquidity_daily() -> pd.DataFrame:
         frame = pd.DataFrame()
 
     if frame.empty or "end_of_date" not in frame.columns:
-        monthly = load_hk_liquidity()
-        if monthly.empty:
-            return pd.DataFrame(columns=DAILY_BANKING_COLUMNS)
-        fallback = monthly[["observation_date", "Aggregate Balance"]].dropna().copy()
-        fallback = fallback.rename(columns={"Aggregate Balance": "Closing Aggregate Balance"})
-        fallback["Opening Aggregate Balance"] = fallback["Closing Aggregate Balance"]
-        fallback["Forecast Aggregate Balance T+1"] = fallback["Closing Aggregate Balance"]
-        fallback["Outstanding EFBN"] = pd.NA
-        fallback["EFBN Held by Licensed Banks"] = pd.NA
-        return fallback[DAILY_BANKING_COLUMNS]
+        return load_hk_banking_liquidity_monthly()
 
     frame["observation_date"] = pd.to_datetime(frame["end_of_date"], errors="coerce")
     mapping = {
@@ -198,6 +228,58 @@ def load_hk_banking_liquidity_daily() -> pd.DataFrame:
         .drop_duplicates("observation_date", keep="last")
     )
     return frame[DAILY_BANKING_COLUMNS]
+
+
+def load_hk_funding_monthly() -> pd.DataFrame:
+    """Build a continuous monthly HKD funding history from persisted official data.
+
+    O/N and 3M HIBOR come from the C&SD monthly-digest snapshot (underlying
+    HKAB/HKMA sources). The HKMA Base Rate comes from the dedicated HKMA
+    Discount Window end-of-period snapshot. Recent values in the core HKMA
+    monetary snapshot remain a fallback for months not yet present upstream.
+    """
+    columns = ["observation_date", "HIBOR O/N", "HIBOR 3M", "HKMA Base Rate", "O/N-3M Spread"]
+    core = load_hk_liquidity()
+    if core.empty:
+        funding = pd.DataFrame(columns=columns[:-1]).set_index("observation_date")
+    else:
+        funding = core[["observation_date", "HIBOR O/N", "HIBOR 3M", "HKMA Base Rate"]].copy()
+        funding = funding.set_index("observation_date").sort_index()
+
+    try:
+        payload = json.loads(HIBOR_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+        rows = payload.get("records") if isinstance(payload, dict) else payload
+        hibor = pd.DataFrame(rows or [])
+    except Exception:
+        hibor = pd.DataFrame()
+    if not hibor.empty and "end_of_month" in hibor.columns:
+        hibor["observation_date"] = pd.to_datetime(hibor["end_of_month"], format="%Y-%m", errors="coerce")
+        hibor["HIBOR O/N"] = pd.to_numeric(hibor.get("hibor_overnight"), errors="coerce")
+        hibor["HIBOR 3M"] = pd.to_numeric(hibor.get("hibor_3m"), errors="coerce")
+        hibor = hibor.dropna(subset=["observation_date"]).set_index("observation_date")[["HIBOR O/N", "HIBOR 3M"]]
+        union = funding.index.union(hibor.index)
+        funding = funding.reindex(union)
+        for col in ("HIBOR O/N", "HIBOR 3M"):
+            funding[col] = hibor[col].reindex(union).combine_first(funding[col])
+
+    try:
+        payload = json.loads(BASE_RATE_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+        rows = payload.get("records") if isinstance(payload, dict) else payload
+        base_rate = pd.DataFrame(rows or [])
+    except Exception:
+        base_rate = pd.DataFrame()
+    if not base_rate.empty and "end_of_month" in base_rate.columns:
+        base_rate["observation_date"] = pd.to_datetime(base_rate["end_of_month"], format="%Y-%m", errors="coerce")
+        base_rate["HKMA Base Rate"] = pd.to_numeric(base_rate.get("disc_win_base_rate"), errors="coerce")
+        base_rate = base_rate.dropna(subset=["observation_date"]).set_index("observation_date")[["HKMA Base Rate"]]
+        union = funding.index.union(base_rate.index)
+        funding = funding.reindex(union)
+        funding["HKMA Base Rate"] = base_rate["HKMA Base Rate"].reindex(union).combine_first(funding["HKMA Base Rate"])
+
+    funding = funding.sort_index()
+    funding["O/N-3M Spread"] = (funding["HIBOR O/N"] - funding["HIBOR 3M"]) * 100.0
+    funding.index.name = "observation_date"
+    return funding.reset_index()[columns]
 
 
 def load_hk_funding_daily() -> pd.DataFrame:
@@ -223,10 +305,7 @@ def load_hk_funding_daily() -> pd.DataFrame:
         frame = frame.dropna(subset=["observation_date"]).sort_values("observation_date").drop_duplicates("observation_date", keep="last")
         if frame[["HIBOR O/N", "HIBOR 3M", "HKMA Base Rate"]].notna().any(axis=1).sum() >= 10:
             return frame[columns]
-    monthly = load_hk_liquidity()
-    if monthly.empty:
-        return pd.DataFrame(columns=columns)
-    return monthly[columns].copy()
+    return load_hk_funding_monthly()
 
 
 def _daily_snapshot_available() -> bool:
@@ -617,8 +696,10 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
     """Build four independent Hong Kong liquidity charts for the dashboard."""
     all_data = load_hk_liquidity()
     data = _slice_range(all_data, date_range)
-    banking_data = _slice_range(load_hk_banking_liquidity_daily(), date_range)
-    funding_data = _slice_range(load_hk_funding_daily(), date_range)
+    banking_source = load_hk_banking_liquidity_monthly() if date_range == "5Y" else load_hk_banking_liquidity_daily()
+    funding_source = load_hk_funding_monthly() if date_range == "5Y" else load_hk_funding_daily()
+    banking_data = _slice_range(banking_source, date_range)
+    funding_data = _slice_range(funding_source, date_range)
     meta = snapshot_metadata()
     latest_text = meta.get("latest_observation") or "--"
 
