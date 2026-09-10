@@ -1,0 +1,110 @@
+name: Refine watchlist workspace
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/refine_watchlist_workspace.py
+      - .github/workflows/refine-watchlist-workspace.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refine-watchlist-workspace
+  cancel-in-progress: true
+
+jobs:
+  refine-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply watchlist refinement
+        run: python scripts/refine_watchlist_workspace.py
+
+      - name: Compile changed Python
+        run: python -m py_compile app.py macro_platform/watchlist_state.py scripts/refine_watchlist_workspace.py
+
+      - name: Validate default watchlist migration
+        run: |
+          python - <<'PY'
+          import json
+          from macro_platform.watchlist_state import (
+              decode_watchlists,
+              default_watchlists,
+              encode_watchlists,
+              merge_default_watchlists,
+              watchlist_needs_default_migration,
+          )
+
+          defaults = default_watchlists()
+          assert [x['symbol'] for x in defaults['market_search_us']] == ['NVDA', 'NBIS', '^NDX']
+          assert [x['symbol'] for x in defaults['market_search_hk']] == ['0700.HK', '0189.HK']
+          assert [x['symbol'] for x in defaults['market_search_cn']] == ['600160.SS', '600021.SS']
+
+          assert watchlist_needs_default_migration('')
+          merged = merge_default_watchlists({'market_search_us': [{'symbol': 'AAPL', 'name': 'Apple'}]})
+          assert [x['symbol'] for x in merged['market_search_us']] == ['AAPL', 'NVDA', 'NBIS', '^NDX']
+          encoded = encode_watchlists(merged)
+          assert encoded.startswith('v3.')
+          assert not watchlist_needs_default_migration(encoded)
+
+          decoded = decode_watchlists(encoded)
+          decoded['market_search_us'] = [x for x in decoded['market_search_us'] if x['symbol'] != 'NVDA']
+          encoded_after_delete = encode_watchlists(decoded)
+          assert not watchlist_needs_default_migration(encoded_after_delete)
+          assert 'NVDA' not in [x['symbol'] for x in decode_watchlists(encoded_after_delete)['market_search_us']]
+
+          legacy = json.dumps({'market_search_hk': [{'symbol': '0388.HK', 'name': 'HKEX'}]}, ensure_ascii=False)
+          assert watchlist_needs_default_migration(legacy)
+          legacy_merged = merge_default_watchlists(decode_watchlists(legacy))
+          assert [x['symbol'] for x in legacy_merged['market_search_hk']] == ['0388.HK', '0700.HK', '0189.HK']
+          print('default migration OK')
+          PY
+
+      - name: Validate workstation UI and search support
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          required = (
+              'watchlist_needs_default_migration(raw)',
+              'merge_default_watchlists(payload)',
+              'allowed_types = {"EQUITY", "INDEX"} if market == "US" else {"EQUITY"}',
+              'watch-market-head',
+              'watch-card-body',
+              'watch-price-row',
+              'watch-change',
+              '＋ 添加标的',
+              'st.selectbox(',
+              '默认组合已启用',
+              '↻ 刷新报价',
+          )
+          for token in required:
+              assert token in text, token
+          for symbol in ('NVDA', 'NBIS', '^NDX', '0700.HK', '0189.HK', '600160.SS', '600021.SS'):
+              assert symbol in Path('macro_platform/watchlist_state.py').read_text(encoding='utf-8')
+          assert 'st.radio("搜索结果"' not in text
+          print('watchlist workstation UI OK')
+          PY
+
+      - name: Commit refinement
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/watchlist_state.py
+          if git diff --cached --quiet; then
+            echo "Watchlist refinement already applied"
+            exit 0
+          fi
+          git commit -m "Refine default watchlist workspace"
+          git pull --rebase origin main
+          git push origin main
