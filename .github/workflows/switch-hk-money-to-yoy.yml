@@ -1,0 +1,79 @@
+name: Switch HK money chart to YoY
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/switch_hk_money_chart_to_yoy.py
+      - .github/workflows/switch-hk-money-to-yoy.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: switch-hk-money-to-yoy
+  cancel-in-progress: true
+
+jobs:
+  migrate-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install validation dependencies
+        run: pip install pandas plotly requests
+      - name: Apply YoY migration
+        run: python scripts/switch_hk_money_chart_to_yoy.py
+      - name: Compile application
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py scripts/switch_hk_money_chart_to_yoy.py
+      - name: Validate Chart 5 YoY traces
+        run: |
+          python - <<'PY'
+          from macro_platform.hk_liquidity import build_hk_liquidity_figures, load_hk_liquidity, liquidity_state
+
+          data = load_hk_liquidity()
+          for col in ('M2 YoY', 'M3 YoY', 'Monetary Base YoY'):
+              valid = data[['observation_date', col]].dropna()
+              assert len(valid) >= 58, (col, len(valid))
+              print(col, len(valid), valid.observation_date.min(), '->', valid.observation_date.max())
+
+          fig = build_hk_liquidity_figures('5Y', market_mode='Raw')[0]
+          names = [str(t.name) for t in fig.data]
+          for name in ('M2 YoY', 'M3 YoY', 'Monetary Base YoY'):
+              assert name in names, (name, names)
+          for old in ('M2 MoM', 'M3 MoM', 'Monetary Base MoM'):
+              assert old not in names, (old, names)
+          assert fig.layout.yaxis.title.text == 'Money YoY (%)', fig.layout.yaxis.title.text
+          state = liquidity_state(data)
+          assert state.get('label') in {'偏宽松', '中性', '偏紧'}, state
+          print('Chart 5 YoY display OK; liquidity scoring still operational:', state)
+          PY
+      - name: Validate descriptions
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          assert 'HKD M2 YoY' in text
+          assert 'HKD M3 YoY' in text
+          assert 'Monetary Base YoY' in text
+          assert '图 5 使用 YoY' in text
+          assert '流动性评分内部仍使用最近 3 个月 M2/M3 MoM 均值' in text
+          print('YoY descriptions and MoM scoring distinction OK')
+          PY
+      - name: Commit migrated application
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/hk_liquidity.py
+          if git diff --cached --quiet; then
+            echo "YoY display already applied"
+            exit 0
+          fi
+          git commit -m "Use YoY money growth in Hong Kong market chart"
+          git pull --rebase origin main
+          git push origin main
