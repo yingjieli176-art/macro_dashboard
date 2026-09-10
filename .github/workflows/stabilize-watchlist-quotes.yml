@@ -1,0 +1,108 @@
+name: Stabilize watchlist quotes
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - macro_platform/watchlist_state.py
+      - scripts/stabilize_watchlist_quotes.py
+      - .github/workflows/stabilize-watchlist-quotes.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stabilize-watchlist-quotes
+  cancel-in-progress: true
+
+jobs:
+  migrate-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply stabilization migration
+        run: python scripts/stabilize_watchlist_quotes.py
+
+      - name: Compile changed Python
+        run: python -m py_compile app.py macro_platform/watchlist_state.py scripts/stabilize_watchlist_quotes.py
+
+      - name: Validate watchlist state codec
+        run: |
+          python - <<'PY'
+          import json
+          from macro_platform.watchlist_state import decode_watchlists, encode_watchlists
+
+          payload = {
+              'market_search_us': [
+                  {'symbol': 'NVDA', 'name': 'NVIDIA Corporation', 'exchange': 'NMS', 'market': 'US'},
+                  {'symbol': 'AAPL', 'name': 'Apple Inc.', 'exchange': 'NMS', 'market': 'US'},
+              ],
+              'market_search_hk': [
+                  {'symbol': '0700.HK', 'name': 'Tencent Holdings Limited', 'exchange': 'HKG', 'market': 'HK'},
+              ],
+              'market_search_cn': [
+                  {'symbol': '600519.SS', 'name': '贵州茅台', 'exchange': 'SHH', 'market': 'CN'},
+              ],
+          }
+          encoded = encode_watchlists(payload)
+          assert encoded.startswith('v2.')
+          decoded = decode_watchlists(encoded)
+          assert [x['symbol'] for x in decoded['market_search_us']] == ['NVDA', 'AAPL']
+          assert decoded['market_search_hk'][0]['symbol'] == '0700.HK'
+          assert decoded['market_search_cn'][0]['name'] == '贵州茅台'
+
+          legacy = json.dumps(payload, ensure_ascii=False, separators=(',', ':'))
+          legacy_decoded = decode_watchlists(legacy)
+          assert legacy_decoded['market_search_hk'][0]['symbol'] == '0700.HK'
+          assert len(encoded) < len(legacy), (len(encoded), len(legacy))
+          assert all(not values for values in decode_watchlists('broken').values())
+          print('watchlist codec OK', len(legacy), '->', len(encoded))
+          PY
+
+      - name: Validate quote resilience wiring
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          required = (
+              'decode_watchlists(st.query_params.get(WATCHLIST_PARAM',
+              'encode_watchlists(payload)',
+              'YAHOO_CHART_BASES =',
+              'query1.finance.yahoo.com/v8/finance/chart/',
+              'query2.finance.yahoo.com/v8/finance/chart/',
+              'YAHOO_SEARCH_URLS =',
+              'def _last_good_quote_store():',
+              'def _stable_quote(symbol, refresh_key=0):',
+              'return _stable_quote(symbol, f"{_quote_refresh_key()}:{manual_key}")',
+              '_stable_quote("^IXIC", refresh_key)',
+              '_stable_quote("^HSI", refresh_key)',
+              '上次有效报价',
+              '_get_cached_quote.clear()',
+          )
+          for token in required:
+              assert token in text, token
+          assert 'def _get_watchlist_quote(symbol): return _get_yahoo_quote_safe(symbol)' not in text
+          assert '_get_watchlist_quote.clear()' not in text
+          print('quote resilience wiring OK')
+          PY
+
+      - name: Commit stabilization
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          if git diff --cached --quiet; then
+            echo "Watchlist stabilization already applied"
+            exit 0
+          fi
+          git commit -m "Stabilize watchlist quote retrieval and persistence"
+          git pull --rebase origin main
+          git push origin main
