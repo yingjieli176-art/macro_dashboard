@@ -1,0 +1,77 @@
+name: Improve watchlist quote freshness
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/improve_watchlist_quote_freshness.py
+      - .github/workflows/improve-watchlist-quote-freshness.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: improve-watchlist-quote-freshness
+  cancel-in-progress: true
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply quote freshness patch
+        run: python scripts/improve_watchlist_quote_freshness.py
+
+      - name: Compile application
+        run: python -m py_compile app.py scripts/improve_watchlist_quote_freshness.py
+
+      - name: Validate provider order and truthful state labels
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          text = Path('app.py').read_text(encoding='utf-8')
+          required = (
+              'TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q="',
+              'def _get_tencent_quote_safe(symbol):',
+              '"^IXIC": "usIXIC"',
+              '"^GSPC": "usINX"',
+              '"^NDX": "usNDX"',
+              'return "已收盘"',
+              'return _us_clock_state()',
+              '(_get_tencent_quote_safe, "primary")',
+              '(_get_eastmoney_quote_safe, "secondary")',
+              '_tag_quote_role(yahoo, "fallback")',
+              '源标注延迟',
+              '报价滞后约',
+              'Yahoo 仅备用或美股扩展时段',
+          )
+          for token in required:
+              assert token in text, token
+          assert 'return "状态未知"' not in text
+
+          cached = text[text.index('@st.cache_data(ttl=60, show_spinner=False)\ndef _get_cached_quote'):text.index('def _quote_meta')]
+          assert cached.index('_get_tencent_quote_safe') < cached.index('_get_eastmoney_quote_safe') < cached.index('_get_yahoo_quote_safe')
+          print('multi-source quote freshness wiring OK')
+          PY
+
+      - name: Commit application patch
+        run: |
+          if git diff --quiet -- app.py; then
+            echo 'Quote freshness patch already applied'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py
+          git commit -m 'Prefer fresher multi-source watchlist quotes'
+          git pull --rebase origin main
+          git push origin main
