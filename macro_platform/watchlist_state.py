@@ -18,7 +18,7 @@ _MARKET = {
 }
 MAX_ITEMS_PER_MARKET = 40
 WATCHLIST_SCHEMA_VERSION = 3
-DEFAULT_WATCHLIST_REVISION = 1
+DEFAULT_WATCHLIST_REVISION = 2
 
 DEFAULT_WATCHLISTS = {
     "market_search_us": [
@@ -87,11 +87,19 @@ def merge_default_watchlists(payload: Any) -> dict[str, list[dict[str, str]]]:
     result = normalize_watchlists(payload)
     defaults = default_watchlists()
     for key in WATCHLIST_KEYS:
-        seen = {row["symbol"] for row in result[key]}
-        for row in defaults[key]:
-            if row["symbol"] not in seen and len(result[key]) < MAX_ITEMS_PER_MARKET:
-                result[key].append(dict(row))
-                seen.add(row["symbol"])
+        by_symbol = {row["symbol"]: row for row in result[key]}
+        for default_row in defaults[key]:
+            symbol = default_row["symbol"]
+            if symbol in by_symbol:
+                # During a default-revision migration, normalize the display
+                # name as well so old saved English labels become consistent.
+                by_symbol[symbol]["name"] = default_row["name"]
+                continue
+            if len(result[key]) >= MAX_ITEMS_PER_MARKET:
+                break
+            added = dict(default_row)
+            result[key].append(added)
+            by_symbol[symbol] = added
     return result
 
 
