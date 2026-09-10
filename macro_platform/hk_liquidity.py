@@ -326,6 +326,11 @@ def snapshot_metadata() -> dict[str, Any]:
     data = load_hk_liquidity()
     if not data.empty:
         meta["latest_observation"] = data["observation_date"].max().strftime("%Y-%m")
+        money_cols = [c for c in ("M2 YoY", "M3 YoY") if c in data.columns]
+        if money_cols:
+            money_rows = data.loc[data[money_cols].notna().any(axis=1), "observation_date"].dropna()
+            if not money_rows.empty:
+                meta["latest_money_observation"] = money_rows.max().strftime("%Y-%m")
     return meta
 
 
@@ -815,6 +820,18 @@ def build_hk_liquidity_figures(
             market_data = market_data.merge(frame, on="observation_date", how="outer")
     if not market_data.empty:
         market_data = market_data.sort_values("observation_date")
+        # Cross-market comparisons must share the same last completed
+        # observation. Never compare a same-day partial HSI/HKEX print against
+        # a prior-day HSTECH close at the right edge of the chart.
+        market_ends = [
+            pd.to_datetime(frame["observation_date"], errors="coerce").max()
+            for frame in (tencent_price, hkex_price, hstech_index, hsi_index)
+            if frame is not None and not frame.empty and "observation_date" in frame.columns
+        ]
+        market_ends = [value for value in market_ends if pd.notna(value)]
+        if market_ends:
+            common_market_end = min(market_ends)
+            market_data = market_data.loc[market_data["observation_date"] <= common_market_end].copy()
     raw_market = str(market_mode).strip().lower() == "raw"
     if not raw_market and not market_data.empty:
         market_data = _rebase_market_data(market_data, market_columns)
@@ -874,16 +891,16 @@ def build_hk_liquidity_figures(
         else:
             fig.add_trace(trace, secondary_y=secondary_y)
 
-    def style(fig: go.Figure, title: str, height: int = 430, right_axis: bool = False) -> go.Figure:
+    def style(fig: go.Figure, title: str, height: int = 380, right_axis: bool = False) -> go.Figure:
         fig.update_layout(
             height=height,
             template="plotly_white",
             hovermode="x unified",
             dragmode=False,
             # Top margin has two dedicated rows: centered year labels, then legend.
-            margin=dict(l=62, r=82 if right_axis else 28, t=124, b=54, pad=2),
+            margin=dict(l=62, r=82 if right_axis else 28, t=96, b=40, pad=2),
             legend=dict(
-                orientation="h", yanchor="bottom", y=1.17, xanchor="left", x=0,
+                orientation="h", yanchor="bottom", y=1.105, xanchor="left", x=0,
                 font=dict(size=11), traceorder="normal", itemwidth=30,
                 bgcolor="rgba(255,255,255,0)", itemclick="toggle", itemdoubleclick="toggleothers",
             ),
@@ -927,14 +944,14 @@ def build_hk_liquidity_figures(
     style(money, "5. HK Money Supply & Market Pulse", right_axis=True)
     if raw_market:
         money.update_layout(
-            margin=dict(l=62, r=142, t=124, b=54, pad=2),
+            margin=dict(l=62, r=142, t=96, b=40, pad=2),
             xaxis=dict(domain=[0.0, 0.84]),
             yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86, title="R1 · HKD Price", showgrid=False, fixedrange=True, tickfont=dict(size=10)),
             yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.97, title="R2 · Index Level", showgrid=False, fixedrange=True, tickfont=dict(size=10)),
         )
     else:
         money.update_layout(
-            margin=dict(l=62, r=94, t=124, b=54, pad=2),
+            margin=dict(l=62, r=94, t=96, b=40, pad=2),
             xaxis=dict(domain=[0.0, 0.91]),
             yaxis2=dict(title="Market · Rebased 100", showgrid=False, fixedrange=True),
         )
@@ -958,7 +975,14 @@ def build_hk_liquidity_figures(
         showgrid=False, zeroline=False, fixedrange=True,
     )
     banking_frequency_label = "Daily" if banking_is_daily else ("Monthly" if date_range == "5Y" else "Monthly fallback")
-    style(balance, f"6. Banking-system Liquidity · {banking_frequency_label}", height=450, right_axis=True)
+    style(balance, f"6. Banking-system Liquidity · {banking_frequency_label}", height=400, right_axis=True)
+    if date_range != "5Y" and not banking_is_daily:
+        balance.add_annotation(
+            text="⚠ HKMA 日频流动性快照不可用 · 当前使用月频回退",
+            x=0.006, y=0.988, xref="paper", yref="paper", xanchor="left", yanchor="top",
+            showarrow=False, font=dict(size=10, color="#991b1b"),
+            bgcolor="rgba(254,242,242,0.94)", bordercolor="#fecaca", borderwidth=1, borderpad=3,
+        )
 
     # 5-3 · HKD funding.
     funding = make_subplots(specs=[[{"secondary_y": True}]])
@@ -977,6 +1001,13 @@ def build_hk_liquidity_figures(
     )
     funding_frequency_label = "Daily" if funding_is_daily else ("Monthly" if date_range == "5Y" else "Monthly fallback")
     style(funding, f"7. HKD Funding · {funding_frequency_label}", right_axis=True)
+    if date_range != "5Y" and not funding_is_daily:
+        funding.add_annotation(
+            text="⚠ HKMA 日频 HIBOR 快照不可用 · 当前使用月频回退",
+            x=0.006, y=0.988, xref="paper", yref="paper", xanchor="left", yanchor="top",
+            showarrow=False, font=dict(size=10, color="#991b1b"),
+            bgcolor="rgba(254,242,242,0.94)", bordercolor="#fecaca", borderwidth=1, borderpad=3,
+        )
 
     # 8 · Convertibility band + market reaction.
     fx = make_subplots(specs=[[{"secondary_y": True}]])
@@ -1020,17 +1051,17 @@ def build_hk_liquidity_figures(
         title_text="R1 · HKD Price" if raw_market else "Market · Rebased 100", secondary_y=True,
         showgrid=False, zeroline=False, fixedrange=True,
     )
-    style(fx, "8. USD/HKD Convertibility Band & Market", height=470, right_axis=True)
+    style(fx, "8. USD/HKD Convertibility Band & Market", height=410, right_axis=True)
     if raw_market:
         fx.update_layout(
-            margin=dict(l=62, r=142, t=124, b=54, pad=2),
+            margin=dict(l=62, r=142, t=96, b=40, pad=2),
             xaxis=dict(domain=[0.0, 0.84]),
             yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86, title="R1 · HKD Price", showgrid=False, fixedrange=True, tickfont=dict(size=10)),
             yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.97, title="R2 · Index Level", showgrid=False, fixedrange=True, tickfont=dict(size=10)),
         )
     else:
         fx.update_layout(
-            margin=dict(l=62, r=94, t=124, b=54, pad=2),
+            margin=dict(l=62, r=94, t=96, b=40, pad=2),
             xaxis=dict(domain=[0.0, 0.91]),
             yaxis2=dict(title="Market · Rebased 100", showgrid=False, fixedrange=True),
         )
@@ -1044,6 +1075,7 @@ def liquidity_status_html() -> str:
     state = liquidity_state(data)
     meta = snapshot_metadata()
     latest = meta.get("latest_observation", "--")
+    latest_money = meta.get("latest_money_observation", latest)
 
     m2 = _latest_value(data, "M2 MoM")
     m3 = _latest_value(data, "M3 MoM")
@@ -1062,5 +1094,5 @@ def liquidity_status_html() -> str:
       <div><span>Aggregate Balance</span><strong>{fmt(balance, ' bn')}</strong></div>
       <div><span>O/N HIBOR</span><strong>{fmt(on, '%')}</strong></div>
       <div><span>USD/HKD</span><strong>{fmt(fx)}</strong></div>
-      <div><span>HKMA monthly through</span><strong>{latest}</strong></div>
+      <div><span>M2/M3 through</span><strong>{latest_money}</strong></div>
     </div>'''

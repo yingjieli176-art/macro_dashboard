@@ -29,17 +29,18 @@ DASHBOARD_TZ = ZoneInfo("Asia/Hong_Kong")
 
 st.markdown("""
 <style>
-.block-container { padding-top: 0.85rem; padding-bottom: 3rem; max-width: 1760px; }
+.block-container { padding-top: 0.70rem; padding-bottom: 2rem; max-width: 1760px; }
 html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "PingFang TC", "Segoe UI", sans-serif; }
 .dashboard-title { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.1rem; }
-.section-title { font-size: 1.35rem; font-weight: 650; letter-spacing: -0.01em; margin-top: 0.7rem; margin-bottom: 0.15rem; min-height: 32px; display: flex; align-items: center; }
-.section-description { color: #6b7280; font-size: 0.86rem; margin-bottom: 0.35rem; min-height: 22px; display: flex; align-items: center; }
-.mini-description { color: #6b7280; font-size: 0.76rem; line-height: 1.5; margin: 2px 0 8px; }
-.source-text { color: #6b7280; font-size: 0.74rem; margin: 3px 0 10px; line-height: 1.45; }
+.section-title { font-size: 1.30rem; font-weight: 650; letter-spacing: -0.01em; margin-top: 0.45rem; margin-bottom: 0.08rem; min-height: 28px; display: flex; align-items: center; }
+.section-description { color: #6b7280; font-size: 0.84rem; margin-bottom: 0.18rem; min-height: 18px; display: flex; align-items: center; }
+.mini-description { color: #6b7280; font-size: 0.74rem; line-height: 1.42; margin: 1px 0 5px; }
+.source-text { color: #6b7280; font-size: 0.72rem; margin: 2px 0 6px; line-height: 1.35; }
 .source-text a { color: #6b7280; text-decoration: none !important; white-space: nowrap; }
 .source-text a:hover { color: #374151; text-decoration: underline !important; }
+.data-health-warning { color:#991b1b; background:rgba(254,242,242,.94); border:1px solid #fecaca; border-radius:6px; padding:3px 6px; font-size:.68rem; line-height:1.25; }
 .source-sep { color: #d1d5db; margin: 0 5px; }
-.chart-divider { margin: 0.30rem 0 0.55rem; border-top: 1px solid #e5e7eb; }
+.chart-divider { margin: 0.18rem 0 0.38rem; border-top: 1px solid #e5e7eb; }
 .compact-title { font-size: 0.98rem; font-weight: 650; margin-bottom: 0.15rem; min-height: 25px; display: flex; align-items: center; }
 .compact-description { color: #6b7280; font-size: 0.73rem; line-height: 1.35; margin-bottom: 0.35rem; min-height: 20px; display: flex; align-items: center; }
 .news-status { color: #6b7280; font-size: 0.75rem; margin-bottom: 0.5rem; }
@@ -99,7 +100,7 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 
 html { scroll-behavior: smooth; }
-.dashboard-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 4px 0 14px; margin-bottom: 14px; border-bottom: 1px solid #e5e7eb; }
+.dashboard-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 3px 0 10px; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; }
 .dashboard-heading { min-width: 0; }
 .dashboard-eyebrow { color: #9ca3af; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; margin-bottom: 2px; }
 .dashboard-subtitle { color: #6b7280; font-size: 0.82rem; line-height: 1.5; margin-top: 2px; }
@@ -949,8 +950,20 @@ def add_sources(sources):
     links = [f'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">{html.escape(text)}</a>' for text, url in sources]
     st.markdown('<div class="source-text">Source: ' + '<span class="source-sep">|</span>'.join(links) + '</div>', unsafe_allow_html=True)
 
+def _mark_missing_series(fig, name):
+    meta = fig.layout.meta if isinstance(fig.layout.meta, dict) else {}
+    meta = dict(meta or {})
+    missing = list(meta.get("missing_series") or [])
+    if name not in missing:
+        missing.append(name)
+    meta["missing_series"] = missing
+    fig.update_layout(meta=meta)
+
+
 def add_line(fig, data, column, name, width=2.5, dash=None, yaxis=None, unit="%"):
-    if column not in data.columns or data[column].notna().sum() == 0: return
+    if column not in data.columns or data[column].notna().sum() == 0:
+        _mark_missing_series(fig, name)
+        return
     line = {"width": width}
     if dash: line["dash"] = dash
     trace = go.Scatter(x=data["observation_date"], y=data[column], name=name, mode="lines", line=line, hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>")
@@ -999,8 +1012,8 @@ def apply_chart_style(fig, height, date_range):
     base_left = 60
     base_right = 76 if has_secondary else 20
     # Reserve separate vertical bands for the top year axis and legend.
-    base_top = 128 if compact_mode else 124
-    base_bottom = 40
+    base_top = 88 if compact_mode else 92
+    base_bottom = 34
 
     fig.update_layout(
         height=height,
@@ -1009,7 +1022,7 @@ def apply_chart_style(fig, height, date_range):
         dragmode=False,
         margin=dict(l=base_left, r=base_right, t=base_top, b=base_bottom, pad=2),
         legend=dict(
-            orientation="h", yanchor="bottom", y=1.17, xanchor="left", x=0,
+            orientation="h", yanchor="bottom", y=1.105, xanchor="left", x=0,
             font=dict(size=9 if compact_mode else 11), traceorder="normal",
             itemwidth=30, bgcolor="rgba(255,255,255,0)",
         ),
@@ -1034,8 +1047,20 @@ def apply_chart_style(fig, height, date_range):
         ))
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
-    # Shared adaptive lower axis + centered upper year axis for charts 1-4.
-    return apply_time_axis(fig, date_range)
+    # Shared adaptive lower axis + centered upper year axis. Missing traces are
+    # surfaced inside the plot instead of disappearing silently.
+    fig = apply_time_axis(fig, date_range)
+    meta = fig.layout.meta if isinstance(fig.layout.meta, dict) else {}
+    missing = list((meta or {}).get("missing_series") or [])
+    if missing:
+        fig.add_annotation(
+            text="⚠ 数据缺失：" + " · ".join(missing),
+            x=0.006, y=0.988, xref="paper", yref="paper",
+            xanchor="left", yanchor="top", showarrow=False,
+            font=dict(size=10, color="#991b1b"),
+            bgcolor="rgba(254,242,242,0.94)", bordercolor="#fecaca", borderwidth=1, borderpad=3,
+        )
+    return fig
 
 def get_start_date(date_range):
     end = pd.Timestamp.now(tz="Asia/Hong_Kong").tz_localize(None).normalize()
@@ -1065,12 +1090,20 @@ def apply_hk_chart_range(fig, date_range):
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
-    fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(340, 500), date_range)
+    fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 def build_fig2(date_range):
-    data = get_dgs10().merge(get_dfii10(), on="observation_date", how="outer").merge(get_fred_series("T10YIE"), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
+    data = get_dgs10().merge(get_dfii10(), on="observation_date", how="outer").merge(get_fred_series("T10YIE"), on="observation_date", how="outer").sort_values("observation_date")
+    for column in ("DGS10", "DFII10", "T10YIE"):
+        data[column] = pd.to_numeric(data.get(column), errors="coerce")
+    # Treasury identity: Nominal ≈ Real + Breakeven. Preserve observed values
+    # first and synthesize only a missing leg when the other two are present.
+    data["DGS10"] = data["DGS10"].combine_first(data["DFII10"] + data["T10YIE"])
+    data["DFII10"] = data["DFII10"].combine_first(data["DGS10"] - data["T10YIE"])
+    data["T10YIE"] = data["T10YIE"].combine_first(data["DGS10"] - data["DFII10"])
+    data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width, dash, yaxis in [("DGS10", "10Y Nominal", 2.8, None, None), ("DFII10", "10Y Real (R)", 2.6, None, "y2"), ("T10YIE", "10Y Breakeven (R)", 2.5, "dot", "y2")]: add_line(fig, data, column, name, width, dash, yaxis)
-    fig.update_layout(yaxis_title="Nominal Yield (%)", yaxis2=dict(title="Real / Breakeven (%)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9))); return apply_chart_style(fig, chart_height(340, 500), date_range)
+    fig.update_layout(yaxis_title="Nominal Yield (%)", yaxis2=dict(title="Real / Breakeven (%)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9))); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 def build_fig4(date_range):
     specs = [(get_wresbal, "WRESBAL"), (get_tga_daily, "TGA_DAILY"), (get_rrp_daily, "RRPONTSYD")]
@@ -1089,7 +1122,10 @@ def build_fig4(date_range):
         except Exception:
             continue
     if not raw_series:
-        return apply_chart_style(go.Figure(), chart_height(340, 500), date_range)
+        fig = go.Figure()
+        for name in ("Net Liquidity Proxy", "Reserve Balances · Weekly", "TGA", "ON RRP · Daily"):
+            _mark_missing_series(fig, name)
+        return apply_chart_style(fig, chart_height(310, 420), date_range)
 
     aligned = None
     for frame in raw_series.values():
@@ -1116,18 +1152,26 @@ def build_fig4(date_range):
     for column in ("WRESBAL", "TGA_DAILY", "RRPONTSYD"):
         frame = raw_series.get(column)
         if frame is None:
+            _mark_missing_series(fig, observed_names[column])
             continue
         add_line(fig, filter_range(frame, date_range), column, observed_names[column], width_map[column], dash_map[column], unit=" T")
     fig.update_layout(yaxis_title="$T")
-    return apply_chart_style(fig, chart_height(340, 500), date_range)
+    return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 
 def build_fig3(date_range):
-    data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").merge(get_fred_series("T10Y2Y"), on="observation_date", how="outer").merge(get_fred_series("T10Y3M"), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
+    data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").sort_values("observation_date")
+    for column in ("DGS3MO", "DGS2", "DGS10"):
+        data[column] = pd.to_numeric(data.get(column), errors="coerce")
+    # Derive curve spreads locally from the displayed yields. This removes two
+    # redundant FRED requests and guarantees spread/yield internal consistency.
+    data["T10Y2Y"] = data["DGS10"] - data["DGS2"]
+    data["T10Y3M"] = data["DGS10"] - data["DGS3MO"]
+    data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8)]: add_line(fig, data, column, name, width)
     add_line(fig, data, "T10Y2Y", "10Y−2Y (R)", 2.2, "dot", "y2", "%"); add_line(fig, data, "T10Y3M", "10Y−3M (R)", 2.2, "dash", "y2", "%")
     fig.update_traces(selector=dict(name="10Y−2Y (R)"), hovertemplate="10Y−2Y (R): %{y:.3f}%<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M (R)"), hovertemplate="10Y−3M (R): %{y:.3f}%<extra></extra>")
-    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (%)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True, tickfont=dict(size=9))); return apply_chart_style(fig, chart_height(340, 500), date_range)
+    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (%)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True, tickfont=dict(size=9))); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 
 def build_fig9(date_range):
@@ -1152,7 +1196,10 @@ def build_fig9(date_range):
         pass
 
     if not frames:
-        return apply_chart_style(go.Figure(), chart_height(340, 500), date_range)
+        fig = go.Figure()
+        for name in ("VIX", "VIXEQ", "S&P 500 (R1)", "VIX3M−VIX (R2)"):
+            _mark_missing_series(fig, name)
+        return apply_chart_style(fig, chart_height(320, 440), date_range)
 
     data = frames[0]
     for frame in frames[1:]:
@@ -1172,9 +1219,9 @@ def build_fig9(date_range):
         yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86),
         yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.97),
     )
-    fig = apply_chart_style(fig, chart_height(360, 520), date_range)
+    fig = apply_chart_style(fig, chart_height(320, 440), date_range)
     fig.update_layout(
-        margin=dict(l=62, r=144, t=72, b=44, pad=2),
+        margin=dict(l=62, r=144, t=68, b=36, pad=2),
         legend=dict(y=1.095),
         xaxis=dict(domain=[0.0, 0.84]),
         yaxis=dict(
