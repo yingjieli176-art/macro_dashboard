@@ -28,7 +28,12 @@ jobs:
           python-version: '3.12'
 
       - name: Apply quote freshness patch
-        run: python scripts/improve_watchlist_quote_freshness.py
+        run: |
+          if grep -q 'def _get_tencent_quote_safe(symbol):' app.py; then
+            echo 'Quote freshness patch already present'
+          else
+            python scripts/improve_watchlist_quote_freshness.py
+          fi
 
       - name: Compile application
         run: python -m py_compile app.py scripts/improve_watchlist_quote_freshness.py
@@ -45,7 +50,7 @@ jobs:
               '"^IXIC": "usIXIC"',
               '"^GSPC": "usINX"',
               '"^NDX": "usNDX"',
-              'return "已收盘"',
+              '"已收盘"',
               'return _us_clock_state()',
               '(_get_tencent_quote_safe, "primary")',
               '(_get_eastmoney_quote_safe, "secondary")',
