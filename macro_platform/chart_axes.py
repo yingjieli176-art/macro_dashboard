@@ -14,14 +14,11 @@ RANGE_OFFSETS = {
     "1M": pd.DateOffset(months=1),
 }
 
+YEAR_BAND_SHAPE_NAME = "__dashboard_year_band__"
+
 
 def _tick_profile(date_range: str) -> dict[str, Any]:
-    """Return a readable lower-axis cadence for every supported viewport.
-
-    The lower axis carries month/day detail while the upper axis carries years.
-    Cadences are intentionally bounded to roughly 6-10 visible labels so wide
-    and narrow Streamlit layouts remain legible without losing useful density.
-    """
+    """Readable lower-axis cadence for every supported viewport."""
     return {
         "5Y": {"dtick": "M6", "tickformat": "%m月"},
         "1Y": {"dtick": "M2", "tickformat": "%m月"},
@@ -29,6 +26,12 @@ def _tick_profile(date_range: str) -> dict[str, Any]:
         "3M": {"dtick": 14 * 24 * 60 * 60 * 1000, "tickformat": "%m-%d"},
         "1M": {"dtick": 5 * 24 * 60 * 60 * 1000, "tickformat": "%m-%d"},
     }.get(date_range, {"dtick": "M2", "tickformat": "%m月"})
+
+
+def _tick0(start: pd.Timestamp, date_range: str) -> pd.Timestamp:
+    if date_range in {"5Y", "1Y", "6M"}:
+        return pd.Timestamp(year=start.year, month=1, day=1)
+    return start.normalize()
 
 
 def _figure_latest(fig: go.Figure) -> pd.Timestamp | None:
@@ -41,32 +44,106 @@ def _figure_latest(fig: go.Figure) -> pd.Timestamp | None:
         parsed = parsed[~pd.isna(parsed)]
         if not len(parsed):
             continue
-        candidate = pd.Timestamp(parsed.max()).tz_localize(None) if getattr(parsed.max(), "tzinfo", None) else pd.Timestamp(parsed.max())
+        candidate = pd.Timestamp(parsed.max())
+        if getattr(candidate, "tzinfo", None):
+            candidate = candidate.tz_localize(None)
         if latest is None or candidate > latest:
             latest = candidate
     return latest
 
 
-def _year_ticks(start: pd.Timestamp, end: pd.Timestamp) -> tuple[list[pd.Timestamp], list[str]]:
-    """Center one year label inside each visible calendar-year segment."""
-    start = pd.Timestamp(start).tz_localize(None) if getattr(start, "tzinfo", None) else pd.Timestamp(start)
-    end = pd.Timestamp(end).tz_localize(None) if getattr(end, "tzinfo", None) else pd.Timestamp(end)
-    ticks: list[pd.Timestamp] = []
-    labels: list[str] = []
+def _year_segments(start: pd.Timestamp, end: pd.Timestamp) -> list[tuple[int, pd.Timestamp, pd.Timestamp, pd.Timestamp]]:
+    """Return visible calendar-year segments and centered label positions."""
+    start = pd.Timestamp(start)
+    end = pd.Timestamp(end)
+    if getattr(start, "tzinfo", None):
+        start = start.tz_localize(None)
+    if getattr(end, "tzinfo", None):
+        end = end.tz_localize(None)
+
+    segments: list[tuple[int, pd.Timestamp, pd.Timestamp, pd.Timestamp]] = []
     for year in range(start.year, end.year + 1):
         year_start = pd.Timestamp(year=year, month=1, day=1)
-        year_end = pd.Timestamp(year=year + 1, month=1, day=1) - pd.Timedelta(milliseconds=1)
+        year_end = pd.Timestamp(year=year + 1, month=1, day=1)
         segment_start = max(start, year_start)
         segment_end = min(end, year_end)
-        if segment_end < segment_start:
+        if segment_end <= segment_start:
             continue
         midpoint = segment_start + (segment_end - segment_start) / 2
-        ticks.append(midpoint)
-        labels.append(str(year))
-    if not ticks:
-        ticks = [start + (end - start) / 2]
-        labels = [str(end.year)]
-    return ticks, labels
+        segments.append((year, segment_start, segment_end, midpoint))
+
+    if not segments:
+        midpoint = start + (end - start) / 2
+        segments.append((end.year, start, end, midpoint))
+    return segments
+
+
+def _is_year_band_annotation(annotation: Any) -> bool:
+    try:
+        text = str(annotation.text or "")
+        yref = str(annotation.yref or "")
+        y = float(annotation.y)
+    except Exception:
+        return False
+    return yref == "paper" and 1.0 <= y <= 1.12 and text.startswith("<b>") and text.endswith("</b>")
+
+
+def _apply_year_band(fig: go.Figure, start: pd.Timestamp, end: pd.Timestamp) -> None:
+    """Draw a persistent shaded year band above the plot area.
+
+    A paper-coordinate band is more reliable in Streamlit/Plotly than an
+    unused overlay x-axis. Each visible calendar year gets its own shaded cell
+    and centered label, including a single-year 1M viewport.
+    """
+    existing_shapes = [
+        shape
+        for shape in (list(fig.layout.shapes) if fig.layout.shapes else [])
+        if getattr(shape, "name", None) != YEAR_BAND_SHAPE_NAME
+    ]
+    existing_annotations = [
+        ann
+        for ann in (list(fig.layout.annotations) if fig.layout.annotations else [])
+        if not _is_year_band_annotation(ann)
+    ]
+
+    year_shapes: list[dict[str, Any]] = []
+    year_annotations: list[dict[str, Any]] = []
+    for idx, (year, segment_start, segment_end, midpoint) in enumerate(_year_segments(start, end)):
+        fill = "rgba(243,244,246,0.96)" if idx % 2 == 0 else "rgba(249,250,251,0.96)"
+        year_shapes.append(
+            dict(
+                type="rect",
+                xref="x",
+                yref="paper",
+                x0=segment_start,
+                x1=segment_end,
+                y0=1.015,
+                y1=1.075,
+                line=dict(color="#d1d5db", width=0.8),
+                fillcolor=fill,
+                layer="above",
+                name=YEAR_BAND_SHAPE_NAME,
+            )
+        )
+        year_annotations.append(
+            dict(
+                x=midpoint,
+                y=1.045,
+                xref="x",
+                yref="paper",
+                text=f"<b>{year}</b>",
+                showarrow=False,
+                xanchor="center",
+                yanchor="middle",
+                font=dict(size=11, color="#4b5563"),
+                align="center",
+            )
+        )
+
+    fig.update_layout(
+        shapes=existing_shapes + year_shapes,
+        annotations=existing_annotations + year_annotations,
+    )
 
 
 def apply_time_axis(
@@ -75,10 +152,10 @@ def apply_time_axis(
     *,
     latest: pd.Timestamp | None = None,
 ) -> go.Figure:
-    """Apply the dashboard-wide two-level time axis.
+    """Apply the dashboard-wide time axis.
 
-    Bottom axis: adaptive month/day detail with a fixed readable cadence.
-    Top axis: centered calendar-year labels for the visible range.
+    Bottom axis: adaptive month/day detail with bounded label density.
+    Top: a shaded calendar-year band, centered within each visible year.
     """
     latest = pd.Timestamp(latest) if latest is not None else _figure_latest(fig)
     if latest is None or pd.isna(latest):
@@ -92,8 +169,6 @@ def apply_time_axis(
         start = latest - pd.Timedelta(days=1)
 
     profile = _tick_profile(date_range)
-    year_tickvals, year_ticktext = _year_ticks(start, latest)
-
     fig.update_layout(
         xaxis=dict(
             type="date",
@@ -114,32 +189,24 @@ def apply_time_axis(
             automargin=True,
             fixedrange=True,
             dtick=profile["dtick"],
+            tick0=_tick0(start, date_range),
             tickformat=profile["tickformat"],
             title=None,
             zeroline=False,
             minor=dict(showgrid=False, ticks="outside", ticklen=2),
         ),
+        # Hide the previous experimental upper x-axis. The year band below is
+        # rendered with shapes/annotations and therefore always appears even
+        # when no trace is explicitly assigned to x2.
         xaxis2=dict(
-            type="date",
-            overlaying="x",
-            matches="x",
-            anchor="free",
-            side="top",
-            position=1.0,
-            range=[start, latest],
+            visible=False,
             showgrid=False,
-            showline=True,
-            linecolor="#d1d5db",
-            linewidth=1,
-            ticks="",
-            tickvals=year_tickvals,
-            ticktext=year_ticktext,
-            tickfont=dict(size=11, color="#6b7280"),
-            ticklabelstandoff=7,
-            automargin=True,
-            fixedrange=True,
+            showline=False,
+            showticklabels=False,
+            matches=None,
+            overlaying=None,
             title=None,
-            zeroline=False,
         ),
     )
+    _apply_year_band(fig, start, latest)
     return fig
