@@ -35,7 +35,11 @@ jobs:
           python - <<'PY'
           import pandas as pd
           import plotly.graph_objects as go
-          from macro_platform.chart_axes import YEAR_BAND_SHAPE_NAME, apply_time_axis
+          from macro_platform.chart_axes import (
+              YEAR_BAND_SHAPE_NAME,
+              YEAR_DIVIDER_SHAPE_NAME,
+              apply_time_axis,
+          )
           from macro_platform.hk_liquidity import build_hk_liquidity_figures
 
           expected = {
@@ -54,29 +58,39 @@ jobs:
               assert fig.layout.xaxis.tickangle == 0
               assert fig.layout.xaxis2.visible is False
               bands = [s for s in fig.layout.shapes if getattr(s, 'name', None) == YEAR_BAND_SHAPE_NAME]
+              dividers = [s for s in fig.layout.shapes if getattr(s, 'name', None) == YEAR_DIVIDER_SHAPE_NAME]
               year_labels = [a for a in fig.layout.annotations if str(getattr(a, 'text', '')).startswith('<b>') and getattr(a, 'yref', None) == 'paper']
               assert bands, date_range
               assert year_labels, date_range
+              assert len(dividers) == max(0, len(bands) - 1), (date_range, len(bands), len(dividers))
+              assert all(float(s.line.width or 0) == 0 for s in bands), date_range
+              assert all(s.line.dash == 'dot' for s in dividers), date_range
+              assert all(float(s.y0) == 0.0 and float(s.y1) == 1.0 for s in dividers), date_range
               if date_range == '1M':
                   assert len(bands) == 1, len(bands)
                   assert len(year_labels) == 1, len(year_labels)
-              print(date_range, 'bands=', len(bands), 'labels=', [a.text for a in year_labels])
+                  assert len(dividers) == 0, len(dividers)
+              print(date_range, 'bands=', len(bands), 'dividers=', len(dividers), 'labels=', [a.text for a in year_labels])
 
-          # Real Hong Kong charts 5-8 must use the same visible year band.
+          # Real Hong Kong charts 5-8 must use the same temporal guides.
           figures = build_hk_liquidity_figures('5Y')
           assert len(figures) == 4
           for i, fig in enumerate(figures, start=5):
               bands = [s for s in fig.layout.shapes if getattr(s, 'name', None) == YEAR_BAND_SHAPE_NAME]
+              dividers = [s for s in fig.layout.shapes if getattr(s, 'name', None) == YEAR_DIVIDER_SHAPE_NAME]
               labels = [a for a in fig.layout.annotations if str(getattr(a, 'text', '')).startswith('<b>') and getattr(a, 'yref', None) == 'paper']
               assert bands, i
               assert labels, i
+              assert len(dividers) == max(0, len(bands) - 1), (i, len(bands), len(dividers))
               assert fig.layout.xaxis2.visible is False, i
               assert fig.layout.legend.y >= 1.15, (i, fig.layout.legend.y)
-              # Re-applying a short range must replace, not duplicate, year cells.
+              # Re-applying a short range must replace, not duplicate, year cells/dividers.
               apply_time_axis(fig, '1M')
               short_bands = [s for s in fig.layout.shapes if getattr(s, 'name', None) == YEAR_BAND_SHAPE_NAME]
+              short_dividers = [s for s in fig.layout.shapes if getattr(s, 'name', None) == YEAR_DIVIDER_SHAPE_NAME]
               short_labels = [a for a in fig.layout.annotations if str(getattr(a, 'text', '')).startswith('<b>') and getattr(a, 'yref', None) == 'paper']
               assert len(short_bands) == 1, (i, len(short_bands))
+              assert len(short_dividers) == 0, (i, len(short_dividers))
               assert len(short_labels) == 1, (i, len(short_labels))
               print('chart', i, '1M year=', short_labels[0].text)
           PY
@@ -86,9 +100,13 @@ jobs:
           from pathlib import Path
           app = Path('app.py').read_text(encoding='utf-8')
           hk = Path('macro_platform/hk_liquidity.py').read_text(encoding='utf-8')
+          axes = Path('macro_platform/chart_axes.py').read_text(encoding='utf-8')
           assert 'from macro_platform.chart_axes import apply_time_axis' in app
           assert 'from macro_platform.chart_axes import apply_time_axis' in hk
           assert 'return apply_time_axis(fig, date_range)' in app
           assert 'return apply_time_axis(fig, date_range)' in hk
-          print('shared time-axis wiring present')
+          assert 'YEAR_DIVIDER_SHAPE_NAME' in axes
+          assert 'rgba(243,244,246,0.34)' in axes
+          assert 'dash="dot"' in axes
+          print('shared soft year-band and divider wiring present')
           PY
