@@ -1,0 +1,53 @@
+name: Fix truthful market quote status
+
+on:
+  push:
+    paths:
+      - 'scripts/fix_market_quote_truth.py'
+      - '.github/workflows/fix-market-quote-truth.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Apply patch
+        run: python scripts/fix_market_quote_truth.py
+      - name: Compile
+        run: python -m py_compile app.py
+      - name: Validate truthful timestamps and session labels
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          assert 'market_snapshot_time = render_market_groups()' not in text
+          assert '行情数据刷新时间（HKT）' not in text
+          assert 'def _valid_market_timestamp' in text
+          assert 'ts < 946684800' in text
+          assert 'def _quote_session_context' in text
+          assert '"夜盘", overnight_ts' in text
+          assert '"午间休市"' in text
+          assert '_quote_meta(q["nasdaq"], "US")' in text
+          assert '_quote_meta(q["hsi"], "HK")' in text
+          assert '_quote_meta(q["sh"], "CN")' in text
+          assert '@st.fragment(run_every="60s")\ndef render_market_overview' in text
+          print('truthful market quote validation passed')
+          PY
+      - name: Commit fix
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to commit'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py
+          git commit -m 'Use source quote times and session states'
+          git push
