@@ -88,3 +88,5 @@ jobs:
           git commit -m "Complete Hong Kong liquidity five-year history wiring"
           git pull --rebase origin main
           git push origin main
+
+# This workflow validates rendered trace coverage, not just snapshot row counts.
