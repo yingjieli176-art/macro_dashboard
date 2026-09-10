@@ -14,26 +14,18 @@ BASE_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-mone
 HIBOR_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/er-ir/hk-interbank-ir-daily"
 
 
-def _date_add(date_text: str, months: int) -> str:
-    y, m, d = map(int, date_text.split("-"))
-    value = y * 12 + (m - 1) + months
-    ny, nm = value // 12, value % 12 + 1
-    # All windows start on day 1, so month arithmetic is safe here.
-    return f"{ny:04d}-{nm:02d}-{d:02d}"
-
-
 def _request(url: str, params: dict[str, str]) -> list[dict]:
     req = urllib.request.Request(
         f"{url}?{urllib.parse.urlencode(params)}",
         headers={
-            "User-Agent": "MacroDashboard/1.0 (+https://github.com/yingjieli176-art/macro_dashboard)",
+            "User-Agent": "Mozilla/5.0 (compatible; MacroDashboard/1.0; +https://github.com/yingjieli176-art/macro_dashboard)",
             "Accept": "application/json",
         },
     )
     last_error = None
     for attempt in range(3):
         try:
-            with urllib.request.urlopen(req, timeout=16) as response:
+            with urllib.request.urlopen(req, timeout=20) as response:
                 payload = json.load(response)
             header = payload.get("header") or {}
             if header.get("success") is False:
@@ -45,36 +37,66 @@ def _request(url: str, params: dict[str, str]) -> list[dict]:
         except Exception as exc:
             last_error = exc
             if attempt < 2:
-                time.sleep(1.5 * (attempt + 1))
+                time.sleep(2.0 * (attempt + 1))
     raise RuntimeError(str(last_error))
 
 
-def _fetch_windows(url: str, date_field: str, fields: str, start: str, end: str, extra: dict[str, str] | None = None) -> list[dict]:
-    """Fetch HKMA history in conservative six-month windows.
+def _fetch_recent(
+    url: str,
+    date_field: str,
+    fields: str,
+    start: str,
+    end: str,
+    extra: dict[str, str] | None = None,
+) -> list[dict]:
+    """Page backwards from the latest HKMA records and stop after five years.
 
-    HKMA endpoints can become slow or reject broad date ranges even when the
-    row count is modest. Six-month chunks match the proven monthly-snapshot
-    strategy and keep each request bounded enough for GitHub Actions.
+    HKMA documents offset/pagesize as the canonical pagination path. Pulling
+    newest-first avoids expensive broad date-range queries that can time out on
+    daily datasets while still retaining the full rolling five-year window.
     """
     rows: list[dict] = []
-    cursor = start
-    while cursor <= end:
-        window_end = min(_date_add(cursor, 6), end)
+    offset = 0
+    page_size = 500
+    seen: set[tuple[str, str]] = set()
+    for _ in range(12):
         params = {
-            "choose": date_field,
-            "from": cursor,
-            "to": window_end,
+            "offset": str(offset),
+            "pagesize": str(page_size),
             "fields": fields,
             "sortby": date_field,
-            "sortorder": "asc",
-            "pagesize": "1000",
+            "sortorder": "desc",
         }
         if extra:
             params.update(extra)
         batch = _request(url, params)
-        print(url.rsplit('/', 1)[-1], cursor, window_end, len(batch))
-        rows.extend(batch)
-        cursor = _date_add(cursor, 6)
+        print(url.rsplit('/', 1)[-1], "offset", offset, len(batch))
+        if not batch:
+            break
+
+        for row in batch:
+            date_text = str(row.get(date_field) or "")
+            key = (date_text, json.dumps(row, sort_keys=True, ensure_ascii=False))
+            if key in seen:
+                continue
+            seen.add(key)
+            if start <= date_text <= end:
+                rows.append(row)
+
+        valid_dates = sorted(
+            str(row.get(date_field) or "")
+            for row in batch
+            if len(str(row.get(date_field) or "")) == 10
+        )
+        if valid_dates and valid_dates[0] <= start:
+            break
+        if len(batch) < page_size:
+            break
+        offset += len(batch)
+    else:
+        raise RuntimeError(f"HKMA pagination exceeded safety limit for {url}")
+
+    rows.sort(key=lambda row: str(row.get(date_field) or ""))
     return rows
 
 
@@ -83,21 +105,21 @@ def main() -> None:
     end = now.strftime("%Y-%m-%d")
     start = f"{now.year - 5:04d}-{now.month:02d}-01"
 
-    liquidity = _fetch_windows(
+    liquidity = _fetch_recent(
         LIQ_URL,
         "end_of_date",
         "end_of_date,cu_weakside,cu_strongside,disc_win_base_rate,hibor_overnight,opening_balance,closing_balance,forecast_aggregate_bal_t1",
         start,
         end,
     )
-    monetary_base = _fetch_windows(
+    monetary_base = _fetch_recent(
         BASE_URL,
         "end_of_date",
         "end_of_date,outstanding_efbn,ow_lb_bf_disc_win,aggr_balance_bf_disc_win,aggr_balance_af_disc_win",
         start,
         end,
     )
-    hibor = _fetch_windows(
+    hibor = _fetch_recent(
         HIBOR_URL,
         "end_of_day",
         "end_of_day,ir_overnight,ir_3m",
@@ -119,7 +141,6 @@ def main() -> None:
         key = str(row.get("end_of_day") or "")
         if len(key) == 10:
             target = merged.setdefault(key, {"end_of_date": key})
-            # Use the dedicated daily HKAB fixing series for both O/N and 3M.
             if row.get("ir_overnight") is not None:
                 target["hibor_overnight"] = row.get("ir_overnight")
             target["hibor_3m"] = row.get("ir_3m")
@@ -139,6 +160,7 @@ def main() -> None:
         "coverage_start": records[0]["end_of_date"],
         "coverage_end": records[-1]["end_of_date"],
         "record_count": len(records),
+        "fetch_strategy": "newest-first offset pagination, 500 rows per page",
         "records": records,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
