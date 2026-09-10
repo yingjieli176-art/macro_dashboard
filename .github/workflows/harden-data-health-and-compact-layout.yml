@@ -1,0 +1,70 @@
+name: Harden data health and compact chart layout
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/harden_data_health_and_compact_layout.py
+      - .github/workflows/harden-data-health-and-compact-layout.yml
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Apply dashboard reliability and layout migration
+        run: python scripts/harden_data_health_and_compact_layout.py
+
+      - name: Compile changed Python modules
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py data.py scripts/update_hkma_daily_snapshot.py
+
+      - name: Refresh HKMA daily liquidity snapshot
+        continue-on-error: true
+        run: python scripts/update_hkma_daily_snapshot.py
+
+      - name: Validate optional HKMA daily snapshot
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('data_snapshots/hkma_banking_liquidity_daily.json')
+          if not path.exists():
+              print('::warning::HKMA daily snapshot still unavailable; UI will visibly mark monthly fallback.')
+          else:
+              payload = json.loads(path.read_text(encoding='utf-8'))
+              rows = payload.get('records') or []
+              if len(rows) < 200:
+                  raise SystemExit(f'HKMA daily snapshot too short: {len(rows)} rows')
+              print(f'HKMA daily snapshot OK: {len(rows)} rows')
+          PY
+
+      - name: Commit production changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/hk_liquidity.py
+          if [ -f data_snapshots/hkma_banking_liquidity_daily.json ]; then
+            git add data_snapshots/hkma_banking_liquidity_daily.json
+          fi
+          if git diff --cached --quiet; then
+            echo "No production changes to commit."
+            exit 0
+          fi
+          git commit -m "Harden data health and compact chart layout"
+          git push
