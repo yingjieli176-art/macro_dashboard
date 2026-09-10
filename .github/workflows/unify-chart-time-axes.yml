@@ -43,7 +43,7 @@ jobs:
           from macro_platform.hk_liquidity import build_hk_liquidity_figures
 
           expected = {
-              '5Y': ('M6', '%m月'),
+              '5Y': ('M12', '%Y'),
               '1Y': ('M2', '%m月'),
               '6M': ('M1', '%m月'),
               '3M': (14 * 24 * 60 * 60 * 1000, '%m-%d'),
@@ -55,8 +55,15 @@ jobs:
               apply_time_axis(fig, date_range)
               assert fig.layout.xaxis.dtick == dtick, (date_range, fig.layout.xaxis.dtick)
               assert fig.layout.xaxis.tickformat == tickformat
+              assert fig.layout.xaxis.tickmode == 'array'
               assert fig.layout.xaxis.tickangle == 0
               assert fig.layout.xaxis2.visible is False
+              tickvals = list(fig.layout.xaxis.tickvals or [])
+              assert tickvals, date_range
+              assert pd.Timestamp(tickvals[-1]) < dates.max(), (date_range, tickvals[-1], dates.max())
+              if date_range == '5Y':
+                  assert len(tickvals) <= 6, tickvals
+                  assert all(pd.Timestamp(v).month == 1 and pd.Timestamp(v).day == 1 for v in tickvals)
               bands = [s for s in fig.layout.shapes if getattr(s, 'name', None) == YEAR_BAND_SHAPE_NAME]
               dividers = [s for s in fig.layout.shapes if getattr(s, 'name', None) == YEAR_DIVIDER_SHAPE_NAME]
               year_labels = [a for a in fig.layout.annotations if str(getattr(a, 'text', '')).startswith('<b>') and getattr(a, 'yref', None) == 'paper']
@@ -70,7 +77,7 @@ jobs:
                   assert len(bands) == 1, len(bands)
                   assert len(year_labels) == 1, len(year_labels)
                   assert len(dividers) == 0, len(dividers)
-              print(date_range, 'bands=', len(bands), 'dividers=', len(dividers), 'labels=', [a.text for a in year_labels])
+              print(date_range, 'ticks=', [str(v) for v in tickvals], 'bands=', len(bands), 'dividers=', len(dividers), 'labels=', [a.text for a in year_labels])
 
           # Real Hong Kong charts 5-8 must use the same temporal guides.
           figures = build_hk_liquidity_figures('5Y')
@@ -83,6 +90,7 @@ jobs:
               assert labels, i
               assert len(dividers) == max(0, len(bands) - 1), (i, len(bands), len(dividers))
               assert fig.layout.xaxis2.visible is False, i
+              assert fig.layout.xaxis.tickmode == 'array', i
               assert fig.layout.legend.y >= 1.15, (i, fig.layout.legend.y)
               # Re-applying a short range must replace, not duplicate, year cells/dividers.
               apply_time_axis(fig, '1M')
@@ -106,7 +114,8 @@ jobs:
           assert 'return apply_time_axis(fig, date_range)' in app
           assert 'return apply_time_axis(fig, date_range)' in hk
           assert 'YEAR_DIVIDER_SHAPE_NAME' in axes
+          assert 'tickmode="array"' in axes
           assert 'rgba(243,244,246,0.34)' in axes
           assert 'dash="dot"' in axes
-          print('shared soft year-band and divider wiring present')
+          print('shared deterministic time-axis and soft year-band wiring present')
           PY
