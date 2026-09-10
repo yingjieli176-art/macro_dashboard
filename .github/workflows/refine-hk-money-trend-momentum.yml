@@ -1,0 +1,83 @@
+name: Refine HK money trend momentum
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/refine_hk_money_trend_momentum.py
+      - .github/workflows/refine-hk-money-trend-momentum.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refine-hk-money-trend-momentum
+  cancel-in-progress: true
+
+jobs:
+  migrate-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install validation dependencies
+        run: pip install pandas plotly requests
+      - name: Apply Chart 5 refinement
+        run: python scripts/refine_hk_money_trend_momentum.py
+      - name: Compile application
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py scripts/refine_hk_money_trend_momentum.py
+      - name: Validate Chart 5 trend and momentum traces
+        run: |
+          python - <<'PY'
+          from macro_platform.hk_liquidity import build_hk_liquidity_figures, load_hk_liquidity
+
+          data = load_hk_liquidity()
+          assert data['M3 YoY'].notna().sum() >= 58, 'M3 YoY should remain in the data model'
+
+          for window in ('5Y', '1Y'):
+              fig = build_hk_liquidity_figures(window, market_mode='Raw')[0]
+              traces = {str(trace.name): trace for trace in fig.data}
+              for name in ('M2 YoY', 'M2 MoM', 'Monetary Base YoY'):
+                  assert name in traces, (window, name, list(traces))
+              assert 'M3 YoY' not in traces, (window, list(traces))
+              assert fig.layout.yaxis.title.text == 'Money Growth (%)', fig.layout.yaxis.title.text
+              assert traces['M2 YoY'].line.dash in (None, 'solid'), traces['M2 YoY'].line.dash
+              assert traces['M2 MoM'].line.dash == 'dash', traces['M2 MoM'].line.dash
+              assert traces['Monetary Base YoY'].line.dash == 'dot', traces['Monetary Base YoY'].line.dash
+              print(window, [(name, len(traces[name].x)) for name in ('M2 YoY','M2 MoM','Monetary Base YoY')])
+
+          five = build_hk_liquidity_figures('5Y', market_mode='Raw')[0]
+          traces = {str(trace.name): trace for trace in five.data}
+          for name in ('M2 YoY','M2 MoM','Monetary Base YoY'):
+              valid = sum(v is not None for v in traces[name].y)
+              assert valid >= 58, (name, valid)
+          print('Chart 5 trend/momentum validation OK')
+          PY
+      - name: Validate visible descriptions
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          assert 'M2 YoY / M2 MoM / Monetary Base YoY' in text
+          assert 'YoY 看趋势，MoM 看边际拐点' in text
+          assert 'M3 YoY 仍保留在底层数据中' in text
+          print('Visible Chart 5 descriptions OK')
+          PY
+      - name: Commit refined chart
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/hk_liquidity.py
+          if git diff --cached --quiet; then
+            echo "Chart 5 already refined"
+            exit 0
+          fi
+          git commit -m "Refine Hong Kong money trend and momentum chart"
+          git pull --rebase origin main
+          git push origin main
