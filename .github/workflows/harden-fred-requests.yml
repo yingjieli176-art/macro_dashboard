@@ -1,0 +1,86 @@
+name: Harden FRED requests
+
+on:
+  push:
+    paths:
+      - 'scripts/harden_fred_requests.py'
+      - '.github/workflows/harden-fred-requests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Apply FRED resilience patch
+        run: python scripts/harden_fred_requests.py
+      - name: Compile
+        run: python -m py_compile data.py app.py
+      - name: Validate timeout resilience
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          import requests
+          import data
+
+          original_graph = data._fetch_fred_graph
+          original_api = data._fetch_fred_api
+          try:
+              data._FRED_LAST_GOOD.clear()
+              def boom(_):
+                  raise requests.exceptions.ReadTimeout('simulated timeout')
+              data._fetch_fred_graph = boom
+              data._fetch_fred_api = boom
+              frame = data._fred_series('TEST_SERIES')
+              assert frame.empty
+              assert list(frame.columns) == ['observation_date', 'TEST_SERIES']
+              assert frame.attrs.get('unavailable') is True
+
+              previous = pd.DataFrame({
+                  'observation_date': pd.to_datetime(['2026-09-01']),
+                  'TEST_SERIES': [1.23],
+              })
+              previous.attrs['source'] = 'FRED graph CSV'
+              data._FRED_LAST_GOOD['TEST_SERIES'] = previous
+              stale = data._fred_series('TEST_SERIES')
+              assert len(stale) == 1
+              assert stale.attrs.get('is_stale') is True
+              assert stale.iloc[0]['TEST_SERIES'] == 1.23
+
+              def graph_ok(_):
+                  good = pd.DataFrame({
+                      'observation_date': pd.to_datetime(['2026-09-02']),
+                      'TEST_SERIES': [2.34],
+                  })
+                  good.attrs.update({'source': 'FRED graph CSV', 'is_stale': False, 'is_fallback': False})
+                  return good
+              data._fetch_fred_graph = graph_ok
+              live = data._fred_series('TEST_SERIES')
+              assert live.iloc[0]['TEST_SERIES'] == 2.34
+              assert live.attrs.get('is_stale') is False
+              print('FRED resilience validation passed')
+          finally:
+              data._fetch_fred_graph = original_graph
+              data._fetch_fred_api = original_api
+          PY
+      - name: Commit generated fix
+        run: |
+          if git diff --quiet -- data.py; then
+            echo 'No generated changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data.py
+          git commit -m 'Prevent FRED timeouts from crashing dashboard'
+          git push
