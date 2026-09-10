@@ -7,6 +7,7 @@ on:
     paths:
       - macro_platform/watchlist_state.py
       - scripts/stabilize_watchlist_quotes.py
+      - scripts/fix_eastmoney_quote_scaling.py
       - .github/workflows/stabilize-watchlist-quotes.yml
 
 permissions:
@@ -29,10 +30,12 @@ jobs:
           python-version: '3.12'
 
       - name: Apply stabilization migration
-        run: python scripts/stabilize_watchlist_quotes.py
+        run: |
+          python scripts/stabilize_watchlist_quotes.py
+          python scripts/fix_eastmoney_quote_scaling.py
 
       - name: Compile changed Python
-        run: python -m py_compile app.py macro_platform/watchlist_state.py scripts/stabilize_watchlist_quotes.py
+        run: python -m py_compile app.py macro_platform/watchlist_state.py scripts/stabilize_watchlist_quotes.py scripts/fix_eastmoney_quote_scaling.py
 
       - name: Validate watchlist state codec
         run: |
@@ -86,12 +89,17 @@ jobs:
               '_stable_quote("^HSI", refresh_key)',
               '上次有效报价',
               '_get_cached_quote.clear()',
+              'Do not divide stock prices by 100 a second time',
           )
           for token in required:
               assert token in text, token
           assert 'def _get_watchlist_quote(symbol): return _get_yahoo_quote_safe(symbol)' not in text
           assert '_get_watchlist_quote.clear()' not in text
-          print('quote resilience wiring OK')
+          eastmoney = text[text.index('def _get_eastmoney_quote_safe'):text.index('def _market_state_text')]
+          assert '/ divisor' not in eastmoney
+          assert 'price = float(price_raw)' in eastmoney
+          assert 'previous = None if prev_raw in (None, "-") else float(prev_raw)' in eastmoney
+          print('quote resilience + Eastmoney scaling wiring OK')
           PY
 
       - name: Commit stabilization
@@ -103,6 +111,6 @@ jobs:
             echo "Watchlist stabilization already applied"
             exit 0
           fi
-          git commit -m "Stabilize watchlist quote retrieval and persistence"
+          git commit -m "Fix watchlist quote scaling and resilience"
           git pull --rebase origin main
           git push origin main
