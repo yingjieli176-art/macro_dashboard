@@ -9,7 +9,7 @@ import streamlit as st
 from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, load_hk_liquidity
 from macro_platform.chart_axes import apply_time_axis
 from macro_platform.us_equity_risk import load_vixeq_snapshot
-from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists
+from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
 from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_wresbal, get_wtre_gen, get_tga_daily, get_rrp_daily, _fred_series)
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
@@ -67,6 +67,31 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .module-delete { display: flex; justify-content: flex-end; align-items: flex-start; margin-top: -7px; margin-right: -4px; transform: none; position: relative; z-index: 5; }
 .module-delete button { min-width: 24px !important; width: 24px !important; max-width: 24px !important; height: 24px !important; padding: 0 !important; margin: 0 !important; font-size: 14px !important; line-height: 24px !important; border: 0 !important; }
 .search-result .search-after, .search-result .search-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Watchlist workstation */
+.watch-toolbar { display:flex; align-items:center; min-height:34px; color:#6b7280; font-size:.74rem; }
+.watch-market-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 7px; }
+.watch-market-head-main { min-width:0; }
+.watch-market-title { color:#111827; font-size:.90rem; font-weight:700; line-height:1.25; }
+.watch-market-subtitle { color:#9ca3af; font-size:.64rem; letter-spacing:.08em; margin-top:2px; }
+.watch-count { display:inline-flex; min-width:24px; height:22px; padding:0 7px; align-items:center; justify-content:center; border:1px solid #e5e7eb; border-radius:999px; color:#6b7280; background:#f9fafb; font-size:.68rem; font-weight:650; }
+.watch-card-body { min-width:0; padding:2px 1px 1px; }
+.watch-card-top { display:flex; align-items:baseline; gap:7px; min-width:0; padding-right:2px; }
+.watch-card-name { color:#111827; font-size:.86rem; font-weight:680; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.watch-card-symbol { color:#9ca3af; font-size:.66rem; font-family:"Segoe UI",sans-serif; white-space:nowrap; }
+.watch-price-row { display:flex; align-items:baseline; gap:9px; margin-top:4px; min-width:0; }
+.watch-price { color:#111827; font-size:1.08rem; line-height:1.15; font-weight:720; letter-spacing:-.01em; white-space:nowrap; }
+.watch-change { font-size:.78rem; font-weight:650; white-space:nowrap; }
+.watch-up { color:#15803d; }
+.watch-down { color:#b91c1c; }
+.watch-flat { color:#6b7280; }
+.watch-session { color:#6b7280; font-size:.69rem; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.watch-meta { color:#9ca3af; font-size:.64rem; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.watch-search-note { color:#9ca3af; font-size:.67rem; margin:4px 0 5px; }
+.watch-empty { color:#9ca3af; font-size:.72rem; padding:9px 2px 7px; }
+.module-delete { margin-top:-4px; margin-right:-3px; }
+.module-delete button { color:#9ca3af !important; border-radius:999px !important; }
+.module-delete button:hover { color:#b91c1c !important; background:#fef2f2 !important; }
 @media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
 
 html { scroll-behavior: smooth; }
@@ -132,7 +157,13 @@ st.markdown(
 def _load_watchlists():
     if st.session_state.get("_watchlist_loaded"):
         return
-    payload = decode_watchlists(st.query_params.get(WATCHLIST_PARAM, ""))
+    raw = st.query_params.get(WATCHLIST_PARAM, "")
+    payload = decode_watchlists(raw)
+    if watchlist_needs_default_migration(raw):
+        payload = merge_default_watchlists(payload)
+        # Migrate old / empty state once. v3 remembers the default revision so
+        # a user can later delete a default symbol without it being re-added.
+        st.query_params[WATCHLIST_PARAM] = encode_watchlists(payload)
     for key in WATCHLIST_KEYS:
         st.session_state[f"{key}_confirmed"] = payload.get(key, [])
     st.session_state["_watchlist_loaded"] = True
@@ -382,7 +413,9 @@ def _search_yahoo(market, query):
             continue
     results = []
     for item in quotes:
-        if item.get("quoteType") != "EQUITY":
+        quote_type = str(item.get("quoteType") or "").upper()
+        allowed_types = {"EQUITY", "INDEX"} if market == "US" else {"EQUITY"}
+        if quote_type not in allowed_types:
             continue
         symbol = str(item.get("symbol") or "")
         if market == "US" and ("." in symbol or symbol.endswith(("=F", "=X"))):
@@ -399,16 +432,41 @@ def _search_yahoo(market, query):
     return results[:6]
 
 def _render_quote_block(item):
-    row = _get_watchlist_quote(item["symbol"]); price, change = row.get("price"), row.get("change_pct"); price_text = "--" if price is None else f"{price:,.2f}"; change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%"); state = _market_state_text(row); after = ""
+    row = _get_watchlist_quote(item["symbol"])
+    price = row.get("price")
+    change = row.get("change_pct")
+    price_text = "--" if price is None else f"{price:,.2f}"
+    change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%")
+    direction_class = "watch-flat"
+    if change is not None:
+        direction_class = "watch-up" if change > 0 else ("watch-down" if change < 0 else "watch-flat")
+
+    session_text = ""
     if item.get("market") == "US":
-        pp, pc = row.get("post_price"), row.get("post_change_pct"); pre_price, pre_change = row.get("pre_price"), row.get("pre_change_pct"); overnight_price, overnight_change = row.get("overnight_price"), row.get("overnight_change_pct"); market_state = row.get("market_state")
-        if market_state in ("POSTPOST", "CLOSED") and overnight_price is not None: after = f'<div class="search-after">夜盘：<strong>{overnight_price:,.2f}</strong> <span>{"--" if overnight_change is None else f"{overnight_change:+.2f}%"}</span></div>'
-        elif market_state in ("PRE", "PREPRE") and pre_price is not None: after = f'<div class="search-after">盘前：<strong>{pre_price:,.2f}</strong> <span>{"--" if pre_change is None else f"{pre_change:+.2f}%"}</span></div>'
-        elif market_state == "POST" and pp is not None: after = f'<div class="search-after">盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
-        elif pp is not None and row.get("post_market_time"): after = f'<div class="search-after">最近盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
-    source = row.get("data_source") or row.get("quote_source") or ""; delay = row.get("delayed_by"); source_text = f"{source} · 延迟{delay}分" if delay not in (None, 0, "0") and source == "Yahoo Finance" else source
-    if row.get("_stale"): source_text = (source_text + " · 上次有效报价").strip(" ·")
-    return f'<div class="search-result"><div class="search-result-label">{html.escape(item["name"])} <span class="search-result-symbol">· {html.escape(item["symbol"])} · {html.escape(item.get("exchange", ""))}</span></div><div class="search-price">{html.escape(price_text)} <span class="market-change">{html.escape(change_text)} {html.escape(state)}</span></div>{after}<div class="search-hint">{html.escape(source_text)}</div></div>'
+        pp, pc = row.get("post_price"), row.get("post_change_pct")
+        pre_price, pre_change = row.get("pre_price"), row.get("pre_change_pct")
+        overnight_price, overnight_change = row.get("overnight_price"), row.get("overnight_change_pct")
+        market_state = row.get("market_state")
+        if market_state in ("POSTPOST", "CLOSED") and overnight_price is not None:
+            session_text = f'夜盘 {overnight_price:,.2f} · {"--" if overnight_change is None else f"{overnight_change:+.2f}%"}'
+        elif market_state in ("PRE", "PREPRE") and pre_price is not None:
+            session_text = f'盘前 {pre_price:,.2f} · {"--" if pre_change is None else f"{pre_change:+.2f}%"}'
+        elif market_state == "POST" and pp is not None:
+            session_text = f'盘后 {pp:,.2f} · {"--" if pc is None else f"{pc:+.2f}%"}'
+        elif pp is not None and row.get("post_market_time"):
+            session_text = f'最近盘后 {pp:,.2f} · {"--" if pc is None else f"{pc:+.2f}%"}'
+
+    meta = _quote_meta(row, item.get("market", ""))
+    name = html.escape(str(item.get("name") or item.get("symbol") or ""))
+    symbol = html.escape(str(item.get("symbol") or ""))
+    session_html = f'<div class="watch-session">{html.escape(session_text)}</div>' if session_text else ''
+    return (
+        '<div class="watch-card-body">'
+        f'<div class="watch-card-top"><span class="watch-card-name">{name}</span><span class="watch-card-symbol">{symbol}</span></div>'
+        f'<div class="watch-price-row"><span class="watch-price">{html.escape(price_text)}</span><span class="watch-change {direction_class}">{html.escape(change_text)}</span></div>'
+        f'{session_html}<div class="watch-meta">{html.escape(meta)}</div>'
+        '</div>'
+    )
 
 def _add_confirmed(key, item):
     confirmed = st.session_state.get(f"{key}_confirmed", []); confirmed = [confirmed] if isinstance(confirmed, dict) else (confirmed if isinstance(confirmed, list) else [])
@@ -437,44 +495,82 @@ def _cancel_search(key):
     st.session_state[f"{key}_open"] = False; st.session_state.pop(f"{key}_results", None)
 
 def render_watchlist_refresh_control():
-    _, refresh_col = st.columns([5, 1], vertical_alignment="top")
+    info_col, refresh_col = st.columns([5, 1], vertical_alignment="center")
+    with info_col:
+        st.markdown('<div class="watch-toolbar">默认组合已启用；行情失败时保留上次有效报价。</div>', unsafe_allow_html=True)
     with refresh_col:
-        if st.button("↻ 刷新股价", key="refresh_watchlist_quotes", use_container_width=True, help="立即重新获取已添加模块的最新报价"):
-            _get_cached_quote.clear(); st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
+        if st.button("↻ 刷新报价", key="refresh_watchlist_quotes", use_container_width=True, help="立即重新获取自选与市场概览报价"):
+            _get_cached_quote.clear()
+            st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
 
 st.markdown('<div id="watchlist" class="section-anchor"></div><div class="section-kicker">WATCHLIST</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">自选观察</div><div class="section-description">按市场添加股票模块；刷新、搜索与删除操作集中在本区域</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · 60 秒自动刷新 · 添加、删除后自动保存到当前链接</div>', unsafe_allow_html=True)
 render_watchlist_refresh_control()
 
 @st.fragment(run_every="60s")
 def render_watchlists():
     search_cols = st.columns(3, gap="small", vertical_alignment="top")
-    search_config = [(search_cols[0], "US", "🇺🇸 美股", "NVDA / Apple", "market_search_us"), (search_cols[1], "HK", "🇭🇰 港股", "0700 / 腾讯", "market_search_hk"), (search_cols[2], "CN", "🇨🇳 A股", "600519 / 贵州茅台", "market_search_cn")]
-    for col, market, title, placeholder, key in search_config:
+    search_config = [
+        (search_cols[0], "US", "🇺🇸 美股", "US EQUITY / INDEX", "NVDA / NBIS / Nasdaq 100", "market_search_us"),
+        (search_cols[1], "HK", "🇭🇰 港股", "HK EQUITY", "0700 / 腾讯 / 东岳", "market_search_hk"),
+        (search_cols[2], "CN", "🇨🇳 A股", "A-SHARE", "600160 / 巨化 / 上海电力", "market_search_cn"),
+    ]
+    for col, market, title, subtitle, placeholder, key in search_config:
         with col:
-            confirmed_list = st.session_state.get(f"{key}_confirmed", []); confirmed_list = [confirmed_list] if isinstance(confirmed_list, dict) else (confirmed_list if isinstance(confirmed_list, list) else [])
+            confirmed_list = st.session_state.get(f"{key}_confirmed", [])
+            confirmed_list = [confirmed_list] if isinstance(confirmed_list, dict) else (confirmed_list if isinstance(confirmed_list, list) else [])
+            st.markdown(
+                f'<div class="watch-market-head"><div class="watch-market-head-main"><div class="watch-market-title">{title}</div><div class="watch-market-subtitle">{subtitle}</div></div><span class="watch-count">{len(confirmed_list)}</span></div>',
+                unsafe_allow_html=True,
+            )
             if confirmed_list:
-                st.markdown(f'<div class="market-group-title">{title}</div>', unsafe_allow_html=True)
                 for idx, confirmed in enumerate(confirmed_list):
-                    if not isinstance(confirmed, dict): continue
+                    if not isinstance(confirmed, dict):
+                        continue
                     with st.container(border=True):
-                        quote_col, delete_col = st.columns([1, 0.08], gap="small", vertical_alignment="top")
-                        with quote_col: st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
+                        quote_col, delete_col = st.columns([1, 0.075], gap="small", vertical_alignment="top")
+                        with quote_col:
+                            st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
                         with delete_col:
-                            st.markdown('<div class="module-delete">', unsafe_allow_html=True); st.button("×", key=f"{key}_delete_{idx}", on_click=_delete_confirmed, args=(key, confirmed.get("symbol")), help="删除此模块", type="tertiary", use_container_width=True); st.markdown('</div>', unsafe_allow_html=True)
-            is_open = st.session_state.get(f"{key}_open", False)
-            if not is_open: st.button("+", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,), help="添加模块")
+                            st.markdown('<div class="module-delete">', unsafe_allow_html=True)
+                            st.button(
+                                "×",
+                                key=f"{key}_delete_{idx}",
+                                on_click=_delete_confirmed,
+                                args=(key, confirmed.get("symbol")),
+                                help=f"删除 {confirmed.get('name') or confirmed.get('symbol')}",
+                                type="tertiary",
+                                use_container_width=True,
+                            )
+                            st.markdown('</div>', unsafe_allow_html=True)
             else:
-                input_col, search_col, cancel_col = st.columns([5.2, 1.1, 1.1], gap="small")
-                with input_col: st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
-                with search_col: st.button("搜索", key=f"{key}_search_button", use_container_width=True, on_click=_run_search, args=(key, market))
-                with cancel_col: st.button("取消", key=f"{key}_cancel_button", use_container_width=True, on_click=_cancel_search, args=(key,))
+                st.markdown('<div class="watch-empty">暂无标的，可从下方添加。</div>', unsafe_allow_html=True)
+
+            is_open = st.session_state.get(f"{key}_open", False)
+            if not is_open:
+                st.button("＋ 添加标的", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,), help="搜索并添加股票或指数")
+            else:
+                st.markdown('<div class="watch-search-note">输入名称或代码，搜索后确认添加。</div>', unsafe_allow_html=True)
+                input_col, search_col, cancel_col = st.columns([5.0, 1.25, 1.25], gap="small")
+                with input_col:
+                    st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
+                with search_col:
+                    st.button("搜索", key=f"{key}_search_button", use_container_width=True, on_click=_run_search, args=(key, market))
+                with cancel_col:
+                    st.button("取消", key=f"{key}_cancel_button", use_container_width=True, on_click=_cancel_search, args=(key,))
                 results = st.session_state.get(f"{key}_results", [])
                 if results:
                     options = [f'{item.get("name", "")} · {item.get("symbol", "")} · {item.get("exchange", "")}' for item in results]
-                    st.radio("搜索结果", range(len(options)), format_func=lambda i: options[i], key=f"{key}_result_select", label_visibility="collapsed")
+                    st.selectbox(
+                        "搜索结果",
+                        range(len(options)),
+                        format_func=lambda i: options[i],
+                        key=f"{key}_result_select",
+                        label_visibility="collapsed",
+                    )
                     st.button("确认添加", key=f"{key}_confirm_selected", use_container_width=True, on_click=_confirm_selected, args=(key,), type="primary")
-                elif st.session_state.get(key, "").strip() and f"{key}_results" in st.session_state: st.caption("没有找到匹配的股票，请检查名称或代码。")
+                elif st.session_state.get(key, "").strip() and f"{key}_results" in st.session_state:
+                    st.caption("没有找到匹配标的，请检查名称或代码。")
 
 render_watchlists()
 

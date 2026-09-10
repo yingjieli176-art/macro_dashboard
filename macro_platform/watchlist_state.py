@@ -17,6 +17,28 @@ _MARKET = {
     "market_search_cn": "CN",
 }
 MAX_ITEMS_PER_MARKET = 40
+WATCHLIST_SCHEMA_VERSION = 3
+DEFAULT_WATCHLIST_REVISION = 1
+
+DEFAULT_WATCHLISTS = {
+    "market_search_us": [
+        {"symbol": "NVDA", "name": "英伟达"},
+        {"symbol": "NBIS", "name": "Nebius"},
+        {"symbol": "^NDX", "name": "纳斯达克100"},
+    ],
+    "market_search_hk": [
+        {"symbol": "0700.HK", "name": "腾讯控股"},
+        {"symbol": "0189.HK", "name": "东岳集团"},
+    ],
+    "market_search_cn": [
+        {"symbol": "600160.SS", "name": "巨化股份"},
+        {"symbol": "600021.SS", "name": "上海电力"},
+    ],
+}
+
+
+def _empty() -> dict[str, list[dict[str, str]]]:
+    return {key: [] for key in WATCHLIST_KEYS}
 
 
 def _clean_item(item: Any, market: str) -> dict[str, str] | None:
@@ -35,7 +57,7 @@ def _clean_item(item: Any, market: str) -> dict[str, str] | None:
 
 
 def normalize_watchlists(payload: Any) -> dict[str, list[dict[str, str]]]:
-    result = {key: [] for key in WATCHLIST_KEYS}
+    result = _empty()
     if not isinstance(payload, dict):
         return result
 
@@ -57,27 +79,49 @@ def normalize_watchlists(payload: Any) -> dict[str, list[dict[str, str]]]:
     return result
 
 
+def default_watchlists() -> dict[str, list[dict[str, str]]]:
+    return normalize_watchlists(DEFAULT_WATCHLISTS)
+
+
+def merge_default_watchlists(payload: Any) -> dict[str, list[dict[str, str]]]:
+    result = normalize_watchlists(payload)
+    defaults = default_watchlists()
+    for key in WATCHLIST_KEYS:
+        seen = {row["symbol"] for row in result[key]}
+        for row in defaults[key]:
+            if row["symbol"] not in seen and len(result[key]) < MAX_ITEMS_PER_MARKET:
+                result[key].append(dict(row))
+                seen.add(row["symbol"])
+    return result
+
+
 def encode_watchlists(payload: Any) -> str:
     normalized = normalize_watchlists(payload)
-    compact: dict[str, Any] = {"v": 2}
+    compact: dict[str, Any] = {
+        "v": WATCHLIST_SCHEMA_VERSION,
+        "d": DEFAULT_WATCHLIST_REVISION,
+    }
     for key in WATCHLIST_KEYS:
         rows = normalized[key]
         compact[_SHORT_KEY[key]] = [[row["symbol"], row["name"]] for row in rows]
     raw = json.dumps(compact, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     packed = zlib.compress(raw, level=9)
     token = base64.urlsafe_b64encode(packed).decode("ascii").rstrip("=")
-    return "v2." + token
+    return "v3." + token
 
 
-def _decode_v2(raw: str) -> dict[str, list[dict[str, str]]]:
-    token = raw[3:]
+def _unpack_token(raw: str, prefix: str) -> dict[str, Any]:
+    token = raw[len(prefix):]
     token += "=" * (-len(token) % 4)
     packed = base64.urlsafe_b64decode(token.encode("ascii"))
     compact = json.loads(zlib.decompress(packed).decode("utf-8"))
-    if not isinstance(compact, dict) or compact.get("v") != 2:
-        raise ValueError("unsupported watchlist payload")
+    if not isinstance(compact, dict):
+        raise ValueError("invalid watchlist payload")
+    return compact
 
-    payload: dict[str, list[dict[str, str]]] = {key: [] for key in WATCHLIST_KEYS}
+
+def _compact_to_payload(compact: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
+    payload = _empty()
     reverse = {value: key for key, value in _SHORT_KEY.items()}
     for short_key, key in reverse.items():
         rows = compact.get(short_key, [])
@@ -95,16 +139,42 @@ def _decode_v2(raw: str) -> dict[str, list[dict[str, str]]]:
     return normalize_watchlists(payload)
 
 
+def _decode_v3(raw: str) -> dict[str, list[dict[str, str]]]:
+    compact = _unpack_token(raw, "v3.")
+    if compact.get("v") != WATCHLIST_SCHEMA_VERSION:
+        raise ValueError("unsupported watchlist payload")
+    return _compact_to_payload(compact)
+
+
+def _decode_v2(raw: str) -> dict[str, list[dict[str, str]]]:
+    compact = _unpack_token(raw, "v2.")
+    if compact.get("v") != 2:
+        raise ValueError("unsupported legacy watchlist payload")
+    return _compact_to_payload(compact)
+
+
 def decode_watchlists(raw: Any) -> dict[str, list[dict[str, str]]]:
     if raw is None:
-        return {key: [] for key in WATCHLIST_KEYS}
+        return _empty()
     text = str(raw).strip()
     if not text:
-        return {key: [] for key in WATCHLIST_KEYS}
+        return _empty()
     try:
+        if text.startswith("v3."):
+            return _decode_v3(text)
         if text.startswith("v2."):
             return _decode_v2(text)
-        # Backward compatibility with the original plain-JSON query parameter.
         return normalize_watchlists(json.loads(text))
     except Exception:
-        return {key: [] for key in WATCHLIST_KEYS}
+        return _empty()
+
+
+def watchlist_needs_default_migration(raw: Any) -> bool:
+    text = str(raw or "").strip()
+    if not text.startswith("v3."):
+        return True
+    try:
+        compact = _unpack_token(text, "v3.")
+        return int(compact.get("d", 0)) < DEFAULT_WATCHLIST_REVISION
+    except Exception:
+        return True
