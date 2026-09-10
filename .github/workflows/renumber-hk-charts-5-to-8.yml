@@ -1,0 +1,71 @@
+name: Renumber Hong Kong charts 5 to 8
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/renumber_hk_charts_5_to_8.py
+      - .github/workflows/renumber-hk-charts-5-to-8.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: renumber-hk-charts-5-to-8
+  cancel-in-progress: true
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install validation dependencies
+        run: python -m pip install --disable-pip-version-check pandas plotly requests
+      - name: Apply layout migration
+        run: python scripts/renumber_hk_charts_5_to_8.py
+      - name: Compile application
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py
+      - name: Validate charts 5 to 8 format
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from macro_platform.hk_liquidity import build_hk_liquidity_figures
+
+          app = Path('app.py').read_text(encoding='utf-8')
+          for title in (
+              '5. HK Money Supply & Market Pulse',
+              '6. Banking-system Liquidity',
+              '7. HKD Funding',
+              '8. USD/HKD Convertibility Band & Market',
+          ):
+              assert title in app, title
+          for key in ('hk_5_range', 'hk_6_range', 'hk_7_range', 'hk_8_range'):
+              assert key in app, key
+
+          figures = build_hk_liquidity_figures('5Y')
+          assert len(figures) == 4, len(figures)
+          for idx, fig in enumerate(figures, start=5):
+              title = fig.layout.title.text if fig.layout.title else None
+              assert title in (None, ''), f'Chart {idx} still has internal title: {title!r}'
+              assert fig.layout.legend.orientation == 'h', f'Chart {idx} legend not horizontal'
+          print('Charts 5-8 external-title layout PASSED')
+          PY
+      - name: Commit layout changes
+        run: |
+          git add app.py macro_platform/hk_liquidity.py
+          if git diff --cached --quiet; then
+            echo "Charts 5-8 layout already applied"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Split Hong Kong liquidity into charts 5 through 8"
+          git pull --rebase origin main
+          git push origin main
