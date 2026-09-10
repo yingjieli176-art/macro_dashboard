@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-from scripts.backfill_hk_money_from_censtat_digests import SNAPSHOT, _extract_issue, _month_range
+from backfill_hk_money_from_censtat_digests import SNAPSHOT, _extract_issue, _month_range
 
 # Older overlapping C&SD digests provide the 12-month lag needed to display a
 # full five years of YoY M2/M3 growth. Later issues remain authoritative where
