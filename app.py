@@ -8,6 +8,7 @@ import requests
 import streamlit as st
 from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, load_hk_liquidity
 from macro_platform.chart_axes import apply_time_axis
+from macro_platform.us_equity_risk import load_vixeq_snapshot
 from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_wresbal, get_wtre_gen, get_tga_daily, get_rrp_daily, _fred_series)
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
@@ -501,6 +502,72 @@ def build_fig3(date_range):
     fig.update_traces(selector=dict(name="10Y−2Y (R)"), hovertemplate="10Y−2Y (R): %{y:.3f}%<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M (R)"), hovertemplate="10Y−3M (R): %{y:.3f}%<extra></extra>")
     fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (%)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True, tickfont=dict(size=9))); return apply_chart_style(fig, chart_height(340, 500), date_range)
 
+
+def build_fig9(date_range):
+    """US equity risk: index vol, constituent vol, VIX term spread, and SPX."""
+    frames = []
+    for series_id in ("VIXCLS", "VXVCLS", "SP500"):
+        try:
+            frame = get_fred_series(series_id).copy()
+            frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
+            frame[series_id] = pd.to_numeric(frame[series_id], errors="coerce")
+            frame = frame.dropna(subset=["observation_date", series_id])[["observation_date", series_id]]
+            if not frame.empty:
+                frames.append(frame)
+        except Exception:
+            continue
+
+    try:
+        vixeq = load_vixeq_snapshot()
+        if not vixeq.empty:
+            frames.append(vixeq)
+    except Exception:
+        pass
+
+    if not frames:
+        return apply_chart_style(go.Figure(), chart_height(340, 500), date_range)
+
+    data = frames[0]
+    for frame in frames[1:]:
+        data = data.merge(frame, on="observation_date", how="outer")
+    data = data.sort_values("observation_date")
+    if "VIXCLS" in data.columns and "VXVCLS" in data.columns:
+        data["VIX3M-VIX"] = data["VXVCLS"] - data["VIXCLS"]
+    data = filter_range(data, date_range)
+
+    fig = go.Figure()
+    add_line(fig, data, "VIXCLS", "VIX", 2.7, unit="")
+    add_line(fig, data, "VIXEQ", "VIXEQ", 2.4, "dash", unit="")
+    add_line(fig, data, "SP500", "S&P 500 (R1)", 2.4, None, "y2", unit=" pts")
+    add_line(fig, data, "VIX3M-VIX", "VIX3M−VIX (R2)", 2.0, "dot", "y3", unit=" pts")
+
+    fig.update_layout(
+        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86),
+        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.97),
+    )
+    fig = apply_chart_style(fig, chart_height(360, 520), date_range)
+    fig.update_layout(
+        margin=dict(l=62, r=144, t=124, b=44, pad=2),
+        xaxis=dict(domain=[0.0, 0.84]),
+        yaxis=dict(
+            title="VIX / VIXEQ",
+            showgrid=True, gridcolor="#e5e7eb", griddash="dot",
+            zeroline=False, fixedrange=True,
+        ),
+        yaxis2=dict(
+            title="R1 · S&P 500",
+            overlaying="y", side="right", anchor="free", position=0.86,
+            showgrid=False, zeroline=False, fixedrange=True, tickfont=dict(size=10),
+        ),
+        yaxis3=dict(
+            title="R2 · VIX3M−VIX",
+            overlaying="y", side="right", anchor="free", position=0.97,
+            showgrid=False, zeroline=True, zerolinecolor="#94a3b8",
+            zerolinewidth=1, fixedrange=True, tickfont=dict(size=10),
+        ),
+    )
+    return fig
+
 PARAM_DESCRIPTIONS = [
     '<b>参数概念：</b><br>1. IORB（Interest on Reserve Balances）：美联储向存款机构准备金余额支付的利率，是美国准备金利率体系的重要基准。<br>2. ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具利率，金融机构可通过该工具进行隔夜资金配置。<br>3. EFFR（Effective Federal Funds Rate）：美国联邦基金市场实际成交形成的有效隔夜利率，反映银行间短期无担保资金价格。<br>4. SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率，是美元有担保短期融资的重要基准。',
     '<b>参数概念：</b><br>1. 10Y Nominal：10 年期美国国债名义收益率，包含实际利率与通胀预期等因素。<br>2. 10Y Real：10 年期美国国债实际收益率，通常由通胀保值国债（TIPS）市场反映。<br>3. 10Y Breakeven：10 年期盈亏平衡通胀率，是名义国债收益率与实际收益率之间的差值，用于观察市场隐含的长期通胀预期。',
@@ -520,6 +587,9 @@ HK_PARAMETER_DESCRIPTIONS = [
 
 def show_hk_parameter_description(index):
     st.markdown(f'<div class="mini-description">{HK_PARAMETER_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
+
+
+US_EQUITY_RISK_DESCRIPTION = '<b>参数概念：</b><br>1. VIX：基于 S&P 500 指数期权的约 30 天隐含波动率，反映指数层面的近端风险定价。<br>2. VIXEQ：Cboe S&P 500 Constituent Volatility Index，衡量一篮子标普 500 成分股按市值加权的约 30 天隐含波动率；它使用单股期权，因此与 VIX 并非同一个指标。<br>3. S&P 500（R1）：标普 500 指数点位，用来观察风险价格与现货大盘的同步/背离。<br>4. VIX3M−VIX（R2）：3 个月 VIX 减约 30 天 VIX。通常为正代表期限结构较正常；快速收窄或转负表示近端隐含波动率高于远端，常见于短期压力上升阶段。<br><br><b>读取提示：</b>VIX 与 VIXEQ 同时上升代表指数与成分股隐含波动率共同抬升；若 VIXEQ 相对 VIX 更强，通常意味着单股波动/分化风险更突出。VIXEQ 自 2024-11-04 起正式发布，因此早于官方可用历史的区间不补造数据。'
 
 compact_mode = False
 
@@ -619,6 +689,28 @@ def render_core_charts():
         show_hk_parameter_description(hk_index)
         add_sources(sources)
         st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+
+    st.markdown('<div class="section-kicker">US EQUITY RISK</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">9. US Equity Risk & Volatility Structure</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIX3M−VIX (R2)</div>', unsafe_allow_html=True)
+    risk_range = st.radio(
+        "时间范围",
+        RANGES,
+        horizontal=True,
+        index=1,
+        key="us_equity_risk_range",
+        label_visibility="collapsed",
+    )
+    st.plotly_chart(build_fig9(risk_range), use_container_width=True, config=PLOTLY_CONFIG)
+    st.markdown(f'<div class="mini-description">{US_EQUITY_RISK_DESCRIPTION}</div>', unsafe_allow_html=True)
+    add_sources([
+        ("Cboe VIX", "https://www.cboe.com/tradable-products/vix/"),
+        ("Cboe VIXEQ / Dispersion", "https://www.cboe.com/us/indices/dispersion/"),
+        ("FRED VIX3M (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),
+        ("FRED S&P 500 (SP500)", "https://fred.stlouisfed.org/series/SP500"),
+    ])
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 st.markdown('<div id="macro-charts" class="section-anchor"></div><div class="section-kicker">MACRO CHARTS</div>', unsafe_allow_html=True)
 render_core_charts()
