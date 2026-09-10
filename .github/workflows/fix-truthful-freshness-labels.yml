@@ -1,0 +1,74 @@
+name: Fix truthful freshness labels
+
+on:
+  push:
+    paths:
+      - 'scripts/fix_truthful_freshness_labels.py'
+      - '.github/workflows/fix-truthful-freshness-labels.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Apply truth audit patch
+        run: python scripts/fix_truthful_freshness_labels.py
+      - name: Compile
+        run: python -m py_compile app.py data.py macro_platform/hk_liquidity.py
+      - name: Validate truthful labels
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          import macro_platform.hk_liquidity as hk
+          import data
+
+          app = Path('app.py').read_text(encoding='utf-8')
+          assert '@st.fragment(run_every="60s")\ndef render_news_panel():' in app
+          assert '平台已筛选重点' not in app
+          assert '交易状态按市场时段与报价日期判定' in app
+          assert 'def _active_quote_values(' in app
+          assert 'TGA · Weekly fallback' in app
+          assert 'Net Liquidity Proxy · weekly TGA fallback' in app
+          assert 'pd.Timestamp.now(tz="Asia/Hong_Kong")' in app
+
+          data_text = Path('data.py').read_text(encoding='utf-8')
+          assert '"is_fallback": False' in data_text
+          assert '"is_fallback": True' in data_text
+          yesterday = data._extract_time({'showTime': '2026-09-09 23:58:01'})
+          assert yesterday.startswith('09-09 '), yesterday
+          epoch = data._extract_time({'showTime': '0'})
+          assert epoch == '0', epoch
+
+          daily = pd.DataFrame({'observation_date': pd.date_range('2026-09-01', periods=8, freq='D')})
+          monthly = pd.DataFrame({'observation_date': pd.date_range('2026-01-01', periods=8, freq='MS')})
+          assert hk._frame_is_daily(daily)
+          assert not hk._frame_is_daily(monthly)
+
+          hk_text = Path('macro_platform/hk_liquidity.py').read_text(encoding='utf-8')
+          assert '6. Daily Banking-system Liquidity" if _daily_snapshot_available()' not in hk_text
+          assert '7. HKD Funding · Daily" if _daily_snapshot_available()' not in hk_text
+          assert 'monthly signal' in hk_text
+          assert 'HKMA monthly through' in hk_text
+          print('truth audit validation passed')
+          PY
+      - name: Commit generated fixes
+        run: |
+          if git diff --quiet -- app.py data.py macro_platform/hk_liquidity.py; then
+            echo 'No generated changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py data.py macro_platform/hk_liquidity.py
+          git commit -m 'Remove misleading freshness and frequency labels'
+          git push
