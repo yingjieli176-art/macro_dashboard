@@ -15,6 +15,7 @@ RANGE_OFFSETS = {
 }
 
 YEAR_BAND_SHAPE_NAME = "__dashboard_year_band__"
+YEAR_DIVIDER_SHAPE_NAME = "__dashboard_year_divider__"
 
 
 def _tick_profile(date_range: str) -> dict[str, Any]:
@@ -89,16 +90,17 @@ def _is_year_band_annotation(annotation: Any) -> bool:
 
 
 def _apply_year_band(fig: go.Figure, start: pd.Timestamp, end: pd.Timestamp) -> None:
-    """Draw a persistent shaded year band above the plot area.
+    """Draw a soft year band plus vertical cross-year separators.
 
-    A paper-coordinate band is more reliable in Streamlit/Plotly than an
-    unused overlay x-axis. Each visible calendar year gets its own shaded cell
-    and centered label, including a single-year 1M viewport.
+    The shaded band is deliberately subtle so it reads as a temporal guide,
+    not another data layer. Every Jan-01 boundary inside the visible window
+    gets a light dotted vertical divider through the plot area.
     """
     existing_shapes = [
         shape
         for shape in (list(fig.layout.shapes) if fig.layout.shapes else [])
-        if getattr(shape, "name", None) != YEAR_BAND_SHAPE_NAME
+        if getattr(shape, "name", None)
+        not in {YEAR_BAND_SHAPE_NAME, YEAR_DIVIDER_SHAPE_NAME}
     ]
     existing_annotations = [
         ann
@@ -107,9 +109,16 @@ def _apply_year_band(fig: go.Figure, start: pd.Timestamp, end: pd.Timestamp) -> 
     ]
 
     year_shapes: list[dict[str, Any]] = []
+    year_dividers: list[dict[str, Any]] = []
     year_annotations: list[dict[str, Any]] = []
-    for idx, (year, segment_start, segment_end, midpoint) in enumerate(_year_segments(start, end)):
-        fill = "rgba(243,244,246,0.96)" if idx % 2 == 0 else "rgba(249,250,251,0.96)"
+    segments = _year_segments(start, end)
+
+    for idx, (year, segment_start, segment_end, midpoint) in enumerate(segments):
+        fill = (
+            "rgba(243,244,246,0.34)"
+            if idx % 2 == 0
+            else "rgba(248,250,252,0.24)"
+        )
         year_shapes.append(
             dict(
                 type="rect",
@@ -117,9 +126,9 @@ def _apply_year_band(fig: go.Figure, start: pd.Timestamp, end: pd.Timestamp) -> 
                 yref="paper",
                 x0=segment_start,
                 x1=segment_end,
-                y0=1.015,
-                y1=1.075,
-                line=dict(color="#d1d5db", width=0.8),
+                y0=1.018,
+                y1=1.066,
+                line=dict(color="rgba(0,0,0,0)", width=0),
                 fillcolor=fill,
                 layer="above",
                 name=YEAR_BAND_SHAPE_NAME,
@@ -128,23 +137,46 @@ def _apply_year_band(fig: go.Figure, start: pd.Timestamp, end: pd.Timestamp) -> 
         year_annotations.append(
             dict(
                 x=midpoint,
-                y=1.045,
+                y=1.042,
                 xref="x",
                 yref="paper",
                 text=f"<b>{year}</b>",
                 showarrow=False,
                 xanchor="center",
                 yanchor="middle",
-                font=dict(size=11, color="#4b5563"),
+                font=dict(size=11, color="#6b7280"),
                 align="center",
             )
         )
 
+        # A segment after the first starts exactly at a cross-year boundary.
+        # Draw the separator only through the data area so it stays visually
+        # subordinate to the year label strip above the plot.
+        if idx > 0:
+            year_dividers.append(
+                dict(
+                    type="line",
+                    xref="x",
+                    yref="paper",
+                    x0=segment_start,
+                    x1=segment_start,
+                    y0=0.0,
+                    y1=1.0,
+                    line=dict(
+                        color="rgba(107,114,128,0.38)",
+                        width=1,
+                        dash="dot",
+                    ),
+                    layer="below",
+                    name=YEAR_DIVIDER_SHAPE_NAME,
+                )
+            )
+
     # Direct tuple assignment is intentional. Plotly's update_layout can merge
-    # shape arrays by index, which leaves stale 5Y cells behind when switching
-    # to 1M. Assignment replaces the old year-band cells completely while
-    # preserving non-year shapes such as the 7.75–7.85 LERS hrect.
-    fig.layout.shapes = tuple(existing_shapes + year_shapes)
+    # shape arrays by index, which leaves stale cells/dividers behind after a
+    # range change. Assignment fully replaces the temporal guides while
+    # preserving unrelated shapes such as the 7.75–7.85 LERS hrect.
+    fig.layout.shapes = tuple(existing_shapes + year_shapes + year_dividers)
     fig.layout.annotations = tuple(existing_annotations + year_annotations)
 
 
@@ -157,7 +189,8 @@ def apply_time_axis(
     """Apply the dashboard-wide time axis.
 
     Bottom axis: adaptive month/day detail with bounded label density.
-    Top: a shaded calendar-year band, centered within each visible year.
+    Top: a subtle shaded calendar-year band centered within each visible year,
+    with dotted vertical separators at cross-year boundaries.
     """
     latest = pd.Timestamp(latest) if latest is not None else _figure_latest(fig)
     if latest is None or pd.isna(latest):
