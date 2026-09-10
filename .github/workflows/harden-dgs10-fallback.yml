@@ -1,0 +1,66 @@
+name: Harden DGS10 fallback
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/harden_dgs10_fallback.py
+      - .github/workflows/harden-dgs10-fallback.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: harden-dgs10-fallback
+  cancel-in-progress: true
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply DGS10 fallback patch
+        run: python scripts/harden_dgs10_fallback.py
+
+      - name: Compile
+        run: python -m py_compile data.py app.py scripts/harden_dgs10_fallback.py
+
+      - name: Validate DGS10 fallback wiring
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('data.py').read_text(encoding='utf-8')
+          required = (
+              'def get_dgs10():',
+              '_fred_series("DGS10").copy()',
+              '_fred_series("DFII10").copy()',
+              '_fred_series("T10YIE").copy()',
+              'Derived from FRED DFII10 + T10YIE',
+              'combine_first(combined["DGS10_derived"])',
+          )
+          for token in required:
+              assert token in text, token
+          assert 'def get_dgs10(): return _fred_series("DGS10")' not in text
+          print('DGS10 resilience wiring OK')
+          PY
+
+      - name: Commit data patch
+        run: |
+          if git diff --quiet -- data.py; then
+            echo 'DGS10 fallback already applied'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data.py
+          git commit -m 'Keep 10Y nominal yield visible during FRED gaps'
+          git pull --rebase origin main
+          git push origin main
