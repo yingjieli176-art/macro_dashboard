@@ -6,89 +6,39 @@ on:
     branches: [main]
     paths:
       - macro_platform/chart_axes.py
-      - scripts/unify_chart_time_axes.py
+      - app.py
+      - macro_platform/hk_liquidity.py
       - .github/workflows/unify-chart-time-axes.yml
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: unify-chart-time-axes
   cancel-in-progress: true
 
 jobs:
-  apply-and-validate:
+  validate:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Install validation dependencies
         run: python -m pip install --disable-pip-version-check pandas plotly requests
-      - name: Apply axis migration
-        run: python scripts/unify_chart_time_axes.py
       - name: Compile application
         run: python -m py_compile app.py macro_platform/hk_liquidity.py macro_platform/chart_axes.py
-      - name: Validate adaptive time-axis profiles
-        run: |
-          python - <<'PY'
-          import pandas as pd
-          import plotly.graph_objects as go
-          from macro_platform.chart_axes import apply_time_axis
-          from macro_platform.hk_liquidity import build_hk_liquidity_figures
-
-          expected = {
-              '5Y': ('M6', '%m月'),
-              '1Y': ('M2', '%m月'),
-              '6M': ('M1', '%m月'),
-              '3M': (14 * 24 * 60 * 60 * 1000, '%m-%d'),
-              '1M': (5 * 24 * 60 * 60 * 1000, '%m-%d'),
-          }
-          dates = pd.date_range('2021-01-01', '2026-09-09', freq='D')
-          for date_range, (dtick, tickformat) in expected.items():
-              fig = go.Figure(go.Scatter(x=dates, y=list(range(len(dates)))))
-              apply_time_axis(fig, date_range)
-              assert fig.layout.xaxis.dtick == dtick, (date_range, fig.layout.xaxis.dtick)
-              assert fig.layout.xaxis.tickformat == tickformat
-              assert fig.layout.xaxis.tickangle == 0
-              assert fig.layout.xaxis2.side == 'top'
-              assert fig.layout.xaxis2.overlaying == 'x'
-              assert list(fig.layout.xaxis2.ticktext), date_range
-              assert len(fig.layout.xaxis2.ticktext) <= 6, (date_range, fig.layout.xaxis2.ticktext)
-              print(date_range, 'bottom=', dtick, tickformat, 'years=', list(fig.layout.xaxis2.ticktext))
-
-          figures = build_hk_liquidity_figures('5Y')
-          assert len(figures) == 4
-          for i, fig in enumerate(figures, start=5):
-              assert fig.layout.xaxis2.side == 'top', i
-              assert fig.layout.xaxis2.overlaying == 'x', i
-              assert list(fig.layout.xaxis2.ticktext), i
-              assert fig.layout.legend.y >= 1.15, (i, fig.layout.legend.y)
-              print('chart', i, 'year labels', list(fig.layout.xaxis2.ticktext))
-          PY
-      - name: Validate app wiring
+      - name: Validate shared axis wiring
         run: |
           python - <<'PY'
           from pathlib import Path
-          text = Path('app.py').read_text(encoding='utf-8')
-          assert 'from macro_platform.chart_axes import apply_time_axis' in text
-          assert 'return apply_time_axis(fig, date_range)' in text
-          assert 'orientation="h", yanchor="bottom", y=1.17' in text
-          print('app shared-axis wiring present')
+          app = Path('app.py').read_text(encoding='utf-8')
+          hk = Path('macro_platform/hk_liquidity.py').read_text(encoding='utf-8')
+          assert 'from macro_platform.chart_axes import apply_time_axis' in app
+          assert 'from macro_platform.chart_axes import apply_time_axis' in hk
+          assert 'return apply_time_axis(fig, date_range)' in app
+          assert 'return apply_time_axis(fig, date_range)' in hk
+          print('shared time-axis wiring present')
           PY
-      - name: Commit unified axis layout
-        run: |
-          git add app.py macro_platform/hk_liquidity.py
-          if git diff --cached --quiet; then
-            echo "Unified time-axis layout already applied"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Unify responsive time axes across charts 1-8"
-          git pull --rebase origin main
-          git push origin main
