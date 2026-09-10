@@ -9,6 +9,7 @@ import streamlit as st
 from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, load_hk_liquidity
 from macro_platform.chart_axes import apply_time_axis
 from macro_platform.us_equity_risk import load_vixeq_snapshot
+from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists
 from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_wresbal, get_wtre_gen, get_tga_daily, get_rrp_daily, _fred_series)
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
@@ -129,66 +130,143 @@ st.markdown(
 )
 
 def _load_watchlists():
-    if st.session_state.get("_watchlist_loaded"): return
-    raw = st.query_params.get(WATCHLIST_PARAM, "")
-    try: payload = json.loads(raw) if raw else {}
-    except (TypeError, ValueError, json.JSONDecodeError): payload = {}
-    if not isinstance(payload, dict): payload = {}
-    for key in ("market_search_us", "market_search_hk", "market_search_cn"):
-        items = payload.get(key, [])
-        if isinstance(items, dict): items = [items]
-        if not isinstance(items, list): items = []
-        st.session_state[f"{key}_confirmed"] = [item for item in items if isinstance(item, dict) and item.get("symbol")]
+    if st.session_state.get("_watchlist_loaded"):
+        return
+    payload = decode_watchlists(st.query_params.get(WATCHLIST_PARAM, ""))
+    for key in WATCHLIST_KEYS:
+        st.session_state[f"{key}_confirmed"] = payload.get(key, [])
     st.session_state["_watchlist_loaded"] = True
+
 
 def _save_watchlists():
     payload = {}
-    for key in ("market_search_us", "market_search_hk", "market_search_cn"):
+    for key in WATCHLIST_KEYS:
         items = st.session_state.get(f"{key}_confirmed", [])
-        if isinstance(items, dict): items = [items]
-        if not isinstance(items, list): items = []
-        payload[key] = [item for item in items if isinstance(item, dict) and item.get("symbol")]
-    st.query_params[WATCHLIST_PARAM] = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+        if isinstance(items, dict):
+            items = [items]
+        payload[key] = items if isinstance(items, list) else []
+    # v2 is compressed + URL-safe and remains backward-compatible on load.
+    st.query_params[WATCHLIST_PARAM] = encode_watchlists(payload)
 
 _load_watchlists()
 
 def _empty_quote():
     return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "regular_market_time": None, "post_market_time": None, "pre_market_time": None, "quote_source": "", "delayed_by": None, "data_source": ""}
 
+
+YAHOO_CHART_BASES = (
+    "https://query1.finance.yahoo.com/v8/finance/chart/",
+    "https://query2.finance.yahoo.com/v8/finance/chart/",
+)
+YAHOO_QUOTE_URLS = (
+    "https://query1.finance.yahoo.com/v7/finance/quote",
+    "https://query2.finance.yahoo.com/v7/finance/quote",
+)
+YAHOO_SEARCH_URLS = (
+    "https://query1.finance.yahoo.com/v1/finance/search",
+    "https://query2.finance.yahoo.com/v1/finance/search",
+)
+
 def _get_yahoo_overnight_safe(symbol, previous=None):
-    try:
-        response = requests.get("https://query1.finance.yahoo.com/v7/finance/quote", params={"symbols": symbol}, headers={"User-Agent": "Mozilla/5.0"}, timeout=2.5)
-        response.raise_for_status(); rows = ((response.json() or {}).get("quoteResponse") or {}).get("result") or []
-        if rows:
-            item = rows[0]; price = item.get("overnightMarketPrice"); pct = item.get("overnightChangePercent")
+    for url in YAHOO_QUOTE_URLS:
+        try:
+            response = requests.get(
+                url,
+                params={"symbols": symbol},
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=3.5,
+            )
+            response.raise_for_status()
+            rows = ((response.json() or {}).get("quoteResponse") or {}).get("result") or []
+            if not rows:
+                continue
+            item = rows[0]
+            price = item.get("overnightMarketPrice")
+            pct = item.get("overnightChangePercent")
             if price is not None:
-                if pct is None and previous not in (None, 0): pct = (price - previous) / previous * 100
+                if pct is None and previous not in (None, 0):
+                    pct = (price - previous) / previous * 100
                 return price, pct
-    except Exception: pass
+        except Exception:
+            continue
     return None, None
 
 def _get_yahoo_quote_safe(symbol):
-    try:
-        response = requests.get("https://query1.finance.yahoo.com/v8/finance/chart/" + symbol, params={"range": "1d", "interval": "5m", "includePrePost": "true"}, headers={"User-Agent": "Mozilla/5.0"}, timeout=2.5)
-        response.raise_for_status(); result = (response.json().get("chart", {}).get("result") or [])[0]; meta = result.get("meta", {})
-        previous = meta.get("previousClose") or meta.get("regularMarketPreviousClose"); price = meta.get("regularMarketPrice"); pre_price = meta.get("preMarketPrice"); post_price = meta.get("postMarketPrice")
-        regular_change_pct = meta.get("regularMarketChangePercent"); post_change_pct = meta.get("postMarketChangePercent"); pre_change_pct = meta.get("preMarketChangePercent")
-        periods = meta.get("currentTradingPeriod") or {}; pre_period = periods.get("pre") or {}; regular_period = periods.get("regular") or {}; post_period = periods.get("post") or {}
-        timestamps = result.get("timestamp") or []; closes = ((result.get("indicators", {}).get("quote") or [{}])[0]).get("close") or []
-        def _last_close_in_period(period):
-            start, end = period.get("start"), period.get("end")
-            if start is None: return None
-            candidates = [close for ts, close in zip(timestamps, closes) if close is not None and ts >= start and (end is None or ts <= end)]
-            return candidates[-1] if candidates else None
-        if price is None: price = _last_close_in_period(regular_period) or next((v for v in reversed(closes) if v is not None), None)
-        if pre_price is None: pre_price = _last_close_in_period(pre_period)
-        if post_price is None: post_price = _last_close_in_period(post_period)
-        if regular_change_pct is None and price is not None and previous not in (None, 0): regular_change_pct = (price - previous) / previous * 100
-        if post_change_pct is None and post_price is not None and previous not in (None, 0): post_change_pct = (post_price - previous) / previous * 100
-        if pre_change_pct is None and pre_price is not None and previous not in (None, 0): pre_change_pct = (pre_price - previous) / previous * 100
-        overnight_price, overnight_change_pct = _get_yahoo_overnight_safe(symbol, previous)
-        row = _empty_quote(); row.update({"price": price, "change_pct": regular_change_pct, "market_state": meta.get("marketState", ""), "currency": meta.get("currency", ""), "post_price": post_price, "post_change_pct": post_change_pct, "pre_price": pre_price, "pre_change_pct": pre_change_pct, "overnight_price": overnight_price, "overnight_change_pct": overnight_change_pct, "regular_market_time": meta.get("regularMarketTime"), "post_market_time": meta.get("postMarketTime"), "pre_market_time": meta.get("preMarketTime"), "quote_source": meta.get("quoteSourceName", ""), "delayed_by": meta.get("exchangeDataDelayedBy"), "data_source": "Yahoo Finance"}); return row
-    except Exception: return _empty_quote()
+    for base in YAHOO_CHART_BASES:
+        try:
+            response = requests.get(
+                base + symbol,
+                params={"range": "1d", "interval": "5m", "includePrePost": "true"},
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=3.5,
+            )
+            response.raise_for_status()
+            results = response.json().get("chart", {}).get("result") or []
+            if not results:
+                continue
+            result = results[0]
+            meta = result.get("meta", {})
+            previous = meta.get("previousClose") or meta.get("regularMarketPreviousClose")
+            price = meta.get("regularMarketPrice")
+            pre_price = meta.get("preMarketPrice")
+            post_price = meta.get("postMarketPrice")
+            regular_change_pct = meta.get("regularMarketChangePercent")
+            post_change_pct = meta.get("postMarketChangePercent")
+            pre_change_pct = meta.get("preMarketChangePercent")
+            periods = meta.get("currentTradingPeriod") or {}
+            pre_period = periods.get("pre") or {}
+            regular_period = periods.get("regular") or {}
+            post_period = periods.get("post") or {}
+            timestamps = result.get("timestamp") or []
+            closes = ((result.get("indicators", {}).get("quote") or [{}])[0]).get("close") or []
+
+            def _last_close_in_period(period):
+                period_start, period_end = period.get("start"), period.get("end")
+                if period_start is None:
+                    return None
+                values = [
+                    close for ts, close in zip(timestamps, closes)
+                    if close is not None and ts >= period_start and (period_end is None or ts <= period_end)
+                ]
+                return values[-1] if values else None
+
+            if price is None:
+                price = _last_close_in_period(regular_period) or next((v for v in reversed(closes) if v is not None), None)
+            if pre_price is None:
+                pre_price = _last_close_in_period(pre_period)
+            if post_price is None:
+                post_price = _last_close_in_period(post_period)
+            if regular_change_pct is None and price is not None and previous not in (None, 0):
+                regular_change_pct = (price - previous) / previous * 100
+            if post_change_pct is None and post_price is not None and previous not in (None, 0):
+                post_change_pct = (post_price - previous) / previous * 100
+            if pre_change_pct is None and pre_price is not None and previous not in (None, 0):
+                pre_change_pct = (pre_price - previous) / previous * 100
+            overnight_price, overnight_change_pct = _get_yahoo_overnight_safe(symbol, previous)
+            row = _empty_quote()
+            row.update({
+                "price": price,
+                "change_pct": regular_change_pct,
+                "market_state": meta.get("marketState", ""),
+                "currency": meta.get("currency", ""),
+                "post_price": post_price,
+                "post_change_pct": post_change_pct,
+                "pre_price": pre_price,
+                "pre_change_pct": pre_change_pct,
+                "overnight_price": overnight_price,
+                "overnight_change_pct": overnight_change_pct,
+                "regular_market_time": meta.get("regularMarketTime"),
+                "post_market_time": meta.get("postMarketTime"),
+                "pre_market_time": meta.get("preMarketTime"),
+                "quote_source": meta.get("quoteSourceName", ""),
+                "delayed_by": meta.get("exchangeDataDelayedBy"),
+                "data_source": "Yahoo Finance",
+            })
+            if row.get("price") is not None:
+                return row
+        except Exception:
+            continue
+    return _empty_quote()
 
 def _eastmoney_secid(symbol):
     raw = str(symbol or "").upper().strip()
@@ -235,14 +313,38 @@ def _quote_meta(row, market=""):
     elif source: parts.append(source)
     return " · ".join(parts)
 
-@st.cache_data(ttl=60, show_spinner=False)
-def _get_watchlist_quote(symbol): return _get_yahoo_quote_safe(symbol)
+@st.cache_resource(show_spinner=False)
+def _last_good_quote_store():
+    return {}
+
+
+def _stable_quote(symbol, refresh_key=0):
+    row = _get_cached_quote(symbol, refresh_key)
+    store = _last_good_quote_store()
+    cache_key = str(symbol or "").upper().strip()
+    if row.get("price") is not None:
+        saved = dict(row)
+        saved["_stale"] = False
+        saved["_cached_at"] = time.time()
+        store[cache_key] = saved
+        return saved
+    previous = store.get(cache_key)
+    if isinstance(previous, dict) and previous.get("price") is not None:
+        stale = dict(previous)
+        stale["_stale"] = True
+        return stale
+    return row
+
+
+def _get_watchlist_quote(symbol):
+    manual_key = st.session_state.get("_watchlist_refresh_key", 0)
+    return _stable_quote(symbol, f"{_quote_refresh_key()}:{manual_key}")
 
 def render_market_groups():
     now = time.time(); snapshot = st.session_state.get("_market_quotes_snapshot"); snapshot_time = st.session_state.get("_market_quotes_snapshot_time", 0)
     if not isinstance(snapshot, dict) or now - snapshot_time >= 60:
         refresh_key = _quote_refresh_key()
-        snapshot = {"nasdaq": _get_cached_quote("^IXIC", refresh_key), "sp500": _get_cached_quote("^GSPC", refresh_key), "dow": _get_cached_quote("^DJI", refresh_key), "hsi": _get_cached_quote("^HSI", refresh_key), "hstech": _get_cached_quote("HSTECH.HK", refresh_key), "sh": _get_cached_quote("000001.SS", refresh_key), "sz": _get_cached_quote("399001.SZ", refresh_key), "csi300": _get_cached_quote("000300.SS", refresh_key)}
+        snapshot = {"nasdaq": _stable_quote("^IXIC", refresh_key), "sp500": _stable_quote("^GSPC", refresh_key), "dow": _stable_quote("^DJI", refresh_key), "hsi": _stable_quote("^HSI", refresh_key), "hstech": _stable_quote("HSTECH.HK", refresh_key), "sh": _stable_quote("000001.SS", refresh_key), "sz": _stable_quote("399001.SZ", refresh_key), "csi300": _stable_quote("000300.SS", refresh_key)}
         st.session_state["_market_quotes_snapshot"] = snapshot; st.session_state["_market_quotes_snapshot_time"] = now
     q = snapshot
     groups = [("🇺🇸 美股", [_market_item_html("纳斯达克", q["nasdaq"].get("price"), q["nasdaq"].get("change_pct"), _quote_meta(q["nasdaq"])), _market_item_html("标普500", q["sp500"].get("price"), q["sp500"].get("change_pct"), _quote_meta(q["sp500"])), _market_item_html("道琼斯", q["dow"].get("price"), q["dow"].get("change_pct"), _quote_meta(q["dow"]))], "three"), ("🇭🇰 港股", [_market_item_html("恒生指数", q["hsi"].get("price"), q["hsi"].get("change_pct"), _quote_meta(q["hsi"])), _market_item_html("恒生科技", q["hstech"].get("price"), q["hstech"].get("change_pct"), _quote_meta(q["hstech"]))], "two"), ("🇨🇳 A股", [_market_item_html("上证指数", q["sh"].get("price"), q["sh"].get("change_pct"), _quote_meta(q["sh"])), _market_item_html("深证成指", q["sz"].get("price"), q["sz"].get("change_pct"), _quote_meta(q["sz"])) , _market_item_html("沪深300", q["csi300"].get("price"), q["csi300"].get("change_pct"), _quote_meta(q["csi300"]))], "three")]
@@ -257,18 +359,41 @@ st.caption(f"行情数据刷新时间：{time.strftime('%Y-%m-%d %H:%M:%S', time
 
 @st.cache_data(ttl=20, show_spinner=False)
 def _search_yahoo(market, query):
-    if not query.strip(): return []
-    try:
-        response = requests.get("https://query1.finance.yahoo.com/v1/finance/search", params={"q": query.strip(), "quotesCount": 10, "newsCount": 0}, headers={"User-Agent": "Mozilla/5.0"}, timeout=2.5); response.raise_for_status(); quotes = response.json().get("quotes") or []; results = []
-        for item in quotes:
-            if item.get("quoteType") != "EQUITY": continue
-            symbol = str(item.get("symbol") or "")
-            if market == "US" and ("." in symbol or symbol.endswith(("=F", "=X"))): continue
-            if market == "HK" and not symbol.upper().endswith(".HK"): continue
-            if market == "CN" and not symbol.upper().endswith((".SS", ".SZ")): continue
-            results.append({"symbol": symbol, "name": item.get("longname") or item.get("shortname") or symbol, "exchange": item.get("exchange") or item.get("exchDisp") or ""})
-        return results[:6]
-    except Exception: return []
+    query = str(query or "").strip()
+    if not query:
+        return []
+    quotes = []
+    for search_url in YAHOO_SEARCH_URLS:
+        try:
+            response = requests.get(
+                search_url,
+                params={"q": query, "quotesCount": 10, "newsCount": 0},
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=3.5,
+            )
+            response.raise_for_status()
+            quotes = response.json().get("quotes") or []
+            if quotes:
+                break
+        except Exception:
+            continue
+    results = []
+    for item in quotes:
+        if item.get("quoteType") != "EQUITY":
+            continue
+        symbol = str(item.get("symbol") or "")
+        if market == "US" and ("." in symbol or symbol.endswith(("=F", "=X"))):
+            continue
+        if market == "HK" and not symbol.upper().endswith(".HK"):
+            continue
+        if market == "CN" and not symbol.upper().endswith((".SS", ".SZ")):
+            continue
+        results.append({
+            "symbol": symbol,
+            "name": item.get("longname") or item.get("shortname") or symbol,
+            "exchange": item.get("exchange") or item.get("exchDisp") or "",
+        })
+    return results[:6]
 
 def _render_quote_block(item):
     row = _get_watchlist_quote(item["symbol"]); price, change = row.get("price"), row.get("change_pct"); price_text = "--" if price is None else f"{price:,.2f}"; change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%"); state = _market_state_text(row); after = ""
@@ -279,6 +404,7 @@ def _render_quote_block(item):
         elif market_state == "POST" and pp is not None: after = f'<div class="search-after">盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
         elif pp is not None and row.get("post_market_time"): after = f'<div class="search-after">最近盘后：<strong>{pp:,.2f}</strong> <span>{"--" if pc is None else f"{pc:+.2f}%"}</span></div>'
     source = row.get("data_source") or row.get("quote_source") or ""; delay = row.get("delayed_by"); source_text = f"{source} · 延迟{delay}分" if delay not in (None, 0, "0") and source == "Yahoo Finance" else source
+    if row.get("_stale"): source_text = (source_text + " · 上次有效报价").strip(" ·")
     return f'<div class="search-result"><div class="search-result-label">{html.escape(item["name"])} <span class="search-result-symbol">· {html.escape(item["symbol"])} · {html.escape(item.get("exchange", ""))}</span></div><div class="search-price">{html.escape(price_text)} <span class="market-change">{html.escape(change_text)} {html.escape(state)}</span></div>{after}<div class="search-hint">{html.escape(source_text)}</div></div>'
 
 def _add_confirmed(key, item):
@@ -311,7 +437,7 @@ def render_watchlist_refresh_control():
     _, refresh_col = st.columns([5, 1], vertical_alignment="top")
     with refresh_col:
         if st.button("↻ 刷新股价", key="refresh_watchlist_quotes", use_container_width=True, help="立即重新获取已添加模块的最新报价"):
-            _get_watchlist_quote.clear(); st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
+            _get_cached_quote.clear(); st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
 
 st.markdown('<div id="watchlist" class="section-anchor"></div><div class="section-kicker">WATCHLIST</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">自选观察</div><div class="section-description">按市场添加股票模块；刷新、搜索与删除操作集中在本区域</div>', unsafe_allow_html=True)
