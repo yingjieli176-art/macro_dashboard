@@ -1,0 +1,80 @@
+name: Add US equity risk chart
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/update_vixeq_snapshot.py
+      - scripts/add_us_equity_risk_chart.py
+      - macro_platform/us_equity_risk.py
+      - .github/workflows/add-us-equity-risk-chart.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: add-us-equity-risk-chart
+  cancel-in-progress: true
+
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install pandas requests
+      - name: Persist official VIXEQ history
+        run: python scripts/update_vixeq_snapshot.py
+      - name: Apply Chart 9 migration
+        run: python scripts/add_us_equity_risk_chart.py
+      - name: Compile changed Python
+        run: python -m py_compile app.py macro_platform/us_equity_risk.py scripts/update_vixeq_snapshot.py scripts/add_us_equity_risk_chart.py
+      - name: Validate VIXEQ snapshot
+        run: |
+          python - <<'PY'
+          from macro_platform.us_equity_risk import load_vixeq_snapshot, vixeq_snapshot_metadata
+          frame = load_vixeq_snapshot()
+          meta = vixeq_snapshot_metadata()
+          assert len(frame) >= 200, len(frame)
+          assert frame['observation_date'].is_monotonic_increasing
+          assert frame['VIXEQ'].notna().all()
+          print('VIXEQ', len(frame), frame.observation_date.min(), '->', frame.observation_date.max())
+          print(meta)
+          PY
+      - name: Validate Chart 9 wiring
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          for token in (
+              'def build_fig9(date_range):',
+              'VIXCLS', 'VXVCLS', 'SP500',
+              'VIXEQ', 'VIX3M−VIX (R2)', 'S&P 500 (R1)',
+              '9. US Equity Risk & Volatility Structure',
+              'US_EQUITY_RISK_DESCRIPTION',
+          ):
+              assert token in text, token
+          assert 'VIX3M-VIX' in text
+          assert 'title="R1 · S&P 500"' in text
+          assert 'title="R2 · VIX3M−VIX"' in text
+          print('Chart 9 wiring OK')
+          PY
+      - name: Commit Chart 9 and snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py data_snapshots/vixeq_daily.json
+          if git diff --cached --quiet; then
+            echo "Chart 9 already current"
+            exit 0
+          fi
+          git commit -m "Add US equity risk and volatility structure chart"
+          git pull --rebase origin main
+          git push origin main
