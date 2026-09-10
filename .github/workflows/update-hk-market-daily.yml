@@ -1,0 +1,65 @@
+name: Update HK market daily snapshot
+
+on:
+  schedule:
+    - cron: '45 9 * * 1-5'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/update_hk_market_daily.py
+      - .github/workflows/update-hk-market-daily.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hk-market-daily-snapshot
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install market snapshot dependencies
+        run: pip install akshare pandas requests
+      - name: Refresh last-known-good Hong Kong market history
+        run: python scripts/update_hk_market_daily.py
+      - name: Validate all four daily histories
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import pandas as pd
+
+          payload = json.loads(Path('data_snapshots/hk_market_daily.json').read_text())
+          series = payload.get('series') or {}
+          required = ['0700.HK', '0388.HK', '^HSI', 'HSTECH']
+          for symbol in required:
+              node = series.get(symbol) or {}
+              rows = node.get('records') or []
+              assert len(rows) >= 900, (symbol, len(rows))
+              dates = pd.to_datetime([r['observation_date'] for r in rows])
+              assert dates.max() >= pd.Timestamp.now().normalize() - pd.Timedelta(days=10), (symbol, dates.max())
+              assert dates.min() <= pd.Timestamp.now().normalize() - pd.DateOffset(years=4, months=10), (symbol, dates.min())
+              assert all(float(r['close']) > 0 for r in rows[-20:]), symbol
+              print(symbol, len(rows), dates.min().date(), '->', dates.max().date(), 'fresh=', node.get('fresh_fetch_ok'))
+          PY
+      - name: Commit refreshed market snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data_snapshots/hk_market_daily.json
+          if git diff --cached --quiet; then
+            echo "Hong Kong market snapshot unchanged"
+            exit 0
+          fi
+          git commit -m "Refresh Hong Kong daily market history"
+          git pull --rebase origin main
+          git push origin main
