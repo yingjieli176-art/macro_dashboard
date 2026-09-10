@@ -718,8 +718,9 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
     # Market overlays use month-end price/index levels. No percentage transformation is applied.
     hkex_price = _market_monthly_close("0388.HK", "HKEX Price")
     hstech_index = _market_monthly_close("HSTECH.HK", "HSTECH Index")
+    hsi_index = _market_monthly_close("^HSI", "HSI Index")
     market_data = pd.DataFrame(columns=["observation_date"])
-    for frame in (hkex_price, hstech_index):
+    for frame in (hkex_price, hstech_index, hsi_index):
         if frame.empty:
             continue
         if market_data.empty:
@@ -811,6 +812,7 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
     add_line(money, data, "Monetary Base MoM", "Monetary Base MoM", COLORS["base"], 1.8, "dot", secondary_y=False)
     add_line(money, market_data, "HKEX Price", "HKEX Price (R)", "#0891b2", 2.1, unit=" HKD", secondary_y=True)
     add_line(money, market_data, "HSTECH Index", "HSTECH Index (R)", "#db2777", 2.1, "dash", unit=" pts", secondary_y=True)
+    add_line(money, market_data, "HSI Index", "HSI Index (R)", "#d97706", 2.0, "dot", unit=" pts", secondary_y=True)
     money.update_yaxes(
         title_text="Money MoM (%)", secondary_y=False,
         showgrid=True, gridcolor="#e5e7eb", griddash="dot",
@@ -874,6 +876,7 @@ def build_hk_liquidity_figures(date_range: str, compact_mode: bool = False) -> l
     add_constant(fx, 7.85, "Weak-side CU 7.85", COLORS["weak"], "dot", 1.4, secondary_y=False, x_frame=fx_source)
     add_line(fx, market_data, "HKEX Price", "HKEX Price (R)", "#0891b2", 2.1, unit=" HKD", secondary_y=True)
     add_line(fx, market_data, "HSTECH Index", "HSTECH Index (R)", "#db2777", 2.1, "dash", unit=" pts", secondary_y=True)
+    add_line(fx, market_data, "HSI Index", "HSI Index (R)", "#d97706", 2.0, "dot", unit=" pts", secondary_y=True)
     fx.add_hrect(
         y0=7.75, y1=7.85,
         fillcolor="rgba(148,163,184,0.10)",
