@@ -1,0 +1,74 @@
+name: Add HSI to Hong Kong overlays
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/add_hsi_to_hk_overlays.py
+      - .github/workflows/add-hsi-to-hk-overlays.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: add-hsi-to-hk-overlays
+  cancel-in-progress: true
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install validation dependencies
+        run: python -m pip install --disable-pip-version-check pandas plotly requests
+      - name: Apply HSI patch
+        run: python scripts/add_hsi_to_hk_overlays.py
+      - name: Compile
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py macro_platform/chart_axes.py
+      - name: Validate HSI history and traces
+        run: |
+          python - <<'PY'
+          from macro_platform.hk_liquidity import _market_monthly_close, build_hk_liquidity_figures
+
+          hsi = _market_monthly_close('^HSI', 'HSI Index')
+          assert len(hsi) >= 48, f'HSI 5Y history too short: {len(hsi)} months'
+          print('HSI history:', len(hsi), hsi.observation_date.min(), '->', hsi.observation_date.max())
+
+          figs = build_hk_liquidity_figures('5Y')
+          assert len(figs) == 4
+          for idx in (0, 3):
+              names = [str(t.name) for t in figs[idx].data]
+              assert 'HSI Index (R)' in names, (idx + 5, names)
+              trace = next(t for t in figs[idx].data if t.name == 'HSI Index (R)')
+              assert len(trace.x) >= 48, (idx + 5, len(trace.x))
+          print('Charts 5 and 8 include HSI Index (R)')
+          PY
+      - name: Validate descriptions
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          assert 'HSI Index（R）' in text
+          assert 'HKEX / HSTECH / HSI (R)' in text
+          assert text.count('Hang Seng Indexes · HSI') >= 2
+          print('HSI descriptions and sources present')
+          PY
+      - name: Commit generated changes
+        run: |
+          git add app.py macro_platform/hk_liquidity.py
+          if git diff --cached --quiet; then
+            echo "HSI overlay already applied"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Add Hang Seng Index to Charts 5 and 8"
+          git pull --rebase origin main
+          git push origin main
