@@ -86,7 +86,7 @@ if "def build_fig9(date_range):" not in text:
 
 risk_description = r'''
 
-US_EQUITY_RISK_DESCRIPTION = '<b>参数概念：</b><br>1. VIX：基于 S&P 500 指数期权的约 30 天隐含波动率，反映指数层面的近端风险定价。<br>2. VIXEQ：Cboe S&P 500 Constituent Volatility Index，衡量一篮子标普 500 成分股按市值加权的约 30 天隐含波动率；它使用单股期权，因此与 VIX 并非同一个指标。<br>3. S&P 500（R1）：标普 500 指数点位，用来观察风险价格与现货大盘的同步/背离。<br>4. VIX3M−VIX（R2）：3 个月 VIX 减约 30 天 VIX。通常为正代表期限结构较正常；快速收窄或转负表示近端隐含波动率高于远端，常见于短期压力上升阶段。<br><br><b>读取提示：</b>VIX 与 VIXEQ 同时上升代表指数与成分股隐含波动率共同抬升；若 VIXEQ 相对 VIX 更强，通常意味着单股波动/分化风险更突出。VIXEQ 自 2024-11-04 起正式发布，因此早于官方可用历史的区间不补造数据。'
+US_EQUITY_RISK_DESCRIPTION = '<b>参数概念：</b><br>1. VIX：基于 S&P 500 指数期权的约 30 天隐含波动率，反映指数层面的近端风险定价。<br>2. VIXEQ：Cboe S&P 500 Constituent Volatility Index，衡量一篮子标普 500 成分股按市值加权的约 30 天隐含波动率；它使用单股期权，因此与 VIX 并非同一个指标。<br>3. S&P 500（R1）：标普 500 指数点位，用来观察风险价格与现货大盘的同步/背离。<br>4. VIX3M−VIX（R2）：3 个月 VIX 减约 30 天 VIX。通常为正代表期限结构较正常；快速收窄或转负表示近端隐含波动率高于远端，常见于短期压力上升阶段。<br><br><b>读取提示：</b>VIX 与 VIXEQ 同时上升代表指数与成分股隐含波动率共同抬升；若 VIXEQ 相对 VIX 更强，通常意味着单股波动/分化风险更突出。VIXEQ 于 2024-11-04 正式开始实时发布；Cboe 官方历史文件提供回溯序列，图表使用官方历史值，不自行外推。'
 '''
 
 if "US_EQUITY_RISK_DESCRIPTION =" not in text:
@@ -94,6 +94,10 @@ if "US_EQUITY_RISK_DESCRIPTION =" not in text:
     if marker not in text:
         raise RuntimeError("compact_mode anchor not found")
     text = text.replace(marker, risk_description + marker, 1)
+
+old_note = "VIXEQ 自 2024-11-04 起正式发布，因此早于官方可用历史的区间不补造数据。"
+new_note = "VIXEQ 于 2024-11-04 正式开始实时发布；Cboe 官方历史文件提供回溯序列，图表使用官方历史值，不自行外推。"
+text = text.replace(old_note, new_note)
 
 render_block = r'''
 
