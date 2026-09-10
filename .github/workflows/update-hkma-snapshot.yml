@@ -27,6 +27,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install snapshot dependencies
+        run: python -m pip install --disable-pip-version-check requests
+
       - name: Refresh HKMA snapshot
         id: refresh
         continue-on-error: true
@@ -41,10 +44,17 @@ jobs:
           p = Path('data_snapshots/hkma_monetary_statistics.json')
           data = json.loads(p.read_text())
           rows = data.get('records') or []
-          assert len(rows) >= 12, f'no usable HKMA fallback snapshot: {len(rows)} rows'
-          assert any(r.get('m2_hkd') is not None for r in rows)
-          assert any(r.get('aggr_balance') is not None for r in rows)
-          print('last good snapshot OK:', len(rows), 'records')
+          assert len(rows) >= 60, f'no usable 5Y HKMA fallback snapshot: {len(rows)} rows'
+          required = {
+              'm2_hkd': 58,
+              'm3_hkd': 58,
+              'monetary_base_total': 60,
+              'aggr_balance': 60,
+          }
+          for field, minimum in required.items():
+              count = sum(r.get(field) is not None for r in rows)
+              assert count >= minimum, f'{field} coverage too short: {count}'
+          print('last good 5Y snapshot OK:', len(rows), 'records')
           PY
 
       - name: Report upstream availability
@@ -54,12 +64,12 @@ jobs:
       - name: Commit refreshed snapshot
         if: steps.refresh.outcome == 'success'
         run: |
-          if git diff --quiet -- data_snapshots/hkma_monetary_statistics.json; then
+          git add data_snapshots/hkma_monetary_statistics.json
+          if git diff --cached --quiet; then
             echo "Snapshot unchanged"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data_snapshots/hkma_monetary_statistics.json
           git commit -m "Refresh HKMA monetary statistics snapshot"
           git push
