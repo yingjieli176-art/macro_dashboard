@@ -1,0 +1,36 @@
+name: Probe HKMA website transport
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/probe-hkma-webpage-v2.yml
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe HKMA public website and small API pages
+        run: |
+          python - <<'PY'
+          import urllib.request, time
+          urls = [
+            'https://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics/2026/09/ms-20260910/',
+            'https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/market-operation-daily?pagesize=20&offset=0&sortby=end_of_day&sortorder=desc',
+            'https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-daily?pagesize=20&offset=0&sortby=end_of_day&sortorder=desc',
+            'https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/er-ir/hk-interbank-ir-daily?segment=hibor.fixing&pagesize=20&offset=0&sortby=end_of_day&sortorder=desc',
+          ]
+          for url in urls:
+              t=time.time()
+              try:
+                  req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0','Accept':'text/html,application/json'})
+                  with urllib.request.urlopen(req,timeout=12) as r:
+                      body=r.read(2500)
+                  print('OK', round(time.time()-t,2), len(body), url, body[:300], flush=True)
+              except Exception as exc:
+                  print('ERR', round(time.time()-t,2), url, repr(exc), flush=True)
+          PY
