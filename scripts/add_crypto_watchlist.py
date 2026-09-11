@@ -33,12 +33,7 @@ def update_state() -> None:
         '    "market_search_us": "US",\n    "market_search_crypto": "CRYPTO",\n    "market_search_hk": "HK",',
         "market map",
     )
-    text = replace_once(
-        text,
-        "DEFAULT_WATCHLIST_REVISION = 2",
-        "DEFAULT_WATCHLIST_REVISION = 3",
-        "default revision",
-    )
+    text = replace_once(text, "DEFAULT_WATCHLIST_REVISION = 2", "DEFAULT_WATCHLIST_REVISION = 3", "default revision")
     text = replace_once(
         text,
         '    "market_search_hk": [\n',
@@ -54,14 +49,12 @@ def update_state() -> None:
 
 def update_app() -> None:
     text = APP.read_text(encoding="utf-8")
-
     text = replace_once(
         text,
         'def _symbol_market(symbol):\n    raw = str(symbol or "").upper().strip()\n    if raw.endswith(".HK")',
         'def _symbol_market(symbol):\n    raw = str(symbol or "").upper().strip()\n    if raw.endswith("-USD"):\n        return "CRYPTO"\n    if raw.endswith(".HK")',
         "crypto market detection",
     )
-
     text = replace_once(
         text,
         '    if market == "US":\n        regular_ts = _valid_market_timestamp(row.get("regular_market_time"))',
@@ -72,14 +65,12 @@ def update_app() -> None:
         '        regular_ts = _valid_market_timestamp(row.get("regular_market_time"))',
         "crypto session label",
     )
-
     text = replace_once(
         text,
         'def _regular_session_now(market):\n    market = str(market or "").upper()\n    if market in {"HK", "CN"}:',
         'def _regular_session_now(market):\n    market = str(market or "").upper()\n    if market == "CRYPTO":\n        return True\n    if market in {"HK", "CN"}:',
         "crypto always-open clock",
     )
-
     text = replace_once(
         text,
         'def _get_cached_quote(symbol, refresh_key=0):\n    market = _symbol_market(symbol)\n    candidates = []\n\n    # HK/A:',
@@ -96,7 +87,6 @@ def update_app() -> None:
         '    # HK/A:',
         "crypto quote routing",
     )
-
     text = replace_once(
         text,
         '        allowed_types = {"EQUITY", "INDEX"} if market == "US" else {"EQUITY"}\n        if quote_type not in allowed_types:',
@@ -119,7 +109,6 @@ def update_app() -> None:
         '        if market == "HK"',
         "crypto search symbol filter",
     )
-
     text = replace_once(
         text,
         '<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · 港/A 腾讯 + 东方财富双源择新，分时兜底 · Yahoo 仅备用 · 15 秒自动刷新</div>',
@@ -130,13 +119,11 @@ def update_app() -> None:
     start_marker = '@st.fragment(run_every="15s")\ndef render_watchlists():'
     end_marker = '\nrender_watchlists()\n'
     start = text.find(start_marker)
-    if start < 0:
-        raise RuntimeError("render_watchlists start not found")
     end = text.find(end_marker, start)
-    if end < 0:
-        raise RuntimeError("render_watchlists end not found")
+    if start < 0 or end < 0:
+        raise RuntimeError("render_watchlists block not found")
 
-    function = r'''@st.fragment(run_every="15s")
+    function = '''@st.fragment(run_every="15s")
 def render_watchlists():
     info_col, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with info_col:
@@ -214,7 +201,7 @@ def render_watchlists():
                         st.button("确认添加", key=f"{key}_confirm_selected", use_container_width=True, on_click=_confirm_selected, args=(key,), type="primary")
                     elif st.session_state.get(key, "").strip() and f"{key}_results" in st.session_state:
                         st.caption("没有找到匹配标的，请检查名称或代码。")
-'''.replace('\\"', '"')
+'''
 
     text = text[:start] + function + text[end:]
     APP.write_text(text, encoding="utf-8")
