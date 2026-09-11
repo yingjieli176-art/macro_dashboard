@@ -1,0 +1,62 @@
+name: Update copper market snapshot
+
+on:
+  schedule:
+    - cron: '30 22 * * 1-5'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/update_copper_snapshot.py
+      - .github/workflows/update-copper-snapshot.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: copper-market-snapshot
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install snapshot dependencies
+        run: python -m pip install --disable-pip-version-check pandas requests beautifulsoup4 lxml
+      - name: Refresh copper snapshot
+        run: python scripts/update_copper_snapshot.py
+      - name: Validate copper snapshot
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('data_snapshots/copper_market_daily.json')
+          data = json.loads(p.read_text())
+          rows = data.get('records') or []
+          counts = data.get('counts') or {}
+          assert len(rows) >= 700, len(rows)
+          assert counts.get('comex_price', 0) >= 700, counts
+          assert counts.get('comex_stock', 0) >= 250, counts
+          assert counts.get('lme_price', 0) >= 700, counts
+          assert counts.get('lme_stock', 0) >= 700, counts
+          print('copper snapshot OK', len(rows), counts, data.get('coverage_start'), data.get('coverage_end'))
+          PY
+      - name: Commit refreshed snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data_snapshots/copper_market_daily.json
+          if git diff --cached --quiet; then
+            echo "Copper snapshot unchanged"
+            exit 0
+          fi
+          git commit -m "Refresh copper market snapshot"
+          git pull --rebase origin main
+          git push origin main
