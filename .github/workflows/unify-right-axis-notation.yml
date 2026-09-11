@@ -1,0 +1,89 @@
+name: Unify right-axis notation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/unify_right_axis_notation.py
+      - .github/workflows/unify-right-axis-notation.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: unify-right-axis-notation
+  cancel-in-progress: true
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply right-axis convention
+        run: python scripts/unify_right_axis_notation.py
+      - name: Compile modified modules
+        run: python -m py_compile app.py macro_platform/hk_liquidity.py
+      - name: Validate compact right-axis convention
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          app = Path('app.py').read_text()
+          hk = Path('macro_platform/hk_liquidity.py').read_text()
+
+          required_app = (
+              '10Y Real (R1)', '10Y Breakeven (R1)',
+              '10Y−2Y (R1)', '10Y−3M (R1)',
+              'Reserve Balances (R1)', 'TGA (R1)', 'ON RRP (R2)',
+              'S&P 500 (R1)', 'VIX3M−VIX (R2)',
+              'Gold/Silver Ratio (R1)', 'Gold Volatility · GVZ (R2)',
+              'Silver (R1)', 'Gold/Silver Ratio (R2)', 'Gold Volatility · GVZ (R3)',
+              'margin=dict(l=64, r=92, t=72, b=34, pad=2)',
+              'margin=dict(l=62, r=92, t=68, b=36, pad=2)',
+          )
+          for needle in required_app:
+              assert needle in app, needle
+          for stale in (
+              '10Y Real (R)', '10Y Breakeven (R)',
+              '10Y−2Y (R)', '10Y−3M (R)',
+              'title="R1 · Reserve / TGA · USD T"',
+              'title="R2 · ON RRP · USD B"',
+              'title="R1 · S&P 500"', 'title="R2 · VIX3M−VIX"',
+              'title="R1 · Gold/Silver Ratio"', 'title="R2 · GVZ"',
+          ):
+              assert stale not in app, stale
+
+          required_hk = (
+              'Tencent (R1)', 'HKEX (R1)', 'HSTECH (R1)', 'HSI (R1)',
+              'Outstanding EFBN (R1)', 'EFBN Held by Licensed Banks (R1)',
+              'O/N−3M Spread (R1)',
+              'margin=dict(l=62, r=92, t=96, b=40, pad=2)',
+              'margin=dict(l=62, r=64, t=96, b=40, pad=2)',
+          )
+          for needle in required_hk:
+              assert needle in hk, needle
+          for stale in (
+              'title="R1 · HKD Price"', 'title="R2 · Index Level"',
+              'Outstanding EFBN (R)', 'EFBN Held by Licensed Banks (R)',
+              'O/N−3M Spread (R)',
+          ):
+              assert stale not in hk, stale
+          print('all visible right axes use compact R1/R2/R3 convention')
+          PY
+      - name: Commit production changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/hk_liquidity.py
+          if git diff --cached --quiet; then
+            echo "No production changes"
+            exit 0
+          fi
+          git commit -m "Unify chart right-axis notation and spacing"
+          git pull --rebase origin main
+          git push origin main
