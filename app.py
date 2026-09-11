@@ -1694,6 +1694,7 @@ PRECIOUS_METALS_DESCRIPTION = '<b>参数概念：</b><br>1. Gold：COMEX 黄金�
 
 compact_mode = False
 
+@st.fragment
 def render_core_charts():
     st.markdown('<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>', unsafe_allow_html=True)
 
