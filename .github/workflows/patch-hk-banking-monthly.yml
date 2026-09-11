@@ -24,49 +24,40 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re
 
           path = Path('macro_platform/hk_liquidity.py')
           text = path.read_text(encoding='utf-8')
 
-          old = '    banking_source = load_hk_banking_liquidity_monthly() if date_range == "5Y" else load_hk_banking_liquidity_daily()\n'
-          new = '    # Banking-system structure is intentionally monthly. Daily detail adds little\n    # to Aggregate Balance / EFBN trend analysis and created unnecessary snapshot\n    # fragility. HKD funding below remains daily where available.\n    banking_source = load_hk_banking_liquidity_monthly()\n'
-          if old not in text:
+          source_line = '    banking_source = load_hk_banking_liquidity_monthly() if date_range == "5Y" else load_hk_banking_liquidity_daily()\n'
+          replacement = (
+              '    # Banking-system structure is intentionally monthly. Daily detail adds little\n'
+              '    # to Aggregate Balance / EFBN trend analysis and created unnecessary snapshot\n'
+              '    # fragility. HKD funding below remains daily where available.\n'
+              '    banking_source = load_hk_banking_liquidity_monthly()\n'
+          )
+          if source_line not in text:
               raise SystemExit('banking source assignment not found')
-          text = text.replace(old, new, 1)
+          text = text.replace(source_line, replacement, 1)
 
-          old = '    banking_is_daily = _frame_is_daily(banking_source)\n'
-          if old in text:
-              text = text.replace(old, '', 1)
-
+          daily_flag = '    banking_is_daily = _frame_is_daily(banking_source)\n'
+          text = text.replace(daily_flag, '', 1)
           text = text.replace(
               '    # 5-2 · Daily banking-system liquidity and monetary-base structure.\n',
               '    # 6 · Monthly banking-system liquidity and monetary-base structure.\n',
               1,
           )
 
-          for line in (
-              '    add_line(balance, banking_data, "Opening Aggregate Balance", "Opening Aggregate Balance", "#64748b", 1.7, "dot", unit=" HK$ bn", secondary_y=False)\n',
-              '    add_line(balance, banking_data, "Forecast Aggregate Balance T+1", "Forecast Aggregate Balance T+1", "#0284c7", 2.0, "dash", unit=" HK$ bn", secondary_y=False)\n',
-          ):
-              if line in text:
-                  text = text.replace(line, '', 1)
+          opening = '    add_line(balance, banking_data, "Opening Aggregate Balance", "Opening Aggregate Balance", "#64748b", 1.7, "dot", unit=" HK$ bn", secondary_y=False)\n'
+          forecast = '    add_line(balance, banking_data, "Forecast Aggregate Balance T+1", "Forecast Aggregate Balance T+1", "#0284c7", 2.0, "dash", unit=" HK$ bn", secondary_y=False)\n'
+          text = text.replace(opening, '', 1).replace(forecast, '', 1)
 
-          old_block = '''    banking_frequency_label = "Daily" if banking_is_daily else ("Monthly" if date_range == "5Y" else "Monthly fallback")
-    style(balance, f"6. Banking-system Liquidity · {banking_frequency_label}", height=400, right_axis=True)
-    if date_range != "5Y" and not banking_is_daily:
-        balance.add_annotation(
-            text="⚠ HKMA 日频流动性快照不可用 · 当前使用月频回退",
-            x=0.006, y=0.988, xref="paper", yref="paper", xanchor="left", yanchor="top",
-            showarrow=False, font=dict(size=10, color="#991b1b"),
-            bgcolor="rgba(254,242,242,0.94)", bordercolor="#fecaca", borderwidth=1, borderpad=3,
-        )
-'''
-          new_block = '''    style(balance, "6. Banking-system Liquidity · Monthly", height=400, right_axis=True)
-'''
-          if old_block not in text:
+          start_token = '    banking_frequency_label = "Daily" if banking_is_daily else ("Monthly" if date_range == "5Y" else "Monthly fallback")\n'
+          end_token = '    # 5-3 · HKD funding.\n'
+          start = text.find(start_token)
+          end = text.find(end_token, start)
+          if start < 0 or end < 0:
               raise SystemExit('banking frequency/warning block not found')
-          text = text.replace(old_block, new_block, 1)
+          text = text[:start] + '    style(balance, "6. Banking-system Liquidity · Monthly", height=400, right_axis=True)\n\n' + text[end:]
 
           path.write_text(text, encoding='utf-8')
           print('HK banking liquidity chart is now monthly-only')
