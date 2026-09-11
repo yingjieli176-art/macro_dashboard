@@ -1,0 +1,52 @@
+name: Enrich crypto watchlist
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/enrich_crypto_watchlist.py
+      - .github/workflows/enrich-crypto-watchlist.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: enrich-crypto-watchlist
+  cancel-in-progress: true
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply crypto metric migration
+        run: python scripts/enrich_crypto_watchlist.py
+      - name: Compile app
+        run: python -m py_compile app.py
+      - name: Validate visible crypto metrics
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('app.py').read_text()
+          for needle in ('VOL · 30D', '24H VOLUME', 'MARKET CAP', 'ETH / BTC', '24H {change:+.2f}%'):
+              assert needle in text, needle
+          print('crypto metric UI OK')
+          PY
+      - name: Commit production changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          if git diff --cached --quiet; then
+            echo "No production changes"
+            exit 0
+          fi
+          git commit -m "Show crypto watchlist metrics"
+          git pull --rebase origin main
+          git push origin main
