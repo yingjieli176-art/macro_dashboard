@@ -10,62 +10,41 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data_snapshots" / "hkma_banking_liquidity_daily.json"
 
-# Durable daily backbone from official HKMA bulletin datasets.
+# These official HKMA bulletin endpoints are daily-frequency datasets. GitHub
+# Actions probes show that small newest-first pages are fast and reliable,
+# while large date-filtered requests can time out or return 502.
 MARKET_OP_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/market-operation-daily"
 BASE_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-daily"
 HIBOR_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/er-ir/hk-interbank-ir-daily"
 
-# Richer current daily dataset. This is optional because api.hkma.gov.hk has
-# repeatedly timed out from GitHub-hosted runners.
+# Optional richer/current endpoints. Failure here must never block the durable
+# daily backbone above.
 INTERBANK_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity"
+CURRENT_BASE_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-monetary-base"
+
+PAGE_SIZE = 20
+ROLLING_DAYS = 550
+MAX_PAGES = 30
 
 
-def _decode_payload(raw: bytes) -> dict:
-    text = raw.decode("utf-8", errors="replace").strip()
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        # A transport proxy can prepend a short text envelope. Extract the
-        # underlying HKMA JSON object without changing its contents.
-        start, end = text.find("{"), text.rfind("}")
-        if start >= 0 and end > start:
-            return json.loads(text[start : end + 1])
-        raise
-
-
-def _fetch_bytes(url: str, timeout: int) -> bytes:
-    req = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": "Mozilla/5.0 (compatible; MacroDashboard/1.0; +https://github.com/yingjieli176-art/macro_dashboard)",
-            "Accept": "application/json,text/plain,*/*",
-            "Cache-Control": "no-cache, no-store, max-age=0",
-            "Pragma": "no-cache",
-            "Connection": "close",
-        },
-    )
-    with urllib.request.urlopen(req, timeout=timeout) as response:
-        return response.read()
-
-
-def _request(url: str, params: dict[str, str], *, optional: bool = False) -> list[dict]:
-    """Fetch HKMA data with a transport fallback for GitHub-hosted runners.
-
-    The source dataset remains HKMA in both cases. r.jina.ai is used only as a
-    transport bridge when direct api.hkma.gov.hk connectivity is unreliable.
-    """
-    query = dict(params)
-    query["_"] = str(int(time.time() * 1000))
-    official = f"{url}?{urllib.parse.urlencode(query)}"
-    proxy = "https://r.jina.ai/http://" + official.removeprefix("https://")
+def _request(url: str, params: dict[str, str], *, timeout: int = 12, attempts: int = 2) -> list[dict]:
     last_error: Exception | None = None
-
-    # Prefer the bridge in CI because direct HKMA calls repeatedly hit read
-    # timeouts there. Always retain a direct official attempt as the fallback.
-    candidates = ((proxy, 28), (official, 10))
-    for candidate, timeout in candidates:
+    query = urllib.parse.urlencode(params)
+    full_url = f"{url}?{query}"
+    for attempt in range(attempts):
+        req = urllib.request.Request(
+            full_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (compatible; MacroDashboard/1.0; +https://github.com/yingjieli176-art/macro_dashboard)",
+                "Accept": "application/json",
+                "Cache-Control": "no-cache, no-store, max-age=0",
+                "Pragma": "no-cache",
+                "Connection": "close",
+            },
+        )
         try:
-            payload = _decode_payload(_fetch_bytes(candidate, timeout))
+            with urllib.request.urlopen(req, timeout=timeout) as response:
+                payload = json.load(response)
             header = payload.get("header") or {}
             if header.get("success") is False:
                 raise RuntimeError(header.get("err_msg") or "HKMA API failure")
@@ -75,134 +54,135 @@ def _request(url: str, params: dict[str, str], *, optional: bool = False) -> lis
             return rows
         except Exception as exc:
             last_error = exc
-            print("transport failed", candidate.split("?", 1)[0], repr(exc), flush=True)
-
-    if optional:
-        return []
+            if attempt < attempts - 1:
+                time.sleep(1.0)
     raise RuntimeError(f"HKMA request failed: {last_error}")
 
 
-def _fetch_window(
+def _fetch_recent_pages(
     url: str,
     date_field: str,
-    fields: str,
     start_day: date,
-    end_day: date,
-    extra: dict[str, str] | None = None,
-    *,
-    optional: bool = False,
-) -> list[dict]:
-    params = {
-        "pagesize": "1000",
-        "fields": fields,
-        "choose": date_field,
-        "from": start_day.isoformat(),
-        "to": end_day.isoformat(),
-        "sortby": date_field,
-        "sortorder": "asc",
-    }
-    if extra:
-        params.update(extra)
-    rows = _request(url, params, optional=optional)
-    print(url.rsplit("/", 1)[-1], start_day, end_day, len(rows), flush=True)
-    return rows
-
-
-def _fetch_window_adaptive(
-    url: str,
-    date_field: str,
-    fields: str,
-    start_day: date,
-    end_day: date,
     extra: dict[str, str] | None = None,
 ) -> list[dict]:
-    try:
-        return _fetch_window(url, date_field, fields, start_day, end_day, extra)
-    except Exception as exc:
-        span = (end_day - start_day).days
-        if span <= 30:
-            raise
-        mid = start_day + timedelta(days=span // 2)
-        print("split slow window", url.rsplit("/", 1)[-1], start_day, end_day, repr(exc), flush=True)
-        return _fetch_window_adaptive(url, date_field, fields, start_day, mid, extra) + _fetch_window_adaptive(
-            url, date_field, fields, mid + timedelta(days=1), end_day, extra
-        )
+    """Fetch a rolling daily buffer using only small offset pages.
 
-
-def _fetch_recent(
-    url: str,
-    date_field: str,
-    fields: str,
-    start_day: date,
-    end_day: date,
-    extra: dict[str, str] | None = None,
-) -> list[dict]:
+    Do not add choose/from/to or fields here. Those query shapes were the source
+    of repeated timeout/502 failures from GitHub-hosted runners, while a live
+    probe confirmed pagesize=20 newest-first calls complete in about one second.
+    """
     rows: list[dict] = []
-    cursor = start_day
-    while cursor <= end_day:
-        window_end = min(cursor + timedelta(days=269), end_day)
-        rows.extend(_fetch_window_adaptive(url, date_field, fields, cursor, window_end, extra))
-        cursor = window_end + timedelta(days=1)
+    for page in range(MAX_PAGES):
+        offset = page * PAGE_SIZE
+        params = {
+            "pagesize": str(PAGE_SIZE),
+            "offset": str(offset),
+            "sortby": date_field,
+            "sortorder": "desc",
+        }
+        if extra:
+            params.update(extra)
+        batch = _request(url, params)
+        print(url.rsplit("/", 1)[-1], "offset", offset, "rows", len(batch), flush=True)
+        if not batch:
+            break
+        rows.extend(batch)
+
+        dates = []
+        for row in batch:
+            raw = str(row.get(date_field) or "")
+            try:
+                dates.append(datetime.strptime(raw, "%Y-%m-%d").date())
+            except ValueError:
+                continue
+        if dates and min(dates) <= start_day:
+            break
+        if len(batch) < PAGE_SIZE:
+            break
+    else:
+        raise RuntimeError(f"HKMA pagination exceeded safety limit for {url}")
 
     deduped: dict[str, dict] = {}
     for row in rows:
         key = str(row.get(date_field) or "")
-        if len(key) == 10:
+        try:
+            day = datetime.strptime(key, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if day >= start_day:
             deduped[key] = row
     return [deduped[key] for key in sorted(deduped)]
 
 
-def main() -> None:
-    now = datetime.now(timezone.utc)
-    end_day = now.date()
-    start_day = end_day - timedelta(days=550)  # 18-month buffer for <=1Y views
+def _optional_latest(url: str, date_field: str, extra: dict[str, str] | None = None) -> list[dict]:
+    params = {
+        "pagesize": "20",
+        "offset": "0",
+        "sortby": date_field,
+        "sortorder": "desc",
+    }
+    if extra:
+        params.update(extra)
+    try:
+        rows = _request(url, params, timeout=8, attempts=1)
+        print("optional", url.rsplit("/", 1)[-1], "rows", len(rows), flush=True)
+        return rows
+    except Exception as exc:
+        print("optional endpoint unavailable:", url.rsplit("/", 1)[-1], repr(exc), flush=True)
+        return []
 
-    market_ops = _fetch_recent(
-        MARKET_OP_URL,
-        "end_of_day",
-        "end_of_day,closing_balance",
-        start_day,
-        end_day,
-    )
-    monetary_base = _fetch_recent(
-        BASE_URL,
-        "end_of_day",
-        "end_of_day,outstanding_efbn,ow_lb_bf_disc_win,aggr_balance_bf_disc_win",
-        start_day,
-        end_day,
-    )
-    hibor = _fetch_recent(
+
+def main() -> None:
+    end_day = datetime.now(timezone.utc).date()
+    start_day = end_day - timedelta(days=ROLLING_DAYS)
+
+    market_ops = _fetch_recent_pages(MARKET_OP_URL, "end_of_day", start_day)
+    monetary_base = _fetch_recent_pages(BASE_URL, "end_of_day", start_day)
+    hibor = _fetch_recent_pages(
         HIBOR_URL,
         "end_of_day",
-        "end_of_day,ir_overnight,ir_3m",
         start_day,
-        end_day,
         {"segment": "hibor.fixing"},
     )
 
-    # Enrich only the most recent month with opening balance / T+1 forecast /
-    # current base rate. A failure here must not block the daily backbone.
-    interbank = _fetch_window(
-        INTERBANK_URL,
-        "end_of_date",
-        "end_of_date,cu_weakside,cu_strongside,disc_win_base_rate,hibor_overnight,opening_balance,closing_balance,forecast_aggregate_bal_t1",
-        max(start_day, end_day - timedelta(days=45)),
-        end_day,
-        optional=True,
-    )
+    # Best-effort latest enrichment. These add opening balance, T+1 forecast,
+    # current Aggregate Balance and Base Rate when the newer daily-statistics
+    # service is reachable, but are never required for snapshot publication.
+    current_base = _optional_latest(CURRENT_BASE_URL, "end_of_date")
+    interbank = _optional_latest(INTERBANK_URL, "end_of_date")
 
     merged: dict[str, dict] = {}
+
+    def target_for(key: str) -> dict:
+        return merged.setdefault(
+            key,
+            {
+                "end_of_date": key,
+                "opening_balance": None,
+                "closing_balance": None,
+                "forecast_aggregate_bal_t1": None,
+                "outstanding_efbn": None,
+                "ow_lb_bf_disc_win": None,
+                "aggr_balance_bf_disc_win": None,
+                "hibor_overnight": None,
+                "hibor_3m": None,
+                "disc_win_base_rate": None,
+                "cu_weakside": None,
+                "cu_strongside": None,
+            },
+        )
+
     for row in market_ops:
         key = str(row.get("end_of_day") or "")
         if len(key) == 10:
-            target = merged.setdefault(key, {"end_of_date": key})
+            target = target_for(key)
             if row.get("closing_balance") is not None:
                 target["closing_balance"] = row.get("closing_balance")
 
     for row in monetary_base:
         key = str(row.get("end_of_day") or "")
         if len(key) == 10:
-            target = merged.setdefault(key, {"end_of_date": key})
+            target = target_for(key)
             for field in ("outstanding_efbn", "ow_lb_bf_disc_win", "aggr_balance_bf_disc_win"):
                 if row.get(field) is not None:
                     target[field] = row.get(field)
@@ -212,24 +192,34 @@ def main() -> None:
     for row in hibor:
         key = str(row.get("end_of_day") or "")
         if len(key) == 10:
-            target = merged.setdefault(key, {"end_of_date": key})
+            target = target_for(key)
             if row.get("ir_overnight") is not None:
                 target["hibor_overnight"] = row.get("ir_overnight")
             if row.get("ir_3m") is not None:
                 target["hibor_3m"] = row.get("ir_3m")
 
+    for row in current_base:
+        key = str(row.get("end_of_date") or "")
+        if len(key) == 10:
+            target = target_for(key)
+            for field in ("outstanding_efbn", "ow_lb_bf_disc_win", "aggr_balance_bf_disc_win"):
+                if row.get(field) is not None:
+                    target[field] = row.get(field)
+            if row.get("aggr_balance_bf_disc_win") is not None:
+                target["closing_balance"] = row.get("aggr_balance_bf_disc_win")
+
     for row in interbank:
         key = str(row.get("end_of_date") or "")
         if len(key) == 10:
-            target = merged.setdefault(key, {"end_of_date": key})
+            target = target_for(key)
             for field in (
-                "cu_weakside",
-                "cu_strongside",
-                "disc_win_base_rate",
-                "hibor_overnight",
                 "opening_balance",
                 "closing_balance",
                 "forecast_aggregate_bal_t1",
+                "disc_win_base_rate",
+                "cu_weakside",
+                "cu_strongside",
+                "hibor_overnight",
             ):
                 if row.get(field) is not None:
                     target[field] = row.get(field)
@@ -243,14 +233,13 @@ def main() -> None:
         )
 
     payload = {
-        "source": "HKMA Market Operation Daily + Monetary Base Daily + HKD HIBOR Fixing; recent Interbank Liquidity enrichment when available",
-        "source_urls": [MARKET_OP_URL, BASE_URL, HIBOR_URL, INTERBANK_URL],
-        "transport_fallback": "r.jina.ai bridge when direct HKMA connectivity from GitHub Actions times out",
+        "source": "HKMA official daily bulletin datasets; current daily-statistics enrichment when available",
+        "source_urls": [MARKET_OP_URL, BASE_URL, HIBOR_URL, CURRENT_BASE_URL, INTERBANK_URL],
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "coverage_start": records[0]["end_of_date"],
         "coverage_end": records[-1]["end_of_date"],
         "record_count": len(records),
-        "fetch_strategy": "official HKMA daily bulletin backbone + transport fallback + optional 45-day rich enrichment",
+        "fetch_strategy": "small newest-first pagesize=20 offset pagination; no date-filter query; optional current enrichment",
         "records": records,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
