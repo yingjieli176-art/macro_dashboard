@@ -53,23 +53,17 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .news-time { flex: 0 0 72px; width: 72px; color: #6b7280; font-size: 0.72rem; white-space: nowrap; padding-top: 2px; margin-right: 6px; }
 .news-content { flex: 1; min-width: 0; overflow: visible; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
 .news-content a { color: #374151; text-decoration: none !important; display: block; white-space: normal; overflow: visible; overflow-wrap: anywhere; word-break: break-word; }
-/* Market overview · compact professional index tape */
-.market-groups { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:2px 0 10px; }
-.market-group { border:1px solid #dde3ea; border-radius:10px; padding:0; background:#fff; min-width:0; overflow:hidden; box-shadow:0 1px 2px rgba(15,23,42,.035); }
-.market-group-title { color:#475569; font-size:.70rem; font-weight:750; letter-spacing:.08em; text-transform:uppercase; padding:8px 11px 7px; margin:0; background:#f8fafc; border-bottom:1px solid #edf1f5; }
-.market-group-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0; align-items:stretch; }
-.market-group-row.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
-.market-item { min-width:0; min-height:82px; padding:9px 11px 8px; border-right:1px solid #edf1f5; box-sizing:border-box; overflow:hidden; transition:background .15s ease; }
-.market-item:hover { background:#fbfdff; }
-.market-item:last-child { border-right:none; }
-.market-name { color:#64748b; font-size:.70rem; font-weight:650; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.market-price { color:#0f172a; font-size:1.13rem; line-height:1.15; font-weight:740; letter-spacing:-.02em; margin-top:5px; white-space:nowrap; font-variant-numeric:tabular-nums; }
-.market-change { display:inline-flex; align-items:center; margin-top:4px; padding:1px 6px; border-radius:999px; font-size:.68rem; font-weight:700; line-height:1.5; white-space:nowrap; font-variant-numeric:tabular-nums; }
-.market-change.up { color:#047857; background:#ecfdf5; }
-.market-change.down { color:#b91c1c; background:#fef2f2; }
-.market-change.flat { color:#64748b; background:#f1f5f9; }
-.market-meta { color:#94a3b8; font-size:.60rem; margin-top:4px; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-@media (max-width:1100px) { .market-groups { grid-template-columns:1fr; } }
+.market-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 0.45rem; }
+.market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; min-height: 96px; box-sizing: border-box; }
+.market-group-title { color: #374151; font-size: 0.88rem; font-weight: 650; margin-bottom: 5px; }
+.market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; min-height: 66px; align-items: start; }
+.market-group-row.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.market-item { min-width: 0; height: 66px; min-height: 66px; max-height: 66px; padding-right: 4px; border-right: 1px solid #f0f0f0; box-sizing: border-box; overflow: hidden; }
+.market-item:last-child { border-right: none; }
+.market-name { color: #6b7280; font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.market-price { color: #111827; font-size: 0.98rem; font-weight: 650; margin-top: 1px; white-space: nowrap; }
+.market-change { font-size: 0.76rem; white-space: nowrap; }
+.market-meta { color: #9ca3af; font-size: 0.66rem; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .search-title { color: #374151; font-size: 1.05rem; font-weight: 650; margin: 0.55rem 0 0.3rem; }
 .search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; height: 76px; min-height: 76px; max-height: 76px; box-sizing: border-box; overflow: hidden; }
 .search-result-label { color: #374151; font-size: 0.80rem; line-height: 1.3; }
@@ -100,10 +94,6 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .watch-flat { color:#6b7280; }
 .watch-session { color:#6b7280; font-size:.69rem; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .watch-meta { color:#9ca3af; font-size:.64rem; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.crypto-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px 7px; margin-top:8px; padding-top:7px; border-top:1px solid #edf1f5; }
-.crypto-metric { min-width:0; }
-.crypto-metric-label { color:#94a3b8; font-size:.58rem; letter-spacing:.04em; line-height:1.2; white-space:nowrap; }
-.crypto-metric-value { color:#334155; font-size:.70rem; font-weight:680; line-height:1.3; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
 .watch-search-note { color:#9ca3af; font-size:.67rem; margin:4px 0 5px; }
 .watch-empty { color:#9ca3af; font-size:.72rem; padding:9px 2px 7px; }
 .module-delete { margin-top:-4px; margin-right:-3px; }
@@ -231,8 +221,6 @@ YAHOO_SEARCH_URLS = (
 
 def _symbol_market(symbol):
     raw = str(symbol or "").upper().strip()
-    if raw.endswith("-USD"):
-        return "CRYPTO"
     if raw.endswith(".HK") or raw in {"^HSI", "^HSTECH", "HSTECH.HK"}:
         return "HK"
     if raw.endswith((".SS", ".SZ")):
@@ -468,8 +456,6 @@ def _us_clock_state():
 
 def _regular_session_now(market):
     market = str(market or "").upper()
-    if market == "CRYPTO":
-        return True
     if market in {"HK", "CN"}:
         return _asia_clock_state(market) == "交易中"
     if market == "US":
@@ -719,9 +705,6 @@ def _quote_session_context(row, market=""):
     state = str(row.get("market_state") or "").upper()
     now_ts = time.time()
 
-    if market == "CRYPTO":
-        quote_ts = _valid_market_timestamp(row.get("regular_market_time"))
-        return "24/7", quote_ts
 
     if market == "US":
         regular_ts = _valid_market_timestamp(row.get("regular_market_time"))
@@ -769,28 +752,12 @@ def _market_state_text(row, market=""):
 def _market_item_html(name, price, change_pct, meta=""):
     price_text = "--" if price is None else f"{price:,.2f}"
     change_text = "--" if change_pct is None else f"{change_pct:+.2f}%"
-    change_class = "flat" if change_pct is None or change_pct == 0 else ("up" if change_pct > 0 else "down")
-    return (
-        '<div class="market-item">'
-        f'<div class="market-name">{html.escape(name)}</div>'
-        f'<div class="market-price">{html.escape(price_text)}</div>'
-        f'<div class="market-change {change_class}">{html.escape(change_text)}</div>'
-        f'<div class="market-meta">{html.escape(meta)}</div>'
-        '</div>'
-    )
+    return f'<div class="market-item"><div class="market-name">{html.escape(name)}</div><div class="market-price">{html.escape(price_text)}</div><div class="market-change">{html.escape(change_text)}</div><div class="market-meta">{html.escape(meta)}</div></div>'
 
 @st.cache_data(ttl=15, show_spinner=False)
 def _get_cached_quote(symbol, refresh_key=0):
     market = _symbol_market(symbol)
     candidates = []
-
-    # Crypto trades continuously. Use Yahoo directly so crypto never
-    # inherits US equity session labels or Tencent fallback behavior.
-    if market == "CRYPTO":
-        yahoo = _get_yahoo_quote_safe(symbol)
-        if yahoo.get("price") is not None:
-            return _tag_quote_role(yahoo, "primary")
-        return _empty_quote()
 
     # HK/A: Tencent and Eastmoney are peers. Always query both during the
     # trading session and choose the newest timestamp instead of accepting a
@@ -980,18 +947,11 @@ def _search_yahoo(market, query):
     results = []
     for item in quotes:
         quote_type = str(item.get("quoteType") or "").upper()
-        if market == "CRYPTO":
-            allowed_types = {"CRYPTOCURRENCY"}
-        elif market == "US":
-            allowed_types = {"EQUITY", "INDEX"}
-        else:
-            allowed_types = {"EQUITY"}
+        allowed_types = {"EQUITY", "INDEX"} if market == "US" else {"EQUITY"}
         if quote_type not in allowed_types:
             continue
         symbol = str(item.get("symbol") or "")
         if market == "US" and ("." in symbol or symbol.endswith(("=F", "=X"))):
-            continue
-        if market == "CRYPTO" and not symbol.upper().endswith("-USD"):
             continue
         if market == "HK" and not symbol.upper().endswith(".HK"):
             continue
@@ -1004,141 +964,12 @@ def _search_yahoo(market, query):
         })
     return results[:6]
 
-@st.cache_data(ttl=60, show_spinner=False)
-def _get_crypto_metrics(symbol):
-    """Compact crypto context from Yahoo daily history + quote metadata."""
-    symbol = str(symbol or "").upper().strip()
-    result_data = {
-        "change_7d": None,
-        "change_30d": None,
-        "realized_vol_30d": None,
-        "volume_24h": None,
-        "market_cap": None,
-    }
-    if not symbol.endswith("-USD"):
-        return result_data
-
-    try:
-        response = requests.get(
-            YAHOO_CHART_BASES[0] + symbol,
-            params={"range": "2mo", "interval": "1d", "includePrePost": "false", "events": "div,splits"},
-            headers={"User-Agent": "Mozilla/5.0 (compatible; MacroDashboard/1.0)"},
-            timeout=4.0,
-        )
-        response.raise_for_status()
-        rows = (response.json().get("chart", {}).get("result") or [])
-        if rows:
-            chart = rows[0]
-            timestamps = chart.get("timestamp") or []
-            quote = (chart.get("indicators", {}).get("quote") or [{}])[0]
-            closes = quote.get("close") or []
-            volumes = quote.get("volume") or []
-            observations = [
-                (int(ts), float(close), volumes[idx] if idx < len(volumes) else None)
-                for idx, (ts, close) in enumerate(zip(timestamps, closes))
-                if ts is not None and close is not None
-            ]
-            if observations:
-                last_ts, last_close, _ = observations[-1]
-
-                def _change(days):
-                    cutoff = last_ts - days * 86400
-                    candidates = [close for ts, close, _ in observations if ts <= cutoff]
-                    base = candidates[-1] if candidates else None
-                    if base in (None, 0):
-                        return None
-                    return (last_close / base - 1.0) * 100.0
-
-                result_data["change_7d"] = _change(7)
-                result_data["change_30d"] = _change(30)
-                close_series = pd.Series([close for _, close, _ in observations], dtype="float64")
-                returns = close_series.pct_change(fill_method=None).dropna().tail(30)
-                if len(returns) >= 10:
-                    result_data["realized_vol_30d"] = float(returns.std(ddof=1) * (365.0 ** 0.5) * 100.0)
-                valid_volumes = [float(volume) for _, _, volume in observations if volume not in (None, 0)]
-                if valid_volumes:
-                    result_data["volume_24h"] = valid_volumes[-1]
-    except Exception:
-        pass
-
-    # The quote endpoint usually exposes market cap and the freshest 24h volume.
-    for quote_url in YAHOO_QUOTE_URLS:
-        try:
-            response = requests.get(
-                quote_url,
-                params={"symbols": symbol},
-                headers={"User-Agent": "Mozilla/5.0 (compatible; MacroDashboard/1.0)"},
-                timeout=3.0,
-            )
-            response.raise_for_status()
-            rows = ((response.json() or {}).get("quoteResponse") or {}).get("result") or []
-            if not rows:
-                continue
-            quote = rows[0]
-            if quote.get("regularMarketVolume") not in (None, 0):
-                result_data["volume_24h"] = float(quote["regularMarketVolume"])
-            if quote.get("marketCap") not in (None, 0):
-                result_data["market_cap"] = float(quote["marketCap"])
-            break
-        except Exception:
-            continue
-    return result_data
-
-
-@st.cache_data(ttl=60, show_spinner=False)
-def _get_eth_btc_ratio():
-    try:
-        eth = _get_yahoo_quote_safe("ETH-USD").get("price")
-        btc = _get_yahoo_quote_safe("BTC-USD").get("price")
-        if eth is None or btc in (None, 0):
-            return None
-        return float(eth) / float(btc)
-    except Exception:
-        return None
-
-
-def _compact_usd(value):
-    if value is None:
-        return "--"
-    value = float(value)
-    if abs(value) >= 1_000_000_000_000:
-        return f"${value / 1_000_000_000_000:.2f}T"
-    if abs(value) >= 1_000_000_000:
-        return f"${value / 1_000_000_000:.1f}B"
-    if abs(value) >= 1_000_000:
-        return f"${value / 1_000_000:.1f}M"
-    return f"${value:,.0f}"
-
-
-def _crypto_metrics_html(symbol):
-    metrics = _get_crypto_metrics(symbol)
-    def pct(value):
-        return "--" if value is None else f"{value:+.1f}%"
-
-    ratio = _get_eth_btc_ratio()
-    fields = [
-        ("7D", pct(metrics.get("change_7d"))),
-        ("30D", pct(metrics.get("change_30d"))),
-        ("VOL · 30D", "--" if metrics.get("realized_vol_30d") is None else f'{metrics["realized_vol_30d"]:.0f}%'),
-        ("24H VOLUME", _compact_usd(metrics.get("volume_24h"))),
-        ("MARKET CAP", _compact_usd(metrics.get("market_cap"))),
-        ("ETH / BTC", "--" if ratio is None else f"{ratio:.4f}"),
-    ]
-    blocks = "".join(
-        f'<div class="crypto-metric"><div class="crypto-metric-label">{html.escape(label)}</div><div class="crypto-metric-value">{html.escape(value)}</div></div>'
-        for label, value in fields
-    )
-    return f'<div class="crypto-metrics">{blocks}</div>'
-
-
 def _render_quote_block(item):
     row = _get_watchlist_quote(item["symbol"])
     price = row.get("price")
     change = row.get("change_pct")
     price_text = "--" if price is None else f"{price:,.2f}"
     change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%")
-    if item.get("market") == "CRYPTO" and price is not None and change is not None:
-        change_text = f"24H {change:+.2f}%"
     direction_class = "watch-flat"
     if change is not None:
         direction_class = "watch-up" if change > 0 else ("watch-down" if change < 0 else "watch-flat")
@@ -1163,12 +994,11 @@ def _render_quote_block(item):
     name = html.escape(str(item.get("name") or item.get("symbol") or ""))
     symbol = html.escape(str(item.get("symbol") or ""))
     session_html = f'<div class="watch-session">{html.escape(session_text)}</div>' if session_text else ''
-    metrics_html = _crypto_metrics_html(item.get("symbol", "")) if item.get("market") == "CRYPTO" else ""
     return (
         '<div class="watch-card-body">'
         f'<div class="watch-card-top"><span class="watch-card-name">{name}</span><span class="watch-card-symbol">{symbol}</span></div>'
         f'<div class="watch-price-row"><span class="watch-price">{html.escape(price_text)}</span><span class="watch-change {direction_class}">{html.escape(change_text)}</span></div>'
-        f'{session_html}<div class="watch-meta">{html.escape(meta)}</div>{metrics_html}'
+        f'{session_html}<div class="watch-meta">{html.escape(meta)}</div>'
         '</div>'
     )
 
@@ -1199,86 +1029,79 @@ def _cancel_search(key):
     st.session_state[f"{key}_open"] = False; st.session_state.pop(f"{key}_results", None)
 
 st.markdown('<div id="watchlist" class="section-anchor"></div><div class="section-kicker">WATCHLIST</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · Crypto 显示 24H / 7D / 30D / 30D波动率 / 成交额 / 市值 / ETH-BTC · 港/A 双源择新 + 分时兜底 · 15 秒自动刷新</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · 港/A 腾讯 + 东方财富双源择新，分时兜底 · Yahoo 仅备用 · 15 秒自动刷新</div>', unsafe_allow_html=True)
 
 @st.fragment(run_every="15s")
 def render_watchlists():
     info_col, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with info_col:
-        st.markdown('<div class="watch-toolbar">多源行情按时效切换 · Crypto 24/7 · 行情失败时保留上次有效报价</div>', unsafe_allow_html=True)
+        st.markdown('<div class="watch-toolbar">多源行情按时效切换 · 行情失败时保留上次有效报价</div>', unsafe_allow_html=True)
     with refresh_col:
         if st.button("↻ 刷新", key="refresh_watchlist_quotes", help="只刷新下方自选模块报价，不刷新市场概览"):
             st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
 
-    # Readability first: two wide columns per row instead of squeezing four
-    # market groups into one line. Global/24h assets are on top; Asia below.
+    search_cols = st.columns(3, gap="small", vertical_alignment="top")
     search_config = [
-        ("US", "🇺🇸 美股", "US EQUITY / INDEX", "NVDA / NBIS / Nasdaq 100", "market_search_us"),
-        ("CRYPTO", "₿ 加密资产", "CRYPTO · 24/7", "BTC / ETH / Bitcoin", "market_search_crypto"),
-        ("HK", "🇭🇰 港股", "HK EQUITY", "0700 / 腾讯 / 东岳", "market_search_hk"),
-        ("CN", "🇨🇳 A股", "A-SHARE", "600160 / 巨化 / 上海电力", "market_search_cn"),
+        (search_cols[0], "US", "🇺🇸 美股", "US EQUITY / INDEX", "NVDA / NBIS / Nasdaq 100", "market_search_us"),
+        (search_cols[1], "HK", "🇭🇰 港股", "HK EQUITY", "0700 / 腾讯 / 东岳", "market_search_hk"),
+        (search_cols[2], "CN", "🇨🇳 A股", "A-SHARE", "600160 / 巨化 / 上海电力", "market_search_cn"),
     ]
+    for col, market, title, subtitle, placeholder, key in search_config:
+        with col:
+            confirmed_list = st.session_state.get(f"{key}_confirmed", [])
+            confirmed_list = [confirmed_list] if isinstance(confirmed_list, dict) else (confirmed_list if isinstance(confirmed_list, list) else [])
+            st.markdown(
+                f'<div class="watch-market-head"><div class="watch-market-head-main"><div class="watch-market-title">{title}</div><div class="watch-market-subtitle">{subtitle}</div></div><span class="watch-count">{len(confirmed_list)}</span></div>',
+                unsafe_allow_html=True,
+            )
+            if confirmed_list:
+                for idx, confirmed in enumerate(confirmed_list):
+                    if not isinstance(confirmed, dict):
+                        continue
+                    with st.container(border=True):
+                        quote_col, delete_col = st.columns([1, 0.075], gap="small", vertical_alignment="top")
+                        with quote_col:
+                            st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
+                        with delete_col:
+                            st.markdown('<div class="module-delete">', unsafe_allow_html=True)
+                            st.button(
+                                "×",
+                                key=f"{key}_delete_{idx}",
+                                on_click=_delete_confirmed,
+                                args=(key, confirmed.get("symbol")),
+                                help=f"删除 {confirmed.get('name') or confirmed.get('symbol')}",
+                                type="tertiary",
+                                use_container_width=True,
+                            )
+                            st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                st.markdown('<div class="watch-empty">暂无标的，可从下方添加。</div>', unsafe_allow_html=True)
 
-    for row_start in range(0, len(search_config), 2):
-        row_cols = st.columns(2, gap="small", vertical_alignment="top")
-        for col, config in zip(row_cols, search_config[row_start:row_start + 2]):
-            market, title, subtitle, placeholder, key = config
-            with col:
-                confirmed_list = st.session_state.get(f"{key}_confirmed", [])
-                confirmed_list = [confirmed_list] if isinstance(confirmed_list, dict) else (confirmed_list if isinstance(confirmed_list, list) else [])
-                st.markdown(
-                    f'<div class="watch-market-head"><div class="watch-market-head-main"><div class="watch-market-title">{title}</div><div class="watch-market-subtitle">{subtitle}</div></div><span class="watch-count">{len(confirmed_list)}</span></div>',
-                    unsafe_allow_html=True,
-                )
-                if confirmed_list:
-                    for idx, confirmed in enumerate(confirmed_list):
-                        if not isinstance(confirmed, dict):
-                            continue
-                        with st.container(border=True):
-                            quote_col, delete_col = st.columns([1, 0.075], gap="small", vertical_alignment="top")
-                            with quote_col:
-                                st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
-                            with delete_col:
-                                st.markdown('<div class="module-delete">', unsafe_allow_html=True)
-                                st.button(
-                                    "×",
-                                    key=f"{key}_delete_{idx}",
-                                    on_click=_delete_confirmed,
-                                    args=(key, confirmed.get("symbol")),
-                                    help=f"删除 {confirmed.get('name') or confirmed.get('symbol')}",
-                                    type="tertiary",
-                                    use_container_width=True,
-                                )
-                                st.markdown('</div>', unsafe_allow_html=True)
-                else:
-                    st.markdown('<div class="watch-empty">暂无标的，可从下方添加。</div>', unsafe_allow_html=True)
-
-                is_open = st.session_state.get(f"{key}_open", False)
-                if not is_open:
-                    help_text = "搜索并添加加密资产" if market == "CRYPTO" else "搜索并添加股票或指数"
-                    st.button("＋ 添加标的", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,), help=help_text)
-                else:
-                    st.markdown('<div class="watch-search-note">输入名称或代码，搜索后确认添加。</div>', unsafe_allow_html=True)
-                    input_col, search_col, cancel_col = st.columns([5.0, 1.25, 1.25], gap="small")
-                    with input_col:
-                        st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
-                    with search_col:
-                        st.button("搜索", key=f"{key}_search_button", use_container_width=True, on_click=_run_search, args=(key, market))
-                    with cancel_col:
-                        st.button("取消", key=f"{key}_cancel_button", use_container_width=True, on_click=_cancel_search, args=(key,))
-                    results = st.session_state.get(f"{key}_results", [])
-                    if results:
-                        options = [f'{item.get("name", "")} · {item.get("symbol", "")} · {item.get("exchange", "")}' for item in results]
-                        st.selectbox(
-                            "搜索结果",
-                            range(len(options)),
-                            format_func=lambda i: options[i],
-                            key=f"{key}_result_select",
-                            label_visibility="collapsed",
-                        )
-                        st.button("确认添加", key=f"{key}_confirm_selected", use_container_width=True, on_click=_confirm_selected, args=(key,), type="primary")
-                    elif st.session_state.get(key, "").strip() and f"{key}_results" in st.session_state:
-                        st.caption("没有找到匹配标的，请检查名称或代码。")
+            is_open = st.session_state.get(f"{key}_open", False)
+            if not is_open:
+                st.button("＋ 添加标的", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,), help="搜索并添加股票或指数")
+            else:
+                st.markdown('<div class="watch-search-note">输入名称或代码，搜索后确认添加。</div>', unsafe_allow_html=True)
+                input_col, search_col, cancel_col = st.columns([5.0, 1.25, 1.25], gap="small")
+                with input_col:
+                    st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
+                with search_col:
+                    st.button("搜索", key=f"{key}_search_button", use_container_width=True, on_click=_run_search, args=(key, market))
+                with cancel_col:
+                    st.button("取消", key=f"{key}_cancel_button", use_container_width=True, on_click=_cancel_search, args=(key,))
+                results = st.session_state.get(f"{key}_results", [])
+                if results:
+                    options = [f'{item.get("name", "")} · {item.get("symbol", "")} · {item.get("exchange", "")}' for item in results]
+                    st.selectbox(
+                        "搜索结果",
+                        range(len(options)),
+                        format_func=lambda i: options[i],
+                        key=f"{key}_result_select",
+                        label_visibility="collapsed",
+                    )
+                    st.button("确认添加", key=f"{key}_confirm_selected", use_container_width=True, on_click=_confirm_selected, args=(key,), type="primary")
+                elif st.session_state.get(key, "").strip() and f"{key}_results" in st.session_state:
+                    st.caption("没有找到匹配标的，请检查名称或代码。")
 
 render_watchlists()
 
@@ -1749,6 +1572,91 @@ def build_fig10(date_range, market_mode="Rebased 100"):
     )
     return fig
 
+
+def build_fig11(date_range, market_mode="Rebased 100"):
+    """Crypto market: BTC, ETH, ETH/BTC and 30-day BTC realized volatility."""
+    frames = []
+    for symbol, column in (("BTC-USD", "BTC"), ("ETH-USD", "ETH")):
+        try:
+            frame = get_yahoo_daily_history(symbol).rename(columns={"close": column})
+            if not frame.empty:
+                frames.append(frame[["observation_date", column]])
+        except Exception:
+            pass
+
+    if frames:
+        data = frames[0]
+        for frame in frames[1:]:
+            data = data.merge(frame, on="observation_date", how="outer")
+        data = data.sort_values("observation_date")
+    else:
+        data = pd.DataFrame(columns=["observation_date"])
+
+    if "BTC" in data.columns and "ETH" in data.columns:
+        btc = pd.to_numeric(data["BTC"], errors="coerce")
+        eth = pd.to_numeric(data["ETH"], errors="coerce")
+        data["ETHBTC"] = eth.where(btc > 0) / btc.where(btc > 0)
+    if "BTC" in data.columns:
+        btc_returns = pd.to_numeric(data["BTC"], errors="coerce").pct_change(fill_method=None)
+        data["BTC_VOL_30D"] = btc_returns.rolling(30, min_periods=20).std() * (365.0 ** 0.5) * 100.0
+
+    data = filter_range(data, date_range)
+    fig = go.Figure()
+
+    if market_mode == "Rebased 100":
+        if "BTC" in data.columns:
+            data["BTC_R100"] = _rebase_100(data["BTC"])
+        if "ETH" in data.columns:
+            data["ETH_R100"] = _rebase_100(data["ETH"])
+        add_line(fig, data, "BTC_R100", "BTC · R100", 2.9, unit="")
+        add_line(fig, data, "ETH_R100", "ETH · R100", 2.6, unit="")
+        add_line(fig, data, "ETHBTC", "ETH/BTC", 2.2, "dash", "y2", "")
+        add_line(fig, data, "BTC_VOL_30D", "BTC 30D Realized Vol", 2.2, "dot", "y3", "%")
+        fig.update_layout(
+            yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.87),
+            yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.98),
+        )
+        fig = apply_chart_style(fig, chart_height(320, 440), date_range)
+        fig.update_layout(
+            margin=dict(l=62, r=150, t=72, b=34, pad=2),
+            legend=dict(y=1.09, x=0.01),
+            xaxis=dict(domain=[0.0, 0.84]),
+            yaxis=dict(title="BTC / ETH · Rebased 100", tickformat=".1f"),
+            yaxis2=dict(title="R1 · ETH/BTC", overlaying="y", side="right", anchor="free", position=0.87, showgrid=False, fixedrange=True, tickformat=".4f"),
+            yaxis3=dict(title="R2 · BTC 30D Vol (%)", overlaying="y", side="right", anchor="free", position=0.98, showgrid=False, fixedrange=True, tickformat=".0f"),
+        )
+        return fig
+
+    add_line(fig, data, "BTC", "BTC", 2.9, unit=" USD")
+    add_line(fig, data, "ETH", "ETH", 2.6, None, "y2", " USD")
+    add_line(fig, data, "ETHBTC", "ETH/BTC", 2.2, "dash", "y3", "")
+    add_line(fig, data, "BTC_VOL_30D", "BTC 30D Realized Vol", 2.2, "dot", "y4", "%")
+    fig.update_layout(
+        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.78),
+        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.88),
+        yaxis4=dict(overlaying="y", side="right", anchor="free", position=0.98),
+    )
+    fig = apply_chart_style(fig, chart_height(330, 450), date_range)
+    fig.update_layout(
+        margin=dict(l=72, r=220, t=72, b=34, pad=2),
+        legend=dict(y=1.09, x=0.01),
+        xaxis=dict(domain=[0.0, 0.75]),
+        yaxis=dict(title="BTC · USD", tickformat=",.0f"),
+        yaxis2=dict(title="R1 · ETH · USD", overlaying="y", side="right", anchor="free", position=0.78, showgrid=False, fixedrange=True, tickformat=",.0f"),
+        yaxis3=dict(title="R2 · ETH/BTC", overlaying="y", side="right", anchor="free", position=0.88, showgrid=False, fixedrange=True, tickformat=".4f"),
+        yaxis4=dict(title="R3 · BTC 30D Vol (%)", overlaying="y", side="right", anchor="free", position=0.98, showgrid=False, fixedrange=True, tickformat=".0f"),
+    )
+    return fig
+
+
+CRYPTO_MARKET_DESCRIPTION = (
+    '<b>参数概念：</b><br>'
+    '1. BTC / ETH：比特币与以太坊美元价格；默认 Rebased 100 以可视区间首个有效值归一到 100，重点比较相对强弱。<br>'
+    '2. ETH/BTC（R1）：ETH 价格除以 BTC 价格；上升表示 ETH 相对 BTC 走强，下降表示资金表现更偏向 BTC。<br>'
+    '3. BTC 30D Realized Vol（R2/R3）：基于 BTC 日收益率计算的 30 日年化实际波动率，反映已经发生的价格波动强度，不是期权隐含波动率。<br><br>'
+    '<b>读取提示：</b>默认优先看 Rebased 100 的 BTC / ETH 强弱，再结合 ETH/BTC 判断风险偏好是否从 BTC 向 ETH 扩散；波动率快速抬升意味着仓位风险同步放大。'
+)
+
 PARAM_DESCRIPTIONS = [
     '<b>参数概念：</b><br>1. IORB（Interest on Reserve Balances）：美联储向存款机构准备金余额支付的利率，是美国准备金利率体系的重要基准。<br>2. ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具利率，金融机构可通过该工具进行隔夜资金配置。<br>3. EFFR（Effective Federal Funds Rate）：美国联邦基金市场实际成交形成的有效隔夜利率，反映银行间短期无担保资金价格。<br>4. SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率，是美元有担保短期融资的重要基准。',
     '<b>参数概念：</b><br>1. 10Y Nominal：10 年期美国国债名义收益率，包含实际利率与通胀预期等因素。<br>2. 10Y Real：10 年期美国国债实际收益率，通常由通胀保值国债（TIPS）市场反映。<br>3. 10Y Breakeven：10 年期盈亏平衡通胀率，是名义国债收益率与实际收益率之间的差值，用于观察市场隐含的长期通胀预期。',
@@ -1920,6 +1828,28 @@ def render_core_charts():
         ("Yahoo Finance · Silver Futures SI=F", "https://finance.yahoo.com/quote/SI=F/history/"),
         ("FRED · Cboe Gold ETF Volatility Index (GVZCLS)", "https://fred.stlouisfed.org/series/GVZCLS"),
         ("Cboe · Gold Volatility", "https://www.cboe.com/tradable_products/vix/vix_historical_data/"),
+    ])
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+    st.markdown(
+        '<div class="section-kicker">CRYPTO MARKET</div>'
+        '<div class="section-title">11. Crypto Market</div>'
+        '<div class="section-description">BTC / ETH · ETH/BTC Ratio (R1) · BTC 30D Realized Volatility (R2/R3)</div>',
+        unsafe_allow_html=True,
+    )
+    crypto_range = st.radio(
+        "时间范围", RANGES, horizontal=True, index=1,
+        key="crypto_market_range", label_visibility="collapsed",
+    )
+    crypto_mode = st.radio(
+        "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
+        key="crypto_market_mode", label_visibility="collapsed",
+    )
+    st.plotly_chart(build_fig11(crypto_range, crypto_mode), use_container_width=True, config=PLOTLY_CONFIG)
+    st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
+    add_sources([
+        ("Yahoo Finance · Bitcoin BTC-USD", "https://finance.yahoo.com/quote/BTC-USD/history/"),
+        ("Yahoo Finance · Ethereum ETH-USD", "https://finance.yahoo.com/quote/ETH-USD/history/"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 

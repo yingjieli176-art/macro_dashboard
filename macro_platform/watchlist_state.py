@@ -5,32 +5,26 @@ import json
 import zlib
 from typing import Any
 
-WATCHLIST_KEYS = ("market_search_us", "market_search_crypto", "market_search_hk", "market_search_cn")
+WATCHLIST_KEYS = ("market_search_us", "market_search_hk", "market_search_cn")
 _SHORT_KEY = {
     "market_search_us": "u",
-    "market_search_crypto": "x",
     "market_search_hk": "h",
     "market_search_cn": "c",
 }
 _MARKET = {
     "market_search_us": "US",
-    "market_search_crypto": "CRYPTO",
     "market_search_hk": "HK",
     "market_search_cn": "CN",
 }
 MAX_ITEMS_PER_MARKET = 40
 WATCHLIST_SCHEMA_VERSION = 3
-DEFAULT_WATCHLIST_REVISION = 3
+DEFAULT_WATCHLIST_REVISION = 4
 
 DEFAULT_WATCHLISTS = {
     "market_search_us": [
         {"symbol": "NVDA", "name": "英伟达"},
         {"symbol": "NBIS", "name": "Nebius"},
         {"symbol": "^NDX", "name": "纳斯达克100"},
-    ],
-    "market_search_crypto": [
-        {"symbol": "BTC-USD", "name": "比特币"},
-        {"symbol": "ETH-USD", "name": "以太坊"},
     ],
     "market_search_hk": [
         {"symbol": "0700.HK", "name": "腾讯控股"},
