@@ -1,0 +1,58 @@
+name: Replace crypto module with chart
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/replace_crypto_module_with_chart.py
+      - .github/workflows/replace-crypto-module-with-chart.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: replace-crypto-module-with-chart
+  cancel-in-progress: true
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply migration
+        run: python scripts/replace_crypto_module_with_chart.py
+      - name: Compile modified modules
+        run: python -m py_compile app.py macro_platform/watchlist_state.py
+      - name: Validate crypto chart and compact overview
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          app = Path('app.py').read_text()
+          state = Path('macro_platform/watchlist_state.py').read_text()
+          assert '11. Crypto Market' in app
+          assert 'def build_fig11' in app
+          assert 'BTC 30D Realized Vol' in app
+          assert 'market_search_crypto' not in state
+          assert '₿ 加密资产' not in app
+          assert 'height: 66px' in app
+          assert 'min-height:82px' not in app
+          print('crypto chart + compact overview OK')
+          PY
+      - name: Commit production changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/watchlist_state.py
+          if git diff --cached --quiet; then
+            echo "No production changes"
+            exit 0
+          fi
+          git commit -m "Move BTC and ETH into crypto chart"
+          git pull --rebase origin main
+          git push origin main
