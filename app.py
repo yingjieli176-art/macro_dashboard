@@ -1169,7 +1169,7 @@ def apply_chart_style(fig, height, date_range):
     yaxis2 = getattr(fig.layout, "yaxis2", None)
     has_secondary = yaxis2 is not None and yaxis2.overlaying is not None
     base_left = 60
-    base_right = 76 if has_secondary else 20
+    base_right = 60 if has_secondary else 20
     # Reserve separate vertical bands for the top year axis and legend.
     base_top = 88 if compact_mode else 92
     base_bottom = 34
@@ -1261,8 +1261,8 @@ def build_fig2(date_range):
     data["DFII10"] = data["DFII10"].combine_first(data["DGS10"] - data["T10YIE"])
     data["T10YIE"] = data["T10YIE"].combine_first(data["DGS10"] - data["DFII10"])
     data = filter_range(data, date_range); fig = go.Figure()
-    for column, name, width, dash, yaxis in [("DGS10", "10Y Nominal", 2.8, None, None), ("DFII10", "10Y Real (R)", 2.6, None, "y2"), ("T10YIE", "10Y Breakeven (R)", 2.5, "dot", "y2")]: add_line(fig, data, column, name, width, dash, yaxis)
-    fig.update_layout(yaxis_title="Nominal Yield (%)", yaxis2=dict(title="Real / Breakeven (%)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=False, fixedrange=True, automargin=True, tickfont=dict(size=9))); return apply_chart_style(fig, chart_height(310, 420), date_range)
+    for column, name, width, dash, yaxis in [("DGS10", "10Y Nominal", 2.8, None, None), ("DFII10", "10Y Real (R1)", 2.6, None, "y2"), ("T10YIE", "10Y Breakeven (R1)", 2.5, "dot", "y2")]: add_line(fig, data, column, name, width, dash, yaxis)
+    fig.update_layout(yaxis_title="Nominal Yield (%)", yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, zeroline=False, fixedrange=True, automargin=False, tickfont=dict(size=9), ticks="outside", ticklen=3)); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 def build_fig4(date_range):
     """US liquidity chart with separate scales for unlike balance magnitudes.
@@ -1319,50 +1319,50 @@ def build_fig4(date_range):
 
     reserve = raw_series.get("WRESBAL")
     if reserve is not None:
-        add_line(fig, filter_range(reserve, date_range), "WRESBAL", "Reserve Balances", 2.4, yaxis="y2", unit=" T")
+        add_line(fig, filter_range(reserve, date_range), "WRESBAL", "Reserve Balances (R1)", 2.4, yaxis="y2", unit=" T")
     else:
         _mark_missing_series(fig, "Reserve Balances")
 
     tga = raw_series.get("TGA_DAILY")
     if tga is not None:
-        tga_name = "TGA · Weekly fallback" if tga_is_fallback else "TGA"
+        tga_name = "TGA · Weekly fallback (R1)" if tga_is_fallback else "TGA (R1)"
         add_line(fig, filter_range(tga, date_range), "TGA_DAILY", tga_name, 2.2, "dash", "y2", " T")
     else:
         _mark_missing_series(fig, "TGA")
 
     rrp = raw_series.get("RRPONTSYD")
     if rrp is not None:
-        add_line(fig, filter_range(rrp, date_range), "RRPONTSYD", "ON RRP", 2.2, "dot", "y3", " B")
+        add_line(fig, filter_range(rrp, date_range), "RRPONTSYD", "ON RRP (R2)", 2.2, "dot", "y3", " B")
     else:
         _mark_missing_series(fig, "ON RRP")
 
     # Predeclare secondary axes so apply_chart_style reserves enough space.
     fig.update_layout(
-        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86),
-        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.97),
+        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.925),
+        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.99),
     )
     fig = apply_chart_style(fig, chart_height(320, 430), date_range)
     fig.update_layout(
-        margin=dict(l=64, r=164, t=72, b=34, pad=2),
+        margin=dict(l=64, r=92, t=72, b=34, pad=2),
         legend=dict(y=1.09, x=0.01),
-        xaxis=dict(domain=[0.0, 0.82]),
+        xaxis=dict(domain=[0.0, 0.91]),
         yaxis=dict(
             title="Net Liquidity · USD T",
             showgrid=True, gridcolor="#e5e7eb", griddash="dot",
             zeroline=False, fixedrange=True, tickformat=".1f",
         ),
         yaxis2=dict(
-            title="R1 · Reserve / TGA · USD T",
-            overlaying="y", side="right", anchor="free", position=0.86,
+            title="",
+            overlaying="y", side="right", anchor="free", position=0.925,
             showgrid=False, zeroline=False, fixedrange=True,
-            tickformat=".1f", tickfont=dict(size=10),
+            tickformat=".1f", tickfont=dict(size=9), ticks="outside", ticklen=3,
         ),
         yaxis3=dict(
-            title="R2 · ON RRP · USD B",
-            overlaying="y", side="right", anchor="free", position=0.97,
+            title="",
+            overlaying="y", side="right", anchor="free", position=0.99,
             showgrid=False, zeroline=True, zerolinecolor="#94a3b8",
             zerolinewidth=1, fixedrange=True, tickformat=".0f",
-            tickfont=dict(size=10),
+            tickfont=dict(size=9), ticks="outside", ticklen=3,
         ),
     )
     return fig
@@ -1378,9 +1378,9 @@ def build_fig3(date_range):
     data["T10Y3M"] = data["DGS10"] - data["DGS3MO"]
     data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8)]: add_line(fig, data, column, name, width)
-    add_line(fig, data, "T10Y2Y", "10Y−2Y (R)", 2.2, "dot", "y2", "%"); add_line(fig, data, "T10Y3M", "10Y−3M (R)", 2.2, "dash", "y2", "%")
-    fig.update_traces(selector=dict(name="10Y−2Y (R)"), hovertemplate="10Y−2Y (R): %{y:.3f}%<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M (R)"), hovertemplate="10Y−3M (R): %{y:.3f}%<extra></extra>")
-    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (%)", overlaying="y", side="right", anchor="free", position=1.0, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=True, tickfont=dict(size=9))); return apply_chart_style(fig, chart_height(310, 420), date_range)
+    add_line(fig, data, "T10Y2Y", "10Y−2Y (R1)", 2.2, "dot", "y2", "%"); add_line(fig, data, "T10Y3M", "10Y−3M (R1)", 2.2, "dash", "y2", "%")
+    fig.update_traces(selector=dict(name="10Y−2Y (R1)"), hovertemplate="10Y−2Y (R1): %{y:.3f}%<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M (R1)"), hovertemplate="10Y−3M (R1): %{y:.3f}%<extra></extra>")
+    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=False, tickfont=dict(size=9), ticks="outside", ticklen=3)); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 
 def build_fig9(date_range):
@@ -1425,29 +1425,29 @@ def build_fig9(date_range):
     add_line(fig, data, "VIX3M-VIX", "VIX3M−VIX (R2)", 2.0, "dot", "y3", unit=" pts")
 
     fig.update_layout(
-        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86),
-        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.97),
+        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.925),
+        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.99),
     )
     fig = apply_chart_style(fig, chart_height(320, 440), date_range)
     fig.update_layout(
-        margin=dict(l=62, r=144, t=68, b=36, pad=2),
+        margin=dict(l=62, r=92, t=68, b=36, pad=2),
         legend=dict(y=1.095),
-        xaxis=dict(domain=[0.0, 0.84]),
+        xaxis=dict(domain=[0.0, 0.91]),
         yaxis=dict(
             title="VIX / VIXEQ",
             showgrid=True, gridcolor="#e5e7eb", griddash="dot",
             zeroline=False, fixedrange=True,
         ),
         yaxis2=dict(
-            title="R1 · S&P 500",
-            overlaying="y", side="right", anchor="free", position=0.86,
-            showgrid=False, zeroline=False, fixedrange=True, tickfont=dict(size=10),
+            title="",
+            overlaying="y", side="right", anchor="free", position=0.925,
+            showgrid=False, zeroline=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3,
         ),
         yaxis3=dict(
-            title="R2 · VIX3M−VIX",
-            overlaying="y", side="right", anchor="free", position=0.97,
+            title="",
+            overlaying="y", side="right", anchor="free", position=0.99,
             showgrid=False, zeroline=True, zerolinecolor="#94a3b8",
-            zerolinewidth=1, fixedrange=True, tickfont=dict(size=10),
+            zerolinewidth=1, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3,
         ),
     )
     return fig
@@ -1534,41 +1534,41 @@ def build_fig10(date_range, market_mode="Rebased 100"):
             data["Silver_R100"] = _rebase_100(data["Silver"])
         add_line(fig, data, "Gold_R100", "Gold · R100", 2.8, unit="")
         add_line(fig, data, "Silver_R100", "Silver · R100", 2.5, unit="")
-        add_line(fig, data, "GoldSilverRatio", "Gold/Silver Ratio", 2.2, "dash", "y2", "x")
-        add_line(fig, data, "GVZCLS", "Gold Volatility · GVZ", 2.2, "dot", "y3", "")
+        add_line(fig, data, "GoldSilverRatio", "Gold/Silver Ratio (R1)", 2.2, "dash", "y2", "x")
+        add_line(fig, data, "GVZCLS", "Gold Volatility · GVZ (R2)", 2.2, "dot", "y3", "")
         fig.update_layout(
-            yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.87),
-            yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.98),
+            yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.925),
+            yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.99),
         )
         fig = apply_chart_style(fig, chart_height(320, 440), date_range)
         fig.update_layout(
-            margin=dict(l=62, r=150, t=72, b=34, pad=2),
+            margin=dict(l=62, r=92, t=72, b=34, pad=2),
             legend=dict(y=1.09, x=0.01),
-            xaxis=dict(domain=[0.0, 0.84]),
+            xaxis=dict(domain=[0.0, 0.91]),
             yaxis=dict(title="Gold / Silver · Rebased 100", tickformat=".1f"),
-            yaxis2=dict(title="R1 · Gold/Silver Ratio", overlaying="y", side="right", anchor="free", position=0.87, showgrid=False, fixedrange=True, tickformat=".1f"),
-            yaxis3=dict(title="R2 · GVZ", overlaying="y", side="right", anchor="free", position=0.98, showgrid=False, fixedrange=True, tickformat=".1f"),
+            yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.925, showgrid=False, fixedrange=True, tickformat=".1f", tickfont=dict(size=9), ticks="outside", ticklen=3),
+            yaxis3=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, fixedrange=True, tickformat=".1f", tickfont=dict(size=9), ticks="outside", ticklen=3),
         )
         return fig
 
     add_line(fig, data, "Gold", "Gold", 2.8, unit=" USD/oz")
-    add_line(fig, data, "Silver", "Silver", 2.5, None, "y2", " USD/oz")
-    add_line(fig, data, "GoldSilverRatio", "Gold/Silver Ratio", 2.2, "dash", "y3", "x")
-    add_line(fig, data, "GVZCLS", "Gold Volatility · GVZ", 2.2, "dot", "y4", "")
+    add_line(fig, data, "Silver", "Silver (R1)", 2.5, None, "y2", " USD/oz")
+    add_line(fig, data, "GoldSilverRatio", "Gold/Silver Ratio (R2)", 2.2, "dash", "y3", "x")
+    add_line(fig, data, "GVZCLS", "Gold Volatility · GVZ (R3)", 2.2, "dot", "y4", "")
     fig.update_layout(
-        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.78),
-        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.88),
-        yaxis4=dict(overlaying="y", side="right", anchor="free", position=0.98),
+        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86),
+        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.93),
+        yaxis4=dict(overlaying="y", side="right", anchor="free", position=0.99),
     )
     fig = apply_chart_style(fig, chart_height(330, 450), date_range)
     fig.update_layout(
-        margin=dict(l=68, r=220, t=72, b=34, pad=2),
+        margin=dict(l=68, r=132, t=72, b=34, pad=2),
         legend=dict(y=1.09, x=0.01),
-        xaxis=dict(domain=[0.0, 0.75]),
+        xaxis=dict(domain=[0.0, 0.84]),
         yaxis=dict(title="Gold · USD/oz", tickformat=",.0f"),
-        yaxis2=dict(title="R1 · Silver · USD/oz", overlaying="y", side="right", anchor="free", position=0.78, showgrid=False, fixedrange=True, tickformat=".1f"),
-        yaxis3=dict(title="R2 · Gold/Silver", overlaying="y", side="right", anchor="free", position=0.88, showgrid=False, fixedrange=True, tickformat=".1f"),
-        yaxis4=dict(title="R3 · GVZ", overlaying="y", side="right", anchor="free", position=0.98, showgrid=False, fixedrange=True, tickformat=".1f"),
+        yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.86, showgrid=False, fixedrange=True, tickformat=".1f", tickfont=dict(size=9), ticks="outside", ticklen=3),
+        yaxis3=dict(title="", overlaying="y", side="right", anchor="free", position=0.93, showgrid=False, fixedrange=True, tickformat=".1f", tickfont=dict(size=9), ticks="outside", ticklen=3),
+        yaxis4=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, fixedrange=True, tickformat=".1f", tickfont=dict(size=9), ticks="outside", ticklen=3),
     )
     return fig
 
@@ -1662,14 +1662,14 @@ PARAM_DESCRIPTIONS = [
     '<b>参数概念：</b><br>1. 10Y Nominal：10 年期美国国债名义收益率，包含实际利率与通胀预期等因素。<br>2. 10Y Real：10 年期美国国债实际收益率，通常由通胀保值国债（TIPS）市场反映。<br>3. 10Y Breakeven：10 年期盈亏平衡通胀率，是名义国债收益率与实际收益率之间的差值，用于观察市场隐含的长期通胀预期。',
     '<b>参数概念：</b><br>1. 3M：3 个月期美国国债收益率，代表较短期限的美元无风险利率。<br>2. 2Y：2 年期美国国债收益率，通常对美联储政策路径及短中期利率预期较敏感。<br>3. 10Y：10 年期美国国债收益率，是全球金融市场重要的长期无风险利率参考。<br>4. 10Y−2Y：10 年期减 2 年期国债收益率利差，图中直接以百分比（%）显示，无需自行换算 bp。<br>5. 10Y−3M：10 年期减 3 个月期国债收益率利差，图中直接以百分比（%）显示，无需自行换算 bp。',
     '<b>参数概念：</b><br>1. Net Liquidity Proxy：WALCL（美联储总资产）− TGA − ON RRP 的常用资产负债表流动性代理，左轴单位 USD trillion；不是美联储官方指标。WALCL 为周频，计算时只在代理内部沿用至下一次公布。<br>2. Reserve Balances：存款机构存放在美联储的准备金余额；WRESBAL 为周频公布，使用右轴 R1，单位 USD trillion。图中的原始线只保留实际周频观测。<br>3. TGA（Treasury General Account）：优先使用美国财政部 Daily Treasury Statement 的日频 Operating Cash Balance；财政资金进出会直接影响银行体系准备金。FiscalData 不可用时自动回退到 FRED WTREGEN 周频数据。<br>4. ON RRP Balance：美联储隔夜逆回购工具余额，使用右轴 R2，单位 USD billion；单独设轴避免当前低余额被压在零线附近。',
-    '<b>参数概念：</b><br>1. HKD M2 YoY：港元 M2 同比增速，M2 覆盖公众持有的现金、活期/储蓄/定期存款及相应货币工具，用于观察广义港元货币的中期扩张趋势。<br>2. HKD M3 YoY：港元 M3 同比增速，M3 在 M2 基础上进一步纳入限制牌照银行及接受存款公司的相关存款与可转让存款证，因此口径更广，但通常与 M2 高度同步。<br>3. Monetary Base YoY：香港货币基础总量同比变化，用于观察基础货币层面的中期扩张与收缩。<br>4. Aggregate Balance：银行体系总结余，单位 HK$ billion；总结余下降通常代表银行体系可用港元流动性趋紧。<br>5. O/N HIBOR：隔夜港元银行同业拆息，反映最短端港元资金价格。<br>6. 3M HIBOR：3 个月港元银行同业拆息，用来观察更持续的港元融资成本。<br>7. HKMA Base Rate：香港金管局基本利率，是港元利率体系的重要政策参考。<br>8. O/N−3M Spread（R）：隔夜 HIBOR 减 3M HIBOR，右轴单位 bp；显著转正通常代表短端资金压力上升。<br>9. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>10. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>11. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br><br><b>读取提示：</b>M2/M3 为月度统计，公布存在时滞；图 5 使用 YoY 观察中期货币趋势并降低单月噪声。流动性评分内部仍使用最近 3 个月 M2/M3 MoM 均值，以保留对边际拐点的敏感度。',
+    '<b>参数概念：</b><br>1. HKD M2 YoY：港元 M2 同比增速，M2 覆盖公众持有的现金、活期/储蓄/定期存款及相应货币工具，用于观察广义港元货币的中期扩张趋势。<br>2. HKD M3 YoY：港元 M3 同比增速，M3 在 M2 基础上进一步纳入限制牌照银行及接受存款公司的相关存款与可转让存款证，因此口径更广，但通常与 M2 高度同步。<br>3. Monetary Base YoY：香港货币基础总量同比变化，用于观察基础货币层面的中期扩张与收缩。<br>4. Aggregate Balance：银行体系总结余，单位 HK$ billion；总结余下降通常代表银行体系可用港元流动性趋紧。<br>5. O/N HIBOR：隔夜港元银行同业拆息，反映最短端港元资金价格。<br>6. 3M HIBOR：3 个月港元银行同业拆息，用来观察更持续的港元融资成本。<br>7. HKMA Base Rate：香港金管局基本利率，是港元利率体系的重要政策参考。<br>8. O/N−3M Spread（R1）：隔夜 HIBOR 减 3M HIBOR，右轴单位 bp；显著转正通常代表短端资金压力上升。<br>9. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>10. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>11. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br><br><b>读取提示：</b>M2/M3 为月度统计，公布存在时滞；图 5 使用 YoY 观察中期货币趋势并降低单月噪声。流动性评分内部仍使用最近 3 个月 M2/M3 MoM 均值，以保留对边际拐点的敏感度。',
 ]
 
 def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
 
 HK_PARAMETER_DESCRIPTIONS = [
     '<b>参数概念：</b><br>1. HKD M2 YoY：港元 M2 同比增速，作为主趋势线，用来观察广义港元货币的中期扩张或收缩；相比 MoM 更平滑。<br>2. HKD M2 MoM：港元 M2 月环比增速，作为边际动量线，用来观察最近一个月货币扩张/收缩是否加速；波动会明显高于 YoY。<br>3. Monetary Base YoY：香港货币基础总量同比变化，用于观察基础货币的中期扩张与收缩。<br>4. HKEX Price（R1）：港交所 0388.HK 市场价格，右轴单位 HKD；用于观察香港交易所股价与货币流动性变化之间的市场映射。<br>5. HSTECH Index（R2）：恒生科技指数 HSTECH 市场点位，右轴单位 points；市场历史独立拉取 5Y，不再被 HKMA 月度快照长度裁断。<br>6. HSI Index（R2）：恒生指数市场点位，右轴单位 points；使用 ^HSI 的 5Y 市场历史，用于对照香港大盘与流动性变化。<br>7. Tencent Price（R1）：腾讯控股 0700.HK 股价，Raw 模式与港交所共用 R1 港元价格轴；Rebased 100 模式把可视区间首个有效值归一到 100，便于比较相对弹性。<br><br><b>读取提示：</b>默认只保留 M2 的同比与环比：YoY 看趋势，MoM 看边际拐点。M3 YoY 仍保留在底层数据中，但因与 M2 YoY 高度同步，不再默认绘制，减少重复信息。<br><br><b>市场显示：</b>Raw 模式把股票价格放在 R1、指数点位放在 R2；Rebased 100 模式把 Tencent / HKEX / HSTECH / HSI 统一归一化，用于比较涨跌幅而不是绝对点位。',
-    '<b>参数概念：</b><br>1. Closing Aggregate Balance：银行体系期末总结余，单位 HK$ billion；5Y 视图使用 HKMA 月度期末历史，数值下降通常代表可用港元流动性收紧。<br>2. Outstanding EFBN（R）：外汇基金票据及债券未偿还总额，右轴单位 HK$ billion，是香港货币基础的重要结构项。<br>3. EFBN Held by Licensed Banks（R）：由持牌银行持有的 EFBN，右轴单位 HK$ billion，用于观察银行体系持有的高流动性港元资产规模。<br><br><b>读取提示：</b>5Y 历史只展示 HKMA 实际公布的月度期末字段，不再用 Closing Aggregate Balance 复制生成 Opening 或 Forecast。若未来日频快照可用，短周期视图仍可显示真实 Opening / Closing / Forecast T+1。',
+    '<b>参数概念：</b><br>1. Closing Aggregate Balance：银行体系期末总结余，单位 HK$ billion；5Y 视图使用 HKMA 月度期末历史，数值下降通常代表可用港元流动性收紧。<br>2. Outstanding EFBN（R1）：外汇基金票据及债券未偿还总额，右轴单位 HK$ billion，是香港货币基础的重要结构项。<br>3. EFBN Held by Licensed Banks（R1）：由持牌银行持有的 EFBN，右轴单位 HK$ billion，用于观察银行体系持有的高流动性港元资产规模。<br><br><b>读取提示：</b>5Y 历史只展示 HKMA 实际公布的月度期末字段，不再用 Closing Aggregate Balance 复制生成 Opening 或 Forecast。若未来日频快照可用，短周期视图仍可显示真实 Opening / Closing / Forecast T+1。',
     '<b>参数概念：</b><br>1. O/N HIBOR：隔夜港元银行同业拆息，5Y 月度历史来自 C&SD 月刊（底层来源 HKAB / HKMA），反映最短端港元资金价格。<br>2. 3M HIBOR：3 个月港元银行同业拆息，用来观察更持续的港元融资成本。<br>3. HKMA Base Rate：香港金管局贴现窗基本利率；5Y 历史直接来自 HKMA 月末官方序列。<br>4. O/N−3M Spread（R）：隔夜 HIBOR 减 3M HIBOR，右轴单位 bp；显著转正通常代表短端资金压力上升。',
     '<b>参数概念：</b><br>1. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>2. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>3. Linked Rate Center 7.80：7.75–7.85 兑换保证区间的中点参考线，用于快速判断港元当前处在偏强侧还是偏弱侧；不是额外的兑换保证触发水平。<br>4. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br>5. HKEX Price（R1）：港交所 0388.HK 市场价格，右轴单位 HKD。<br>6. HSTECH Index（R2）：恒生科技指数 HSTECH 市场点位，右轴单位 points。<br>7. HSI Index（R2）：恒生指数点位，Raw 模式对应 R2。<br>8. Tencent Price（R1）：腾讯控股 0700.HK 股价，Raw 模式对应 R1 港元价格轴。<br><br><b>市场显示：</b>Raw 模式保留真实价格/点位；Rebased 100 模式把四条市场资产在可视区间首个有效值归一到 100，用来比较谁更强、谁更弱。<br><br><b>读取提示：</b>USD/HKD 左轴已反向：7.75 强方兑换保证显示在上方、7.85 弱方兑换保证显示在下方，因此视觉方向直接对应“港元偏强/流动性偏强 → 港元偏弱/流动性偏弱”。灰色区域表示 7.75–7.85 联系汇率区间；其中 7.84–7.85 的淡红区域为 Weak-side Pressure Zone，用于提示接近弱方兑换保证的压力阶段；USD/HKD 优先使用仓库持久化的 Yahoo HKD=X 日频 5Y 快照，HKMA 月度汇率作为回退。',
 ]
@@ -1690,8 +1690,8 @@ def render_core_charts():
 
     configs = [
         ('<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>', '<div class="section-description">IORB / ON RRP Rate / EFFR / SOFR</div>', "normal_corridor_range", build_fig1, [("IORB (IORB)", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP Rate (RRPONTSYAWARD)", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR (EFFR)", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR (SOFR)", "https://fred.stlouisfed.org/series/SOFR")], 0),
-        ('<div class="section-title">2. 10Y Yield Structure</div>', '<div class="section-description">10Y Nominal / 10Y Real (R) / 10Y Breakeven (R)</div>', "normal_yield10_range", build_fig2, [("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y Real (DFII10)", "https://fred.stlouisfed.org/series/DFII10"), ("10Y Breakeven (T10YIE)", "https://fred.stlouisfed.org/series/T10YIE")], 1),
-        ('<div class="section-title">3. Treasury Yield & Curve Spread</div>', '<div class="section-description">3M / 2Y / 10Y / 10Y−2Y (R) / 10Y−3M (R)</div>', "normal_treasury_range", build_fig3, [("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"), ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"), ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"), ("10Y−3M Spread (T10Y3M)", "https://fred.stlouisfed.org/series/T10Y3M")], 2),
+        ('<div class="section-title">2. 10Y Yield Structure</div>', '<div class="section-description">10Y Nominal / 10Y Real (R1) / 10Y Breakeven (R1)</div>', "normal_yield10_range", build_fig2, [("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y Real (DFII10)", "https://fred.stlouisfed.org/series/DFII10"), ("10Y Breakeven (T10YIE)", "https://fred.stlouisfed.org/series/T10YIE")], 1),
+        ('<div class="section-title">3. Treasury Yield & Curve Spread</div>', '<div class="section-description">3M / 2Y / 10Y / 10Y−2Y (R1) / 10Y−3M (R1)</div>', "normal_treasury_range", build_fig3, [("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"), ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"), ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"), ("10Y−3M Spread (T10Y3M)", "https://fred.stlouisfed.org/series/T10Y3M")], 2),
         ('<div class="section-title">4. US Liquidity</div>', '<div class="section-description">Net Liquidity (L) · Reserve Balances / TGA (R1) · ON RRP (R2)</div>', "normal_liquidity_range", build_fig4, [("Fed Total Assets (WALCL)", "https://fred.stlouisfed.org/series/WALCL"), ("Reserve Balances (WRESBAL)", "https://fred.stlouisfed.org/series/WRESBAL"), ("TGA · Daily Treasury Statement", "https://fiscaldata.treasury.gov/datasets/daily-treasury-statement/operating-cash-balance"), ("TGA fallback (WTREGEN)", "https://fred.stlouisfed.org/series/WTREGEN"), ("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD")], 3),
     ]
 
@@ -1722,7 +1722,7 @@ def render_core_charts():
         ),
         (
             '<div class="section-title">6. Banking-system Liquidity</div>',
-            '<div class="section-description">Aggregate Balance · Outstanding EFBN (R) · EFBN Held by Licensed Banks (R)</div>',
+            '<div class="section-description">Aggregate Balance · Outstanding EFBN (R1) · EFBN Held by Licensed Banks (R1)</div>',
             "hk_6_range",
             [
                 ("HKMA Monetary Base", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod/"),
@@ -1731,7 +1731,7 @@ def render_core_charts():
         ),
         (
             '<div class="section-title">7. HKD Funding</div>',
-            '<div class="section-description">O/N HIBOR · 3M HIBOR · HKMA Base Rate · O/N−3M Spread (R)</div>',
+            '<div class="section-description">O/N HIBOR · 3M HIBOR · HKMA Base Rate · O/N−3M Spread (R1)</div>',
             "hk_7_range",
             [
                 ("HKMA Open API", "https://apidocs.hkma.gov.hk/"),
