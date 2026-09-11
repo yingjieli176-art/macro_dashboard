@@ -784,9 +784,11 @@ def build_hk_liquidity_figures(
     """Build four independent Hong Kong liquidity charts for the dashboard."""
     all_data = load_hk_liquidity()
     data = _slice_range(all_data, date_range)
-    banking_source = load_hk_banking_liquidity_monthly() if date_range == "5Y" else load_hk_banking_liquidity_daily()
+    # Banking-system structure is intentionally monthly. Daily detail adds little
+    # to Aggregate Balance / EFBN trend analysis and created unnecessary snapshot
+    # fragility. HKD funding below remains daily where available.
+    banking_source = load_hk_banking_liquidity_monthly()
     funding_source = load_hk_funding_monthly() if date_range == "5Y" else load_hk_funding_daily()
-    banking_is_daily = _frame_is_daily(banking_source)
     funding_is_daily = _frame_is_daily(funding_source)
     banking_data = _slice_range(banking_source, date_range)
     funding_data = _slice_range(funding_source, date_range)
@@ -958,11 +960,9 @@ def build_hk_liquidity_figures(
     if not market_data.empty:
         market_latest = market_data["observation_date"].max().strftime("%Y-%m-%d")
 
-    # 5-2 · Daily banking-system liquidity and monetary-base structure.
+    # 6 · Monthly banking-system liquidity and monetary-base structure.
     balance = make_subplots(specs=[[{"secondary_y": True}]])
-    add_line(balance, banking_data, "Opening Aggregate Balance", "Opening Aggregate Balance", "#64748b", 1.7, "dot", unit=" HK$ bn", secondary_y=False)
     add_line(balance, banking_data, "Closing Aggregate Balance", "Closing Aggregate Balance", COLORS["balance"], 2.9, unit=" HK$ bn", secondary_y=False)
-    add_line(balance, banking_data, "Forecast Aggregate Balance T+1", "Forecast Aggregate Balance T+1", "#0284c7", 2.0, "dash", unit=" HK$ bn", secondary_y=False)
     add_line(balance, banking_data, "Outstanding EFBN", "Outstanding EFBN (R1)", "#7c3aed", 2.0, unit=" HK$ bn", secondary_y=True)
     add_line(balance, banking_data, "EFBN Held by Licensed Banks", "EFBN Held by Licensed Banks (R1)", "#c026d3", 1.8, "dash", unit=" HK$ bn", secondary_y=True)
     balance.update_yaxes(
@@ -974,15 +974,7 @@ def build_hk_liquidity_figures(
         title_text="", secondary_y=True,
         showgrid=False, zeroline=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3,
     )
-    banking_frequency_label = "Daily" if banking_is_daily else ("Monthly" if date_range == "5Y" else "Monthly fallback")
-    style(balance, f"6. Banking-system Liquidity · {banking_frequency_label}", height=400, right_axis=True)
-    if date_range != "5Y" and not banking_is_daily:
-        balance.add_annotation(
-            text="⚠ HKMA 日频流动性快照不可用 · 当前使用月频回退",
-            x=0.006, y=0.988, xref="paper", yref="paper", xanchor="left", yanchor="top",
-            showarrow=False, font=dict(size=10, color="#991b1b"),
-            bgcolor="rgba(254,242,242,0.94)", bordercolor="#fecaca", borderwidth=1, borderpad=3,
-        )
+    style(balance, "6. Banking-system Liquidity · Monthly", height=400, right_axis=True)
 
     # 5-3 · HKD funding.
     funding = make_subplots(specs=[[{"secondary_y": True}]])
