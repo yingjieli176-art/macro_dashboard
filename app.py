@@ -227,6 +227,8 @@ YAHOO_SEARCH_URLS = (
 
 def _symbol_market(symbol):
     raw = str(symbol or "").upper().strip()
+    if raw.endswith("-USD"):
+        return "CRYPTO"
     if raw.endswith(".HK") or raw in {"^HSI", "^HSTECH", "HSTECH.HK"}:
         return "HK"
     if raw.endswith((".SS", ".SZ")):
@@ -462,6 +464,8 @@ def _us_clock_state():
 
 def _regular_session_now(market):
     market = str(market or "").upper()
+    if market == "CRYPTO":
+        return True
     if market in {"HK", "CN"}:
         return _asia_clock_state(market) == "交易中"
     if market == "US":
@@ -711,6 +715,10 @@ def _quote_session_context(row, market=""):
     state = str(row.get("market_state") or "").upper()
     now_ts = time.time()
 
+    if market == "CRYPTO":
+        quote_ts = _valid_market_timestamp(row.get("regular_market_time"))
+        return "24/7", quote_ts
+
     if market == "US":
         regular_ts = _valid_market_timestamp(row.get("regular_market_time"))
         pre_ts = _valid_market_timestamp(row.get("pre_market_time"))
@@ -771,6 +779,14 @@ def _market_item_html(name, price, change_pct, meta=""):
 def _get_cached_quote(symbol, refresh_key=0):
     market = _symbol_market(symbol)
     candidates = []
+
+    # Crypto trades continuously. Use Yahoo directly so crypto never
+    # inherits US equity session labels or Tencent fallback behavior.
+    if market == "CRYPTO":
+        yahoo = _get_yahoo_quote_safe(symbol)
+        if yahoo.get("price") is not None:
+            return _tag_quote_role(yahoo, "primary")
+        return _empty_quote()
 
     # HK/A: Tencent and Eastmoney are peers. Always query both during the
     # trading session and choose the newest timestamp instead of accepting a
@@ -960,11 +976,18 @@ def _search_yahoo(market, query):
     results = []
     for item in quotes:
         quote_type = str(item.get("quoteType") or "").upper()
-        allowed_types = {"EQUITY", "INDEX"} if market == "US" else {"EQUITY"}
+        if market == "CRYPTO":
+            allowed_types = {"CRYPTOCURRENCY"}
+        elif market == "US":
+            allowed_types = {"EQUITY", "INDEX"}
+        else:
+            allowed_types = {"EQUITY"}
         if quote_type not in allowed_types:
             continue
         symbol = str(item.get("symbol") or "")
         if market == "US" and ("." in symbol or symbol.endswith(("=F", "=X"))):
+            continue
+        if market == "CRYPTO" and not symbol.upper().endswith("-USD"):
             continue
         if market == "HK" and not symbol.upper().endswith(".HK"):
             continue
@@ -1042,79 +1065,86 @@ def _cancel_search(key):
     st.session_state[f"{key}_open"] = False; st.session_state.pop(f"{key}_results", None)
 
 st.markdown('<div id="watchlist" class="section-anchor"></div><div class="section-kicker">WATCHLIST</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · 港/A 腾讯 + 东方财富双源择新，分时兜底 · Yahoo 仅备用 · 15 秒自动刷新</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · 美股 / 港股 / A股 / Crypto 分组 · Crypto 24/7 Yahoo · 港/A 双源择新 + 分时兜底 · 15 秒自动刷新</div>', unsafe_allow_html=True)
 
 @st.fragment(run_every="15s")
 def render_watchlists():
     info_col, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with info_col:
-        st.markdown('<div class="watch-toolbar">多源行情按时效切换 · 行情失败时保留上次有效报价</div>', unsafe_allow_html=True)
+        st.markdown('<div class="watch-toolbar">多源行情按时效切换 · Crypto 24/7 · 行情失败时保留上次有效报价</div>', unsafe_allow_html=True)
     with refresh_col:
         if st.button("↻ 刷新", key="refresh_watchlist_quotes", help="只刷新下方自选模块报价，不刷新市场概览"):
             st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
 
-    search_cols = st.columns(3, gap="small", vertical_alignment="top")
+    # Readability first: two wide columns per row instead of squeezing four
+    # market groups into one line. Global/24h assets are on top; Asia below.
     search_config = [
-        (search_cols[0], "US", "🇺🇸 美股", "US EQUITY / INDEX", "NVDA / NBIS / Nasdaq 100", "market_search_us"),
-        (search_cols[1], "HK", "🇭🇰 港股", "HK EQUITY", "0700 / 腾讯 / 东岳", "market_search_hk"),
-        (search_cols[2], "CN", "🇨🇳 A股", "A-SHARE", "600160 / 巨化 / 上海电力", "market_search_cn"),
+        ("US", "🇺🇸 美股", "US EQUITY / INDEX", "NVDA / NBIS / Nasdaq 100", "market_search_us"),
+        ("CRYPTO", "₿ 加密资产", "CRYPTO · 24/7", "BTC / ETH / Bitcoin", "market_search_crypto"),
+        ("HK", "🇭🇰 港股", "HK EQUITY", "0700 / 腾讯 / 东岳", "market_search_hk"),
+        ("CN", "🇨🇳 A股", "A-SHARE", "600160 / 巨化 / 上海电力", "market_search_cn"),
     ]
-    for col, market, title, subtitle, placeholder, key in search_config:
-        with col:
-            confirmed_list = st.session_state.get(f"{key}_confirmed", [])
-            confirmed_list = [confirmed_list] if isinstance(confirmed_list, dict) else (confirmed_list if isinstance(confirmed_list, list) else [])
-            st.markdown(
-                f'<div class="watch-market-head"><div class="watch-market-head-main"><div class="watch-market-title">{title}</div><div class="watch-market-subtitle">{subtitle}</div></div><span class="watch-count">{len(confirmed_list)}</span></div>',
-                unsafe_allow_html=True,
-            )
-            if confirmed_list:
-                for idx, confirmed in enumerate(confirmed_list):
-                    if not isinstance(confirmed, dict):
-                        continue
-                    with st.container(border=True):
-                        quote_col, delete_col = st.columns([1, 0.075], gap="small", vertical_alignment="top")
-                        with quote_col:
-                            st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
-                        with delete_col:
-                            st.markdown('<div class="module-delete">', unsafe_allow_html=True)
-                            st.button(
-                                "×",
-                                key=f"{key}_delete_{idx}",
-                                on_click=_delete_confirmed,
-                                args=(key, confirmed.get("symbol")),
-                                help=f"删除 {confirmed.get('name') or confirmed.get('symbol')}",
-                                type="tertiary",
-                                use_container_width=True,
-                            )
-                            st.markdown('</div>', unsafe_allow_html=True)
-            else:
-                st.markdown('<div class="watch-empty">暂无标的，可从下方添加。</div>', unsafe_allow_html=True)
 
-            is_open = st.session_state.get(f"{key}_open", False)
-            if not is_open:
-                st.button("＋ 添加标的", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,), help="搜索并添加股票或指数")
-            else:
-                st.markdown('<div class="watch-search-note">输入名称或代码，搜索后确认添加。</div>', unsafe_allow_html=True)
-                input_col, search_col, cancel_col = st.columns([5.0, 1.25, 1.25], gap="small")
-                with input_col:
-                    st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
-                with search_col:
-                    st.button("搜索", key=f"{key}_search_button", use_container_width=True, on_click=_run_search, args=(key, market))
-                with cancel_col:
-                    st.button("取消", key=f"{key}_cancel_button", use_container_width=True, on_click=_cancel_search, args=(key,))
-                results = st.session_state.get(f"{key}_results", [])
-                if results:
-                    options = [f'{item.get("name", "")} · {item.get("symbol", "")} · {item.get("exchange", "")}' for item in results]
-                    st.selectbox(
-                        "搜索结果",
-                        range(len(options)),
-                        format_func=lambda i: options[i],
-                        key=f"{key}_result_select",
-                        label_visibility="collapsed",
-                    )
-                    st.button("确认添加", key=f"{key}_confirm_selected", use_container_width=True, on_click=_confirm_selected, args=(key,), type="primary")
-                elif st.session_state.get(key, "").strip() and f"{key}_results" in st.session_state:
-                    st.caption("没有找到匹配标的，请检查名称或代码。")
+    for row_start in range(0, len(search_config), 2):
+        row_cols = st.columns(2, gap="small", vertical_alignment="top")
+        for col, config in zip(row_cols, search_config[row_start:row_start + 2]):
+            market, title, subtitle, placeholder, key = config
+            with col:
+                confirmed_list = st.session_state.get(f"{key}_confirmed", [])
+                confirmed_list = [confirmed_list] if isinstance(confirmed_list, dict) else (confirmed_list if isinstance(confirmed_list, list) else [])
+                st.markdown(
+                    f'<div class="watch-market-head"><div class="watch-market-head-main"><div class="watch-market-title">{title}</div><div class="watch-market-subtitle">{subtitle}</div></div><span class="watch-count">{len(confirmed_list)}</span></div>',
+                    unsafe_allow_html=True,
+                )
+                if confirmed_list:
+                    for idx, confirmed in enumerate(confirmed_list):
+                        if not isinstance(confirmed, dict):
+                            continue
+                        with st.container(border=True):
+                            quote_col, delete_col = st.columns([1, 0.075], gap="small", vertical_alignment="top")
+                            with quote_col:
+                                st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
+                            with delete_col:
+                                st.markdown('<div class="module-delete">', unsafe_allow_html=True)
+                                st.button(
+                                    "×",
+                                    key=f"{key}_delete_{idx}",
+                                    on_click=_delete_confirmed,
+                                    args=(key, confirmed.get("symbol")),
+                                    help=f"删除 {confirmed.get('name') or confirmed.get('symbol')}",
+                                    type="tertiary",
+                                    use_container_width=True,
+                                )
+                                st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown('<div class="watch-empty">暂无标的，可从下方添加。</div>', unsafe_allow_html=True)
+
+                is_open = st.session_state.get(f"{key}_open", False)
+                if not is_open:
+                    help_text = "搜索并添加加密资产" if market == "CRYPTO" else "搜索并添加股票或指数"
+                    st.button("＋ 添加标的", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,), help=help_text)
+                else:
+                    st.markdown('<div class="watch-search-note">输入名称或代码，搜索后确认添加。</div>', unsafe_allow_html=True)
+                    input_col, search_col, cancel_col = st.columns([5.0, 1.25, 1.25], gap="small")
+                    with input_col:
+                        st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
+                    with search_col:
+                        st.button("搜索", key=f"{key}_search_button", use_container_width=True, on_click=_run_search, args=(key, market))
+                    with cancel_col:
+                        st.button("取消", key=f"{key}_cancel_button", use_container_width=True, on_click=_cancel_search, args=(key,))
+                    results = st.session_state.get(f"{key}_results", [])
+                    if results:
+                        options = [f'{item.get("name", "")} · {item.get("symbol", "")} · {item.get("exchange", "")}' for item in results]
+                        st.selectbox(
+                            "搜索结果",
+                            range(len(options)),
+                            format_func=lambda i: options[i],
+                            key=f"{key}_result_select",
+                            label_visibility="collapsed",
+                        )
+                        st.button("确认添加", key=f"{key}_confirm_selected", use_container_width=True, on_click=_confirm_selected, args=(key,), type="primary")
+                    elif st.session_state.get(key, "").strip() and f"{key}_results" in st.session_state:
+                        st.caption("没有找到匹配标的，请检查名称或代码。")
 
 render_watchlists()
 
