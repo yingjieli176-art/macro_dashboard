@@ -1,0 +1,54 @@
+name: Add crypto watchlist
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/add_crypto_watchlist.py
+      - .github/workflows/add-crypto-watchlist.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: add-crypto-watchlist
+  cancel-in-progress: true
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply crypto watchlist migration
+        run: python scripts/add_crypto_watchlist.py
+      - name: Compile modified modules
+        run: python -m py_compile app.py macro_platform/watchlist_state.py
+      - name: Validate crypto defaults and round-trip
+        run: |
+          python - <<'PY'
+          from macro_platform.watchlist_state import default_watchlists, encode_watchlists, decode_watchlists
+          data = default_watchlists()
+          rows = data['market_search_crypto']
+          assert [r['symbol'] for r in rows] == ['BTC-USD', 'ETH-USD'], rows
+          restored = decode_watchlists(encode_watchlists(data))
+          assert [r['symbol'] for r in restored['market_search_crypto']] == ['BTC-USD', 'ETH-USD']
+          print('crypto watchlist state OK')
+          PY
+      - name: Commit production changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py macro_platform/watchlist_state.py
+          if git diff --cached --quiet; then
+            echo "No production changes"
+            exit 0
+          fi
+          git commit -m "Add BTC and ETH crypto watchlist"
+          git pull --rebase origin main
+          git push origin main
