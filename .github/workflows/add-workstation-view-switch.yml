@@ -1,0 +1,57 @@
+name: Add workstation view switch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/add_workstation_view_switch.py
+      - .github/workflows/add-workstation-view-switch.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply view switch
+        run: python scripts/add_workstation_view_switch.py
+      - name: Compile app
+        run: python -m py_compile app.py data.py
+      - name: Validate view mode
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          required = [
+              'key="workstation_view_mode"',
+              'options=["电脑", "手机"]',
+              'default="电脑"',
+              'compact_mode = workstation_view == "手机"',
+              'MOBILE COMPACT',
+              'DESKTOP WORKSTATION',
+          ]
+          missing = [x for x in required if x not in text]
+          assert not missing, missing
+          assert '\ncompact_mode = False\n' not in text
+          print('Workstation view-mode validation OK')
+          PY
+      - name: Commit production changes
+        run: |
+          if git diff --quiet -- app.py; then
+            echo "No app.py changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          git commit -m "Add desktop and mobile workstation views"
+          git pull --rebase origin main
+          git push origin main
