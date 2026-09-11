@@ -47,13 +47,15 @@ jobs:
           PY
       - name: Commit refreshed snapshot
         run: |
-          if git diff --quiet -- data_snapshots/hkma_banking_liquidity_daily.json; then
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Stage first: the snapshot can be a brand-new untracked file, which
+          # `git diff` alone does not detect.
+          git add data_snapshots/hkma_banking_liquidity_daily.json
+          if git diff --cached --quiet; then
             echo "Daily snapshot unchanged"
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data_snapshots/hkma_banking_liquidity_daily.json
           git commit -m "Refresh HKMA daily liquidity snapshot"
           git pull --rebase origin main
           git push origin main
