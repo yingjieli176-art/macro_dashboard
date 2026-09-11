@@ -1,0 +1,87 @@
+name: Patch HK banking liquidity to monthly
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/patch-hk-banking-monthly.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Make banking liquidity monthly-only
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('macro_platform/hk_liquidity.py')
+          text = path.read_text(encoding='utf-8')
+
+          old = '    banking_source = load_hk_banking_liquidity_monthly() if date_range == "5Y" else load_hk_banking_liquidity_daily()\n'
+          new = '    # Banking-system structure is intentionally monthly. Daily detail adds little\n    # to Aggregate Balance / EFBN trend analysis and created unnecessary snapshot\n    # fragility. HKD funding below remains daily where available.\n    banking_source = load_hk_banking_liquidity_monthly()\n'
+          if old not in text:
+              raise SystemExit('banking source assignment not found')
+          text = text.replace(old, new, 1)
+
+          old = '    banking_is_daily = _frame_is_daily(banking_source)\n'
+          if old in text:
+              text = text.replace(old, '', 1)
+
+          text = text.replace(
+              '    # 5-2 · Daily banking-system liquidity and monetary-base structure.\n',
+              '    # 6 · Monthly banking-system liquidity and monetary-base structure.\n',
+              1,
+          )
+
+          for line in (
+              '    add_line(balance, banking_data, "Opening Aggregate Balance", "Opening Aggregate Balance", "#64748b", 1.7, "dot", unit=" HK$ bn", secondary_y=False)\n',
+              '    add_line(balance, banking_data, "Forecast Aggregate Balance T+1", "Forecast Aggregate Balance T+1", "#0284c7", 2.0, "dash", unit=" HK$ bn", secondary_y=False)\n',
+          ):
+              if line in text:
+                  text = text.replace(line, '', 1)
+
+          old_block = '''    banking_frequency_label = "Daily" if banking_is_daily else ("Monthly" if date_range == "5Y" else "Monthly fallback")
+    style(balance, f"6. Banking-system Liquidity · {banking_frequency_label}", height=400, right_axis=True)
+    if date_range != "5Y" and not banking_is_daily:
+        balance.add_annotation(
+            text="⚠ HKMA 日频流动性快照不可用 · 当前使用月频回退",
+            x=0.006, y=0.988, xref="paper", yref="paper", xanchor="left", yanchor="top",
+            showarrow=False, font=dict(size=10, color="#991b1b"),
+            bgcolor="rgba(254,242,242,0.94)", bordercolor="#fecaca", borderwidth=1, borderpad=3,
+        )
+'''
+          new_block = '''    style(balance, "6. Banking-system Liquidity · Monthly", height=400, right_axis=True)
+'''
+          if old_block not in text:
+              raise SystemExit('banking frequency/warning block not found')
+          text = text.replace(old_block, new_block, 1)
+
+          path.write_text(text, encoding='utf-8')
+          print('HK banking liquidity chart is now monthly-only')
+          PY
+      - name: Syntax check
+        run: python -m py_compile macro_platform/hk_liquidity.py app.py
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add macro_platform/hk_liquidity.py
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "Use monthly HK banking liquidity series"
+          git pull --rebase origin main
+          git push origin main
