@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - scripts/unify_right_axis_notation.py
+      - scripts/unify_right_axis_notation_v2.py
       - .github/workflows/unify-right-axis-notation.yml
 
 permissions:
@@ -26,7 +26,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Apply right-axis convention
-        run: python scripts/unify_right_axis_notation.py
+        run: python scripts/unify_right_axis_notation_v2.py
       - name: Compile modified modules
         run: python -m py_compile app.py macro_platform/hk_liquidity.py
       - name: Validate compact right-axis convention
