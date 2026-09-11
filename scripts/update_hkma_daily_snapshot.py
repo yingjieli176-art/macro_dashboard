@@ -27,36 +27,71 @@ ROLLING_DAYS = 550
 MAX_PAGES = 30
 
 
+def _decode_payload(raw: bytes) -> dict:
+    """Decode either native HKMA JSON or the same JSON carried by r.jina.ai."""
+    text = raw.decode("utf-8", errors="replace").strip()
+    try:
+        payload = json.loads(text)
+        if isinstance(payload, dict):
+            return payload
+    except json.JSONDecodeError:
+        pass
+
+    # r.jina.ai is transport-only. In unusual responses it may prepend a small
+    # text wrapper, so recover the first complete-looking JSON object.
+    start, end = text.find("{"), text.rfind("}")
+    if start >= 0 and end > start:
+        payload = json.loads(text[start : end + 1])
+        if isinstance(payload, dict):
+            return payload
+    raise RuntimeError("HKMA response was not a JSON object")
+
+
+def _fetch_bytes(url: str, timeout: int) -> bytes:
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (compatible; MacroDashboard/1.0; +https://github.com/yingjieli176-art/macro_dashboard)",
+            "Accept": "application/json,text/plain,*/*",
+            "Cache-Control": "no-cache, no-store, max-age=0",
+            "Pragma": "no-cache",
+            "Connection": "close",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as response:
+        return response.read()
+
+
 def _request(url: str, params: dict[str, str], *, timeout: int = 12, attempts: int = 2) -> list[dict]:
-    last_error: Exception | None = None
+    """Fetch HKMA rows with a transport fallback for GitHub-hosted runners.
+
+    The data source remains HKMA in both cases. r.jina.ai is used only as an
+    HTTP transport relay because GitHub-hosted runners intermittently time out
+    when connecting directly to api.hkma.gov.hk.
+    """
     query = urllib.parse.urlencode(params)
-    full_url = f"{url}?{query}"
-    for attempt in range(attempts):
-        req = urllib.request.Request(
-            full_url,
-            headers={
-                "User-Agent": "Mozilla/5.0 (compatible; MacroDashboard/1.0; +https://github.com/yingjieli176-art/macro_dashboard)",
-                "Accept": "application/json",
-                "Cache-Control": "no-cache, no-store, max-age=0",
-                "Pragma": "no-cache",
-                "Connection": "close",
-            },
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as response:
-                payload = json.load(response)
-            header = payload.get("header") or {}
-            if header.get("success") is False:
-                raise RuntimeError(header.get("err_msg") or "HKMA API failure")
-            rows = (payload.get("result") or {}).get("records") or []
-            if not isinstance(rows, list):
-                raise RuntimeError("HKMA result.records is not a list")
-            return rows
-        except Exception as exc:
-            last_error = exc
-            if attempt < attempts - 1:
-                time.sleep(1.0)
-    raise RuntimeError(f"HKMA request failed: {last_error}")
+    official = f"{url}?{query}"
+    proxy = "https://r.jina.ai/http://" + official.removeprefix("https://")
+    candidates = ((proxy, max(timeout, 35)), (official, timeout))
+    errors: list[str] = []
+
+    for candidate, candidate_timeout in candidates:
+        for attempt in range(attempts):
+            try:
+                payload = _decode_payload(_fetch_bytes(candidate, candidate_timeout))
+                header = payload.get("header") or {}
+                if header.get("success") is False:
+                    raise RuntimeError(header.get("err_msg") or "HKMA API failure")
+                rows = (payload.get("result") or {}).get("records") or []
+                if not isinstance(rows, list):
+                    raise RuntimeError("HKMA result.records is not a list")
+                return rows
+            except Exception as exc:
+                errors.append(f"{candidate.split('?')[0]} attempt {attempt + 1}: {type(exc).__name__}: {exc}")
+                if attempt < attempts - 1:
+                    time.sleep(1.0)
+
+    raise RuntimeError("HKMA request failed: " + " | ".join(errors[-6:]))
 
 
 def _fetch_recent_pages(
@@ -235,11 +270,12 @@ def main() -> None:
     payload = {
         "source": "HKMA official daily bulletin datasets; current daily-statistics enrichment when available",
         "source_urls": [MARKET_OP_URL, BASE_URL, HIBOR_URL, CURRENT_BASE_URL, INTERBANK_URL],
+        "transport_fallback": "r.jina.ai relay when direct api.hkma.gov.hk access is unavailable from CI",
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "coverage_start": records[0]["end_of_date"],
         "coverage_end": records[-1]["end_of_date"],
         "record_count": len(records),
-        "fetch_strategy": "small newest-first pagesize=20 offset pagination; no date-filter query; optional current enrichment",
+        "fetch_strategy": "small newest-first pagesize=20 offset pagination; no date-filter query; proxy/direct transport fallback; optional current enrichment",
         "records": records,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
