@@ -24,7 +24,7 @@ TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q="
 TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
-PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False}
+PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
 DASHBOARD_TZ = ZoneInfo("Asia/Hong_Kong")
@@ -1234,10 +1234,12 @@ def get_fred_series(series_id): return _fred_series(series_id)
 
 
 # === HK LIQUIDITY CHART 5 ===
+@st.cache_data(ttl=300, show_spinner=False)
 def get_hk_liquidity():
     return load_hk_liquidity()
 
 
+@st.cache_data(ttl=300, show_spinner=False)
 def build_fig5(date_range, market_mode="Raw"):
     return build_hk_liquidity_figures(date_range, compact_mode=False, market_mode=market_mode)
 
@@ -1246,11 +1248,13 @@ def apply_hk_chart_range(fig, date_range):
     """Apply the same dashboard-wide adaptive time axis to charts 5-8."""
     return apply_time_axis(fig, date_range)
 
+@st.cache_data(ttl=300, show_spinner=False)
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
     fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
+@st.cache_data(ttl=300, show_spinner=False)
 def build_fig2(date_range):
     data = get_dgs10().merge(get_dfii10(), on="observation_date", how="outer").merge(get_fred_series("T10YIE"), on="observation_date", how="outer").sort_values("observation_date")
     for column in ("DGS10", "DFII10", "T10YIE"):
@@ -1264,6 +1268,7 @@ def build_fig2(date_range):
     for column, name, width, dash, yaxis in [("DGS10", "10Y Nominal", 2.8, None, None), ("DFII10", "10Y Real (R1)", 2.6, None, "y2"), ("T10YIE", "10Y Breakeven (R1)", 2.5, "dot", "y2")]: add_line(fig, data, column, name, width, dash, yaxis)
     fig.update_layout(yaxis_title="Nominal Yield (%)", yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, zeroline=False, fixedrange=True, automargin=False, tickfont=dict(size=9), ticks="outside", ticklen=3)); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
+@st.cache_data(ttl=300, show_spinner=False)
 def build_fig4(date_range):
     """US liquidity chart with separate scales for unlike balance magnitudes.
 
@@ -1368,6 +1373,7 @@ def build_fig4(date_range):
     return fig
 
 
+@st.cache_data(ttl=300, show_spinner=False)
 def build_fig3(date_range):
     data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").sort_values("observation_date")
     for column in ("DGS3MO", "DGS2", "DGS10"):
@@ -1383,6 +1389,7 @@ def build_fig3(date_range):
     fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=False, tickfont=dict(size=9), ticks="outside", ticklen=3)); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 
+@st.cache_data(ttl=300, show_spinner=False)
 def build_fig9(date_range):
     """US equity risk: index vol, constituent vol, VIX term spread, and SPX."""
     frames = []
@@ -1492,6 +1499,7 @@ def _rebase_100(series):
     return values / float(valid.iloc[0]) * 100.0
 
 
+@st.cache_data(ttl=300, show_spinner=False)
 def build_fig10(date_range, market_mode="Rebased 100"):
     """Precious metals: gold, silver, gold/silver ratio, and GVZ."""
     frames = []
@@ -1573,6 +1581,7 @@ def build_fig10(date_range, market_mode="Rebased 100"):
     return fig
 
 
+@st.cache_data(ttl=300, show_spinner=False)
 def build_fig11(date_range, market_mode="Rebased 100"):
     """Crypto market: BTC, ETH, ETH/BTC and 30-day BTC realized volatility."""
     frames = []
