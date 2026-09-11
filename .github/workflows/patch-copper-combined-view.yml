@@ -1,0 +1,85 @@
+name: Patch copper combined view
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/patch-copper-combined-view.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Replace separate copper panels with one combined flow/spread panel
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('app.py')
+          text = path.read_text(encoding='utf-8')
+          start_marker = "    st.markdown(\n        '<div class=\"section-kicker\">INDUSTRIAL METALS · COPPER</div>'"
+          end_marker = "st.markdown('<div id=\"macro-charts\" class=\"section-anchor\"></div><div class=\"section-kicker\">MACRO CHARTS</div>'"
+
+          start = text.find(start_marker)
+          end = text.find(end_marker, start)
+          if start < 0 or end < 0:
+              raise SystemExit('Copper render block markers not found; refusing to patch app.py')
+
+          replacement = '''    st.markdown(
+              '<div class="section-kicker">INDUSTRIAL METALS · COPPER</div>'
+              '<div class="section-title">12. Copper Flow & COMEX–LME Spread</div>'
+              '<div class="section-description">LME / COMEX inventories (L) · normalized copper prices (R1) · COMEX−LME 3M spread (R2)</div>',
+              unsafe_allow_html=True,
+          )
+          copper_flow_range = st.radio(
+              "时间范围", RANGES, horizontal=True, index=1,
+              key="copper_flow_spread_range", label_visibility="collapsed",
+          )
+          st.plotly_chart(
+              build_comex_copper_figure(copper_flow_range),
+              use_container_width=True,
+              config=PLOTLY_CONFIG,
+          )
+          st.markdown(
+              '<div class="mini-description"><b>读取方法：</b>COMEX 与 LME 库存放在同一左轴（千吨，kt），直接观察交易所可见库存的相对迁移；'
+              'COMEX HG 先按 1 公吨 = 2,204.6226 磅换算为 USD/t，再与 LME 3M 放在同一价格轴；R2 直接显示 COMEX−LME 3M 价差。'
+              '若 COMEX 库存上升、LME 库存下降且价差同步走阔，通常可视作库存/交割需求向美国端迁移的信号；反向组合则相反。'
+              '该价差使用 HG 近月连续代理与 LME 3M，期限并非严格匹配，因此用于方向与压力监测，不是可直接执行的无风险套利报价。</div>',
+              unsafe_allow_html=True,
+          )
+          add_sources([
+              ("CME · COMEX Warehouse & Depository Stocks", "https://www.cmegroup.com/solutions/clearing/operations-and-deliveries/nymex-delivery-notices.html"),
+              ("Yahoo Finance · COMEX Copper HG=F", "https://finance.yahoo.com/quote/HG=F/history/"),
+              ("LME Copper", "https://www.lme.com/copper"),
+              ("LME Warehouse & Stocks Reports", "https://www.lme.com/Market-data/Reports-and-data/Warehouse-and-stocks-reports"),
+              ("Westmetall · LME Copper Daily Table", "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"),
+              ("COCHILCO · Copper Inventories", "https://boletin.cochilco.cl/estadisticas/inventarios.asp"),
+          ])
+          st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+'''
+
+          patched = text[:start] + replacement + text[end:]
+          path.write_text(patched, encoding='utf-8')
+          print('app.py copper panel patched')
+          PY
+      - name: Validate Python syntax
+        run: python -m py_compile app.py macro_platform/copper.py
+      - name: Commit combined copper panel
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          if git diff --cached --quiet; then
+            echo "app.py already patched"
+            exit 0
+          fi
+          git commit -m "Combine LME and COMEX copper monitor"
+          git pull --rebase origin main
+          git push origin main
