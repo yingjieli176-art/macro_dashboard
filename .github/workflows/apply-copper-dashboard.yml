@@ -1,0 +1,45 @@
+name: Apply copper dashboard integration
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/apply_copper_dashboard.py
+      - macro_platform/copper.py
+      - .github/workflows/apply-copper-dashboard.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-copper-dashboard
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply dashboard patch
+        run: python scripts/apply_copper_dashboard.py
+      - name: Syntax check
+        run: python -m py_compile app.py macro_platform/copper.py scripts/update_copper_snapshot.py scripts/update_hkma_daily_snapshot.py
+      - name: Commit app integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          if git diff --cached --quiet; then
+            echo "Copper dashboard already integrated"
+            exit 0
+          fi
+          git commit -m "Add COMEX and LME copper charts"
+          git pull --rebase origin main
+          git push origin main
