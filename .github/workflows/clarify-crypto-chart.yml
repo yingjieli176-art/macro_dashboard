@@ -1,0 +1,61 @@
+name: Clarify crypto chart labels
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/clarify_crypto_chart.py
+      - .github/workflows/clarify-crypto-chart.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: clarify-crypto-chart
+  cancel-in-progress: true
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply crypto chart clarity migration
+        run: python scripts/clarify_crypto_chart.py
+      - name: Compile app
+        run: python -m py_compile app.py scripts/clarify_crypto_chart.py
+      - name: Validate crypto chart wording
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          for token in (
+              'BTC · 起点100',
+              'ETH · 起点100',
+              'ETH/BTC 强弱 · R1',
+              'BTC 30D 实际波动率 · R2',
+              '<b>4 个参数分别看什么：</b>',
+              '4 个指标 · BTC / ETH 相对表现',
+              'R1 / R2 / R3 只是不同的右侧纵轴编号',
+          ):
+              assert token in text, token
+          print('Crypto chart clarity checks OK')
+          PY
+      - name: Commit clarified crypto chart
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          if git diff --cached --quiet; then
+            echo "Crypto chart already current"
+            exit 0
+          fi
+          git commit -m "Clarify crypto chart parameters and axes"
+          git pull --rebase origin main
+          git push origin main
