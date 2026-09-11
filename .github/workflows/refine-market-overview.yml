@@ -1,0 +1,58 @@
+name: Refine market overview
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/refine_market_overview.py
+      - .github/workflows/refine-market-overview.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply market overview refinement
+        run: python scripts/refine_market_overview.py
+      - name: Compile app
+        run: python -m py_compile app.py data.py
+      - name: Validate market overview only
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text(encoding='utf-8')
+          required = [
+              'Market overview · compact professional index tape',
+              'market-change {change_class}',
+              '主要指数行情带 · 当前价格 / 涨跌幅 / 市场状态 / 报价时间 · 60 秒刷新',
+              '10. Precious Metals',
+              'def build_fig10',
+          ]
+          missing = [x for x in required if x not in text]
+          assert not missing, missing
+          assert 'workstation-rail' not in text
+          assert 'workspace_global_range' not in text
+          assert 'workstation_view_mode' not in text
+          print('Market overview refinement validation OK')
+          PY
+      - name: Commit production change
+        run: |
+          if git diff --quiet -- app.py; then
+            echo "No app.py changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          git commit -m "Polish market overview index cards"
+          git pull --rebase origin main
+          git push origin main
