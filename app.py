@@ -111,6 +111,7 @@ html { scroll-behavior: smooth; }
 .section-anchor { height: 0; visibility: hidden; scroll-margin-top: 18px; }
 .section-kicker { color: #9ca3af; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; margin-top: 0.12rem; margin-bottom: 0.04rem; line-height: 1.1; }
 .section-toolbar-note { color: #9ca3af; font-size: 0.72rem; margin-top: -0.15rem; margin-bottom: 0.5rem; }
+.view-mode-note { color:#9ca3af; font-size:.60rem; letter-spacing:.11em; text-align:right; margin:-4px 2px 4px; }
 div[data-testid="stVerticalBlockBorderWrapper"] { border-color: #e5e7eb !important; border-radius: 12px !important; }
 div[data-testid="stPlotlyChart"] { border: 1px solid #eef2f7; border-radius: 12px; padding: 2px 4px 0; background: #fff; overflow: hidden; }
 .stButton > button { border-radius: 8px; }
@@ -158,6 +159,57 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+
+# Workstation view mode: desktop is the deliberate default; mobile is an
+# explicit compact workspace rather than a browser-width guess.
+_view_left, _view_right = st.columns([5, 2])
+with _view_right:
+    workstation_view = st.segmented_control(
+        "视图模式",
+        options=["电脑", "手机"],
+        default="电脑",
+        selection_mode="single",
+        key="workstation_view_mode",
+        label_visibility="collapsed",
+    ) or "电脑"
+compact_mode = workstation_view == "手机"
+
+st.markdown(
+    f'<div class="view-mode-note">VIEW · {"MOBILE COMPACT" if compact_mode else "DESKTOP WORKSTATION"}</div>',
+    unsafe_allow_html=True,
+)
+
+if compact_mode:
+    st.markdown(
+        """
+        <style>
+        .block-container {
+            max-width: 760px !important;
+            padding-top: .35rem !important;
+            padding-left: .55rem !important;
+            padding-right: .55rem !important;
+            padding-bottom: 1.5rem !important;
+        }
+        .dashboard-header { padding: 2px 0 6px !important; margin-bottom: 6px !important; }
+        .dashboard-links { display: none !important; }
+        .dashboard-title { font-size: 1.42rem !important; }
+        .dashboard-subtitle { font-size: .72rem !important; line-height: 1.35 !important; }
+        .section-kicker { font-size: .58rem !important; }
+        .section-title { font-size: 1.02rem !important; min-height: 23px !important; margin-top: .26rem !important; }
+        .section-description { font-size: .70rem !important; min-height: 16px !important; margin-bottom: .08rem !important; }
+        .mini-description { font-size: .66rem !important; line-height: 1.35 !important; }
+        .source-text { font-size: .64rem !important; }
+        .chart-divider { margin: .08rem 0 .22rem !important; }
+        div[data-testid="stPlotlyChart"] { border-radius: 7px !important; padding: 0 !important; }
+        div[data-testid="stRadio"] label, div[data-testid="stSegmentedControl"] label { font-size: .72rem !important; }
+        .market-groups { grid-template-columns: 1fr !important; gap: 5px !important; }
+        .hk-liquidity-strip { grid-template-columns: repeat(2, minmax(0,1fr)) !important; gap: 4px !important; }
+        .news-box { max-height: 520px !important; }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 def _load_watchlists():
     raw = st.query_params.get(WATCHLIST_PARAM, "")
@@ -1184,9 +1236,9 @@ def build_fig4(date_range):
     )
     fig = apply_chart_style(fig, chart_height(320, 430), date_range)
     fig.update_layout(
-        margin=dict(l=64, r=164, t=72, b=34, pad=2),
-        legend=dict(y=1.09, x=0.01),
-        xaxis=dict(domain=[0.0, 0.82]),
+        margin=dict(l=50 if compact_mode else 64, r=118 if compact_mode else 164, t=62 if compact_mode else 72, b=30 if compact_mode else 34, pad=2),
+        legend=dict(y=1.08 if compact_mode else 1.09, x=0.01),
+        xaxis=dict(domain=[0.0, 0.78 if compact_mode else 0.82]),
         yaxis=dict(
             title="Net Liquidity · USD T",
             showgrid=True, gridcolor="#e5e7eb", griddash="dot",
@@ -1383,9 +1435,9 @@ def build_fig10(date_range, market_mode="Rebased 100"):
         )
         fig = apply_chart_style(fig, chart_height(320, 440), date_range)
         fig.update_layout(
-            margin=dict(l=62, r=150, t=72, b=34, pad=2),
-            legend=dict(y=1.09, x=0.01),
-            xaxis=dict(domain=[0.0, 0.84]),
+            margin=dict(l=48 if compact_mode else 62, r=108 if compact_mode else 150, t=62 if compact_mode else 72, b=30 if compact_mode else 34, pad=2),
+            legend=dict(y=1.08 if compact_mode else 1.09, x=0.01),
+            xaxis=dict(domain=[0.0, 0.78 if compact_mode else 0.84]),
             yaxis=dict(title="Gold / Silver · Rebased 100", tickformat=".1f"),
             yaxis2=dict(title="R1 · Gold/Silver Ratio", overlaying="y", side="right", anchor="free", position=0.87, showgrid=False, fixedrange=True, tickformat=".1f"),
             yaxis3=dict(title="R2 · GVZ", overlaying="y", side="right", anchor="free", position=0.98, showgrid=False, fixedrange=True, tickformat=".1f"),
@@ -1403,9 +1455,9 @@ def build_fig10(date_range, market_mode="Rebased 100"):
     )
     fig = apply_chart_style(fig, chart_height(330, 450), date_range)
     fig.update_layout(
-        margin=dict(l=68, r=220, t=72, b=34, pad=2),
-        legend=dict(y=1.09, x=0.01),
-        xaxis=dict(domain=[0.0, 0.75]),
+        margin=dict(l=50 if compact_mode else 68, r=152 if compact_mode else 220, t=62 if compact_mode else 72, b=30 if compact_mode else 34, pad=2),
+        legend=dict(y=1.08 if compact_mode else 1.09, x=0.01),
+        xaxis=dict(domain=[0.0, 0.68 if compact_mode else 0.75]),
         yaxis=dict(title="Gold · USD/oz", tickformat=",.0f"),
         yaxis2=dict(title="R1 · Silver · USD/oz", overlaying="y", side="right", anchor="free", position=0.78, showgrid=False, fixedrange=True, tickformat=".1f"),
         yaxis3=dict(title="R2 · Gold/Silver", overlaying="y", side="right", anchor="free", position=0.88, showgrid=False, fixedrange=True, tickformat=".1f"),
@@ -1439,7 +1491,7 @@ US_EQUITY_RISK_DESCRIPTION = '<b>参数概念：</b><br>1. VIX：基于 S&P 500 
 
 PRECIOUS_METALS_DESCRIPTION = '<b>参数概念：</b><br>1. Gold：COMEX 黄金连续近月期货 GC=F 日收盘价，单位 USD/oz。<br>2. Silver：COMEX 白银连续近月期货 SI=F 日收盘价，单位 USD/oz。<br>3. Gold/Silver Ratio：金价 ÷ 银价；上升表示黄金相对白银更强，下降表示白银相对更强。<br>4. Gold Volatility / GVZ：Cboe Gold ETF Volatility Index，反映黄金相关期权的隐含波动率。<br><br><b>读取提示：</b>默认 Rebased 100 用于比较金银相对强弱；Raw 模式保留金银绝对价格，并为 Silver、金银比和 GVZ 使用独立右轴，避免不同量纲互相压缩。'
 
-compact_mode = False
+# compact_mode is selected by the workstation view switch above.
 
 def render_core_charts():
     st.markdown('<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>', unsafe_allow_html=True)
