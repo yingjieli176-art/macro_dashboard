@@ -1,0 +1,54 @@
+name: Optimize dashboard runtime
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/optimize_dashboard_runtime.py
+      - .github/workflows/optimize-dashboard-runtime.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: optimize-dashboard-runtime
+  cancel-in-progress: true
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply runtime optimization
+        run: python scripts/optimize_dashboard_runtime.py
+      - name: Compile app
+        run: python -m py_compile app.py
+      - name: Validate runtime caches
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text()
+          for name in ('build_fig1','build_fig2','build_fig3','build_fig4','build_fig5','build_fig9','build_fig10','build_fig11','get_hk_liquidity'):
+              marker = f'@st.cache_data(ttl=300, show_spinner=False)\ndef {name}('
+              assert marker in text, marker
+          assert '"responsive": True' in text
+          print('runtime cache validation OK')
+          PY
+      - name: Commit production change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          if git diff --cached --quiet; then
+            echo "No production changes"
+            exit 0
+          fi
+          git commit -m "Reduce Streamlit chart rebuild overhead"
+          git pull --rebase origin main
+          git push origin main
