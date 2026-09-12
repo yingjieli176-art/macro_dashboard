@@ -2,7 +2,7 @@
   "source": "Hong Kong Monetary Authority Discount Window Base Rate — end of period",
   "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/disc-win-liquid-adj-win-rates-endperiod",
   "transport": "r.jina.ai text transport used only by repository snapshot job",
-  "updated_at": "2026-09-10T00:35:59.925559+00:00",
+  "updated_at": "2026-09-12T00:29:51.230662+00:00",
   "record_count": 100,
   "coverage_start": "2018-05",
   "coverage_end": "2026-08",
