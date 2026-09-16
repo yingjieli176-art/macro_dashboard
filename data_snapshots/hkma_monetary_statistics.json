@@ -1208,7 +1208,7 @@
     "source": "Hong Kong Monetary Authority Monetary Base end-of-period API",
     "official_source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod",
     "transport": "direct HKMA first; r.jina.ai fallback used only by repository snapshot job",
-    "updated_at": "2026-09-15T00:51:59.879523+00:00",
+    "updated_at": "2026-09-16T00:45:20.718355+00:00",
     "record_count": 100,
     "coverage_start": "2018-05",
     "coverage_end": "2026-08",
