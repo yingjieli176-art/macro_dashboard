@@ -8,10 +8,10 @@
     "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity"
   ],
   "transport_fallback": "r.jina.ai relay when direct api.hkma.gov.hk access is unavailable from CI",
-  "updated_at": "2026-09-16T15:27:37.572771+00:00",
+  "updated_at": "2026-09-17T15:34:24.905710+00:00",
   "coverage_start": "2025-03-17",
-  "coverage_end": "2026-09-16",
-  "record_count": 371,
+  "coverage_end": "2026-09-17",
+  "record_count": 372,
   "fetch_strategy": "small newest-first pagesize=20 offset pagination; no date-filter query; proxy/direct transport fallback; optional current enrichment",
   "records": [
     {
@@ -4930,17 +4930,17 @@
     },
     {
       "end_of_date": "2026-08-20",
-      "opening_balance": 53968,
+      "opening_balance": null,
       "closing_balance": 53968,
-      "forecast_aggregate_bal_t1": 53968,
+      "forecast_aggregate_bal_t1": null,
       "outstanding_efbn": 1355603,
       "ow_lb_bf_disc_win": 1183536,
       "aggr_balance_bf_disc_win": 53968,
-      "hibor_overnight": 2.66,
+      "hibor_overnight": 2.8919,
       "hibor_3m": 2.94452,
-      "disc_win_base_rate": 4,
-      "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "disc_win_base_rate": null,
+      "cu_weakside": null,
+      "cu_strongside": null
     },
     {
       "end_of_date": "2026-08-21",
@@ -5205,6 +5205,20 @@
       "hibor_overnight": 2.03,
       "hibor_3m": null,
       "disc_win_base_rate": 4,
+      "cu_weakside": 7.85,
+      "cu_strongside": 7.75
+    },
+    {
+      "end_of_date": "2026-09-17",
+      "opening_balance": 56167,
+      "closing_balance": 53975,
+      "forecast_aggregate_bal_t1": 53975,
+      "outstanding_efbn": 1358165,
+      "ow_lb_bf_disc_win": 1188947,
+      "aggr_balance_bf_disc_win": 53975,
+      "hibor_overnight": 2.02,
+      "hibor_3m": null,
+      "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75
     }
