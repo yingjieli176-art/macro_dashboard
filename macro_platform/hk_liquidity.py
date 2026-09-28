@@ -8,6 +8,7 @@ from typing import Any
 import pandas as pd
 import plotly.graph_objects as go
 import requests
+import streamlit as st
 from plotly.subplots import make_subplots
 
 from macro_platform.chart_axes import apply_time_axis
@@ -98,6 +99,7 @@ def _read_snapshot() -> tuple[list[dict[str, Any]], dict[str, Any]]:
     return rows, meta
 
 
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def load_hk_liquidity() -> pd.DataFrame:
     rows, _ = _read_snapshot()
     frame = pd.DataFrame(rows)
@@ -174,6 +176,7 @@ def load_hk_liquidity() -> pd.DataFrame:
 
 
 
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def load_hk_banking_liquidity_monthly() -> pd.DataFrame:
     """Return real monthly HKMA banking-liquidity history for long windows."""
     monthly = load_hk_liquidity()
@@ -234,6 +237,7 @@ def load_hk_banking_liquidity_daily() -> pd.DataFrame:
     return frame[DAILY_BANKING_COLUMNS]
 
 
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def load_hk_funding_monthly() -> pd.DataFrame:
     """Build a continuous monthly HKD funding history from persisted official data.
 
@@ -286,6 +290,7 @@ def load_hk_funding_monthly() -> pd.DataFrame:
     return funding.reset_index()[columns]
 
 
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def load_hk_funding_daily() -> pd.DataFrame:
     """Load O/N HIBOR, 3M HIBOR and Base Rate from the daily HKMA snapshot.
 
@@ -321,6 +326,7 @@ def _daily_snapshot_available() -> bool:
         return False
 
 
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def snapshot_metadata() -> dict[str, Any]:
     _, meta = _read_snapshot()
     data = load_hk_liquidity()
@@ -616,6 +622,7 @@ def _market_snapshot_history(symbol: str, label: str, date_range: str) -> pd.Dat
     return frame
 
 
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def _market_history(symbol: str, label: str, date_range: str) -> pd.DataFrame:
     snapshot_symbol = "HSTECH" if str(symbol).upper() in {"HSTECH", "HSTECH.HK", "^HSTECH"} else symbol
     snapshot = _market_snapshot_history(snapshot_symbol, label, date_range)
@@ -733,6 +740,7 @@ def _usdhkd_snapshot_daily(label: str) -> pd.DataFrame:
     return frame[["observation_date", label]]
 
 
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def _fred_daily_series(series_id: str, label: str) -> pd.DataFrame:
     """Load a daily series, preferring a repository snapshot for USD/HKD."""
     if series_id == "DEXHKUS":
