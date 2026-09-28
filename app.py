@@ -966,7 +966,7 @@ def render_market_groups():
 st.markdown('<div id="market-overview" class="section-anchor"></div><div class="section-kicker">MARKET OVERVIEW</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">市场概览</div><div class="section-description">主要指数行情带 · 港/A 双源择新 + 分时兜底 · 模块内手动刷新，不触发整页定时重跑</div>', unsafe_allow_html=True)
 
-@st.fragment(key="market_overview")
+@st.fragment(parallel=True, key="market_overview")
 def render_market_overview():
     _, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with refresh_col:
@@ -1083,7 +1083,7 @@ def _cancel_search(key):
 st.markdown('<div id="watchlist" class="section-anchor"></div><div class="section-kicker">WATCHLIST</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · 港/A 腾讯 + 东方财富双源择新，分时兜底 · Yahoo 仅备用 · 模块内手动刷新</div>', unsafe_allow_html=True)
 
-@st.fragment(key="watchlists")
+@st.fragment(parallel=True, key="watchlists")
 def render_watchlists():
     info_col, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with info_col:
@@ -1286,12 +1286,12 @@ def get_fred_series(series_id): return _fred_series(series_id)
 
 
 # === HK LIQUIDITY CHART 5 ===
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def get_hk_liquidity():
     return load_hk_liquidity()
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig5(date_range, market_mode="Raw"):
     return build_hk_liquidity_figures(date_range, compact_mode=False, market_mode=market_mode)
 
@@ -1300,13 +1300,13 @@ def apply_hk_chart_range(fig, date_range):
     """Apply the same dashboard-wide adaptive time axis to charts 5-8."""
     return apply_time_axis(fig, date_range)
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
     fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig2(date_range):
     data = get_dgs10().merge(get_dfii10(), on="observation_date", how="outer").merge(get_fred_series("T10YIE"), on="observation_date", how="outer").sort_values("observation_date")
     for column in ("DGS10", "DFII10", "T10YIE"):
@@ -1320,7 +1320,7 @@ def build_fig2(date_range):
     for column, name, width, dash, yaxis in [("DGS10", "10Y Nominal", 2.8, None, None), ("DFII10", "10Y Real (R1)", 2.6, None, "y2"), ("T10YIE", "10Y Breakeven (R1)", 2.5, "dot", "y2")]: add_line(fig, data, column, name, width, dash, yaxis)
     fig.update_layout(yaxis_title="Nominal Yield (%)", yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, zeroline=False, fixedrange=True, automargin=False, tickfont=dict(size=9), ticks="outside", ticklen=3)); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig4(date_range):
     """US liquidity chart with separate scales for unlike balance magnitudes.
 
@@ -1425,7 +1425,7 @@ def build_fig4(date_range):
     return fig
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig3(date_range):
     data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").sort_values("observation_date")
     for column in ("DGS3MO", "DGS2", "DGS10"):
@@ -1441,7 +1441,7 @@ def build_fig3(date_range):
     fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=False, tickfont=dict(size=9), ticks="outside", ticklen=3)); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig9(date_range):
     """US equity risk: index vol, constituent vol, VIX term spread, and SPX."""
     frames = []
@@ -1551,7 +1551,7 @@ def _rebase_100(series):
     return values / float(valid.iloc[0]) * 100.0
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig10(date_range, market_mode="Rebased 100"):
     """Precious metals: gold, silver, gold/silver ratio, and GVZ."""
     frames = []
@@ -1633,7 +1633,7 @@ def build_fig10(date_range, market_mode="Rebased 100"):
     return fig
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig11(date_range, market_mode="Rebased 100"):
     """Crypto market: BTC, ETH, ETH/BTC and 30-day BTC realized volatility."""
     frames = []
@@ -1710,6 +1710,11 @@ def build_fig11(date_range, market_mode="Rebased 100"):
     return fig
 
 
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
+def build_fig12(date_range):
+    return build_copper_flow_spread_figure(date_range)
+
+
 CRYPTO_MARKET_DESCRIPTION = (
     '<b>4 个参数分别看什么：</b><br>'
     '1. BTC：默认 Rebased 100 把所选区间第一个有效价格设为 100，只表示相对涨跌，不是 BTC 的美元价格；使用左轴。Raw 模式显示真实美元价格。<br>'
@@ -1748,7 +1753,7 @@ PRECIOUS_METALS_DESCRIPTION = '<b>参数概念：</b><br>1. Gold：COMEX 黄金�
 
 compact_mode = False
 
-@st.fragment(key="core_charts")
+@st.fragment(parallel=True, key="core_charts")
 def render_core_charts():
     st.markdown('<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>', unsafe_allow_html=True)
 
@@ -1930,7 +1935,7 @@ def render_core_charts():
         key="copper_flow_spread_range", label_visibility="collapsed",
     )
     st.plotly_chart(
-        build_copper_flow_spread_figure(copper_flow_range),
+        build_fig12(copper_flow_range),
         use_container_width=True,
         config=PLOTLY_CONFIG,
     )
@@ -1993,7 +1998,7 @@ def render_news_panel():
 <div id="news" class="news-box"><div class="empty">正在取得新闻…</div></div>
 <script>
 (function () {
-  var endpoint = "/app/static/news.json";
+  var endpoint = "app/static/news.json";
   var newsEl = document.getElementById("news");
   var statusEl = document.getElementById("status");
   var button = document.getElementById("refresh");
@@ -2067,7 +2072,7 @@ def render_news_panel():
       }
     } catch (err) {
       statusEl.className = "status error";
-      statusEl.textContent = "新闻局部更新暂时无法连接；主页面不会被重跑。";
+      statusEl.textContent = "新闻局部更新失败：" + (err && err.message ? err.message : String(err)) + "；主页面不会被重跑。";
     } finally {
       if (force) {
         button.disabled = false;
