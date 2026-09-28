@@ -380,15 +380,24 @@ def _parse_focus_news(raw_items):
         seen.add(normalized); result.append({"id": _extract_id(item), "title": title, "content": content, "time": _extract_time(item), "url": _extract_url(item)})
     return result
 
-@st.cache_data(ttl=60)
-def get_eastmoney_news(limit=50):
+def fetch_eastmoney_news(limit=50):
+    """Fetch and normalize Eastmoney 7×24 news without touching Streamlit state/cache."""
     try:
         raw_items = _find_list(_request_focus_news(page_size=max(100, limit)))
-        if not raw_items: return [], "东方财富 7×24 全球直播接口没有返回新闻列表。"
+        if not raw_items:
+            return [], "东方财富 7×24 全球直播接口没有返回新闻列表。"
         news_items = _parse_focus_news(raw_items)
-        if not news_items: return [], "东方财富 7×24 全球直播接口返回数据，但没有解析出有效新闻。"
+        if not news_items:
+            return [], "东方财富 7×24 全球直播接口返回数据，但没有解析出有效新闻。"
         return news_items[:limit], None
-    except Exception as exc: return [], f"东方财富 7×24 全球直播：{exc}"
+    except Exception as exc:
+        return [], f"东方财富 7×24 全球直播：{exc}"
+
+
+@st.cache_data(ttl=50, show_spinner=False)
+def get_eastmoney_news(limit=50):
+    return fetch_eastmoney_news(limit=limit)
+
 
 get_sina_news = get_eastmoney_news
 

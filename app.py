@@ -1,7 +1,10 @@
 import html
 import json
+import os
+import threading
 import time
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 import pandas as pd
 import plotly.graph_objects as go
@@ -13,7 +16,7 @@ from macro_platform.chart_axes import apply_time_axis
 from macro_platform.us_equity_risk import load_vixeq_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
-from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_walcl, get_wresbal, get_wtre_gen, get_tga_daily, get_rrp_daily, _fred_series)
+from data import (fetch_eastmoney_news, get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_walcl, get_wresbal, get_wtre_gen, get_tga_daily, get_rrp_daily, _fred_series)
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
 
@@ -29,6 +32,50 @@ PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": Fa
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
 DASHBOARD_TZ = ZoneInfo("Asia/Hong_Kong")
+NEWS_STATIC_PATH = Path(__file__).resolve().parent / "static" / "news.json"
+NEWS_BACKGROUND_INTERVAL_SECONDS = 60
+
+
+def _read_existing_news_snapshot():
+    try:
+        payload = json.loads(NEWS_STATIC_PATH.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+
+
+def _write_news_snapshot():
+    NEWS_STATIC_PATH.parent.mkdir(parents=True, exist_ok=True)
+    items, error = fetch_eastmoney_news(limit=50)
+    previous = _read_existing_news_snapshot()
+    if not items:
+        items = previous.get("items") if isinstance(previous.get("items"), list) else []
+    payload = {
+        "items": items,
+        "error": error,
+        "updated_at": datetime.now(DASHBOARD_TZ).isoformat(timespec="seconds"),
+    }
+    temp_path = NEWS_STATIC_PATH.with_suffix(".json.tmp")
+    temp_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    os.replace(temp_path, NEWS_STATIC_PATH)
+
+
+@st.cache_resource(show_spinner=False)
+def _start_news_background_updater():
+    def worker():
+        while True:
+            try:
+                _write_news_snapshot()
+            except Exception:
+                pass
+            time.sleep(NEWS_BACKGROUND_INTERVAL_SECONDS)
+
+    thread = threading.Thread(target=worker, name="eastmoney-news-updater", daemon=True)
+    thread.start()
+    return thread
+
+
+_start_news_background_updater()
 
 st.markdown("""
 <style>
@@ -917,10 +964,14 @@ def render_market_groups():
     st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
 
 st.markdown('<div id="market-overview" class="section-anchor"></div><div class="section-kicker">MARKET OVERVIEW</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">市场概览</div><div class="section-description">主要指数行情带 · 港/A 双源择新 + 分时兜底 · 15 秒刷新</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">市场概览</div><div class="section-description">主要指数行情带 · 港/A 双源择新 + 分时兜底 · 模块内手动刷新，不触发整页定时重跑</div>', unsafe_allow_html=True)
 
-@st.fragment(run_every="15s")
+@st.fragment(key="market_overview")
 def render_market_overview():
+    _, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
+    with refresh_col:
+        if st.button("↻ 刷新行情", key="refresh_market_overview", use_container_width=True):
+            st.session_state["_market_quotes_snapshot_time"] = 0
     render_market_groups()
 
 render_market_overview()
@@ -1030,9 +1081,9 @@ def _cancel_search(key):
     st.session_state[f"{key}_open"] = False; st.session_state.pop(f"{key}_results", None)
 
 st.markdown('<div id="watchlist" class="section-anchor"></div><div class="section-kicker">WATCHLIST</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · 港/A 腾讯 + 东方财富双源择新，分时兜底 · Yahoo 仅备用 · 15 秒自动刷新</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · 港/A 腾讯 + 东方财富双源择新，分时兜底 · Yahoo 仅备用 · 模块内手动刷新</div>', unsafe_allow_html=True)
 
-@st.fragment(run_every="15s")
+@st.fragment(key="watchlists")
 def render_watchlists():
     info_col, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with info_col:
@@ -1697,7 +1748,7 @@ PRECIOUS_METALS_DESCRIPTION = '<b>参数概念：</b><br>1. Gold：COMEX 黄金�
 
 compact_mode = False
 
-@st.fragment
+@st.fragment(key="core_charts")
 def render_core_charts():
     st.markdown('<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>', unsafe_allow_html=True)
 
@@ -1905,26 +1956,136 @@ st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 st.markdown('<div id="news" class="section-anchor"></div><div class="section-kicker">NEWS</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-description">东方财富「红字焦点快讯」 · 源端焦点流 · 每60秒自动刷新</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-description">东方财富「红字焦点快讯」 · 后台抓取，浏览器局部更新 · 不触发 Streamlit 定时 rerun</div>', unsafe_allow_html=True)
 
-@st.fragment(run_every="60s")
+
 def render_news_panel():
-    _, action_col = st.columns([5, 1])
-    with action_col:
-        if st.button("🔄 立即刷新", key="refresh_7x24", use_container_width=True): get_sina_news.clear()
-    news_items, news_error = get_sina_news(limit=50)
-    if news_items:
-        st.markdown(f'<div class="news-status">当前显示 {len(news_items)} 条 · 来源：东方财富红字焦点快讯 · 60秒自动刷新</div>', unsafe_allow_html=True); news_html = '<div class="news-box">'
-        for idx, item in enumerate(news_items, start=1):
-            news_time = html.escape(str(item.get("time", ""))); news_title = html.escape(str(item.get("title", ""))); news_content = html.escape(str(item.get("content", ""))); news_url = html.escape(str(item.get("url", EASTMONEY_FOCUS_URL)), quote=True)
-            if not news_url.startswith(("http://", "https://")): news_url = EASTMONEY_FOCUS_URL
-            body = f"<strong>{news_title}</strong><div style=\"margin-top:3px;\">{news_content}</div>" if news_title and news_content and news_title != news_content else (news_content or news_title)
-            news_html += f'<div class="news-item"><span class="news-index">{idx}.</span><span class="news-time">{news_time}</span><div class="news-content"><a href="{news_url}" target="_blank" rel="noopener noreferrer">{body}</a></div></div>'
-        st.markdown(news_html + "</div>", unsafe_allow_html=True)
-    else:
-        st.warning("暂时无法取得东方财富红字焦点快讯。")
-        if news_error: st.caption(f"错误：{news_error}")
-    add_sources([("东方财富红字焦点快讯", EASTMONEY_FOCUS_URL)])
+    news_component = r"""
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Noto Sans TC","Noto Sans CJK TC","Microsoft JhengHei","PingFang TC","Segoe UI",sans-serif; color:#374151; background:#fff; }
+  .toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 8px; }
+  .status { color:#6b7280; font-size:12px; line-height:1.4; }
+  button { border:1px solid #d1d5db; background:#fff; color:#374151; border-radius:8px; padding:8px 16px; cursor:pointer; font-size:13px; }
+  button:hover { background:#f9fafb; }
+  button:disabled { opacity:.55; cursor:default; }
+  .news-box { border:1px solid #e5e7eb; border-radius:8px; padding:6px 10px; background:#fff; height:650px; overflow-y:auto; overflow-x:hidden; }
+  .news-item { display:flex; align-items:flex-start; padding:8px 3px; border-bottom:1px solid #eee; line-height:1.5; font-size:14px; }
+  .news-item:last-child { border-bottom:none; }
+  .news-index { flex:0 0 38px; width:38px; color:#9ca3af; font-size:12px; padding-top:2px; }
+  .news-time { flex:0 0 88px; width:88px; color:#6b7280; font-size:12px; white-space:nowrap; padding-top:2px; margin-right:8px; }
+  .news-content { flex:1; min-width:0; overflow-wrap:anywhere; word-break:break-word; }
+  .news-content a { color:#374151; text-decoration:none; display:block; }
+  .news-title { color:#1f2937; font-weight:700; margin-bottom:3px; }
+  .empty { padding:18px 10px; color:#9ca3af; font-size:13px; }
+  .error { color:#b45309; }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <div id="status" class="status">正在连接 7×24 新闻后台…</div>
+  <button id="refresh">🔄 立即刷新</button>
+</div>
+<div id="news" class="news-box"><div class="empty">正在取得新闻…</div></div>
+<script>
+(function () {
+  var endpoint = "/app/static/news.json";
+  var newsEl = document.getElementById("news");
+  var statusEl = document.getElementById("status");
+  var button = document.getElementById("refresh");
+  var lastVersion = "";
+
+  function makeNode(tag, cls, text) {
+    var el = document.createElement(tag);
+    if (cls) el.className = cls;
+    if (text !== undefined) el.textContent = text;
+    return el;
+  }
+
+  function render(payload) {
+    var items = Array.isArray(payload.items) ? payload.items : [];
+    var updated = payload.updated_at ? String(payload.updated_at).replace("T", " ") : "";
+    statusEl.className = payload.error ? "status error" : "status";
+    statusEl.textContent =
+      "当前显示 " + items.length +
+      " 条 · 来源：东方财富红字焦点快讯 · 后台60秒更新" +
+      (updated ? " · " + updated : "") +
+      (payload.error ? " · 最近一次抓取失败，保留上一版" : "");
+
+    if (!items.length) {
+      newsEl.replaceChildren(makeNode("div", "empty", payload.error || "暂时没有新闻数据。"));
+      return;
+    }
+
+    var frag = document.createDocumentFragment();
+    items.forEach(function (item, index) {
+      var row = makeNode("div", "news-item");
+      row.appendChild(makeNode("span", "news-index", String(index + 1) + "."));
+      row.appendChild(makeNode("span", "news-time", item.time || ""));
+
+      var content = makeNode("div", "news-content");
+      var link = makeNode("a");
+      var rawUrl = typeof item.url === "string" ? item.url : "";
+      link.href = /^https?:\/\//i.test(rawUrl) ? rawUrl : "https://kuaixun.eastmoney.com/";
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+
+      var title = String(item.title || "");
+      var body = String(item.content || "");
+      if (title && body && title !== body) {
+        link.appendChild(makeNode("div", "news-title", title));
+        link.appendChild(makeNode("div", "", body));
+      } else {
+        link.appendChild(makeNode("div", title ? "news-title" : "", body || title));
+      }
+
+      content.appendChild(link);
+      row.appendChild(content);
+      frag.appendChild(row);
+    });
+    newsEl.replaceChildren(frag);
+  }
+
+  async function refresh(force) {
+    force = Boolean(force);
+    if (force) {
+      button.disabled = true;
+      button.textContent = "刷新中…";
+    }
+    try {
+      var response = await fetch(endpoint + "?t=" + Date.now(), {cache:"no-store"});
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      var payload = await response.json();
+      var version = String(payload.updated_at || "") + ":" + String((payload.items || []).length);
+      if (force || version !== lastVersion) {
+        render(payload);
+        lastVersion = version;
+      }
+    } catch (err) {
+      statusEl.className = "status error";
+      statusEl.textContent = "新闻局部更新暂时无法连接；主页面不会被重跑。";
+    } finally {
+      if (force) {
+        button.disabled = false;
+        button.textContent = "🔄 立即刷新";
+      }
+    }
+  }
+
+  button.addEventListener("click", function () { refresh(true); });
+  refresh(true);
+  setInterval(function () { refresh(false); }, 5000);
+})();
+</script>
+</body>
+</html>
+"""
+    st.iframe(news_component, width="stretch", height=710)
+
 
 render_news_panel()
 st.markdown(f'<div class="source-text">Source: <a href="{EASTMONEY_FOCUS_URL}" target="_blank" rel="noopener noreferrer">Eastmoney 7×24 Focus News</a></div>', unsafe_allow_html=True)
