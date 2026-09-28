@@ -1957,26 +1957,136 @@ st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 st.markdown('<div id="news" class="section-anchor"></div><div class="section-kicker">NEWS</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-description">东方财富「红字焦点快讯」 · 源端焦点流 · 每60秒独立刷新</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-description">东方财富「红字焦点快讯」 · 后台抓取，浏览器局部更新 · 不触发 Streamlit 定时 rerun</div>', unsafe_allow_html=True)
 
-@st.fragment(run_every="60s", key="news_7x24")
+
 def render_news_panel():
-    _, action_col = st.columns([5, 1])
-    with action_col:
-        if st.button("🔄 立即刷新", key="refresh_7x24", use_container_width=True): get_sina_news.clear()
-    news_items, news_error = get_sina_news(limit=50)
-    if news_items:
-        st.markdown(f'<div class="news-status">当前显示 {len(news_items)} 条 · 来源：东方财富红字焦点快讯 · 60秒自动刷新</div>', unsafe_allow_html=True); news_html = '<div class="news-box">'
-        for idx, item in enumerate(news_items, start=1):
-            news_time = html.escape(str(item.get("time", ""))); news_title = html.escape(str(item.get("title", ""))); news_content = html.escape(str(item.get("content", ""))); news_url = html.escape(str(item.get("url", EASTMONEY_FOCUS_URL)), quote=True)
-            if not news_url.startswith(("http://", "https://")): news_url = EASTMONEY_FOCUS_URL
-            body = f"<strong>{news_title}</strong><div style=\"margin-top:3px;\">{news_content}</div>" if news_title and news_content and news_title != news_content else (news_content or news_title)
-            news_html += f'<div class="news-item"><span class="news-index">{idx}.</span><span class="news-time">{news_time}</span><div class="news-content"><a href="{news_url}" target="_blank" rel="noopener noreferrer">{body}</a></div></div>'
-        st.markdown(news_html + "</div>", unsafe_allow_html=True)
-    else:
-        st.warning("暂时无法取得东方财富红字焦点快讯。")
-        if news_error: st.caption(f"错误：{news_error}")
-    add_sources([("东方财富红字焦点快讯", EASTMONEY_FOCUS_URL)])
+    news_component = r"""
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Noto Sans TC","Noto Sans CJK TC","Microsoft JhengHei","PingFang TC","Segoe UI",sans-serif; color:#374151; background:#fff; }
+  .toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 8px; }
+  .status { color:#6b7280; font-size:12px; line-height:1.4; }
+  button { border:1px solid #d1d5db; background:#fff; color:#374151; border-radius:8px; padding:8px 16px; cursor:pointer; font-size:13px; }
+  button:hover { background:#f9fafb; }
+  button:disabled { opacity:.55; cursor:default; }
+  .news-box { border:1px solid #e5e7eb; border-radius:8px; padding:6px 10px; background:#fff; height:650px; overflow-y:auto; overflow-x:hidden; }
+  .news-item { display:flex; align-items:flex-start; padding:8px 3px; border-bottom:1px solid #eee; line-height:1.5; font-size:14px; }
+  .news-item:last-child { border-bottom:none; }
+  .news-index { flex:0 0 38px; width:38px; color:#9ca3af; font-size:12px; padding-top:2px; }
+  .news-time { flex:0 0 88px; width:88px; color:#6b7280; font-size:12px; white-space:nowrap; padding-top:2px; margin-right:8px; }
+  .news-content { flex:1; min-width:0; overflow-wrap:anywhere; word-break:break-word; }
+  .news-content a { color:#374151; text-decoration:none; display:block; }
+  .news-title { color:#1f2937; font-weight:700; margin-bottom:3px; }
+  .empty { padding:18px 10px; color:#9ca3af; font-size:13px; }
+  .error { color:#b45309; }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <div id="status" class="status">正在连接 7×24 新闻后台…</div>
+  <button id="refresh">🔄 立即刷新</button>
+</div>
+<div id="news" class="news-box"><div class="empty">正在取得新闻…</div></div>
+<script>
+(function () {
+  var endpoint = "/app/static/news.json";
+  var newsEl = document.getElementById("news");
+  var statusEl = document.getElementById("status");
+  var button = document.getElementById("refresh");
+  var lastVersion = "";
+
+  function makeNode(tag, cls, text) {
+    var el = document.createElement(tag);
+    if (cls) el.className = cls;
+    if (text !== undefined) el.textContent = text;
+    return el;
+  }
+
+  function render(payload) {
+    var items = Array.isArray(payload.items) ? payload.items : [];
+    var updated = payload.updated_at ? String(payload.updated_at).replace("T", " ") : "";
+    statusEl.className = payload.error ? "status error" : "status";
+    statusEl.textContent =
+      "当前显示 " + items.length +
+      " 条 · 来源：东方财富红字焦点快讯 · 后台60秒更新" +
+      (updated ? " · " + updated : "") +
+      (payload.error ? " · 最近一次抓取失败，保留上一版" : "");
+
+    if (!items.length) {
+      newsEl.replaceChildren(makeNode("div", "empty", payload.error || "暂时没有新闻数据。"));
+      return;
+    }
+
+    var frag = document.createDocumentFragment();
+    items.forEach(function (item, index) {
+      var row = makeNode("div", "news-item");
+      row.appendChild(makeNode("span", "news-index", String(index + 1) + "."));
+      row.appendChild(makeNode("span", "news-time", item.time || ""));
+
+      var content = makeNode("div", "news-content");
+      var link = makeNode("a");
+      var rawUrl = typeof item.url === "string" ? item.url : "";
+      link.href = /^https?:\/\//i.test(rawUrl) ? rawUrl : "https://kuaixun.eastmoney.com/";
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+
+      var title = String(item.title || "");
+      var body = String(item.content || "");
+      if (title && body && title !== body) {
+        link.appendChild(makeNode("div", "news-title", title));
+        link.appendChild(makeNode("div", "", body));
+      } else {
+        link.appendChild(makeNode("div", title ? "news-title" : "", body || title));
+      }
+
+      content.appendChild(link);
+      row.appendChild(content);
+      frag.appendChild(row);
+    });
+    newsEl.replaceChildren(frag);
+  }
+
+  async function refresh(force) {
+    force = Boolean(force);
+    if (force) {
+      button.disabled = true;
+      button.textContent = "刷新中…";
+    }
+    try {
+      var response = await fetch(endpoint + "?t=" + Date.now(), {cache:"no-store"});
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      var payload = await response.json();
+      var version = String(payload.updated_at || "") + ":" + String((payload.items || []).length);
+      if (force || version !== lastVersion) {
+        render(payload);
+        lastVersion = version;
+      }
+    } catch (err) {
+      statusEl.className = "status error";
+      statusEl.textContent = "新闻局部更新暂时无法连接；主页面不会被重跑。";
+    } finally {
+      if (force) {
+        button.disabled = false;
+        button.textContent = "🔄 立即刷新";
+      }
+    }
+  }
+
+  button.addEventListener("click", function () { refresh(true); });
+  refresh(true);
+  setInterval(function () { refresh(false); }, 5000);
+})();
+</script>
+</body>
+</html>
+"""
+    components.html(news_component, height=710, scrolling=False)
+
 
 render_news_panel()
 st.markdown(f'<div class="source-text">Source: <a href="{EASTMONEY_FOCUS_URL}" target="_blank" rel="noopener noreferrer">Eastmoney 7×24 Focus News</a></div>', unsafe_allow_html=True)
