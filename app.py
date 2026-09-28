@@ -1,19 +1,23 @@
 import html
 import json
+import os
+import threading
 import time
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, load_hk_liquidity
 from macro_platform.chart_axes import apply_time_axis
 from macro_platform.us_equity_risk import load_vixeq_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
-from data import (get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_walcl, get_wresbal, get_wtre_gen, get_tga_daily, get_rrp_daily, _fred_series)
+from data import (fetch_eastmoney_news, get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_walcl, get_wresbal, get_wtre_gen, get_tga_daily, get_rrp_daily, _fred_series)
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
 
@@ -29,6 +33,50 @@ PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": Fa
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
 DASHBOARD_TZ = ZoneInfo("Asia/Hong_Kong")
+NEWS_STATIC_PATH = Path(__file__).resolve().parent / "static" / "news.json"
+NEWS_BACKGROUND_INTERVAL_SECONDS = 60
+
+
+def _read_existing_news_snapshot():
+    try:
+        payload = json.loads(NEWS_STATIC_PATH.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+
+
+def _write_news_snapshot():
+    NEWS_STATIC_PATH.parent.mkdir(parents=True, exist_ok=True)
+    items, error = fetch_eastmoney_news(limit=50)
+    previous = _read_existing_news_snapshot()
+    if not items:
+        items = previous.get("items") if isinstance(previous.get("items"), list) else []
+    payload = {
+        "items": items,
+        "error": error,
+        "updated_at": datetime.now(DASHBOARD_TZ).isoformat(timespec="seconds"),
+    }
+    temp_path = NEWS_STATIC_PATH.with_suffix(".json.tmp")
+    temp_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    os.replace(temp_path, NEWS_STATIC_PATH)
+
+
+@st.cache_resource(show_spinner=False)
+def _start_news_background_updater():
+    def worker():
+        while True:
+            try:
+                _write_news_snapshot()
+            except Exception:
+                pass
+            time.sleep(NEWS_BACKGROUND_INTERVAL_SECONDS)
+
+    thread = threading.Thread(target=worker, name="eastmoney-news-updater", daemon=True)
+    thread.start()
+    return thread
+
+
+_start_news_background_updater()
 
 st.markdown("""
 <style>
@@ -917,10 +965,14 @@ def render_market_groups():
     st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
 
 st.markdown('<div id="market-overview" class="section-anchor"></div><div class="section-kicker">MARKET OVERVIEW</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">市场概览</div><div class="section-description">主要指数行情带 · 港/A 双源择新 + 分时兜底 · 16 秒独立刷新</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">市场概览</div><div class="section-description">主要指数行情带 · 港/A 双源择新 + 分时兜底 · 模块内手动刷新，不触发整页定时重跑</div>', unsafe_allow_html=True)
 
-@st.fragment(run_every="16s", key="market_overview")
+@st.fragment(key="market_overview")
 def render_market_overview():
+    _, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
+    with refresh_col:
+        if st.button("↻ 刷新行情", key="refresh_market_overview", use_container_width=True):
+            st.session_state["_market_quotes_snapshot_time"] = 0
     render_market_groups()
 
 render_market_overview()
@@ -1030,9 +1082,9 @@ def _cancel_search(key):
     st.session_state[f"{key}_open"] = False; st.session_state.pop(f"{key}_results", None)
 
 st.markdown('<div id="watchlist" class="section-anchor"></div><div class="section-kicker">WATCHLIST</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · 港/A 腾讯 + 东方财富双源择新，分时兜底 · Yahoo 仅备用 · 17 秒独立自动刷新</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · 港/A 腾讯 + 东方财富双源择新，分时兜底 · Yahoo 仅备用 · 模块内手动刷新</div>', unsafe_allow_html=True)
 
-@st.fragment(run_every="17s", key="watchlists")
+@st.fragment(key="watchlists")
 def render_watchlists():
     info_col, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with info_col:
