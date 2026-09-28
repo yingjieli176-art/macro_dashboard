@@ -1753,7 +1753,11 @@ PRECIOUS_METALS_DESCRIPTION = '<b>参数概念：</b><br>1. Gold：COMEX 黄金�
 
 compact_mode = False
 
-@st.fragment(parallel=True, key="core_charts")
+def _rerun_core_charts():
+    st.rerun("core_charts")
+
+
+@st.fragment(key="core_charts")
 def render_core_charts():
     st.markdown('<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>', unsafe_allow_html=True)
 
@@ -1767,7 +1771,7 @@ def render_core_charts():
     for title, description, key, builder, sources, desc_index in configs:
         st.markdown(title, unsafe_allow_html=True)
         st.markdown(description, unsafe_allow_html=True)
-        date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed")
+        date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed", on_change=_rerun_core_charts)
         st.plotly_chart(builder(date_range), use_container_width=True, config=PLOTLY_CONFIG)
         show_parameter_description(desc_index)
         add_sources(sources)
@@ -1830,6 +1834,7 @@ def render_core_charts():
             index=1,
             key=key,
             label_visibility="collapsed",
+            on_change=_rerun_core_charts,
         )
         hk_market_mode = "Raw"
         if hk_index in (0, 3):
@@ -1840,7 +1845,8 @@ def render_core_charts():
                 index=0,
                 key=f"{key}_market_mode",
                 label_visibility="collapsed",
-            )
+            on_change=_rerun_core_charts,
+        )
         hk_figure = build_fig5(hk_range, market_mode=hk_market_mode)[hk_index]
         st.plotly_chart(
             hk_figure,
@@ -1865,7 +1871,8 @@ def render_core_charts():
         index=1,
         key="us_equity_risk_range",
         label_visibility="collapsed",
-    )
+            on_change=_rerun_core_charts,
+        )
     st.plotly_chart(build_fig9(risk_range), use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{US_EQUITY_RISK_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
@@ -1885,11 +1892,13 @@ def render_core_charts():
     metals_range = st.radio(
         "时间范围", RANGES, horizontal=True, index=1,
         key="precious_metals_range", label_visibility="collapsed",
-    )
+            on_change=_rerun_core_charts,
+        )
     metals_mode = st.radio(
         "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
         key="precious_metals_mode", label_visibility="collapsed",
-    )
+            on_change=_rerun_core_charts,
+        )
     st.plotly_chart(build_fig10(metals_range, metals_mode), use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
@@ -1909,11 +1918,13 @@ def render_core_charts():
     crypto_range = st.radio(
         "时间范围", RANGES, horizontal=True, index=1,
         key="crypto_market_range", label_visibility="collapsed",
-    )
+            on_change=_rerun_core_charts,
+        )
     crypto_mode = st.radio(
         "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
         key="crypto_market_mode", label_visibility="collapsed",
-    )
+            on_change=_rerun_core_charts,
+        )
     st.plotly_chart(build_fig11(crypto_range, crypto_mode), use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
@@ -1933,7 +1944,8 @@ def render_core_charts():
     copper_flow_range = st.radio(
         "时间范围", RANGES, horizontal=True, index=1,
         key="copper_flow_spread_range", label_visibility="collapsed",
-    )
+            on_change=_rerun_core_charts,
+        )
     st.plotly_chart(
         build_fig12(copper_flow_range),
         use_container_width=True,
