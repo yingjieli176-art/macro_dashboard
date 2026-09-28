@@ -1834,8 +1834,8 @@ def render_core_charts():
             index=1,
             key=key,
             label_visibility="collapsed",
-        on_change=_rerun_core_charts,
-    )
+            on_change=_rerun_core_charts,
+        )
         hk_market_mode = "Raw"
         if hk_index in (0, 3):
             hk_market_mode = st.radio(
