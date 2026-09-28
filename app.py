@@ -917,9 +917,9 @@ def render_market_groups():
     st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
 
 st.markdown('<div id="market-overview" class="section-anchor"></div><div class="section-kicker">MARKET OVERVIEW</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">市场概览</div><div class="section-description">主要指数行情带 · 港/A 双源择新 + 分时兜底 · 15 秒刷新</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">市场概览</div><div class="section-description">主要指数行情带 · 港/A 双源择新 + 分时兜底 · 16 秒独立刷新</div>', unsafe_allow_html=True)
 
-@st.fragment(run_every="15s")
+@st.fragment(run_every="16s", key="market_overview")
 def render_market_overview():
     render_market_groups()
 
@@ -1030,9 +1030,9 @@ def _cancel_search(key):
     st.session_state[f"{key}_open"] = False; st.session_state.pop(f"{key}_results", None)
 
 st.markdown('<div id="watchlist" class="section-anchor"></div><div class="section-kicker">WATCHLIST</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · 港/A 腾讯 + 东方财富双源择新，分时兜底 · Yahoo 仅备用 · 15 秒自动刷新</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · 港/A 腾讯 + 东方财富双源择新，分时兜底 · Yahoo 仅备用 · 17 秒独立自动刷新</div>', unsafe_allow_html=True)
 
-@st.fragment(run_every="15s")
+@st.fragment(run_every="17s", key="watchlists")
 def render_watchlists():
     info_col, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with info_col:
@@ -1697,7 +1697,7 @@ PRECIOUS_METALS_DESCRIPTION = '<b>参数概念：</b><br>1. Gold：COMEX 黄金�
 
 compact_mode = False
 
-@st.fragment
+@st.fragment(key="core_charts")
 def render_core_charts():
     st.markdown('<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>', unsafe_allow_html=True)
 
@@ -1905,9 +1905,9 @@ st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 st.markdown('<div id="news" class="section-anchor"></div><div class="section-kicker">NEWS</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-description">东方财富「红字焦点快讯」 · 源端焦点流 · 每60秒自动刷新</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-description">东方财富「红字焦点快讯」 · 源端焦点流 · 每60秒独立刷新</div>', unsafe_allow_html=True)
 
-@st.fragment(run_every="60s")
+@st.fragment(run_every="60s", key="news_7x24")
 def render_news_panel():
     _, action_col = st.columns([5, 1])
     with action_col:
