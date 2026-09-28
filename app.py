@@ -11,7 +11,6 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import requests
 import streamlit as st
-import streamlit.components.v1 as components
 from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, load_hk_liquidity
 from macro_platform.chart_axes import apply_time_axis
 from macro_platform.us_equity_risk import load_vixeq_snapshot
@@ -2085,7 +2084,7 @@ def render_news_panel():
 </body>
 </html>
 """
-    components.html(news_component, height=710, scrolling=False)
+    st.iframe(news_component, width="stretch", height=710)
 
 
 render_news_panel()
