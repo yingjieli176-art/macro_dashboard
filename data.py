@@ -81,6 +81,7 @@ def _fetch_fred_api(series_id):
     return frame
 
 
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def _fred_series(series_id):
     """Retrieve a FRED series without allowing a transient network error to crash the app.
 
