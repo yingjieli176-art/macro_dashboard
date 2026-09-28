@@ -380,7 +380,7 @@ def _parse_focus_news(raw_items):
         seen.add(normalized); result.append({"id": _extract_id(item), "title": title, "content": content, "time": _extract_time(item), "url": _extract_url(item)})
     return result
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=50, show_spinner=False)
 def get_eastmoney_news(limit=50):
     try:
         raw_items = _find_list(_request_focus_news(page_size=max(100, limit)))
