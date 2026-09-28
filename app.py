@@ -1710,6 +1710,11 @@ def build_fig11(date_range, market_mode="Rebased 100"):
     return fig
 
 
+@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
+def build_fig12(date_range):
+    return build_copper_flow_spread_figure(date_range)
+
+
 CRYPTO_MARKET_DESCRIPTION = (
     '<b>4 个参数分别看什么：</b><br>'
     '1. BTC：默认 Rebased 100 把所选区间第一个有效价格设为 100，只表示相对涨跌，不是 BTC 的美元价格；使用左轴。Raw 模式显示真实美元价格。<br>'
@@ -1930,7 +1935,7 @@ def render_core_charts():
         key="copper_flow_spread_range", label_visibility="collapsed",
     )
     st.plotly_chart(
-        build_copper_flow_spread_figure(copper_flow_range),
+        build_fig12(copper_flow_range),
         use_container_width=True,
         config=PLOTLY_CONFIG,
     )
