@@ -966,7 +966,7 @@ def render_market_groups():
 st.markdown('<div id="market-overview" class="section-anchor"></div><div class="section-kicker">MARKET OVERVIEW</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">市场概览</div><div class="section-description">主要指数行情带 · 港/A 双源择新 + 分时兜底 · 模块内手动刷新，不触发整页定时重跑</div>', unsafe_allow_html=True)
 
-@st.fragment(parallel=True, key="market_overview")
+@st.fragment(key="market_overview")
 def render_market_overview():
     _, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with refresh_col:
@@ -1083,7 +1083,7 @@ def _cancel_search(key):
 st.markdown('<div id="watchlist" class="section-anchor"></div><div class="section-kicker">WATCHLIST</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · 港/A 腾讯 + 东方财富双源择新，分时兜底 · Yahoo 仅备用 · 模块内手动刷新</div>', unsafe_allow_html=True)
 
-@st.fragment(parallel=True, key="watchlists")
+@st.fragment(key="watchlists")
 def render_watchlists():
     info_col, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with info_col:
