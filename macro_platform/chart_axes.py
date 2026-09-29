@@ -308,10 +308,10 @@ def _remove_year_band_for_client_controls(fig: go.Figure) -> None:
     )
 
 
-DASHBOARD_CHART_HEIGHT = 460
+DASHBOARD_CHART_HEIGHT = 420
 DASHBOARD_MARGIN_LEFT = 62
 DASHBOARD_MARGIN_BOTTOM = 38
-DASHBOARD_MARGIN_TOP = 130
+DASHBOARD_MARGIN_TOP = 82
 
 
 def _visible_right_axis_count(fig: go.Figure) -> int:
@@ -439,65 +439,6 @@ def apply_dashboard_chart_standard(fig: go.Figure) -> go.Figure:
     return fig
 
 
-def _apply_dynamic_year_axis(fig: go.Figure, latest: pd.Timestamp) -> None:
-    """Show a synchronized top year axis that follows client-side range changes.
-
-    A transparent trace is bound to x2 so Plotly always instantiates the axis in
-    embedded renderers.  The axis range is still driven by x through matches.
-    """
-    earliest = latest - RANGE_OFFSETS["5Y"]
-    anchor_name = "__dashboard_year_axis_anchor__"
-
-    # Remove a prior anchor if this helper is called more than once.
-    fig.data = tuple(
-        trace for trace in fig.data
-        if getattr(trace, "name", None) != anchor_name
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=[earliest, latest],
-            y=[None, None],
-            xaxis="x2",
-            yaxis="y",
-            mode="markers",
-            marker=dict(opacity=0, size=1),
-            showlegend=False,
-            hoverinfo="skip",
-            name=anchor_name,
-        )
-    )
-
-    tick0 = pd.Timestamp(year=earliest.year, month=1, day=1)
-    fig.update_layout(
-        xaxis2=dict(
-            type="date",
-            overlaying="x",
-            matches="x",
-            anchor="y",
-            side="top",
-            visible=True,
-            showgrid=False,
-            showline=True,
-            linecolor="#e2e8f0",
-            linewidth=1,
-            zeroline=False,
-            ticks="",
-            showticklabels=True,
-            tickmode="linear",
-            tick0=tick0,
-            dtick="M12",
-            tickformat="%Y",
-            ticklabelmode="period",
-            tickfont=dict(size=10, color="#64748b"),
-            ticklabelstandoff=8,
-            fixedrange=True,
-            automargin=False,
-            layer="above traces",
-            title=None,
-        )
-    )
-
-
 def apply_client_time_controls(
     fig: go.Figure,
     *,
@@ -528,7 +469,7 @@ def apply_client_time_controls(
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=1.105,
+            y=1.055,
             xanchor="left",
             x=0.0,
             font=dict(size=10, color="#334155"),
@@ -551,12 +492,17 @@ def apply_client_time_controls(
         nticks=8,
         hoverformat="%Y-%m-%d",
         rangeslider_visible=False,
+        tickformatstops=[
+            dict(dtickrange=[None, "M1"], value="%d %b"),
+            dict(dtickrange=["M1", "M12"], value="%b %Y"),
+            dict(dtickrange=["M12", None], value="%Y"),
+        ],
         rangeselector=dict(
             visible=True,
             buttons=_native_range_buttons(),
             x=0.0,
             xanchor="left",
-            y=1.32,
+            y=1.20,
             yanchor="top",
             bgcolor="rgba(248,250,252,0.96)",
             activecolor="#e7eefc",
@@ -565,5 +511,4 @@ def apply_client_time_controls(
             font=dict(size=10, color="#475569"),
         ),
     )
-    _apply_dynamic_year_axis(fig, latest)
     return fig
