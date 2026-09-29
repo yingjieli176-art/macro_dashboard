@@ -28,6 +28,7 @@ EASTMONEY_UT = "bd1d9ddb04089700cf9c27f4f4961f5b"
 TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q="
 TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
+HK_PUBLIC_QUOTE_DELAY_MINUTES = 15
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 CHART_BUILD = "2026-09-29-range-legend-gap-r11"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
@@ -364,8 +365,8 @@ def _get_tencent_quote_safe(symbol):
                 "currency": currency,
                 "regular_market_time": quote_time,
                 "quote_source": "Tencent Finance",
-                "delayed_by": 0,
-                "data_source": "腾讯实时行情",
+                "delayed_by": HK_PUBLIC_QUOTE_DELAY_MINUTES if market == "HK" else 0,
+                "data_source": "腾讯港股公共行情" if market == "HK" else "腾讯实时行情",
             })
             return row
         except Exception:
@@ -453,8 +454,8 @@ def _get_tencent_minute_quote_safe(symbol):
             "currency": "HKD" if market == "HK" else "CNY",
             "regular_market_time": quote_time,
             "quote_source": "Tencent Intraday",
-            "delayed_by": 0,
-            "data_source": "腾讯分时行情",
+            "delayed_by": HK_PUBLIC_QUOTE_DELAY_MINUTES if market == "HK" else 0,
+            "data_source": "腾讯港股分时行情" if market == "HK" else "腾讯分时行情",
         })
         return row
     except Exception:
@@ -682,11 +683,12 @@ def _get_eastmoney_quote_safe(symbol):
         change_pct = None if pct_raw in (None, "-") else float(pct_raw)
         if change_pct is None and previous not in (None, 0):
             change_pct = (price - previous) / previous * 100
+        is_hk = str(symbol).upper().endswith(".HK") or str(symbol).upper() in ("^HSI", "^HSTECH", "HSTECH.HK")
         return {
             "price": price,
             "change_pct": change_pct,
             "market_state": "REGULAR",
-            "currency": "HKD" if str(symbol).upper().endswith(".HK") or str(symbol).upper() in ("^HSI", "^HSTECH", "HSTECH.HK") else "CNY",
+            "currency": "HKD" if is_hk else "CNY",
             "post_price": None,
             "post_change_pct": None,
             "pre_price": None,
@@ -697,8 +699,8 @@ def _get_eastmoney_quote_safe(symbol):
             "post_market_time": None,
             "pre_market_time": None,
             "quote_source": "Eastmoney",
-            "delayed_by": 0,
-            "data_source": "东方财富实时行情",
+            "delayed_by": HK_PUBLIC_QUOTE_DELAY_MINUTES if is_hk else 0,
+            "data_source": "东方财富港股公共行情" if is_hk else "东方财富实时行情",
         }
     except Exception:
         return _empty_quote()
@@ -888,14 +890,19 @@ def _quote_meta(row, market=""):
             source_label += "（扩展时段）"
         parts.append(source_label)
 
-    if delayed not in (None, 0, "0") and source == "Yahoo Finance":
-        parts.append(f"源标注延迟{delayed}分")
+    if delayed not in (None, 0, "0"):
+        if market == "HK":
+            parts.append(f"港股公共源约延迟{delayed}分")
+        elif source == "Yahoo Finance":
+            parts.append(f"源标注延迟{delayed}分")
 
     age = None
     if quote_ts is not None:
         age = max(0.0, time.time() - quote_ts) / 60.0
     if _regular_session_now(market) and age is not None:
-        if market in {"HK", "CN"} and age <= DIRECT_QUOTE_FRESH_SECONDS / 60.0:
+        if market == "HK" and delayed not in (None, 0, "0"):
+            pass
+        elif market in {"HK", "CN"} and age <= DIRECT_QUOTE_FRESH_SECONDS / 60.0:
             parts.append("近实时")
         elif age > 2:
             parts.append(f"报价滞后约{int(round(age))}分")
