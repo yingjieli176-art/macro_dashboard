@@ -18,7 +18,7 @@ _MARKET = {
 }
 MAX_ITEMS_PER_MARKET = 40
 WATCHLIST_SCHEMA_VERSION = 3
-DEFAULT_WATCHLIST_REVISION = 4
+DEFAULT_WATCHLIST_REVISION = 5
 
 DEFAULT_WATCHLISTS = {
     "market_search_us": [
@@ -29,6 +29,7 @@ DEFAULT_WATCHLISTS = {
     "market_search_hk": [
         {"symbol": "0700.HK", "name": "腾讯控股"},
         {"symbol": "0189.HK", "name": "东岳集团"},
+        {"symbol": "3993.HK", "name": "洛阳钼业"},
     ],
     "market_search_cn": [
         {"symbol": "600160.SS", "name": "巨化股份"},
