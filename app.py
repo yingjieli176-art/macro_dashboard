@@ -29,7 +29,7 @@ TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q="
 TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
-CHART_BUILD = "2026-09-29-native-range-r4-left"
+CHART_BUILD = "2026-09-29-range-ui-r5"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -164,7 +164,7 @@ html { scroll-behavior: smooth; }
 .section-kicker { color: #9ca3af; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; margin-top: 0.12rem; margin-bottom: 0.04rem; line-height: 1.1; }
 .section-toolbar-note { color: #9ca3af; font-size: 0.72rem; margin-top: -0.15rem; margin-bottom: 0.5rem; }
 div[data-testid="stVerticalBlockBorderWrapper"] { border-color: #e5e7eb !important; border-radius: 12px !important; }
-div[data-testid="stPlotlyChart"] { border: 1px solid #eef2f7; border-radius: 12px; padding: 2px 4px 0; background: #fff; overflow: hidden; }
+div[data-testid="stPlotlyChart"] { border: 1px solid #e8edf3; border-radius: 10px; padding: 0 2px; background: #fff; overflow: hidden; box-shadow: 0 1px 2px rgba(15,23,42,.035); }
 .stButton > button { border-radius: 8px; }
 .source-text a { display: inline-block; padding: 1px 0; }
 .news-box { border-radius: 12px; padding: 8px 12px; }
