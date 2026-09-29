@@ -1310,9 +1310,68 @@ def apply_hk_chart_range(fig, date_range):
     return apply_time_axis(fig, date_range)
 
 def build_fig1(date_range):
-    data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
-    for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
-    fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(310, 420), date_range)
+    """Fed operating framework plus explicit money-market pressure spreads."""
+    data = (
+        get_iorb()
+        .merge(get_rrp_rate(), on="observation_date", how="outer")
+        .merge(get_effr(), on="observation_date", how="outer")
+        .merge(get_sofr(), on="observation_date", how="outer")
+        .merge(get_fred_series("DFEDTARU"), on="observation_date", how="outer")
+        .merge(get_fred_series("DFEDTARL"), on="observation_date", how="outer")
+        .sort_values("observation_date")
+    )
+    for column in ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR", "DFEDTARU", "DFEDTARL"):
+        if column in data.columns:
+            data[column] = pd.to_numeric(data[column], errors="coerce")
+
+    # Basis-point spreads make daily funding stress visible even when the
+    # primary rate axis spans a multi-year policy cycle.
+    data["SOFR_IORB_BP"] = (data["SOFR"] - data["IORB"]) * 100.0
+    data["EFFR_IORB_BP"] = (data["EFFR"] - data["IORB"]) * 100.0
+    data = filter_range(data, date_range)
+
+    fig = go.Figure()
+    add_line(fig, data, "DFEDTARU", "Fed Target Upper", 1.5, "dash")
+    add_line(fig, data, "DFEDTARL", "Fed Target Lower", 1.5, "dash")
+    add_line(fig, data, "IORB", "IORB", 2.6)
+    add_line(fig, data, "RRPONTSYAWARD", "ON RRP", 2.2)
+    add_line(fig, data, "EFFR", "EFFR", 2.4)
+
+    if "SOFR" in data.columns and data["SOFR"].notna().sum():
+        fig.add_trace(
+            go.Scatter(
+                x=data["observation_date"],
+                y=data["SOFR"],
+                name="SOFR",
+                mode="lines+markers",
+                line=dict(width=2.0),
+                marker=dict(size=3),
+                hovertemplate="SOFR: %{y:.3f}%<extra></extra>",
+            )
+        )
+    else:
+        _mark_missing_series(fig, "SOFR")
+
+    add_line(fig, data, "SOFR_IORB_BP", "SOFR−IORB (R1)", 2.3, None, "y2", " bp")
+    add_line(fig, data, "EFFR_IORB_BP", "EFFR−IORB (R1)", 1.8, "dot", "y2", " bp")
+
+    fig.update_layout(
+        yaxis_title="Rate (%)",
+        yaxis2=dict(
+            title="Spread to IORB (bp)",
+            overlaying="y",
+            side="right",
+            showgrid=False,
+            zeroline=True,
+            zerolinecolor="#94a3b8",
+            zerolinewidth=1,
+            fixedrange=True,
+            automargin=False,
+            ticks="outside",
+            ticklen=3,
+        ),
+    )
+    return apply_chart_style(fig, chart_height(330, 440), date_range)
 
 def build_fig2(date_range):
     data = get_dgs10().merge(get_dfii10(), on="observation_date", how="outer").merge(get_fred_series("T10YIE"), on="observation_date", how="outer").sort_values("observation_date")
@@ -1727,7 +1786,7 @@ CRYPTO_MARKET_DESCRIPTION = (
 )
 
 PARAM_DESCRIPTIONS = [
-    '<b>参数概念：</b><br>1. IORB（Interest on Reserve Balances）：美联储向存款机构准备金余额支付的利率，是美国准备金利率体系的重要基准。<br>2. ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具利率，金融机构可通过该工具进行隔夜资金配置。<br>3. EFFR（Effective Federal Funds Rate）：美国联邦基金市场实际成交形成的有效隔夜利率，反映银行间短期无担保资金价格。<br>4. SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率，是美元有担保短期融资的重要基准。',
+    '<b>参数概念：</b><br>1. Fed Target Upper / Lower：联邦基金目标区间上下限，用来判断 EFFR 是否仍处于政策目标区间。<br>2. IORB：美联储向准备金余额支付的利率，是充裕准备金框架下最重要的管理利率之一。<br>3. ON RRP：隔夜逆回购工具利率，为部分非银机构提供隔夜投资工具。<br>4. EFFR：联邦基金市场实际成交形成的有效隔夜无担保利率。<br>5. SOFR：以美国国债为抵押的隔夜融资利率；图中使用 FRED / 纽约联储日度原始值，不做移动平均，并用小圆点显示每个有效交易日。<br>6. SOFR−IORB（R1）：SOFR 减 IORB，右轴单位 bp；向上快速扩大通常表示回购融资相对准备金利率明显偏紧。<br>7. EFFR−IORB（R1）：EFFR 减 IORB，右轴单位 bp，用于观察联邦基金市场相对管理利率的位置。<br><br><b>读取提示：</b>时间按钮只改变 X 轴窗口，因此主利率轴为了兼容 5Y 政策周期会显得较宽；右轴 bp spread 专门用于放大短期资金压力。',
     '<b>参数概念：</b><br>1. 10Y Nominal：10 年期美国国债名义收益率，包含实际利率与通胀预期等因素。<br>2. 10Y Real：10 年期美国国债实际收益率，通常由通胀保值国债（TIPS）市场反映。<br>3. 10Y Breakeven：10 年期盈亏平衡通胀率，是名义国债收益率与实际收益率之间的差值，用于观察市场隐含的长期通胀预期。',
     '<b>参数概念：</b><br>1. 3M：3 个月期美国国债收益率，代表较短期限的美元无风险利率。<br>2. 2Y：2 年期美国国债收益率，通常对美联储政策路径及短中期利率预期较敏感。<br>3. 10Y：10 年期美国国债收益率，是全球金融市场重要的长期无风险利率参考。<br>4. 10Y−2Y：10 年期减 2 年期国债收益率利差，图中直接以百分比（%）显示，无需自行换算 bp。<br>5. 10Y−3M：10 年期减 3 个月期国债收益率利差，图中直接以百分比（%）显示，无需自行换算 bp。',
     '<b>参数概念：</b><br>1. Net Liquidity Proxy：WALCL（美联储总资产）− TGA − ON RRP 的常用资产负债表流动性代理，左轴单位 USD trillion；不是美联储官方指标。WALCL 为周频，计算时只在代理内部沿用至下一次公布。<br>2. Reserve Balances：存款机构存放在美联储的准备金余额；WRESBAL 为周频公布，使用右轴 R1，单位 USD trillion。图中的原始线只保留实际周频观测。<br>3. TGA（Treasury General Account）：优先使用美国财政部 Daily Treasury Statement 的日频 Operating Cash Balance；财政资金进出会直接影响银行体系准备金。FiscalData 不可用时自动回退到 FRED WTREGEN 周频数据。<br>4. ON RRP Balance：美联储隔夜逆回购工具余额，使用右轴 R2，单位 USD billion；单独设轴避免当前低余额被压在零线附近。',
@@ -1775,10 +1834,12 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
 def render_macro_chart_1():
     _render_standard_macro_chart(
         '<div class="section-title">1. Fed Policy Rate & Money Market</div>',
-        '<div class="section-description">IORB / ON RRP Rate / EFFR / SOFR</div>',
+        '<div class="section-description">Fed target corridor / IORB / ON RRP / EFFR / SOFR · funding spreads (R1, bp)</div>',
         "normal_corridor_range",
         build_fig1,
         [
+            ("Fed Target Upper (DFEDTARU)", "https://fred.stlouisfed.org/series/DFEDTARU"),
+            ("Fed Target Lower (DFEDTARL)", "https://fred.stlouisfed.org/series/DFEDTARL"),
             ("IORB (IORB)", "https://fred.stlouisfed.org/series/IORB"),
             ("ON RRP Rate (RRPONTSYAWARD)", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"),
             ("EFFR (EFFR)", "https://fred.stlouisfed.org/series/EFFR"),
