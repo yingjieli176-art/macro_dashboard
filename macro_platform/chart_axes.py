@@ -314,7 +314,7 @@ def _remove_year_band_for_client_controls(fig: go.Figure) -> None:
 DASHBOARD_CHART_HEIGHT = 420
 DASHBOARD_MARGIN_LEFT = 62
 DASHBOARD_MARGIN_BOTTOM = 38
-DASHBOARD_MARGIN_TOP = 82
+DASHBOARD_MARGIN_TOP = 88
 
 
 def _visible_right_axis_count(fig: go.Figure) -> int:
@@ -472,7 +472,7 @@ def apply_client_time_controls(
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=1.055,
+            y=1.02,
             xanchor="left",
             x=0.0,
             font=dict(size=10, color="#334155"),
@@ -505,7 +505,7 @@ def apply_client_time_controls(
             buttons=_native_range_buttons(),
             x=0.0,
             xanchor="left",
-            y=1.20,
+            y=1.22,
             yanchor="top",
             bgcolor="rgba(248,250,252,0.96)",
             activecolor="#e7eefc",
