@@ -30,9 +30,12 @@ class AsiaRatesTraceTests(unittest.TestCase):
         trace = fig.data[0]
         self.assertEqual(
             list(pd.to_datetime(trace.x)),
-            list(pd.to_datetime(["2026-01-02", "2026-01-06"])),
+            list(pd.to_datetime(["2026-01-02", "2026-01-05", "2026-01-06"])),
         )
-        self.assertEqual(list(trace.y), [1.40, 1.42])
+        values = list(trace.y)
+        self.assertEqual(values[0], 1.40)
+        self.assertTrue(pd.isna(values[1]))
+        self.assertEqual(values[2], 1.42)
         self.assertTrue(trace.connectgaps)
 
 
