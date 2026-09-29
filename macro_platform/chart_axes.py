@@ -293,6 +293,21 @@ def _native_range_buttons() -> list[dict[str, Any]]:
     ]
 
 
+def _remove_year_band_for_client_controls(fig: go.Figure) -> None:
+    """Remove the static top year strip when the viewport changes client-side."""
+    fig.layout.shapes = tuple(
+        shape
+        for shape in (list(fig.layout.shapes) if fig.layout.shapes else [])
+        if getattr(shape, "name", None)
+        not in {YEAR_BAND_SHAPE_NAME, YEAR_DIVIDER_SHAPE_NAME}
+    )
+    fig.layout.annotations = tuple(
+        ann
+        for ann in (list(fig.layout.annotations) if fig.layout.annotations else [])
+        if not _is_year_band_annotation(ann)
+    )
+
+
 def apply_client_time_controls(
     fig: go.Figure,
     *,
@@ -312,6 +327,7 @@ def apply_client_time_controls(
         latest = latest.tz_localize(None)
 
     fig = apply_time_axis(fig, "5Y", latest=latest)
+    _remove_year_band_for_client_controls(fig)
 
     default_range = default_range if default_range in RANGE_OFFSETS else "1Y"
     default_start = latest - RANGE_OFFSETS[default_range]
@@ -319,7 +335,19 @@ def apply_client_time_controls(
     fig.update_layout(
         updatemenus=[],
         dragmode=False,
-        margin=dict(t=max(int(getattr(fig.layout.margin, "t", 0) or 0), 112)),
+        # Compact two-row toolbar: range selector first, legend second.
+        margin=dict(t=max(int(getattr(fig.layout.margin, "t", 0) or 0), 94)),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.025,
+            xanchor="left",
+            x=0.0,
+            font=dict(size=10, color="#374151"),
+            bgcolor="rgba(255,255,255,0)",
+            borderwidth=0,
+            itemwidth=30,
+        ),
     )
     fig.update_xaxes(
         type="date",
@@ -332,18 +360,23 @@ def apply_client_time_controls(
         dtick=None,
         tickformat=None,
         nticks=8,
+        hoverformat="%Y-%m-%d",
         rangeslider_visible=False,
+        showgrid=True,
+        gridcolor="#edf1f5",
+        griddash="dot",
         rangeselector=dict(
             visible=True,
             buttons=_native_range_buttons(),
             x=0.0,
             xanchor="left",
-            y=1.18,
+            y=1.135,
             yanchor="top",
-            bgcolor="#ffffff",
-            bordercolor="#d1d5db",
-            borderwidth=1,
-            font=dict(size=10, color="#374151"),
+            bgcolor="rgba(248,250,252,0.96)",
+            activecolor="#e8eefc",
+            bordercolor="rgba(0,0,0,0)",
+            borderwidth=0,
+            font=dict(size=10, color="#475569"),
         ),
     )
     return fig
