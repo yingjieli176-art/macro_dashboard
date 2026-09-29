@@ -27,8 +27,8 @@ EASTMONEY_SEARCH_URL = "https://searchapi.eastmoney.com/api/suggest/get"
 EASTMONEY_UT = "bd1d9ddb04089700cf9c27f4f4961f5b"
 TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q="
 TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
+SINA_QUOTE_URL = "https://hq.sinajs.cn/list="
 DIRECT_QUOTE_FRESH_SECONDS = 90
-HK_PUBLIC_QUOTE_DELAY_MINUTES = 15
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 CHART_BUILD = "2026-09-29-range-legend-gap-r11"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
@@ -365,13 +365,70 @@ def _get_tencent_quote_safe(symbol):
                 "currency": currency,
                 "regular_market_time": quote_time,
                 "quote_source": "Tencent Finance",
-                "delayed_by": HK_PUBLIC_QUOTE_DELAY_MINUTES if market == "HK" else 0,
+                "delayed_by": None if market == "HK" else 0,
                 "data_source": "腾讯港股公共行情" if market == "HK" else "腾讯实时行情",
             })
             return row
         except Exception:
             continue
     return _empty_quote()
+
+
+def _sina_hk_quote_code(symbol):
+    raw = str(symbol or "").upper().strip()
+    if raw.endswith(".HK") and raw[:-3].isdigit():
+        return f"rt_hk{raw[:-3].zfill(5)}"
+    return ""
+
+
+def _get_sina_hk_quote_safe(symbol):
+    """Free public HK quote snapshot from Sina's rt_hk feed."""
+    code = _sina_hk_quote_code(symbol)
+    if not code:
+        return _empty_quote()
+    try:
+        response = requests.get(
+            SINA_QUOTE_URL + code + f"&_={int(time.time() * 1000)}",
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Referer": "https://finance.sina.com.cn/",
+                "Cache-Control": "no-cache, no-store, max-age=0",
+                "Pragma": "no-cache",
+            },
+            timeout=2.5,
+        )
+        response.raise_for_status()
+        raw = response.content.decode("gbk", errors="ignore")
+        if '="' not in raw:
+            return _empty_quote()
+        payload = raw.split('="', 1)[1].split('"', 1)[0]
+        fields = payload.split(",")
+        if len(fields) < 19:
+            return _empty_quote()
+
+        price = float(fields[6]) if fields[6] else None
+        previous = float(fields[3]) if fields[3] else None
+        change_pct = float(fields[8]) if fields[8] else None
+        if price is None:
+            return _empty_quote()
+        if change_pct is None and previous not in (None, 0):
+            change_pct = (price - previous) / previous * 100.0
+
+        quote_time = _parse_asia_minute_timestamp(fields[17], fields[18])
+        row = _empty_quote()
+        row.update({
+            "price": price,
+            "change_pct": change_pct,
+            "market_state": "REGULAR",
+            "currency": "HKD",
+            "regular_market_time": quote_time,
+            "quote_source": "Sina Finance",
+            "delayed_by": None,
+            "data_source": "新浪港股公共行情",
+        })
+        return row
+    except Exception:
+        return _empty_quote()
 
 
 def _parse_asia_minute_timestamp(date_value, time_value):
@@ -454,7 +511,7 @@ def _get_tencent_minute_quote_safe(symbol):
             "currency": "HKD" if market == "HK" else "CNY",
             "regular_market_time": quote_time,
             "quote_source": "Tencent Intraday",
-            "delayed_by": HK_PUBLIC_QUOTE_DELAY_MINUTES if market == "HK" else 0,
+            "delayed_by": None if market == "HK" else 0,
             "data_source": "腾讯港股分时行情" if market == "HK" else "腾讯分时行情",
         })
         return row
@@ -699,7 +756,7 @@ def _get_eastmoney_quote_safe(symbol):
             "post_market_time": None,
             "pre_market_time": None,
             "quote_source": "Eastmoney",
-            "delayed_by": HK_PUBLIC_QUOTE_DELAY_MINUTES if is_hk else 0,
+            "delayed_by": None if is_hk else 0,
             "data_source": "东方财富港股公共行情" if is_hk else "东方财富实时行情",
         }
     except Exception:
@@ -817,7 +874,12 @@ def _get_cached_quote(symbol, refresh_key=0):
     # stale, query Tencent's independent intraday feed before falling back to
     # Yahoo (which can itself be delayed for Asian markets).
     if market in {"HK", "CN"}:
-        for getter in (_get_tencent_quote_safe, _get_eastmoney_quote_safe):
+        direct_getters = (
+            (_get_sina_hk_quote_safe, _get_tencent_quote_safe, _get_eastmoney_quote_safe)
+            if market == "HK"
+            else (_get_tencent_quote_safe, _get_eastmoney_quote_safe)
+        )
+        for getter in direct_getters:
             row = getter(symbol)
             if row.get("price") is not None:
                 candidates.append(_tag_quote_role(row, "direct"))
@@ -890,19 +952,14 @@ def _quote_meta(row, market=""):
             source_label += "（扩展时段）"
         parts.append(source_label)
 
-    if delayed not in (None, 0, "0"):
-        if market == "HK":
-            parts.append(f"港股公共源约延迟{delayed}分")
-        elif source == "Yahoo Finance":
-            parts.append(f"源标注延迟{delayed}分")
+    if delayed not in (None, 0, "0") and source == "Yahoo Finance":
+        parts.append(f"源标注延迟{delayed}分")
 
     age = None
     if quote_ts is not None:
         age = max(0.0, time.time() - quote_ts) / 60.0
     if _regular_session_now(market) and age is not None:
-        if market == "HK" and delayed not in (None, 0, "0"):
-            pass
-        elif market in {"HK", "CN"} and age <= DIRECT_QUOTE_FRESH_SECONDS / 60.0:
+        if market in {"HK", "CN"} and age <= DIRECT_QUOTE_FRESH_SECONDS / 60.0:
             parts.append("近实时")
         elif age > 2:
             parts.append(f"报价滞后约{int(round(age))}分")
