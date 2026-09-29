@@ -388,7 +388,7 @@ def _get_sina_hk_quote_safe(symbol):
         return _empty_quote()
     try:
         response = requests.get(
-            SINA_QUOTE_URL + code + f"&_={int(time.time() * 1000)}",
+            f"https://hq.sinajs.cn/rn={int(time.time() * 1000)}&list={code}",
             headers={
                 "User-Agent": "Mozilla/5.0",
                 "Referer": "https://finance.sina.com.cn/",
