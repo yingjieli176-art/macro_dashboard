@@ -308,10 +308,10 @@ def _remove_year_band_for_client_controls(fig: go.Figure) -> None:
     )
 
 
-DASHBOARD_CHART_HEIGHT = 420
+DASHBOARD_CHART_HEIGHT = 440
 DASHBOARD_MARGIN_LEFT = 62
 DASHBOARD_MARGIN_BOTTOM = 38
-DASHBOARD_MARGIN_TOP = 68
+DASHBOARD_MARGIN_TOP = 106
 
 
 def _visible_right_axis_count(fig: go.Figure) -> int:
@@ -439,6 +439,37 @@ def apply_dashboard_chart_standard(fig: go.Figure) -> go.Figure:
     return fig
 
 
+def _apply_dynamic_year_axis(fig: go.Figure, latest: pd.Timestamp) -> None:
+    """Show a synchronized top year axis that follows client-side range changes."""
+    tick0 = pd.Timestamp(year=latest.year - 6, month=1, day=1)
+    fig.update_layout(
+        xaxis2=dict(
+            type="date",
+            overlaying="x",
+            matches="x",
+            anchor="free",
+            side="top",
+            position=1.0,
+            visible=True,
+            showgrid=False,
+            showline=False,
+            zeroline=False,
+            ticks="",
+            showticklabels=True,
+            tickmode="linear",
+            tick0=tick0,
+            dtick="M12",
+            tickformat="%Y",
+            ticklabelmode="period",
+            tickfont=dict(size=10, color="#64748b"),
+            ticklabelstandoff=7,
+            fixedrange=True,
+            automargin=False,
+            title=None,
+        )
+    )
+
+
 def apply_client_time_controls(
     fig: go.Figure,
     *,
@@ -464,7 +495,21 @@ def apply_client_time_controls(
     default_range = default_range if default_range in RANGE_OFFSETS else "1Y"
     default_start = latest - RANGE_OFFSETS[default_range]
 
-    fig.update_layout(updatemenus=[])
+    fig.update_layout(
+        updatemenus=[],
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.075,
+            xanchor="left",
+            x=0.0,
+            font=dict(size=10, color="#334155"),
+            bgcolor="rgba(255,255,255,0)",
+            borderwidth=0,
+            itemwidth=30,
+            traceorder="normal",
+        ),
+    )
     fig.update_xaxes(
         type="date",
         range=[default_start, latest],
@@ -483,7 +528,7 @@ def apply_client_time_controls(
             buttons=_native_range_buttons(),
             x=0.0,
             xanchor="left",
-            y=1.105,
+            y=1.19,
             yanchor="top",
             bgcolor="rgba(248,250,252,0.96)",
             activecolor="#e7eefc",
@@ -492,4 +537,5 @@ def apply_client_time_controls(
             font=dict(size=10, color="#475569"),
         ),
     )
+    _apply_dynamic_year_axis(fig, latest)
     return fig
