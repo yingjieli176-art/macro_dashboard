@@ -55,7 +55,7 @@ class ChartTimeAxisTests(unittest.TestCase):
     def test_client_controls_use_native_range_selector(self):
         fig = apply_client_time_controls(self._figure(), default_range="1Y")
         selector = fig.layout.xaxis.rangeselector
-        labels = [button.label for button in selector.buttons]
+        labels = [button.label.strip() for button in selector.buttons]
 
         self.assertEqual(labels, ["5Y", "1Y", "6M", "3M", "1M"])
         self.assertTrue(selector.visible)
@@ -72,6 +72,7 @@ class ChartTimeAxisTests(unittest.TestCase):
         self.assertEqual(selector.y, 1.20)
         self.assertEqual(selector.borderwidth, 1)
         self.assertEqual(selector.activecolor, "#e7eefc")
+        self.assertEqual(selector.font.size, 11)
         self.assertEqual(fig.layout.legend.y, 1.055)
         self.assertEqual(fig.layout.height, 420)
         self.assertEqual(fig.layout.margin.t, 82)
