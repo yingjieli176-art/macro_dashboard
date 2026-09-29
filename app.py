@@ -29,6 +29,7 @@ TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q="
 TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
+CHART_BUILD = "2026-09-29-range-fix-r1"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1761,6 +1762,18 @@ def _prepare_chart_for_range(fig, element_key, date_range, mode=None):
     return fig
 
 
+def _render_server_range_audit(fig, date_range):
+    axis_range = getattr(fig.layout.xaxis, "range", None)
+    if axis_range and len(axis_range) >= 2:
+        start = pd.Timestamp(axis_range[0]).strftime("%Y-%m-%d")
+        end = pd.Timestamp(axis_range[1]).strftime("%Y-%m-%d")
+        st.caption(
+            f"Server range: {date_range} · X-axis {start} → {end} · {CHART_BUILD}"
+        )
+    else:
+        st.caption(f"Server range: {date_range} · {CHART_BUILD}")
+
+
 def _render_standard_macro_chart(title, description, range_key, builder, sources, desc_index):
     st.markdown(title, unsafe_allow_html=True)
     st.markdown(description, unsafe_allow_html=True)
@@ -1773,13 +1786,14 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         label_visibility="collapsed",
     )
     fig = _prepare_chart_for_range(builder(date_range), range_key, date_range)
-    st.plotly_chart(fig, key=f"{range_key}_plot_{date_range}", use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(fig, key=f"{range_key}_plot", use_container_width=True, config=PLOTLY_CONFIG)
+    if range_key == "normal_corridor_range":
+        _render_server_range_audit(fig, date_range)
     show_parameter_description(desc_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-@st.fragment(key="macro_chart_1")
 def render_macro_chart_1():
     _render_standard_macro_chart(
         '<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>',
@@ -1796,7 +1810,6 @@ def render_macro_chart_1():
     )
 
 
-@st.fragment(key="macro_chart_2")
 def render_macro_chart_2():
     _render_standard_macro_chart(
         '<div class="section-title">2. 10Y Yield Structure</div>',
@@ -1812,7 +1825,6 @@ def render_macro_chart_2():
     )
 
 
-@st.fragment(key="macro_chart_3")
 def render_macro_chart_3():
     _render_standard_macro_chart(
         '<div class="section-title">3. Treasury Yield & Curve Spread</div>',
@@ -1830,7 +1842,6 @@ def render_macro_chart_3():
     )
 
 
-@st.fragment(key="macro_chart_4")
 def render_macro_chart_4():
     _render_standard_macro_chart(
         '<div class="section-title">4. US Liquidity</div>',
@@ -1918,7 +1929,7 @@ def _render_hk_macro_chart(hk_index):
     fig = _prepare_chart_for_range(fig, range_key, date_range, market_mode)
     st.plotly_chart(
         fig,
-        key=f"{range_key}_plot_{date_range}_{market_mode}",
+        key=f"{range_key}_plot",
         use_container_width=True,
         config=PLOTLY_CONFIG,
     )
@@ -1927,27 +1938,22 @@ def _render_hk_macro_chart(hk_index):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-@st.fragment(key="macro_chart_5")
 def render_macro_chart_5():
     _render_hk_macro_chart(0)
 
 
-@st.fragment(key="macro_chart_6")
 def render_macro_chart_6():
     _render_hk_macro_chart(1)
 
 
-@st.fragment(key="macro_chart_7")
 def render_macro_chart_7():
     _render_hk_macro_chart(2)
 
 
-@st.fragment(key="macro_chart_8")
 def render_macro_chart_8():
     _render_hk_macro_chart(3)
 
 
-@st.fragment(key="macro_chart_9")
 def render_macro_chart_9():
     st.markdown(
         '<div class="section-title">9. US Equity Risk & Volatility Structure</div>'
@@ -1963,7 +1969,7 @@ def render_macro_chart_9():
         label_visibility="collapsed",
     )
     fig = _prepare_chart_for_range(build_fig9(date_range), "us_equity_risk", date_range)
-    st.plotly_chart(fig, key=f"us_equity_risk_plot_{date_range}", use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(fig, key="us_equity_risk_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{US_EQUITY_RISK_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Cboe VIX", "https://www.cboe.com/tradable-products/vix/"),
@@ -1974,7 +1980,6 @@ def render_macro_chart_9():
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-@st.fragment(key="macro_chart_10")
 def render_macro_chart_10():
     st.markdown(
         '<div class="section-title">10. Precious Metals</div>'
@@ -1990,7 +1995,7 @@ def render_macro_chart_10():
         key="precious_metals_mode", label_visibility="collapsed",
     )
     fig = _prepare_chart_for_range(build_fig10(date_range, market_mode), "precious_metals", date_range, market_mode)
-    st.plotly_chart(fig, key=f"precious_metals_plot_{date_range}_{market_mode}", use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(fig, key="precious_metals_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Yahoo Finance · Gold Futures GC=F", "https://finance.yahoo.com/quote/GC=F/history/"),
@@ -2001,7 +2006,6 @@ def render_macro_chart_10():
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-@st.fragment(key="macro_chart_11")
 def render_macro_chart_11():
     st.markdown(
         '<div class="section-title">11. Crypto Market</div>'
@@ -2017,7 +2021,7 @@ def render_macro_chart_11():
         key="crypto_market_mode", label_visibility="collapsed",
     )
     fig = _prepare_chart_for_range(build_fig11(date_range, market_mode), "crypto_market", date_range, market_mode)
-    st.plotly_chart(fig, key=f"crypto_market_plot_{date_range}_{market_mode}", use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(fig, key="crypto_market_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Yahoo Finance · Bitcoin BTC-USD", "https://finance.yahoo.com/quote/BTC-USD/history/"),
@@ -2026,7 +2030,6 @@ def render_macro_chart_11():
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-@st.fragment(key="macro_chart_12")
 def render_macro_chart_12():
     st.markdown(
         '<div class="section-title">12. Copper Flow & COMEX–LME Spread</div>'
@@ -2038,7 +2041,7 @@ def render_macro_chart_12():
         key="copper_flow_spread_range", label_visibility="collapsed",
     )
     fig = _prepare_chart_for_range(build_fig12(date_range), "copper_flow", date_range)
-    st.plotly_chart(fig, key=f"copper_flow_plot_{date_range}", use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(fig, key="copper_flow_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(
         '<div class="mini-description"><b>读取方法：</b>COMEX 与 LME 库存放在同一左轴（千吨，kt），直接观察交易所可见库存的相对迁移；'
         'COMEX HG 先按 1 公吨 = 2,204.6226 磅换算为 USD/t，再与 LME 3M 放在同一价格轴；R2 直接显示 COMEX−LME 3M 价差。'
@@ -2057,7 +2060,6 @@ def render_macro_chart_12():
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-@st.fragment(key="macro_chart_13")
 def render_macro_chart_13():
     st.markdown(
         '<div class="section-title">13. China & Japan Government Yield Curves</div>'
@@ -2079,7 +2081,7 @@ def render_macro_chart_13():
     )
     st.plotly_chart(
         fig,
-        key=f"asia_rates_plot_{date_range}",
+        key="asia_rates_plot",
         use_container_width=True,
         config=PLOTLY_CONFIG,
     )
