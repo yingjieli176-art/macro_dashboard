@@ -29,7 +29,7 @@ TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q="
 TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
-CHART_BUILD = "2026-09-29-client-range-r2"
+CHART_BUILD = "2026-09-29-native-range-r3"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1768,7 +1768,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     fig = _prepare_chart_for_client_ranges(builder("5Y"), range_key)
     st.plotly_chart(fig, key=f"{range_key}_plot", use_container_width=True, config=PLOTLY_CONFIG)
     if range_key == "normal_corridor_range":
-        st.caption(f"时间范围由图内按钮直接切换 · 默认 1Y · {CHART_BUILD}")
+        st.caption(f"时间范围使用 Plotly 原生 Range Selector · 默认 1Y · {CHART_BUILD}")
     show_parameter_description(desc_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
