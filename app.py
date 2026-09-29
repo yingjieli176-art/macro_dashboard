@@ -12,7 +12,7 @@ from plotly.subplots import make_subplots
 import requests
 import streamlit as st
 from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, load_hk_liquidity
-from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis
+from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis, apply_client_time_controls
 from macro_platform.us_equity_risk import load_vixeq_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_asia_rates_figure
@@ -29,7 +29,7 @@ TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q="
 TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
-CHART_BUILD = "2026-09-29-range-fix-r1"
+CHART_BUILD = "2026-09-29-client-range-r2"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1718,7 +1718,7 @@ def build_fig12(date_range):
 
 CRYPTO_MARKET_DESCRIPTION = (
     '<b>4 个参数分别看什么：</b><br>'
-    '1. BTC：默认 Rebased 100 把所选区间第一个有效价格设为 100，只表示相对涨跌，不是 BTC 的美元价格；使用左轴。Raw 模式显示真实美元价格。<br>'
+    '1. BTC：默认 Rebased 100 把完整 5Y 样本第一个有效价格设为 100；图内时间按钮只改变显示窗口，不重新计算基准。该模式只表示相对涨跌，不是 BTC 的美元价格；使用左轴。Raw 模式显示真实美元价格。<br>'
     '2. ETH：与 BTC 一样把起点设为 100，因此可直接比较谁涨得更多、跌得更少；Rebased 100 使用左轴，Raw 模式使用 R1。<br>'
     '3. ETH/BTC：ETH 价格 ÷ BTC 价格；上升表示 ETH 相对 BTC 走强，下降表示 BTC 相对更强；Rebased 100 使用 R1，Raw 使用 R2。<br>'
     '4. BTC 30D Realized Vol：根据 BTC 日收益率计算的过去 30 日年化实际波动率；只表示“波动有多大”，不表示上涨或下跌方向；Rebased 100 使用 R2，Raw 使用 R3。<br><br>'
@@ -1737,10 +1737,10 @@ PARAM_DESCRIPTIONS = [
 def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
 
 HK_PARAMETER_DESCRIPTIONS = [
-    '<b>参数概念：</b><br>1. HKD M2 YoY：港元 M2 同比增速，作为主趋势线，用来观察广义港元货币的中期扩张或收缩；相比 MoM 更平滑。<br>2. HKD M2 MoM：港元 M2 月环比增速，作为边际动量线，用来观察最近一个月货币扩张/收缩是否加速；波动会明显高于 YoY。<br>3. Monetary Base YoY：香港货币基础总量同比变化，用于观察基础货币的中期扩张与收缩。<br>4. HKEX Price（R1）：港交所 0388.HK 市场价格，右轴单位 HKD；用于观察香港交易所股价与货币流动性变化之间的市场映射。<br>5. HSTECH Index（R2）：恒生科技指数 HSTECH 市场点位，右轴单位 points；市场历史独立拉取 5Y，不再被 HKMA 月度快照长度裁断。<br>6. HSI Index（R2）：恒生指数市场点位，右轴单位 points；使用 ^HSI 的 5Y 市场历史，用于对照香港大盘与流动性变化。<br>7. Tencent Price（R1）：腾讯控股 0700.HK 股价，Raw 模式与港交所共用 R1 港元价格轴；Rebased 100 模式把可视区间首个有效值归一到 100，便于比较相对弹性。<br><br><b>读取提示：</b>默认只保留 M2 的同比与环比：YoY 看趋势，MoM 看边际拐点。M3 YoY 仍保留在底层数据中，但因与 M2 YoY 高度同步，不再默认绘制，减少重复信息。<br><br><b>市场显示：</b>Raw 模式把股票价格放在 R1、指数点位放在 R2；Rebased 100 模式把 Tencent / HKEX / HSTECH / HSI 统一归一化，用于比较涨跌幅而不是绝对点位。',
+    '<b>参数概念：</b><br>1. HKD M2 YoY：港元 M2 同比增速，作为主趋势线，用来观察广义港元货币的中期扩张或收缩；相比 MoM 更平滑。<br>2. HKD M2 MoM：港元 M2 月环比增速，作为边际动量线，用来观察最近一个月货币扩张/收缩是否加速；波动会明显高于 YoY。<br>3. Monetary Base YoY：香港货币基础总量同比变化，用于观察基础货币的中期扩张与收缩。<br>4. HKEX Price（R1）：港交所 0388.HK 市场价格，右轴单位 HKD；用于观察香港交易所股价与货币流动性变化之间的市场映射。<br>5. HSTECH Index（R2）：恒生科技指数 HSTECH 市场点位，右轴单位 points；市场历史独立拉取 5Y，不再被 HKMA 月度快照长度裁断。<br>6. HSI Index（R2）：恒生指数市场点位，右轴单位 points；使用 ^HSI 的 5Y 市场历史，用于对照香港大盘与流动性变化。<br>7. Tencent Price（R1）：腾讯控股 0700.HK 股价，Raw 模式与港交所共用 R1 港元价格轴；Rebased 100 模式把完整 5Y 样本首个有效值归一到 100；图内时间按钮只改变显示窗口，便于比较相对弹性。<br><br><b>读取提示：</b>默认只保留 M2 的同比与环比：YoY 看趋势，MoM 看边际拐点。M3 YoY 仍保留在底层数据中，但因与 M2 YoY 高度同步，不再默认绘制，减少重复信息。<br><br><b>市场显示：</b>Raw 模式把股票价格放在 R1、指数点位放在 R2；Rebased 100 模式把 Tencent / HKEX / HSTECH / HSI 统一归一化，用于比较涨跌幅而不是绝对点位。',
     '<b>参数概念：</b><br>1. Closing Aggregate Balance：银行体系期末总结余，单位 HK$ billion；5Y 视图使用 HKMA 月度期末历史，数值下降通常代表可用港元流动性收紧。<br>2. Outstanding EFBN（R1）：外汇基金票据及债券未偿还总额，右轴单位 HK$ billion，是香港货币基础的重要结构项。<br>3. EFBN Held by Licensed Banks（R1）：由持牌银行持有的 EFBN，右轴单位 HK$ billion，用于观察银行体系持有的高流动性港元资产规模。<br><br><b>读取提示：</b>5Y 历史只展示 HKMA 实际公布的月度期末字段，不再用 Closing Aggregate Balance 复制生成 Opening 或 Forecast。若未来日频快照可用，短周期视图仍可显示真实 Opening / Closing / Forecast T+1。',
     '<b>参数概念：</b><br>1. O/N HIBOR：隔夜港元银行同业拆息，5Y 月度历史来自 C&SD 月刊（底层来源 HKAB / HKMA），反映最短端港元资金价格。<br>2. 3M HIBOR：3 个月港元银行同业拆息，用来观察更持续的港元融资成本。<br>3. HKMA Base Rate：香港金管局贴现窗基本利率；5Y 历史直接来自 HKMA 月末官方序列。<br>4. O/N−3M Spread（R）：隔夜 HIBOR 减 3M HIBOR，右轴单位 bp；显著转正通常代表短端资金压力上升。',
-    '<b>参数概念：</b><br>1. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>2. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>3. Linked Rate Center 7.80：7.75–7.85 兑换保证区间的中点参考线，用于快速判断港元当前处在偏强侧还是偏弱侧；不是额外的兑换保证触发水平。<br>4. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br>5. HKEX Price（R1）：港交所 0388.HK 市场价格，右轴单位 HKD。<br>6. HSTECH Index（R2）：恒生科技指数 HSTECH 市场点位，右轴单位 points。<br>7. HSI Index（R2）：恒生指数点位，Raw 模式对应 R2。<br>8. Tencent Price（R1）：腾讯控股 0700.HK 股价，Raw 模式对应 R1 港元价格轴。<br><br><b>市场显示：</b>Raw 模式保留真实价格/点位；Rebased 100 模式把四条市场资产在可视区间首个有效值归一到 100，用来比较谁更强、谁更弱。<br><br><b>读取提示：</b>USD/HKD 左轴已反向：7.75 强方兑换保证显示在上方、7.85 弱方兑换保证显示在下方，因此视觉方向直接对应“港元偏强/流动性偏强 → 港元偏弱/流动性偏弱”。灰色区域表示 7.75–7.85 联系汇率区间；其中 7.84–7.85 的淡红区域为 Weak-side Pressure Zone，用于提示接近弱方兑换保证的压力阶段；USD/HKD 优先使用仓库持久化的 Yahoo HKD=X 日频 5Y 快照，HKMA 月度汇率作为回退。',
+    '<b>参数概念：</b><br>1. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>2. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>3. Linked Rate Center 7.80：7.75–7.85 兑换保证区间的中点参考线，用于快速判断港元当前处在偏强侧还是偏弱侧；不是额外的兑换保证触发水平。<br>4. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br>5. HKEX Price（R1）：港交所 0388.HK 市场价格，右轴单位 HKD。<br>6. HSTECH Index（R2）：恒生科技指数 HSTECH 市场点位，右轴单位 points。<br>7. HSI Index（R2）：恒生指数点位，Raw 模式对应 R2。<br>8. Tencent Price（R1）：腾讯控股 0700.HK 股价，Raw 模式对应 R1 港元价格轴。<br><br><b>市场显示：</b>Raw 模式保留真实价格/点位；Rebased 100 模式把四条市场资产在完整 5Y 样本首个有效值归一到 100；图内时间按钮只改变显示窗口，用来比较谁更强、谁更弱。<br><br><b>读取提示：</b>USD/HKD 左轴已反向：7.75 强方兑换保证显示在上方、7.85 弱方兑换保证显示在下方，因此视觉方向直接对应“港元偏强/流动性偏强 → 港元偏弱/流动性偏弱”。灰色区域表示 7.75–7.85 联系汇率区间；其中 7.84–7.85 的淡红区域为 Weak-side Pressure Zone，用于提示接近弱方兑换保证的压力阶段；USD/HKD 优先使用仓库持久化的 Yahoo HKD=X 日频 5Y 快照，HKMA 月度汇率作为回退。',
 ]
 
 def show_hk_parameter_description(index):
@@ -1750,45 +1750,25 @@ def show_hk_parameter_description(index):
 US_EQUITY_RISK_DESCRIPTION = '<b>参数概念：</b><br>1. VIX：基于 S&P 500 指数期权的约 30 天隐含波动率，反映指数层面的近端风险定价。<br>2. VIXEQ：Cboe S&P 500 Constituent Volatility Index，衡量一篮子标普 500 成分股按市值加权的约 30 天隐含波动率；它使用单股期权，因此与 VIX 并非同一个指标。<br>3. S&P 500（R1）：标普 500 指数点位，用来观察风险价格与现货大盘的同步/背离。<br>4. VIX3M−VIX（R2）：3 个月 VIX 减约 30 天 VIX。通常为正代表期限结构较正常；快速收窄或转负表示近端隐含波动率高于远端，常见于短期压力上升阶段。<br><br><b>读取提示：</b>VIX 与 VIXEQ 同时上升代表指数与成分股隐含波动率共同抬升；若 VIXEQ 相对 VIX 更强，通常意味着单股波动/分化风险更突出。VIXEQ 于 2024-11-04 正式开始实时发布；Cboe 官方历史文件提供回溯序列，图表使用官方历史值，不自行外推。'
 
 
-PRECIOUS_METALS_DESCRIPTION = '<b>参数概念：</b><br>1. Gold：COMEX 黄金连续近月期货 GC=F 日收盘价，单位 USD/oz。<br>2. Silver：COMEX 白银连续近月期货 SI=F 日收盘价，单位 USD/oz。<br>3. Gold/Silver Ratio：金价 ÷ 银价；上升表示黄金相对白银更强，下降表示白银相对更强。<br>4. Gold Volatility / GVZ：Cboe Gold ETF Volatility Index，反映黄金相关期权的隐含波动率。<br><br><b>读取提示：</b>默认 Rebased 100 用于比较金银相对强弱；Raw 模式保留金银绝对价格，并为 Silver、金银比和 GVZ 使用独立右轴，避免不同量纲互相压缩。'
+PRECIOUS_METALS_DESCRIPTION = '<b>参数概念：</b><br>1. Gold：COMEX 黄金连续近月期货 GC=F 日收盘价，单位 USD/oz。<br>2. Silver：COMEX 白银连续近月期货 SI=F 日收盘价，单位 USD/oz。<br>3. Gold/Silver Ratio：金价 ÷ 银价；上升表示黄金相对白银更强，下降表示白银相对更强。<br>4. Gold Volatility / GVZ：Cboe Gold ETF Volatility Index，反映黄金相关期权的隐含波动率。<br><br><b>读取提示：</b>默认 Rebased 100 以完整 5Y 样本首个有效值为 100，图内时间按钮只改变显示窗口；Raw 模式保留金银绝对价格，并为 Silver、金银比和 GVZ 使用独立右轴，避免不同量纲互相压缩。'
 
 compact_mode = False
 
-def _prepare_chart_for_range(fig, element_key, date_range, mode=None):
-    """Apply the selected viewport as the final layout operation before rendering."""
-    fig = apply_time_axis(fig, date_range)
-    revision = f"{element_key}:{date_range}" if mode is None else f"{element_key}:{date_range}:{mode}"
+def _prepare_chart_for_client_ranges(fig, element_key, mode=None):
+    """Attach browser-side time controls to a complete five-year figure."""
+    fig = apply_client_time_controls(fig, default_range="1Y")
+    revision = f"{element_key}:client-range" if mode is None else f"{element_key}:client-range:{mode}"
     fig.update_layout(uirevision=revision)
     return fig
-
-
-def _render_server_range_audit(fig, date_range):
-    axis_range = getattr(fig.layout.xaxis, "range", None)
-    if axis_range and len(axis_range) >= 2:
-        start = pd.Timestamp(axis_range[0]).strftime("%Y-%m-%d")
-        end = pd.Timestamp(axis_range[1]).strftime("%Y-%m-%d")
-        st.caption(
-            f"Server range: {date_range} · X-axis {start} → {end} · {CHART_BUILD}"
-        )
-    else:
-        st.caption(f"Server range: {date_range} · {CHART_BUILD}")
 
 
 def _render_standard_macro_chart(title, description, range_key, builder, sources, desc_index):
     st.markdown(title, unsafe_allow_html=True)
     st.markdown(description, unsafe_allow_html=True)
-    date_range = st.radio(
-        "时间范围",
-        RANGES,
-        horizontal=True,
-        index=1,
-        key=range_key,
-        label_visibility="collapsed",
-    )
-    fig = _prepare_chart_for_range(builder(date_range), range_key, date_range)
+    fig = _prepare_chart_for_client_ranges(builder("5Y"), range_key)
     st.plotly_chart(fig, key=f"{range_key}_plot", use_container_width=True, config=PLOTLY_CONFIG)
     if range_key == "normal_corridor_range":
-        _render_server_range_audit(fig, date_range)
+        st.caption(f"时间范围由图内按钮直接切换 · 默认 1Y · {CHART_BUILD}")
     show_parameter_description(desc_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
@@ -1907,14 +1887,6 @@ def _render_hk_macro_chart(hk_index):
     title, description, range_key, sources = HK_CHART_CONFIGS[hk_index]
     st.markdown(title, unsafe_allow_html=True)
     st.markdown(description, unsafe_allow_html=True)
-    date_range = st.radio(
-        "时间范围",
-        RANGES,
-        horizontal=True,
-        index=1,
-        key=range_key,
-        label_visibility="collapsed",
-    )
     market_mode = "Raw"
     if hk_index in (0, 3):
         market_mode = st.radio(
@@ -1925,8 +1897,8 @@ def _render_hk_macro_chart(hk_index):
             key=f"{range_key}_market_mode",
             label_visibility="collapsed",
         )
-    fig = build_fig5(date_range, market_mode=market_mode)[hk_index]
-    fig = _prepare_chart_for_range(fig, range_key, date_range, market_mode)
+    fig = build_fig5("5Y", market_mode=market_mode)[hk_index]
+    fig = _prepare_chart_for_client_ranges(fig, range_key, market_mode)
     st.plotly_chart(
         fig,
         key=f"{range_key}_plot",
@@ -1960,15 +1932,7 @@ def render_macro_chart_9():
         '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIX3M−VIX (R2)</div>',
         unsafe_allow_html=True,
     )
-    date_range = st.radio(
-        "时间范围",
-        RANGES,
-        horizontal=True,
-        index=1,
-        key="us_equity_risk_range",
-        label_visibility="collapsed",
-    )
-    fig = _prepare_chart_for_range(build_fig9(date_range), "us_equity_risk", date_range)
+    fig = _prepare_chart_for_client_ranges(build_fig9("5Y"), "us_equity_risk")
     st.plotly_chart(fig, key="us_equity_risk_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{US_EQUITY_RISK_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
@@ -1986,15 +1950,11 @@ def render_macro_chart_10():
         '<div class="section-description">Gold / Silver · Gold/Silver Ratio (R1) · Gold Volatility GVZ (R2/R3)</div>',
         unsafe_allow_html=True,
     )
-    date_range = st.radio(
-        "时间范围", RANGES, horizontal=True, index=1,
-        key="precious_metals_range", label_visibility="collapsed",
-    )
     market_mode = st.radio(
         "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
         key="precious_metals_mode", label_visibility="collapsed",
     )
-    fig = _prepare_chart_for_range(build_fig10(date_range, market_mode), "precious_metals", date_range, market_mode)
+    fig = _prepare_chart_for_client_ranges(build_fig10("5Y", market_mode), "precious_metals", market_mode)
     st.plotly_chart(fig, key="precious_metals_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
@@ -2012,15 +1972,11 @@ def render_macro_chart_11():
         '<div class="section-description">4 个指标 · BTC / ETH 相对表现 · ETH/BTC 强弱 · BTC 30D 实际波动率</div>',
         unsafe_allow_html=True,
     )
-    date_range = st.radio(
-        "时间范围", RANGES, horizontal=True, index=1,
-        key="crypto_market_range", label_visibility="collapsed",
-    )
     market_mode = st.radio(
         "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
         key="crypto_market_mode", label_visibility="collapsed",
     )
-    fig = _prepare_chart_for_range(build_fig11(date_range, market_mode), "crypto_market", date_range, market_mode)
+    fig = _prepare_chart_for_client_ranges(build_fig11("5Y", market_mode), "crypto_market", market_mode)
     st.plotly_chart(fig, key="crypto_market_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
@@ -2036,11 +1992,7 @@ def render_macro_chart_12():
         '<div class="section-description">LME / COMEX inventories (L) · normalized copper prices (R1) · COMEX−LME 3M spread (R2)</div>',
         unsafe_allow_html=True,
     )
-    date_range = st.radio(
-        "时间范围", RANGES, horizontal=True, index=1,
-        key="copper_flow_spread_range", label_visibility="collapsed",
-    )
-    fig = _prepare_chart_for_range(build_fig12(date_range), "copper_flow", date_range)
+    fig = _prepare_chart_for_client_ranges(build_fig12("5Y"), "copper_flow")
     st.plotly_chart(fig, key="copper_flow_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(
         '<div class="mini-description"><b>读取方法：</b>COMEX 与 LME 库存放在同一左轴（千吨，kt），直接观察交易所可见库存的相对迁移；'
@@ -2066,18 +2018,9 @@ def render_macro_chart_13():
         '<div class="section-description">China 2Y / 10Y · Japan 2Y / 10Y · 10Y−2Y curve spread (R1, bp)</div>',
         unsafe_allow_html=True,
     )
-    date_range = st.radio(
-        "时间范围",
-        RANGES,
-        horizontal=True,
-        index=1,
-        key="asia_rates_range",
-        label_visibility="collapsed",
-    )
-    fig = _prepare_chart_for_range(
-        build_asia_rates_figure(date_range),
+    fig = _prepare_chart_for_client_ranges(
+        build_asia_rates_figure("5Y"),
         "asia_rates",
-        date_range,
     )
     st.plotly_chart(
         fig,
