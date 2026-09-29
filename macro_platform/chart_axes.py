@@ -336,8 +336,8 @@ def apply_client_time_controls(
         rangeselector=dict(
             visible=True,
             buttons=_native_range_buttons(),
-            x=1.0,
-            xanchor="right",
+            x=0.0,
+            xanchor="left",
             y=1.18,
             yanchor="top",
             bgcolor="#ffffff",
