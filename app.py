@@ -27,7 +27,6 @@ EASTMONEY_SEARCH_URL = "https://searchapi.eastmoney.com/api/suggest/get"
 EASTMONEY_UT = "bd1d9ddb04089700cf9c27f4f4961f5b"
 TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q="
 TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
-SINA_QUOTE_URL = "https://hq.sinajs.cn/list="
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 CHART_BUILD = "2026-09-29-range-legend-gap-r11"
