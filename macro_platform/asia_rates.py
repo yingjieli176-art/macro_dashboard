@@ -107,6 +107,10 @@ def load_china_gov_yields() -> pd.DataFrame:
 
     out = (
         out.dropna(subset=["observation_date"])
+        .dropna(
+            how="all",
+            subset=["china_2y", "china_10y", "china_10y_2y_pct"],
+        )
         .sort_values("observation_date")
         .drop_duplicates("observation_date", keep="last")
     )
@@ -223,15 +227,30 @@ def _add_trace(
 ) -> None:
     if frame.empty or column not in frame.columns or frame[column].notna().sum() == 0:
         return
+
+    # Eastmoney/MOF can contain calendar rows with a null yield on days when
+    # no fixing was published.  Do not pass those null rows to Plotly because
+    # they create artificial line breaks.  We do not interpolate or fill any
+    # value: each trace is built only from its actual observations.
+    plot_frame = (
+        frame.loc[frame[column].notna(), ["observation_date", column]]
+        .dropna(subset=["observation_date"])
+        .sort_values("observation_date")
+        .drop_duplicates("observation_date", keep="last")
+    )
+    if plot_frame.empty:
+        return
+
     line = {"width": width}
     if dash:
         line["dash"] = dash
     trace = go.Scatter(
-        x=frame["observation_date"],
-        y=frame[column],
+        x=plot_frame["observation_date"],
+        y=plot_frame[column],
         name=name,
         mode="lines",
         line=line,
+        connectgaps=False,
         hovertemplate=f"{name}: %{{y:.2f}}{suffix}<extra></extra>",
     )
     if yaxis:
