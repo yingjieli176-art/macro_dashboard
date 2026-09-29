@@ -284,12 +284,15 @@ CLIENT_RANGE_ORDER = ("5Y", "1Y", "6M", "3M", "1M")
 
 def _native_range_buttons() -> list[dict[str, Any]]:
     """Plotly built-in date-axis range selector buttons."""
+    # En-spaces make Plotly's native selector buttons breathe a little without
+    # replacing the stable browser-native range-selector interaction.
+    pad = "\u2002"
     return [
-        dict(count=5, label="5Y", step="year", stepmode="backward"),
-        dict(count=1, label="1Y", step="year", stepmode="backward"),
-        dict(count=6, label="6M", step="month", stepmode="backward"),
-        dict(count=3, label="3M", step="month", stepmode="backward"),
-        dict(count=1, label="1M", step="month", stepmode="backward"),
+        dict(count=5, label=f"{pad}5Y{pad}", step="year", stepmode="backward"),
+        dict(count=1, label=f"{pad}1Y{pad}", step="year", stepmode="backward"),
+        dict(count=6, label=f"{pad}6M{pad}", step="month", stepmode="backward"),
+        dict(count=3, label=f"{pad}3M{pad}", step="month", stepmode="backward"),
+        dict(count=1, label=f"{pad}1M{pad}", step="month", stepmode="backward"),
     ]
 
 
@@ -508,7 +511,7 @@ def apply_client_time_controls(
             activecolor="#e7eefc",
             bordercolor="rgba(203,213,225,0.75)",
             borderwidth=1,
-            font=dict(size=10, color="#475569"),
+            font=dict(size=11, color="#475569"),
         ),
     )
     return fig
