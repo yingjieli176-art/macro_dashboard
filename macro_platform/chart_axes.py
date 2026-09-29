@@ -277,3 +277,104 @@ def apply_time_axis(
     )
     _apply_year_band(fig, start, latest)
     return fig
+
+
+CLIENT_RANGE_ORDER = ("5Y", "1Y", "6M", "3M", "1M")
+
+
+def _client_range_payload(latest: pd.Timestamp, date_range: str) -> dict[str, Any]:
+    """Plotly relayout payload for one browser-side time-range button."""
+    offset = RANGE_OFFSETS.get(date_range, RANGE_OFFSETS["1Y"])
+    start = latest - offset
+    if start >= latest:
+        start = latest - pd.Timedelta(days=1)
+
+    profile = _tick_profile(date_range)
+    tickvals = _axis_ticks(start, latest, date_range)
+    axis_end = _axis_end_with_padding(start, latest)
+
+    return {
+        "xaxis.range": [start.isoformat(), axis_end.isoformat()],
+        "xaxis.autorange": False,
+        "xaxis.tickmode": "array",
+        "xaxis.tickvals": [value.isoformat() for value in tickvals],
+        "xaxis.ticktext": [value.strftime(profile["tickformat"]) for value in tickvals],
+        "xaxis.dtick": profile["dtick"],
+        "xaxis.tickformat": profile["tickformat"],
+    }
+
+
+def apply_client_time_controls(
+    fig: go.Figure,
+    *,
+    default_range: str = "1Y",
+    latest: pd.Timestamp | None = None,
+) -> go.Figure:
+    """Add browser-native 5Y/1Y/6M/3M/1M controls to a full-history figure.
+
+    These buttons call Plotly relayout directly in the browser. Switching the
+    time window therefore does not depend on a Streamlit rerun, Session State,
+    fragment cleanup, or any server round-trip.
+    """
+    latest = pd.Timestamp(latest) if latest is not None else _figure_latest(fig)
+    if latest is None or pd.isna(latest):
+        return fig
+    if getattr(latest, "tzinfo", None):
+        latest = latest.tz_localize(None)
+
+    # Build temporal guide shapes from the complete five-year history.
+    # Shorter browser-side ranges simply clip those guides to the viewport.
+    fig = apply_time_axis(fig, "5Y", latest=latest)
+
+    default_range = default_range if default_range in RANGE_OFFSETS else "1Y"
+    default_payload = _client_range_payload(latest, default_range)
+
+    fig.update_layout(
+        xaxis=dict(
+            range=default_payload["xaxis.range"],
+            autorange=False,
+            fixedrange=False,
+            tickmode="array",
+            tickvals=default_payload["xaxis.tickvals"],
+            ticktext=default_payload["xaxis.ticktext"],
+            dtick=default_payload["xaxis.dtick"],
+            tickformat=default_payload["xaxis.tickformat"],
+        ),
+        dragmode=False,
+    )
+
+    buttons = [
+        dict(
+            label=date_range,
+            method="relayout",
+            args=[_client_range_payload(latest, date_range)],
+        )
+        for date_range in CLIENT_RANGE_ORDER
+    ]
+
+    margin = fig.layout.margin
+    current_top = getattr(margin, "t", None) if margin is not None else None
+    top_margin = max(int(current_top or 0), 96)
+
+    fig.update_layout(
+        margin=dict(t=top_margin),
+        updatemenus=[
+            dict(
+                type="buttons",
+                direction="right",
+                active=CLIENT_RANGE_ORDER.index(default_range),
+                showactive=True,
+                x=0.0,
+                xanchor="left",
+                y=1.145,
+                yanchor="top",
+                pad=dict(r=4, t=0),
+                bgcolor="#ffffff",
+                bordercolor="#d1d5db",
+                borderwidth=1,
+                font=dict(size=10, color="#374151"),
+                buttons=buttons,
+            )
+        ],
+    )
+    return fig
