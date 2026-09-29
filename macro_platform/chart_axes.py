@@ -354,7 +354,7 @@ def apply_client_time_controls(
 
     margin = fig.layout.margin
     current_top = getattr(margin, "t", None) if margin is not None else None
-    top_margin = max(int(current_top or 0), 96)
+    top_margin = max(int(current_top or 0), 118)
 
     fig.update_layout(
         margin=dict(t=top_margin),
@@ -364,9 +364,9 @@ def apply_client_time_controls(
                 direction="right",
                 active=CLIENT_RANGE_ORDER.index(default_range),
                 showactive=True,
-                x=0.0,
-                xanchor="left",
-                y=1.145,
+                x=0.995,
+                xanchor="right",
+                y=1.205,
                 yanchor="top",
                 pad=dict(r=4, t=0),
                 bgcolor="#ffffff",
