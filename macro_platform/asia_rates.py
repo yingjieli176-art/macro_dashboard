@@ -228,17 +228,17 @@ def _add_trace(
     if frame.empty or column not in frame.columns or frame[column].notna().sum() == 0:
         return
 
-    # Eastmoney/MOF can contain calendar rows with a null yield on days when
-    # no fixing was published.  Do not pass those null rows to Plotly because
-    # they create artificial line breaks.  We do not interpolate or fill any
-    # value: each trace is built only from its actual observations.
+    # Eastmoney/MOF can include dated rows with a null fixing. Keep those null
+    # rows in the Plotly trace and explicitly connect across them. Plotly does
+    # not invent a value or hover point for the null date; it only draws the
+    # segment between the surrounding published observations.
     plot_frame = (
-        frame.loc[frame[column].notna(), ["observation_date", column]]
+        frame.loc[:, ["observation_date", column]]
         .dropna(subset=["observation_date"])
         .sort_values("observation_date")
         .drop_duplicates("observation_date", keep="last")
     )
-    if plot_frame.empty:
+    if plot_frame[column].notna().sum() == 0:
         return
 
     line = {"width": width}
@@ -250,7 +250,7 @@ def _add_trace(
         name=name,
         mode="lines",
         line=line,
-        connectgaps=False,
+        connectgaps=True,
         hovertemplate=f"{name}: %{{y:.2f}}{suffix}<extra></extra>",
     )
     if yaxis:
@@ -280,6 +280,12 @@ def build_asia_rates_figure(date_range: str) -> go.Figure:
     start = latest - offset
     china = _slice(china, start)
     japan = _slice(japan, start)
+
+    if not japan.empty:
+        japan = japan.copy()
+        japan["japan_2y"] = pd.to_numeric(japan.get("japan_2y"), errors="coerce")
+        japan["japan_10y"] = pd.to_numeric(japan.get("japan_10y"), errors="coerce")
+        japan["japan_10y_2y_pct"] = japan["japan_10y"] - japan["japan_2y"]
 
     _add_trace(fig, china, "china_2y", "China 2Y", width=2.1)
     _add_trace(fig, china, "china_10y", "China 10Y", width=2.8)
