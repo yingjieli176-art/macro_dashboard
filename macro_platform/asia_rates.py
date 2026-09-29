@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import io
-from datetime import datetime
 from typing import Iterable
 
 import pandas as pd
@@ -42,42 +41,46 @@ def load_china_gov_yields() -> pd.DataFrame:
     rows: list[dict] = []
     cutoff = _cutoff_date()
 
-    for page in range(1, 8):
-        params = {
-            "type": "RPTA_WEB_TREASURYYIELD",
-            "sty": "ALL",
-            "st": "SOLAR_DATE",
-            "sr": "-1",
-            "token": "894050c76af8597a853f5b408b759f5d",
-            "p": str(page),
-            "ps": "500",
-            "pageNo": str(page),
-            "pageNum": str(page),
-        }
-        response = requests.get(
-            CHINA_TREASURY_URL,
-            params=params,
-            headers=HTTP_HEADERS,
-            timeout=(3.0, 10.0),
-        )
-        response.raise_for_status()
-        payload = response.json() or {}
-        result = payload.get("result") or {}
-        page_rows = result.get("data") or []
-        if not page_rows:
-            break
-        rows.extend(page_rows)
+    try:
+        for page in range(1, 8):
+            params = {
+                "type": "RPTA_WEB_TREASURYYIELD",
+                "sty": "ALL",
+                "st": "SOLAR_DATE",
+                "sr": "-1",
+                "token": "894050c76af8597a853f5b408b759f5d",
+                "p": str(page),
+                "ps": "500",
+                "pageNo": str(page),
+                "pageNum": str(page),
+            }
+            response = requests.get(
+                CHINA_TREASURY_URL,
+                params=params,
+                headers=HTTP_HEADERS,
+                timeout=(3.0, 10.0),
+            )
+            response.raise_for_status()
+            payload = response.json() or {}
+            result = payload.get("result") or {}
+            page_rows = result.get("data") or []
+            if not page_rows:
+                break
+            rows.extend(page_rows)
 
-        dates = pd.to_datetime(
-            [item.get("SOLAR_DATE") for item in page_rows],
-            errors="coerce",
-        )
-        if dates.notna().any() and dates.min() <= cutoff:
-            break
+            dates = pd.to_datetime(
+                [item.get("SOLAR_DATE") for item in page_rows],
+                errors="coerce",
+            )
+            if dates.notna().any() and dates.min() <= cutoff:
+                break
 
-        total_pages = int(result.get("pages") or page)
-        if page >= total_pages:
-            break
+            total_pages = int(result.get("pages") or page)
+            if page >= total_pages:
+                break
+    except Exception:
+        if not rows:
+            return _empty_frame("china")
 
     if not rows:
         return _empty_frame("china")
@@ -88,14 +91,11 @@ def load_china_gov_yields() -> pd.DataFrame:
             "observation_date": pd.to_datetime(frame.get("SOLAR_DATE"), errors="coerce"),
             "china_2y": pd.to_numeric(frame.get("EMM00588704"), errors="coerce"),
             "china_10y": pd.to_numeric(frame.get("EMM00166466"), errors="coerce"),
-            "china_spread_raw": pd.to_numeric(frame.get("EMM01276014"), errors="coerce"),
         }
     )
-    computed = (out["china_10y"] - out["china_2y"]) * 100.0
-    out["china_10y_2y_bp"] = out["china_spread_raw"].mul(100.0).combine_first(computed)
+    out["china_10y_2y_bp"] = (out["china_10y"] - out["china_2y"]) * 100.0
     out = (
-        out.drop(columns=["china_spread_raw"])
-        .dropna(subset=["observation_date"])
+        out.dropna(subset=["observation_date"])
         .sort_values("observation_date")
         .drop_duplicates("observation_date", keep="last")
     )
