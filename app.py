@@ -15,6 +15,7 @@ from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liqu
 from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis
 from macro_platform.us_equity_risk import load_vixeq_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
+from macro_platform.asia_rates import build_asia_rates_figure
 from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
 from data import (fetch_eastmoney_news, get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_walcl, get_wresbal, get_wtre_gen, get_tga_daily, get_rrp_daily, _fred_series)
 
@@ -1753,7 +1754,8 @@ PRECIOUS_METALS_DESCRIPTION = '<b>参数概念：</b><br>1. Gold：COMEX 黄金�
 compact_mode = False
 
 def _prepare_chart_for_range(fig, element_key, date_range, mode=None):
-    """Force Plotly to apply the newly selected viewport instead of preserving an old one."""
+    """Apply the selected viewport as the final layout operation before rendering."""
+    fig = apply_time_axis(fig, date_range)
     revision = f"{element_key}:{date_range}" if mode is None else f"{element_key}:{date_range}:{mode}"
     fig.update_layout(uirevision=revision)
     return fig
@@ -1771,7 +1773,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         label_visibility="collapsed",
     )
     fig = _prepare_chart_for_range(builder(date_range), range_key, date_range)
-    st.plotly_chart(fig, key=f"{range_key}_plot", use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(fig, key=f"{range_key}_plot_{date_range}", use_container_width=True, config=PLOTLY_CONFIG)
     show_parameter_description(desc_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
@@ -1914,7 +1916,12 @@ def _render_hk_macro_chart(hk_index):
         )
     fig = build_fig5(date_range, market_mode=market_mode)[hk_index]
     fig = _prepare_chart_for_range(fig, range_key, date_range, market_mode)
-    st.plotly_chart(fig, key=f"{range_key}_plot", use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(
+        fig,
+        key=f"{range_key}_plot_{date_range}_{market_mode}",
+        use_container_width=True,
+        config=PLOTLY_CONFIG,
+    )
     show_hk_parameter_description(hk_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
@@ -1956,7 +1963,7 @@ def render_macro_chart_9():
         label_visibility="collapsed",
     )
     fig = _prepare_chart_for_range(build_fig9(date_range), "us_equity_risk", date_range)
-    st.plotly_chart(fig, key="us_equity_risk_plot", use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(fig, key=f"us_equity_risk_plot_{date_range}", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{US_EQUITY_RISK_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Cboe VIX", "https://www.cboe.com/tradable-products/vix/"),
@@ -1983,7 +1990,7 @@ def render_macro_chart_10():
         key="precious_metals_mode", label_visibility="collapsed",
     )
     fig = _prepare_chart_for_range(build_fig10(date_range, market_mode), "precious_metals", date_range, market_mode)
-    st.plotly_chart(fig, key="precious_metals_plot", use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(fig, key=f"precious_metals_plot_{date_range}_{market_mode}", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Yahoo Finance · Gold Futures GC=F", "https://finance.yahoo.com/quote/GC=F/history/"),
@@ -2010,7 +2017,7 @@ def render_macro_chart_11():
         key="crypto_market_mode", label_visibility="collapsed",
     )
     fig = _prepare_chart_for_range(build_fig11(date_range, market_mode), "crypto_market", date_range, market_mode)
-    st.plotly_chart(fig, key="crypto_market_plot", use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(fig, key=f"crypto_market_plot_{date_range}_{market_mode}", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Yahoo Finance · Bitcoin BTC-USD", "https://finance.yahoo.com/quote/BTC-USD/history/"),
@@ -2031,7 +2038,7 @@ def render_macro_chart_12():
         key="copper_flow_spread_range", label_visibility="collapsed",
     )
     fig = _prepare_chart_for_range(build_fig12(date_range), "copper_flow", date_range)
-    st.plotly_chart(fig, key="copper_flow_plot", use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(fig, key=f"copper_flow_plot_{date_range}", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(
         '<div class="mini-description"><b>读取方法：</b>COMEX 与 LME 库存放在同一左轴（千吨，kt），直接观察交易所可见库存的相对迁移；'
         'COMEX HG 先按 1 公吨 = 2,204.6226 磅换算为 USD/t，再与 LME 3M 放在同一价格轴；R2 直接显示 COMEX−LME 3M 价差。'
@@ -2046,6 +2053,48 @@ def render_macro_chart_12():
         ("LME Warehouse & Stocks Reports", "https://www.lme.com/Market-data/Reports-and-data/Warehouse-and-stocks-reports"),
         ("Westmetall · LME Copper Daily Table", "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"),
         ("COCHILCO · Copper Inventories", "https://boletin.cochilco.cl/estadisticas/inventarios.asp"),
+    ])
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+
+@st.fragment(key="macro_chart_13")
+def render_macro_chart_13():
+    st.markdown(
+        '<div class="section-title">13. China & Japan Government Yield Curves</div>'
+        '<div class="section-description">China 2Y / 10Y · Japan 2Y / 10Y · 10Y−2Y curve spread (R1, bp)</div>',
+        unsafe_allow_html=True,
+    )
+    date_range = st.radio(
+        "时间范围",
+        RANGES,
+        horizontal=True,
+        index=1,
+        key="asia_rates_range",
+        label_visibility="collapsed",
+    )
+    fig = _prepare_chart_for_range(
+        build_asia_rates_figure(date_range),
+        "asia_rates",
+        date_range,
+    )
+    st.plotly_chart(
+        fig,
+        key=f"asia_rates_plot_{date_range}",
+        use_container_width=True,
+        config=PLOTLY_CONFIG,
+    )
+    st.markdown(
+        '<div class="mini-description"><b>读取方法：</b>'
+        '左轴比较中国、日本 2 年期与 10 年期国债收益率；'
+        '右轴显示各自 10Y−2Y 利差（bp）。'
+        '利差上升代表曲线陡峭化，下降代表曲线趋平；转负代表 2Y 高于 10Y。'
+        '中国数据使用东方财富宏观国债收益率历史序列；'
+        '日本数据使用日本财务省公布的 JGB constant-maturity 收益率。</div>',
+        unsafe_allow_html=True,
+    )
+    add_sources([
+        ("Eastmoney · China Treasury Yield History", "https://data.eastmoney.com/cjsj/zmgzsyl.html"),
+        ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -2078,6 +2127,9 @@ render_macro_chart_11()
 
 st.markdown('<div class="section-kicker">INDUSTRIAL METALS · COPPER</div>', unsafe_allow_html=True)
 render_macro_chart_12()
+
+st.markdown('<div class="section-kicker">ASIA RATES</div>', unsafe_allow_html=True)
+render_macro_chart_13()
 
 st.markdown('<div id="news" class="section-anchor"></div><div class="section-kicker">NEWS</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)
