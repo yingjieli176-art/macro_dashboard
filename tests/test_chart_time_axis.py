@@ -52,18 +52,21 @@ class ChartTimeAxisTests(unittest.TestCase):
         self.assertEqual(start.normalize(), pd.Timestamp("2025-09-29"))
         self.assertGreaterEqual(end, pd.Timestamp("2026-09-29"))
 
-    def test_client_controls_have_all_five_ranges(self):
+    def test_client_controls_use_native_range_selector(self):
         fig = apply_client_time_controls(self._figure(), default_range="1Y")
-        menu = fig.layout.updatemenus[0]
-        labels = [button.label for button in menu.buttons]
+        selector = fig.layout.xaxis.rangeselector
+        labels = [button.label for button in selector.buttons]
 
         self.assertEqual(labels, ["5Y", "1Y", "6M", "3M", "1M"])
-        self.assertEqual(menu.active, 1)
+        self.assertTrue(selector.visible)
+        self.assertEqual(len(fig.layout.updatemenus), 0)
+        self.assertFalse(fig.layout.xaxis.fixedrange)
+        self.assertEqual(fig.layout.xaxis.tickmode, "auto")
 
-        three_month = menu.buttons[3].args[0]
-        three_month_start = pd.Timestamp(three_month["xaxis.range"][0])
-        self.assertEqual(three_month_start.normalize(), pd.Timestamp("2026-06-29"))
-        self.assertFalse(three_month["xaxis.autorange"])
+        three_month = selector.buttons[3]
+        self.assertEqual(three_month.count, 3)
+        self.assertEqual(three_month.step, "month")
+        self.assertEqual(three_month.stepmode, "backward")
 
 
 
