@@ -69,16 +69,24 @@ class ChartTimeAxisTests(unittest.TestCase):
         self.assertEqual(three_month.stepmode, "backward")
         self.assertEqual(selector.x, 0.0)
         self.assertEqual(selector.xanchor, "left")
-        self.assertEqual(selector.y, 1.135)
-        self.assertEqual(selector.borderwidth, 0)
-        self.assertEqual(selector.activecolor, "#e8eefc")
-        self.assertEqual(fig.layout.legend.y, 1.025)
+        self.assertEqual(selector.y, 1.105)
+        self.assertEqual(selector.borderwidth, 1)
+        self.assertEqual(selector.activecolor, "#e7eefc")
+        self.assertEqual(fig.layout.legend.y, 1.012)
+        self.assertEqual(fig.layout.height, 420)
+        self.assertEqual(fig.layout.margin.t, 68)
+        self.assertEqual(fig.layout.margin.l, 62)
+        self.assertEqual(fig.layout.margin.b, 38)
 
         year_shape_names = {
             getattr(shape, "name", None) for shape in (fig.layout.shapes or [])
         }
         self.assertNotIn("__dashboard_year_band__", year_shape_names)
         self.assertNotIn("__dashboard_year_divider__", year_shape_names)
+        self.assertEqual(fig.layout.plot_bgcolor, "#ffffff")
+        self.assertEqual(fig.layout.paper_bgcolor, "#ffffff")
+        self.assertEqual(fig.layout.yaxis.gridcolor, "#e7edf3")
+        self.assertEqual(fig.layout.xaxis.gridcolor, "#edf1f5")
 
 
 
