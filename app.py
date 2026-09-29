@@ -29,7 +29,7 @@ TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q="
 TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
-CHART_BUILD = "2026-09-29-chart-standard-r6"
+CHART_BUILD = "2026-09-29-year-axis-r7"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
