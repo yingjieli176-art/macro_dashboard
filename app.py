@@ -1278,11 +1278,11 @@ def filter_range(data, date_range):
     if data.empty or "observation_date" not in data.columns:
         return data.copy()
     dates = pd.to_datetime(data["observation_date"], errors="coerce")
+    if getattr(dates.dt, "tz", None) is not None:
+        dates = dates.dt.tz_localize(None)
     latest = dates.max()
     if pd.isna(latest):
         return data.copy()
-    if getattr(latest, "tzinfo", None):
-        latest = latest.tz_localize(None)
     offset = RANGE_OFFSETS.get(date_range, RANGE_OFFSETS["1Y"])
     start = latest - offset
     return data.loc[dates >= start].copy()
@@ -1848,7 +1848,7 @@ def render_core_charts():
                 index=0,
                 key=f"{key}_market_mode",
                 label_visibility="collapsed",
-                )
+            )
         hk_figure = build_fig5(hk_range, market_mode=hk_market_mode)[hk_index]
         st.plotly_chart(
             hk_figure,
