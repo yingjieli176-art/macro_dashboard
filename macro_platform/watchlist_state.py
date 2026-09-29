@@ -18,7 +18,7 @@ _MARKET = {
 }
 MAX_ITEMS_PER_MARKET = 40
 WATCHLIST_SCHEMA_VERSION = 3
-DEFAULT_WATCHLIST_REVISION = 5
+DEFAULT_WATCHLIST_REVISION = 6
 
 DEFAULT_WATCHLISTS = {
     "market_search_us": [
@@ -34,6 +34,9 @@ DEFAULT_WATCHLISTS = {
     "market_search_cn": [
         {"symbol": "600160.SS", "name": "巨化股份"},
         {"symbol": "600021.SS", "name": "上海电力"},
+        {"symbol": "600510.SS", "name": "黑牡丹"},
+        {"symbol": "000980.SZ", "name": "众泰汽车"},
+        {"symbol": "002501.SZ", "name": "*ST利源"},
     ],
 }
 
