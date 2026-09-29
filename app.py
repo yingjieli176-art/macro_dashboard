@@ -2076,7 +2076,7 @@ def render_macro_chart_12():
 def render_macro_chart_13():
     st.markdown(
         '<div class="section-title">13. China & Japan Government Yield Curves</div>'
-        '<div class="section-description">China 2Y / 10Y · Japan 2Y / 10Y · 10Y−2Y curve spread · all in %</div>',
+        '<div class="section-description">China 2Y / 10Y / 10Y−2Y · Japan 2Y / 10Y / 10Y−2Y · all in %</div>',
         unsafe_allow_html=True,
     )
     fig = _prepare_chart_for_client_ranges(
