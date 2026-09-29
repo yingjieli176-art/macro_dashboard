@@ -69,7 +69,7 @@ class ChartTimeAxisTests(unittest.TestCase):
         self.assertEqual(three_month.stepmode, "backward")
         self.assertEqual(selector.x, 0.0)
         self.assertEqual(selector.xanchor, "left")
-        self.assertEqual(selector.y, 1.30)
+        self.assertEqual(selector.y, 1.32)
         self.assertEqual(selector.borderwidth, 1)
         self.assertEqual(selector.activecolor, "#e7eefc")
         self.assertEqual(fig.layout.legend.y, 1.105)
@@ -95,6 +95,8 @@ class ChartTimeAxisTests(unittest.TestCase):
         self.assertEqual(fig.layout.xaxis2.dtick, "M12")
         self.assertEqual(fig.layout.xaxis2.tickformat, "%Y")
         self.assertEqual(fig.layout.xaxis2.ticklabelmode, "period")
+        self.assertTrue(fig.layout.xaxis2.showline)
+        self.assertEqual(fig.layout.xaxis2.linecolor, "#e2e8f0")
 
         year_anchor = [
             trace for trace in fig.data
