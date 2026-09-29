@@ -228,17 +228,17 @@ def _add_trace(
     if frame.empty or column not in frame.columns or frame[column].notna().sum() == 0:
         return
 
-    # Eastmoney/MOF can contain calendar rows with a null yield on days when
-    # no fixing was published.  Do not pass those null rows to Plotly because
-    # they create artificial line breaks.  We do not interpolate or fill any
-    # value: each trace is built only from its actual observations.
+    # Eastmoney/MOF can include dated rows with a null fixing. Keep those null
+    # rows in the Plotly trace and explicitly connect across them. Plotly does
+    # not invent a value or hover point for the null date; it only draws the
+    # segment between the surrounding published observations.
     plot_frame = (
-        frame.loc[frame[column].notna(), ["observation_date", column]]
+        frame.loc[:, ["observation_date", column]]
         .dropna(subset=["observation_date"])
         .sort_values("observation_date")
         .drop_duplicates("observation_date", keep="last")
     )
-    if plot_frame.empty:
+    if plot_frame[column].notna().sum() == 0:
         return
 
     line = {"width": width}
