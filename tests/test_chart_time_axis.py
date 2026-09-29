@@ -67,6 +67,8 @@ class ChartTimeAxisTests(unittest.TestCase):
         self.assertEqual(three_month.count, 3)
         self.assertEqual(three_month.step, "month")
         self.assertEqual(three_month.stepmode, "backward")
+        self.assertEqual(selector.x, 0.0)
+        self.assertEqual(selector.xanchor, "left")
 
 
 
