@@ -12,7 +12,7 @@ from plotly.subplots import make_subplots
 import requests
 import streamlit as st
 from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, load_hk_liquidity
-from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis
+from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis, apply_client_time_controls
 from macro_platform.us_equity_risk import load_vixeq_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_asia_rates_figure
@@ -29,7 +29,7 @@ TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q="
 TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
-CHART_BUILD = "2026-09-29-range-fix-r1"
+CHART_BUILD = "2026-09-29-client-range-r2"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1754,41 +1754,21 @@ PRECIOUS_METALS_DESCRIPTION = '<b>参数概念：</b><br>1. Gold：COMEX 黄金�
 
 compact_mode = False
 
-def _prepare_chart_for_range(fig, element_key, date_range, mode=None):
-    """Apply the selected viewport as the final layout operation before rendering."""
-    fig = apply_time_axis(fig, date_range)
-    revision = f"{element_key}:{date_range}" if mode is None else f"{element_key}:{date_range}:{mode}"
+def _prepare_chart_for_client_ranges(fig, element_key, mode=None):
+    """Attach browser-side time controls to a complete five-year figure."""
+    fig = apply_client_time_controls(fig, default_range="1Y")
+    revision = f"{element_key}:client-range" if mode is None else f"{element_key}:client-range:{mode}"
     fig.update_layout(uirevision=revision)
     return fig
-
-
-def _render_server_range_audit(fig, date_range):
-    axis_range = getattr(fig.layout.xaxis, "range", None)
-    if axis_range and len(axis_range) >= 2:
-        start = pd.Timestamp(axis_range[0]).strftime("%Y-%m-%d")
-        end = pd.Timestamp(axis_range[1]).strftime("%Y-%m-%d")
-        st.caption(
-            f"Server range: {date_range} · X-axis {start} → {end} · {CHART_BUILD}"
-        )
-    else:
-        st.caption(f"Server range: {date_range} · {CHART_BUILD}")
 
 
 def _render_standard_macro_chart(title, description, range_key, builder, sources, desc_index):
     st.markdown(title, unsafe_allow_html=True)
     st.markdown(description, unsafe_allow_html=True)
-    date_range = st.radio(
-        "时间范围",
-        RANGES,
-        horizontal=True,
-        index=1,
-        key=range_key,
-        label_visibility="collapsed",
-    )
-    fig = _prepare_chart_for_range(builder(date_range), range_key, date_range)
+    fig = _prepare_chart_for_client_ranges(builder("5Y"), range_key)
     st.plotly_chart(fig, key=f"{range_key}_plot", use_container_width=True, config=PLOTLY_CONFIG)
     if range_key == "normal_corridor_range":
-        _render_server_range_audit(fig, date_range)
+        st.caption(f"时间范围由图内按钮直接切换 · 默认 1Y · {CHART_BUILD}")
     show_parameter_description(desc_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
@@ -1907,14 +1887,6 @@ def _render_hk_macro_chart(hk_index):
     title, description, range_key, sources = HK_CHART_CONFIGS[hk_index]
     st.markdown(title, unsafe_allow_html=True)
     st.markdown(description, unsafe_allow_html=True)
-    date_range = st.radio(
-        "时间范围",
-        RANGES,
-        horizontal=True,
-        index=1,
-        key=range_key,
-        label_visibility="collapsed",
-    )
     market_mode = "Raw"
     if hk_index in (0, 3):
         market_mode = st.radio(
@@ -1925,8 +1897,8 @@ def _render_hk_macro_chart(hk_index):
             key=f"{range_key}_market_mode",
             label_visibility="collapsed",
         )
-    fig = build_fig5(date_range, market_mode=market_mode)[hk_index]
-    fig = _prepare_chart_for_range(fig, range_key, date_range, market_mode)
+    fig = build_fig5("5Y", market_mode=market_mode)[hk_index]
+    fig = _prepare_chart_for_client_ranges(fig, range_key, market_mode)
     st.plotly_chart(
         fig,
         key=f"{range_key}_plot",
@@ -1960,15 +1932,7 @@ def render_macro_chart_9():
         '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIX3M−VIX (R2)</div>',
         unsafe_allow_html=True,
     )
-    date_range = st.radio(
-        "时间范围",
-        RANGES,
-        horizontal=True,
-        index=1,
-        key="us_equity_risk_range",
-        label_visibility="collapsed",
-    )
-    fig = _prepare_chart_for_range(build_fig9(date_range), "us_equity_risk", date_range)
+    fig = _prepare_chart_for_client_ranges(build_fig9("5Y"), "us_equity_risk")
     st.plotly_chart(fig, key="us_equity_risk_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{US_EQUITY_RISK_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
@@ -1986,15 +1950,11 @@ def render_macro_chart_10():
         '<div class="section-description">Gold / Silver · Gold/Silver Ratio (R1) · Gold Volatility GVZ (R2/R3)</div>',
         unsafe_allow_html=True,
     )
-    date_range = st.radio(
-        "时间范围", RANGES, horizontal=True, index=1,
-        key="precious_metals_range", label_visibility="collapsed",
-    )
     market_mode = st.radio(
         "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
         key="precious_metals_mode", label_visibility="collapsed",
     )
-    fig = _prepare_chart_for_range(build_fig10(date_range, market_mode), "precious_metals", date_range, market_mode)
+    fig = _prepare_chart_for_client_ranges(build_fig10("5Y", market_mode), "precious_metals", market_mode)
     st.plotly_chart(fig, key="precious_metals_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
@@ -2012,15 +1972,11 @@ def render_macro_chart_11():
         '<div class="section-description">4 个指标 · BTC / ETH 相对表现 · ETH/BTC 强弱 · BTC 30D 实际波动率</div>',
         unsafe_allow_html=True,
     )
-    date_range = st.radio(
-        "时间范围", RANGES, horizontal=True, index=1,
-        key="crypto_market_range", label_visibility="collapsed",
-    )
     market_mode = st.radio(
         "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
         key="crypto_market_mode", label_visibility="collapsed",
     )
-    fig = _prepare_chart_for_range(build_fig11(date_range, market_mode), "crypto_market", date_range, market_mode)
+    fig = _prepare_chart_for_client_ranges(build_fig11("5Y", market_mode), "crypto_market", market_mode)
     st.plotly_chart(fig, key="crypto_market_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
@@ -2036,11 +1992,7 @@ def render_macro_chart_12():
         '<div class="section-description">LME / COMEX inventories (L) · normalized copper prices (R1) · COMEX−LME 3M spread (R2)</div>',
         unsafe_allow_html=True,
     )
-    date_range = st.radio(
-        "时间范围", RANGES, horizontal=True, index=1,
-        key="copper_flow_spread_range", label_visibility="collapsed",
-    )
-    fig = _prepare_chart_for_range(build_fig12(date_range), "copper_flow", date_range)
+    fig = _prepare_chart_for_client_ranges(build_fig12("5Y"), "copper_flow")
     st.plotly_chart(fig, key="copper_flow_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(
         '<div class="mini-description"><b>读取方法：</b>COMEX 与 LME 库存放在同一左轴（千吨，kt），直接观察交易所可见库存的相对迁移；'
@@ -2066,18 +2018,9 @@ def render_macro_chart_13():
         '<div class="section-description">China 2Y / 10Y · Japan 2Y / 10Y · 10Y−2Y curve spread (R1, bp)</div>',
         unsafe_allow_html=True,
     )
-    date_range = st.radio(
-        "时间范围",
-        RANGES,
-        horizontal=True,
-        index=1,
-        key="asia_rates_range",
-        label_visibility="collapsed",
-    )
-    fig = _prepare_chart_for_range(
-        build_asia_rates_figure(date_range),
+    fig = _prepare_chart_for_client_ranges(
+        build_asia_rates_figure("5Y"),
         "asia_rates",
-        date_range,
     )
     st.plotly_chart(
         fig,
