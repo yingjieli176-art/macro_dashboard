@@ -69,12 +69,12 @@ class ChartTimeAxisTests(unittest.TestCase):
         self.assertEqual(three_month.stepmode, "backward")
         self.assertEqual(selector.x, 0.0)
         self.assertEqual(selector.xanchor, "left")
-        self.assertEqual(selector.y, 1.32)
+        self.assertEqual(selector.y, 1.20)
         self.assertEqual(selector.borderwidth, 1)
         self.assertEqual(selector.activecolor, "#e7eefc")
-        self.assertEqual(fig.layout.legend.y, 1.105)
-        self.assertEqual(fig.layout.height, 460)
-        self.assertEqual(fig.layout.margin.t, 130)
+        self.assertEqual(fig.layout.legend.y, 1.055)
+        self.assertEqual(fig.layout.height, 420)
+        self.assertEqual(fig.layout.margin.t, 82)
         self.assertEqual(fig.layout.margin.l, 62)
         self.assertEqual(fig.layout.margin.b, 38)
 
@@ -87,24 +87,11 @@ class ChartTimeAxisTests(unittest.TestCase):
         self.assertEqual(fig.layout.paper_bgcolor, "#ffffff")
         self.assertEqual(fig.layout.yaxis.gridcolor, "#e7edf3")
         self.assertEqual(fig.layout.xaxis.gridcolor, "#edf1f5")
-        self.assertTrue(fig.layout.xaxis2.visible)
-        self.assertEqual(fig.layout.xaxis2.matches, "x")
-        self.assertEqual(fig.layout.xaxis2.overlaying, "x")
-        self.assertEqual(fig.layout.xaxis2.anchor, "y")
-        self.assertEqual(fig.layout.xaxis2.side, "top")
-        self.assertEqual(fig.layout.xaxis2.dtick, "M12")
-        self.assertEqual(fig.layout.xaxis2.tickformat, "%Y")
-        self.assertEqual(fig.layout.xaxis2.ticklabelmode, "period")
-        self.assertTrue(fig.layout.xaxis2.showline)
-        self.assertEqual(fig.layout.xaxis2.linecolor, "#e2e8f0")
-
-        year_anchor = [
-            trace for trace in fig.data
-            if getattr(trace, "name", None) == "__dashboard_year_axis_anchor__"
-        ]
-        self.assertEqual(len(year_anchor), 1)
-        self.assertEqual(year_anchor[0].xaxis, "x2")
-        self.assertFalse(year_anchor[0].showlegend)
+        stops = fig.layout.xaxis.tickformatstops
+        self.assertEqual(len(stops), 3)
+        self.assertEqual(stops[0].value, "%d %b")
+        self.assertEqual(stops[1].value, "%b %Y")
+        self.assertEqual(stops[2].value, "%Y")
 
 
 
