@@ -1299,7 +1299,6 @@ def get_hk_liquidity():
     return load_hk_liquidity()
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig5(date_range, market_mode="Raw"):
     return build_hk_liquidity_figures(date_range, compact_mode=False, market_mode=market_mode)
 
@@ -1308,13 +1307,11 @@ def apply_hk_chart_range(fig, date_range):
     """Apply the same dashboard-wide adaptive time axis to charts 5-8."""
     return apply_time_axis(fig, date_range)
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
     for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
     fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig2(date_range):
     data = get_dgs10().merge(get_dfii10(), on="observation_date", how="outer").merge(get_fred_series("T10YIE"), on="observation_date", how="outer").sort_values("observation_date")
     for column in ("DGS10", "DFII10", "T10YIE"):
@@ -1328,7 +1325,6 @@ def build_fig2(date_range):
     for column, name, width, dash, yaxis in [("DGS10", "10Y Nominal", 2.8, None, None), ("DFII10", "10Y Real (R1)", 2.6, None, "y2"), ("T10YIE", "10Y Breakeven (R1)", 2.5, "dot", "y2")]: add_line(fig, data, column, name, width, dash, yaxis)
     fig.update_layout(yaxis_title="Nominal Yield (%)", yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, zeroline=False, fixedrange=True, automargin=False, tickfont=dict(size=9), ticks="outside", ticklen=3)); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig4(date_range):
     """US liquidity chart with separate scales for unlike balance magnitudes.
 
@@ -1433,7 +1429,6 @@ def build_fig4(date_range):
     return fig
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig3(date_range):
     data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").sort_values("observation_date")
     for column in ("DGS3MO", "DGS2", "DGS10"):
@@ -1449,7 +1444,6 @@ def build_fig3(date_range):
     fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=False, tickfont=dict(size=9), ticks="outside", ticklen=3)); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig9(date_range):
     """US equity risk: index vol, constituent vol, VIX term spread, and SPX."""
     frames = []
@@ -1559,7 +1553,6 @@ def _rebase_100(series):
     return values / float(valid.iloc[0]) * 100.0
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig10(date_range, market_mode="Rebased 100"):
     """Precious metals: gold, silver, gold/silver ratio, and GVZ."""
     frames = []
@@ -1641,7 +1634,6 @@ def build_fig10(date_range, market_mode="Rebased 100"):
     return fig
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig11(date_range, market_mode="Rebased 100"):
     """Crypto market: BTC, ETH, ETH/BTC and 30-day BTC realized volatility."""
     frames = []
@@ -1718,7 +1710,6 @@ def build_fig11(date_range, market_mode="Rebased 100"):
     return fig
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
 def build_fig12(date_range):
     return build_copper_flow_spread_figure(date_range)
 
@@ -1761,113 +1752,202 @@ PRECIOUS_METALS_DESCRIPTION = '<b>参数概念：</b><br>1. Gold：COMEX 黄金�
 
 compact_mode = False
 
-@st.fragment(key="core_charts")
-def render_core_charts():
-    st.markdown('<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>', unsafe_allow_html=True)
+def _prepare_chart_for_range(fig, element_key, date_range, mode=None):
+    """Force Plotly to apply the newly selected viewport instead of preserving an old one."""
+    revision = f"{element_key}:{date_range}" if mode is None else f"{element_key}:{date_range}:{mode}"
+    fig.update_layout(uirevision=revision)
+    return fig
 
-    configs = [
-        ('<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>', '<div class="section-description">IORB / ON RRP Rate / EFFR / SOFR</div>', "normal_corridor_range", build_fig1, [("IORB (IORB)", "https://fred.stlouisfed.org/series/IORB"), ("ON RRP Rate (RRPONTSYAWARD)", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"), ("EFFR (EFFR)", "https://fred.stlouisfed.org/series/EFFR"), ("SOFR (SOFR)", "https://fred.stlouisfed.org/series/SOFR")], 0),
-        ('<div class="section-title">2. 10Y Yield Structure</div>', '<div class="section-description">10Y Nominal / 10Y Real (R1) / 10Y Breakeven (R1)</div>', "normal_yield10_range", build_fig2, [("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y Real (DFII10)", "https://fred.stlouisfed.org/series/DFII10"), ("10Y Breakeven (T10YIE)", "https://fred.stlouisfed.org/series/T10YIE")], 1),
-        ('<div class="section-title">3. Treasury Yield & Curve Spread</div>', '<div class="section-description">3M / 2Y / 10Y / 10Y−2Y (R1) / 10Y−3M (R1)</div>', "normal_treasury_range", build_fig3, [("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"), ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"), ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"), ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"), ("10Y−3M Spread (T10Y3M)", "https://fred.stlouisfed.org/series/T10Y3M")], 2),
-        ('<div class="section-title">4. US Liquidity</div>', '<div class="section-description">Net Liquidity (L) · Reserve Balances / TGA (R1) · ON RRP (R2)</div>', "normal_liquidity_range", build_fig4, [("Fed Total Assets (WALCL)", "https://fred.stlouisfed.org/series/WALCL"), ("Reserve Balances (WRESBAL)", "https://fred.stlouisfed.org/series/WRESBAL"), ("TGA · Daily Treasury Statement", "https://fiscaldata.treasury.gov/datasets/daily-treasury-statement/operating-cash-balance"), ("TGA fallback (WTREGEN)", "https://fred.stlouisfed.org/series/WTREGEN"), ("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD")], 3),
-    ]
 
-    for title, description, key, builder, sources, desc_index in configs:
-        st.markdown(title, unsafe_allow_html=True)
-        st.markdown(description, unsafe_allow_html=True)
-        date_range = st.radio("时间范围", RANGES, horizontal=True, index=1, key=key, label_visibility="collapsed")
-        st.plotly_chart(builder(date_range), key=f"{key}_plot_{date_range}", use_container_width=True, config=PLOTLY_CONFIG)
-        show_parameter_description(desc_index)
-        add_sources(sources)
-        st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+def _render_standard_macro_chart(title, description, range_key, builder, sources, desc_index):
+    st.markdown(title, unsafe_allow_html=True)
+    st.markdown(description, unsafe_allow_html=True)
+    date_range = st.radio(
+        "时间范围",
+        RANGES,
+        horizontal=True,
+        index=1,
+        key=range_key,
+        label_visibility="collapsed",
+    )
+    fig = _prepare_chart_for_range(builder(date_range), range_key, date_range)
+    st.plotly_chart(fig, key=f"{range_key}_plot", use_container_width=True, config=PLOTLY_CONFIG)
+    show_parameter_description(desc_index)
+    add_sources(sources)
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="section-kicker">HONG KONG LIQUIDITY</div>', unsafe_allow_html=True)
-    # Build the full Hong Kong data set once. Charts 5-8 then behave exactly
-    # like charts 1-4: external title, description, independent range control,
-    # chart, local parameter notes, local sources, divider.
-    hk_configs = [
-        (
-            '<div class="section-title">5. HK Money Supply & Market Pulse</div>',
-            '<div class="section-description">M2 YoY / M2 MoM / Monetary Base YoY · Tencent / HKEX (R1) · HSTECH / HSI (R2)</div>',
-            "hk_5_range",
-            [
-                ("HKMA Monetary Statistics", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics/"),
-                ("Hang Seng Indexes · HSTECH", "https://www.hsi.com.hk/eng/indexes/all-indexes/hstech"),
-                ("Hang Seng Indexes · HSI", "https://www.hsi.com.hk/eng/indexes/all-indexes/hsi"),
-                ("Yahoo Finance Market History", "https://finance.yahoo.com/"),
-            ],
-        ),
-        (
-            '<div class="section-title">6. Banking-system Liquidity</div>',
-            '<div class="section-description">Aggregate Balance · Outstanding EFBN (R1) · EFBN Held by Licensed Banks (R1)</div>',
-            "hk_6_range",
-            [
-                ("HKMA Monetary Base", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod/"),
-                ("HKMA Daily Interbank Liquidity", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity/"),
-            ],
-        ),
-        (
-            '<div class="section-title">7. HKD Funding</div>',
-            '<div class="section-description">O/N HIBOR · 3M HIBOR · HKMA Base Rate · O/N−3M Spread (R1)</div>',
-            "hk_7_range",
-            [
-                ("HKMA Open API", "https://apidocs.hkma.gov.hk/"),
-                ("HKMA Base Rate", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/disc-win-liquid-adj-win-rates-endperiod/"),
-            ],
-        ),
-        (
-            '<div class="section-title">8. USD/HKD Convertibility Band & Market</div>',
-            '<div class="section-description">USD/HKD · Weak-side pressure 7.84–7.85 · Tencent / HKEX (R1) · HSTECH / HSI (R2)</div>',
-            "hk_8_range",
-            [
-                ("HKMA Linked Exchange Rate System", "https://www.hkma.gov.hk/eng/key-functions/money/linked-exchange-rate-system/"),
-                ("Yahoo Finance Market History", "https://finance.yahoo.com/"),
-                ("Hang Seng Indexes · HSTECH", "https://www.hsi.com.hk/eng/indexes/all-indexes/hstech"),
-                ("Hang Seng Indexes · HSI", "https://www.hsi.com.hk/eng/indexes/all-indexes/hsi"),
-            ],
-        ),
-    ]
 
-    for hk_index, (title, description, key, sources) in enumerate(hk_configs):
-        st.markdown(title, unsafe_allow_html=True)
-        st.markdown(description, unsafe_allow_html=True)
-        hk_range = st.radio(
-            "时间范围",
-            RANGES,
+@st.fragment(key="macro_chart_1")
+def render_macro_chart_1():
+    _render_standard_macro_chart(
+        '<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>',
+        '<div class="section-description">IORB / ON RRP Rate / EFFR / SOFR</div>',
+        "normal_corridor_range",
+        build_fig1,
+        [
+            ("IORB (IORB)", "https://fred.stlouisfed.org/series/IORB"),
+            ("ON RRP Rate (RRPONTSYAWARD)", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"),
+            ("EFFR (EFFR)", "https://fred.stlouisfed.org/series/EFFR"),
+            ("SOFR (SOFR)", "https://fred.stlouisfed.org/series/SOFR"),
+        ],
+        0,
+    )
+
+
+@st.fragment(key="macro_chart_2")
+def render_macro_chart_2():
+    _render_standard_macro_chart(
+        '<div class="section-title">2. 10Y Yield Structure</div>',
+        '<div class="section-description">10Y Nominal / 10Y Real (R1) / 10Y Breakeven (R1)</div>',
+        "normal_yield10_range",
+        build_fig2,
+        [
+            ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
+            ("10Y Real (DFII10)", "https://fred.stlouisfed.org/series/DFII10"),
+            ("10Y Breakeven (T10YIE)", "https://fred.stlouisfed.org/series/T10YIE"),
+        ],
+        1,
+    )
+
+
+@st.fragment(key="macro_chart_3")
+def render_macro_chart_3():
+    _render_standard_macro_chart(
+        '<div class="section-title">3. Treasury Yield & Curve Spread</div>',
+        '<div class="section-description">3M / 2Y / 10Y / 10Y−2Y (R1) / 10Y−3M (R1)</div>',
+        "normal_treasury_range",
+        build_fig3,
+        [
+            ("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"),
+            ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"),
+            ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
+            ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"),
+            ("10Y−3M Spread (T10Y3M)", "https://fred.stlouisfed.org/series/T10Y3M"),
+        ],
+        2,
+    )
+
+
+@st.fragment(key="macro_chart_4")
+def render_macro_chart_4():
+    _render_standard_macro_chart(
+        '<div class="section-title">4. US Liquidity</div>',
+        '<div class="section-description">Net Liquidity (L) · Reserve Balances / TGA (R1) · ON RRP (R2)</div>',
+        "normal_liquidity_range",
+        build_fig4,
+        [
+            ("Fed Total Assets (WALCL)", "https://fred.stlouisfed.org/series/WALCL"),
+            ("Reserve Balances (WRESBAL)", "https://fred.stlouisfed.org/series/WRESBAL"),
+            ("TGA · Daily Treasury Statement", "https://fiscaldata.treasury.gov/datasets/daily-treasury-statement/operating-cash-balance"),
+            ("TGA fallback (WTREGEN)", "https://fred.stlouisfed.org/series/WTREGEN"),
+            ("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD"),
+        ],
+        3,
+    )
+
+
+HK_CHART_CONFIGS = [
+    (
+        '<div class="section-title">5. HK Money Supply & Market Pulse</div>',
+        '<div class="section-description">M2 YoY / M2 MoM / Monetary Base YoY · Tencent / HKEX (R1) · HSTECH / HSI (R2)</div>',
+        "hk_5_range",
+        [
+            ("HKMA Monetary Statistics", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics/"),
+            ("Hang Seng Indexes · HSTECH", "https://www.hsi.com.hk/eng/indexes/all-indexes/hstech"),
+            ("Hang Seng Indexes · HSI", "https://www.hsi.com.hk/eng/indexes/all-indexes/hsi"),
+            ("Yahoo Finance Market History", "https://finance.yahoo.com/"),
+        ],
+    ),
+    (
+        '<div class="section-title">6. Banking-system Liquidity</div>',
+        '<div class="section-description">Aggregate Balance · Outstanding EFBN (R1) · EFBN Held by Licensed Banks (R1)</div>',
+        "hk_6_range",
+        [
+            ("HKMA Monetary Base", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod/"),
+            ("HKMA Daily Interbank Liquidity", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity/"),
+        ],
+    ),
+    (
+        '<div class="section-title">7. HKD Funding</div>',
+        '<div class="section-description">O/N HIBOR · 3M HIBOR · HKMA Base Rate · O/N−3M Spread (R1)</div>',
+        "hk_7_range",
+        [
+            ("HKMA Open API", "https://apidocs.hkma.gov.hk/"),
+            ("HKMA Base Rate", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/disc-win-liquid-adj-win-rates-endperiod/"),
+        ],
+    ),
+    (
+        '<div class="section-title">8. USD/HKD Convertibility Band & Market</div>',
+        '<div class="section-description">USD/HKD · Weak-side pressure 7.84–7.85 · Tencent / HKEX (R1) · HSTECH / HSI (R2)</div>',
+        "hk_8_range",
+        [
+            ("HKMA Linked Exchange Rate System", "https://www.hkma.gov.hk/eng/key-functions/money/linked-exchange-rate-system/"),
+            ("Yahoo Finance Market History", "https://finance.yahoo.com/"),
+            ("Hang Seng Indexes · HSTECH", "https://www.hsi.com.hk/eng/indexes/all-indexes/hstech"),
+            ("Hang Seng Indexes · HSI", "https://www.hsi.com.hk/eng/indexes/all-indexes/hsi"),
+        ],
+    ),
+]
+
+
+def _render_hk_macro_chart(hk_index):
+    title, description, range_key, sources = HK_CHART_CONFIGS[hk_index]
+    st.markdown(title, unsafe_allow_html=True)
+    st.markdown(description, unsafe_allow_html=True)
+    date_range = st.radio(
+        "时间范围",
+        RANGES,
+        horizontal=True,
+        index=1,
+        key=range_key,
+        label_visibility="collapsed",
+    )
+    market_mode = "Raw"
+    if hk_index in (0, 3):
+        market_mode = st.radio(
+            "市场显示",
+            ["Raw", "Rebased 100"],
             horizontal=True,
-            index=1,
-            key=key,
+            index=0,
+            key=f"{range_key}_market_mode",
             label_visibility="collapsed",
         )
-        hk_market_mode = "Raw"
-        if hk_index in (0, 3):
-            hk_market_mode = st.radio(
-                "市场显示",
-                ["Raw", "Rebased 100"],
-                horizontal=True,
-                index=0,
-                key=f"{key}_market_mode",
-                label_visibility="collapsed",
-            )
-        hk_figure = build_fig5(hk_range, market_mode=hk_market_mode)[hk_index]
-        st.plotly_chart(
-            hk_figure,
-            key=f"{key}_plot_{hk_range}_{hk_market_mode}",
-            use_container_width=True,
-            config=PLOTLY_CONFIG,
-        )
-        show_hk_parameter_description(hk_index)
-        add_sources(sources)
-        if hk_index < len(hk_configs) - 1:
-            st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+    fig = build_fig5(date_range, market_mode=market_mode)[hk_index]
+    fig = _prepare_chart_for_range(fig, range_key, date_range, market_mode)
+    st.plotly_chart(fig, key=f"{range_key}_plot", use_container_width=True, config=PLOTLY_CONFIG)
+    show_hk_parameter_description(hk_index)
+    add_sources(sources)
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
+
+@st.fragment(key="macro_chart_5")
+def render_macro_chart_5():
+    _render_hk_macro_chart(0)
+
+
+@st.fragment(key="macro_chart_6")
+def render_macro_chart_6():
+    _render_hk_macro_chart(1)
+
+
+@st.fragment(key="macro_chart_7")
+def render_macro_chart_7():
+    _render_hk_macro_chart(2)
+
+
+@st.fragment(key="macro_chart_8")
+def render_macro_chart_8():
+    _render_hk_macro_chart(3)
+
+
+@st.fragment(key="macro_chart_9")
+def render_macro_chart_9():
     st.markdown(
-        '<div class="section-kicker">US EQUITY RISK</div>'
         '<div class="section-title">9. US Equity Risk & Volatility Structure</div>'
         '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIX3M−VIX (R2)</div>',
         unsafe_allow_html=True,
     )
-    risk_range = st.radio(
+    date_range = st.radio(
         "时间范围",
         RANGES,
         horizontal=True,
@@ -1875,7 +1955,8 @@ def render_core_charts():
         key="us_equity_risk_range",
         label_visibility="collapsed",
     )
-    st.plotly_chart(build_fig9(risk_range), key=f"us_equity_risk_plot_{risk_range}", use_container_width=True, config=PLOTLY_CONFIG)
+    fig = _prepare_chart_for_range(build_fig9(date_range), "us_equity_risk", date_range)
+    st.plotly_chart(fig, key="us_equity_risk_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{US_EQUITY_RISK_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Cboe VIX", "https://www.cboe.com/tradable-products/vix/"),
@@ -1885,21 +1966,24 @@ def render_core_charts():
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
+
+@st.fragment(key="macro_chart_10")
+def render_macro_chart_10():
     st.markdown(
-        '<div class="section-kicker">PRECIOUS METALS</div>'
         '<div class="section-title">10. Precious Metals</div>'
         '<div class="section-description">Gold / Silver · Gold/Silver Ratio (R1) · Gold Volatility GVZ (R2/R3)</div>',
         unsafe_allow_html=True,
     )
-    metals_range = st.radio(
+    date_range = st.radio(
         "时间范围", RANGES, horizontal=True, index=1,
         key="precious_metals_range", label_visibility="collapsed",
     )
-    metals_mode = st.radio(
+    market_mode = st.radio(
         "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
         key="precious_metals_mode", label_visibility="collapsed",
     )
-    st.plotly_chart(build_fig10(metals_range, metals_mode), key=f"precious_metals_plot_{metals_range}_{metals_mode}", use_container_width=True, config=PLOTLY_CONFIG)
+    fig = _prepare_chart_for_range(build_fig10(date_range, market_mode), "precious_metals", date_range, market_mode)
+    st.plotly_chart(fig, key="precious_metals_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Yahoo Finance · Gold Futures GC=F", "https://finance.yahoo.com/quote/GC=F/history/"),
@@ -1909,21 +1993,24 @@ def render_core_charts():
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
+
+@st.fragment(key="macro_chart_11")
+def render_macro_chart_11():
     st.markdown(
-        '<div class="section-kicker">CRYPTO MARKET</div>'
         '<div class="section-title">11. Crypto Market</div>'
         '<div class="section-description">4 个指标 · BTC / ETH 相对表现 · ETH/BTC 强弱 · BTC 30D 实际波动率</div>',
         unsafe_allow_html=True,
     )
-    crypto_range = st.radio(
+    date_range = st.radio(
         "时间范围", RANGES, horizontal=True, index=1,
         key="crypto_market_range", label_visibility="collapsed",
     )
-    crypto_mode = st.radio(
+    market_mode = st.radio(
         "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
         key="crypto_market_mode", label_visibility="collapsed",
     )
-    st.plotly_chart(build_fig11(crypto_range, crypto_mode), key=f"crypto_market_plot_{crypto_range}_{crypto_mode}", use_container_width=True, config=PLOTLY_CONFIG)
+    fig = _prepare_chart_for_range(build_fig11(date_range, market_mode), "crypto_market", date_range, market_mode)
+    st.plotly_chart(fig, key="crypto_market_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Yahoo Finance · Bitcoin BTC-USD", "https://finance.yahoo.com/quote/BTC-USD/history/"),
@@ -1932,23 +2019,19 @@ def render_core_charts():
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-
+@st.fragment(key="macro_chart_12")
+def render_macro_chart_12():
     st.markdown(
-        '<div class="section-kicker">INDUSTRIAL METALS · COPPER</div>'
         '<div class="section-title">12. Copper Flow & COMEX–LME Spread</div>'
         '<div class="section-description">LME / COMEX inventories (L) · normalized copper prices (R1) · COMEX−LME 3M spread (R2)</div>',
         unsafe_allow_html=True,
     )
-    copper_flow_range = st.radio(
+    date_range = st.radio(
         "时间范围", RANGES, horizontal=True, index=1,
         key="copper_flow_spread_range", label_visibility="collapsed",
     )
-    st.plotly_chart(
-        build_fig12(copper_flow_range),
-        key=f"copper_flow_plot_{copper_flow_range}",
-        use_container_width=True,
-        config=PLOTLY_CONFIG,
-    )
+    fig = _prepare_chart_for_range(build_fig12(date_range), "copper_flow", date_range)
+    st.plotly_chart(fig, key="copper_flow_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(
         '<div class="mini-description"><b>读取方法：</b>COMEX 与 LME 库存放在同一左轴（千吨，kt），直接观察交易所可见库存的相对迁移；'
         'COMEX HG 先按 1 公吨 = 2,204.6226 磅换算为 USD/t，再与 LME 3M 放在同一价格轴；R2 直接显示 COMEX−LME 3M 价差。'
@@ -1965,9 +2048,36 @@ def render_core_charts():
         ("COCHILCO · Copper Inventories", "https://boletin.cochilco.cl/estadisticas/inventarios.asp"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-st.markdown('<div id="macro-charts" class="section-anchor"></div><div class="section-kicker">MACRO CHARTS</div>', unsafe_allow_html=True)
-render_core_charts()
-st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+
+st.markdown(
+    '<div id="macro-charts" class="section-anchor"></div>'
+    '<div class="section-kicker">MACRO CHARTS</div>'
+    '<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>',
+    unsafe_allow_html=True,
+)
+render_macro_chart_1()
+render_macro_chart_2()
+render_macro_chart_3()
+render_macro_chart_4()
+
+st.markdown('<div class="section-kicker">HONG KONG LIQUIDITY</div>', unsafe_allow_html=True)
+render_macro_chart_5()
+render_macro_chart_6()
+render_macro_chart_7()
+render_macro_chart_8()
+
+st.markdown('<div class="section-kicker">US EQUITY RISK</div>', unsafe_allow_html=True)
+render_macro_chart_9()
+
+st.markdown('<div class="section-kicker">PRECIOUS METALS</div>', unsafe_allow_html=True)
+render_macro_chart_10()
+
+st.markdown('<div class="section-kicker">CRYPTO MARKET</div>', unsafe_allow_html=True)
+render_macro_chart_11()
+
+st.markdown('<div class="section-kicker">INDUSTRIAL METALS · COPPER</div>', unsafe_allow_html=True)
+render_macro_chart_12()
 
 st.markdown('<div id="news" class="section-anchor"></div><div class="section-kicker">NEWS</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)
