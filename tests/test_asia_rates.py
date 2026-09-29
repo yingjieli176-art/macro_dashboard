@@ -82,7 +82,8 @@ class AsiaRatesTraceTests(unittest.TestCase):
             ],
         )
         japan_spread = fig.data[-1]
-        self.assertEqual(list(japan_spread.y), [0.90, 0.91])
+        self.assertAlmostEqual(float(japan_spread.y[0]), 0.90, places=8)
+        self.assertAlmostEqual(float(japan_spread.y[1]), 0.91, places=8)
 
 
 if __name__ == "__main__":
