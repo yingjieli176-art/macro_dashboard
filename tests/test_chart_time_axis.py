@@ -69,12 +69,12 @@ class ChartTimeAxisTests(unittest.TestCase):
         self.assertEqual(three_month.stepmode, "backward")
         self.assertEqual(selector.x, 0.0)
         self.assertEqual(selector.xanchor, "left")
-        self.assertEqual(selector.y, 1.105)
+        self.assertEqual(selector.y, 1.19)
         self.assertEqual(selector.borderwidth, 1)
         self.assertEqual(selector.activecolor, "#e7eefc")
-        self.assertEqual(fig.layout.legend.y, 1.012)
-        self.assertEqual(fig.layout.height, 420)
-        self.assertEqual(fig.layout.margin.t, 68)
+        self.assertEqual(fig.layout.legend.y, 1.075)
+        self.assertEqual(fig.layout.height, 440)
+        self.assertEqual(fig.layout.margin.t, 106)
         self.assertEqual(fig.layout.margin.l, 62)
         self.assertEqual(fig.layout.margin.b, 38)
 
@@ -87,6 +87,13 @@ class ChartTimeAxisTests(unittest.TestCase):
         self.assertEqual(fig.layout.paper_bgcolor, "#ffffff")
         self.assertEqual(fig.layout.yaxis.gridcolor, "#e7edf3")
         self.assertEqual(fig.layout.xaxis.gridcolor, "#edf1f5")
+        self.assertTrue(fig.layout.xaxis2.visible)
+        self.assertEqual(fig.layout.xaxis2.matches, "x")
+        self.assertEqual(fig.layout.xaxis2.overlaying, "x")
+        self.assertEqual(fig.layout.xaxis2.side, "top")
+        self.assertEqual(fig.layout.xaxis2.dtick, "M12")
+        self.assertEqual(fig.layout.xaxis2.tickformat, "%Y")
+        self.assertEqual(fig.layout.xaxis2.ticklabelmode, "period")
 
 
 
