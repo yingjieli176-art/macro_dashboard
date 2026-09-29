@@ -168,7 +168,7 @@ def load_hk_liquidity() -> pd.DataFrame:
     monthly["HIBOR O/N"] = monthly["hibor_fixing_overnight"]
     monthly["HIBOR 3M"] = monthly["hibor_fixing_3m"]
     monthly["HKMA Base Rate"] = monthly["discount_window_base_rate"]
-    monthly["O/N-3M Spread"] = (monthly["HIBOR O/N"] - monthly["HIBOR 3M"]) * 100.0
+    monthly["O/N-3M Spread"] = (monthly["HIBOR O/N"] - monthly["HIBOR 3M"])
     monthly["USD/HKD"] = monthly["exrate_hkd_usd"]
     monthly["Strong-side CU"] = 7.75
     monthly["Weak-side CU"] = 7.85
@@ -285,7 +285,7 @@ def load_hk_funding_monthly() -> pd.DataFrame:
         funding["HKMA Base Rate"] = base_rate["HKMA Base Rate"].reindex(union).combine_first(funding["HKMA Base Rate"])
 
     funding = funding.sort_index()
-    funding["O/N-3M Spread"] = (funding["HIBOR O/N"] - funding["HIBOR 3M"]) * 100.0
+    funding["O/N-3M Spread"] = (funding["HIBOR O/N"] - funding["HIBOR 3M"])
     funding.index.name = "observation_date"
     return funding.reset_index()[columns]
 
@@ -310,7 +310,7 @@ def load_hk_funding_daily() -> pd.DataFrame:
         frame["HIBOR O/N"] = pd.to_numeric(frame.get("hibor_overnight"), errors="coerce")
         frame["HIBOR 3M"] = pd.to_numeric(frame.get("hibor_3m"), errors="coerce")
         frame["HKMA Base Rate"] = pd.to_numeric(frame.get("disc_win_base_rate"), errors="coerce")
-        frame["O/N-3M Spread"] = (frame["HIBOR O/N"] - frame["HIBOR 3M"]) * 100.0
+        frame["O/N-3M Spread"] = (frame["HIBOR O/N"] - frame["HIBOR 3M"])
         frame = frame.dropna(subset=["observation_date"]).sort_values("observation_date").drop_duplicates("observation_date", keep="last")
         if frame[["HIBOR O/N", "HIBOR 3M", "HKMA Base Rate"]].notna().any(axis=1).sum() >= 10:
             return frame[columns]
@@ -512,7 +512,7 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
     add_trace(3, "HIBOR O/N", "O/N HIBOR", COLORS["on"], 2.0)
     add_trace(3, "HIBOR 3M", "3M HIBOR", COLORS["h3m"], 2.3, "dash")
     add_trace(3, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot")
-    add_trace(3, "O/N-3M Spread", "O/N−3M Spread (R1)", COLORS["spread"], 1.7, "dashdot", " bp", secondary_y=True)
+    add_trace(3, "O/N-3M Spread", "O/N−3M Spread (R1)", COLORS["spread"], 1.7, "dashdot", "%", secondary_y=True)
 
     add_trace(4, "USD/HKD", "USD/HKD", COLORS["fx"], 2.6, unit="")
     add_trace(4, "Strong-side CU", "Strong-side 7.75", COLORS["strong"], 1.4, "dot", unit="")
@@ -544,7 +544,7 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
     fig.update_yaxes(title_text="Money Growth (%)", row=1, col=1, zeroline=True, zerolinecolor="#cbd5e1", **grid)
     fig.update_yaxes(title_text="HK$ bn", row=2, col=1, zeroline=False, **grid)
     fig.update_yaxes(title_text="Rate (%)", row=3, col=1, secondary_y=False, zeroline=True, zerolinecolor="#cbd5e1", **grid)
-    fig.update_yaxes(title_text="", row=3, col=1, secondary_y=True, showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True)
+    fig.update_yaxes(title_text="Spread (%)", row=3, col=1, secondary_y=True, showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True)
     fig.update_yaxes(title_text="USD/HKD", row=4, col=1, range=[7.73, 7.87], zeroline=False, **grid)
     fig.update_xaxes(showgrid=True, gridcolor="#eef2f7", griddash="dot", fixedrange=True, tickformat="%Y-%m", row=4, col=1)
 
@@ -989,14 +989,14 @@ def build_hk_liquidity_figures(
     add_line(funding, funding_data, "HIBOR O/N", "O/N HIBOR", COLORS["on"], 2.0, secondary_y=False)
     add_line(funding, funding_data, "HIBOR 3M", "3M HIBOR", COLORS["h3m"], 2.3, "dash", secondary_y=False)
     add_line(funding, funding_data, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot", secondary_y=False)
-    add_line(funding, funding_data, "O/N-3M Spread", "O/N−3M Spread (R1)", COLORS["spread"], 1.7, "dashdot", " bp", secondary_y=True)
+    add_line(funding, funding_data, "O/N-3M Spread", "O/N−3M Spread (R1)", COLORS["spread"], 1.7, "dashdot", "%", secondary_y=True)
     funding.update_yaxes(
         title_text="Rate (%)", secondary_y=False,
         showgrid=True, gridcolor="#e5e7eb", griddash="dot",
         zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
     funding.update_yaxes(
-        title_text="", secondary_y=True,
+        title_text="Spread (%)", secondary_y=True,
         showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
     funding_frequency_label = "Daily" if funding_is_daily else ("Monthly" if date_range == "5Y" else "Monthly fallback")

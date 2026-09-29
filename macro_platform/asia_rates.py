@@ -26,7 +26,7 @@ def _empty_frame(prefix: str) -> pd.DataFrame:
             "observation_date",
             f"{prefix}_2y",
             f"{prefix}_10y",
-            f"{prefix}_10y_2y_bp",
+            f"{prefix}_10y_2y_pct",
         ]
     )
 
@@ -86,6 +86,7 @@ def load_china_gov_yields() -> pd.DataFrame:
         return _empty_frame("china")
 
     frame = pd.DataFrame(rows)
+    source_spread = pd.to_numeric(frame.get("EMM01276014"), errors="coerce")
     out = pd.DataFrame(
         {
             "observation_date": pd.to_datetime(frame.get("SOLAR_DATE"), errors="coerce"),
@@ -93,7 +94,17 @@ def load_china_gov_yields() -> pd.DataFrame:
             "china_10y": pd.to_numeric(frame.get("EMM00166466"), errors="coerce"),
         }
     )
-    out["china_10y_2y_bp"] = (out["china_10y"] - out["china_2y"]) * 100.0
+
+    # Eastmoney publishes the same-day China 10Y−2Y spread as a separate
+    # percentage-point series.  When the standalone 2Y field is missing but
+    # 10Y and the source spread are present, recover 2Y algebraically:
+    #     2Y = 10Y - (10Y−2Y)
+    # This is not interpolation or smoothing and does not cross dates.
+    reconstructed_2y = out["china_10y"] - source_spread
+    out["china_2y"] = out["china_2y"].combine_first(reconstructed_2y)
+    computed_spread = out["china_10y"] - out["china_2y"]
+    out["china_10y_2y_pct"] = source_spread.combine_first(computed_spread)
+
     out = (
         out.dropna(subset=["observation_date"])
         .sort_values("observation_date")
@@ -153,7 +164,7 @@ def _read_japan_csv(url: str) -> pd.DataFrame:
             "japan_10y": pd.to_numeric(raw[ten_col], errors="coerce"),
         }
     )
-    out["japan_10y_2y_bp"] = (out["japan_10y"] - out["japan_2y"]) * 100.0
+    out["japan_10y_2y_pct"] = out["japan_10y"] - out["japan_2y"]
     return out.dropna(subset=["observation_date"])
 
 
@@ -256,12 +267,11 @@ def build_asia_rates_figure(date_range: str) -> go.Figure:
     _add_trace(
         fig,
         china,
-        "china_10y_2y_bp",
-        "China 10Y−2Y (R1)",
+        "china_10y_2y_pct",
+        "China 10Y−2Y",
         width=2.0,
         dash="dot",
-        yaxis="y2",
-        suffix=" bp",
+        suffix="%",
     )
 
     _add_trace(fig, japan, "japan_2y", "Japan 2Y", width=2.1)
@@ -269,12 +279,11 @@ def build_asia_rates_figure(date_range: str) -> go.Figure:
     _add_trace(
         fig,
         japan,
-        "japan_10y_2y_bp",
-        "Japan 10Y−2Y (R1)",
+        "japan_10y_2y_pct",
+        "Japan 10Y−2Y",
         width=2.0,
         dash="dot",
-        yaxis="y2",
-        suffix=" bp",
+        suffix="%",
     )
 
     fig.update_layout(
@@ -293,24 +302,13 @@ def build_asia_rates_figure(date_range: str) -> go.Figure:
             bgcolor="rgba(255,255,255,0)",
         ),
         yaxis=dict(
-            title="Government bond yield (%)",
+            title="Yield / curve spread (%)",
             showgrid=True,
             gridcolor="#e5e7eb",
             griddash="dot",
             zeroline=False,
             fixedrange=True,
             tickformat=".2f",
-        ),
-        yaxis2=dict(
-            title="10Y−2Y spread · bp",
-            overlaying="y",
-            side="right",
-            showgrid=False,
-            zeroline=True,
-            zerolinecolor="#94a3b8",
-            zerolinewidth=1,
-            fixedrange=True,
-            tickformat=".0f",
         ),
         paper_bgcolor="white",
         plot_bgcolor="white",
