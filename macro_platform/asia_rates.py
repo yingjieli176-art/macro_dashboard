@@ -250,7 +250,7 @@ def _add_trace(
         name=name,
         mode="lines",
         line=line,
-        connectgaps=False,
+        connectgaps=True,
         hovertemplate=f"{name}: %{{y:.2f}}{suffix}<extra></extra>",
     )
     if yaxis:
@@ -280,6 +280,12 @@ def build_asia_rates_figure(date_range: str) -> go.Figure:
     start = latest - offset
     china = _slice(china, start)
     japan = _slice(japan, start)
+
+    if not japan.empty:
+        japan = japan.copy()
+        japan["japan_2y"] = pd.to_numeric(japan.get("japan_2y"), errors="coerce")
+        japan["japan_10y"] = pd.to_numeric(japan.get("japan_10y"), errors="coerce")
+        japan["japan_10y_2y_pct"] = japan["japan_10y"] - japan["japan_2y"]
 
     _add_trace(fig, china, "china_2y", "China 2Y", width=2.1)
     _add_trace(fig, china, "china_10y", "China 10Y", width=2.8)
