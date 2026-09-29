@@ -29,7 +29,7 @@ TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q="
 TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
-CHART_BUILD = "2026-09-29-range-ui-r5"
+CHART_BUILD = "2026-09-29-chart-standard-r6"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -84,8 +84,8 @@ st.markdown("""
 .block-container { padding-top: 0.70rem; padding-bottom: 2rem; max-width: 1760px; }
 html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "PingFang TC", "Segoe UI", sans-serif; }
 .dashboard-title { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.1rem; }
-.section-title { font-size: 1.30rem; font-weight: 650; letter-spacing: -0.01em; margin-top: 0.45rem; margin-bottom: 0.08rem; min-height: 28px; display: flex; align-items: center; }
-.section-description { color: #6b7280; font-size: 0.84rem; margin-bottom: 0.18rem; min-height: 18px; display: flex; align-items: center; }
+.section-title { font-size: 1.18rem; font-weight: 680; letter-spacing: -0.012em; margin-top: 0.52rem; margin-bottom: 0.04rem; min-height: 26px; display: flex; align-items: center; color:#1f2937; }
+.section-description { color: #7b8493; font-size: 0.80rem; margin-bottom: 0.16rem; min-height: 17px; display: flex; align-items: center; }
 .mini-description { color: #6b7280; font-size: 0.74rem; line-height: 1.42; margin: 1px 0 5px; }
 .source-text { color: #6b7280; font-size: 0.72rem; margin: 2px 0 6px; line-height: 1.35; }
 .source-text a { color: #6b7280; text-decoration: none !important; white-space: nowrap; }
@@ -164,7 +164,7 @@ html { scroll-behavior: smooth; }
 .section-kicker { color: #9ca3af; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; margin-top: 0.12rem; margin-bottom: 0.04rem; line-height: 1.1; }
 .section-toolbar-note { color: #9ca3af; font-size: 0.72rem; margin-top: -0.15rem; margin-bottom: 0.5rem; }
 div[data-testid="stVerticalBlockBorderWrapper"] { border-color: #e5e7eb !important; border-radius: 12px !important; }
-div[data-testid="stPlotlyChart"] { border: 1px solid #e8edf3; border-radius: 10px; padding: 0 2px; background: #fff; overflow: hidden; box-shadow: 0 1px 2px rgba(15,23,42,.035); }
+div[data-testid="stPlotlyChart"] { border: 1px solid #e5eaf0; border-radius: 12px; padding: 0; background: #fff; overflow: hidden; box-shadow: 0 1px 2px rgba(15,23,42,.03); }
 .stButton > button { border-radius: 8px; }
 .source-text a { display: inline-block; padding: 1px 0; }
 .news-box { border-radius: 12px; padding: 8px 12px; }
@@ -1767,8 +1767,6 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     st.markdown(description, unsafe_allow_html=True)
     fig = _prepare_chart_for_client_ranges(builder("5Y"), range_key)
     st.plotly_chart(fig, key=f"{range_key}_plot", use_container_width=True, config=PLOTLY_CONFIG)
-    if range_key == "normal_corridor_range":
-        st.caption(f"时间范围使用 Plotly 原生 Range Selector · 默认 1Y · {CHART_BUILD}")
     show_parameter_description(desc_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
@@ -1776,7 +1774,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
 
 def render_macro_chart_1():
     _render_standard_macro_chart(
-        '<div class="section-title">🏦 1. Fed Policy Rate & Money Market</div>',
+        '<div class="section-title">1. Fed Policy Rate & Money Market</div>',
         '<div class="section-description">IORB / ON RRP Rate / EFFR / SOFR</div>',
         "normal_corridor_range",
         build_fig1,
