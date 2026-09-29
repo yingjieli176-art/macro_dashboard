@@ -308,6 +308,137 @@ def _remove_year_band_for_client_controls(fig: go.Figure) -> None:
     )
 
 
+DASHBOARD_CHART_HEIGHT = 420
+DASHBOARD_MARGIN_LEFT = 62
+DASHBOARD_MARGIN_BOTTOM = 38
+DASHBOARD_MARGIN_TOP = 68
+
+
+def _visible_right_axis_count(fig: go.Figure) -> int:
+    """Count visible overlay Y axes placed on the right side."""
+    count = 0
+    for axis_name in ("yaxis2", "yaxis3", "yaxis4", "yaxis5"):
+        axis = getattr(fig.layout, axis_name, None)
+        if axis is None:
+            continue
+        if getattr(axis, "visible", True) is False:
+            continue
+        if getattr(axis, "overlaying", None) is None:
+            continue
+        side = getattr(axis, "side", "right")
+        if side == "right":
+            count += 1
+    return count
+
+
+def _right_margin_for_axes(fig: go.Figure) -> int:
+    count = _visible_right_axis_count(fig)
+    return {0: 34, 1: 70, 2: 98, 3: 124}.get(count, 136)
+
+
+def apply_dashboard_chart_standard(fig: go.Figure) -> go.Figure:
+    """Final visual standard shared by every Macro Chart.
+
+    Figure builders own only data, traces and axis semantics. This function owns
+    the visual system: dimensions, margins, legend, typography, grid and axis
+    chrome. Calling it last prevents module-specific layout drift.
+    """
+    fig.update_layout(
+        height=DASHBOARD_CHART_HEIGHT,
+        template="plotly_white",
+        hovermode="x unified",
+        dragmode=False,
+        margin=dict(
+            l=DASHBOARD_MARGIN_LEFT,
+            r=_right_margin_for_axes(fig),
+            t=DASHBOARD_MARGIN_TOP,
+            b=DASHBOARD_MARGIN_BOTTOM,
+            pad=1,
+        ),
+        font=dict(
+            family="Inter, Segoe UI, Microsoft JhengHei, PingFang TC, sans-serif",
+            size=11,
+            color="#475569",
+        ),
+        hoverlabel=dict(
+            bgcolor="#ffffff",
+            bordercolor="#dbe3ec",
+            font_size=11,
+            font_family="Inter, Segoe UI, Microsoft JhengHei, PingFang TC, sans-serif",
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.012,
+            xanchor="left",
+            x=0.0,
+            font=dict(size=10, color="#334155"),
+            bgcolor="rgba(255,255,255,0)",
+            borderwidth=0,
+            itemwidth=30,
+            traceorder="normal",
+        ),
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+    )
+
+    fig.update_xaxes(
+        showgrid=True,
+        gridcolor="#edf1f5",
+        griddash="dot",
+        showline=True,
+        linecolor="#cbd5e1",
+        linewidth=1,
+        ticks="outside",
+        ticklen=3,
+        tickcolor="#94a3b8",
+        tickfont=dict(size=10, color="#64748b"),
+        ticklabelstandoff=5,
+        automargin=False,
+        zeroline=False,
+    )
+
+    primary = fig.layout.yaxis
+    primary.update(
+        showgrid=True,
+        gridcolor="#e7edf3",
+        griddash="dot",
+        showline=True,
+        linecolor="#cbd5e1",
+        linewidth=1,
+        ticks="outside",
+        ticklen=3,
+        tickcolor="#94a3b8",
+        tickfont=dict(size=10, color="#64748b"),
+        automargin=False,
+        fixedrange=True,
+        zeroline=False,
+    )
+    if primary.title is not None:
+        primary.title.font = dict(size=11, color="#64748b")
+        primary.title.standoff = 8
+
+    for axis_name in ("yaxis2", "yaxis3", "yaxis4", "yaxis5"):
+        axis = getattr(fig.layout, axis_name, None)
+        if axis is None:
+            continue
+        axis.update(
+            showgrid=False,
+            showline=False,
+            ticks="outside",
+            ticklen=3,
+            tickcolor="#94a3b8",
+            tickfont=dict(size=9, color="#64748b"),
+            automargin=False,
+            fixedrange=True,
+        )
+        if axis.title is not None:
+            axis.title.font = dict(size=10, color="#64748b")
+            axis.title.standoff = 6
+
+    return fig
+
+
 def apply_client_time_controls(
     fig: go.Figure,
     *,
@@ -328,27 +459,12 @@ def apply_client_time_controls(
 
     fig = apply_time_axis(fig, "5Y", latest=latest)
     _remove_year_band_for_client_controls(fig)
+    fig = apply_dashboard_chart_standard(fig)
 
     default_range = default_range if default_range in RANGE_OFFSETS else "1Y"
     default_start = latest - RANGE_OFFSETS[default_range]
 
-    fig.update_layout(
-        updatemenus=[],
-        dragmode=False,
-        # Compact two-row toolbar: range selector first, legend second.
-        margin=dict(t=max(int(getattr(fig.layout.margin, "t", 0) or 0), 94)),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.025,
-            xanchor="left",
-            x=0.0,
-            font=dict(size=10, color="#374151"),
-            bgcolor="rgba(255,255,255,0)",
-            borderwidth=0,
-            itemwidth=30,
-        ),
-    )
+    fig.update_layout(updatemenus=[])
     fig.update_xaxes(
         type="date",
         range=[default_start, latest],
@@ -362,20 +478,17 @@ def apply_client_time_controls(
         nticks=8,
         hoverformat="%Y-%m-%d",
         rangeslider_visible=False,
-        showgrid=True,
-        gridcolor="#edf1f5",
-        griddash="dot",
         rangeselector=dict(
             visible=True,
             buttons=_native_range_buttons(),
             x=0.0,
             xanchor="left",
-            y=1.135,
+            y=1.105,
             yanchor="top",
             bgcolor="rgba(248,250,252,0.96)",
-            activecolor="#e8eefc",
-            bordercolor="rgba(0,0,0,0)",
-            borderwidth=0,
+            activecolor="#e7eefc",
+            bordercolor="rgba(203,213,225,0.75)",
+            borderwidth=1,
             font=dict(size=10, color="#475569"),
         ),
     )
