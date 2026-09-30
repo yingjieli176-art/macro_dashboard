@@ -8,26 +8,12 @@
     "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity"
   ],
   "transport_fallback": "r.jina.ai relay when direct api.hkma.gov.hk access is unavailable from CI",
-  "updated_at": "2026-09-29T16:55:40.489582+00:00",
-  "coverage_start": "2025-03-28",
-  "coverage_end": "2026-09-29",
-  "record_count": 370,
+  "updated_at": "2026-09-30T16:58:58.599417+00:00",
+  "coverage_start": "2025-03-31",
+  "coverage_end": "2026-09-30",
+  "record_count": 369,
   "fetch_strategy": "small newest-first pagesize=20 offset pagination; no date-filter query; proxy/direct transport fallback; optional current enrichment",
   "records": [
-    {
-      "end_of_date": "2025-03-28",
-      "opening_balance": null,
-      "closing_balance": 44621,
-      "forecast_aggregate_bal_t1": null,
-      "outstanding_efbn": 1310730,
-      "ow_lb_bf_disc_win": 1202407,
-      "aggr_balance_bf_disc_win": 44621,
-      "hibor_overnight": 3.04119,
-      "hibor_3m": 3.88315,
-      "disc_win_base_rate": null,
-      "cu_weakside": null,
-      "cu_strongside": null
-    },
     {
       "end_of_date": "2025-03-31",
       "opening_balance": null,
@@ -4915,20 +4901,6 @@
       "cu_strongside": null
     },
     {
-      "end_of_date": "2026-09-02",
-      "opening_balance": 54190,
-      "closing_balance": 54019,
-      "forecast_aggregate_bal_t1": 54019,
-      "outstanding_efbn": 1356653,
-      "ow_lb_bf_disc_win": 1186542,
-      "aggr_balance_bf_disc_win": 54019,
-      "hibor_overnight": 2.75,
-      "hibor_3m": null,
-      "disc_win_base_rate": 4,
-      "cu_weakside": 7.85,
-      "cu_strongside": 7.75
-    },
-    {
       "end_of_date": "2026-09-03",
       "opening_balance": 54019,
       "closing_balance": 54019,
@@ -5189,6 +5161,20 @@
       "ow_lb_bf_disc_win": 1173194,
       "aggr_balance_bf_disc_win": 54156,
       "hibor_overnight": 2.72,
+      "hibor_3m": null,
+      "disc_win_base_rate": 4.25,
+      "cu_weakside": 7.85,
+      "cu_strongside": 7.75
+    },
+    {
+      "end_of_date": "2026-09-30",
+      "opening_balance": 54196,
+      "closing_balance": 54108,
+      "forecast_aggregate_bal_t1": 54108,
+      "outstanding_efbn": 1359377,
+      "ow_lb_bf_disc_win": 1175850,
+      "aggr_balance_bf_disc_win": 54108,
+      "hibor_overnight": 3.85,
       "hibor_3m": null,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
