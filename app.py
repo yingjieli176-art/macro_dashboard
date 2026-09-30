@@ -3,6 +3,7 @@ import json
 import os
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -1825,17 +1826,18 @@ def _prepare_chart_for_client_ranges(fig, element_key, mode=None):
     return fig
 
 
-def _render_standard_macro_chart(title, description, range_key, builder, sources, desc_index):
+def _render_standard_macro_chart(title, description, range_key, builder, sources, desc_index, prebuilt_fig=None):
     st.markdown(title, unsafe_allow_html=True)
     st.markdown(description, unsafe_allow_html=True)
-    fig = _prepare_chart_for_client_ranges(builder("5Y"), range_key)
+    base_fig = prebuilt_fig if prebuilt_fig is not None else builder("5Y")
+    fig = _prepare_chart_for_client_ranges(base_fig, range_key)
     st.plotly_chart(fig, key=f"{range_key}_plot", use_container_width=True, config=PLOTLY_CONFIG)
     show_parameter_description(desc_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-def render_macro_chart_1():
+def render_macro_chart_1(prebuilt_fig=None):
     _render_standard_macro_chart(
         '<div class="section-title">1. Fed Policy Rate & Money Market</div>',
         '<div class="section-description">IORB / ON RRP Rate / EFFR / SOFR</div>',
@@ -1848,10 +1850,11 @@ def render_macro_chart_1():
             ("SOFR (SOFR)", "https://fred.stlouisfed.org/series/SOFR"),
         ],
         0,
+        prebuilt_fig=prebuilt_fig,
     )
 
 
-def render_macro_chart_2():
+def render_macro_chart_2(prebuilt_fig=None):
     _render_standard_macro_chart(
         '<div class="section-title">2. 10Y Yield Structure</div>',
         '<div class="section-description">10Y Nominal / 10Y Real (R1) / 10Y Breakeven (R1)</div>',
@@ -1863,10 +1866,11 @@ def render_macro_chart_2():
             ("10Y Breakeven (T10YIE)", "https://fred.stlouisfed.org/series/T10YIE"),
         ],
         1,
+        prebuilt_fig=prebuilt_fig,
     )
 
 
-def render_macro_chart_3():
+def render_macro_chart_3(prebuilt_fig=None):
     _render_standard_macro_chart(
         '<div class="section-title">3. Treasury Yield & Curve Spread</div>',
         '<div class="section-description">3M / 2Y / 10Y / 10Y−2Y (R1) / 10Y−3M (R1)</div>',
@@ -1880,10 +1884,11 @@ def render_macro_chart_3():
             ("10Y−3M Spread (T10Y3M)", "https://fred.stlouisfed.org/series/T10Y3M"),
         ],
         2,
+        prebuilt_fig=prebuilt_fig,
     )
 
 
-def render_macro_chart_4():
+def render_macro_chart_4(prebuilt_fig=None):
     _render_standard_macro_chart(
         '<div class="section-title">4. US Liquidity</div>',
         '<div class="section-description">Net Liquidity (L) · Reserve Balances / TGA (R1) · ON RRP (R2)</div>',
@@ -1897,6 +1902,7 @@ def render_macro_chart_4():
             ("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD"),
         ],
         3,
+        prebuilt_fig=prebuilt_fig,
     )
 
 
@@ -1944,7 +1950,7 @@ HK_CHART_CONFIGS = [
 ]
 
 
-def _render_hk_macro_chart(hk_index):
+def _render_hk_macro_chart(hk_index, prebuilt_fig=None):
     title, description, range_key, sources = HK_CHART_CONFIGS[hk_index]
     st.markdown(title, unsafe_allow_html=True)
     st.markdown(description, unsafe_allow_html=True)
@@ -1958,7 +1964,7 @@ def _render_hk_macro_chart(hk_index):
             key=f"{range_key}_market_mode",
             label_visibility="collapsed",
         )
-    fig = build_fig5("5Y", market_mode=market_mode)[hk_index]
+    fig = prebuilt_fig if prebuilt_fig is not None else build_fig5("5Y", market_mode=market_mode)[hk_index]
     fig = _prepare_chart_for_client_ranges(fig, range_key, market_mode)
     st.plotly_chart(
         fig,
@@ -1971,29 +1977,30 @@ def _render_hk_macro_chart(hk_index):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-def render_macro_chart_5():
-    _render_hk_macro_chart(0)
+def render_macro_chart_5(prebuilt_fig=None):
+    _render_hk_macro_chart(0, prebuilt_fig=prebuilt_fig)
 
 
-def render_macro_chart_6():
-    _render_hk_macro_chart(1)
+def render_macro_chart_6(prebuilt_fig=None):
+    _render_hk_macro_chart(1, prebuilt_fig=prebuilt_fig)
 
 
-def render_macro_chart_7():
-    _render_hk_macro_chart(2)
+def render_macro_chart_7(prebuilt_fig=None):
+    _render_hk_macro_chart(2, prebuilt_fig=prebuilt_fig)
 
 
-def render_macro_chart_8():
-    _render_hk_macro_chart(3)
+def render_macro_chart_8(prebuilt_fig=None):
+    _render_hk_macro_chart(3, prebuilt_fig=prebuilt_fig)
 
 
-def render_macro_chart_9():
+def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">9. US Equity Risk & Volatility Structure</div>'
         '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIX3M−VIX (R2)</div>',
         unsafe_allow_html=True,
     )
-    fig = _prepare_chart_for_client_ranges(build_fig9("5Y"), "us_equity_risk")
+    base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig9("5Y")
+    fig = _prepare_chart_for_client_ranges(base_fig, "us_equity_risk")
     st.plotly_chart(fig, key="us_equity_risk_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{US_EQUITY_RISK_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
@@ -2005,7 +2012,7 @@ def render_macro_chart_9():
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-def render_macro_chart_10():
+def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">10. Precious Metals</div>'
         '<div class="section-description">Gold · Silver · Gold/Silver Ratio · Gold Volatility GVZ</div>',
@@ -2015,7 +2022,8 @@ def render_macro_chart_10():
         "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
         key="precious_metals_mode", label_visibility="collapsed",
     )
-    fig = _prepare_chart_for_client_ranges(build_fig10("5Y", market_mode), "precious_metals", market_mode)
+    base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig10("5Y", market_mode)
+    fig = _prepare_chart_for_client_ranges(base_fig, "precious_metals", market_mode)
     st.plotly_chart(fig, key="precious_metals_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
@@ -2027,7 +2035,7 @@ def render_macro_chart_10():
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-def render_macro_chart_11():
+def render_macro_chart_11(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">11. Crypto Market</div>'
         '<div class="section-description">BTC · ETH · ETH/BTC · BTC 30D 实际波动率</div>',
@@ -2037,7 +2045,8 @@ def render_macro_chart_11():
         "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
         key="crypto_market_mode", label_visibility="collapsed",
     )
-    fig = _prepare_chart_for_client_ranges(build_fig11("5Y", market_mode), "crypto_market", market_mode)
+    base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig11("5Y", market_mode)
+    fig = _prepare_chart_for_client_ranges(base_fig, "crypto_market", market_mode)
     st.plotly_chart(fig, key="crypto_market_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
@@ -2047,13 +2056,14 @@ def render_macro_chart_11():
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-def render_macro_chart_12():
+def render_macro_chart_12(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">12. Copper Flow & COMEX–LME Spread</div>'
         '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2)</div>',
         unsafe_allow_html=True,
     )
-    fig = _prepare_chart_for_client_ranges(build_fig12("5Y"), "copper_flow")
+    base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig12("5Y")
+    fig = _prepare_chart_for_client_ranges(base_fig, "copper_flow")
     st.plotly_chart(fig, key="copper_flow_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(
         '<div class="mini-description"><b>读取方法：</b>阅读顺序与图例一致：① COMEX 库存；② LME 库存；③ LME 3M 铜价（R1）；④ COMEX HG 换算价（R1）；⑤ COMEX−LME 3M 价差（R2）。'
@@ -2073,14 +2083,15 @@ def render_macro_chart_12():
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-def render_macro_chart_13():
+def render_macro_chart_13(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">13. China & Japan Government Yield Curves</div>'
         '<div class="section-description">China 2Y / 10Y / 10Y−2Y · Japan 2Y / 10Y / 10Y−2Y · all in %</div>',
         unsafe_allow_html=True,
     )
+    base_fig = prebuilt_fig if prebuilt_fig is not None else build_asia_rates_figure("5Y")
     fig = _prepare_chart_for_client_ranges(
-        build_asia_rates_figure("5Y"),
+        base_fig,
         "asia_rates",
     )
     st.plotly_chart(
@@ -2104,37 +2115,130 @@ def render_macro_chart_13():
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
+def _macro_error_figure(label):
+    fig = go.Figure()
+    fig.add_annotation(
+        text=f"{label} 数据暂不可用",
+        x=0.5,
+        y=0.5,
+        xref="paper",
+        yref="paper",
+        showarrow=False,
+        font=dict(size=13, color="#6b7280"),
+    )
+    fig.update_layout(
+        height=420,
+        template="plotly_white",
+        margin=dict(l=40, r=40, t=60, b=40),
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+    )
+    return fig
+
+
+def _safe_macro_build(label, builder):
+    try:
+        return builder()
+    except Exception:
+        return _macro_error_figure(label)
+
+
+def _safe_hk_bundle(market_mode):
+    try:
+        figures = build_fig5("5Y", market_mode=market_mode)
+        if not isinstance(figures, (list, tuple)) or len(figures) < 4:
+            raise ValueError("HK figure bundle incomplete")
+        return list(figures)
+    except Exception:
+        return [_macro_error_figure(f"Chart {number}") for number in range(5, 9)]
+
+
+def _build_macro_figures_parallel():
+    """Build all macro figures concurrently, then render them together.
+
+    Only data access and Plotly figure construction run in worker threads.
+    Streamlit widgets/rendering stay on the main script thread.
+    """
+    hk5_mode = st.session_state.get("hk_5_range_market_mode", "Raw")
+    hk8_mode = st.session_state.get("hk_8_range_market_mode", "Raw")
+    metals_mode = st.session_state.get("precious_metals_mode", "Rebased 100")
+    crypto_mode = st.session_state.get("crypto_market_mode", "Rebased 100")
+
+    jobs = {
+        1: lambda: _safe_macro_build("Chart 1", lambda: build_fig1("5Y")),
+        2: lambda: _safe_macro_build("Chart 2", lambda: build_fig2("5Y")),
+        3: lambda: _safe_macro_build("Chart 3", lambda: build_fig3("5Y")),
+        4: lambda: _safe_macro_build("Chart 4", lambda: build_fig4("5Y")),
+        "hk5": lambda: _safe_hk_bundle(hk5_mode),
+        9: lambda: _safe_macro_build("Chart 9", lambda: build_fig9("5Y")),
+        10: lambda: _safe_macro_build("Chart 10", lambda: build_fig10("5Y", metals_mode)),
+        11: lambda: _safe_macro_build("Chart 11", lambda: build_fig11("5Y", crypto_mode)),
+        12: lambda: _safe_macro_build("Chart 12", lambda: build_fig12("5Y")),
+        13: lambda: _safe_macro_build("Chart 13", lambda: build_asia_rates_figure("5Y")),
+    }
+    if hk8_mode != hk5_mode:
+        jobs["hk8"] = lambda: _safe_hk_bundle(hk8_mode)
+
+    # Six workers keeps cold-start I/O parallel without hammering public data
+    # endpoints with one thread per chart.
+    with ThreadPoolExecutor(max_workers=6, thread_name_prefix="macro-chart") as executor:
+        futures = {key: executor.submit(job) for key, job in jobs.items()}
+        results = {key: future.result() for key, future in futures.items()}
+
+    hk5_bundle = results["hk5"]
+    hk8_bundle = results.get("hk8", hk5_bundle)
+    return {
+        1: results[1],
+        2: results[2],
+        3: results[3],
+        4: results[4],
+        5: hk5_bundle[0],
+        6: hk5_bundle[1],
+        7: hk5_bundle[2],
+        8: hk8_bundle[3],
+        9: results[9],
+        10: results[10],
+        11: results[11],
+        12: results[12],
+        13: results[13],
+    }
+
+
 st.markdown(
     '<div id="macro-charts" class="section-anchor"></div>'
     '<div class="section-kicker">MACRO CHARTS</div>'
     '<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>',
     unsafe_allow_html=True,
 )
-render_macro_chart_1()
-render_macro_chart_2()
-render_macro_chart_3()
-render_macro_chart_4()
+
+with st.spinner("正在并行加载 13 张宏观图表…"):
+    macro_figures = _build_macro_figures_parallel()
+
+render_macro_chart_1(macro_figures[1])
+render_macro_chart_2(macro_figures[2])
+render_macro_chart_3(macro_figures[3])
+render_macro_chart_4(macro_figures[4])
 
 st.markdown('<div class="section-kicker">HONG KONG LIQUIDITY</div>', unsafe_allow_html=True)
-render_macro_chart_5()
-render_macro_chart_6()
-render_macro_chart_7()
-render_macro_chart_8()
+render_macro_chart_5(macro_figures[5])
+render_macro_chart_6(macro_figures[6])
+render_macro_chart_7(macro_figures[7])
+render_macro_chart_8(macro_figures[8])
 
 st.markdown('<div class="section-kicker">US EQUITY RISK</div>', unsafe_allow_html=True)
-render_macro_chart_9()
+render_macro_chart_9(macro_figures[9])
 
 st.markdown('<div class="section-kicker">PRECIOUS METALS</div>', unsafe_allow_html=True)
-render_macro_chart_10()
+render_macro_chart_10(macro_figures[10])
 
 st.markdown('<div class="section-kicker">CRYPTO MARKET</div>', unsafe_allow_html=True)
-render_macro_chart_11()
+render_macro_chart_11(macro_figures[11])
 
 st.markdown('<div class="section-kicker">INDUSTRIAL METALS · COPPER</div>', unsafe_allow_html=True)
-render_macro_chart_12()
+render_macro_chart_12(macro_figures[12])
 
 st.markdown('<div class="section-kicker">ASIA RATES</div>', unsafe_allow_html=True)
-render_macro_chart_13()
+render_macro_chart_13(macro_figures[13])
 
 st.markdown('<div id="news" class="section-anchor"></div><div class="section-kicker">NEWS</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)
