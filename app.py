@@ -1800,7 +1800,7 @@ PARAM_DESCRIPTIONS = [
 def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
 
 HK_PARAMETER_DESCRIPTIONS = [
-    '<b>参数概念：</b><br>1. HKD M2 YoY：港元 M2 同比增速，作为主趋势线，用来观察广义港元货币的中期扩张或收缩；相比 MoM 更平滑。<br>2. HKD M2 MoM：港元 M2 月环比增速，作为边际动量线，用来观察最近一个月货币扩张/收缩是否加速；波动会明显高于 YoY。<br>3. Monetary Base YoY：香港货币基础总量同比变化，用于观察基础货币的中期扩张与收缩。<br>4. HKEX Price（R1）：港交所 0388.HK 市场价格，右轴单位 HKD；用于观察香港交易所股价与货币流动性变化之间的市场映射。<br>5. HSTECH Index（R2）：恒生科技指数 HSTECH 市场点位，右轴单位 points；市场历史独立拉取 5Y，不再被 HKMA 月度快照长度裁断。<br>6. HSI Index（R2）：恒生指数市场点位，右轴单位 points；使用 ^HSI 的 5Y 市场历史，用于对照香港大盘与流动性变化。<br>7. Tencent Price（R1）：腾讯控股 0700.HK 股价，Raw 模式与港交所共用 R1 港元价格轴；Rebased 100 模式把完整 5Y 样本首个有效值归一到 100；图内时间按钮只改变显示窗口，便于比较相对弹性。<br><br><b>读取提示：</b>默认只保留 M2 的同比与环比：YoY 看趋势，MoM 看边际拐点。M3 YoY 仍保留在底层数据中，但因与 M2 YoY 高度同步，不再默认绘制，减少重复信息。<br><br><b>市场显示：</b>Raw 模式把股票价格放在 R1、指数点位放在 R2；Rebased 100 模式把 Tencent / HKEX / HSTECH / HSI 统一归一化，用于比较涨跌幅而不是绝对点位。',
+    '<b>参数概念：</b><br>1. M2 YoY：港元 M2 同比增速，作为主趋势线，用来观察广义港元货币的中期扩张或收缩；相比 MoM 更平滑。<br>2. M2 MoM：港元 M2 月环比增速，作为边际动量线，用来观察最近一个月货币扩张/收缩是否加速；波动会明显高于 YoY。<br>3. Monetary Base YoY：香港货币基础总量同比变化，用于观察基础货币的中期扩张与收缩。<br>4. Tencent Price（R1）：腾讯控股 0700.HK 股价，Raw 模式使用 R1 港元价格轴。<br>5. HKEX Price（R1）：港交所 0388.HK 市场价格，Raw 模式与腾讯共用 R1 港元价格轴。<br>6. HSTECH Index（R2）：恒生科技指数 HSTECH 市场点位，Raw 模式使用 R2 指数点位轴。<br>7. HSI Index（R2）：恒生指数市场点位，Raw 模式与 HSTECH 共用 R2 指数点位轴。<br><br><b>读取提示：</b>阅读顺序与图例一致：先看 M2 YoY、M2 MoM、Monetary Base YoY，再看 Tencent、HKEX、HSTECH、HSI。默认只保留 M2 的同比与环比：YoY 看趋势，MoM 看边际拐点。M3 YoY 仍保留在底层数据中，但因与 M2 YoY 高度同步，不再默认绘制。<br><br><b>市场显示：</b>Raw 模式把 Tencent / HKEX 放在 R1、HSTECH / HSI 放在 R2；Rebased 100 模式按同一图例顺序把四个市场资产归一化，用于比较涨跌幅而不是绝对点位。',
     '<b>参数概念：</b><br>1. Closing Aggregate Balance：银行体系期末总结余，单位 HK$ billion；5Y 视图使用 HKMA 月度期末历史，数值下降通常代表可用港元流动性收紧。<br>2. Outstanding EFBN（R1）：外汇基金票据及债券未偿还总额，右轴单位 HK$ billion，是香港货币基础的重要结构项。<br>3. EFBN Held by Licensed Banks（R1）：由持牌银行持有的 EFBN，右轴单位 HK$ billion，用于观察银行体系持有的高流动性港元资产规模。<br><br><b>读取提示：</b>5Y 历史只展示 HKMA 实际公布的月度期末字段，不再用 Closing Aggregate Balance 复制生成 Opening 或 Forecast。若未来日频快照可用，短周期视图仍可显示真实 Opening / Closing / Forecast T+1。',
     '<b>参数概念：</b><br>1. O/N HIBOR：隔夜港元银行同业拆息，5Y 月度历史来自 C&SD 月刊（底层来源 HKAB / HKMA），反映最短端港元资金价格。<br>2. 3M HIBOR：3 个月港元银行同业拆息，用来观察更持续的港元融资成本。<br>3. HKMA Base Rate：香港金管局贴现窗基本利率；5Y 历史直接来自 HKMA 月末官方序列。<br>4. O/N−3M Spread（R）：隔夜 HIBOR 减 3M HIBOR，右轴单位 %；显著转正通常代表短端资金压力上升。',
     '<b>参数概念：</b><br>1. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>2. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>3. Linked Rate Center 7.80：7.75–7.85 兑换保证区间的中点参考线，用于快速判断港元当前处在偏强侧还是偏弱侧；不是额外的兑换保证触发水平。<br>4. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br>5. Tencent Price（R1）：腾讯控股 0700.HK 股价，Raw 模式对应 R1 港元价格轴。<br>6. HKEX Price（R1）：港交所 0388.HK 市场价格，Raw 模式与腾讯共用 R1 港元价格轴。<br>7. HSTECH Index（R2）：恒生科技指数 HSTECH 市场点位，Raw 模式对应 R2 指数点位轴。<br>8. HSI Index（R2）：恒生指数点位，Raw 模式对应 R2 指数点位轴。<br><br><b>市场显示：</b>Raw 模式保留真实价格/点位；Rebased 100 模式把 Tencent / HKEX / HSTECH / HSI 在完整 5Y 样本首个有效值归一到 100；图内时间按钮只改变显示窗口，用来比较谁更强、谁更弱。<br><br><b>读取提示：</b>阅读顺序与图例一致：先看 USD/HKD 与 7.75 / 7.80 / 7.85 三条制度参考线，再看 Tencent、HKEX、HSTECH、HSI 的市场反应。USD/HKD 左轴已反向：7.75 强方兑换保证显示在上方、7.85 弱方兑换保证显示在下方，因此视觉方向直接对应“港元偏强/流动性偏强 → 港元偏弱/流动性偏弱”。灰色区域表示 7.75–7.85 联系汇率区间；其中 7.84–7.85 的淡红区域为 Weak-side Pressure Zone，用于提示接近弱方兑换保证的压力阶段；USD/HKD 优先使用仓库持久化的 Yahoo HKD=X 日频 5Y 快照，HKMA 月度汇率作为回退。',
@@ -2008,7 +2008,7 @@ def render_macro_chart_9():
 def render_macro_chart_10():
     st.markdown(
         '<div class="section-title">10. Precious Metals</div>'
-        '<div class="section-description">Gold / Silver · Gold/Silver Ratio (R1) · Gold Volatility GVZ (R2/R3)</div>',
+        '<div class="section-description">Gold · Silver · Gold/Silver Ratio · Gold Volatility GVZ</div>',
         unsafe_allow_html=True,
     )
     market_mode = st.radio(
@@ -2030,7 +2030,7 @@ def render_macro_chart_10():
 def render_macro_chart_11():
     st.markdown(
         '<div class="section-title">11. Crypto Market</div>'
-        '<div class="section-description">4 个指标 · BTC / ETH 相对表现 · ETH/BTC 强弱 · BTC 30D 实际波动率</div>',
+        '<div class="section-description">BTC · ETH · ETH/BTC · BTC 30D 实际波动率</div>',
         unsafe_allow_html=True,
     )
     market_mode = st.radio(
@@ -2050,14 +2050,14 @@ def render_macro_chart_11():
 def render_macro_chart_12():
     st.markdown(
         '<div class="section-title">12. Copper Flow & COMEX–LME Spread</div>'
-        '<div class="section-description">LME / COMEX inventories (L) · normalized copper prices (R1) · COMEX−LME 3M spread (R2)</div>',
+        '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2)</div>',
         unsafe_allow_html=True,
     )
     fig = _prepare_chart_for_client_ranges(build_fig12("5Y"), "copper_flow")
     st.plotly_chart(fig, key="copper_flow_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(
-        '<div class="mini-description"><b>读取方法：</b>COMEX 与 LME 库存放在同一左轴（千吨，kt），直接观察交易所可见库存的相对迁移；'
-        'COMEX HG 先按 1 公吨 = 2,204.6226 磅换算为 USD/t，再与 LME 3M 放在同一价格轴；R2 直接显示 COMEX−LME 3M 价差。'
+        '<div class="mini-description"><b>读取方法：</b>阅读顺序与图例一致：① COMEX 库存；② LME 库存；③ LME 3M 铜价（R1）；④ COMEX HG 换算价（R1）；⑤ COMEX−LME 3M 价差（R2）。'
+        'COMEX 与 LME 库存共用左轴（千吨，kt）；COMEX HG 按 1 公吨 = 2,204.6226 磅换算为 USD/t 后与 LME 3M 共用 R1；R2 显示两者价差。'
         '若 COMEX 库存上升、LME 库存下降且价差同步走阔，通常可视作库存/交割需求向美国端迁移的信号；反向组合则相反。'
         '该价差使用 HG 近月连续代理与 LME 3M，期限并非严格匹配，因此用于方向与压力监测，不是可直接执行的无风险套利报价。</div>',
         unsafe_allow_html=True,
