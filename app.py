@@ -3,7 +3,7 @@ import json
 import os
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -865,6 +865,11 @@ def _market_item_html(name, price, change_pct, meta=""):
 
 @st.cache_data(ttl=15, show_spinner=False)
 def _get_cached_quote(symbol, refresh_key=0):
+    return _fetch_quote(symbol)
+
+
+def _fetch_quote(symbol):
+    """Fetch providers without Streamlit caching or session-state access."""
     market = _symbol_market(symbol)
     candidates = []
 
@@ -974,6 +979,10 @@ def _last_good_quote_store():
 
 def _stable_quote(symbol, refresh_key=0):
     row = _get_cached_quote(symbol, refresh_key)
+    return _remember_quote(symbol, row)
+
+
+def _remember_quote(symbol, row):
     store = _last_good_quote_store()
     cache_key = str(symbol or "").upper().strip()
     if row.get("price") is not None:
@@ -991,8 +1000,83 @@ def _stable_quote(symbol, refresh_key=0):
 
 
 def _get_watchlist_quote(symbol):
-    manual_key = st.session_state.get("_watchlist_refresh_key", 0)
-    return _stable_quote(symbol, f"{_quote_refresh_key()}:{manual_key}")
+    snapshot = st.session_state.get("_watchlist_quotes_snapshot", {})
+    return snapshot.get(symbol, _empty_quote())
+
+
+def _request_watchlist_refresh():
+    st.session_state["_watchlist_refresh_pending"] = True
+
+
+def _watchlist_symbols():
+    symbols = []
+    for key in WATCHLIST_KEYS:
+        items = st.session_state.get(f"{key}_confirmed", [])
+        items = [items] if isinstance(items, dict) else (items if isinstance(items, list) else [])
+        for item in items:
+            if isinstance(item, dict) and item.get("symbol"):
+                symbols.append(item["symbol"])
+    return list(dict.fromkeys(symbols))
+
+
+def _load_watchlist_quotes(symbols, manual=False, progress=None):
+    """Fetch in workers; apply last-good fallback and session updates here."""
+    previous = st.session_state.get("_watchlist_quotes_snapshot", {})
+    snapshot = {symbol: previous[symbol] for symbol in symbols if symbol in previous}
+    requested = symbols if manual else [symbol for symbol in symbols if symbol not in snapshot]
+    received = changed = retained = missing = completed = 0
+    if requested:
+        with ThreadPoolExecutor(max_workers=min(6, len(requested)), thread_name_prefix="watchlist-quote") as executor:
+            futures = {executor.submit(_fetch_quote, symbol): symbol for symbol in requested}
+            for future in as_completed(futures):
+                symbol = futures[future]
+                try:
+                    row = future.result()
+                    if not isinstance(row, dict):
+                        row = _empty_quote()
+                except Exception:
+                    row = _empty_quote()
+                fetched = row.get("price") is not None
+                row = _remember_quote(symbol, row)
+                snapshot[symbol] = row
+                if fetched:
+                    received += 1
+                    old = previous.get(symbol)
+                    market = _symbol_market(symbol)
+                    if isinstance(old, dict) and _active_quote_values(old, market) != _active_quote_values(row, market):
+                        changed += 1
+                elif row.get("price") is not None:
+                    retained += 1
+                else:
+                    missing += 1
+                completed += 1
+                if progress is not None:
+                    progress.caption(f"刷新中… {completed}/{len(requested)}")
+    st.session_state["_watchlist_quotes_snapshot"] = snapshot
+    if manual:
+        st.session_state["_watchlist_refresh_result"] = {
+            "completed_at": datetime.now(DASHBOARD_TZ).strftime("%m-%d %H:%M:%S"),
+            "total": len(requested), "received": received, "changed": changed,
+            "retained": retained, "missing": missing,
+        }
+
+
+def _watchlist_refresh_status():
+    result = st.session_state.get("_watchlist_refresh_result")
+    if not result:
+        return ""
+    text = (f"最近手动刷新 {result['completed_at']} HKT · "
+            f"取得报价 {result['received']}/{result['total']}")
+    if result["total"] == 0:
+        return text + " · 暂无自选标的"
+    text += f" · 价格/涨跌变化 {result['changed']} 个"
+    if result["retained"]:
+        text += f" · {result['retained']} 个请求失败，保留上次有效报价"
+    if result["missing"]:
+        text += f" · {result['missing']} 个报价暂缺"
+    if result["received"] == result["total"] and result["changed"] == 0:
+        text += " · 报价未变化，行情源时间见卡片"
+    return text
 
 
 def _active_quote_values(row, market=""):
@@ -1151,12 +1235,34 @@ st.markdown('<div class="section-title">自选观察</div><div class="section-de
 
 @st.fragment(key="watchlists")
 def render_watchlists():
+    pending = st.session_state.get("_watchlist_refresh_pending", False)
     info_col, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with info_col:
         st.markdown('<div class="watch-toolbar">多源行情按时效切换 · 行情失败时保留上次有效报价</div>', unsafe_allow_html=True)
     with refresh_col:
-        if st.button("↻ 刷新", key="refresh_watchlist_quotes", help="只刷新下方自选模块报价，不刷新市场概览"):
-            st.session_state["_watchlist_refresh_key"] = st.session_state.get("_watchlist_refresh_key", 0) + 1
+        refresh_slot = st.empty()
+        if pending:
+            refresh_slot.button("刷新中…", key="refresh_watchlist_quotes_busy", disabled=True)
+        else:
+            refresh_slot.button("↻ 刷新", key="refresh_watchlist_quotes", on_click=_request_watchlist_refresh, help="只刷新下方自选模块报价，不刷新市场概览")
+
+    status_slot = st.empty()
+    symbols = _watchlist_symbols()
+    snapshot = st.session_state.get("_watchlist_quotes_snapshot", {})
+    if pending or any(symbol not in snapshot for symbol in symbols):
+        try:
+            with st.spinner("正在获取自选行情…"):
+                _load_watchlist_quotes(symbols, manual=pending, progress=status_slot)
+        finally:
+            if pending:
+                st.session_state["_watchlist_refresh_pending"] = False
+                refresh_slot.empty()
+                refresh_slot.button("↻ 刷新", key="refresh_watchlist_quotes", on_click=_request_watchlist_refresh, help="只刷新下方自选模块报价，不刷新市场概览")
+    status = _watchlist_refresh_status()
+    if status:
+        status_slot.caption(status)
+    else:
+        status_slot.empty()
 
     search_cols = st.columns(3, gap="small", vertical_alignment="top")
     search_config = [
