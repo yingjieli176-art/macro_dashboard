@@ -30,7 +30,8 @@ TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q="
 TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
-CHART_BUILD = "2026-09-29-range-legend-gap-r11"
+DEFAULT_CHART_RANGE = "1Y"
+CHART_BUILD = "2026-09-30-one-year-loading-r12"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1092,11 +1093,32 @@ def _active_quote_values(row, market=""):
             return row.get("post_price"), row.get("post_change_pct")
     return row.get("price"), row.get("change_pct")
 
+def _load_market_quotes(refresh_key):
+    """Fetch index quotes together, keeping cache and last-good semantics."""
+    symbols = {
+        "nasdaq": "^IXIC", "sp500": "^GSPC", "dow": "^DJI",
+        "hsi": "^HSI", "hstech": "HSTECH.HK", "sh": "000001.SS",
+        "sz": "399001.SZ", "csi300": "000300.SS",
+    }
+    snapshot = {}
+    with ThreadPoolExecutor(max_workers=6, thread_name_prefix="market-index") as executor:
+        futures = {executor.submit(_get_cached_quote, symbol, refresh_key): (key, symbol)
+                   for key, symbol in symbols.items()}
+        for future in as_completed(futures):
+            key, symbol = futures[future]
+            try:
+                row = future.result()
+            except Exception:
+                row = _empty_quote()
+            snapshot[key] = _remember_quote(symbol, row)
+    return snapshot
+
+
 def render_market_groups():
     now = time.time(); snapshot = st.session_state.get("_market_quotes_snapshot"); snapshot_time = st.session_state.get("_market_quotes_snapshot_time", 0)
     if not isinstance(snapshot, dict) or now - snapshot_time >= 60:
         refresh_key = _quote_refresh_key()
-        snapshot = {"nasdaq": _stable_quote("^IXIC", refresh_key), "sp500": _stable_quote("^GSPC", refresh_key), "dow": _stable_quote("^DJI", refresh_key), "hsi": _stable_quote("^HSI", refresh_key), "hstech": _stable_quote("HSTECH.HK", refresh_key), "sh": _stable_quote("000001.SS", refresh_key), "sz": _stable_quote("399001.SZ", refresh_key), "csi300": _stable_quote("000300.SS", refresh_key)}
+        snapshot = _load_market_quotes(refresh_key)
         st.session_state["_market_quotes_snapshot"] = snapshot; st.session_state["_market_quotes_snapshot_time"] = now
     q = snapshot
 
@@ -1725,12 +1747,26 @@ def _rebase_100(series):
     return values / float(valid.iloc[0]) * 100.0
 
 
+def _load_yahoo_histories(symbols):
+    """Load independent histories together without changing their data window."""
+    frames = {}
+    with ThreadPoolExecutor(max_workers=min(2, len(symbols)), thread_name_prefix="market-history") as executor:
+        futures = {executor.submit(get_yahoo_daily_history, symbol): symbol for symbol in symbols}
+        for future in as_completed(futures):
+            try:
+                frames[futures[future]] = future.result()
+            except Exception:
+                frames[futures[future]] = pd.DataFrame(columns=["observation_date", "close"])
+    return frames
+
+
 def build_fig10(date_range, market_mode="Rebased 100"):
     """Precious metals: gold, silver, gold/silver ratio, and GVZ."""
     frames = []
+    histories = _load_yahoo_histories(("GC=F", "SI=F"))
     for symbol, column in (("GC=F", "Gold"), ("SI=F", "Silver")):
         try:
-            frame = get_yahoo_daily_history(symbol).rename(columns={"close": column})
+            frame = histories[symbol].rename(columns={"close": column})
             if not frame.empty:
                 frames.append(frame[["observation_date", column]])
         except Exception:
@@ -1809,9 +1845,10 @@ def build_fig10(date_range, market_mode="Rebased 100"):
 def build_fig11(date_range, market_mode="Rebased 100"):
     """Crypto market: BTC, ETH, ETH/BTC and 30-day BTC realized volatility."""
     frames = []
+    histories = _load_yahoo_histories(("BTC-USD", "ETH-USD"))
     for symbol, column in (("BTC-USD", "BTC"), ("ETH-USD", "ETH")):
         try:
-            frame = get_yahoo_daily_history(symbol).rename(columns={"close": column})
+            frame = histories[symbol].rename(columns={"close": column})
             if not frame.empty:
                 frames.append(frame[["observation_date", column]])
         except Exception:
@@ -1926,8 +1963,10 @@ compact_mode = False
 
 def _prepare_chart_for_client_ranges(fig, element_key, mode=None):
     """Attach browser-side time controls to a complete five-year figure."""
-    fig = apply_client_time_controls(fig, default_range="1Y")
-    revision = f"{element_key}:client-range" if mode is None else f"{element_key}:client-range:{mode}"
+    fig = apply_client_time_controls(fig, default_range=DEFAULT_CHART_RANGE)
+    revision = f"{element_key}:client-range:{DEFAULT_CHART_RANGE}:r12"
+    if mode is not None:
+        revision += f":{mode}"
     fig.update_layout(uirevision=revision)
     return fig
 
@@ -2249,12 +2288,44 @@ def _safe_macro_build(label, builder):
         return _macro_error_figure(label)
 
 
-def _safe_hk_bundle(market_mode):
+def _macro_snapshot_revision():
+    """Invalidate constructed figures when a repository snapshot is replaced."""
+    folder = Path(__file__).resolve().parent / "data_snapshots"
+    revision = []
+    for path in sorted(folder.glob("*.json")):
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        revision.append((path.name, stat.st_mtime_ns, stat.st_size))
+    return tuple(revision)
+
+
+@st.cache_data(ttl=60, max_entries=32, show_spinner=False)
+def _cached_macro_figure(chart_number, market_mode, snapshot_revision, build_revision):
+    """Reuse successful construction; callers receive isolated figure copies."""
+    builders = {
+        1: build_fig1, 2: build_fig2, 3: build_fig3, 4: build_fig4,
+        9: build_fig9, 10: build_fig10, 11: build_fig11,
+        12: build_fig12, 13: build_asia_rates_figure,
+    }
+    builder = builders[chart_number]
+    if chart_number in (10, 11):
+        return builder("5Y", market_mode)
+    return builder("5Y")
+
+
+@st.cache_data(ttl=60, max_entries=8, show_spinner=False)
+def _cached_hk_bundle(market_mode, snapshot_revision, build_revision):
+    figures = build_fig5("5Y", market_mode=market_mode)
+    if not isinstance(figures, (list, tuple)) or len(figures) < 4:
+        raise ValueError("HK figure bundle incomplete")
+    return list(figures)
+
+
+def _safe_hk_bundle(market_mode, snapshot_revision):
     try:
-        figures = build_fig5("5Y", market_mode=market_mode)
-        if not isinstance(figures, (list, tuple)) or len(figures) < 4:
-            raise ValueError("HK figure bundle incomplete")
-        return list(figures)
+        return _cached_hk_bundle(market_mode, snapshot_revision, CHART_BUILD)
     except Exception:
         return [_macro_error_figure(f"Chart {number}") for number in range(5, 9)]
 
@@ -2269,21 +2340,25 @@ def _build_macro_figures_parallel():
     hk8_mode = st.session_state.get("hk_8_range_market_mode", "Raw")
     metals_mode = st.session_state.get("precious_metals_mode", "Rebased 100")
     crypto_mode = st.session_state.get("crypto_market_mode", "Rebased 100")
+    snapshot_revision = _macro_snapshot_revision()
+
+    def cached_chart(number, mode=""):
+        return _safe_macro_build(f"Chart {number}", lambda: _cached_macro_figure(number, mode, snapshot_revision, CHART_BUILD))
 
     jobs = {
-        1: lambda: _safe_macro_build("Chart 1", lambda: build_fig1("5Y")),
-        2: lambda: _safe_macro_build("Chart 2", lambda: build_fig2("5Y")),
-        3: lambda: _safe_macro_build("Chart 3", lambda: build_fig3("5Y")),
-        4: lambda: _safe_macro_build("Chart 4", lambda: build_fig4("5Y")),
-        "hk5": lambda: _safe_hk_bundle(hk5_mode),
-        9: lambda: _safe_macro_build("Chart 9", lambda: build_fig9("5Y")),
-        10: lambda: _safe_macro_build("Chart 10", lambda: build_fig10("5Y", metals_mode)),
-        11: lambda: _safe_macro_build("Chart 11", lambda: build_fig11("5Y", crypto_mode)),
-        12: lambda: _safe_macro_build("Chart 12", lambda: build_fig12("5Y")),
-        13: lambda: _safe_macro_build("Chart 13", lambda: build_asia_rates_figure("5Y")),
+        1: lambda: cached_chart(1),
+        2: lambda: cached_chart(2),
+        3: lambda: cached_chart(3),
+        4: lambda: cached_chart(4),
+        "hk5": lambda: _safe_hk_bundle(hk5_mode, snapshot_revision),
+        9: lambda: cached_chart(9),
+        10: lambda: cached_chart(10, metals_mode),
+        11: lambda: cached_chart(11, crypto_mode),
+        12: lambda: cached_chart(12),
+        13: lambda: cached_chart(13),
     }
     if hk8_mode != hk5_mode:
-        jobs["hk8"] = lambda: _safe_hk_bundle(hk8_mode)
+        jobs["hk8"] = lambda: _safe_hk_bundle(hk8_mode, snapshot_revision)
 
     # Six workers keeps cold-start I/O parallel without hammering public data
     # endpoints with one thread per chart.
