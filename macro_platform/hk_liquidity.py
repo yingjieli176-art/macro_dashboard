@@ -456,7 +456,7 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
 
     if data.empty:
         fig.add_annotation(
-            text="HKMA snapshot unavailable · data pipeline needs refresh",
+            text="香港流动性数据暂不可用",
             x=0.5,
             y=0.5,
             xref="paper",
@@ -806,7 +806,7 @@ def build_hk_liquidity_figures(
     if data.empty:
         fig = go.Figure()
         fig.add_annotation(
-            text="HKMA snapshot unavailable · data pipeline needs refresh",
+            text="香港流动性数据暂不可用",
             x=0.5, y=0.5, xref="paper", yref="paper", showarrow=False,
             font=dict(size=14),
         )
@@ -1003,7 +1003,7 @@ def build_hk_liquidity_figures(
     style(funding, f"7. HKD Funding · {funding_frequency_label}", right_axis=True)
     if date_range != "5Y" and not funding_is_daily:
         funding.add_annotation(
-            text="⚠ HKMA 日频 HIBOR 快照不可用 · 当前使用月频回退",
+            text="⚠ 日频 HIBOR 暂缺，显示月末数据",
             x=0.006, y=0.988, xref="paper", yref="paper", xanchor="left", yanchor="top",
             showarrow=False, font=dict(size=10, color="#991b1b"),
             bgcolor="rgba(254,242,242,0.94)", bordercolor="#fecaca", borderwidth=1, borderpad=3,
