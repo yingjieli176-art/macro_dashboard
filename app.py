@@ -54,29 +54,34 @@ def _write_news_snapshot():
     previous = _read_existing_news_snapshot()
     if not items:
         items = previous.get("items") if isinstance(previous.get("items"), list) else []
+        error = error or "暂无新数据"
+    checked_at = datetime.now(DASHBOARD_TZ).isoformat(timespec="seconds")
     payload = {
         "items": items,
         "error": error,
-        "updated_at": datetime.now(DASHBOARD_TZ).isoformat(timespec="seconds"),
+        "updated_at": previous.get("updated_at", "") if error else checked_at,
     }
     temp_path = NEWS_STATIC_PATH.with_suffix(".json.tmp")
     temp_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
     os.replace(temp_path, NEWS_STATIC_PATH)
 
 
+
 @st.cache_resource(show_spinner=False)
 def _start_news_background_updater():
     def worker():
         while True:
+            started = time.monotonic()
             try:
                 _write_news_snapshot()
             except Exception:
                 pass
-            time.sleep(NEWS_BACKGROUND_INTERVAL_SECONDS)
+            time.sleep(max(1.0, NEWS_BACKGROUND_INTERVAL_SECONDS - (time.monotonic() - started)))
 
     thread = threading.Thread(target=worker, name="eastmoney-news-updater", daemon=True)
     thread.start()
     return thread
+
 
 
 _start_news_background_updater()
@@ -670,7 +675,11 @@ def _get_yahoo_quote_safe(symbol):
                 post_change_pct = (post_price - previous) / previous * 100
             if pre_change_pct is None and pre_price is not None and previous not in (None, 0):
                 pre_change_pct = (pre_price - previous) / previous * 100
-            overnight_price, overnight_change_pct, overnight_market_time = _get_yahoo_overnight_safe(symbol, previous)
+            overnight_price, overnight_change_pct, overnight_market_time = None, None, None
+            if _symbol_market(symbol) == "US" and (
+                _us_overnight_window_now() or meta.get("marketState") in {"PREPRE", "POSTPOST"}
+            ):
+                overnight_price, overnight_change_pct, overnight_market_time = _get_yahoo_overnight_safe(symbol, previous)
             row = _empty_quote()
             row.update({
                 "price": price,
@@ -864,7 +873,7 @@ def _market_item_html(name, price, change_pct, meta=""):
     change_text = "--" if change_pct is None else f"{change_pct:+.2f}%"
     return f'<div class="market-item"><div class="market-name">{html.escape(name)}</div><div class="market-price">{html.escape(price_text)}</div><div class="market-change">{html.escape(change_text)}</div><div class="market-meta">{html.escape(meta)}</div></div>'
 
-@st.cache_data(ttl=15, show_spinner=False)
+@st.cache_data(ttl=15, max_entries=256, show_spinner=False)
 def _get_cached_quote(symbol, refresh_key=0):
     return _fetch_quote(symbol)
 
@@ -1066,17 +1075,18 @@ def _watchlist_refresh_status():
     result = st.session_state.get("_watchlist_refresh_result")
     if not result:
         return ""
-    text = (f"最近手动刷新 {result['completed_at']} HKT · "
+    text = (f"刷新 {result['completed_at']} HKT · "
             f"取得报价 {result['received']}/{result['total']}")
     if result["total"] == 0:
         return text + " · 暂无自选标的"
-    text += f" · 价格/涨跌变化 {result['changed']} 个"
+    if result["changed"]:
+        text += f" · {result['changed']} 个变化"
     if result["retained"]:
-        text += f" · {result['retained']} 个请求失败，保留上次有效报价"
+        text += f" · {result['retained']} 个请求失败，沿用旧价"
     if result["missing"]:
         text += f" · {result['missing']} 个报价暂缺"
     if result["received"] == result["total"] and result["changed"] == 0:
-        text += " · 报价未变化，行情源时间见卡片"
+        text += " · 报价未变化"
     return text
 
 
@@ -1117,7 +1127,7 @@ def _load_market_quotes(refresh_key):
 def render_market_groups():
     now = time.time(); snapshot = st.session_state.get("_market_quotes_snapshot"); snapshot_time = st.session_state.get("_market_quotes_snapshot_time", 0)
     if not isinstance(snapshot, dict) or now - snapshot_time >= 60:
-        refresh_key = _quote_refresh_key()
+        refresh_key = (_quote_refresh_key(), st.session_state.get("_market_refresh_key", 0))
         snapshot = _load_market_quotes(refresh_key)
         st.session_state["_market_quotes_snapshot"] = snapshot; st.session_state["_market_quotes_snapshot_time"] = now
     q = snapshot
@@ -1136,7 +1146,7 @@ def render_market_groups():
     st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
 
 st.markdown('<div id="market-overview" class="section-anchor"></div><div class="section-kicker">MARKET OVERVIEW</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">市场概览</div><div class="section-description">主要指数行情带 · 港/A 双源择新 + 分时兜底 · 模块内手动刷新，不触发整页定时重跑</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">市场概览</div><div class="section-description">美股、港股与 A 股主要指数</div>', unsafe_allow_html=True)
 
 @st.fragment(key="market_overview")
 def render_market_overview():
@@ -1144,6 +1154,7 @@ def render_market_overview():
     with refresh_col:
         if st.button("↻ 刷新行情", key="refresh_market_overview", use_container_width=True):
             st.session_state["_market_quotes_snapshot_time"] = 0
+            st.session_state["_market_refresh_key"] = st.session_state.get("_market_refresh_key", 0) + 1
     render_market_groups()
 
 render_market_overview()
@@ -1253,14 +1264,14 @@ def _cancel_search(key):
     st.session_state[f"{key}_open"] = False; st.session_state.pop(f"{key}_results", None)
 
 st.markdown('<div id="watchlist" class="section-anchor"></div><div class="section-kicker">WATCHLIST</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">自选观察</div><div class="section-description">核心标的快速监控 · 港/A 腾讯 + 东方财富双源择新，分时兜底 · Yahoo 仅备用 · 模块内手动刷新</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">自选观察</div>', unsafe_allow_html=True)
 
 @st.fragment(key="watchlists")
 def render_watchlists():
     pending = st.session_state.get("_watchlist_refresh_pending", False)
     info_col, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with info_col:
-        st.markdown('<div class="watch-toolbar">多源行情按时效切换 · 行情失败时保留上次有效报价</div>', unsafe_allow_html=True)
+        st.markdown('<div class="watch-toolbar">自选股票与指数 · 可添加或删除</div>', unsafe_allow_html=True)
     with refresh_col:
         refresh_slot = st.empty()
         if pending:
@@ -1924,40 +1935,43 @@ def build_fig12(date_range):
 
 
 CRYPTO_MARKET_DESCRIPTION = (
-    '<b>4 个参数分别看什么：</b><br>'
-    '1. BTC：默认 Rebased 100 把完整 5Y 样本第一个有效价格设为 100；图内时间按钮只改变显示窗口，不重新计算基准。该模式只表示相对涨跌，不是 BTC 的美元价格；使用左轴。Raw 模式显示真实美元价格。<br>'
-    '2. ETH：与 BTC 一样把起点设为 100，因此可直接比较谁涨得更多、跌得更少；Rebased 100 使用左轴，Raw 模式使用 R1。<br>'
-    '3. ETH/BTC：ETH 价格 ÷ BTC 价格；上升表示 ETH 相对 BTC 走强，下降表示 BTC 相对更强；Rebased 100 使用 R1，Raw 使用 R2。<br>'
-    '4. BTC 30D Realized Vol：根据 BTC 日收益率计算的过去 30 日年化实际波动率；只表示“波动有多大”，不表示上涨或下跌方向；Rebased 100 使用 R2，Raw 使用 R3。<br><br>'
-    '<b>最简单的读取顺序：</b>① 蓝线 vs 红线：BTC 和 ETH 谁跑赢；② 绿线：ETH 相对 BTC 是变强还是变弱；③ 紫色虚线：BTC 最近是否进入高波动状态。<br>'
-    '<b>轴编号说明：</b>R1 / R2 / R3 只是不同的右侧纵轴编号，不是额外指标。'
+    '<b>读取提示：</b>BTC / ETH 看相对表现；ETH/BTC 上升表示 ETH 更强；30D 实际波动率看波动大小。Rebased 100 使用完整 5Y 样本的固定起点，Raw 显示美元价格。R1–R3 为右轴。'
 )
 
+
 PARAM_DESCRIPTIONS = [
-    '<b>参数概念：</b><br>1. IORB（Interest on Reserve Balances）：美联储向存款机构准备金余额支付的利率，是美国准备金利率体系的重要基准。<br>2. ON RRP（Overnight Reverse Repurchase Agreement）：美联储隔夜逆回购工具利率，金融机构可通过该工具进行隔夜资金配置。<br>3. EFFR（Effective Federal Funds Rate）：美国联邦基金市场实际成交形成的有效隔夜利率，反映银行间短期无担保资金价格。<br>4. SOFR（Secured Overnight Financing Rate）：以美国国债为抵押的隔夜融资利率，是美元有担保短期融资的重要基准。',
-    '<b>参数概念：</b><br>1. 10Y Nominal：10 年期美国国债名义收益率，包含实际利率与通胀预期等因素。<br>2. 10Y Real：10 年期美国国债实际收益率，通常由通胀保值国债（TIPS）市场反映。<br>3. 10Y Breakeven：10 年期盈亏平衡通胀率，是名义国债收益率与实际收益率之间的差值，用于观察市场隐含的长期通胀预期。',
-    '<b>参数概念：</b><br>1. 3M：3 个月期美国国债收益率，代表较短期限的美元无风险利率。<br>2. 2Y：2 年期美国国债收益率，通常对美联储政策路径及短中期利率预期较敏感。<br>3. 10Y：10 年期美国国债收益率，是全球金融市场重要的长期无风险利率参考。<br>4. 10Y−2Y：10 年期减 2 年期国债收益率利差，图中直接以百分比（%）显示。<br>5. 10Y−3M：10 年期减 3 个月期国债收益率利差，图中直接以百分比（%）显示。',
-    '<b>参数概念：</b><br>1. Net Liquidity Proxy：WALCL（美联储总资产）− TGA − ON RRP 的常用资产负债表流动性代理，左轴单位 USD trillion；不是美联储官方指标。WALCL 为周频，计算时只在代理内部沿用至下一次公布。<br>2. Reserve Balances：存款机构存放在美联储的准备金余额；WRESBAL 为周频公布，使用右轴 R1，单位 USD trillion。图中的原始线只保留实际周频观测。<br>3. TGA（Treasury General Account）：优先使用美国财政部 Daily Treasury Statement 的日频 Operating Cash Balance；财政资金进出会直接影响银行体系准备金。FiscalData 不可用时自动回退到 FRED WTREGEN 周频数据。<br>4. ON RRP Balance：美联储隔夜逆回购工具余额，使用右轴 R2，单位 USD billion；单独设轴避免当前低余额被压在零线附近。',
-    '<b>参数概念：</b><br>1. HKD M2 YoY：港元 M2 同比增速，M2 覆盖公众持有的现金、活期/储蓄/定期存款及相应货币工具，用于观察广义港元货币的中期扩张趋势。<br>2. HKD M3 YoY：港元 M3 同比增速，M3 在 M2 基础上进一步纳入限制牌照银行及接受存款公司的相关存款与可转让存款证，因此口径更广，但通常与 M2 高度同步。<br>3. Monetary Base YoY：香港货币基础总量同比变化，用于观察基础货币层面的中期扩张与收缩。<br>4. Aggregate Balance：银行体系总结余，单位 HK$ billion；总结余下降通常代表银行体系可用港元流动性趋紧。<br>5. O/N HIBOR：隔夜港元银行同业拆息，反映最短端港元资金价格。<br>6. 3M HIBOR：3 个月港元银行同业拆息，用来观察更持续的港元融资成本。<br>7. HKMA Base Rate：香港金管局基本利率，是港元利率体系的重要政策参考。<br>8. O/N−3M Spread（R1）：隔夜 HIBOR 减 3M HIBOR，右轴单位 %；显著转正通常代表短端资金压力上升。<br>9. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>10. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>11. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br><br><b>读取提示：</b>M2/M3 为月度统计，公布存在时滞；图 5 使用 YoY 观察中期货币趋势并降低单月噪声。流动性评分内部仍使用最近 3 个月 M2/M3 MoM 均值，以保留对边际拐点的敏感度。',
+    '<b>读取提示：</b>IORB / ON RRP 是美联储工具利率；EFFR / SOFR 分别反映无担保与国债抵押的隔夜资金成本。',
+    '<b>读取提示：</b>名义收益率≈实际收益率＋盈亏平衡通胀率；后者反映市场隐含的长期通胀预期。',
+    '<b>读取提示：</b>10Y−2Y / 10Y−3M 上升表示曲线变陡，负值表示倒挂；利差单位为百分点。',
+    '<b>读取提示：</b>净流动性代理＝美联储资产−TGA−ON RRP。左轴与 R1 为万亿美元，R2 为十亿美元；准备金为周频，TGA 不可用时回退到周频。',
+    '<b>读取提示：</b>M2 / M3 同比看货币趋势，总结余与 HIBOR 看资金松紧；港元接近 7.85 时偏弱。月度数据有公布时滞。',
 ]
+
 
 def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
 
 HK_PARAMETER_DESCRIPTIONS = [
-    '<b>参数概念：</b><br>1. M2 YoY：港元 M2 同比增速，作为主趋势线，用来观察广义港元货币的中期扩张或收缩；相比 MoM 更平滑。<br>2. M2 MoM：港元 M2 月环比增速，作为边际动量线，用来观察最近一个月货币扩张/收缩是否加速；波动会明显高于 YoY。<br>3. Monetary Base YoY：香港货币基础总量同比变化，用于观察基础货币的中期扩张与收缩。<br>4. Tencent Price（R1）：腾讯控股 0700.HK 股价，Raw 模式使用 R1 港元价格轴。<br>5. HKEX Price（R1）：港交所 0388.HK 市场价格，Raw 模式与腾讯共用 R1 港元价格轴。<br>6. HSTECH Index（R2）：恒生科技指数 HSTECH 市场点位，Raw 模式使用 R2 指数点位轴。<br>7. HSI Index（R2）：恒生指数市场点位，Raw 模式与 HSTECH 共用 R2 指数点位轴。<br><br><b>读取提示：</b>阅读顺序与图例一致：先看 M2 YoY、M2 MoM、Monetary Base YoY，再看 Tencent、HKEX、HSTECH、HSI。默认只保留 M2 的同比与环比：YoY 看趋势，MoM 看边际拐点。M3 YoY 仍保留在底层数据中，但因与 M2 YoY 高度同步，不再默认绘制。<br><br><b>市场显示：</b>Raw 模式把 Tencent / HKEX 放在 R1、HSTECH / HSI 放在 R2；Rebased 100 模式按同一图例顺序把四个市场资产归一化，用于比较涨跌幅而不是绝对点位。',
-    '<b>参数概念：</b><br>1. Closing Aggregate Balance：银行体系期末总结余，单位 HK$ billion；5Y 视图使用 HKMA 月度期末历史，数值下降通常代表可用港元流动性收紧。<br>2. Outstanding EFBN（R1）：外汇基金票据及债券未偿还总额，右轴单位 HK$ billion，是香港货币基础的重要结构项。<br>3. EFBN Held by Licensed Banks（R1）：由持牌银行持有的 EFBN，右轴单位 HK$ billion，用于观察银行体系持有的高流动性港元资产规模。<br><br><b>读取提示：</b>5Y 历史只展示 HKMA 实际公布的月度期末字段，不再用 Closing Aggregate Balance 复制生成 Opening 或 Forecast。若未来日频快照可用，短周期视图仍可显示真实 Opening / Closing / Forecast T+1。',
-    '<b>参数概念：</b><br>1. O/N HIBOR：隔夜港元银行同业拆息，5Y 月度历史来自 C&SD 月刊（底层来源 HKAB / HKMA），反映最短端港元资金价格。<br>2. 3M HIBOR：3 个月港元银行同业拆息，用来观察更持续的港元融资成本。<br>3. HKMA Base Rate：香港金管局贴现窗基本利率；5Y 历史直接来自 HKMA 月末官方序列。<br>4. O/N−3M Spread（R）：隔夜 HIBOR 减 3M HIBOR，右轴单位 %；显著转正通常代表短端资金压力上升。',
-    '<b>参数概念：</b><br>1. USD/HKD：每 1 美元对应的港元价格；向 7.85 上升表示港元转弱，向 7.75 下降表示港元转强。<br>2. Strong-side CU 7.75：联系汇率制度下强方兑换保证。<br>3. Linked Rate Center 7.80：7.75–7.85 兑换保证区间的中点参考线，用于快速判断港元当前处在偏强侧还是偏弱侧；不是额外的兑换保证触发水平。<br>4. Weak-side CU 7.85：联系汇率制度下弱方兑换保证。<br>5. Tencent Price（R1）：腾讯控股 0700.HK 股价，Raw 模式对应 R1 港元价格轴。<br>6. HKEX Price（R1）：港交所 0388.HK 市场价格，Raw 模式与腾讯共用 R1 港元价格轴。<br>7. HSTECH Index（R2）：恒生科技指数 HSTECH 市场点位，Raw 模式对应 R2 指数点位轴。<br>8. HSI Index（R2）：恒生指数点位，Raw 模式对应 R2 指数点位轴。<br><br><b>市场显示：</b>Raw 模式保留真实价格/点位；Rebased 100 模式把 Tencent / HKEX / HSTECH / HSI 在完整 5Y 样本首个有效值归一到 100；图内时间按钮只改变显示窗口，用来比较谁更强、谁更弱。<br><br><b>读取提示：</b>阅读顺序与图例一致：先看 USD/HKD 与 7.75 / 7.80 / 7.85 三条制度参考线，再看 Tencent、HKEX、HSTECH、HSI 的市场反应。USD/HKD 左轴已反向：7.75 强方兑换保证显示在上方、7.85 弱方兑换保证显示在下方，因此视觉方向直接对应“港元偏强/流动性偏强 → 港元偏弱/流动性偏弱”。灰色区域表示 7.75–7.85 联系汇率区间；其中 7.84–7.85 的淡红区域为 Weak-side Pressure Zone，用于提示接近弱方兑换保证的压力阶段；USD/HKD 优先使用仓库持久化的 Yahoo HKD=X 日频 5Y 快照，HKMA 月度汇率作为回退。',
+    '<b>读取提示：</b>M2 同比看趋势、环比看边际变化；货币基础同比看基础货币变化。Raw 显示价格与点位，Rebased 100 用固定 5Y 起点比较相对涨跌。月度数据有公布时滞。',
+    '<b>读取提示：</b>总结余下降通常表示港元流动性收紧；EFBN 看票据及债券总量与银行持仓。单位均为十亿港元，历史为月末值。',
+    '<b>读取提示：</b>O/N / 3M HIBOR 分别看短端与持续融资成本；O/N−3M 转正提示短端资金压力。历史为月末值，单位为 %。',
+    '<b>读取提示：</b>USD/HKD 左轴反向：上方 7.75 为港元偏强，下方 7.85 为偏弱；红区 7.84–7.85 提示弱方压力。Rebased 100 用固定 5Y 起点比较市场资产。',
 ]
+
 
 def show_hk_parameter_description(index):
     st.markdown(f'<div class="mini-description">{HK_PARAMETER_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
 
 
-US_EQUITY_RISK_DESCRIPTION = '<b>参数概念：</b><br>1. VIX：基于 S&P 500 指数期权的约 30 天隐含波动率，反映指数层面的近端风险定价。<br>2. VIXEQ：Cboe S&P 500 Constituent Volatility Index，衡量一篮子标普 500 成分股按市值加权的约 30 天隐含波动率；它使用单股期权，因此与 VIX 并非同一个指标。<br>3. S&P 500（R1）：标普 500 指数点位，用来观察风险价格与现货大盘的同步/背离。<br>4. VIX3M−VIX（R2）：3 个月 VIX 减约 30 天 VIX。通常为正代表期限结构较正常；快速收窄或转负表示近端隐含波动率高于远端，常见于短期压力上升阶段。<br><br><b>读取提示：</b>VIX 与 VIXEQ 同时上升代表指数与成分股隐含波动率共同抬升；若 VIXEQ 相对 VIX 更强，通常意味着单股波动/分化风险更突出。VIXEQ 于 2024-11-04 正式开始实时发布；Cboe 官方历史文件提供回溯序列，图表使用官方历史值，不自行外推。'
+US_EQUITY_RISK_DESCRIPTION = (
+    '<b>读取提示：</b>VIX 看指数隐含波动，VIXEQ 看成分股隐含波动；VIX3M−VIX 收窄或转负提示近端压力。VIXEQ 早期数据为官方回溯序列。'
+)
 
 
-PRECIOUS_METALS_DESCRIPTION = '<b>参数概念：</b><br>1. Gold：COMEX 黄金连续近月期货 GC=F 日收盘价，单位 USD/oz。<br>2. Silver：COMEX 白银连续近月期货 SI=F 日收盘价，单位 USD/oz。<br>3. Gold/Silver Ratio：金价 ÷ 银价；上升表示黄金相对白银更强，下降表示白银相对更强。<br>4. Gold Volatility / GVZ：Cboe Gold ETF Volatility Index，反映黄金相关期权的隐含波动率。<br><br><b>读取提示：</b>默认 Rebased 100 以完整 5Y 样本首个有效值为 100，图内时间按钮只改变显示窗口；Raw 模式保留金银绝对价格，并为 Silver、金银比和 GVZ 使用独立右轴，避免不同量纲互相压缩。'
+
+PRECIOUS_METALS_DESCRIPTION = (
+    '<b>读取提示：</b>金银比上升表示黄金更强；GVZ 看黄金隐含波动。Rebased 100 使用固定 5Y 起点，Raw 显示 USD/oz；R1–R3 为右轴。'
+)
+
 
 compact_mode = False
 
@@ -2109,7 +2123,7 @@ def _render_hk_macro_chart(hk_index, prebuilt_fig=None):
             key=f"{range_key}_market_mode",
             label_visibility="collapsed",
         )
-    fig = prebuilt_fig if prebuilt_fig is not None else build_fig5("5Y", market_mode=market_mode)[hk_index]
+    fig = prebuilt_fig if prebuilt_fig is not None else _safe_hk_bundle(market_mode, _macro_snapshot_revision())[hk_index]
     fig = _prepare_chart_for_client_ranges(fig, range_key, market_mode)
     st.plotly_chart(
         fig,
@@ -2122,6 +2136,7 @@ def _render_hk_macro_chart(hk_index, prebuilt_fig=None):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
+@st.fragment(key="hk_money_chart")
 def render_macro_chart_5(prebuilt_fig=None):
     _render_hk_macro_chart(0, prebuilt_fig=prebuilt_fig)
 
@@ -2134,6 +2149,7 @@ def render_macro_chart_7(prebuilt_fig=None):
     _render_hk_macro_chart(2, prebuilt_fig=prebuilt_fig)
 
 
+@st.fragment(key="hk_fx_chart")
 def render_macro_chart_8(prebuilt_fig=None):
     _render_hk_macro_chart(3, prebuilt_fig=prebuilt_fig)
 
@@ -2157,6 +2173,7 @@ def render_macro_chart_9(prebuilt_fig=None):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
+@st.fragment(key="precious_metals_chart")
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">10. Precious Metals</div>'
@@ -2167,7 +2184,9 @@ def render_macro_chart_10(prebuilt_fig=None):
         "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
         key="precious_metals_mode", label_visibility="collapsed",
     )
-    base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig10("5Y", market_mode)
+    base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
+        "Chart 10", lambda: _cached_macro_figure(10, market_mode, _macro_snapshot_revision(), CHART_BUILD)
+    )
     fig = _prepare_chart_for_client_ranges(base_fig, "precious_metals", market_mode)
     st.plotly_chart(fig, key="precious_metals_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
@@ -2180,6 +2199,7 @@ def render_macro_chart_10(prebuilt_fig=None):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
+@st.fragment(key="crypto_chart")
 def render_macro_chart_11(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">11. Crypto Market</div>'
@@ -2190,7 +2210,9 @@ def render_macro_chart_11(prebuilt_fig=None):
         "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
         key="crypto_market_mode", label_visibility="collapsed",
     )
-    base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig11("5Y", market_mode)
+    base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
+        "Chart 11", lambda: _cached_macro_figure(11, market_mode, _macro_snapshot_revision(), CHART_BUILD)
+    )
     fig = _prepare_chart_for_client_ranges(base_fig, "crypto_market", market_mode)
     st.plotly_chart(fig, key="crypto_market_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
@@ -2211,10 +2233,8 @@ def render_macro_chart_12(prebuilt_fig=None):
     fig = _prepare_chart_for_client_ranges(base_fig, "copper_flow")
     st.plotly_chart(fig, key="copper_flow_plot", use_container_width=True, config=PLOTLY_CONFIG)
     st.markdown(
-        '<div class="mini-description"><b>读取方法：</b>阅读顺序与图例一致：① COMEX 库存；② LME 库存；③ LME 3M 铜价（R1）；④ COMEX HG 换算价（R1）；⑤ COMEX−LME 3M 价差（R2）。'
-        'COMEX 与 LME 库存共用左轴（千吨，kt）；COMEX HG 按 1 公吨 = 2,204.6226 磅换算为 USD/t 后与 LME 3M 共用 R1；R2 显示两者价差。'
-        '若 COMEX 库存上升、LME 库存下降且价差同步走阔，通常可视作库存/交割需求向美国端迁移的信号；反向组合则相反。'
-        '该价差使用 HG 近月连续代理与 LME 3M，期限并非严格匹配，因此用于方向与压力监测，不是可直接执行的无风险套利报价。</div>',
+        '<div class="mini-description"><b>读取提示：</b>库存单位为千吨，铜价统一为 USD/t；价差＝COMEX−LME 3M。'
+        '库存此增彼减且价差走阔可提示交割需求迁移；两者期限不同，价差仅用于压力监测。</div>',
         unsafe_allow_html=True,
     )
     add_sources([
@@ -2247,10 +2267,7 @@ def render_macro_chart_13(prebuilt_fig=None):
     )
     st.markdown(
         '<div class="mini-description"><b>读取方法：</b>'
-        '中国、日本 2 年期、10 年期与各自 10Y−2Y 利差全部统一使用百分比（%）显示。'
-        '利差上升代表曲线陡峭化，下降代表曲线趋平；转负代表 2Y 高于 10Y。'
-        '中国数据使用东方财富宏观国债收益率历史序列；若单日 2Y 字段缺失，但同日 10Y 与源自带 10Y−2Y 均有效，则按 2Y = 10Y − (10Y−2Y) 同日反推，不做插值或平滑；'
-        '日本数据使用日本财务省公布的 JGB constant-maturity 收益率。</div>',
+        '10Y−2Y 上升表示曲线变陡，下降表示趋平，负值表示倒挂。</div>',
         unsafe_allow_html=True,
     )
     add_sources([
@@ -2392,7 +2409,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-with st.spinner("正在并行加载 13 张宏观图表…"):
+with st.spinner("正在加载图表…"):
     macro_figures = _build_macro_figures_parallel()
 
 render_macro_chart_1(macro_figures[1])
@@ -2401,19 +2418,19 @@ render_macro_chart_3(macro_figures[3])
 render_macro_chart_4(macro_figures[4])
 
 st.markdown('<div class="section-kicker">HONG KONG LIQUIDITY</div>', unsafe_allow_html=True)
-render_macro_chart_5(macro_figures[5])
+render_macro_chart_5()
 render_macro_chart_6(macro_figures[6])
 render_macro_chart_7(macro_figures[7])
-render_macro_chart_8(macro_figures[8])
+render_macro_chart_8()
 
 st.markdown('<div class="section-kicker">US EQUITY RISK</div>', unsafe_allow_html=True)
 render_macro_chart_9(macro_figures[9])
 
 st.markdown('<div class="section-kicker">PRECIOUS METALS</div>', unsafe_allow_html=True)
-render_macro_chart_10(macro_figures[10])
+render_macro_chart_10()
 
 st.markdown('<div class="section-kicker">CRYPTO MARKET</div>', unsafe_allow_html=True)
-render_macro_chart_11(macro_figures[11])
+render_macro_chart_11()
 
 st.markdown('<div class="section-kicker">INDUSTRIAL METALS · COPPER</div>', unsafe_allow_html=True)
 render_macro_chart_12(macro_figures[12])
@@ -2423,7 +2440,7 @@ render_macro_chart_13(macro_figures[13])
 
 st.markdown('<div id="news" class="section-anchor"></div><div class="section-kicker">NEWS</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-description">东方财富「红字焦点快讯」 · 后台抓取，浏览器局部更新 · 不触发 Streamlit 定时 rerun</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="source-text"><a href="{EASTMONEY_FOCUS_URL}" target="_blank" rel="noopener noreferrer">东方财富 · 红字精选</a></div>', unsafe_allow_html=True)
 
 
 def render_news_panel():
@@ -2454,8 +2471,8 @@ def render_news_panel():
 </head>
 <body>
 <div class="toolbar">
-  <div id="status" class="status">正在连接 7×24 新闻后台…</div>
-  <button id="refresh">🔄 立即刷新</button>
+  <div id="status" class="status">正在加载快讯…</div>
+  <button id="refresh">🔄 刷新快讯</button>
 </div>
 <div id="news" class="news-box"><div class="empty">正在取得新闻…</div></div>
 <script>
@@ -2465,6 +2482,8 @@ def render_news_panel():
   var statusEl = document.getElementById("status");
   var button = document.getElementById("refresh");
   var lastVersion = "";
+  var inFlight = false;
+  var pollTimer;
 
   function makeNode(tag, cls, text) {
     var el = document.createElement(tag);
@@ -2478,13 +2497,12 @@ def render_news_panel():
     var updated = payload.updated_at ? String(payload.updated_at).replace("T", " ") : "";
     statusEl.className = payload.error ? "status error" : "status";
     statusEl.textContent =
-      "当前显示 " + items.length +
-      " 条 · 来源：东方财富红字焦点快讯 · 后台60秒更新" +
-      (updated ? " · " + updated : "") +
-      (payload.error ? " · 最近一次抓取失败，保留上一版" : "");
+      items.length + " 条" +
+      (updated ? " · 更新于 " + updated : "") +
+      (payload.error ? " · 更新失败，显示缓存" : "");
 
     if (!items.length) {
-      newsEl.replaceChildren(makeNode("div", "empty", payload.error || "暂时没有新闻数据。"));
+      newsEl.replaceChildren(makeNode("div", "empty", payload.error ? "快讯暂不可用，请稍后刷新。" : "暂无快讯。"));
       return;
     }
 
@@ -2519,33 +2537,45 @@ def render_news_panel():
 
   async function refresh(force) {
     force = Boolean(force);
+    if (inFlight) return;
+    inFlight = true;
+    clearTimeout(pollTimer);
+    var controller = new AbortController();
+    var timeout = setTimeout(function () { controller.abort(); }, 8000);
     if (force) {
       button.disabled = true;
       button.textContent = "刷新中…";
     }
     try {
-      var response = await fetch(endpoint + "?t=" + Date.now(), {cache:"no-store"});
+      var response = await fetch(endpoint + "?t=" + Date.now(), {cache:"no-store", signal:controller.signal});
       if (!response.ok) throw new Error("HTTP " + response.status);
       var payload = await response.json();
-      var version = String(payload.updated_at || "") + ":" + String((payload.items || []).length);
+      var version = JSON.stringify(payload);
       if (force || version !== lastVersion) {
         render(payload);
         lastVersion = version;
       }
     } catch (err) {
+      lastVersion = "";
       statusEl.className = "status error";
-      statusEl.textContent = "新闻局部更新失败：" + (err && err.message ? err.message : String(err)) + "；主页面不会被重跑。";
+      statusEl.textContent = "快讯刷新失败，请稍后重试。";
     } finally {
+      clearTimeout(timeout);
+      inFlight = false;
       if (force) {
         button.disabled = false;
-        button.textContent = "🔄 立即刷新";
+        button.textContent = "🔄 刷新快讯";
       }
+      if (!document.hidden) pollTimer = setTimeout(function () { refresh(false); }, 5000);
     }
   }
 
   button.addEventListener("click", function () { refresh(true); });
+  document.addEventListener("visibilitychange", function () {
+    clearTimeout(pollTimer);
+    if (!document.hidden) refresh(false);
+  });
   refresh(true);
-  setInterval(function () { refresh(false); }, 5000);
 })();
 </script>
 </body>
@@ -2554,5 +2584,5 @@ def render_news_panel():
     st.iframe(news_component, width="stretch", height=710)
 
 
+
 render_news_panel()
-st.markdown(f'<div class="source-text">Source: <a href="{EASTMONEY_FOCUS_URL}" target="_blank" rel="noopener noreferrer">Eastmoney 7×24 Focus News</a></div>', unsafe_allow_html=True)

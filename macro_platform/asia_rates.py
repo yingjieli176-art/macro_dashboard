@@ -235,8 +235,8 @@ def _add_trace(
     plot_frame = (
         frame.loc[:, ["observation_date", column]]
         .dropna(subset=["observation_date"])
-        .sort_values("observation_date")
-        .drop_duplicates("observation_date", keep="last")
+        .groupby("observation_date", as_index=False, sort=True)
+        .last()
     )
     if plot_frame[column].notna().sum() == 0:
         return
