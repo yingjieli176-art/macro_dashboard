@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T18:49:31.820714+00:00",
+  "updated_at": "2026-10-06T16:15:38.409530+00:00",
   "retention": "rolling 5 years plus one month buffer",
   "policy": "merge fresh observations into last-known-good history; never erase a usable series on fetch failure",
   "coverage_start": "2021-09-06",
-  "coverage_end": "2026-10-05",
+  "coverage_end": "2026-10-06",
   "series": {
     "0700.HK": {
       "name": "Tencent Holdings",
@@ -13,7 +13,7 @@
       "record_count": 1243,
       "coverage_start": "2021-09-10",
       "coverage_end": "2026-10-05",
-      "last_successful_fetch": "2026-10-05T18:49:31.820714+00:00",
+      "last_successful_fetch": "2026-10-06T16:15:38.409530+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -119,11 +119,11 @@
         },
         {
           "observation_date": "2021-10-21",
-          "close": 447.321381
+          "close": 447.32135
         },
         {
           "observation_date": "2021-10-22",
-          "close": 450.860962
+          "close": 450.860992
         },
         {
           "observation_date": "2021-10-25",
@@ -175,7 +175,7 @@
         },
         {
           "observation_date": "2021-11-10",
-          "close": 427.941833
+          "close": 427.941864
         },
         {
           "observation_date": "2021-11-11",
@@ -231,15 +231,15 @@
         },
         {
           "observation_date": "2021-11-30",
-          "close": 406.527039
+          "close": 406.527069
         },
         {
           "observation_date": "2021-12-01",
-          "close": 414.845154
+          "close": 414.845215
         },
         {
           "observation_date": "2021-12-02",
-          "close": 419.092773
+          "close": 419.092743
         },
         {
           "observation_date": "2021-12-03",
@@ -247,7 +247,7 @@
         },
         {
           "observation_date": "2021-12-06",
-          "close": 396.262115
+          "close": 396.262085
         },
         {
           "observation_date": "2021-12-07",
@@ -279,7 +279,7 @@
         },
         {
           "observation_date": "2021-12-16",
-          "close": 400.509705
+          "close": 400.509674
         },
         {
           "observation_date": "2021-12-17",
@@ -287,7 +287,7 @@
         },
         {
           "observation_date": "2021-12-20",
-          "close": 380.510773
+          "close": 380.510742
         },
         {
           "observation_date": "2021-12-21",
@@ -303,7 +303,7 @@
         },
         {
           "observation_date": "2021-12-24",
-          "close": 407.235016
+          "close": 407.234985
         },
         {
           "observation_date": "2021-12-28",
@@ -327,15 +327,15 @@
         },
         {
           "observation_date": "2022-01-04",
-          "close": 398.208923
+          "close": 398.208862
         },
         {
           "observation_date": "2022-01-05",
-          "close": 381.041687
+          "close": 381.041656
         },
         {
           "observation_date": "2022-01-06",
-          "close": 386.705109
+          "close": 386.705139
         },
         {
           "observation_date": "2022-01-07",
@@ -343,7 +343,7 @@
         },
         {
           "observation_date": "2022-01-10",
-          "close": 401.040649
+          "close": 401.040619
         },
         {
           "observation_date": "2022-01-11",
@@ -359,7 +359,7 @@
         },
         {
           "observation_date": "2022-01-14",
-          "close": 418.915741
+          "close": 418.915771
         },
         {
           "observation_date": "2022-01-17",
@@ -371,7 +371,7 @@
         },
         {
           "observation_date": "2022-01-19",
-          "close": 403.341339
+          "close": 403.34137
         },
         {
           "observation_date": "2022-01-20",
@@ -387,7 +387,7 @@
         },
         {
           "observation_date": "2022-01-25",
-          "close": 425.587036
+          "close": 425.587006
         },
         {
           "observation_date": "2022-01-26",
@@ -419,23 +419,23 @@
         },
         {
           "observation_date": "2022-02-09",
-          "close": 440.174408
+          "close": 440.174438
         },
         {
           "observation_date": "2022-02-10",
-          "close": 441.633087
+          "close": 441.633118
         },
         {
           "observation_date": "2022-02-11",
-          "close": 434.886444
+          "close": 434.886475
         },
         {
           "observation_date": "2022-02-14",
-          "close": 430.327881
+          "close": 430.327911
         },
         {
           "observation_date": "2022-02-15",
-          "close": 428.504547
+          "close": 428.504517
         },
         {
           "observation_date": "2022-02-16",
@@ -455,7 +455,7 @@
         },
         {
           "observation_date": "2022-02-22",
-          "close": 405.529358
+          "close": 405.529388
         },
         {
           "observation_date": "2022-02-23",
@@ -479,7 +479,7 @@
         },
         {
           "observation_date": "2022-03-02",
-          "close": 386.018677
+          "close": 386.018738
         },
         {
           "observation_date": "2022-03-03",
@@ -507,7 +507,7 @@
         },
         {
           "observation_date": "2022-03-11",
-          "close": 335.327545
+          "close": 335.327576
         },
         {
           "observation_date": "2022-03-14",
@@ -527,7 +527,7 @@
         },
         {
           "observation_date": "2022-03-18",
-          "close": 347.362183
+          "close": 347.362152
         },
         {
           "observation_date": "2022-03-21",
@@ -535,7 +535,7 @@
         },
         {
           "observation_date": "2022-03-22",
-          "close": 353.744141
+          "close": 353.74411
         },
         {
           "observation_date": "2022-03-23",
@@ -551,7 +551,7 @@
         },
         {
           "observation_date": "2022-03-28",
-          "close": 334.051178
+          "close": 334.051147
         },
         {
           "observation_date": "2022-03-29",
@@ -579,11 +579,11 @@
         },
         {
           "observation_date": "2022-04-07",
-          "close": 341.344879
+          "close": 341.344849
         },
         {
           "observation_date": "2022-04-08",
-          "close": 336.968658
+          "close": 336.968628
         },
         {
           "observation_date": "2022-04-11",
@@ -599,15 +599,15 @@
         },
         {
           "observation_date": "2022-04-14",
-          "close": 341.344879
+          "close": 341.344849
         },
         {
           "observation_date": "2022-04-19",
-          "close": 331.863068
+          "close": 331.863037
         },
         {
           "observation_date": "2022-04-20",
-          "close": 330.039642
+          "close": 330.039612
         },
         {
           "observation_date": "2022-04-21",
@@ -619,7 +619,7 @@
         },
         {
           "observation_date": "2022-04-25",
-          "close": 298.494415
+          "close": 298.494385
         },
         {
           "observation_date": "2022-04-26",
@@ -627,11 +627,11 @@
         },
         {
           "observation_date": "2022-04-27",
-          "close": 305.241089
+          "close": 305.241058
         },
         {
           "observation_date": "2022-04-28",
-          "close": 309.799652
+          "close": 309.799591
         },
         {
           "observation_date": "2022-04-29",
@@ -655,7 +655,7 @@
         },
         {
           "observation_date": "2022-05-10",
-          "close": 311.07608
+          "close": 311.07605
         },
         {
           "observation_date": "2022-05-11",
@@ -663,7 +663,7 @@
         },
         {
           "observation_date": "2022-05-12",
-          "close": 313.811157
+          "close": 313.811188
         },
         {
           "observation_date": "2022-05-13",
@@ -683,7 +683,7 @@
         },
         {
           "observation_date": "2022-05-19",
-          "close": 311.623047
+          "close": 311.623016
         },
         {
           "observation_date": "2022-05-20",
@@ -691,11 +691,11 @@
         },
         {
           "observation_date": "2022-05-23",
-          "close": 317.747681
+          "close": 317.747711
         },
         {
           "observation_date": "2022-05-24",
-          "close": 309.684875
+          "close": 309.684845
         },
         {
           "observation_date": "2022-05-25",
@@ -703,11 +703,11 @@
         },
         {
           "observation_date": "2022-05-26",
-          "close": 306.203217
+          "close": 306.203186
         },
         {
           "observation_date": "2022-05-27",
-          "close": 313.166534
+          "close": 313.166504
         },
         {
           "observation_date": "2022-05-30",
@@ -719,7 +719,7 @@
         },
         {
           "observation_date": "2022-06-01",
-          "close": 330.208344
+          "close": 330.208374
         },
         {
           "observation_date": "2022-06-02",
@@ -727,7 +727,7 @@
         },
         {
           "observation_date": "2022-06-06",
-          "close": 336.805206
+          "close": 336.805267
         },
         {
           "observation_date": "2022-06-07",
@@ -739,7 +739,7 @@
         },
         {
           "observation_date": "2022-06-09",
-          "close": 361.726562
+          "close": 361.726593
         },
         {
           "observation_date": "2022-06-10",
@@ -751,7 +751,7 @@
         },
         {
           "observation_date": "2022-06-14",
-          "close": 344.501495
+          "close": 344.501556
         },
         {
           "observation_date": "2022-06-15",
@@ -759,7 +759,7 @@
         },
         {
           "observation_date": "2022-06-16",
-          "close": 336.805206
+          "close": 336.805267
         },
         {
           "observation_date": "2022-06-17",
@@ -767,7 +767,7 @@
         },
         {
           "observation_date": "2022-06-20",
-          "close": 339.737122
+          "close": 339.737152
         },
         {
           "observation_date": "2022-06-21",
@@ -779,11 +779,11 @@
         },
         {
           "observation_date": "2022-06-23",
-          "close": 343.585327
+          "close": 343.585266
         },
         {
           "observation_date": "2022-06-24",
-          "close": 352.014587
+          "close": 352.014557
         },
         {
           "observation_date": "2022-06-27",
@@ -795,7 +795,7 @@
         },
         {
           "observation_date": "2022-06-29",
-          "close": 334.423004
+          "close": 334.423035
         },
         {
           "observation_date": "2022-06-30",
@@ -811,11 +811,11 @@
         },
         {
           "observation_date": "2022-07-06",
-          "close": 318.480652
+          "close": 318.480682
         },
         {
           "observation_date": "2022-07-07",
-          "close": 322.145599
+          "close": 322.145569
         },
         {
           "observation_date": "2022-07-08",
@@ -847,7 +847,7 @@
         },
         {
           "observation_date": "2022-07-19",
-          "close": 305.287018
+          "close": 305.286987
         },
         {
           "observation_date": "2022-07-20",
@@ -855,11 +855,11 @@
         },
         {
           "observation_date": "2022-07-21",
-          "close": 306.019989
+          "close": 306.019958
         },
         {
           "observation_date": "2022-07-22",
-          "close": 304.187531
+          "close": 304.1875
         },
         {
           "observation_date": "2022-07-25",
@@ -871,7 +871,7 @@
         },
         {
           "observation_date": "2022-07-27",
-          "close": 293.376038
+          "close": 293.376007
         },
         {
           "observation_date": "2022-07-28",
@@ -907,7 +907,7 @@
         },
         {
           "observation_date": "2022-08-09",
-          "close": 273.035767
+          "close": 273.035736
         },
         {
           "observation_date": "2022-08-10",
@@ -919,7 +919,7 @@
         },
         {
           "observation_date": "2022-08-12",
-          "close": 278.71637
+          "close": 278.7164
         },
         {
           "observation_date": "2022-08-15",
@@ -927,7 +927,7 @@
         },
         {
           "observation_date": "2022-08-16",
-          "close": 277.616943
+          "close": 277.616913
         },
         {
           "observation_date": "2022-08-17",
@@ -939,7 +939,7 @@
         },
         {
           "observation_date": "2022-08-19",
-          "close": 288.611664
+          "close": 288.611633
         },
         {
           "observation_date": "2022-08-22",
@@ -959,7 +959,7 @@
         },
         {
           "observation_date": "2022-08-26",
-          "close": 297.040924
+          "close": 297.040955
         },
         {
           "observation_date": "2022-08-29",
@@ -1015,7 +1015,7 @@
         },
         {
           "observation_date": "2022-09-16",
-          "close": 268.637909
+          "close": 268.637878
         },
         {
           "observation_date": "2022-09-19",
@@ -1027,7 +1027,7 @@
         },
         {
           "observation_date": "2022-09-21",
-          "close": 262.041046
+          "close": 262.041077
         },
         {
           "observation_date": "2022-09-22",
@@ -1047,7 +1047,7 @@
         },
         {
           "observation_date": "2022-09-28",
-          "close": 251.04631
+          "close": 251.046326
         },
         {
           "observation_date": "2022-09-29",
@@ -1087,7 +1087,7 @@
         },
         {
           "observation_date": "2022-10-13",
-          "close": 225.57518
+          "close": 225.575195
         },
         {
           "observation_date": "2022-10-14",
@@ -1127,7 +1127,7 @@
         },
         {
           "observation_date": "2022-10-27",
-          "close": 195.339676
+          "close": 195.339691
         },
         {
           "observation_date": "2022-10-28",
@@ -1135,7 +1135,7 @@
         },
         {
           "observation_date": "2022-10-31",
-          "close": 188.376373
+          "close": 188.376358
         },
         {
           "observation_date": "2022-11-01",
@@ -1143,7 +1143,7 @@
         },
         {
           "observation_date": "2022-11-02",
-          "close": 211.282059
+          "close": 211.282043
         },
         {
           "observation_date": "2022-11-03",
@@ -1163,7 +1163,7 @@
         },
         {
           "observation_date": "2022-11-09",
-          "close": 216.962662
+          "close": 216.962646
         },
         {
           "observation_date": "2022-11-10",
@@ -1171,7 +1171,7 @@
         },
         {
           "observation_date": "2022-11-11",
-          "close": 236.753189
+          "close": 236.753159
         },
         {
           "observation_date": "2022-11-14",
@@ -1183,11 +1183,11 @@
         },
         {
           "observation_date": "2022-11-16",
-          "close": 269.737335
+          "close": 269.737366
         },
         {
           "observation_date": "2022-11-17",
-          "close": 267.538391
+          "close": 267.538422
         },
         {
           "observation_date": "2022-11-18",
@@ -1211,7 +1211,7 @@
         },
         {
           "observation_date": "2022-11-25",
-          "close": 250.130112
+          "close": 250.130096
         },
         {
           "observation_date": "2022-11-28",
@@ -1219,7 +1219,7 @@
         },
         {
           "observation_date": "2022-11-29",
-          "close": 261.857849
+          "close": 261.857788
         },
         {
           "observation_date": "2022-11-30",
@@ -1271,7 +1271,7 @@
         },
         {
           "observation_date": "2022-12-16",
-          "close": 290.260895
+          "close": 290.260864
         },
         {
           "observation_date": "2022-12-19",
@@ -1299,7 +1299,7 @@
         },
         {
           "observation_date": "2022-12-29",
-          "close": 307.119446
+          "close": 307.119476
         },
         {
           "observation_date": "2022-12-30",
@@ -1323,7 +1323,7 @@
         },
         {
           "observation_date": "2023-01-09",
-          "close": 349.21225
+          "close": 349.21228
         },
         {
           "observation_date": "2023-01-10",
@@ -1363,11 +1363,11 @@
         },
         {
           "observation_date": "2023-01-26",
-          "close": 392.429718
+          "close": 392.429657
         },
         {
           "observation_date": "2023-01-27",
-          "close": 400.340027
+          "close": 400.340057
         },
         {
           "observation_date": "2023-01-30",
@@ -1375,7 +1375,7 @@
         },
         {
           "observation_date": "2023-01-31",
-          "close": 368.6987
+          "close": 368.69873
         },
         {
           "observation_date": "2023-02-01",
@@ -1383,11 +1383,11 @@
         },
         {
           "observation_date": "2023-02-02",
-          "close": 369.470428
+          "close": 369.470459
         },
         {
           "observation_date": "2023-02-03",
-          "close": 371.39978
+          "close": 371.399811
         },
         {
           "observation_date": "2023-02-06",
@@ -1419,7 +1419,7 @@
         },
         {
           "observation_date": "2023-02-15",
-          "close": 363.682373
+          "close": 363.682404
         },
         {
           "observation_date": "2023-02-16",
@@ -1475,7 +1475,7 @@
         },
         {
           "observation_date": "2023-03-07",
-          "close": 344.388885
+          "close": 344.388916
         },
         {
           "observation_date": "2023-03-08",
@@ -1483,7 +1483,7 @@
         },
         {
           "observation_date": "2023-03-09",
-          "close": 328.182404
+          "close": 328.182373
         },
         {
           "observation_date": "2023-03-10",
@@ -1491,7 +1491,7 @@
         },
         {
           "observation_date": "2023-03-13",
-          "close": 332.619873
+          "close": 332.619843
         },
         {
           "observation_date": "2023-03-14",
@@ -1519,11 +1519,11 @@
         },
         {
           "observation_date": "2023-03-22",
-          "close": 334.935089
+          "close": 334.935059
         },
         {
           "observation_date": "2023-03-23",
-          "close": 362.331848
+          "close": 362.331879
         },
         {
           "observation_date": "2023-03-24",
@@ -1543,7 +1543,7 @@
         },
         {
           "observation_date": "2023-03-30",
-          "close": 371.39978
+          "close": 371.399811
         },
         {
           "observation_date": "2023-03-31",
@@ -1559,7 +1559,7 @@
         },
         {
           "observation_date": "2023-04-06",
-          "close": 371.785645
+          "close": 371.785675
         },
         {
           "observation_date": "2023-04-11",
@@ -1567,7 +1567,7 @@
         },
         {
           "observation_date": "2023-04-12",
-          "close": 344.581879
+          "close": 344.581848
         },
         {
           "observation_date": "2023-04-13",
@@ -1595,7 +1595,7 @@
         },
         {
           "observation_date": "2023-04-21",
-          "close": 336.864471
+          "close": 336.864502
         },
         {
           "observation_date": "2023-04-24",
@@ -1607,11 +1607,11 @@
         },
         {
           "observation_date": "2023-04-26",
-          "close": 335.89978
+          "close": 335.899811
         },
         {
           "observation_date": "2023-04-27",
-          "close": 332.812805
+          "close": 332.812836
         },
         {
           "observation_date": "2023-04-28",
@@ -1643,7 +1643,7 @@
         },
         {
           "observation_date": "2023-05-10",
-          "close": 317.956787
+          "close": 317.956818
         },
         {
           "observation_date": "2023-05-11",
@@ -1655,7 +1655,7 @@
         },
         {
           "observation_date": "2023-05-15",
-          "close": 328.954102
+          "close": 328.954071
         },
         {
           "observation_date": "2023-05-16",
@@ -1679,7 +1679,7 @@
         },
         {
           "observation_date": "2023-05-23",
-          "close": 326.04776
+          "close": 326.047729
         },
         {
           "observation_date": "2023-05-24",
@@ -1691,15 +1691,15 @@
         },
         {
           "observation_date": "2023-05-29",
-          "close": 304.285339
+          "close": 304.285309
         },
         {
           "observation_date": "2023-05-30",
-          "close": 307.199951
+          "close": 307.199921
         },
         {
           "observation_date": "2023-05-31",
-          "close": 301.759308
+          "close": 301.759338
         },
         {
           "observation_date": "2023-06-01",
@@ -1735,7 +1735,7 @@
         },
         {
           "observation_date": "2023-06-13",
-          "close": 334.98587
+          "close": 334.98584
         },
         {
           "observation_date": "2023-06-14",
@@ -1743,7 +1743,7 @@
         },
         {
           "observation_date": "2023-06-15",
-          "close": 344.895538
+          "close": 344.895569
         },
         {
           "observation_date": "2023-06-16",
@@ -1751,7 +1751,7 @@
         },
         {
           "observation_date": "2023-06-19",
-          "close": 347.032959
+          "close": 347.032928
         },
         {
           "observation_date": "2023-06-20",
@@ -1783,7 +1783,7 @@
         },
         {
           "observation_date": "2023-06-30",
-          "close": 322.161591
+          "close": 322.161621
         },
         {
           "observation_date": "2023-07-03",
@@ -1791,7 +1791,7 @@
         },
         {
           "observation_date": "2023-07-04",
-          "close": 329.545258
+          "close": 329.545288
         },
         {
           "observation_date": "2023-07-05",
@@ -1807,15 +1807,15 @@
         },
         {
           "observation_date": "2023-07-10",
-          "close": 319.441254
+          "close": 319.441284
         },
         {
           "observation_date": "2023-07-11",
-          "close": 324.298981
+          "close": 324.29895
         },
         {
           "observation_date": "2023-07-12",
-          "close": 330.322479
+          "close": 330.32251
         },
         {
           "observation_date": "2023-07-13",
@@ -1879,11 +1879,11 @@
         },
         {
           "observation_date": "2023-08-04",
-          "close": 333.625732
+          "close": 333.625702
         },
         {
           "observation_date": "2023-08-07",
-          "close": 331.488342
+          "close": 331.488373
         },
         {
           "observation_date": "2023-08-08",
@@ -1891,7 +1891,7 @@
         },
         {
           "observation_date": "2023-08-09",
-          "close": 327.602203
+          "close": 327.602173
         },
         {
           "observation_date": "2023-08-10",
@@ -1899,7 +1899,7 @@
         },
         {
           "observation_date": "2023-08-11",
-          "close": 326.242035
+          "close": 326.242065
         },
         {
           "observation_date": "2023-08-14",
@@ -1907,11 +1907,11 @@
         },
         {
           "observation_date": "2023-08-15",
-          "close": 323.133148
+          "close": 323.133118
         },
         {
           "observation_date": "2023-08-16",
-          "close": 319.441254
+          "close": 319.441284
         },
         {
           "observation_date": "2023-08-17",
@@ -1983,7 +1983,7 @@
         },
         {
           "observation_date": "2023-09-13",
-          "close": 311.08606
+          "close": 311.08609
         },
         {
           "observation_date": "2023-09-14",
@@ -2003,11 +2003,11 @@
         },
         {
           "observation_date": "2023-09-20",
-          "close": 300.39917
+          "close": 300.3992
         },
         {
           "observation_date": "2023-09-21",
-          "close": 294.375641
+          "close": 294.375671
         },
         {
           "observation_date": "2023-09-22",
@@ -2047,7 +2047,7 @@
         },
         {
           "observation_date": "2023-10-06",
-          "close": 296.513031
+          "close": 296.513
         },
         {
           "observation_date": "2023-10-09",
@@ -2067,7 +2067,7 @@
         },
         {
           "observation_date": "2023-10-13",
-          "close": 298.067444
+          "close": 298.067474
         },
         {
           "observation_date": "2023-10-16",
@@ -2123,7 +2123,7 @@
         },
         {
           "observation_date": "2023-11-03",
-          "close": 293.98703
+          "close": 293.987061
         },
         {
           "observation_date": "2023-11-06",
@@ -2131,11 +2131,11 @@
         },
         {
           "observation_date": "2023-11-07",
-          "close": 299.816254
+          "close": 299.816223
         },
         {
           "observation_date": "2023-11-08",
-          "close": 299.621918
+          "close": 299.621948
         },
         {
           "observation_date": "2023-11-09",
@@ -2163,7 +2163,7 @@
         },
         {
           "observation_date": "2023-11-17",
-          "close": 306.228424
+          "close": 306.228394
         },
         {
           "observation_date": "2023-11-20",
@@ -2175,7 +2175,7 @@
         },
         {
           "observation_date": "2023-11-22",
-          "close": 315.166504
+          "close": 315.166534
         },
         {
           "observation_date": "2023-11-23",
@@ -2191,7 +2191,7 @@
         },
         {
           "observation_date": "2023-11-28",
-          "close": 310.503143
+          "close": 310.503174
         },
         {
           "observation_date": "2023-11-29",
@@ -2267,7 +2267,7 @@
         },
         {
           "observation_date": "2023-12-27",
-          "close": 276.888
+          "close": 276.88797
         },
         {
           "observation_date": "2023-12-28",
@@ -2287,19 +2287,19 @@
         },
         {
           "observation_date": "2024-01-04",
-          "close": 290.295166
+          "close": 290.295197
         },
         {
           "observation_date": "2024-01-05",
-          "close": 283.883057
+          "close": 283.883026
         },
         {
           "observation_date": "2024-01-08",
-          "close": 279.802612
+          "close": 279.802582
         },
         {
           "observation_date": "2024-01-09",
-          "close": 275.527863
+          "close": 275.527832
         },
         {
           "observation_date": "2024-01-10",
@@ -2307,11 +2307,11 @@
         },
         {
           "observation_date": "2024-01-11",
-          "close": 279.219635
+          "close": 279.219666
         },
         {
           "observation_date": "2024-01-12",
-          "close": 280.191162
+          "close": 280.191193
         },
         {
           "observation_date": "2024-01-15",
@@ -2335,7 +2335,7 @@
         },
         {
           "observation_date": "2024-01-22",
-          "close": 254.736969
+          "close": 254.736938
         },
         {
           "observation_date": "2024-01-23",
@@ -2343,7 +2343,7 @@
         },
         {
           "observation_date": "2024-01-24",
-          "close": 273.779053
+          "close": 273.779022
         },
         {
           "observation_date": "2024-01-25",
@@ -2359,7 +2359,7 @@
         },
         {
           "observation_date": "2024-01-30",
-          "close": 266.006775
+          "close": 266.006744
         },
         {
           "observation_date": "2024-01-31",
@@ -2375,7 +2375,7 @@
         },
         {
           "observation_date": "2024-02-05",
-          "close": 271.641663
+          "close": 271.641693
         },
         {
           "observation_date": "2024-02-06",
@@ -2383,7 +2383,7 @@
         },
         {
           "observation_date": "2024-02-07",
-          "close": 283.883057
+          "close": 283.883026
         },
         {
           "observation_date": "2024-02-08",
@@ -2399,7 +2399,7 @@
         },
         {
           "observation_date": "2024-02-15",
-          "close": 277.276581
+          "close": 277.276611
         },
         {
           "observation_date": "2024-02-16",
@@ -2419,7 +2419,7 @@
         },
         {
           "observation_date": "2024-02-22",
-          "close": 283.105835
+          "close": 283.105774
         },
         {
           "observation_date": "2024-02-23",
@@ -2439,11 +2439,11 @@
         },
         {
           "observation_date": "2024-02-29",
-          "close": 269.310028
+          "close": 269.309998
         },
         {
           "observation_date": "2024-03-01",
-          "close": 269.504272
+          "close": 269.504303
         },
         {
           "observation_date": "2024-03-04",
@@ -2467,7 +2467,7 @@
         },
         {
           "observation_date": "2024-03-11",
-          "close": 270.670135
+          "close": 270.670166
         },
         {
           "observation_date": "2024-03-12",
@@ -2487,7 +2487,7 @@
         },
         {
           "observation_date": "2024-03-18",
-          "close": 281.551361
+          "close": 281.551331
         },
         {
           "observation_date": "2024-03-19",
@@ -2595,7 +2595,7 @@
         },
         {
           "observation_date": "2024-04-29",
-          "close": 337.706177
+          "close": 337.706146
         },
         {
           "observation_date": "2024-04-30",
@@ -2743,7 +2743,7 @@
         },
         {
           "observation_date": "2024-06-24",
-          "close": 372.765045
+          "close": 372.765015
         },
         {
           "observation_date": "2024-06-25",
@@ -2759,7 +2759,7 @@
         },
         {
           "observation_date": "2024-06-28",
-          "close": 364.925598
+          "close": 364.925568
         },
         {
           "observation_date": "2024-07-02",
@@ -2795,7 +2795,7 @@
         },
         {
           "observation_date": "2024-07-12",
-          "close": 389.03183
+          "close": 389.03186
         },
         {
           "observation_date": "2024-07-15",
@@ -3023,7 +3023,7 @@
         },
         {
           "observation_date": "2024-10-04",
-          "close": 468.01416
+          "close": 468.01413
         },
         {
           "observation_date": "2024-10-07",
@@ -3103,7 +3103,7 @@
         },
         {
           "observation_date": "2024-11-04",
-          "close": 410.590302
+          "close": 410.590271
         },
         {
           "observation_date": "2024-11-05",
@@ -3111,7 +3111,7 @@
         },
         {
           "observation_date": "2024-11-06",
-          "close": 411.374207
+          "close": 411.374237
         },
         {
           "observation_date": "2024-11-07",
@@ -3123,7 +3123,7 @@
         },
         {
           "observation_date": "2024-11-11",
-          "close": 404.906738
+          "close": 404.906708
         },
         {
           "observation_date": "2024-11-12",
@@ -3163,7 +3163,7 @@
         },
         {
           "observation_date": "2024-11-25",
-          "close": 387.268005
+          "close": 387.267975
         },
         {
           "observation_date": "2024-11-26",
@@ -3203,7 +3203,7 @@
         },
         {
           "observation_date": "2024-12-09",
-          "close": 410.394318
+          "close": 410.394287
         },
         {
           "observation_date": "2024-12-10",
@@ -3255,7 +3255,7 @@
         },
         {
           "observation_date": "2024-12-30",
-          "close": 410.590302
+          "close": 410.590271
         },
         {
           "observation_date": "2024-12-31",
@@ -3335,7 +3335,7 @@
         },
         {
           "observation_date": "2025-01-28",
-          "close": 393.931519
+          "close": 393.931488
         },
         {
           "observation_date": "2025-02-03",
@@ -3343,7 +3343,7 @@
         },
         {
           "observation_date": "2025-02-04",
-          "close": 412.354126
+          "close": 412.354156
         },
         {
           "observation_date": "2025-02-05",
@@ -3439,11 +3439,11 @@
         },
         {
           "observation_date": "2025-03-10",
-          "close": 506.133362
+          "close": 506.133392
         },
         {
           "observation_date": "2025-03-11",
-          "close": 507.113312
+          "close": 507.113281
         },
         {
           "observation_date": "2025-03-12",
@@ -3459,7 +3459,7 @@
         },
         {
           "observation_date": "2025-03-17",
-          "close": 513.972778
+          "close": 513.972839
         },
         {
           "observation_date": "2025-03-18",
@@ -4998,7 +4998,7 @@
       "record_count": 1243,
       "coverage_start": "2021-09-10",
       "coverage_end": "2026-10-05",
-      "last_successful_fetch": "2026-10-05T18:49:31.820714+00:00",
+      "last_successful_fetch": "2026-10-06T16:15:38.409530+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -5068,15 +5068,15 @@
         },
         {
           "observation_date": "2021-10-06",
-          "close": 407.771912
+          "close": 407.771942
         },
         {
           "observation_date": "2021-10-07",
-          "close": 414.348907
+          "close": 414.348938
         },
         {
           "observation_date": "2021-10-08",
-          "close": 408.464203
+          "close": 408.464264
         },
         {
           "observation_date": "2021-10-11",
@@ -5108,7 +5108,7 @@
         },
         {
           "observation_date": "2021-10-22",
-          "close": 415.387421
+          "close": 415.38739
         },
         {
           "observation_date": "2021-10-25",
@@ -5120,11 +5120,11 @@
         },
         {
           "observation_date": "2021-10-27",
-          "close": 410.887329
+          "close": 410.88736
         },
         {
           "observation_date": "2021-10-28",
-          "close": 404.656525
+          "close": 404.656555
         },
         {
           "observation_date": "2021-10-29",
@@ -5156,7 +5156,7 @@
         },
         {
           "observation_date": "2021-11-09",
-          "close": 402.406525
+          "close": 402.406555
         },
         {
           "observation_date": "2021-11-10",
@@ -5164,7 +5164,7 @@
         },
         {
           "observation_date": "2021-11-11",
-          "close": 402.060364
+          "close": 402.060333
         },
         {
           "observation_date": "2021-11-12",
@@ -5180,7 +5180,7 @@
         },
         {
           "observation_date": "2021-11-17",
-          "close": 399.464172
+          "close": 399.464203
         },
         {
           "observation_date": "2021-11-18",
@@ -5200,11 +5200,11 @@
         },
         {
           "observation_date": "2021-11-24",
-          "close": 392.021881
+          "close": 392.021851
         },
         {
           "observation_date": "2021-11-25",
-          "close": 393.57959
+          "close": 393.579498
         },
         {
           "observation_date": "2021-11-26",
@@ -5216,15 +5216,15 @@
         },
         {
           "observation_date": "2021-11-30",
-          "close": 372.117859
+          "close": 372.117889
         },
         {
           "observation_date": "2021-12-01",
-          "close": 376.271698
+          "close": 376.271759
         },
         {
           "observation_date": "2021-12-02",
-          "close": 373.848633
+          "close": 373.848663
         },
         {
           "observation_date": "2021-12-03",
@@ -5252,7 +5252,7 @@
         },
         {
           "observation_date": "2021-12-13",
-          "close": 409.156586
+          "close": 409.156555
         },
         {
           "observation_date": "2021-12-14",
@@ -5264,19 +5264,19 @@
         },
         {
           "observation_date": "2021-12-16",
-          "close": 395.483398
+          "close": 395.483429
         },
         {
           "observation_date": "2021-12-17",
-          "close": 392.021881
+          "close": 392.021851
         },
         {
           "observation_date": "2021-12-20",
-          "close": 384.060242
+          "close": 384.060303
         },
         {
           "observation_date": "2021-12-21",
-          "close": 387.348755
+          "close": 387.348724
         },
         {
           "observation_date": "2021-12-22",
@@ -5304,7 +5304,7 @@
         },
         {
           "observation_date": "2021-12-31",
-          "close": 394.098724
+          "close": 394.098755
         },
         {
           "observation_date": "2022-01-03",
@@ -5316,7 +5316,7 @@
         },
         {
           "observation_date": "2022-01-05",
-          "close": 380.944855
+          "close": 380.944824
         },
         {
           "observation_date": "2022-01-06",
@@ -5324,7 +5324,7 @@
         },
         {
           "observation_date": "2022-01-07",
-          "close": 388.906433
+          "close": 388.906464
         },
         {
           "observation_date": "2022-01-10",
@@ -5340,11 +5340,11 @@
         },
         {
           "observation_date": "2022-01-13",
-          "close": 395.137238
+          "close": 395.137268
         },
         {
           "observation_date": "2022-01-14",
-          "close": 391.848785
+          "close": 391.848724
         },
         {
           "observation_date": "2022-01-17",
@@ -5356,7 +5356,7 @@
         },
         {
           "observation_date": "2022-01-19",
-          "close": 394.964203
+          "close": 394.964172
         },
         {
           "observation_date": "2022-01-20",
@@ -5364,7 +5364,7 @@
         },
         {
           "observation_date": "2022-01-21",
-          "close": 416.079742
+          "close": 416.079651
         },
         {
           "observation_date": "2022-01-24",
@@ -5372,11 +5372,11 @@
         },
         {
           "observation_date": "2022-01-25",
-          "close": 404.82962
+          "close": 404.829651
         },
         {
           "observation_date": "2022-01-26",
-          "close": 399.291107
+          "close": 399.291138
         },
         {
           "observation_date": "2022-01-27",
@@ -5396,7 +5396,7 @@
         },
         {
           "observation_date": "2022-02-07",
-          "close": 385.61792
+          "close": 385.61795
         },
         {
           "observation_date": "2022-02-08",
@@ -5404,19 +5404,19 @@
         },
         {
           "observation_date": "2022-02-09",
-          "close": 389.252594
+          "close": 389.252533
         },
         {
           "observation_date": "2022-02-10",
-          "close": 389.252594
+          "close": 389.252533
         },
         {
           "observation_date": "2022-02-11",
-          "close": 384.579498
+          "close": 384.579468
         },
         {
           "observation_date": "2022-02-14",
-          "close": 378.521759
+          "close": 378.521729
         },
         {
           "observation_date": "2022-02-15",
@@ -5428,7 +5428,7 @@
         },
         {
           "observation_date": "2022-02-17",
-          "close": 378.521759
+          "close": 378.521729
         },
         {
           "observation_date": "2022-02-18",
@@ -5436,7 +5436,7 @@
         },
         {
           "observation_date": "2022-02-21",
-          "close": 372.81015
+          "close": 372.81012
         },
         {
           "observation_date": "2022-02-22",
@@ -5456,7 +5456,7 @@
         },
         {
           "observation_date": "2022-02-28",
-          "close": 326.771393
+          "close": 326.771362
         },
         {
           "observation_date": "2022-03-01",
@@ -5468,7 +5468,7 @@
         },
         {
           "observation_date": "2022-03-03",
-          "close": 314.309814
+          "close": 314.309784
         },
         {
           "observation_date": "2022-03-04",
@@ -5476,11 +5476,11 @@
         },
         {
           "observation_date": "2022-03-07",
-          "close": 294.232727
+          "close": 294.232758
         },
         {
           "observation_date": "2022-03-08",
-          "close": 294.578857
+          "close": 294.578918
         },
         {
           "observation_date": "2022-03-09",
@@ -5492,7 +5492,7 @@
         },
         {
           "observation_date": "2022-03-11",
-          "close": 303.673309
+          "close": 303.67337
         },
         {
           "observation_date": "2022-03-14",
@@ -5504,7 +5504,7 @@
         },
         {
           "observation_date": "2022-03-16",
-          "close": 315.764221
+          "close": 315.76416
         },
         {
           "observation_date": "2022-03-17",
@@ -5516,7 +5516,7 @@
         },
         {
           "observation_date": "2022-03-21",
-          "close": 327.855072
+          "close": 327.855103
         },
         {
           "observation_date": "2022-03-22",
@@ -5536,11 +5536,11 @@
         },
         {
           "observation_date": "2022-03-28",
-          "close": 326.277985
+          "close": 326.277954
         },
         {
           "observation_date": "2022-03-29",
-          "close": 325.927521
+          "close": 325.92749
         },
         {
           "observation_date": "2022-03-30",
@@ -5568,7 +5568,7 @@
         },
         {
           "observation_date": "2022-04-08",
-          "close": 311.383453
+          "close": 311.383423
         },
         {
           "observation_date": "2022-04-11",
@@ -5584,7 +5584,7 @@
         },
         {
           "observation_date": "2022-04-14",
-          "close": 299.467804
+          "close": 299.467773
         },
         {
           "observation_date": "2022-04-19",
@@ -5592,7 +5592,7 @@
         },
         {
           "observation_date": "2022-04-20",
-          "close": 285.799896
+          "close": 285.799927
         },
         {
           "observation_date": "2022-04-21",
@@ -5604,7 +5604,7 @@
         },
         {
           "observation_date": "2022-04-25",
-          "close": 283.346619
+          "close": 283.34668
         },
         {
           "observation_date": "2022-04-26",
@@ -5612,15 +5612,15 @@
         },
         {
           "observation_date": "2022-04-27",
-          "close": 281.59436
+          "close": 281.59433
         },
         {
           "observation_date": "2022-04-28",
-          "close": 285.449371
+          "close": 285.449432
         },
         {
           "observation_date": "2022-04-29",
-          "close": 295.963226
+          "close": 295.963165
         },
         {
           "observation_date": "2022-05-03",
@@ -5640,15 +5640,15 @@
         },
         {
           "observation_date": "2022-05-10",
-          "close": 285.27417
+          "close": 285.2742
         },
         {
           "observation_date": "2022-05-11",
-          "close": 285.098938
+          "close": 285.098969
         },
         {
           "observation_date": "2022-05-12",
-          "close": 281.243896
+          "close": 281.243927
         },
         {
           "observation_date": "2022-05-13",
@@ -5688,11 +5688,11 @@
         },
         {
           "observation_date": "2022-05-26",
-          "close": 284.923767
+          "close": 284.923737
         },
         {
           "observation_date": "2022-05-27",
-          "close": 289.83017
+          "close": 289.830139
         },
         {
           "observation_date": "2022-05-30",
@@ -5724,11 +5724,11 @@
         },
         {
           "observation_date": "2022-06-09",
-          "close": 311.383453
+          "close": 311.383423
         },
         {
           "observation_date": "2022-06-10",
-          "close": 311.208252
+          "close": 311.208221
         },
         {
           "observation_date": "2022-06-13",
@@ -5736,11 +5736,11 @@
         },
         {
           "observation_date": "2022-06-14",
-          "close": 299.292603
+          "close": 299.292572
         },
         {
           "observation_date": "2022-06-15",
-          "close": 311.383453
+          "close": 311.383423
         },
         {
           "observation_date": "2022-06-16",
@@ -5752,7 +5752,7 @@
         },
         {
           "observation_date": "2022-06-20",
-          "close": 314.011902
+          "close": 314.011841
         },
         {
           "observation_date": "2022-06-21",
@@ -5764,11 +5764,11 @@
         },
         {
           "observation_date": "2022-06-23",
-          "close": 314.888
+          "close": 314.888062
         },
         {
           "observation_date": "2022-06-24",
-          "close": 327.855072
+          "close": 327.855103
         },
         {
           "observation_date": "2022-06-27",
@@ -5776,7 +5776,7 @@
         },
         {
           "observation_date": "2022-06-28",
-          "close": 347.480804
+          "close": 347.480743
         },
         {
           "observation_date": "2022-06-29",
@@ -5796,11 +5796,11 @@
         },
         {
           "observation_date": "2022-07-06",
-          "close": 322.24762
+          "close": 322.247711
         },
         {
           "observation_date": "2022-07-07",
-          "close": 324.700928
+          "close": 324.700897
         },
         {
           "observation_date": "2022-07-08",
@@ -5820,7 +5820,7 @@
         },
         {
           "observation_date": "2022-07-14",
-          "close": 317.166016
+          "close": 317.166046
         },
         {
           "observation_date": "2022-07-15",
@@ -5832,19 +5832,19 @@
         },
         {
           "observation_date": "2022-07-19",
-          "close": 307.878906
+          "close": 307.878845
         },
         {
           "observation_date": "2022-07-20",
-          "close": 315.413757
+          "close": 315.413727
         },
         {
           "observation_date": "2022-07-21",
-          "close": 309.105408
+          "close": 309.105469
         },
         {
           "observation_date": "2022-07-22",
-          "close": 308.054016
+          "close": 308.054077
         },
         {
           "observation_date": "2022-07-25",
@@ -5852,7 +5852,7 @@
         },
         {
           "observation_date": "2022-07-26",
-          "close": 322.598145
+          "close": 322.598175
         },
         {
           "observation_date": "2022-07-27",
@@ -5872,7 +5872,7 @@
         },
         {
           "observation_date": "2022-08-02",
-          "close": 307.002716
+          "close": 307.002686
         },
         {
           "observation_date": "2022-08-03",
@@ -5880,7 +5880,7 @@
         },
         {
           "observation_date": "2022-08-04",
-          "close": 312.610016
+          "close": 312.609985
         },
         {
           "observation_date": "2022-08-05",
@@ -5892,15 +5892,15 @@
         },
         {
           "observation_date": "2022-08-09",
-          "close": 308.754974
+          "close": 308.755035
         },
         {
           "observation_date": "2022-08-10",
-          "close": 301.570587
+          "close": 301.570557
         },
         {
           "observation_date": "2022-08-11",
-          "close": 304.899902
+          "close": 304.899963
         },
         {
           "observation_date": "2022-08-12",
@@ -5912,7 +5912,7 @@
         },
         {
           "observation_date": "2022-08-16",
-          "close": 303.67334
+          "close": 303.67337
         },
         {
           "observation_date": "2022-08-17",
@@ -5924,7 +5924,7 @@
         },
         {
           "observation_date": "2022-08-19",
-          "close": 292.809113
+          "close": 292.809082
         },
         {
           "observation_date": "2022-08-22",
@@ -5936,7 +5936,7 @@
         },
         {
           "observation_date": "2022-08-24",
-          "close": 280.367706
+          "close": 280.367767
         },
         {
           "observation_date": "2022-08-25",
@@ -5964,7 +5964,7 @@
         },
         {
           "observation_date": "2022-09-02",
-          "close": 278.452118
+          "close": 278.452179
         },
         {
           "observation_date": "2022-09-05",
@@ -5984,7 +5984,7 @@
         },
         {
           "observation_date": "2022-09-09",
-          "close": 275.440918
+          "close": 275.440948
         },
         {
           "observation_date": "2022-09-13",
@@ -6004,7 +6004,7 @@
         },
         {
           "observation_date": "2022-09-19",
-          "close": 258.08197
+          "close": 258.08194
         },
         {
           "observation_date": "2022-09-20",
@@ -6012,11 +6012,11 @@
         },
         {
           "observation_date": "2022-09-21",
-          "close": 256.133514
+          "close": 256.133484
         },
         {
           "observation_date": "2022-09-22",
-          "close": 248.871017
+          "close": 248.871048
         },
         {
           "observation_date": "2022-09-23",
@@ -6032,7 +6032,7 @@
         },
         {
           "observation_date": "2022-09-28",
-          "close": 242.14003
+          "close": 242.139984
         },
         {
           "observation_date": "2022-09-29",
@@ -6076,11 +6076,11 @@
         },
         {
           "observation_date": "2022-10-14",
-          "close": 218.404282
+          "close": 218.404312
         },
         {
           "observation_date": "2022-10-17",
-          "close": 223.363998
+          "close": 223.363983
         },
         {
           "observation_date": "2022-10-18",
@@ -6100,7 +6100,7 @@
         },
         {
           "observation_date": "2022-10-24",
-          "close": 202.108093
+          "close": 202.108078
         },
         {
           "observation_date": "2022-10-25",
@@ -6128,7 +6128,7 @@
         },
         {
           "observation_date": "2022-11-02",
-          "close": 209.193375
+          "close": 209.193405
         },
         {
           "observation_date": "2022-11-03",
@@ -6148,7 +6148,7 @@
         },
         {
           "observation_date": "2022-11-09",
-          "close": 230.272125
+          "close": 230.272141
         },
         {
           "observation_date": "2022-11-10",
@@ -6156,11 +6156,11 @@
         },
         {
           "observation_date": "2022-11-11",
-          "close": 252.059464
+          "close": 252.059418
         },
         {
           "observation_date": "2022-11-14",
-          "close": 258.436188
+          "close": 258.436218
         },
         {
           "observation_date": "2022-11-15",
@@ -6168,11 +6168,11 @@
         },
         {
           "observation_date": "2022-11-16",
-          "close": 269.949768
+          "close": 269.949799
         },
         {
           "observation_date": "2022-11-17",
-          "close": 268.7099
+          "close": 268.70993
         },
         {
           "observation_date": "2022-11-18",
@@ -6180,7 +6180,7 @@
         },
         {
           "observation_date": "2022-11-21",
-          "close": 258.790497
+          "close": 258.790466
         },
         {
           "observation_date": "2022-11-22",
@@ -6204,7 +6204,7 @@
         },
         {
           "observation_date": "2022-11-29",
-          "close": 265.698639
+          "close": 265.698669
         },
         {
           "observation_date": "2022-11-30",
@@ -6212,7 +6212,7 @@
         },
         {
           "observation_date": "2022-12-01",
-          "close": 280.932037
+          "close": 280.932068
         },
         {
           "observation_date": "2022-12-02",
@@ -6264,11 +6264,11 @@
         },
         {
           "observation_date": "2022-12-20",
-          "close": 287.84024
+          "close": 287.840179
         },
         {
           "observation_date": "2022-12-21",
-          "close": 290.320007
+          "close": 290.319977
         },
         {
           "observation_date": "2022-12-22",
@@ -6284,7 +6284,7 @@
         },
         {
           "observation_date": "2022-12-29",
-          "close": 301.125092
+          "close": 301.125122
         },
         {
           "observation_date": "2022-12-30",
@@ -6296,7 +6296,7 @@
         },
         {
           "observation_date": "2023-01-04",
-          "close": 313.524353
+          "close": 313.524384
         },
         {
           "observation_date": "2023-01-05",
@@ -6304,11 +6304,11 @@
         },
         {
           "observation_date": "2023-01-06",
-          "close": 320.963959
+          "close": 320.963928
         },
         {
           "observation_date": "2023-01-09",
-          "close": 334.248901
+          "close": 334.248871
         },
         {
           "observation_date": "2023-01-10",
@@ -6348,7 +6348,7 @@
         },
         {
           "observation_date": "2023-01-26",
-          "close": 332.123291
+          "close": 332.12326
         },
         {
           "observation_date": "2023-01-27",
@@ -6360,7 +6360,7 @@
         },
         {
           "observation_date": "2023-01-31",
-          "close": 312.10733
+          "close": 312.107391
         },
         {
           "observation_date": "2023-02-01",
@@ -6368,11 +6368,11 @@
         },
         {
           "observation_date": "2023-02-02",
-          "close": 312.10733
+          "close": 312.107391
         },
         {
           "observation_date": "2023-02-03",
-          "close": 312.10733
+          "close": 312.107391
         },
         {
           "observation_date": "2023-02-06",
@@ -6404,7 +6404,7 @@
         },
         {
           "observation_date": "2023-02-15",
-          "close": 294.748322
+          "close": 294.748352
         },
         {
           "observation_date": "2023-02-16",
@@ -6412,7 +6412,7 @@
         },
         {
           "observation_date": "2023-02-17",
-          "close": 292.976959
+          "close": 292.97702
         },
         {
           "observation_date": "2023-02-20",
@@ -6452,7 +6452,7 @@
         },
         {
           "observation_date": "2023-03-03",
-          "close": 299.176666
+          "close": 299.176605
         },
         {
           "observation_date": "2023-03-06",
@@ -6460,23 +6460,23 @@
         },
         {
           "observation_date": "2023-03-07",
-          "close": 298.822449
+          "close": 298.822388
         },
         {
           "observation_date": "2023-03-08",
-          "close": 293.530273
+          "close": 293.530212
         },
         {
           "observation_date": "2023-03-09",
-          "close": 291.02301
+          "close": 291.02298
         },
         {
           "observation_date": "2023-03-10",
-          "close": 285.112976
+          "close": 285.113007
         },
         {
           "observation_date": "2023-03-13",
-          "close": 290.485718
+          "close": 290.485687
         },
         {
           "observation_date": "2023-03-14",
@@ -6504,7 +6504,7 @@
         },
         {
           "observation_date": "2023-03-22",
-          "close": 297.8284
+          "close": 297.828461
         },
         {
           "observation_date": "2023-03-23",
@@ -6528,7 +6528,7 @@
         },
         {
           "observation_date": "2023-03-30",
-          "close": 306.78302
+          "close": 306.782959
         },
         {
           "observation_date": "2023-03-31",
@@ -6552,11 +6552,11 @@
         },
         {
           "observation_date": "2023-04-12",
-          "close": 308.036591
+          "close": 308.036621
         },
         {
           "observation_date": "2023-04-13",
-          "close": 309.111206
+          "close": 309.111176
         },
         {
           "observation_date": "2023-04-14",
@@ -6564,7 +6564,7 @@
         },
         {
           "observation_date": "2023-04-17",
-          "close": 311.976654
+          "close": 311.976624
         },
         {
           "observation_date": "2023-04-18",
@@ -6596,7 +6596,7 @@
         },
         {
           "observation_date": "2023-04-27",
-          "close": 292.276581
+          "close": 292.276611
         },
         {
           "observation_date": "2023-04-28",
@@ -6640,7 +6640,7 @@
         },
         {
           "observation_date": "2023-05-15",
-          "close": 280.635681
+          "close": 280.635712
         },
         {
           "observation_date": "2023-05-16",
@@ -6656,27 +6656,27 @@
         },
         {
           "observation_date": "2023-05-19",
-          "close": 272.218414
+          "close": 272.218384
         },
         {
           "observation_date": "2023-05-22",
-          "close": 275.442047
+          "close": 275.442078
         },
         {
           "observation_date": "2023-05-23",
-          "close": 274.188446
+          "close": 274.188416
         },
         {
           "observation_date": "2023-05-24",
-          "close": 269.532074
+          "close": 269.532043
         },
         {
           "observation_date": "2023-05-25",
-          "close": 263.263855
+          "close": 263.263824
         },
         {
           "observation_date": "2023-05-29",
-          "close": 258.786621
+          "close": 258.786591
         },
         {
           "observation_date": "2023-05-30",
@@ -6684,7 +6684,7 @@
         },
         {
           "observation_date": "2023-05-31",
-          "close": 256.637512
+          "close": 256.637482
         },
         {
           "observation_date": "2023-06-01",
@@ -6704,7 +6704,7 @@
         },
         {
           "observation_date": "2023-06-07",
-          "close": 276.158386
+          "close": 276.158417
         },
         {
           "observation_date": "2023-06-08",
@@ -6716,19 +6716,19 @@
         },
         {
           "observation_date": "2023-06-12",
-          "close": 277.94928
+          "close": 277.949341
         },
         {
           "observation_date": "2023-06-13",
-          "close": 277.770233
+          "close": 277.770264
         },
         {
           "observation_date": "2023-06-14",
-          "close": 278.66571
+          "close": 278.66568
         },
         {
           "observation_date": "2023-06-15",
-          "close": 282.426605
+          "close": 282.426636
         },
         {
           "observation_date": "2023-06-16",
@@ -6736,7 +6736,7 @@
         },
         {
           "observation_date": "2023-06-19",
-          "close": 280.456604
+          "close": 280.456635
         },
         {
           "observation_date": "2023-06-20",
@@ -6760,11 +6760,11 @@
         },
         {
           "observation_date": "2023-06-28",
-          "close": 269.352936
+          "close": 269.352905
         },
         {
           "observation_date": "2023-06-29",
-          "close": 267.74115
+          "close": 267.741119
         },
         {
           "observation_date": "2023-06-30",
@@ -6776,7 +6776,7 @@
         },
         {
           "observation_date": "2023-07-04",
-          "close": 271.86026
+          "close": 271.860229
         },
         {
           "observation_date": "2023-07-05",
@@ -6784,15 +6784,15 @@
         },
         {
           "observation_date": "2023-07-06",
-          "close": 259.682068
+          "close": 259.682037
         },
         {
           "observation_date": "2023-07-07",
-          "close": 252.697479
+          "close": 252.697525
         },
         {
           "observation_date": "2023-07-10",
-          "close": 253.234741
+          "close": 253.234726
         },
         {
           "observation_date": "2023-07-11",
@@ -6832,7 +6832,7 @@
         },
         {
           "observation_date": "2023-07-25",
-          "close": 274.009369
+          "close": 274.009338
         },
         {
           "observation_date": "2023-07-26",
@@ -6876,15 +6876,15 @@
         },
         {
           "observation_date": "2023-08-09",
-          "close": 279.561157
+          "close": 279.561188
         },
         {
           "observation_date": "2023-08-10",
-          "close": 279.740234
+          "close": 279.740204
         },
         {
           "observation_date": "2023-08-11",
-          "close": 277.591187
+          "close": 277.591156
         },
         {
           "observation_date": "2023-08-14",
@@ -6892,7 +6892,7 @@
         },
         {
           "observation_date": "2023-08-15",
-          "close": 270.069336
+          "close": 270.069305
         },
         {
           "observation_date": "2023-08-16",
@@ -6900,7 +6900,7 @@
         },
         {
           "observation_date": "2023-08-17",
-          "close": 266.129303
+          "close": 266.129333
         },
         {
           "observation_date": "2023-08-18",
@@ -6908,7 +6908,7 @@
         },
         {
           "observation_date": "2023-08-21",
-          "close": 252.876617
+          "close": 252.876556
         },
         {
           "observation_date": "2023-08-22",
@@ -6916,7 +6916,7 @@
         },
         {
           "observation_date": "2023-08-23",
-          "close": 251.264755
+          "close": 251.264786
         },
         {
           "observation_date": "2023-08-24",
@@ -6940,7 +6940,7 @@
         },
         {
           "observation_date": "2023-08-31",
-          "close": 276.403503
+          "close": 276.403534
         },
         {
           "observation_date": "2023-09-04",
@@ -6956,7 +6956,7 @@
         },
         {
           "observation_date": "2023-09-07",
-          "close": 279.313019
+          "close": 279.313049
         },
         {
           "observation_date": "2023-09-11",
@@ -6964,7 +6964,7 @@
         },
         {
           "observation_date": "2023-09-12",
-          "close": 275.130646
+          "close": 275.130615
         },
         {
           "observation_date": "2023-09-13",
@@ -6984,15 +6984,15 @@
         },
         {
           "observation_date": "2023-09-19",
-          "close": 264.583649
+          "close": 264.583618
         },
         {
           "observation_date": "2023-09-20",
-          "close": 260.583099
+          "close": 260.583069
         },
         {
           "observation_date": "2023-09-21",
-          "close": 260.946716
+          "close": 260.946747
         },
         {
           "observation_date": "2023-09-22",
@@ -7000,7 +7000,7 @@
         },
         {
           "observation_date": "2023-09-25",
-          "close": 266.038422
+          "close": 266.038361
         },
         {
           "observation_date": "2023-09-26",
@@ -7016,11 +7016,11 @@
         },
         {
           "observation_date": "2023-09-29",
-          "close": 266.038422
+          "close": 266.038361
         },
         {
           "observation_date": "2023-10-03",
-          "close": 259.855652
+          "close": 259.855682
         },
         {
           "observation_date": "2023-10-04",
@@ -7028,15 +7028,15 @@
         },
         {
           "observation_date": "2023-10-05",
-          "close": 259.673828
+          "close": 259.673859
         },
         {
           "observation_date": "2023-10-06",
-          "close": 262.40152
+          "close": 262.40155
         },
         {
           "observation_date": "2023-10-09",
-          "close": 262.583344
+          "close": 262.583313
         },
         {
           "observation_date": "2023-10-10",
@@ -7108,7 +7108,7 @@
         },
         {
           "observation_date": "2023-11-03",
-          "close": 259.673828
+          "close": 259.673859
         },
         {
           "observation_date": "2023-11-06",
@@ -7116,7 +7116,7 @@
         },
         {
           "observation_date": "2023-11-07",
-          "close": 265.674713
+          "close": 265.674744
         },
         {
           "observation_date": "2023-11-08",
@@ -7148,23 +7148,23 @@
         },
         {
           "observation_date": "2023-11-17",
-          "close": 259.492004
+          "close": 259.491974
         },
         {
           "observation_date": "2023-11-20",
-          "close": 265.674713
+          "close": 265.674744
         },
         {
           "observation_date": "2023-11-21",
-          "close": 263.856293
+          "close": 263.856262
         },
         {
           "observation_date": "2023-11-22",
-          "close": 264.583649
+          "close": 264.583618
         },
         {
           "observation_date": "2023-11-23",
-          "close": 265.492859
+          "close": 265.492889
         },
         {
           "observation_date": "2023-11-24",
@@ -7172,15 +7172,15 @@
         },
         {
           "observation_date": "2023-11-27",
-          "close": 260.946716
+          "close": 260.946747
         },
         {
           "observation_date": "2023-11-28",
-          "close": 258.40094
+          "close": 258.400909
         },
         {
           "observation_date": "2023-11-29",
-          "close": 254.218552
+          "close": 254.218536
         },
         {
           "observation_date": "2023-11-30",
@@ -7212,7 +7212,7 @@
         },
         {
           "observation_date": "2023-12-11",
-          "close": 222.941269
+          "close": 222.941254
         },
         {
           "observation_date": "2023-12-12",
@@ -7220,7 +7220,7 @@
         },
         {
           "observation_date": "2023-12-13",
-          "close": 224.759705
+          "close": 224.759689
         },
         {
           "observation_date": "2023-12-14",
@@ -7232,7 +7232,7 @@
         },
         {
           "observation_date": "2023-12-18",
-          "close": 235.306656
+          "close": 235.306671
         },
         {
           "observation_date": "2023-12-19",
@@ -7244,7 +7244,7 @@
         },
         {
           "observation_date": "2023-12-21",
-          "close": 234.033783
+          "close": 234.033768
         },
         {
           "observation_date": "2023-12-22",
@@ -7252,7 +7252,7 @@
         },
         {
           "observation_date": "2023-12-27",
-          "close": 234.579315
+          "close": 234.57933
         },
         {
           "observation_date": "2023-12-28",
@@ -7264,7 +7264,7 @@
         },
         {
           "observation_date": "2024-01-02",
-          "close": 238.57988
+          "close": 238.579895
         },
         {
           "observation_date": "2024-01-03",
@@ -7272,7 +7272,7 @@
         },
         {
           "observation_date": "2024-01-04",
-          "close": 234.397461
+          "close": 234.397446
         },
         {
           "observation_date": "2024-01-05",
@@ -7280,11 +7280,11 @@
         },
         {
           "observation_date": "2024-01-08",
-          "close": 225.305267
+          "close": 225.305252
         },
         {
           "observation_date": "2024-01-09",
-          "close": 222.941269
+          "close": 222.941254
         },
         {
           "observation_date": "2024-01-10",
@@ -7292,15 +7292,15 @@
         },
         {
           "observation_date": "2024-01-11",
-          "close": 227.305527
+          "close": 227.305542
         },
         {
           "observation_date": "2024-01-12",
-          "close": 228.214767
+          "close": 228.214752
         },
         {
           "observation_date": "2024-01-15",
-          "close": 227.851089
+          "close": 227.851059
         },
         {
           "observation_date": "2024-01-16",
@@ -7308,7 +7308,7 @@
         },
         {
           "observation_date": "2024-01-17",
-          "close": 211.485077
+          "close": 211.485092
         },
         {
           "observation_date": "2024-01-18",
@@ -7316,11 +7316,11 @@
         },
         {
           "observation_date": "2024-01-19",
-          "close": 208.757401
+          "close": 208.757416
         },
         {
           "observation_date": "2024-01-22",
-          "close": 201.483627
+          "close": 201.483612
         },
         {
           "observation_date": "2024-01-23",
@@ -7328,7 +7328,7 @@
         },
         {
           "observation_date": "2024-01-24",
-          "close": 217.485916
+          "close": 217.485931
         },
         {
           "observation_date": "2024-01-25",
@@ -7340,11 +7340,11 @@
         },
         {
           "observation_date": "2024-01-29",
-          "close": 223.66864
+          "close": 223.668655
         },
         {
           "observation_date": "2024-01-30",
-          "close": 218.213333
+          "close": 218.213303
         },
         {
           "observation_date": "2024-01-31",
@@ -7352,15 +7352,15 @@
         },
         {
           "observation_date": "2024-02-01",
-          "close": 215.303787
+          "close": 215.303818
         },
         {
           "observation_date": "2024-02-02",
-          "close": 212.212448
+          "close": 212.212433
         },
         {
           "observation_date": "2024-02-05",
-          "close": 209.666626
+          "close": 209.666641
         },
         {
           "observation_date": "2024-02-06",
@@ -7368,11 +7368,11 @@
         },
         {
           "observation_date": "2024-02-07",
-          "close": 221.486526
+          "close": 221.486511
         },
         {
           "observation_date": "2024-02-08",
-          "close": 220.031754
+          "close": 220.031784
         },
         {
           "observation_date": "2024-02-09",
@@ -7384,11 +7384,11 @@
         },
         {
           "observation_date": "2024-02-15",
-          "close": 224.577866
+          "close": 224.577881
         },
         {
           "observation_date": "2024-02-16",
-          "close": 228.942154
+          "close": 228.942139
         },
         {
           "observation_date": "2024-02-19",
@@ -7400,7 +7400,7 @@
         },
         {
           "observation_date": "2024-02-21",
-          "close": 227.305527
+          "close": 227.305542
         },
         {
           "observation_date": "2024-02-22",
@@ -7428,15 +7428,15 @@
         },
         {
           "observation_date": "2024-03-01",
-          "close": 218.213333
+          "close": 218.213303
         },
         {
           "observation_date": "2024-03-04",
-          "close": 218.213333
+          "close": 218.213303
         },
         {
           "observation_date": "2024-03-05",
-          "close": 212.576141
+          "close": 212.576126
         },
         {
           "observation_date": "2024-03-06",
@@ -7444,7 +7444,7 @@
         },
         {
           "observation_date": "2024-03-07",
-          "close": 212.939804
+          "close": 212.939819
         },
         {
           "observation_date": "2024-03-08",
@@ -7452,11 +7452,11 @@
         },
         {
           "observation_date": "2024-03-11",
-          "close": 219.122543
+          "close": 219.122528
         },
         {
           "observation_date": "2024-03-12",
-          "close": 227.123688
+          "close": 227.123672
         },
         {
           "observation_date": "2024-03-13",
@@ -7468,11 +7468,11 @@
         },
         {
           "observation_date": "2024-03-15",
-          "close": 225.747391
+          "close": 225.747406
         },
         {
           "observation_date": "2024-03-18",
-          "close": 223.90004
+          "close": 223.900055
         },
         {
           "observation_date": "2024-03-19",
@@ -7480,15 +7480,15 @@
         },
         {
           "observation_date": "2024-03-20",
-          "close": 221.867935
+          "close": 221.86795
         },
         {
           "observation_date": "2024-03-21",
-          "close": 223.530579
+          "close": 223.530594
         },
         {
           "observation_date": "2024-03-22",
-          "close": 220.020599
+          "close": 220.020584
         },
         {
           "observation_date": "2024-03-25",
@@ -7512,7 +7512,7 @@
         },
         {
           "observation_date": "2024-04-03",
-          "close": 210.968521
+          "close": 210.968506
         },
         {
           "observation_date": "2024-04-05",
@@ -7528,7 +7528,7 @@
         },
         {
           "observation_date": "2024-04-10",
-          "close": 216.695358
+          "close": 216.695343
         },
         {
           "observation_date": "2024-04-11",
@@ -7560,7 +7560,7 @@
         },
         {
           "observation_date": "2024-04-22",
-          "close": 203.20961
+          "close": 203.209625
         },
         {
           "observation_date": "2024-04-23",
@@ -7572,11 +7572,11 @@
         },
         {
           "observation_date": "2024-04-25",
-          "close": 227.964249
+          "close": 227.964233
         },
         {
           "observation_date": "2024-04-26",
-          "close": 231.104752
+          "close": 231.104736
         },
         {
           "observation_date": "2024-04-29",
@@ -7588,15 +7588,15 @@
         },
         {
           "observation_date": "2024-05-02",
-          "close": 244.590454
+          "close": 244.590485
         },
         {
           "observation_date": "2024-05-03",
-          "close": 248.285172
+          "close": 248.285187
         },
         {
           "observation_date": "2024-05-06",
-          "close": 248.839417
+          "close": 248.839401
         },
         {
           "observation_date": "2024-05-07",
@@ -7604,11 +7604,11 @@
         },
         {
           "observation_date": "2024-05-08",
-          "close": 238.309464
+          "close": 238.309479
         },
         {
           "observation_date": "2024-05-09",
-          "close": 245.329453
+          "close": 245.329437
         },
         {
           "observation_date": "2024-05-10",
@@ -7628,7 +7628,7 @@
         },
         {
           "observation_date": "2024-05-17",
-          "close": 272.485626
+          "close": 272.485596
         },
         {
           "observation_date": "2024-05-20",
@@ -7644,7 +7644,7 @@
         },
         {
           "observation_date": "2024-05-23",
-          "close": 256.598297
+          "close": 256.598328
         },
         {
           "observation_date": "2024-05-24",
@@ -7652,11 +7652,11 @@
         },
         {
           "observation_date": "2024-05-27",
-          "close": 257.706757
+          "close": 257.706726
         },
         {
           "observation_date": "2024-05-28",
-          "close": 255.305191
+          "close": 255.305161
         },
         {
           "observation_date": "2024-05-29",
@@ -7684,11 +7684,11 @@
         },
         {
           "observation_date": "2024-06-06",
-          "close": 252.164658
+          "close": 252.164627
         },
         {
           "observation_date": "2024-06-07",
-          "close": 250.132553
+          "close": 250.132568
         },
         {
           "observation_date": "2024-06-11",
@@ -7696,7 +7696,7 @@
         },
         {
           "observation_date": "2024-06-12",
-          "close": 242.558411
+          "close": 242.55838
         },
         {
           "observation_date": "2024-06-13",
@@ -7720,15 +7720,15 @@
         },
         {
           "observation_date": "2024-06-20",
-          "close": 243.112579
+          "close": 243.11261
         },
         {
           "observation_date": "2024-06-21",
-          "close": 237.755249
+          "close": 237.755234
         },
         {
           "observation_date": "2024-06-24",
-          "close": 238.124725
+          "close": 238.12471
         },
         {
           "observation_date": "2024-06-25",
@@ -7744,7 +7744,7 @@
         },
         {
           "observation_date": "2024-06-28",
-          "close": 231.104752
+          "close": 231.104736
         },
         {
           "observation_date": "2024-07-02",
@@ -7752,7 +7752,7 @@
         },
         {
           "observation_date": "2024-07-03",
-          "close": 232.397919
+          "close": 232.397903
         },
         {
           "observation_date": "2024-07-04",
@@ -7788,7 +7788,7 @@
         },
         {
           "observation_date": "2024-07-16",
-          "close": 223.34584
+          "close": 223.345856
         },
         {
           "observation_date": "2024-07-17",
@@ -7804,7 +7804,7 @@
         },
         {
           "observation_date": "2024-07-22",
-          "close": 220.944275
+          "close": 220.94426
         },
         {
           "observation_date": "2024-07-23",
@@ -7812,7 +7812,7 @@
         },
         {
           "observation_date": "2024-07-24",
-          "close": 215.03273
+          "close": 215.032715
         },
         {
           "observation_date": "2024-07-25",
@@ -7852,11 +7852,11 @@
         },
         {
           "observation_date": "2024-08-07",
-          "close": 210.968521
+          "close": 210.968506
         },
         {
           "observation_date": "2024-08-08",
-          "close": 210.229568
+          "close": 210.229584
         },
         {
           "observation_date": "2024-08-09",
@@ -7868,7 +7868,7 @@
         },
         {
           "observation_date": "2024-08-13",
-          "close": 213.370102
+          "close": 213.370087
         },
         {
           "observation_date": "2024-08-14",
@@ -7920,7 +7920,7 @@
         },
         {
           "observation_date": "2024-08-30",
-          "close": 222.052689
+          "close": 222.052673
         },
         {
           "observation_date": "2024-09-02",
@@ -7944,7 +7944,7 @@
         },
         {
           "observation_date": "2024-09-10",
-          "close": 210.220764
+          "close": 210.220749
         },
         {
           "observation_date": "2024-09-11",
@@ -8008,7 +8008,7 @@
         },
         {
           "observation_date": "2024-10-04",
-          "close": 354.0065
+          "close": 354.00647
         },
         {
           "observation_date": "2024-10-07",
@@ -8016,11 +8016,11 @@
         },
         {
           "observation_date": "2024-10-08",
-          "close": 320.694824
+          "close": 320.694885
         },
         {
           "observation_date": "2024-10-09",
-          "close": 303.003967
+          "close": 303.003937
         },
         {
           "observation_date": "2024-10-10",
@@ -8036,7 +8036,7 @@
         },
         {
           "observation_date": "2024-10-16",
-          "close": 287.38327
+          "close": 287.383209
         },
         {
           "observation_date": "2024-10-17",
@@ -8044,7 +8044,7 @@
         },
         {
           "observation_date": "2024-10-18",
-          "close": 298.298889
+          "close": 298.29892
         },
         {
           "observation_date": "2024-10-21",
@@ -8068,7 +8068,7 @@
         },
         {
           "observation_date": "2024-10-28",
-          "close": 294.911255
+          "close": 294.911316
         },
         {
           "observation_date": "2024-10-29",
@@ -8084,7 +8084,7 @@
         },
         {
           "observation_date": "2024-11-01",
-          "close": 293.217499
+          "close": 293.217468
         },
         {
           "observation_date": "2024-11-04",
@@ -8096,7 +8096,7 @@
         },
         {
           "observation_date": "2024-11-06",
-          "close": 303.003967
+          "close": 303.003937
         },
         {
           "observation_date": "2024-11-07",
@@ -8104,11 +8104,11 @@
         },
         {
           "observation_date": "2024-11-08",
-          "close": 319.377472
+          "close": 319.377441
         },
         {
           "observation_date": "2024-11-11",
-          "close": 306.767975
+          "close": 306.767944
         },
         {
           "observation_date": "2024-11-12",
@@ -8116,7 +8116,7 @@
         },
         {
           "observation_date": "2024-11-13",
-          "close": 290.959045
+          "close": 290.959106
         },
         {
           "observation_date": "2024-11-14",
@@ -8128,11 +8128,11 @@
         },
         {
           "observation_date": "2024-11-18",
-          "close": 281.925446
+          "close": 281.925385
         },
         {
           "observation_date": "2024-11-19",
-          "close": 282.678223
+          "close": 282.678192
         },
         {
           "observation_date": "2024-11-20",
@@ -8144,11 +8144,11 @@
         },
         {
           "observation_date": "2024-11-22",
-          "close": 268.939484
+          "close": 268.939514
         },
         {
           "observation_date": "2024-11-25",
-          "close": 267.622101
+          "close": 267.622131
         },
         {
           "observation_date": "2024-11-26",
@@ -8160,7 +8160,7 @@
         },
         {
           "observation_date": "2024-11-28",
-          "close": 270.633331
+          "close": 270.633362
         },
         {
           "observation_date": "2024-11-29",
@@ -8168,7 +8168,7 @@
         },
         {
           "observation_date": "2024-12-02",
-          "close": 274.585571
+          "close": 274.585541
         },
         {
           "observation_date": "2024-12-03",
@@ -8176,7 +8176,7 @@
         },
         {
           "observation_date": "2024-12-04",
-          "close": 275.150177
+          "close": 275.150146
         },
         {
           "observation_date": "2024-12-05",
@@ -8188,7 +8188,7 @@
         },
         {
           "observation_date": "2024-12-09",
-          "close": 293.217499
+          "close": 293.217468
         },
         {
           "observation_date": "2024-12-10",
@@ -8232,11 +8232,11 @@
         },
         {
           "observation_date": "2024-12-24",
-          "close": 282.678223
+          "close": 282.678192
         },
         {
           "observation_date": "2024-12-27",
-          "close": 279.666992
+          "close": 279.667023
         },
         {
           "observation_date": "2024-12-30",
@@ -8260,7 +8260,7 @@
         },
         {
           "observation_date": "2025-01-07",
-          "close": 267.433929
+          "close": 267.433899
         },
         {
           "observation_date": "2025-01-08",
@@ -8268,7 +8268,7 @@
         },
         {
           "observation_date": "2025-01-09",
-          "close": 265.363708
+          "close": 265.363678
         },
         {
           "observation_date": "2025-01-10",
@@ -8276,7 +8276,7 @@
         },
         {
           "observation_date": "2025-01-13",
-          "close": 259.153076
+          "close": 259.153046
         },
         {
           "observation_date": "2025-01-14",
@@ -8288,7 +8288,7 @@
         },
         {
           "observation_date": "2025-01-16",
-          "close": 269.880493
+          "close": 269.880524
         },
         {
           "observation_date": "2025-01-17",
@@ -8316,7 +8316,7 @@
         },
         {
           "observation_date": "2025-01-27",
-          "close": 284.748474
+          "close": 284.748444
         },
         {
           "observation_date": "2025-01-28",
@@ -8332,23 +8332,23 @@
         },
         {
           "observation_date": "2025-02-05",
-          "close": 287.759644
+          "close": 287.759613
         },
         {
           "observation_date": "2025-02-06",
-          "close": 290.770874
+          "close": 290.770844
         },
         {
           "observation_date": "2025-02-07",
-          "close": 297.922516
+          "close": 297.922485
         },
         {
           "observation_date": "2025-02-10",
-          "close": 301.498322
+          "close": 301.498352
         },
         {
           "observation_date": "2025-02-11",
-          "close": 299.239899
+          "close": 299.239929
         },
         {
           "observation_date": "2025-02-12",
@@ -8356,11 +8356,11 @@
         },
         {
           "observation_date": "2025-02-13",
-          "close": 306.579742
+          "close": 306.579773
         },
         {
           "observation_date": "2025-02-14",
-          "close": 319.753815
+          "close": 319.753845
         },
         {
           "observation_date": "2025-02-17",
@@ -8424,7 +8424,7 @@
         },
         {
           "observation_date": "2025-03-10",
-          "close": 331.798737
+          "close": 331.798706
         },
         {
           "observation_date": "2025-03-11",
@@ -8460,7 +8460,7 @@
         },
         {
           "observation_date": "2025-03-21",
-          "close": 344.52655
+          "close": 344.52652
         },
         {
           "observation_date": "2025-03-24",
@@ -8468,7 +8468,7 @@
         },
         {
           "observation_date": "2025-03-25",
-          "close": 334.982849
+          "close": 334.98288
         },
         {
           "observation_date": "2025-03-26",
@@ -8480,7 +8480,7 @@
         },
         {
           "observation_date": "2025-03-28",
-          "close": 337.464233
+          "close": 337.464264
         },
         {
           "observation_date": "2025-03-31",
@@ -8532,11 +8532,11 @@
         },
         {
           "observation_date": "2025-04-17",
-          "close": 316.277252
+          "close": 316.277283
         },
         {
           "observation_date": "2025-04-22",
-          "close": 319.331238
+          "close": 319.331268
         },
         {
           "observation_date": "2025-04-23",
@@ -8544,7 +8544,7 @@
         },
         {
           "observation_date": "2025-04-24",
-          "close": 322.385223
+          "close": 322.385193
         },
         {
           "observation_date": "2025-04-25",
@@ -8584,7 +8584,7 @@
         },
         {
           "observation_date": "2025-05-12",
-          "close": 367.431366
+          "close": 367.431335
         },
         {
           "observation_date": "2025-05-13",
@@ -8676,7 +8676,7 @@
         },
         {
           "observation_date": "2025-06-12",
-          "close": 392.626678
+          "close": 392.626648
         },
         {
           "observation_date": "2025-06-13",
@@ -8712,7 +8712,7 @@
         },
         {
           "observation_date": "2025-06-25",
-          "close": 402.74292
+          "close": 402.74295
         },
         {
           "observation_date": "2025-06-26",
@@ -8736,11 +8736,11 @@
         },
         {
           "observation_date": "2025-07-04",
-          "close": 394.917114
+          "close": 394.917145
         },
         {
           "observation_date": "2025-07-07",
-          "close": 389.572693
+          "close": 389.572662
         },
         {
           "observation_date": "2025-07-08",
@@ -8780,7 +8780,7 @@
         },
         {
           "observation_date": "2025-07-21",
-          "close": 411.523132
+          "close": 411.523102
         },
         {
           "observation_date": "2025-07-22",
@@ -8788,11 +8788,11 @@
         },
         {
           "observation_date": "2025-07-23",
-          "close": 419.730682
+          "close": 419.730652
         },
         {
           "observation_date": "2025-07-24",
-          "close": 427.747375
+          "close": 427.747345
         },
         {
           "observation_date": "2025-07-25",
@@ -8804,7 +8804,7 @@
         },
         {
           "observation_date": "2025-07-29",
-          "close": 420.685028
+          "close": 420.685059
         },
         {
           "observation_date": "2025-07-30",
@@ -8824,7 +8824,7 @@
         },
         {
           "observation_date": "2025-08-05",
-          "close": 404.079071
+          "close": 404.079041
         },
         {
           "observation_date": "2025-08-06",
@@ -8840,7 +8840,7 @@
         },
         {
           "observation_date": "2025-08-11",
-          "close": 410.9505
+          "close": 410.950531
         },
         {
           "observation_date": "2025-08-12",
@@ -8860,7 +8860,7 @@
         },
         {
           "observation_date": "2025-08-18",
-          "close": 419.539795
+          "close": 419.539825
         },
         {
           "observation_date": "2025-08-19",
@@ -8872,7 +8872,7 @@
         },
         {
           "observation_date": "2025-08-21",
-          "close": 422.021149
+          "close": 422.021179
         },
         {
           "observation_date": "2025-08-22",
@@ -8884,7 +8884,7 @@
         },
         {
           "observation_date": "2025-08-26",
-          "close": 434.618805
+          "close": 434.618835
         },
         {
           "observation_date": "2025-08-27",
@@ -8900,11 +8900,11 @@
         },
         {
           "observation_date": "2025-09-01",
-          "close": 433.282715
+          "close": 433.282684
         },
         {
           "observation_date": "2025-09-02",
-          "close": 429.027252
+          "close": 429.027222
         },
         {
           "observation_date": "2025-09-03",
@@ -8916,7 +8916,7 @@
         },
         {
           "observation_date": "2025-09-05",
-          "close": 421.29007
+          "close": 421.290039
         },
         {
           "observation_date": "2025-09-08",
@@ -8936,7 +8936,7 @@
         },
         {
           "observation_date": "2025-09-12",
-          "close": 433.669525
+          "close": 433.669556
         },
         {
           "observation_date": "2025-09-15",
@@ -9000,11 +9000,11 @@
         },
         {
           "observation_date": "2025-10-08",
-          "close": 430.381226
+          "close": 430.381256
         },
         {
           "observation_date": "2025-10-09",
-          "close": 441.79361
+          "close": 441.793579
         },
         {
           "observation_date": "2025-10-10",
@@ -9012,7 +9012,7 @@
         },
         {
           "observation_date": "2025-10-13",
-          "close": 418.582031
+          "close": 418.582001
         },
         {
           "observation_date": "2025-10-14",
@@ -9024,7 +9024,7 @@
         },
         {
           "observation_date": "2025-10-16",
-          "close": 410.457947
+          "close": 410.457977
         },
         {
           "observation_date": "2025-10-17",
@@ -9048,7 +9048,7 @@
         },
         {
           "observation_date": "2025-10-24",
-          "close": 411.038269
+          "close": 411.038239
         },
         {
           "observation_date": "2025-10-27",
@@ -9068,7 +9068,7 @@
         },
         {
           "observation_date": "2025-11-03",
-          "close": 414.713409
+          "close": 414.71344
         },
         {
           "observation_date": "2025-11-04",
@@ -9096,7 +9096,7 @@
         },
         {
           "observation_date": "2025-11-12",
-          "close": 423.030914
+          "close": 423.030884
         },
         {
           "observation_date": "2025-11-13",
@@ -9164,15 +9164,15 @@
         },
         {
           "observation_date": "2025-12-05",
-          "close": 394.016449
+          "close": 394.016418
         },
         {
           "observation_date": "2025-12-08",
-          "close": 391.308441
+          "close": 391.308411
         },
         {
           "observation_date": "2025-12-09",
-          "close": 388.020111
+          "close": 388.020142
         },
         {
           "observation_date": "2025-12-10",
@@ -9188,7 +9188,7 @@
         },
         {
           "observation_date": "2025-12-15",
-          "close": 390.534698
+          "close": 390.534668
         },
         {
           "observation_date": "2025-12-16",
@@ -9228,7 +9228,7 @@
         },
         {
           "observation_date": "2025-12-31",
-          "close": 394.40332
+          "close": 394.40329
         },
         {
           "observation_date": "2026-01-02",
@@ -9276,7 +9276,7 @@
         },
         {
           "observation_date": "2026-01-19",
-          "close": 417.614838
+          "close": 417.614868
         },
         {
           "observation_date": "2026-01-20",
@@ -9328,7 +9328,7 @@
         },
         {
           "observation_date": "2026-02-05",
-          "close": 400.786499
+          "close": 400.786469
         },
         {
           "observation_date": "2026-02-06",
@@ -9384,7 +9384,7 @@
         },
         {
           "observation_date": "2026-03-02",
-          "close": 397.498169
+          "close": 397.498199
         },
         {
           "observation_date": "2026-03-03",
@@ -9392,7 +9392,7 @@
         },
         {
           "observation_date": "2026-03-04",
-          "close": 391.501831
+          "close": 391.501862
         },
         {
           "observation_date": "2026-03-05",
@@ -9980,10 +9980,10 @@
       "name": "Hang Seng Index",
       "unit": "points",
       "source": "Yahoo Finance",
-      "record_count": 1242,
+      "record_count": 1243,
       "coverage_start": "2021-09-10",
-      "coverage_end": "2026-10-02",
-      "last_successful_fetch": "2026-10-05T18:49:31.820714+00:00",
+      "coverage_end": "2026-10-05",
+      "last_successful_fetch": "2026-10-06T16:15:38.409530+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -14954,6 +14954,10 @@
         {
           "observation_date": "2026-10-02",
           "close": 23972.289062
+        },
+        {
+          "observation_date": "2026-10-05",
+          "close": 24040.339844
         }
       ]
     },
@@ -14961,10 +14965,10 @@
       "name": "Hang Seng TECH Index",
       "unit": "points",
       "source": "Sina Finance via AKShare",
-      "record_count": 1247,
+      "record_count": 1248,
       "coverage_start": "2021-09-06",
-      "coverage_end": "2026-10-05",
-      "last_successful_fetch": "2026-10-05T18:49:31.820714+00:00",
+      "coverage_end": "2026-10-06",
+      "last_successful_fetch": "2026-10-06T16:15:38.409530+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -19955,6 +19959,10 @@
         {
           "observation_date": "2026-10-05",
           "close": 4183.68018
+        },
+        {
+          "observation_date": "2026-10-06",
+          "close": 4223.08008
         }
       ]
     }
