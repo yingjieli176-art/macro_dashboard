@@ -33,7 +33,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-08-echarts-dynamic-y-r22"
+CHART_BUILD = "2026-10-08-all-us-macro-echarts-r23"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2002,24 +2002,29 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         default=DEFAULT_CHART_RANGE, key=f"{range_key}_time_window",
         label_visibility="collapsed",
     ) or DEFAULT_CHART_RANGE
-    # ECharts 1.64 filters observations outside the client-side X viewport
-    # and recalculates the Y extent with scale=True. This fixes the Plotly
-    # 0–5% axis remaining fixed after selecting the last month.
-    if range_key == "normal_corridor_range":
-        native_option = build_adaptive_echarts_option(base_fig, selected_range)
-        if native_option:
-            st.caption("动态坐标轴：Y轴按当前时间窗口自动伸缩；点击图表右上角缩放工具后可任意框选。")
-            st.echarts_chart(
-                native_option,
-                height=445,
-                width="stretch",
-                key=f"{range_key}_echarts_{selected_range}",
-                theme=None,
-            )
-            show_parameter_description(desc_index)
-            add_sources(sources)
-            st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-            return
+    # Native ECharts filters samples outside the active X window and sets\n    # each Y axis to an independent nonzero-based visible-data extent.
+    # All standard US macro charts (1–4), not just chart 1, must use the
+    # same viewport-filtered engine. A Plotly fallback silently reintroduces
+    # the fixed five-year zero-based axes, so never render it here.
+    native_option = build_adaptive_echarts_option(base_fig, selected_range)
+    if native_option is None:
+        st.error("当前图表缺少有效观测值，无法绘制；请检查数据源更新时间。")
+        show_parameter_description(desc_index)
+        add_sources(sources)
+        st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+        return
+    st.caption("动态Y轴已启用：时间切换、底部滑块和右上角框选缩放都会重新计算当前区间的数据范围。")
+    st.echarts_chart(
+        native_option,
+        height=465,
+        width="stretch",
+        key=f"{range_key}_echarts_{selected_range}",
+        theme="streamlit",
+    )
+    show_parameter_description(desc_index)
+    add_sources(sources)
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+    return
     fig = apply_server_time_window(base_fig, selected_range)
     chart_key = f"{range_key}_{selected_range}_plot"
     # Streamlit exposes exact box X coordinates; the subsequent rerun refits
