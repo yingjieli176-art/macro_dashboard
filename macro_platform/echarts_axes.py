@@ -150,3 +150,50 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
         ],
         "series": series,
     }
+
+
+def summarize_series_dates(fig, *, now: pd.Timestamp | None = None,
+                           maximum_age_days: int = 10) -> dict:
+    """Report actual observation dates, not chart rendering/update timestamps.
+
+    Never imply a last-good cached reading is fresh because it was loaded today.
+    """
+    now = pd.Timestamp.now(tz="UTC").tz_localize(None) if now is None else pd.Timestamp(now)
+    if now.tzinfo is not None:
+        now = now.tz_localize(None)
+    now = now.normalize()
+    latest_by_name = {}
+    stale_names = []
+    future_names = []
+    for trace in fig.data:
+        xs, ys = getattr(trace, "x", None), getattr(trace, "y", None)
+        if xs is None or ys is None:
+            continue
+        latest = None
+        for x, y in zip(xs, ys):
+            try:
+                value = float(y)
+                if not math.isfinite(value):
+                    continue
+                timestamp = pd.Timestamp(x)
+                if pd.isna(timestamp):
+                    continue
+                if timestamp.tzinfo is not None:
+                    timestamp = timestamp.tz_localize(None)
+                latest = timestamp if latest is None else max(latest, timestamp)
+            except (ValueError, TypeError, OverflowError):
+                continue
+        if latest is None:
+            continue
+        name = str(getattr(trace, "name", None) or "Series")
+        latest_by_name[name] = latest.strftime("%Y-%m-%d")
+        age = (now - latest.normalize()).days
+        if age > maximum_age_days:
+            stale_names.append(name)
+        if age < -1:
+            future_names.append(name)
+    return {
+        "latest_by_name": latest_by_name,
+        "stale_names": stale_names,
+        "future_names": future_names,
+    }
