@@ -1,0 +1,50 @@
+name: Confirm live Streamlit deployment
+on:
+  push:
+    branches: [main]
+    paths:
+      - app.py
+      - static/deploy_version.json
+      - .github/workflows/deployment-sync.yml
+  workflow_dispatch:
+
+jobs:
+  verify-cloud-version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check deployed static version fingerprint
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import sys
+          import time
+          import urllib.request
+
+          manifest = json.loads(pathlib.Path("static/deploy_version.json").read_text())
+          expected = manifest["release"]
+          url = "https://data-macromarket.streamlit.app/app/static/deploy_version.json"
+          for attempt in range(1, 9):
+              try:
+                  request = urllib.request.Request(
+                      url, headers={"User-Agent": "MacroDashboard-live-version-check/1.0"}
+                  )
+                  with urllib.request.urlopen(request, timeout=18) as response:
+                      actual = json.loads(response.read(50000).decode("utf-8"))
+                  found = actual.get("release")
+                  print(f"Attempt {attempt}: expected={expected}, deployed={found}", flush=True)
+                  if found == expected:
+                      print("PASS: Streamlit Cloud serves the current GitHub release")
+                      sys.exit(0)
+              except Exception as exc:
+                  print(f"Attempt {attempt}: unable to read deployment fingerprint: {exc}", flush=True)
+              if attempt < 8:
+                  time.sleep(30)
+          sys.exit(
+              "FAIL: Streamlit Cloud is not serving the newest release. "
+              "Check the app's source repository, branch, entrypoint, build logs, "
+              "and GitHub-to-Streamlit deployment connection."
+          )
+          PY
