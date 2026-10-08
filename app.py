@@ -1,4 +1,5 @@
 import html
+from collections.abc import Mapping
 import json
 import os
 import threading
@@ -31,7 +32,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-08-viewport-autoscale-r20"
+CHART_BUILD = "2026-10-08-viewport-autoscale-r21"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1978,7 +1979,7 @@ compact_mode = False
 def _prepare_chart_for_client_ranges(fig, element_key, mode=None):
     """Attach browser-side time controls to a complete five-year figure."""
     fig = apply_client_time_controls(fig, default_range=DEFAULT_CHART_RANGE)
-    revision = f"{element_key}:client-range:{DEFAULT_CHART_RANGE}:r12"
+    revision = f"{element_key}:client-range:{DEFAULT_CHART_RANGE}:r21"
     if mode is not None:
         revision += f":{mode}"
     # Do not preserve stale browser axes across a rerun: viewport Y ranges must win.
@@ -2004,12 +2005,21 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     chart_key = f"{range_key}_{selected_range}_plot"
     # Streamlit exposes exact box X coordinates; the subsequent rerun refits
     # every visible Y axis against observations in the chosen time viewport.
-    event_state = st.session_state.get(chart_key, {})
-    selection = event_state.get("selection", {}) if isinstance(event_state, dict) else {}
-    boxes = selection.get("box", []) if isinstance(selection, dict) else []
-    if boxes:
+    event_state = st.session_state.get(chart_key)
+    # PlotlyState is a read-only Mapping, not necessarily a plain dict.
+    selection = event_state.get("selection", {}) if isinstance(event_state, Mapping) else {}
+    boxes = selection.get("box", []) if isinstance(selection, Mapping) else []
+    if boxes and isinstance(boxes[-1], Mapping):
         fig = apply_selected_x_viewport(fig, boxes[-1])
     fig.update_layout(dragmode="select", selectdirection="h", selectionrevision=None)
+    # The chart's effective (not merely requested) axis bounds are visible
+    # beside the release marker, making stale deployments immediately apparent.
+    axis = fig.layout.yaxis
+    bounds = list(axis.range) if axis.range is not None else []
+    if len(bounds) == 2:
+        st.caption(f"当前Y轴: {float(bounds[0]):.3f} ～ {float(bounds[1]):.3f} % · 按所选X轴范围计算")
+    else:
+        st.warning("当前数据没有有效Y轴范围，请检查数据源。")
     st.plotly_chart(
         fig, key=chart_key, use_container_width=True, config=PLOTLY_CONFIG,
         on_select="rerun", selection_mode="box",
