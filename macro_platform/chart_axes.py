@@ -536,7 +536,7 @@ def apply_client_time_controls(
             active=CLIENT_RANGE_ORDER.index(default_range),
             buttons=buttons, x=0, xanchor="left", y=1.22, yanchor="top",
             bgcolor="rgba(248,250,252,0.96)",
-            activebordercolor="#cbd5e1", bordercolor="#cbd5e1",
+            bordercolor="#cbd5e1",
             font=dict(size=11, color="#475569"),
         )],
         legend=dict(orientation="h", yanchor="bottom", y=1.02,
