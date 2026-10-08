@@ -1,5 +1,7 @@
 """ECharts viewport autoscaling checks (no network access needed)."""
 import unittest
+import ast
+from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -38,6 +40,33 @@ class EchartsNativeAxes(unittest.TestCase):
         self.assertEqual(options["yAxis"][1]["position"], "right")
         self.assertTrue(options["yAxis"][1]["scale"])
         self.assertEqual(options["series"][1]["yAxisIndex"], 1)
+
+    def test_all_standard_us_charts_use_same_responsive_renderer(self):
+        source = (Path(__file__).resolve().parents[1] / "app.py").read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        renderer = next(
+            node for node in tree.body
+            if isinstance(node, ast.FunctionDef) and node.name == "_render_standard_macro_chart"
+        )
+        calls = [
+            node.func.attr for node in ast.walk(renderer)
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+        ]
+        self.assertIn("echarts_chart", calls)
+        self.assertNotIn("plotly_chart", calls)
+        self.assertNotIn('range_key == "normal_corridor_range"', ast.get_source_segment(source, renderer))
+        for chart_no in range(1, 5):
+            chart_name = f"render_macro_chart_{chart_no}"
+            render_method = next(
+                node for node in tree.body
+                if isinstance(node, ast.FunctionDef) and node.name == chart_name
+            )
+            self.assertTrue(any(
+                isinstance(call, ast.Call)
+                and isinstance(call.func, ast.Name)
+                and call.func.id == "_render_standard_macro_chart"
+                for call in ast.walk(render_method)
+            ))
 
     def test_no_observations(self):
         self.assertIsNone(build_adaptive_echarts_option(go.Figure(), "1M"))
