@@ -37,5 +37,15 @@ jobs:
           assert "theme" in parameters and "key" in parameters
           print("Streamlit", st.__version__, "supports native ECharts")
           PY
+      - name: Smoke-test actual app.py startup imports
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path("app.py").read_text(encoding="utf-8")
+          imports = source.split("st.set_page_config(", 1)[0]
+          assert "import macro_platform.echarts_axes as _echarts_axes" in imports
+          exec(compile(imports, "app.py", "exec"), {})
+          print("PASS: application startup import chain")
+          PY
       - name: Regression tests for viewport fit and observation dates
         run: python -m unittest discover -s tests -p "test_*axes.py" -v
