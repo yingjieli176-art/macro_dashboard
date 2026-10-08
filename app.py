@@ -14,7 +14,15 @@ from plotly.subplots import make_subplots
 import requests
 import streamlit as st
 from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, load_hk_liquidity
-from macro_platform.echarts_axes import build_adaptive_echarts_option, summarize_series_dates, expected_viewport_y_bounds
+# The renderer is an optional module during rolling Streamlit Cloud deployments.
+# Never import individual newly added helpers at startup: mixed revisions of
+# app.py and macro_platform/echarts_axes.py must not crash the entire app.
+try:
+    import macro_platform.echarts_axes as _echarts_axes
+except (ImportError, AttributeError) as _echarts_module_error:
+    _echarts_axes = None
+else:
+    _echarts_module_error = None
 from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis, apply_client_time_controls, apply_selected_x_viewport, apply_server_time_window
 from macro_platform.us_equity_risk import load_vixeq_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
@@ -33,7 +41,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-08-dynamic-y-verified-r24"
+CHART_BUILD = "2026-10-08-importfix-r25"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2006,7 +2014,21 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     # All standard US macro charts (1–4), not just chart 1, must use the
     # same viewport-filtered engine. A Plotly fallback silently reintroduces
     # the fixed five-year zero-based axes, so never render it here.
-    native_option = build_adaptive_echarts_option(base_fig, selected_range)
+    builder = getattr(_echarts_axes, "build_adaptive_echarts_option", None)
+    if builder is None or not callable(getattr(st, "echarts_chart", None)):
+        # Fail open: even a stale/missing optional chart adapter cannot prevent
+        # the market overview, charts and news from loading.
+        st.warning("ECharts 模块尚未同步，临时显示可缩放的 Plotly 图表。")
+        fallback = apply_server_time_window(base_fig, selected_range)
+        st.plotly_chart(
+            fallback, key=f"{range_key}_plotly_fallback_{selected_range}",
+            use_container_width=True, config=PLOTLY_CONFIG,
+        )
+        show_parameter_description(desc_index)
+        add_sources(sources)
+        st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+        return
+    native_option = builder(base_fig, selected_range)
     if native_option is None:
         st.error("当前图表缺少有效观测值，无法绘制；请检查数据源更新时间。")
         show_parameter_description(desc_index)
@@ -2014,26 +2036,31 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
         return
     st.caption("动态Y轴：时间切换、底部滑块及框选时按可见样本自适应（左右轴分别计算）。")
-    # Optional diagnostic: show the server-computed viewport range beside
-    # the renderer result, so a stale deployment/zero-based axis is traceable.
+    # Extra diagnostics are optional: version skew must not break the charts.
     if st.query_params.get("debug_chart") == "1":
-        bounds = expected_viewport_y_bounds(base_fig, selected_range)
-        st.caption("服务端校验区间：" + (
-            " · ".join(f"{axis}: {values[0]:.3f}～{values[1]:.3f}"
-                     for axis, values in sorted(bounds.items()))
-            if bounds else "无可用数据"
-        ))
-    health = summarize_series_dates(
-        base_fig, maximum_age_days=15 if range_key == "us_liquidity_range" else 10,
-    )
-    if health["latest_by_name"]:
-        st.caption("数据观测日：" + " · ".join(
-            f"{name} {obs}" for name, obs in health["latest_by_name"].items()
-        ))
-    if health["stale_names"]:
-        st.warning("以下序列可能尚未更新：" + "、".join(health["stale_names"]))
-    if health["future_names"]:
-        st.warning("以下序列的观测日期超前，请检查源数据：" + "、".join(health["future_names"]))
+        bounds_helper = getattr(_echarts_axes, "expected_viewport_y_bounds", None)
+        if callable(bounds_helper):
+            bounds = bounds_helper(base_fig, selected_range)
+            st.caption("服务端校验区间：" + (
+                " · ".join(f"{axis}: {values[0]:.3f}～{values[1]:.3f}"
+                         for axis, values in sorted(bounds.items()))
+                if bounds else "无可用数据"
+            ))
+        else:
+            st.caption("Y 轴诊断辅助函数未加载；图表显示不受影响。")
+    health_helper = getattr(_echarts_axes, "summarize_series_dates", None)
+    if callable(health_helper):
+        health = health_helper(
+            base_fig, maximum_age_days=15 if range_key == "us_liquidity_range" else 10,
+        )
+        if health.get("latest_by_name"):
+            st.caption("数据观测日：" + " · ".join(
+                f"{name} {obs}" for name, obs in health["latest_by_name"].items()
+            ))
+        if health.get("stale_names"):
+            st.warning("以下序列可能尚未更新：" + "、".join(health["stale_names"]))
+        if health.get("future_names"):
+            st.warning("以下序列的观测日期超前，请检查源数据：" + "、".join(health["future_names"]))
     st.echarts_chart(
         native_option,
         height=465,
