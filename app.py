@@ -23,7 +23,15 @@ except (ImportError, AttributeError) as _echarts_module_error:
     _echarts_axes = None
 else:
     _echarts_module_error = None
-from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis, apply_client_time_controls, apply_selected_x_viewport, apply_server_time_window
+from macro_platform import chart_axes as _chart_axes
+RANGE_OFFSETS = _chart_axes.RANGE_OFFSETS
+apply_time_axis = _chart_axes.apply_time_axis
+# Extra chart helpers were added across multiple commits. Treat them as
+# optional during an out-of-sync Cloud rollout instead of raising ImportError.
+apply_client_time_controls = getattr(
+    _chart_axes, "apply_client_time_controls", lambda fig, **_kwargs: fig
+)
+apply_server_time_window = getattr(_chart_axes, "apply_server_time_window", None)
 from macro_platform.us_equity_risk import load_vixeq_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_asia_rates_figure
@@ -2019,7 +2027,11 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         # Fail open: even a stale/missing optional chart adapter cannot prevent
         # the market overview, charts and news from loading.
         st.warning("ECharts 模块尚未同步，临时显示可缩放的 Plotly 图表。")
-        fallback = apply_server_time_window(base_fig, selected_range)
+        if callable(apply_server_time_window):
+            fallback = apply_server_time_window(base_fig, selected_range)
+        else:
+            fallback = apply_time_axis(base_fig, selected_range)
+            fallback.update_yaxes(autorange=True, fixedrange=False, rangemode="normal")
         st.plotly_chart(
             fallback, key=f"{range_key}_plotly_fallback_{selected_range}",
             use_container_width=True, config=PLOTLY_CONFIG,
