@@ -13,7 +13,7 @@ from plotly.subplots import make_subplots
 import requests
 import streamlit as st
 from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, load_hk_liquidity
-from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis, apply_client_time_controls, apply_selected_x_viewport
+from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis, apply_client_time_controls, apply_selected_x_viewport, apply_server_time_window
 from macro_platform.us_equity_risk import load_vixeq_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_asia_rates_figure
@@ -1990,8 +1990,16 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     st.markdown(title, unsafe_allow_html=True)
     st.markdown(description, unsafe_allow_html=True)
     base_fig = prebuilt_fig if prebuilt_fig is not None else builder("5Y")
-    fig = _prepare_chart_for_client_ranges(base_fig, range_key)
-    chart_key = f"{range_key}_plot"
+    # Streamlit-side selector forces a fresh figure with the correct visible Y
+    # span. Plotly's client-side range buttons can retain the original 5Y Y
+    # range despite relayout instructions.
+    selected_range = st.segmented_control(
+        "时间范围", options=["5Y", "1Y", "6M", "3M", "1M"],
+        default=DEFAULT_CHART_RANGE, key=f"{range_key}_time_window",
+        label_visibility="collapsed",
+    ) or DEFAULT_CHART_RANGE
+    fig = apply_server_time_window(base_fig, selected_range)
+    chart_key = f"{range_key}_{selected_range}_plot"
     # Streamlit exposes exact box X coordinates; the subsequent rerun refits
     # every visible Y axis against observations in the chosen time viewport.
     event_state = st.session_state.get(chart_key, {})
