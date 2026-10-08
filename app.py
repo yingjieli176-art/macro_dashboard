@@ -1994,15 +1994,14 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     # Visible deployment fingerprint: distinguishes deployed code from an old instance.
     st.caption(f"图表版本 {CHART_BUILD} · X/Y 自适应缩放")
     base_fig = prebuilt_fig if prebuilt_fig is not None else builder("5Y")
-    # Streamlit-side selector forces a fresh figure with the correct visible Y
-    # span. Plotly's client-side range buttons can retain the original 5Y Y
-    # range despite relayout instructions.
+    # All four standard US charts now share one client-side viewport engine.
     selected_range = st.segmented_control(
         "时间范围", options=["5Y", "1Y", "6M", "3M", "1M"],
         default=DEFAULT_CHART_RANGE, key=f"{range_key}_time_window",
         label_visibility="collapsed",
     ) or DEFAULT_CHART_RANGE
-    # Native ECharts filters samples outside the active X window and sets\n    # each Y axis to an independent nonzero-based visible-data extent.
+    # Native ECharts filters samples outside the active X window and sets
+    # each Y axis to an independent nonzero-based visible-data extent.
     # All standard US macro charts (1–4), not just chart 1, must use the
     # same viewport-filtered engine. A Plotly fallback silently reintroduces
     # the fixed five-year zero-based axes, so never render it here.
@@ -2025,32 +2024,6 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
     return
-    fig = apply_server_time_window(base_fig, selected_range)
-    chart_key = f"{range_key}_{selected_range}_plot"
-    # Streamlit exposes exact box X coordinates; the subsequent rerun refits
-    # every visible Y axis against observations in the chosen time viewport.
-    event_state = st.session_state.get(chart_key)
-    # PlotlyState is a read-only Mapping, not necessarily a plain dict.
-    selection = event_state.get("selection", {}) if isinstance(event_state, Mapping) else {}
-    boxes = selection.get("box", []) if isinstance(selection, Mapping) else []
-    if boxes and isinstance(boxes[-1], Mapping):
-        fig = apply_selected_x_viewport(fig, boxes[-1])
-    fig.update_layout(dragmode="select", selectdirection="h", selectionrevision=None)
-    # The chart's effective (not merely requested) axis bounds are visible
-    # beside the release marker, making stale deployments immediately apparent.
-    axis = fig.layout.yaxis
-    bounds = list(axis.range) if axis.range is not None else []
-    if len(bounds) == 2:
-        st.caption(f"当前Y轴: {float(bounds[0]):.3f} ～ {float(bounds[1]):.3f} % · 按所选X轴范围计算")
-    else:
-        st.warning("当前数据没有有效Y轴范围，请检查数据源。")
-    st.plotly_chart(
-        fig, key=chart_key, use_container_width=True, config=PLOTLY_CONFIG,
-        on_select="rerun", selection_mode="box",
-    )
-    show_parameter_description(desc_index)
-    add_sources(sources)
-    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
 def render_macro_chart_1(prebuilt_fig=None):
