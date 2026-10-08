@@ -4,7 +4,7 @@ import unittest
 import pandas as pd
 import plotly.graph_objects as go
 
-from macro_platform.echarts_axes import build_adaptive_echarts_option
+from macro_platform.echarts_axes import build_adaptive_echarts_option, summarize_series_dates
 
 
 class EchartsNativeAxes(unittest.TestCase):
@@ -41,6 +41,34 @@ class EchartsNativeAxes(unittest.TestCase):
 
     def test_no_observations(self):
         self.assertIsNone(build_adaptive_echarts_option(go.Figure(), "1M"))
+
+    def test_curve_primary_and_spreads_use_independent_scales(self):
+        dates = pd.date_range("2026-04-01", periods=28, freq="7D")
+        fig = go.Figure()
+        nominal = [4.9 + i * 0.01 for i in range(28)]
+        two_year = [4.5 + i * 0.007 for i in range(28)]
+        fig.add_trace(go.Scatter(x=dates, y=nominal, name="10Y"))
+        fig.add_trace(go.Scatter(x=dates, y=two_year, name="2Y"))
+        fig.add_trace(go.Scatter(
+            x=dates, y=[a-b for a,b in zip(nominal, two_year)],
+            yaxis="y2", name="10Y−2Y (R1)"
+        ))
+        fig.update_layout(yaxis2=dict(overlaying="y", side="right"))
+        opts = build_adaptive_echarts_option(fig, "6M")
+        self.assertEqual(opts["series"][2]["yAxisIndex"], 1)
+        self.assertEqual(len(opts["yAxis"]), 2)
+        self.assertTrue(all(ax["scale"] for ax in opts["yAxis"]))
+        self.assertTrue(all(dz["filterMode"] == "filter" for dz in opts["dataZoom"]))
+
+    def test_observation_dates_and_stale_warning(self):
+        dates = ["2026-10-01", "2026-10-02"]
+        fig = go.Figure(data=[go.Scatter(x=dates, y=[4.2, 4.3], name="2Y")])
+        result = summarize_series_dates(
+            fig, now=pd.Timestamp("2026-10-15"), maximum_age_days=7
+        )
+        self.assertEqual(result["latest_by_name"]["2Y"], "2026-10-02")
+        self.assertEqual(result["stale_names"], ["2Y"])
+        self.assertEqual(result["future_names"], [])
 
 
 if __name__ == "__main__":
