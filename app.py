@@ -14,7 +14,7 @@ from plotly.subplots import make_subplots
 import requests
 import streamlit as st
 from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, load_hk_liquidity
-from macro_platform.echarts_axes import build_adaptive_echarts_option
+from macro_platform.echarts_axes import build_adaptive_echarts_option, summarize_series_dates
 from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis, apply_client_time_controls, apply_selected_x_viewport, apply_server_time_window
 from macro_platform.us_equity_risk import load_vixeq_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
@@ -2013,6 +2013,17 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
         return
     st.caption("动态Y轴已启用：时间切换、底部滑块和右上角框选缩放都会重新计算当前区间的数据范围。")
+    health = summarize_series_dates(
+        base_fig, maximum_age_days=15 if range_key == "us_liquidity_range" else 10,
+    )
+    if health["latest_by_name"]:
+        st.caption("数据观测日：" + " · ".join(
+            f"{name} {obs}" for name, obs in health["latest_by_name"].items()
+        ))
+    if health["stale_names"]:
+        st.warning("以下序列可能尚未更新：" + "、".join(health["stale_names"]))
+    if health["future_names"]:
+        st.warning("以下序列的观测日期超前，请检查源数据：" + "、".join(health["future_names"]))
     st.echarts_chart(
         native_option,
         height=465,
