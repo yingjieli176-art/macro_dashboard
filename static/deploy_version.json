@@ -1,11 +1,11 @@
 {
-  "release": "2026-10-08-echarts-dynamic-y-r22",
+  "release": "2026-10-08-all-us-macro-echarts-r23",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
   "features": [
-    "echarts_native_y_autofit_chart1",
-    "plotly_server_x_y_rescale",
-    "horizontal_box_select"
+    "us_macro_charts_1_to_4_dynamic_y_axis",
+    "echarts_x_zoom_y_autofit",
+    "series_observation_date_health"
   ]
 }
