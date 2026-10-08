@@ -524,7 +524,7 @@ def apply_client_time_controls(
     for axis_name, bounds in selected_ranges.items():
         axis = getattr(fig.layout, axis_name, None)
         if axis is not None:
-            axis.update(range=bounds, autorange=False)
+            axis.update(range=bounds, autorange=False, rangemode="normal")
     for axis_name in ("yaxis", "yaxis2", "yaxis3", "yaxis4", "yaxis5"):
         axis = getattr(fig.layout, axis_name, None)
         if axis is not None:
@@ -574,5 +574,5 @@ def apply_selected_x_viewport(fig: go.Figure, box: dict[str, Any]) -> go.Figure:
     for axis_name, bounds in _visible_y_ranges(fig, start, end).items():
         axis = getattr(fig.layout, axis_name, None)
         if axis is not None:
-            axis.update(range=bounds, autorange=False, fixedrange=False)
+            axis.update(range=bounds, autorange=False, fixedrange=False, rangemode="normal")
     return fig
