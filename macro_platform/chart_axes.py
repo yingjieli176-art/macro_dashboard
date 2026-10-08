@@ -576,3 +576,31 @@ def apply_selected_x_viewport(fig: go.Figure, box: dict[str, Any]) -> go.Figure:
         if axis is not None:
             axis.update(range=bounds, autorange=False, fixedrange=False, rangemode="normal")
     return fig
+
+
+def apply_server_time_window(
+    fig: go.Figure, date_range: str, *, latest: pd.Timestamp | None = None
+) -> go.Figure:
+    """Reliable server-rendered X/Y bounds, independent of Plotly button state."""
+    latest = pd.Timestamp(latest) if latest is not None else _figure_latest(fig)
+    if latest is None or pd.isna(latest):
+        return fig
+    if latest.tzinfo is not None:
+        latest = latest.tz_localize(None)
+    date_range = date_range if date_range in RANGE_OFFSETS else "1Y"
+    start = latest - RANGE_OFFSETS[date_range]
+    fig = apply_time_axis(fig, date_range, latest=latest)
+    _remove_year_band_for_client_controls(fig)
+    fig = apply_dashboard_chart_standard(fig)
+    fig.update_layout(updatemenus=[], dragmode="select", selectdirection="h",
+                      uirevision=None)
+    fig.update_xaxes(range=[start, _axis_end_with_padding(start, latest)],
+                     autorange=False, fixedrange=False, tickmode="auto",
+                     tickvals=None, ticktext=None, dtick=None, tickformat=None,
+                     rangeslider_visible=False)
+    for name, bounds in _visible_y_ranges(fig, start, latest).items():
+        axis = getattr(fig.layout, name, None)
+        if axis is not None:
+            axis.update(range=bounds, autorange=False, fixedrange=False,
+                        rangemode="normal")
+    return fig
