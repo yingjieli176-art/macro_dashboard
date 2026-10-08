@@ -1,0 +1,24 @@
+name: Viewport Y-axis regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - app.py
+      - macro_platform/chart_axes.py
+      - tests/test_viewport_axes.py
+      - .github/workflows/viewport-axis-regression.yml
+  workflow_dispatch:
+
+jobs:
+  axes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install chart test dependencies
+        run: python -m pip install "pandas>=2,<3" "plotly>=5,<7"
+      - name: Verify adaptive axes and box selection
+        run: python -m unittest discover -s tests -p "test_viewport_axes.py" -v
