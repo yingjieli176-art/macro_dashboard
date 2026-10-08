@@ -442,76 +442,112 @@ def apply_dashboard_chart_standard(fig: go.Figure) -> go.Figure:
     return fig
 
 
+def _visible_y_ranges(fig: go.Figure, start: pd.Timestamp, end: pd.Timestamp) -> dict[str, list[float]]:
+    """Scale each Y axis independently using ONLY observations in the X viewport."""
+    import math
+
+    grouped: dict[str, list[float]] = {}
+    for trace in fig.data:
+        if getattr(trace, "visible", True) in (False, "legendonly"):
+            continue
+        xs, ys = getattr(trace, "x", None), getattr(trace, "y", None)
+        if xs is None or ys is None:
+            continue
+        axis_ref = getattr(trace, "yaxis", None) or "y"
+        axis_name = "yaxis" if axis_ref == "y" else "yaxis" + axis_ref[1:]
+        for x, y in zip(xs, ys):
+            try:
+                stamp = pd.Timestamp(x)
+                if stamp.tzinfo is not None:
+                    stamp = stamp.tz_localize(None)
+                value = float(y)
+                if start <= stamp <= end and math.isfinite(value):
+                    grouped.setdefault(axis_name, []).append(value)
+            except (TypeError, ValueError, OverflowError):
+                continue
+
+    result = {}
+    for name, values in grouped.items():
+        low, high = min(values), max(values)
+        span = high - low
+        # A flat series gets a small symmetric range; never fabricate movement.
+        padding = span * 0.09 if span > 0 else max(abs(low) * 0.01, 0.001)
+        axis = getattr(fig.layout, name, None)
+        if getattr(axis, "type", None) == "log":
+            if low <= 0:
+                continue
+            import math
+            result[name] = [math.log10(max(low - padding, low * 0.8)), math.log10(high + padding)]
+        else:
+            result[name] = [low - padding, high + padding]
+    return result
+
+
 def apply_client_time_controls(
     fig: go.Figure,
     *,
     default_range: str = "1Y",
     latest: pd.Timestamp | None = None,
 ) -> go.Figure:
-    """Attach Plotly native date-axis range selector.
+    """Client-side time buttons update X and every visible Y axis together.
 
-    This uses xaxis.rangeselector, Plotly purpose-built time-series control,
-    so clicking a time window updates the date axis entirely inside plotly.js
-    without any Streamlit widget or server rerun.
+    Native Plotly rangeselector adjusts only X; its automatic Y range is
+    calculated against the full trace, not the selected viewport. Relayout
+    buttons explicitly update both dimensions without a Streamlit rerun.
+    Users can also pan/zoom Y independently (fixedrange=False).
     """
     latest = pd.Timestamp(latest) if latest is not None else _figure_latest(fig)
     if latest is None or pd.isna(latest):
         return fig
-    if getattr(latest, "tzinfo", None):
+    if latest.tzinfo is not None:
         latest = latest.tz_localize(None)
 
     fig = apply_time_axis(fig, "5Y", latest=latest)
     _remove_year_band_for_client_controls(fig)
     fig = apply_dashboard_chart_standard(fig)
-
     default_range = default_range if default_range in RANGE_OFFSETS else "1Y"
-    default_start = latest - RANGE_OFFSETS[default_range]
+
+    buttons = []
+    for label in CLIENT_RANGE_ORDER:
+        start = latest - RANGE_OFFSETS[label]
+        updates: dict[str, Any] = {
+            "xaxis.range": [start.isoformat(), _axis_end_with_padding(start, latest).isoformat()],
+            "xaxis.autorange": False,
+        }
+        for axis_name, bounds in _visible_y_ranges(fig, start, latest).items():
+            updates[f"{axis_name}.range"] = bounds
+            updates[f"{axis_name}.autorange"] = False
+        buttons.append(dict(label=label, method="relayout", args=[updates]))
+
+    selected_start = latest - RANGE_OFFSETS[default_range]
+    selected_ranges = _visible_y_ranges(fig, selected_start, latest)
+    for axis_name, bounds in selected_ranges.items():
+        axis = getattr(fig.layout, axis_name, None)
+        if axis is not None:
+            axis.update(range=bounds, autorange=False)
+    for axis_name in ("yaxis", "yaxis2", "yaxis3", "yaxis4", "yaxis5"):
+        axis = getattr(fig.layout, axis_name, None)
+        if axis is not None:
+            axis.fixedrange = False
 
     fig.update_layout(
-        updatemenus=[],
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="left",
-            x=0.0,
-            font=dict(size=10, color="#334155"),
-            bgcolor="rgba(255,255,255,0)",
-            borderwidth=0,
-            itemwidth=30,
-            traceorder="normal",
-        ),
+        updatemenus=[dict(
+            type="buttons", direction="right", showactive=True,
+            active=CLIENT_RANGE_ORDER.index(default_range),
+            buttons=buttons, x=0, xanchor="left", y=1.22, yanchor="top",
+            bgcolor="rgba(248,250,252,0.96)",
+            activebordercolor="#cbd5e1", bordercolor="#cbd5e1",
+            font=dict(size=11, color="#475569"),
+        )],
+        legend=dict(orientation="h", yanchor="bottom", y=1.02,
+                    xanchor="left", x=0, font=dict(size=10, color="#334155")),
     )
     fig.update_xaxes(
         type="date",
-        range=[default_start, latest],
-        autorange=False,
-        fixedrange=False,
-        tickmode="auto",
-        tickvals=None,
-        ticktext=None,
-        dtick=None,
-        tickformat=None,
-        nticks=8,
-        hoverformat="%Y-%m-%d",
-        rangeslider_visible=False,
-        tickformatstops=[
-            dict(dtickrange=[None, "M1"], value="%d %b"),
-            dict(dtickrange=["M1", "M12"], value="%b %Y"),
-            dict(dtickrange=["M12", None], value="%Y"),
-        ],
-        rangeselector=dict(
-            visible=True,
-            buttons=_native_range_buttons(),
-            x=0.0,
-            xanchor="left",
-            y=1.22,
-            yanchor="top",
-            bgcolor="rgba(248,250,252,0.96)",
-            activecolor="#e7eefc",
-            bordercolor="rgba(203,213,225,0.75)",
-            borderwidth=1,
-            font=dict(size=11, color="#475569"),
-        ),
+        range=[selected_start, _axis_end_with_padding(selected_start, latest)],
+        autorange=False, fixedrange=False, tickmode="auto",
+        tickvals=None, ticktext=None, dtick=None, tickformat=None,
+        nticks=8, hoverformat="%Y-%m-%d", rangeslider_visible=False,
+        rangeselector=dict(visible=False),
     )
     return fig

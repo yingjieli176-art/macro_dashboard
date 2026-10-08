@@ -2,6 +2,9 @@ import html
 import json
 import re
 import time
+import os
+import threading
+from pathlib import Path
 from io import StringIO
 import pandas as pd
 import requests
@@ -18,6 +21,43 @@ NEWS_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWe
 
 FRED_GRAPH_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv"
 _FRED_LAST_GOOD = {}
+_FRED_LOCK = threading.RLock()
+_FRED_SNAPSHOT_DIR = Path(os.environ.get("MACRO_FRED_CACHE_DIR", "data_snapshots/fred_cache"))
+
+def _fred_disk_path(series_id):
+    if not re.fullmatch(r"[A-Z0-9_]+", series_id):
+        raise ValueError("Invalid FRED series ID")
+    return _FRED_SNAPSHOT_DIR / (series_id + ".json")
+
+def _save_fred_success(series_id, frame):
+    """Persist only validated nonempty data using an atomic replacement."""
+    rows = [{"date": d.strftime("%Y-%m-%d"), "value": float(v)} for d, v in zip(frame["observation_date"], frame[series_id])]
+    if not rows:
+        return
+    with _FRED_LOCK:
+        _FRED_SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+        path = _fred_disk_path(series_id)
+        temp = path.with_suffix(".json.tmp")
+        try:
+            temp.write_text(json.dumps({"series_id": series_id, "fetched_at": time.time(), "records": rows}), encoding="utf-8")
+            os.replace(temp, path)
+        finally:
+            temp.unlink(missing_ok=True)
+
+def _read_fred_success(series_id):
+    try:
+        payload = json.loads(_fred_disk_path(series_id).read_text(encoding="utf-8"))
+        if payload.get("series_id") != series_id:
+            return None
+        rows = pd.DataFrame(payload["records"]).rename(columns={"date": "observation_date", "value": series_id})
+        frame = _normalize_fred_frame(rows, series_id)
+        if frame.empty:
+            return None
+        frame.attrs.update({"source": "FRED persisted last-good", "is_stale": True, "is_fallback": True, "fetched_at": payload.get("fetched_at")})
+        return frame
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
 
 
 def _normalize_fred_frame(frame, series_id):
@@ -99,12 +139,21 @@ def _fred_series(series_id):
                 saved = frame.copy()
                 saved.attrs = dict(frame.attrs)
                 saved.attrs["fetched_at"] = time.time()
-                _FRED_LAST_GOOD[series_id] = saved
+                with _FRED_LOCK:
+                    _FRED_LAST_GOOD[series_id] = saved
+                try:
+                    _save_fred_success(series_id, saved)
+                except OSError:
+                    pass
+                frame.attrs["fetched_at"] = saved.attrs["fetched_at"]
                 return frame
         except Exception as exc:
             errors.append(f"{fetcher.__name__}: {type(exc).__name__}: {exc}")
 
-    previous = _FRED_LAST_GOOD.get(series_id)
+    with _FRED_LOCK:
+        previous = _FRED_LAST_GOOD.get(series_id)
+    if previous is None:
+        previous = _read_fred_success(series_id)
     if isinstance(previous, pd.DataFrame) and not previous.empty:
         stale = previous.copy()
         stale.attrs = dict(previous.attrs)
