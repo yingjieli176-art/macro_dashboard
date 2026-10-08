@@ -31,7 +31,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-09-30-one-year-loading-r12"
+CHART_BUILD = "2026-10-08-viewport-autoscale-r19"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1989,6 +1989,8 @@ def _prepare_chart_for_client_ranges(fig, element_key, mode=None):
 def _render_standard_macro_chart(title, description, range_key, builder, sources, desc_index, prebuilt_fig=None):
     st.markdown(title, unsafe_allow_html=True)
     st.markdown(description, unsafe_allow_html=True)
+    # Visible deployment fingerprint: distinguishes deployed code from an old instance.
+    st.caption(f"图表版本 {CHART_BUILD} · X/Y 自适应缩放")
     base_fig = prebuilt_fig if prebuilt_fig is not None else builder("5Y")
     # Streamlit-side selector forces a fresh figure with the correct visible Y
     # span. Plotly's client-side range buttons can retain the original 5Y Y
