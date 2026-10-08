@@ -1,0 +1,10 @@
+{
+  "release": "2026-10-08-viewport-autoscale-r20",
+  "repository": "yingjieli176-art/macro_dashboard",
+  "branch": "main",
+  "entrypoint": "app.py",
+  "features": [
+    "server_x_y_rescale",
+    "horizontal_box_select"
+  ]
+}
