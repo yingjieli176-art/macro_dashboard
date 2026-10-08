@@ -1981,7 +1981,8 @@ def _prepare_chart_for_client_ranges(fig, element_key, mode=None):
     revision = f"{element_key}:client-range:{DEFAULT_CHART_RANGE}:r12"
     if mode is not None:
         revision += f":{mode}"
-    fig.update_layout(uirevision=revision)
+    # Do not preserve stale browser axes across a rerun: viewport Y ranges must win.
+    fig.update_layout(uirevision=None)
     return fig
 
 
@@ -1998,7 +1999,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     boxes = selection.get("box", []) if isinstance(selection, dict) else []
     if boxes:
         fig = apply_selected_x_viewport(fig, boxes[-1])
-    fig.update_layout(dragmode="select", selectdirection="h")
+    fig.update_layout(dragmode="select", selectdirection="h", selectionrevision=None)
     st.plotly_chart(
         fig, key=chart_key, use_container_width=True, config=PLOTLY_CONFIG,
         on_select="rerun", selection_mode="box",
