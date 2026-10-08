@@ -551,3 +551,28 @@ def apply_client_time_controls(
         rangeselector=dict(visible=False),
     )
     return fig
+
+
+def apply_selected_x_viewport(fig: go.Figure, box: dict[str, Any]) -> go.Figure:
+    """Zoom into a Streamlit Plotly box selection, recalculating visible Y ranges."""
+    try:
+        coords = box.get("x", [])
+        if len(coords) != 2:
+            return fig
+        start, end = sorted(pd.Timestamp(v) for v in coords)
+        if start.tzinfo is not None:
+            start = start.tz_localize(None)
+        if end.tzinfo is not None:
+            end = end.tz_localize(None)
+        if pd.isna(start) or pd.isna(end) or start == end:
+            return fig
+    except (TypeError, ValueError, OverflowError):
+        return fig
+    fig.update_xaxes(range=[start, end], autorange=False)
+    # For axes with no observations in the selection, leave their previous
+    # ranges intact rather than showing a misleading synthetic scale.
+    for axis_name, bounds in _visible_y_ranges(fig, start, end).items():
+        axis = getattr(fig.layout, axis_name, None)
+        if axis is not None:
+            axis.update(range=bounds, autorange=False, fixedrange=False)
+    return fig
