@@ -1,11 +1,12 @@
 {
-  "release": "2026-10-08-all-us-macro-echarts-r23",
+  "release": "2026-10-08-dynamic-y-verified-r24",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
   "features": [
-    "us_macro_charts_1_to_4_dynamic_y_axis",
-    "echarts_x_zoom_y_autofit",
-    "series_observation_date_health"
+    "us_macro_1_to_4_native_echarts",
+    "viewport_dynamic_y",
+    "deployment_fingerprint_in_header",
+    "chart_debug_y_bounds"
   ]
 }
