@@ -1,12 +1,13 @@
 """ECharts viewport autoscaling checks (no network access needed)."""
 import unittest
 import ast
+import json
 from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
 
-from macro_platform.echarts_axes import build_adaptive_echarts_option, summarize_series_dates
+from macro_platform.echarts_axes import build_adaptive_echarts_option, summarize_series_dates, expected_viewport_y_bounds
 
 
 class EchartsNativeAxes(unittest.TestCase):
@@ -67,6 +68,29 @@ class EchartsNativeAxes(unittest.TestCase):
                 and call.func.id == "_render_standard_macro_chart"
                 for call in ast.walk(render_method)
             ))
+
+    def test_exact_month_viewport_y_bounds_exclude_five_year_extremes(self):
+        dates = pd.date_range("2021-10-01", "2026-10-01", freq="7D")
+        fig = go.Figure(data=[go.Scatter(
+            x=dates,
+            y=[0.6 if d.year < 2025 else 3.65 + (i % 7) * 0.02
+               for i, d in enumerate(dates)],
+            name="Treasury"
+        )])
+        recent = expected_viewport_y_bounds(fig, "1M")["yaxis"]
+        long = expected_viewport_y_bounds(fig, "5Y")["yaxis"]
+        self.assertGreater(recent[0], 3.5)
+        self.assertLess(recent[1], 3.9)
+        self.assertLess(long[0], 1)
+        self.assertGreater(long[1] - long[0], recent[1] - recent[0])
+
+    def test_echarts_chart_options_are_json_serializable(self):
+        dates = pd.date_range("2026-09-01", periods=25, freq="D")
+        fig = go.Figure([go.Scatter(x=dates, y=[3.75 + i / 500 for i in range(25)])])
+        config = build_adaptive_echarts_option(fig, "1M")
+        json.dumps(config, allow_nan=False)
+        self.assertTrue(all(axis.get("scale") is True for axis in config["yAxis"]))
+        self.assertEqual(config["yAxis"][0]["boundaryGap"], ["7%", "7%"])
 
     def test_no_observations(self):
         self.assertIsNone(build_adaptive_echarts_option(go.Figure(), "1M"))
