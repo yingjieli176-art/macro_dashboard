@@ -1,12 +1,12 @@
 {
-  "release": "2026-10-08-dynamic-y-verified-r24",
+  "release": "2026-10-08-importfix-r25",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
   "features": [
-    "us_macro_1_to_4_native_echarts",
+    "startup_import_guard",
+    "optional_adapter_fallback",
     "viewport_dynamic_y",
-    "deployment_fingerprint_in_header",
-    "chart_debug_y_bounds"
+    "diagnostic_version_header"
   ]
 }
