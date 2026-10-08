@@ -11,7 +11,7 @@ import math
 
 import pandas as pd
 
-from macro_platform.chart_axes import RANGE_OFFSETS
+from macro_platform.chart_axes import RANGE_OFFSETS, _visible_y_ranges, _figure_latest
 
 
 def build_adaptive_echarts_option(fig, date_range="1Y"):
@@ -93,6 +93,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             "nameLocation": "middle",
             "nameGap": 42,
             "scale": True,
+            "boundaryGap": ["7%", "7%"],
             "inverse": reversed_range,
             "position": "left" if index == 0 else "right",
             "offset": max(0, index - 1) * 58,
@@ -197,3 +198,17 @@ def summarize_series_dates(fig, *, now: pd.Timestamp | None = None,
         "stale_names": stale_names,
         "future_names": future_names,
     }
+
+
+def expected_viewport_y_bounds(fig, date_range="1Y") -> dict[str, list[float]]:
+    """Audit the initial viewport independently of client chart rendering.
+
+    This does not force ECharts Y limits; keeping ECharts limits automatic is
+    required for them to change after drag/slider zoom interactions.
+    """
+    latest = _figure_latest(fig)
+    if latest is None or pd.isna(latest):
+        return {}
+    window = date_range if date_range in RANGE_OFFSETS else "1Y"
+    start = latest - RANGE_OFFSETS[window]
+    return _visible_y_ranges(fig, start, latest)
