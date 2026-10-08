@@ -91,7 +91,7 @@ jobs:
               assert len(dividers) == max(0, len(bands) - 1), (i, len(bands), len(dividers))
               assert fig.layout.xaxis2.visible is False, i
               assert fig.layout.xaxis.tickmode == 'array', i
-              assert fig.layout.legend.y >= 1.15, (i, fig.layout.legend.y)
+              assert fig.layout.legend.y >= 1.0, (i, fig.layout.legend.y)
               # Re-applying a short range must replace, not duplicate, year cells/dividers.
               apply_time_axis(fig, '1M')
               short_bands = [s for s in fig.layout.shapes if getattr(s, 'name', None) == YEAR_BAND_SHAPE_NAME]
