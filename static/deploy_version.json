@@ -1,10 +1,11 @@
 {
-  "release": "2026-10-08-viewport-autoscale-r20",
+  "release": "2026-10-08-echarts-dynamic-y-r22",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
   "features": [
-    "server_x_y_rescale",
+    "echarts_native_y_autofit_chart1",
+    "plotly_server_x_y_rescale",
     "horizontal_box_select"
   ]
 }
