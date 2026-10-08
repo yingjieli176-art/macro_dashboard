@@ -14,7 +14,7 @@ from plotly.subplots import make_subplots
 import requests
 import streamlit as st
 from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, load_hk_liquidity
-from macro_platform.echarts_axes import build_adaptive_echarts_option, summarize_series_dates
+from macro_platform.echarts_axes import build_adaptive_echarts_option, summarize_series_dates, expected_viewport_y_bounds
 from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis, apply_client_time_controls, apply_selected_x_viewport, apply_server_time_window
 from macro_platform.us_equity_risk import load_vixeq_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
@@ -33,7 +33,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-08-all-us-macro-echarts-r23"
+CHART_BUILD = "2026-10-08-dynamic-y-verified-r24"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -206,6 +206,7 @@ st.markdown(
         <div class="dashboard-eyebrow">MACRO · LIQUIDITY · RATES</div>
         <div class="dashboard-title">Macro Dashboard</div>
         <div class="dashboard-subtitle">跨市场行情、利率、流动性与 7×24 财经信息面板</div>
+        <div class="dashboard-subtitle" style="font-size:.68rem;color:#64748b">运行代码：{CHART_BUILD} · 自适应坐标轴</div>
       </div>
       <div class="dashboard-links">
         <a href="#market-overview">市场概览</a>
@@ -2012,7 +2013,16 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         add_sources(sources)
         st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
         return
-    st.caption("动态Y轴已启用：时间切换、底部滑块和右上角框选缩放都会重新计算当前区间的数据范围。")
+    st.caption("动态Y轴：时间切换、底部滑块及框选时按可见样本自适应（左右轴分别计算）。")
+    # Optional diagnostic: show the server-computed viewport range beside
+    # the renderer result, so a stale deployment/zero-based axis is traceable.
+    if st.query_params.get("debug_chart") == "1":
+        bounds = expected_viewport_y_bounds(base_fig, selected_range)
+        st.caption("服务端校验区间：" + (
+            " · ".join(f"{axis}: {values[0]:.3f}～{values[1]:.3f}"
+                     for axis, values in sorted(bounds.items()))
+            if bounds else "无可用数据"
+        ))
     health = summarize_series_dates(
         base_fig, maximum_age_days=15 if range_key == "us_liquidity_range" else 10,
     )
@@ -2029,7 +2039,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         height=465,
         width="stretch",
         key=f"{range_key}_echarts_{selected_range}",
-        theme="streamlit",
+        theme=None,
     )
     show_parameter_description(desc_index)
     add_sources(sources)
