@@ -4,22 +4,38 @@ on:
     branches: [main]
     paths:
       - app.py
+      - data.py
+      - requirements.txt
       - macro_platform/chart_axes.py
       - macro_platform/echarts_axes.py
       - tests/test_viewport_axes.py
+      - tests/test_echarts_axes.py
       - .github/workflows/viewport-axis-regression.yml
   workflow_dispatch:
 
 jobs:
   axes:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install chart test dependencies
-        run: python -m pip install "pandas>=2,<3" "plotly>=5,<7"
-      - name: Verify adaptive axes and box selection
+          cache: pip
+      - name: Install production requirements
+        run: python -m pip install -r requirements.txt
+      - name: Syntax check application and chart modules
+        run: python -m compileall -q app.py data.py macro_platform tests
+      - name: Verify Streamlit native ECharts API
+        run: |
+          python - <<'PY'
+          import inspect
+          import streamlit as st
+          assert hasattr(st, "echarts_chart"), "Streamlit runtime lacks st.echarts_chart"
+          parameters = inspect.signature(st.echarts_chart).parameters
+          assert "theme" in parameters and "key" in parameters
+          print("Streamlit", st.__version__, "supports native ECharts")
+          PY
+      - name: Regression tests for viewport fit and observation dates
         run: python -m unittest discover -s tests -p "test_*axes.py" -v
