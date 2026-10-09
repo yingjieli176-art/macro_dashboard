@@ -2183,7 +2183,10 @@ def _figure_has_real_observations(fig):
     for trace in getattr(fig, "data", ()):
         if getattr(trace, "visible", True) in (False, "legendonly"):
             continue
-        for value in (getattr(trace, "y", None) or ()):
+        values = getattr(trace, "y", None)
+        if values is None:
+            continue
+        for value in values:
             try:
                 if math.isfinite(float(value)):
                     return True
