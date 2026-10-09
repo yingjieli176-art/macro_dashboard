@@ -182,10 +182,9 @@ class RefreshOptimizationTests(unittest.TestCase):
                 and dec.func.attr == "fragment"
                 for dec in method.decorator_list
             ))
-        self.assertIn("render_macro_chart_5(macro_figures[5]", app)
-        self.assertIn("render_macro_chart_8(macro_figures[8]", app)
-        self.assertIn("render_macro_chart_10(macro_figures[10]", app)
-        self.assertIn("render_macro_chart_11(macro_figures[11]", app)
+        self.assertIn("on_complete=_render_completed_macro_chart", app)
+        for number in (5, 8, 10, 11):
+            self.assertIn(f"render_macro_chart_{number}(figure", app)
         self.assertIn("@st.cache_data(ttl=300", app)
         # Charts 5, 8, 10 and 11 already have fragments; all remaining
         # macro charts now need them to avoid a full rerun on time clicks.
@@ -201,3 +200,4 @@ class RefreshOptimizationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

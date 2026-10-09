@@ -39,6 +39,7 @@ from macro_platform.us_equity_risk import load_vixeq_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_asia_rates_figure
 from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
+from macro_platform.market_history import completed_daily_closes
 # Keep startup-compatible with older data.py during Streamlit Cloud rolling
 # deployments: optional/newer market getters must never crash the whole page.
 import data as _market_data_module
@@ -69,7 +70,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-09-tga-close-recovery-r38"
+CHART_BUILD = "2026-10-09-data-integrity-progressive-r39"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -894,10 +895,8 @@ def _quote_session_context(row, market=""):
         if state == "CLOSED":
             if _us_overnight_window_now():
                 return "夜盘时段 · 正常盘最近价", regular_ts
-            candidates = [x for x in (post_ts, regular_ts) if x is not None]
-            return "休市", max(candidates) if candidates else None
-        candidates = [x for x in (overnight_ts, pre_ts, post_ts, regular_ts) if x is not None]
-        return _us_clock_state(), max(candidates) if candidates else regular_ts
+            return "休市", regular_ts
+        return _us_clock_state(), regular_ts
 
     quote_ts = _valid_market_timestamp(row.get("regular_market_time"))
     return _asia_session_state(market, quote_ts), quote_ts
@@ -933,10 +932,16 @@ def _fetch_quote(symbol):
             if market == "HK"
             else (_get_tencent_quote_safe, _get_eastmoney_quote_safe)
         )
-        for getter in direct_getters:
-            row = getter(symbol)
-            if row.get("price") is not None:
-                candidates.append(_tag_quote_role(row, "direct"))
+        with ThreadPoolExecutor(max_workers=len(direct_getters), thread_name_prefix="quote-provider") as executor:
+            futures = [executor.submit(getter, symbol) for getter in direct_getters]
+            # Preserve provider precedence for identical timestamps.
+            for future in futures:
+                try:
+                    row = future.result()
+                except Exception:
+                    continue
+                if row.get("price") is not None:
+                    candidates.append(_tag_quote_role(row, "direct"))
 
         best = _newest_quote(candidates)
         best_age = _quote_regular_age_seconds(best) if best.get("price") is not None else None
@@ -1820,21 +1825,7 @@ def get_yahoo_daily_history(symbol):
     result = ((response.json() or {}).get("chart") or {}).get("result") or []
     if not result:
         return pd.DataFrame(columns=["observation_date", "close"])
-    node = result[0]
-    timestamps = node.get("timestamp") or []
-    quotes = (((node.get("indicators") or {}).get("quote") or [{}])[0]).get("close") or []
-    if not timestamps or not quotes:
-        return pd.DataFrame(columns=["observation_date", "close"])
-    size = min(len(timestamps), len(quotes))
-    dates = pd.to_datetime(timestamps[:size], unit="s", utc=True)
-    tz_name = (node.get("meta") or {}).get("exchangeTimezoneName") or "America/New_York"
-    try:
-        dates = dates.tz_convert(tz_name).tz_localize(None).normalize()
-    except Exception:
-        dates = dates.tz_convert("America/New_York").tz_localize(None).normalize()
-    frame = pd.DataFrame({"observation_date": dates, "close": pd.to_numeric(quotes[:size], errors="coerce")})
-    frame = frame.dropna(subset=["observation_date", "close"]).sort_values("observation_date")
-    return frame.drop_duplicates("observation_date", keep="last")
+    return completed_daily_closes(result[0])
 
 
 def _rebase_100(series):
@@ -2585,7 +2576,7 @@ def _render_hk_macro_chart(hk_index, prebuilt_fig=None, prebuilt_mode=None):
     # not cause a full dashboard rerun or display the old prebuilt mode.
     fig = (
         prebuilt_fig
-        if prebuilt_fig is not None and prebuilt_mode == market_mode
+        if prebuilt_fig is not None and (hk_index not in (0, 3) or prebuilt_mode == market_mode)
         else _safe_hk_bundle(market_mode, _macro_snapshot_revision())[hk_index]
     )
     _render_adaptive_macro_figure(fig, range_key, market_mode)
@@ -2827,8 +2818,8 @@ def _safe_hk_bundle(market_mode, snapshot_revision):
     return figures
 
 
-def _build_macro_figures_parallel():
-    """Build all macro figures concurrently, then render them together.
+def _build_macro_figures_parallel(on_complete=None):
+    """Build concurrently and optionally publish completed charts immediately.
 
     Only data access and Plotly figure construction run in worker threads.
     Streamlit widgets/rendering stay on the main script thread.
@@ -2860,8 +2851,21 @@ def _build_macro_figures_parallel():
     # Six workers keeps cold-start I/O parallel without hammering public data
     # endpoints with one thread per chart.
     with ThreadPoolExecutor(max_workers=6, thread_name_prefix="macro-chart") as executor:
-        futures = {key: executor.submit(job) for key, job in jobs.items()}
-        results = {key: future.result() for key, future in futures.items()}
+        futures = {executor.submit(job): key for key, job in jobs.items()}
+        results = {}
+        for future in as_completed(futures):
+            key = futures[future]
+            results[key] = future.result()
+            if on_complete is not None:
+                if key == "hk5":
+                    for number in (5, 6, 7):
+                        on_complete(number, results[key][number - 5])
+                    if "hk8" not in jobs:
+                        on_complete(8, results[key][3])
+                elif key == "hk8":
+                    on_complete(8, results[key][3])
+                else:
+                    on_complete(key, results[key])
 
     hk5_bundle = results["hk5"]
     hk8_bundle = results.get("hk8", hk5_bundle)
@@ -2889,34 +2893,52 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Reserve the existing document order, then fill sections as workers finish.
+# Only the main Streamlit thread creates containers, fragments and widgets.
+macro_slots = {}
+for number in range(1, 14):
+    section_headers = {
+        5: "HONG KONG LIQUIDITY", 9: "US EQUITY RISK",
+        10: "PRECIOUS METALS", 11: "CRYPTO MARKET",
+        12: "INDUSTRIAL METALS · COPPER", 13: "ASIA RATES",
+    }
+    if number in section_headers:
+        st.markdown(f'<div class="section-kicker">{section_headers[number]}</div>', unsafe_allow_html=True)
+    macro_slots[number] = st.container()
+
+
+def _render_completed_macro_chart(number, figure):
+    with macro_slots[number]:
+        if number == 1:
+            render_macro_chart_1(figure)
+        elif number == 2:
+            render_macro_chart_2(figure)
+        elif number == 3:
+            render_macro_chart_3(figure)
+        elif number == 4:
+            render_macro_chart_4(figure)
+        elif number == 5:
+            render_macro_chart_5(figure, prebuilt_mode=st.session_state.get("hk_5_range_market_mode", "Raw"))
+        elif number == 6:
+            render_macro_chart_6(figure)
+        elif number == 7:
+            render_macro_chart_7(figure)
+        elif number == 8:
+            render_macro_chart_8(figure, prebuilt_mode=st.session_state.get("hk_8_range_market_mode", "Raw"))
+        elif number == 9:
+            render_macro_chart_9(figure)
+        elif number == 10:
+            render_macro_chart_10(figure, prebuilt_mode=st.session_state.get("precious_metals_mode", "Rebased 100"))
+        elif number == 11:
+            render_macro_chart_11(figure, prebuilt_mode=st.session_state.get("crypto_market_mode", "Rebased 100"))
+        elif number == 12:
+            render_macro_chart_12(figure)
+        elif number == 13:
+            render_macro_chart_13(figure)
+
+
 with st.spinner("正在加载图表…"):
-    macro_figures = _build_macro_figures_parallel()
-
-render_macro_chart_1(macro_figures[1])
-render_macro_chart_2(macro_figures[2])
-render_macro_chart_3(macro_figures[3])
-render_macro_chart_4(macro_figures[4])
-
-st.markdown('<div class="section-kicker">HONG KONG LIQUIDITY</div>', unsafe_allow_html=True)
-render_macro_chart_5(macro_figures[5], prebuilt_mode=st.session_state.get("hk_5_range_market_mode", "Raw"))
-render_macro_chart_6(macro_figures[6])
-render_macro_chart_7(macro_figures[7])
-render_macro_chart_8(macro_figures[8], prebuilt_mode=st.session_state.get("hk_8_range_market_mode", "Raw"))
-
-st.markdown('<div class="section-kicker">US EQUITY RISK</div>', unsafe_allow_html=True)
-render_macro_chart_9(macro_figures[9])
-
-st.markdown('<div class="section-kicker">PRECIOUS METALS</div>', unsafe_allow_html=True)
-render_macro_chart_10(macro_figures[10], prebuilt_mode=st.session_state.get("precious_metals_mode", "Rebased 100"))
-
-st.markdown('<div class="section-kicker">CRYPTO MARKET</div>', unsafe_allow_html=True)
-render_macro_chart_11(macro_figures[11], prebuilt_mode=st.session_state.get("crypto_market_mode", "Rebased 100"))
-
-st.markdown('<div class="section-kicker">INDUSTRIAL METALS · COPPER</div>', unsafe_allow_html=True)
-render_macro_chart_12(macro_figures[12])
-
-st.markdown('<div class="section-kicker">ASIA RATES</div>', unsafe_allow_html=True)
-render_macro_chart_13(macro_figures[13])
+    macro_figures = _build_macro_figures_parallel(on_complete=_render_completed_macro_chart)
 
 st.markdown('<div id="news" class="section-anchor"></div><div class="section-kicker">NEWS</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)
@@ -3066,3 +3088,4 @@ def render_news_panel():
 
 
 render_news_panel()
+

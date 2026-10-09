@@ -19,10 +19,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def isolated_fred_reader(ns):
     tree = ast.parse((ROOT / "data.py").read_text(encoding="utf-8"))
-    func = next(x for x in tree.body if isinstance(x, ast.FunctionDef)
-                and x.name == "_fred_series")
-    func.decorator_list = []
-    exec(compile(ast.Module(body=[func], type_ignores=[]), "data.py", "exec"), ns)
+    funcs = [x for x in tree.body if isinstance(x, ast.FunctionDef)
+             and x.name in ("_fred_series", "_refresh_fred_series")]
+    for func in funcs:
+        func.decorator_list = []
+    ns.setdefault("_FRED_REFRESH", Mock())
+    exec(compile(ast.Module(body=funcs, type_ignores=[]), "data.py", "exec"), ns)
     return ns["_fred_series"]
 
 
@@ -73,7 +75,7 @@ class FredVerifiedColdBootTests(unittest.TestCase):
             for request in requests:
                 request.assert_not_called()
 
-    def test_old_bundle_falls_back_after_failed_live_request_without_filling_gaps(self):
+    def test_old_bundle_refreshes_in_background_without_blocking_or_filling_gaps(self):
         old = self.t0 - 5 * 86400
         self.file.write_text(json.dumps({
             "series_id": self.sid, "fetched_at": old,
@@ -173,3 +175,4 @@ class FredVerifiedColdBootTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

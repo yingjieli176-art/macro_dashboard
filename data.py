@@ -9,6 +9,7 @@ from io import StringIO
 import pandas as pd
 import requests
 import streamlit as st
+from macro_platform.background_refresh import BackgroundRefresh
 
 from macro_platform.treasury_cash import parse_dts_tga_rows, read_verified_tga_snapshot
 
@@ -26,6 +27,7 @@ NEWS_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWe
 FRED_GRAPH_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv"
 _FRED_LAST_GOOD = {}
 _FRED_LOCK = threading.RLock()
+_FRED_REFRESH = BackgroundRefresh()
 _FRED_SNAPSHOT_DIR = Path(os.environ.get("MACRO_FRED_CACHE_DIR", "data_snapshots/fred_cache"))
 
 def _fred_disk_path(series_id):
@@ -139,6 +141,7 @@ def _fred_series(series_id):
     # During a Streamlit Cloud cold start, use a recent observed snapshot
     # immediately instead of blocking all macro charts on remote HTTP.
     # Source dates, missing dates, and "stale" provenance are preserved.
+    # Serving a snapshot never suppresses a refresh for multiple days.
     disk_copy = _read_fred_success(series_id)
     if disk_copy is not None:
         try:
@@ -146,10 +149,15 @@ def _fred_series(series_id):
             age_seconds = time.time() - fetched_at
         except (TypeError, ValueError, OverflowError):
             age_seconds = float("inf")
-        # 84h crosses weekends/market holidays; old snapshots still get
-        # a live retry, with fallback to genuine last-good observations.
-        if 0 <= age_seconds <= 84 * 3600:
-            return disk_copy
+        if age_seconds < 0 or age_seconds >= 3600:
+            _FRED_REFRESH.submit(series_id, lambda: _refresh_fred_series(series_id))
+        return disk_copy
+
+    return _refresh_fred_series(series_id)
+
+
+def _refresh_fred_series(series_id):
+    """Fetch genuine observations; workers never write widgets/session state."""
 
     errors = []
     for fetcher in (_fetch_fred_graph, _fetch_fred_api):
@@ -622,3 +630,4 @@ def _update_layout_with_consistent_date_axes(self, *args, **kwargs):
 BaseFigure.update_layout = _update_layout_with_consistent_date_axes
 
 st.markdown("""<style><nobr>.block-container { max-width: 2200px !important; width: 100% !important; }</nobr></style>""", unsafe_allow_html=True)
+

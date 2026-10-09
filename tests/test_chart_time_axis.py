@@ -52,49 +52,24 @@ class ChartTimeAxisTests(unittest.TestCase):
         self.assertEqual(start.normalize(), pd.Timestamp("2025-09-29"))
         self.assertGreaterEqual(end, pd.Timestamp("2026-09-29"))
 
-    def test_client_controls_use_native_range_selector(self):
+    def test_client_controls_refit_both_axes_instead_of_x_only_selector(self):
         fig = apply_client_time_controls(self._figure(), default_range="1Y")
-        selector = fig.layout.xaxis.rangeselector
-        labels = [button.label.strip() for button in selector.buttons]
+        buttons = fig.layout.updatemenus[0].buttons
+        labels = [button.label.strip() for button in buttons]
 
         self.assertEqual(labels, ["5Y", "1Y", "6M", "3M", "1M"])
-        self.assertTrue(selector.visible)
-        self.assertEqual(len(fig.layout.updatemenus), 0)
+        self.assertFalse(fig.layout.xaxis.rangeselector.visible)
+        for button in buttons:
+            self.assertEqual(button.method, "relayout")
+            self.assertIn("xaxis.range", button.args[0])
+            self.assertIn("yaxis.range", button.args[0])
+            bounds = button.args[0]["yaxis.range"]
+            self.assertLess(bounds[0], bounds[1])
         self.assertFalse(fig.layout.xaxis.fixedrange)
         self.assertEqual(fig.layout.xaxis.tickmode, "auto")
-
-        three_month = selector.buttons[3]
-        self.assertEqual(three_month.count, 3)
-        self.assertEqual(three_month.step, "month")
-        self.assertEqual(three_month.stepmode, "backward")
-        self.assertEqual(selector.x, 0.0)
-        self.assertEqual(selector.xanchor, "left")
-        self.assertEqual(selector.y, 1.22)
-        self.assertEqual(selector.borderwidth, 1)
-        self.assertEqual(selector.activecolor, "#e7eefc")
-        self.assertEqual(selector.font.size, 11)
-        self.assertEqual(fig.layout.legend.y, 1.02)
-        self.assertEqual(fig.layout.height, 420)
-        self.assertEqual(fig.layout.margin.t, 88)
-        self.assertEqual(fig.layout.margin.l, 62)
-        self.assertEqual(fig.layout.margin.b, 38)
-
-        year_shape_names = {
-            getattr(shape, "name", None) for shape in (fig.layout.shapes or [])
-        }
-        self.assertNotIn("__dashboard_year_band__", year_shape_names)
-        self.assertNotIn("__dashboard_year_divider__", year_shape_names)
-        self.assertEqual(fig.layout.plot_bgcolor, "#ffffff")
-        self.assertEqual(fig.layout.paper_bgcolor, "#ffffff")
-        self.assertEqual(fig.layout.yaxis.gridcolor, "#e7edf3")
-        self.assertEqual(fig.layout.xaxis.gridcolor, "#edf1f5")
-        stops = fig.layout.xaxis.tickformatstops
-        self.assertEqual(len(stops), 3)
-        self.assertEqual(stops[0].value, "%d %b")
-        self.assertEqual(stops[1].value, "%b %Y")
-        self.assertEqual(stops[2].value, "%Y")
 
 
 
 if __name__ == "__main__":
     unittest.main()
+

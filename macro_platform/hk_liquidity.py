@@ -591,11 +591,7 @@ def _hstech_snapshot_monthly(label: str) -> pd.DataFrame:
 
 
 def _market_snapshot_history(symbol: str, label: str, date_range: str) -> pd.DataFrame:
-    """Load persisted daily Hong Kong market history and adapt density by window.
-
-    1M/3M/6M/1Y retain trading-day observations. 5Y is reduced to weekly
-    closes to keep Plotly responsive without destroying the shape of the cycle.
-    """
+    """Retain every observed trading-day close, including five-year extrema."""
     try:
         payload = json.loads(HK_MARKET_DAILY_SNAPSHOT_PATH.read_text(encoding="utf-8"))
         node = ((payload.get("series") or {}).get(symbol) or {})
@@ -615,20 +611,8 @@ def _market_snapshot_history(symbol: str, label: str, date_range: str) -> pd.Dat
         return pd.DataFrame(columns=["observation_date", label])
     start = frame["observation_date"].max() - RANGE_OFFSETS.get(date_range, RANGE_OFFSETS["1Y"])
     frame = frame.loc[frame["observation_date"] >= start, ["observation_date", label]].copy()
-    if date_range == "5Y" and not frame.empty:
-        # Keep recent daily observations for the client-side 1M/3M zoom.
-        # Reduce ONLY older history to genuine weekly closing observations.
-        # A resample('W-FRI') timestamp fabricates Friday timestamps for
-        # Mon-Thu closes, so retain the last *actual* trading-day date.
-        cutoff = frame["observation_date"].max() - pd.DateOffset(years=1)
-        older = frame.loc[frame["observation_date"] < cutoff]
-        recent = frame.loc[frame["observation_date"] >= cutoff]
-        if not older.empty:
-            weeks = older["observation_date"].dt.to_period("W-FRI")
-            older = older.groupby(weeks, sort=True).tail(1)
-        frame = pd.concat([older, recent], ignore_index=True)
-        frame = frame.sort_values("observation_date").reset_index(drop=True)
-    return frame
+    frame.attrs["price_basis"] = node.get("price_basis", "legacy_unspecified")
+    return frame.reset_index(drop=True)
 
 
 @st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
@@ -698,8 +682,7 @@ def _market_monthly_close(symbol: str, label: str) -> pd.DataFrame:
                 timestamps = node.get("timestamp") or []
                 indicators = node.get("indicators") or {}
                 quote_close = (indicators.get("quote") or [{}])[0].get("close") or []
-                adj_close = (indicators.get("adjclose") or [{}])[0].get("adjclose") or []
-                closes = adj_close if len(adj_close) == len(timestamps) else quote_close
+                closes = quote_close
                 if len(closes) != len(timestamps):
                     continue
                 frame = pd.DataFrame(
@@ -905,8 +888,7 @@ def build_hk_liquidity_figures(
         fig.update_layout(height=420, template="plotly_white")
         return [fig]
 
-    # Market overlays are persisted as daily last-known-good history. Short
-    # windows retain daily detail; the 5Y view is sampled to weekly closes.
+    # Market overlays retain complete observed daily history in every window.
     tencent_price = _market_history("0700.HK", "Tencent Price", date_range)
     hkex_price = _market_history("0388.HK", "HKEX Price", date_range)
     hstech_index = _market_history("HSTECH", "HSTECH Index", date_range)
@@ -1191,3 +1173,4 @@ def liquidity_status_html() -> str:
       <div><span>USD/HKD</span><strong>{fmt(fx)}</strong></div>
       <div><span>M2/M3 through</span><strong>{latest_money}</strong></div>
     </div>'''
+

@@ -194,6 +194,48 @@ def save_snapshot(series_id, payload):
     return True
 
 
+def snapshot_health(series_id, now=None):
+    """Validate each stored series independently of the sync job exit code."""
+    now = pd.Timestamp.now(tz="UTC").tz_localize(None) if now is None else pd.Timestamp(now)
+    try:
+        payload = json.loads((OUT / (series_id + ".json")).read_text())
+        if payload.get("series_id") != series_id:
+            raise ValueError("series ID mismatch")
+        records = payload["records"]
+        if len(records) < 12:
+            raise ValueError("too few observations")
+        dates = pd.to_datetime([row["date"] for row in records], errors="raise")
+        values = [float(row["value"]) for row in records]
+        if not dates.is_unique or not dates.is_monotonic_increasing or not all(math.isfinite(v) for v in values):
+            raise ValueError("invalid dates or values")
+        if dates.max() > now.normalize() + pd.Timedelta(days=1):
+            raise ValueError("future observation")
+        end = dates.max().strftime("%Y-%m-%d")
+        if end != payload.get("coverage_end"):
+            raise ValueError("coverage end mismatch")
+        # Debt series are monthly/quarterly; market/rate series are daily/weekly.
+        tolerance = 150 if series_id in ("GFDEBTN", "FYGFDPUN", "FDHBFRBN", "FDHBFIN", "FDHBPIN") else 14
+        status = "stale" if (now.normalize() - dates.max()).days > tolerance else "available"
+        return {"series_id": series_id, "status": status, "coverage_end": end, "rows": len(records)}
+    except (OSError, ValueError, TypeError, KeyError):
+        return {"series_id": series_id, "status": "missing_or_invalid", "coverage_end": "", "rows": 0}
+
+
+def write_health_report(series_ids, errors):
+    reports = [snapshot_health(sid) for sid in series_ids]
+    Path("fred_sync_health.json").write_text(json.dumps({"series": reports, "fetch_failures": errors}, indent=2) + "\n")
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary:
+        available = sum(row["status"] == "available" for row in reports)
+        lines = [f"## Source availability: {available}/{len(reports)} series", "",
+                 "A successful job does not imply that every source is current.", "",
+                 "| Series | Stored status | Last observed | Rows |", "| --- | --- | --- | --- |"]
+        lines += [f"| {row['series_id']} | {row['status']} | {row['coverage_end']} | {row['rows']} |" for row in reports]
+        with open(summary, "a", encoding="utf-8") as stream:
+            stream.write("\n".join(lines) + "\n")
+    return reports
+
+
 def main():
     updated, retained, errors = [], [], []
     target_series = CRITICAL if "--core-only" in sys.argv else SERIES
@@ -210,7 +252,8 @@ def main():
                 errors.append(sid)
                 print(f"WARN {sid}: {error}; preserved last-good snapshot", flush=True)
 
-    missing_core = [s for s in CRITICAL if not (OUT / (s + ".json")).exists()]
+    write_health_report(target_series, errors)
+    missing_core = [s for s in CRITICAL if snapshot_health(s)["status"] != "available"]
     core_present = len(CRITICAL) - len(missing_core)
     # The chart is honest with partial observations; do NOT fail because the
     # ON RRP operation rate is unavailable from a primary endpoint.
@@ -226,3 +269,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
