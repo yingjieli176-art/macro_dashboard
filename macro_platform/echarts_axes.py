@@ -21,6 +21,14 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
     y_axis_map = {}
     original_axis_refs = {}
     latest = None
+    # The HKD convertibility guide lines are chart annotations, not
+    # observations. Keeping them as data would pin the Y axis near 7.75-7.85.
+    reference_names = {
+        "Strong-side CU 7.75",
+        "Linked Rate Center 7.80",
+        "Weak-side CU 7.85",
+    }
+    reference_lines = []
 
     for trace in fig.data:
         if getattr(trace, "visible", True) in (False, "legendonly"):
@@ -63,8 +71,22 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             line_style["type"] = "dashed"
         elif dash == "dot":
             line_style["type"] = "dotted"
+        trace_name = str(getattr(trace, "name", None) or "Series")
+        finite_values = [value for _, value in points if value is not None]
+        if (
+            axis_ref == "y" and trace_name in reference_names
+            and finite_values
+            and all(abs(value - finite_values[0]) < 1e-10 for value in finite_values)
+        ):
+            reference_lines.append({
+                "name": trace_name,
+                "yAxis": finite_values[0],
+                "lineStyle": line_style,
+                "label": {"show": False},
+            })
+            continue
         series.append({
-            "name": str(getattr(trace, "name", None) or "Series"),
+            "name": trace_name,
             "type": "bar" if getattr(trace, "type", "") == "bar" else "line",
             "showSymbol": False,
             "connectNulls": False,
@@ -77,6 +99,45 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
 
     if latest is None or not series:
         return None
+
+    primary_series = next((item for item in series if item["yAxisIndex"] == y_axis_map.get("y")), None)
+    if primary_series is not None and reference_lines:
+        primary_series["markLine"] = {
+            "silent": True,
+            "symbol": ["none", "none"],
+            "data": reference_lines,
+        }
+
+    # Preserve HKD linked-exchange-rate bands as annotations, rather than
+    # inserting synthetic points that would prevent viewport Y autoscaling.
+    mark_areas = []
+    for shape in fig.layout.shapes or []:
+        if getattr(shape, "type", None) != "rect" or str(getattr(shape, "yref", "")) not in ("y", "y1"):
+            continue
+        xref = str(getattr(shape, "xref", "") or "")
+        if xref not in ("paper", "x domain", "x"):
+            continue
+        try:
+            lower = float(shape.y0)
+            upper = float(shape.y1)
+            if not (math.isfinite(lower) and math.isfinite(upper)):
+                continue
+            # Only translate horizontal bands covering the full X domain.
+            if float(shape.x0) != 0.0 or float(shape.x1) != 1.0:
+                continue
+        except (TypeError, ValueError, OverflowError):
+            continue
+        mark_areas.append([
+            {"yAxis": min(lower, upper),
+             "itemStyle": {"color": str(shape.fillcolor or "rgba(148,163,184,0.08)")}},
+            {"yAxis": max(lower, upper)},
+        ])
+    if primary_series is not None and mark_areas:
+        primary_series["markArea"] = {
+            "silent": True,
+            "label": {"show": False},
+            "data": mark_areas,
+        }
     start = latest - RANGE_OFFSETS[date_range]
     axes = []
     for axis_ref, index in sorted(y_axis_map.items(), key=lambda pair: pair[1]):
