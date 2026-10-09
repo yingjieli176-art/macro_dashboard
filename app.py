@@ -1,6 +1,7 @@
 import html
 from collections.abc import Mapping
 import json
+import logging
 import os
 import threading
 import time
@@ -49,7 +50,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-09-dynamic-y-r26"
+CHART_BUILD = "2026-10-09-render-recovery-r27"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2016,26 +2017,34 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
     adapter = getattr(_echarts_axes, "build_adaptive_echarts_option", None)
     renderer = getattr(st, "echarts_chart", None)
     if callable(adapter) and callable(renderer):
-        option = adapter(base_fig, DEFAULT_CHART_RANGE)
-        if option is not None:
-            renderer(
-                option,
-                height=465,
-                width="stretch",
-                key=f"{element_key}_adaptive_{mode or 'default'}",
-                theme=None,
-            )
-            return
+        try:
+            option = adapter(base_fig, DEFAULT_CHART_RANGE)
+            if option is not None:
+                renderer(
+                    option,
+                    height=465,
+                    width="stretch",
+                    key=f"{element_key}_adaptive_{mode or 'default'}",
+                    theme=None,
+                )
+                return
+        except Exception:
+            logging.exception("Adaptive chart %s failed; switching to Plotly", element_key)
 
-    # Keep the dashboard usable during an out-of-sync Streamlit Cloud rollout.
-    st.warning("动态 Y 轴组件未就绪，暂用 Plotly 兼容模式（框选缩放需重新选时间范围）。")
-    fallback = _prepare_chart_for_client_ranges(base_fig, element_key, mode)
-    st.plotly_chart(
-        fallback,
-        key=f"{element_key}_plotly_fallback_{mode or 'default'}",
-        use_container_width=True,
-        config=PLOTLY_CONFIG,
-    )
+    # A bad option or a temporary Cloud renderer mismatch must never break
+    # the whole dashboard. Each chart falls back independently.
+    st.warning("动态 Y 轴图表暂不可用，已自动切换兼容图表。")
+    try:
+        fallback = _prepare_chart_for_client_ranges(base_fig, element_key, mode)
+        st.plotly_chart(
+            fallback,
+            key=f"{element_key}_plotly_fallback_{mode or 'default'}",
+            use_container_width=True,
+            config=PLOTLY_CONFIG,
+        )
+    except Exception:
+        logging.exception("Plotly fallback for chart %s failed", element_key)
+        st.error("该图表暂时无法显示，其余图表及页面可继续使用。")
 
 
 def _render_standard_macro_chart(title, description, range_key, builder, sources, desc_index, prebuilt_fig=None):
@@ -2073,9 +2082,25 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         add_sources(sources)
         st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
         return
-    native_option = builder(base_fig, selected_range)
+    try:
+        native_option = builder(base_fig, selected_range)
+    except Exception:
+        logging.exception("ECharts option build failed for %s", range_key)
+        native_option = None
     if native_option is None:
-        st.error("当前图表缺少有效观测值，无法绘制；请检查数据源更新时间。")
+        st.warning("当前图表无可用的动态视图，已尝试兼容显示。")
+        if callable(apply_server_time_window):
+            fallback = apply_server_time_window(base_fig, selected_range)
+        else:
+            fallback = base_fig
+        try:
+            st.plotly_chart(
+                fallback, key=f"{range_key}_plotly_recovery_{selected_range}",
+                use_container_width=True, config=PLOTLY_CONFIG,
+            )
+        except Exception:
+            logging.exception("Recovery chart failed for %s", range_key)
+            st.error("该图表暂时无法显示，其余页面仍可使用。")
         show_parameter_description(desc_index)
         add_sources(sources)
         st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
@@ -2106,13 +2131,29 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
             st.warning("以下序列可能尚未更新：" + "、".join(health["stale_names"]))
         if health.get("future_names"):
             st.warning("以下序列的观测日期超前，请检查源数据：" + "、".join(health["future_names"]))
-    st.echarts_chart(
-        native_option,
-        height=465,
-        width="stretch",
-        key=f"{range_key}_echarts_{selected_range}",
-        theme=None,
-    )
+    try:
+        st.echarts_chart(
+            native_option,
+            height=465,
+            width="stretch",
+            key=f"{range_key}_echarts_{selected_range}",
+            theme=None,
+        )
+    except Exception:
+        logging.exception("ECharts renderer failed for %s", range_key)
+        st.warning("图表渲染异常，已改用兼容显示。")
+        if callable(apply_server_time_window):
+            fallback = apply_server_time_window(base_fig, selected_range)
+        else:
+            fallback = base_fig
+        try:
+            st.plotly_chart(
+                fallback, key=f"{range_key}_renderer_recovery_{selected_range}",
+                use_container_width=True, config=PLOTLY_CONFIG,
+            )
+        except Exception:
+            logging.exception("Recovery chart failed for %s", range_key)
+            st.error("该图表暂时无法显示，其余页面仍可使用。")
     show_parameter_description(desc_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
