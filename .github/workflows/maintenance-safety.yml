@@ -1,0 +1,35 @@
+name: Maintenance workflow safety
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/*.yml'
+      - tests/test_maintenance_workflows.py
+      - docs/MAINTENANCE.md
+      - app.py
+      - data.py
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/*.yml'
+      - tests/test_maintenance_workflows.py
+      - app.py
+      - data.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate workflow trigger safety without network dependencies
+        run: python -m unittest discover -s tests -p "test_maintenance_workflows.py" -v
+      - name: Check Python syntax without booting Streamlit
+        run: python -m py_compile app.py data.py macro_platform/treasury_cash.py tests/test_maintenance_workflows.py
