@@ -51,7 +51,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-09-data-truth-r32"
+CHART_BUILD = "2026-10-09-unified-calendar-r33"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2089,6 +2089,16 @@ def _recoverable_echarts_option(fig, element_key, date_range, mode=None):
     except (KeyError, IndexError, TypeError, ValueError, OverflowError):
         logging.exception("Invalid cached ECharts viewport for %s", element_key)
         return None, False
+    # A session's last-good option can predate an application update: upgrade
+    # its X-axis labels on recovery, without changing underlying observations.
+    x_axis = recovered.get("xAxis")
+    if isinstance(x_axis, dict):
+        x_axis.setdefault("axisLabel", {}).update({
+            "formatter": {
+                "year": "{yyyy}-01", "month": "{yyyy}-{MM}",
+                "day": "{MM}-{dd}", "hour": "{MM}-{dd} {HH}:{mm}",
+            }
+        })
     return recovered, True
 
 
@@ -2147,10 +2157,18 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
     arbitrary drag/slider zoom. ECharts filters visible data client-side and
     rescales every independent Y axis when the X viewport changes.
     """
+    # Uniform Streamlit buttons work for all 13 charts, regardless of
+    # whether ECharts or Plotly is currently the available renderer.
+    # Their parent fragments prevent an X/Y viewport change from rerunning
+    # the entire dashboard and refetching unrelated market data.
+    selected_range = st.segmented_control(
+        "时间范围", options=RANGES, default=DEFAULT_CHART_RANGE,
+        key=f"{element_key}_time_window", label_visibility="collapsed",
+    ) or DEFAULT_CHART_RANGE
     renderer = getattr(st, "echarts_chart", None)
     if callable(renderer):
         option, reused = _recoverable_echarts_option(
-            base_fig, element_key, DEFAULT_CHART_RANGE, mode
+            base_fig, element_key, selected_range, mode
         )
         if option is not None:
             try:
@@ -2158,7 +2176,7 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
                     option,
                     height=465,
                     width="stretch",
-                    key=f"{element_key}_adaptive_{mode or 'default'}",
+                    key=f"{element_key}_adaptive_{mode or 'default'}_{selected_range}",
                     theme=None,
                 )
                 if reused:
@@ -2171,10 +2189,13 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
     # Per-chart fail-open fallback, with independent viewport-aware Y buttons.
     st.warning("动态 Y 轴暂不可用，已切换可同时调整 X/Y 的兼容图表。")
     try:
-        fallback = _viewport_scaled_plotly_fallback(base_fig, DEFAULT_CHART_RANGE)
+        fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
+        # The unified selector above already handles relayout of X and Y.
+        # Hide the second, renderer-specific row of time buttons.
+        fallback.update_layout(updatemenus=[])
         st.plotly_chart(
             fallback,
-            key=f"{element_key}_plotly_fallback_{mode or 'default'}",
+            key=f"{element_key}_plotly_fallback_{mode or 'default'}_{selected_range}",
             use_container_width=True,
             config=PLOTLY_CONFIG,
         )
@@ -2440,10 +2461,12 @@ def render_macro_chart_5(prebuilt_fig=None, prebuilt_mode=None):
     _render_hk_macro_chart(0, prebuilt_fig=prebuilt_fig, prebuilt_mode=prebuilt_mode)
 
 
+@st.fragment(key="macro_chart_6_viewport")
 def render_macro_chart_6(prebuilt_fig=None):
     _render_hk_macro_chart(1, prebuilt_fig=prebuilt_fig)
 
 
+@st.fragment(key="macro_chart_7_viewport")
 def render_macro_chart_7(prebuilt_fig=None):
     _render_hk_macro_chart(2, prebuilt_fig=prebuilt_fig)
 
@@ -2453,6 +2476,7 @@ def render_macro_chart_8(prebuilt_fig=None, prebuilt_mode=None):
     _render_hk_macro_chart(3, prebuilt_fig=prebuilt_fig, prebuilt_mode=prebuilt_mode)
 
 
+@st.fragment(key="macro_chart_9_viewport")
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">9. US Equity Risk & Volatility Structure</div>'
@@ -2529,6 +2553,7 @@ def render_macro_chart_11(prebuilt_fig=None, prebuilt_mode=None):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
+@st.fragment(key="macro_chart_12_viewport")
 def render_macro_chart_12(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">12. Copper Flow & COMEX–LME Spread</div>'
@@ -2553,6 +2578,7 @@ def render_macro_chart_12(prebuilt_fig=None):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
+@st.fragment(key="macro_chart_13_viewport")
 def render_macro_chart_13(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">13. China & Japan Government Yield Curves</div>'
