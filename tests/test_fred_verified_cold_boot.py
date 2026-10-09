@@ -113,6 +113,37 @@ class FredVerifiedColdBootTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             sync._parse_source("DATE,IORB\n2026-09-01,3.6", "IORB")
 
+    def test_new_york_fed_official_rate_json_keeps_only_actual_trade_dates(self):
+        dates = pd.date_range("2026-09-01", periods=20, freq="D")
+        session = Mock()
+        session.get.return_value.json.return_value = {
+            "refRates": [
+                {"effectiveDate": day.strftime("%Y-%m-%d"),
+                 "percentRate": 3.63 + (i % 2) * 0.01}
+                for i, day in enumerate(dates)
+            ]
+        }
+        session.get.return_value.raise_for_status.return_value = None
+        frame = sync._fetch_primary(session, "EFFR")
+        self.assertEqual(len(frame), 20)
+        self.assertEqual(frame.date.max(), pd.Timestamp("2026-09-20"))
+        self.assertAlmostEqual(float(frame.value.iloc[0]), 3.63)
+
+    def test_federal_reserve_iorb_csv_preserves_observed_dates(self):
+        dates = pd.date_range("2026-09-01", periods=20, freq="D")
+        csv = "\\n".join(
+            ["Metadata"] * 5 +
+            ["Time Period,RESBM_N.D"] +
+            [f"{day:%Y-%m-%d},{3.65 if i < 15 else 3.9}"
+             for i, day in enumerate(dates)]
+        )
+        session = Mock()
+        session.get.return_value.text = csv
+        session.get.return_value.raise_for_status.return_value = None
+        frame = sync._fetch_primary(session, "IORB")
+        self.assertEqual(len(frame), 20)
+        self.assertAlmostEqual(float(frame.value.iloc[-1]), 3.9)
+
     def test_failed_upstream_sync_keeps_existing_observed_snapshot_unchanged(self):
         before = self.file.read_bytes()
         with patch.object(sync, "OUT", self.folder), \
