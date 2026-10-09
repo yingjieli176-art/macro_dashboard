@@ -103,7 +103,10 @@ def load_china_gov_yields() -> pd.DataFrame:
     reconstructed_2y = out["china_10y"] - source_spread
     out["china_2y"] = out["china_2y"].combine_first(reconstructed_2y)
     computed_spread = out["china_10y"] - out["china_2y"]
-    out["china_10y_2y_pct"] = source_spread.combine_first(computed_spread)
+    # Prefer the spread calculated from the two yields shown in the same
+    # chart, so no observer sees a spread contradicting its components.
+    # Retain Eastmoney's source spread only when no calculation is possible.
+    out["china_10y_2y_pct"] = computed_spread.combine_first(source_spread)
 
     out = (
         out.dropna(subset=["observation_date"])
@@ -293,10 +296,11 @@ def build_asia_rates_figure(date_range: str) -> go.Figure:
         fig,
         china,
         "china_10y_2y_pct",
-        "China 10Y−2Y",
+        "China 10Y−2Y (R1)",
         width=2.0,
         dash="dot",
-        suffix="%",
+        yaxis="y2",
+        suffix=" pp",
     )
 
     _add_trace(fig, japan, "japan_2y", "Japan 2Y", width=2.1)
@@ -305,10 +309,11 @@ def build_asia_rates_figure(date_range: str) -> go.Figure:
         fig,
         japan,
         "japan_10y_2y_pct",
-        "Japan 10Y−2Y",
+        "Japan 10Y−2Y (R1)",
         width=2.0,
         dash="dot",
-        suffix="%",
+        yaxis="y2",
+        suffix=" pp",
     )
 
     fig.update_layout(
@@ -327,11 +332,19 @@ def build_asia_rates_figure(date_range: str) -> go.Figure:
             bgcolor="rgba(255,255,255,0)",
         ),
         yaxis=dict(
-            title="Yield / curve spread (%)",
+            title="Government yield (%)",
             showgrid=True,
             gridcolor="#e5e7eb",
             griddash="dot",
             zeroline=False,
+            fixedrange=True,
+            tickformat=".2f",
+        ),
+        yaxis2=dict(
+            title="10Y−2Y spread (pp)",
+            overlaying="y",
+            side="right",
+            showgrid=False,
             fixedrange=True,
             tickformat=".2f",
         ),
