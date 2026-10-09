@@ -1,18 +1,22 @@
 """Chart-level fault isolation: a failed renderer must not abort the dashboard."""
 import ast
 import logging
+from copy import deepcopy
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 import plotly.graph_objects as go
+import pandas as pd
+from macro_platform.chart_axes import RANGE_OFFSETS, apply_client_time_controls
 
 
 def _load_renderers():
     source = Path(__file__).resolve().parents[1] / "app.py"
     tree = ast.parse(source.read_text(encoding="utf-8"))
-    names = {"_render_adaptive_macro_figure", "_render_standard_macro_chart"}
+    names = {"_render_adaptive_macro_figure", "_render_standard_macro_chart",
+             "_recoverable_echarts_option", "_viewport_scaled_plotly_fallback"}
     functions = [node for node in tree.body
                  if isinstance(node, ast.FunctionDef) and node.name in names]
     ns = {}
@@ -36,12 +40,18 @@ class ChartRendererRecoveryTests(unittest.TestCase):
             segmented_control=Mock(return_value="1Y"),
             query_params={},
         )
+        self.st.session_state = {}
         self.ns.update({
+            "go": go,
+            "pd": pd,
+            "deepcopy": deepcopy,
+            "RANGE_OFFSETS": RANGE_OFFSETS,
             "_echarts_axes": SimpleNamespace(build_adaptive_echarts_option=self.adapter),
             "st": self.st,
             "DEFAULT_CHART_RANGE": "1Y",
             "CHART_BUILD": "test-smoke",
             "_prepare_chart_for_client_ranges": Mock(return_value=self.fig),
+            "apply_client_time_controls": apply_client_time_controls,
             "apply_server_time_window": Mock(return_value=self.fig),
             "apply_time_axis": Mock(return_value=self.fig),
             "PLOTLY_CONFIG": {},
@@ -90,6 +100,74 @@ class ChartRendererRecoveryTests(unittest.TestCase):
         self.ns["_render_adaptive_macro_figure"](self.fig, "hk_5_range")
         self.st.echarts_chart.assert_called_once()
         self.st.plotly_chart.assert_not_called()
+
+
+    def test_after_1y_load_a_failed_1m_refresh_reuses_dynamic_view(self):
+        # Recreates the screenshot: first chart works, time switch/rerun fails
+        # to build options. The next render must remain ECharts, not Plotly.
+        dates = pd.date_range("2025-10-08", "2026-10-08", freq="D")
+        self.fig = go.Figure(go.Scatter(x=dates, y=[0.5 if d.year < 2026
+                            else 3.7 + 0.01 * (i % 10)
+                            for i, d in enumerate(dates)]))
+        from macro_platform.echarts_axes import build_adaptive_echarts_option
+        working_option = build_adaptive_echarts_option(self.fig, "1Y")
+        self.assertIsNotNone(working_option)
+        self.adapter.return_value = working_option
+
+        self.ns["_render_standard_macro_chart"](
+            "<b>Rates</b>", "Description", "fed_range", Mock(), [], 1, self.fig
+        )
+        self.assertEqual(self.st.echarts_chart.call_count, 1)
+        self.assertEqual(self.st.plotly_chart.call_count, 0)
+
+        self.st.segmented_control.return_value = "1M"
+        self.adapter.side_effect = RuntimeError("temporary converter failure")
+        self.ns["_render_standard_macro_chart"](
+            "<b>Rates</b>", "Description", "fed_range", Mock(), [], 1, self.fig
+        )
+        self.assertEqual(self.st.echarts_chart.call_count, 2)
+        self.st.plotly_chart.assert_not_called()
+        recovered = self.st.echarts_chart.call_args.kwargs
+        self.assertTrue(recovered["options"] if "options" in recovered else True)
+        option = self.st.echarts_chart.call_args.args[0]
+        start = pd.Timestamp(option["dataZoom"][0]["startValue"])
+        latest = pd.Timestamp(option["dataZoom"][0]["endValue"])
+        self.assertEqual(start, latest - pd.DateOffset(months=1))
+        self.assertTrue(option["yAxis"][0]["scale"])
+        self.assertTrue(all(zoom["filterMode"] == "filter" for zoom in option["dataZoom"]))
+
+    def test_fallback_1m_y_does_not_inherit_five_year_zero_floor(self):
+        dates = pd.date_range("2021-10-08", "2026-10-08", freq="7D")
+        fig = go.Figure(go.Scatter(
+            x=dates, y=[0.25 if d.year < 2025 else 3.7 + i % 7 * 0.015
+                        for i, d in enumerate(dates)], name="Policy rate",
+        ))
+        self.adapter.side_effect = RuntimeError("temporarily broken")
+        fallback = self.ns["_viewport_scaled_plotly_fallback"](fig, "1M")
+        self.assertGreater(fallback.layout.yaxis.range[0], 3.4)
+        self.assertLess(fallback.layout.yaxis.range[1], 4.2)
+        self.assertEqual(
+            [b.label for b in fallback.layout.updatemenus[0].buttons],
+            ["5Y", "1Y", "6M", "3M", "1M"],
+        )
+        # A fallback remains an independently zoomable X/Y chart.
+        self.assertFalse(fallback.layout.yaxis.fixedrange)
+
+    def test_first_load_converter_error_uses_tight_plotly_fallback(self):
+        self.adapter.side_effect = ValueError("converter exception")
+        dates = pd.date_range("2021-10-08", "2026-10-08", freq="7D")
+        fig = go.Figure(go.Scatter(
+            x=dates, y=[0.25 if d.year < 2025 else 3.75
+                        for d in dates], name="Policy rate",
+        ))
+        self.st.segmented_control.return_value = "1M"
+        self.ns["_render_standard_macro_chart"](
+            "<b>Rates</b>", "Description", "fed_range", Mock(), [], 1, fig
+        )
+        self.st.plotly_chart.assert_called_once()
+        rendered = self.st.plotly_chart.call_args.args[0]
+        self.assertGreater(rendered.layout.yaxis.range[0], 3.0)
+        self.assertLess(rendered.layout.yaxis.range[1], 4.5)
 
 
 if __name__ == "__main__":
