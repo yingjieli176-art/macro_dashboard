@@ -3,6 +3,7 @@ from collections.abc import Mapping
 from copy import deepcopy
 import json
 import logging
+import math
 import os
 import threading
 import time
@@ -68,7 +69,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-09-native-y-recovery-r35"
+CHART_BUILD = "2026-10-09-fred-coldstart-r36"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2176,6 +2177,42 @@ def _show_macro_plot_health(fig, option, element_key):
 
 
 
+
+def _figure_has_real_observations(fig):
+    """Only allow a viewport renderer when there are finite source samples."""
+    for trace in getattr(fig, "data", ()):
+        if getattr(trace, "visible", True) in (False, "legendonly"):
+            continue
+        for value in (getattr(trace, "y", None) or ()):
+            try:
+                if math.isfinite(float(value)):
+                    return True
+            except (TypeError, ValueError, OverflowError):
+                pass
+    return False
+
+
+def _chart_has_recoverable_data(fig, element_key, mode=None):
+    if _figure_has_real_observations(fig):
+        return True
+    key = f"_echarts_last_good_{element_key}_{mode or 'default'}"
+    state = getattr(st, "session_state", None)
+    return bool(state is not None and
+                isinstance(state.get(key), dict) and state[key].get("series"))
+
+
+def _explain_missing_chart_data(fig, element_key):
+    meta = fig.layout.meta if isinstance(fig.layout.meta, dict) else {}
+    st.error("该图表目前没有可验证的有效观测数据，无法进行 X/Y 动态缩放。"
+             "程序不会通过插值或虚构数值补齐行情。")
+    if (meta or {}).get("build_error_type"):
+        st.caption("图表构建错误类别：" + str(meta["build_error_type"])
+                   + "；完整异常见服务器日志。")
+    st.caption("数据或原生图表恢复后会重新启用动态 X/Y。"
+               "FRED 官方历史缓存可用于网络故障时展示真实但可能过期的数据。")
+    logging.warning("No valid chart samples for %s", element_key)
+
+
 def _try_minimal_adaptive_chart(base_fig, element_key, selected_range, mode=None):
     """Retry a *native* adaptive renderer before degrading to Plotly.
 
@@ -2222,6 +2259,9 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
         "时间范围", options=RANGES, default=DEFAULT_CHART_RANGE,
         key=f"{element_key}_time_window", label_visibility="collapsed",
     ) or DEFAULT_CHART_RANGE
+    if not _chart_has_recoverable_data(base_fig, element_key, mode):
+        _explain_missing_chart_data(base_fig, element_key)
+        return
     renderer = getattr(st, "echarts_chart", None)
     failure_kind = "原生图表组件缺失" if not callable(renderer) else "数据转换无有效图表"
     if callable(renderer):
@@ -2282,6 +2322,12 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         default=DEFAULT_CHART_RANGE, key=f"{range_key}_time_window",
         label_visibility="collapsed",
     ) or DEFAULT_CHART_RANGE
+    if not _chart_has_recoverable_data(base_fig, range_key):
+        _explain_missing_chart_data(base_fig, range_key)
+        show_parameter_description(desc_index)
+        add_sources(sources)
+        st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+        return
     # Native ECharts filters samples outside the active X window and sets
     # each Y axis to an independent nonzero-based visible-data extent.
     # All standard US macro charts (1–4), not just chart 1, must use the
@@ -2702,8 +2748,12 @@ def _macro_error_figure(label):
 def _safe_macro_build(label, builder):
     try:
         return builder()
-    except Exception:
-        return _macro_error_figure(label)
+    except Exception as exc:
+        logging.exception("Chart builder failed: %s", label)
+        fig = _macro_error_figure(label)
+        fig.update_layout(meta={"data_unavailable": True,
+                                "build_error_type": type(exc).__name__})
+        return fig
 
 
 def _macro_snapshot_revision():
