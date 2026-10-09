@@ -172,7 +172,12 @@ def load_hk_liquidity() -> pd.DataFrame:
     monthly["USD/HKD"] = monthly["exrate_hkd_usd"]
     monthly["Strong-side CU"] = 7.75
     monthly["Weak-side CU"] = 7.85
-    return monthly.reset_index()[OUTPUT_COLUMNS]
+    # Source end_of_month is a period label, not its first trading day.
+    # Calculate MoM/YoY on a true month-start grid above, then date the
+    # published monthly observation at the corresponding calendar month end.
+    result = monthly.reset_index()[OUTPUT_COLUMNS]
+    result["observation_date"] = result["observation_date"] + pd.offsets.MonthEnd(0)
+    return result
 
 
 
@@ -261,7 +266,7 @@ def load_hk_funding_monthly() -> pd.DataFrame:
     except Exception:
         hibor = pd.DataFrame()
     if not hibor.empty and "end_of_month" in hibor.columns:
-        hibor["observation_date"] = pd.to_datetime(hibor["end_of_month"], format="%Y-%m", errors="coerce")
+        hibor["observation_date"] = pd.to_datetime(hibor["end_of_month"], format="%Y-%m", errors="coerce") + pd.offsets.MonthEnd(0)
         hibor["HIBOR O/N"] = pd.to_numeric(hibor.get("hibor_overnight"), errors="coerce")
         hibor["HIBOR 3M"] = pd.to_numeric(hibor.get("hibor_3m"), errors="coerce")
         hibor = hibor.dropna(subset=["observation_date"]).set_index("observation_date")[["HIBOR O/N", "HIBOR 3M"]]
@@ -277,7 +282,7 @@ def load_hk_funding_monthly() -> pd.DataFrame:
     except Exception:
         base_rate = pd.DataFrame()
     if not base_rate.empty and "end_of_month" in base_rate.columns:
-        base_rate["observation_date"] = pd.to_datetime(base_rate["end_of_month"], format="%Y-%m", errors="coerce")
+        base_rate["observation_date"] = pd.to_datetime(base_rate["end_of_month"], format="%Y-%m", errors="coerce") + pd.offsets.MonthEnd(0)
         base_rate["HKMA Base Rate"] = pd.to_numeric(base_rate.get("disc_win_base_rate"), errors="coerce")
         base_rate = base_rate.dropna(subset=["observation_date"]).set_index("observation_date")[["HKMA Base Rate"]]
         union = funding.index.union(base_rate.index)
@@ -611,14 +616,18 @@ def _market_snapshot_history(symbol: str, label: str, date_range: str) -> pd.Dat
     start = frame["observation_date"].max() - RANGE_OFFSETS.get(date_range, RANGE_OFFSETS["1Y"])
     frame = frame.loc[frame["observation_date"] >= start, ["observation_date", label]].copy()
     if date_range == "5Y" and not frame.empty:
-        frame = (
-            frame.set_index("observation_date")[label]
-            .resample("W-FRI")
-            .last()
-            .dropna()
-            .rename(label)
-            .reset_index()
-        )
+        # Keep recent daily observations for the client-side 1M/3M zoom.
+        # Reduce ONLY older history to genuine weekly closing observations.
+        # A resample('W-FRI') timestamp fabricates Friday timestamps for
+        # Mon-Thu closes, so retain the last *actual* trading-day date.
+        cutoff = frame["observation_date"].max() - pd.DateOffset(years=1)
+        older = frame.loc[frame["observation_date"] < cutoff]
+        recent = frame.loc[frame["observation_date"] >= cutoff]
+        if not older.empty:
+            weeks = older["observation_date"].dt.to_period("W-FRI")
+            older = older.groupby(weeks, sort=True).tail(1)
+        frame = pd.concat([older, recent], ignore_index=True)
+        frame = frame.sort_values("observation_date").reset_index(drop=True)
     return frame
 
 
@@ -796,7 +805,17 @@ def build_hk_liquidity_figures(
     # to Aggregate Balance / EFBN trend analysis and created unnecessary snapshot
     # fragility. HKD funding below remains daily where available.
     banking_source = load_hk_banking_liquidity_monthly()
-    funding_source = load_hk_funding_monthly() if date_range == "5Y" else load_hk_funding_daily()
+    if date_range == "5Y":
+        # Browser-side zooms retain the same five-year figure. Build a mixed
+        # monthly-history + recent daily dataset so selecting 1M/3M does NOT
+        # show just one old monthly fixing.
+        monthly_funding = load_hk_funding_monthly().set_index("observation_date")
+        daily_funding = load_hk_funding_daily().set_index("observation_date")
+        # Prefer daily readings where they exist; preserve monthly history
+        # and per-column values that have not yet been published daily.
+        funding_source = daily_funding.combine_first(monthly_funding).sort_index().reset_index()
+    else:
+        funding_source = load_hk_funding_daily()
     funding_is_daily = _frame_is_daily(funding_source)
     banking_data = _slice_range(banking_source, date_range)
     funding_data = _slice_range(funding_source, date_range)
@@ -999,7 +1018,10 @@ def build_hk_liquidity_figures(
         title_text="Spread (%)", secondary_y=True,
         showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
-    funding_frequency_label = "Daily" if funding_is_daily else ("Monthly" if date_range == "5Y" else "Monthly fallback")
+    funding_frequency_label = (
+        "Monthly history + recent daily" if date_range == "5Y" and funding_is_daily
+        else ("Daily" if funding_is_daily else "Monthly fallback")
+    )
     style(funding, f"7. HKD Funding · {funding_frequency_label}", right_axis=True)
     if date_range != "5Y" and not funding_is_daily:
         funding.add_annotation(
