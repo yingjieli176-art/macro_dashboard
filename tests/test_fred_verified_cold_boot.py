@@ -131,7 +131,7 @@ class FredVerifiedColdBootTests(unittest.TestCase):
 
     def test_federal_reserve_iorb_csv_preserves_observed_dates(self):
         dates = pd.date_range("2026-09-01", periods=20, freq="D")
-        csv = "\\n".join(
+        csv = "\n".join(
             ["Metadata"] * 5 +
             ["Time Period,RESBM_N.D"] +
             [f"{day:%Y-%m-%d},{3.65 if i < 15 else 3.9}"
@@ -147,6 +147,7 @@ class FredVerifiedColdBootTests(unittest.TestCase):
     def test_failed_upstream_sync_keeps_existing_observed_snapshot_unchanged(self):
         before = self.file.read_bytes()
         with patch.object(sync, "OUT", self.folder), \
+             patch.object(sync, "_fetch_primary", side_effect=OSError("no primary feed")), \
              patch.object(sync, "_fetch_csv", side_effect=OSError("no network")), \
              patch.object(sync, "_fetch_api", side_effect=OSError("no key")):
             series_id, payload, reason = sync.refresh_one(self.sid)
