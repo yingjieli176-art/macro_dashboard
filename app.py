@@ -49,7 +49,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-08-importfix-r25"
+CHART_BUILD = "2026-10-09-dynamic-y-r26"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2005,6 +2005,39 @@ def _prepare_chart_for_client_ranges(fig, element_key, mode=None):
     return fig
 
 
+
+def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
+    """Use viewport-filtered ECharts for every macro chart, not only US 1-4.
+
+    Plotly's native time selector changes X without recalculating Y after
+    arbitrary drag/slider zoom. ECharts filters visible data client-side and
+    rescales every independent Y axis when the X viewport changes.
+    """
+    adapter = getattr(_echarts_axes, "build_adaptive_echarts_option", None)
+    renderer = getattr(st, "echarts_chart", None)
+    if callable(adapter) and callable(renderer):
+        option = adapter(base_fig, DEFAULT_CHART_RANGE)
+        if option is not None:
+            renderer(
+                option,
+                height=465,
+                width="stretch",
+                key=f"{element_key}_adaptive_{mode or 'default'}",
+                theme=None,
+            )
+            return
+
+    # Keep the dashboard usable during an out-of-sync Streamlit Cloud rollout.
+    st.warning("动态 Y 轴组件未就绪，暂用 Plotly 兼容模式（框选缩放需重新选时间范围）。")
+    fallback = _prepare_chart_for_client_ranges(base_fig, element_key, mode)
+    st.plotly_chart(
+        fallback,
+        key=f"{element_key}_plotly_fallback_{mode or 'default'}",
+        use_container_width=True,
+        config=PLOTLY_CONFIG,
+    )
+
+
 def _render_standard_macro_chart(title, description, range_key, builder, sources, desc_index, prebuilt_fig=None):
     st.markdown(title, unsafe_allow_html=True)
     st.markdown(description, unsafe_allow_html=True)
@@ -2214,13 +2247,7 @@ def _render_hk_macro_chart(hk_index, prebuilt_fig=None):
             label_visibility="collapsed",
         )
     fig = prebuilt_fig if prebuilt_fig is not None else _safe_hk_bundle(market_mode, _macro_snapshot_revision())[hk_index]
-    fig = _prepare_chart_for_client_ranges(fig, range_key, market_mode)
-    st.plotly_chart(
-        fig,
-        key=f"{range_key}_plot",
-        use_container_width=True,
-        config=PLOTLY_CONFIG,
-    )
+    _render_adaptive_macro_figure(fig, range_key, market_mode)
     show_hk_parameter_description(hk_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
@@ -2251,8 +2278,7 @@ def render_macro_chart_9(prebuilt_fig=None):
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig9("5Y")
-    fig = _prepare_chart_for_client_ranges(base_fig, "us_equity_risk")
-    st.plotly_chart(fig, key="us_equity_risk_plot", use_container_width=True, config=PLOTLY_CONFIG)
+    _render_adaptive_macro_figure(base_fig, "us_equity_risk")
     st.markdown(f'<div class="mini-description">{US_EQUITY_RISK_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Cboe VIX", "https://www.cboe.com/tradable-products/vix/"),
@@ -2277,8 +2303,7 @@ def render_macro_chart_10(prebuilt_fig=None):
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 10", lambda: _cached_macro_figure(10, market_mode, _macro_snapshot_revision(), CHART_BUILD)
     )
-    fig = _prepare_chart_for_client_ranges(base_fig, "precious_metals", market_mode)
-    st.plotly_chart(fig, key="precious_metals_plot", use_container_width=True, config=PLOTLY_CONFIG)
+    _render_adaptive_macro_figure(base_fig, "precious_metals", market_mode)
     st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Yahoo Finance · Gold Futures GC=F", "https://finance.yahoo.com/quote/GC=F/history/"),
@@ -2303,8 +2328,7 @@ def render_macro_chart_11(prebuilt_fig=None):
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 11", lambda: _cached_macro_figure(11, market_mode, _macro_snapshot_revision(), CHART_BUILD)
     )
-    fig = _prepare_chart_for_client_ranges(base_fig, "crypto_market", market_mode)
-    st.plotly_chart(fig, key="crypto_market_plot", use_container_width=True, config=PLOTLY_CONFIG)
+    _render_adaptive_macro_figure(base_fig, "crypto_market", market_mode)
     st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Yahoo Finance · Bitcoin BTC-USD", "https://finance.yahoo.com/quote/BTC-USD/history/"),
@@ -2320,8 +2344,7 @@ def render_macro_chart_12(prebuilt_fig=None):
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig12("5Y")
-    fig = _prepare_chart_for_client_ranges(base_fig, "copper_flow")
-    st.plotly_chart(fig, key="copper_flow_plot", use_container_width=True, config=PLOTLY_CONFIG)
+    _render_adaptive_macro_figure(base_fig, "copper_flow")
     st.markdown(
         '<div class="mini-description"><b>读取提示：</b>库存单位为千吨，铜价统一为 USD/t；价差＝COMEX−LME 3M。'
         '库存此增彼减且价差走阔可提示交割需求迁移；两者期限不同，价差仅用于压力监测。</div>',
@@ -2345,16 +2368,7 @@ def render_macro_chart_13(prebuilt_fig=None):
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_asia_rates_figure("5Y")
-    fig = _prepare_chart_for_client_ranges(
-        base_fig,
-        "asia_rates",
-    )
-    st.plotly_chart(
-        fig,
-        key="asia_rates_plot",
-        use_container_width=True,
-        config=PLOTLY_CONFIG,
-    )
+    _render_adaptive_macro_figure(base_fig, "asia_rates")
     st.markdown(
         '<div class="mini-description"><b>读取方法：</b>'
         '10Y−2Y 上升表示曲线变陡，下降表示趋平，负值表示倒挂。</div>',
