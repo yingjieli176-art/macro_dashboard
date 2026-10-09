@@ -2200,7 +2200,9 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
         fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
         # The unified selector above already handles relayout of X and Y.
         # Hide the second, renderer-specific row of time buttons.
-        fallback.update_layout(updatemenus=[])
+        # Plotly update_layout(updatemenus=[]) merges with existing menus,
+        # so set the tuple directly to actually remove duplicate buttons.
+        fallback.layout.updatemenus = ()
         st.plotly_chart(
             fallback,
             key=f"{element_key}_plotly_fallback_{mode or 'default'}_{selected_range}",
