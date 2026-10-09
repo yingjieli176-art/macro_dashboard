@@ -248,6 +248,18 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             "axisLabel": {
                 "color": "#475569", "fontSize": 10,
                 "hideOverlap": True, "margin": 10,
+                # ECharts defaults to '2026' at January and 'Sep' elsewhere;
+                # use explicit calendar labels so year/month never disappear.
+                # Compact day ticks remain distinguishable in 1M/3M views.
+                # All templates are JSON-compatible (no JavaScript callbacks).
+                "formatter": {
+                    "year": "{yyyy}-01",
+                    "month": "{yyyy}-{MM}",
+                    "day": "{MM}-{dd}",
+                    "hour": "{MM}-{dd} {HH}:{mm}",
+                    "minute": "{HH}:{mm}",
+                    "second": "{HH}:{mm}:{ss}",
+                },
             },
             "splitNumber": 6,
             "splitLine": {"show": True, "lineStyle": {"color": "#f1f5f9", "type": "dashed"}},
