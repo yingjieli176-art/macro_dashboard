@@ -173,7 +173,7 @@ def refresh_one(series_id: str):
                 }
                 return series_id, payload, ""
             except Exception as exc:
-                failures.append(f"{fetcher.__name__}: {type(exc).__name__}: {exc}")
+                failures.append(f"{getattr(fetcher, '__name__', type(fetcher).__name__)}: {type(exc).__name__}: {exc}")
     return series_id, None, " | ".join(failures)
 
 
