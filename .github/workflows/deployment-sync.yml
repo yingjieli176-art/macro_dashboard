@@ -18,6 +18,7 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          import os
           import pathlib
           import sys
           import urllib.error
@@ -56,7 +57,7 @@ jobs:
               print(f"PATH {path}: status={status}; redirect={location or '-'}; type={len(body)} bytes", flush=True)
               responses[path] = (status, location, body)
 
-          status, _, body = responses.get("/app/static/deploy_version.json", (None, None, None))
+          status, redirect, body = responses.get("/app/static/deploy_version.json", (None, None, None))
           if status == 200 and body:
               try:
                   release = json.loads(body).get("release")
@@ -68,7 +69,25 @@ jobs:
                   sys.exit(0)
               if release:
                   sys.exit("FAIL: deployed old release; verify Streamlit Cloud branch and reboot")
+          if status in (301, 302, 303, 307, 308) and redirect and "/-/auth/app" in redirect:
+              message = (
+                  "AUTH REQUIRED: Streamlit Cloud redirects anonymous probes to its sign-in page. "
+                  "GitHub cannot verify running code or trigger a reboot. "
+                  "Check deployment branch and restart using the app owner's Cloud dashboard."
+              )
+              print("::warning::" + message, flush=True)
+              summary = os.getenv("GITHUB_STEP_SUMMARY")
+              if summary:
+                  with open(summary, "a", encoding="utf-8") as output:
+                      output.write(
+                          "### Cloud release check: authentication required\\n\\n"
+                          + message + "\\n\\n"
+                          + "This is **not** a verified deployment; GitHub build tests are separate.\\n"
+                      )
+              # A login gate is not an application regression. Do not turn it
+              # into a misleading red CI failure or a false deployment PASS.
+              sys.exit(0)
           if status in (301, 302, 303, 307, 308):
-              sys.exit("INCONCLUSIVE: Cloud returns a redirect to release probe; check URL access policy, Streamlit logs and deployed branch")
-          sys.exit("INCONCLUSIVE: live release could not be verified; check Streamlit Cloud deployment logs")
+              sys.exit("INCONCLUSIVE: unexpected redirect; inspect the deployment and auth settings")
+          sys.exit("INCONCLUSIVE: live release could not be verified; inspect Streamlit Cloud logs")
           PY
