@@ -53,6 +53,7 @@ class ChartRendererRecoveryTests(unittest.TestCase):
             "_echarts_axes": SimpleNamespace(build_adaptive_echarts_option=self.adapter),
             "st": self.st,
             "DEFAULT_CHART_RANGE": "1Y",
+            "RANGES": ["5Y", "1Y", "6M", "3M", "1M"],
             "CHART_BUILD": "test-smoke",
             "_prepare_chart_for_client_ranges": Mock(return_value=self.fig),
             "apply_client_time_controls": apply_client_time_controls,
@@ -172,6 +173,53 @@ class ChartRendererRecoveryTests(unittest.TestCase):
         rendered = self.st.plotly_chart.call_args.args[0]
         self.assertGreater(rendered.layout.yaxis.range[0], 3.0)
         self.assertLess(rendered.layout.yaxis.range[1], 4.5)
+
+
+    def test_every_adaptive_chart_gets_visible_five_range_buttons(self):
+        for key in ("hk_5_range", "hk_6_range", "hk_7_range",
+                    "hk_8_range", "us_equity_risk", "precious_metals",
+                    "crypto_market", "copper_flow", "asia_rates"):
+            with self.subTest(chart=key):
+                self.st.segmented_control.reset_mock()
+                self.ns["_render_adaptive_macro_figure"](self.fig, key)
+                controls = self.st.segmented_control.call_args
+                self.assertEqual(
+                    controls.kwargs["options"], ["5Y", "1Y", "6M", "3M", "1M"]
+                )
+                self.assertEqual(controls.kwargs["key"], f"{key}_time_window")
+
+    def test_hk_one_month_zoom_uses_same_month_on_both_engines(self):
+        self.st.segmented_control.return_value = "1M"
+        self.ns["_render_adaptive_macro_figure"](self.fig, "hk_5_range", "Raw")
+        self.adapter.assert_called_with(self.fig, "1M")
+        self.assertIn("_1M", self.st.echarts_chart.call_args.kwargs["key"])
+        self.st.echarts_chart.side_effect = RuntimeError("adapter unavailable")
+        self.ns["_render_adaptive_macro_figure"](self.fig, "hk_5_range", "Raw")
+        self.st.plotly_chart.assert_called_once()
+        fallback = self.st.plotly_chart.call_args.args[0]
+        self.assertEqual(fallback.layout.xaxis.tickformat, "%m-%d")
+        # The common external selector replaces the duplicate Plotly buttons.
+        self.assertFalse(fallback.layout.updatemenus)
+
+    def test_hk_cached_recovery_updates_month_window(self):
+        from macro_platform.echarts_axes import build_adaptive_echarts_option
+        dates = pd.date_range("2025-10-01", "2026-10-08", freq="7D")
+        self.fig = go.Figure(go.Scatter(x=dates, y=[3 + 0.1 * (i % 4)
+                                                  for i in range(len(dates))]))
+        self.adapter.return_value = build_adaptive_echarts_option(self.fig, "1Y")
+        self.ns["_render_adaptive_macro_figure"](self.fig, "hk_6_range")
+        self.adapter.side_effect = ValueError("temporary adapter failure")
+        self.st.segmented_control.return_value = "3M"
+        self.ns["_render_adaptive_macro_figure"](self.fig, "hk_6_range")
+        self.assertEqual(self.st.echarts_chart.call_count, 2)
+        self.st.plotly_chart.assert_not_called()
+        option = self.st.echarts_chart.call_args.args[0]
+        zoom = option["dataZoom"][0]
+        self.assertEqual(
+            pd.Timestamp(zoom["startValue"]),
+            pd.Timestamp(zoom["endValue"]) - pd.DateOffset(months=3)
+        )
+        self.assertEqual(option["xAxis"]["axisLabel"]["formatter"]["month"], "{yyyy}-{MM}")
 
 
 if __name__ == "__main__":

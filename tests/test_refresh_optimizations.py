@@ -187,6 +187,16 @@ class RefreshOptimizationTests(unittest.TestCase):
         self.assertIn("render_macro_chart_10(macro_figures[10]", app)
         self.assertIn("render_macro_chart_11(macro_figures[11]", app)
         self.assertIn("@st.cache_data(ttl=300", app)
+        # Charts 5, 8, 10 and 11 already have fragments; all remaining
+        # macro charts now need them to avoid a full rerun on time clicks.
+        for number in (6, 7, 9, 12, 13):
+            function = functions[f"render_macro_chart_{number}"]
+            self.assertTrue(any(
+                isinstance(decorator, ast.Call)
+                and isinstance(decorator.func, ast.Attribute)
+                and decorator.func.attr == "fragment"
+                for decorator in function.decorator_list
+            ), f"Chart {number} must isolate date-control reruns")
 
 
 if __name__ == "__main__":
