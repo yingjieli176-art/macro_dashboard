@@ -89,15 +89,20 @@ def build_safe_echarts_option(fig, date_range="1Y"):
                     continue
                 if when.tzinfo is not None:
                     when = when.tz_localize(None)
-                value = float(y)
             except (TypeError, ValueError, OverflowError):
                 continue
-            if not math.isfinite(value):
-                # Nulls must remain gaps, not zero-valued data.
-                points.append([when.isoformat(), None])
-                continue
-            latest = when if latest is None else max(latest, when)
+            try:
+                value = float(y)
+                if not math.isfinite(value):
+                    value = None
+            except (TypeError, ValueError, OverflowError):
+                value = None
+            # Keep the original date and a null gap even if this source did
+            # not report a value. Skipping points shifts sparse chart series
+            # and would silently fabricate a continuous line.
             points.append([when.isoformat(), value])
+            if value is not None:
+                latest = when if latest is None else max(latest, when)
         if not any(value is not None for _, value in points):
             continue
         if ref not in axis_map:
