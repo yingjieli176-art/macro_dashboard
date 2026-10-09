@@ -3,10 +3,10 @@
   "name": "Cboe S&P 500 Constituent Volatility Index",
   "source": "Cboe Global Indices",
   "source_url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIXEQ_History.csv",
-  "updated_at": "2026-09-11T00:26:00.622712+00:00",
-  "record_count": 3075,
+  "updated_at": "2026-10-09T06:59:07.603195+00:00",
+  "record_count": 3095,
   "coverage_start": "2014-06-19",
-  "coverage_end": "2026-09-10",
+  "coverage_end": "2026-10-08",
   "records": [
     {
       "observation_date": "2014-06-19",
@@ -12307,6 +12307,86 @@
     {
       "observation_date": "2026-09-10",
       "close": 36.37
+    },
+    {
+      "observation_date": "2026-09-11",
+      "close": 34.46
+    },
+    {
+      "observation_date": "2026-09-14",
+      "close": 36.01
+    },
+    {
+      "observation_date": "2026-09-15",
+      "close": 36.25
+    },
+    {
+      "observation_date": "2026-09-16",
+      "close": 36.47
+    },
+    {
+      "observation_date": "2026-09-17",
+      "close": 36.35
+    },
+    {
+      "observation_date": "2026-09-18",
+      "close": 36.38
+    },
+    {
+      "observation_date": "2026-09-21",
+      "close": 38.72
+    },
+    {
+      "observation_date": "2026-09-22",
+      "close": 39.08
+    },
+    {
+      "observation_date": "2026-09-23",
+      "close": 39.23
+    },
+    {
+      "observation_date": "2026-09-24",
+      "close": 39.16
+    },
+    {
+      "observation_date": "2026-09-25",
+      "close": 38.46
+    },
+    {
+      "observation_date": "2026-09-28",
+      "close": 39.46
+    },
+    {
+      "observation_date": "2026-09-29",
+      "close": 39.71
+    },
+    {
+      "observation_date": "2026-09-30",
+      "close": 39.83
+    },
+    {
+      "observation_date": "2026-10-01",
+      "close": 39.19
+    },
+    {
+      "observation_date": "2026-10-02",
+      "close": 37.96
+    },
+    {
+      "observation_date": "2026-10-05",
+      "close": 38.3
+    },
+    {
+      "observation_date": "2026-10-06",
+      "close": 38.18
+    },
+    {
+      "observation_date": "2026-10-07",
+      "close": 39.13
+    },
+    {
+      "observation_date": "2026-10-08",
+      "close": 39.75
     }
   ]
 }
