@@ -51,7 +51,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-09-sticky-y-r28"
+CHART_BUILD = "2026-10-09-axis-audit-r29"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2065,6 +2065,34 @@ def _viewport_scaled_plotly_fallback(base_fig, date_range):
 
 
 
+
+def _show_macro_plot_health(fig, option, element_key):
+    """Show timestamps and missing/stale observations without new network I/O."""
+    meta = fig.layout.meta if isinstance(fig.layout.meta, dict) else {}
+    missing = list((meta or {}).get("missing_series") or [])
+    if missing:
+        st.warning("以下序列缺少观测数据：" + " · ".join(missing))
+
+    checker = getattr(_echarts_axes, "option_observation_health", None)
+    if not callable(checker):
+        return
+    try:
+        report = checker(option, chart_key=element_key)
+        dates = report.get("latest_by_name", {})
+        if dates:
+            st.caption("实际观测日：" + " · ".join(
+                f"{name} {day}" for name, day in dates.items()
+            ))
+        if report.get("stale_names"):
+            st.warning("部分数据未及时更新（使用最后有效观测，非实时）：" +
+                       " · ".join(report["stale_names"]))
+        if report.get("future_names"):
+            st.warning("发现超前观测日期，请检查数据源：" +
+                       " · ".join(report["future_names"]))
+    except Exception:
+        logging.exception("Unable to describe observation health for %s", element_key)
+
+
 def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
     """Use viewport-filtered ECharts for every macro chart, not only US 1-4.
 
@@ -2088,6 +2116,7 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
                 )
                 if reused:
                     st.caption("动态 Y 轴已保留上次有效数据；数据更新暂不可用。")
+                _show_macro_plot_health(base_fig, option, element_key)
                 return
             except Exception:
                 logging.exception("Adaptive chart %s renderer failed", element_key)
@@ -2156,6 +2185,9 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
         return
     st.caption("动态Y轴：时间切换、底部滑块及框选时按可见样本自适应（左右轴分别计算）。")
+    missing_series = list((base_fig.layout.meta or {}).get("missing_series", [])) if isinstance(base_fig.layout.meta, dict) else []
+    if missing_series:
+        st.warning("以下序列缺少观测数据：" + " · ".join(missing_series))
     if reused:
         st.caption("当前沿用上次正常加载的动态曲线，数据可能未更新；Y 轴缩放仍可使用。")
     # Extra diagnostics are optional: version skew must not break the charts.
