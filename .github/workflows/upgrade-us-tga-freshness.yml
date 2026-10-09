@@ -1,10 +1,9 @@
 name: Upgrade US TGA freshness
 
+# Historical one-time code migration. Keep for deliberate manual recovery only.
+# Never schedule this workflow or rewrite a live dashboard after data updates.
+# Official snapshot refreshes have dedicated data-only workflows.
 on:
-  push:
-    paths:
-      - "scripts/upgrade_us_tga_freshness.py"
-      - ".github/workflows/upgrade-us-tga-freshness.yml"
   workflow_dispatch:
 
 permissions:
