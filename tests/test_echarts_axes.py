@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import plotly.graph_objects as go
 
-from macro_platform.echarts_axes import build_adaptive_echarts_option, summarize_series_dates, expected_viewport_y_bounds
+from macro_platform.echarts_axes import build_adaptive_echarts_option, summarize_series_dates, expected_viewport_y_bounds, build_safe_echarts_option
 
 
 class EchartsNativeAxes(unittest.TestCase):
@@ -45,6 +45,54 @@ class EchartsNativeAxes(unittest.TestCase):
         self.assertLessEqual((end-start).days, 32)
         self.assertTrue(any(v[1] < 1.0 for v in option["series"][0]["data"]))
         self.assertEqual(option["toolbox"]["feature"]["dataZoom"]["yAxisIndex"], "none")
+
+    def test_native_streamlit_accepts_rich_and_minimal_options(self):
+        """Exercise native Streamlit's spec validation, not just a mocked renderer."""
+        from streamlit.testing.v1 import AppTest
+        dates = pd.date_range("2026-08-01", periods=31, freq="D")
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=dates, y=[100+i for i in range(31)], name="BTC"))
+        fig.add_trace(go.Scatter(x=dates, y=[0.04+i*0.0002 for i in range(31)],
+                                 name="ETH/BTC", yaxis="y2"))
+        fig.update_layout(yaxis2=dict(side="right", overlaying="y"))
+        for build in (build_adaptive_echarts_option, build_safe_echarts_option):
+            with self.subTest(builder=build.__name__):
+                spec = build(fig, "1M")
+                code = ("import streamlit as st\\n"
+                        "st.echarts_chart(" + repr(spec) +
+                        ", height=465, width='stretch', key='test', theme=None)\\n")
+                runner = AppTest.from_string(code, default_timeout=25).run()
+                self.assertFalse(
+                    runner.exception,
+                    [str(problem.message) for problem in runner.exception],
+                )
+
+    def test_minimal_native_rescue_keeps_crypto_independent_y_and_real_dates(self):
+        dates = pd.date_range("2025-10-01", "2026-10-01", freq="D")
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=dates, y=[100 + i * 0.1 for i in range(len(dates))],
+                                 name="BTC · 起点100"))
+        fig.add_trace(go.Scatter(x=dates, y=[0.06 + 0.00001 * i for i in range(len(dates))],
+                                 name="ETH/BTC 强弱 · R1", yaxis="y2"))
+        fig.add_trace(go.Scatter(x=dates, y=[None if i == 30 else 55 + i/30
+                                             for i in range(len(dates))],
+                                 name="30D Vol · R2", yaxis="y3"))
+        fig.update_layout(yaxis2=dict(overlaying="y", side="right"),
+                          yaxis3=dict(overlaying="y", side="right"))
+        for period in ("5Y", "1Y", "6M", "3M", "1M"):
+            with self.subTest(range=period):
+                options = build_safe_echarts_option(fig, period)
+                self.assertEqual(len(options["series"]), 3)
+                self.assertEqual(len(options["yAxis"]), 3)
+                self.assertTrue(all(axis["scale"] for axis in options["yAxis"]))
+                self.assertTrue(all("min" not in a and "max" not in a
+                                    for a in options["yAxis"]))
+                self.assertEqual([s["yAxisIndex"] for s in options["series"]], [0, 1, 2])
+                self.assertIsNone(options["series"][2]["data"][30][1])
+                self.assertTrue(all(z["filterMode"] == "filter"
+                                    for z in options["dataZoom"]))
+                self.assertEqual(options["series"][0]["data"][0][0], dates[0].isoformat())
+                json.dumps(options, allow_nan=False)
 
     def test_independent_right_axis(self):
         dates = pd.date_range("2026-09-01", periods=20, freq="D")

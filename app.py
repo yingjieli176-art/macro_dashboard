@@ -68,7 +68,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-09-import-recovery-r34"
+CHART_BUILD = "2026-10-09-native-y-recovery-r35"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2175,6 +2175,38 @@ def _show_macro_plot_health(fig, option, element_key):
         logging.exception("Unable to describe observation health for %s", element_key)
 
 
+
+def _try_minimal_adaptive_chart(base_fig, element_key, selected_range, mode=None):
+    """Retry a *native* adaptive renderer before degrading to Plotly.
+
+    The rich option can be incompatible with a partially upgraded Cloud
+    runtime. The minimal spec omits optional toolbox/formatting/shading but
+    retains dataZoom(filter) and independent per-axis Y autoscaling.
+    """
+    builder = getattr(_echarts_axes, "build_safe_echarts_option", None)
+    renderer = getattr(st, "echarts_chart", None)
+    if not callable(builder) or not callable(renderer):
+        return False
+    try:
+        option = builder(base_fig, selected_range)
+        if not isinstance(option, dict) or not option.get("series"):
+            return False
+        renderer(
+            option,
+            height=465,
+            width="stretch",
+            key=f"{element_key}_native_safe_{mode or 'default'}_{selected_range}",
+            theme=None,
+        )
+        st.caption("已启用轻量动态 X/Y 视图：时间切换及滑块仍按可见样本自适应。")
+        _show_macro_plot_health(base_fig, option, element_key)
+        return True
+    except Exception:
+        logging.exception("Minimal native ECharts also failed for %s (%s)",
+                          element_key, selected_range)
+        return False
+
+
 def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
     """Use viewport-filtered ECharts for every macro chart, not only US 1-4.
 
@@ -2191,6 +2223,7 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
         key=f"{element_key}_time_window", label_visibility="collapsed",
     ) or DEFAULT_CHART_RANGE
     renderer = getattr(st, "echarts_chart", None)
+    failure_kind = "原生图表组件缺失" if not callable(renderer) else "数据转换无有效图表"
     if callable(renderer):
         option, reused = _recoverable_echarts_option(
             base_fig, element_key, selected_range, mode
@@ -2208,11 +2241,17 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
                     st.caption("动态 Y 轴已保留上次有效数据；数据更新暂不可用。")
                 _show_macro_plot_health(base_fig, option, element_key)
                 return
-            except Exception:
+            except Exception as exc:
+                failure_kind = type(exc).__name__
                 logging.exception("Adaptive chart %s renderer failed", element_key)
 
-    # Per-chart fail-open fallback, with independent viewport-aware Y buttons.
-    st.warning("动态 Y 轴暂不可用，已切换可同时调整 X/Y 的兼容图表。")
+    # Retain genuine browser-side X/Y scaling even when a rich ECharts option
+    # fails due to unsupported decorations or rolling Cloud version skew.
+    if _try_minimal_adaptive_chart(base_fig, element_key, selected_range, mode):
+        return
+
+    # Only fall back to Plotly if BOTH ECharts rendering strategies fail.
+    st.warning(f"原生动态图表暂不可用（{failure_kind}），显示可切换时间范围的兼容图表。")
     try:
         fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
         # The unified selector above already handles relayout of X and Y.
@@ -2251,7 +2290,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     if not callable(getattr(st, "echarts_chart", None)):
         # Fail open: even a stale/missing optional chart adapter cannot prevent
         # the market overview, charts and news from loading.
-        st.warning("ECharts 模块尚未同步，临时显示可缩放的 Plotly 图表。")
+        st.warning("原生 ECharts 渲染器不可用，暂时显示兼容图表。")
         fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
         fallback.layout.updatemenus = ()
         st.plotly_chart(
@@ -2266,7 +2305,12 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         base_fig, range_key, selected_range
     )
     if native_option is None:
-        st.warning("动态图表与缓存均不可用，已使用可同时调整 X/Y 的兼容图表。")
+        if _try_minimal_adaptive_chart(base_fig, range_key, selected_range):
+            show_parameter_description(desc_index)
+            add_sources(sources)
+            st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+            return
+        st.warning("动态图表与缓存均不可用，已使用可切换时间范围的兼容图表。")
         fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
         fallback.layout.updatemenus = ()
         try:
@@ -2322,7 +2366,12 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         )
     except Exception:
         logging.exception("ECharts renderer failed for %s", range_key)
-        st.warning("图表渲染异常，已改用兼容显示。")
+        if _try_minimal_adaptive_chart(base_fig, range_key, selected_range):
+            show_parameter_description(desc_index)
+            add_sources(sources)
+            st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+            return
+        st.warning("原生图表渲染失败，已改用时间切换兼容视图。")
         fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
         fallback.layout.updatemenus = ()
         try:
