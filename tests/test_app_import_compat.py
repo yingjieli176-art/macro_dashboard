@@ -31,6 +31,16 @@ elif mode == "old":
     stub.build_adaptive_echarts_option = lambda *_args: None
     sys.modules["macro_platform.echarts_axes"] = stub
     macro_platform.echarts_axes = stub
+elif mode == "old_data":
+    # Simulate Cloud loading the new app.py with an older data.py. The old
+    # module lacked DFII5 and some unused compatibility aliases.
+    import data as current_data
+    stub = types.ModuleType("data")
+    stub.__dict__.update(current_data.__dict__)
+    stub.__dict__.pop("get_dfii5", None)
+    stub.__dict__.pop("get_sina_news", None)
+    stub._fred_series = lambda symbol: {"series_id": symbol}
+    sys.modules["data"] = stub
 else:
     raise ValueError(mode)
 
@@ -38,10 +48,13 @@ context = {"__name__": "__main__", "__file__": "app.py"}
 exec(compile(startup, "app.py", "exec"), context)
 if mode == "absent":
     assert context["_echarts_axes"] is None
-else:
+elif mode == "old":
     assert context["_echarts_axes"] is stub
     assert not hasattr(stub, "summarize_series_dates")
     assert not hasattr(stub, "expected_viewport_y_bounds")
+elif mode == "old_data":
+    assert context["get_dfii5"]() == {"series_id": "DFII5"}
+    assert "get_sina_news" not in context
 print("PASS:", mode)
 """
 
@@ -67,6 +80,9 @@ class CloudImportCompatibility(unittest.TestCase):
 
     def test_old_optional_echarts_module_missing_helpers(self):
         self._assert_startup_works("old")
+
+    def test_old_data_module_missing_dfii5_and_sina_alias(self):
+        self._assert_startup_works("old_data")
 
 
 if __name__ == "__main__":
