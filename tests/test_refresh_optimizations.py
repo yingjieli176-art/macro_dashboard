@@ -103,5 +103,91 @@ class RefreshOptimizationTests(unittest.TestCase):
         loader.assert_called_with((7, 1))
 
 
+    def _fragment_test_namespace(self, mode):
+        state = {"choice": mode}
+        chart = object()
+        builder = Mock(return_value=["rebuilt"])
+        st = SimpleNamespace(
+            markdown=Mock(), radio=Mock(side_effect=lambda *args, **kw: state["choice"]),
+        )
+        ns = load_functions(
+            {"_render_hk_macro_chart", "render_macro_chart_10", "render_macro_chart_11"},
+            {
+                "st": st,
+                "HK_CHART_CONFIGS": [
+                    ("title", "description", "hk_5_range", []),
+                    ("title", "description", "hk_6_range", []),
+                    ("title", "description", "hk_7_range", []),
+                    ("title", "description", "hk_8_range", []),
+                ],
+                "_safe_hk_bundle": builder,
+                "_macro_snapshot_revision": lambda: "snap",
+                "_render_adaptive_macro_figure": Mock(),
+                "show_hk_parameter_description": Mock(),
+                "add_sources": Mock(),
+                "_safe_macro_build": Mock(side_effect=lambda label, callback: callback()),
+                "_cached_macro_figure": Mock(return_value="rebuilt"),
+                "CHART_BUILD": "perf-test",
+                "US_EQUITY_RISK_DESCRIPTION": "",
+                "PRECIOUS_METALS_DESCRIPTION": "",
+                "CRYPTO_MARKET_DESCRIPTION": "",
+            },
+        )
+        return ns, state, chart, builder
+
+    def test_hk_prebuilt_mode_is_reused_without_duplicate_build(self):
+        ns, state, chart, bundle = self._fragment_test_namespace("Raw")
+        ns["_render_hk_macro_chart"](0, chart, prebuilt_mode="Raw")
+        bundle.assert_not_called()
+        ns["_render_adaptive_macro_figure"].assert_called_with(chart, "hk_5_range", "Raw")
+
+        # Isolated Streamlit fragment radio rerun: mode changed, so do not
+        # erroneously show the old raw Plotly figure in rebased mode.
+        state["choice"] = "Rebased 100"
+        ns["_render_hk_macro_chart"](0, chart, prebuilt_mode="Raw")
+        bundle.assert_called_once_with("Rebased 100", "snap")
+        ns["_render_adaptive_macro_figure"].assert_called_with(
+            "rebuilt", "hk_5_range", "Rebased 100"
+        )
+
+    def test_metals_and_crypto_initial_render_does_not_duplicate_data_build(self):
+        for no, name in ((10, "precious_metals"), (11, "crypto_market")):
+            with self.subTest(chart=no):
+                ns, state, chart, _ = self._fragment_test_namespace("Rebased 100")
+                ns[f"render_macro_chart_{no}"](chart, prebuilt_mode="Rebased 100")
+                ns["_cached_macro_figure"].assert_not_called()
+                ns["_render_adaptive_macro_figure"].assert_called_with(
+                    chart, name, "Rebased 100"
+                )
+                state["choice"] = "Raw"
+                ns[f"render_macro_chart_{no}"](chart, prebuilt_mode="Rebased 100")
+                ns["_cached_macro_figure"].assert_called_once_with(
+                    no, "Raw", "snap", "perf-test"
+                )
+                ns["_render_adaptive_macro_figure"].assert_called_with(
+                    "rebuilt", name, "Raw"
+                )
+
+    def test_time_range_inputs_are_isolated_to_us_fragments(self):
+        app = (Path(__file__).resolve().parents[1] / "app.py").read_text(encoding="utf-8")
+        tree = ast.parse(app)
+        functions = {
+            node.name: node for node in tree.body if isinstance(node, ast.FunctionDef)
+        }
+        for n in range(1, 5):
+            method = functions[f"render_macro_chart_{n}"]
+            self.assertTrue(any(
+                isinstance(dec, ast.Call)
+                and isinstance(dec.func, ast.Attribute)
+                and dec.func.attr == "fragment"
+                for dec in method.decorator_list
+            ))
+        self.assertIn("render_macro_chart_5(macro_figures[5]", app)
+        self.assertIn("render_macro_chart_8(macro_figures[8]", app)
+        self.assertIn("render_macro_chart_10(macro_figures[10]", app)
+        self.assertIn("render_macro_chart_11(macro_figures[11]", app)
+        self.assertIn("@st.cache_data(ttl=300", app)
+
+
 if __name__ == "__main__":
     unittest.main()
