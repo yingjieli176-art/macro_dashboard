@@ -8,6 +8,10 @@ opening-balance rows. Preserve true dates and never fill missing days.
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
+import time
+
 import pandas as pd
 
 TGA_CLOSING_LABEL = "treasury general account"
@@ -70,3 +74,33 @@ def parse_dts_tga_rows(rows) -> pd.DataFrame:
         "post_2022_closing_row_compatible": True,
     })
     return result
+
+
+def read_verified_tga_snapshot(path: str | Path) -> pd.DataFrame:
+    """Validate locally persisted original DTS rows before using them."""
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        if payload.get("source") != "U.S. Treasury Daily Treasury Statement":
+            raise ValueError("Unexpected DTS source provenance")
+        rows = payload.get("records")
+        if not isinstance(rows, list):
+            raise ValueError("Missing observed DTS records")
+        result = parse_dts_tga_rows(rows)
+        if result.empty:
+            return result
+        declared_end = str(payload.get("coverage_end") or "")
+        actual_end = result["observation_date"].max().strftime("%Y-%m-%d")
+        if declared_end != actual_end:
+            raise ValueError("DTS coverage_end does not match observed records")
+        fetched_at = float(payload.get("fetched_at") or 0)
+        age = max(0.0, time.time() - fetched_at)
+        result.attrs.update({
+            "source": "U.S. Treasury DTS verified source snapshot",
+            "is_fallback": False,
+            "is_stale": age > 3 * 86400,
+            "fetched_at": fetched_at,
+            "frequency": "daily",
+        })
+        return result
+    except (OSError, TypeError, KeyError, ValueError, json.JSONDecodeError):
+        return pd.DataFrame(columns=["observation_date", "TGA_DAILY"])
