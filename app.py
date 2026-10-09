@@ -16,7 +16,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import requests
 import streamlit as st
-from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, load_hk_liquidity
+from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, build_hk_core_snapshot_figures, load_hk_liquidity
 # The renderer is an optional module during rolling Streamlit Cloud deployments.
 # Never import individual newly added helpers at startup: mixed revisions of
 # app.py and macro_platform/echarts_axes.py must not crash the entire app.
@@ -2808,9 +2808,23 @@ def _cached_hk_bundle(market_mode, snapshot_revision, build_revision):
 
 def _safe_hk_bundle(market_mode, snapshot_revision):
     try:
-        return _cached_hk_bundle(market_mode, snapshot_revision, CHART_BUILD)
+        figures = _cached_hk_bundle(market_mode, snapshot_revision, CHART_BUILD)
     except Exception:
-        return [_macro_error_figure(f"Chart {number}") for number in range(5, 9)]
+        logging.exception("Composite HK liquidity bundle failed; rescuing core official data")
+        figures = [_macro_error_figure(f"Chart {number}") for number in range(5, 9)]
+
+    # A background refresh may yield an empty composite plot without raising.
+    # Banking and funding are official stored data; salvage them separately.
+    if not _figure_has_real_observations(figures[1]) or not _figure_has_real_observations(figures[2]):
+        try:
+            banking, funding = build_hk_core_snapshot_figures("5Y")
+            if not _figure_has_real_observations(figures[1]) and _figure_has_real_observations(banking):
+                figures[1] = banking
+            if not _figure_has_real_observations(figures[2]) and _figure_has_real_observations(funding):
+                figures[2] = funding
+        except Exception:
+            logging.exception("Independent HKMA banking/HIBOR source recovery failed")
+    return figures
 
 
 def _build_macro_figures_parallel():
