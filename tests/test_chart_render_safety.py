@@ -28,7 +28,10 @@ class ChartRendererRecoveryTests(unittest.TestCase):
     def setUp(self):
         self.ns = _load_renderers()
         self.fig = go.Figure(go.Scatter(x=["2026-09-01", "2026-09-02"], y=[4.1, 4.2]))
-        self.option = {"xAxis": {"type": "time"}, "yAxis": [{"scale": True}]}
+        self.option = {"xAxis": {"type": "time"}, "yAxis": [{"scale": True}],
+                       "series": [{"name": "Sample", "data": [["2026-09-01", 4.1]]}],
+                       "dataZoom": [{"startValue": "2026-08-02", "endValue": "2026-09-02",
+                                     "filterMode": "filter"}]}
         self.adapter = Mock(return_value=self.option)
         self.st = SimpleNamespace(
             echarts_chart=Mock(),
