@@ -14,6 +14,54 @@ import pandas as pd
 from macro_platform.chart_axes import RANGE_OFFSETS, _visible_y_ranges, _figure_latest
 
 
+
+def _axis_unit(axis, traces):
+    """Compact display-only unit from Plotly axis titles and hover values."""
+    text = str(getattr(getattr(axis, "title", None), "text", None) or "").lower()
+    for trace in traces:
+        template = str(getattr(trace, "hovertemplate", None) or "")
+        start = template.find("%{y")
+        if start != -1:
+            end = template.find("}", start)
+            if end != -1:
+                text += " " + template[end + 1:].split("<extra>", 1)[0].strip().lower()
+    if "usd/hkd" in text:
+        return "USD/HKD"
+    if "hk$ bn" in text:
+        return "HK$ bn"
+    if "usd/oz" in text:
+        return "USD/oz"
+    if "usd/t" in text or "$/t" in text:
+        return "USD/t"
+    if "usd t" in text or text.endswith(" t"):
+        return "USD tn"
+    if "usd b" in text or text.endswith(" b"):
+        return "USD bn"
+    if " pp" in text or "(pp)" in text:
+        return "pp"
+    if "%" in text:
+        return "%"
+    if " pts" in text or "index" in text:
+        return "pts"
+    if " hkd" in text:
+        return "HKD"
+    if " usd" in text:
+        return "USD"
+    if " x" in text:
+        return "×"
+    return ""
+
+
+def _axis_readable_title(source_axis, index, traces):
+    title = str(getattr(getattr(source_axis, "title", None), "text", None) or "").strip()
+    unit = _axis_unit(source_axis, traces)
+    if index == 0:
+        if title and len(title) <= 25:
+            return title
+        return "Left · " + (unit or "value")
+    return f"R{index} · {unit or 'value'}"
+
+
 def build_adaptive_echarts_option(fig, date_range="1Y"):
     """Convert a Plotly chart to a native ECharts time-series option object."""
     date_range = date_range if date_range in RANGE_OFFSETS else "1Y"
@@ -148,19 +196,29 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             and old_range[0] is not None and old_range[1] is not None
             and float(old_range[0]) > float(old_range[1])
         )
+        traces_on_axis = [
+            trace for trace in fig.data
+            if (getattr(trace, "yaxis", None) or "y") == axis_ref
+            and getattr(trace, "visible", True) not in (False, "legendonly")
+        ]
         axes.append({
             "type": "value",
-            "name": str(getattr(getattr(source_axis, "title", None), "text", None) or ""),
+            "name": _axis_readable_title(source_axis, index, traces_on_axis),
             "nameLocation": "middle",
-            "nameGap": 42,
+            "nameGap": 52 if index == 0 else 45,
+            "nameTextStyle": {"fontSize": 10, "color": "#475569"},
             "scale": True,
+            "splitNumber": 5,
             "boundaryGap": ["7%", "7%"],
             "inverse": reversed_range,
             "position": "left" if index == 0 else "right",
             "offset": max(0, index - 1) * 58,
             "splitLine": {"show": index == 0, "lineStyle": {"color": "#edf1f5", "type": "dashed"}},
             "axisLine": {"show": True, "lineStyle": {"color": "#cbd5e1"}},
-            "axisLabel": {"color": "#64748b"},
+            "axisLabel": {
+                "color": "#475569", "fontSize": 10,
+                "hideOverlap": True, "margin": 8,
+            },
         })
     return {
         "animation": False,
@@ -172,8 +230,8 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
         "grid": {
             "top": 96,
             "bottom": 75,
-            "left": 73,
-            "right": 43 + max(0, len(axes) - 1) * 66,
+            "left": 81,
+            "right": 50 + max(0, len(axes) - 1) * 70,
             "containLabel": False,
         },
         "tooltip": {"trigger": "axis", "axisPointer": {"type": "cross"}},
@@ -187,7 +245,11 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
         "xAxis": {
             "type": "time",
             "scale": True,
-            "axisLabel": {"color": "#64748b"},
+            "axisLabel": {
+                "color": "#475569", "fontSize": 10,
+                "hideOverlap": True, "margin": 10,
+            },
+            "splitNumber": 6,
             "splitLine": {"show": True, "lineStyle": {"color": "#f1f5f9", "type": "dashed"}},
         },
         "yAxis": axes,
