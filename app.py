@@ -69,7 +69,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-09-fred-coldstart-r36"
+CHART_BUILD = "2026-10-09-data-repair-r37"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1635,9 +1635,10 @@ def build_fig4(date_range):
             _mark_missing_series(fig, name)
         return apply_chart_style(fig, chart_height(320, 430), date_range)
 
-    # Calculate the proxy on a union calendar. Forward filling is only used
-    # inside the mixed-frequency calculation; displayed source traces remain
-    # at their native observation dates.
+    # Mixed-frequency proxy: only use RECENT observations, never carry
+    # an obsolete TGA fixing (e.g. 2022-04-15) into 2026 calculations.
+    # Observed source traces remain at their original dates. The proxy
+    # is unavailable whenever any constituent is older than its tolerance.
     calc = None
     for column in ("WALCL", "TGA_DAILY", "RRPONTSYD"):
         frame = raw_series.get(column)
@@ -1647,12 +1648,21 @@ def build_fig4(date_range):
     calc = pd.DataFrame(columns=["observation_date"]) if calc is None else calc.sort_values("observation_date")
     component_cols = [c for c in ("WALCL", "TGA_DAILY", "RRPONTSYD") if c in calc.columns]
     if component_cols:
-        calc[component_cols] = calc[component_cols].ffill()
+        freshness_days = {"WALCL": 10, "TGA_DAILY": 8, "RRPONTSYD": 7}
+        for column in component_cols:
+            last_observed = calc["observation_date"].where(calc[column].notna()).ffill()
+            age = calc["observation_date"] - last_observed
+            calc[column] = calc[column].ffill().where(
+                age <= pd.Timedelta(days=freshness_days[column])
+            )
     if all(c in calc.columns for c in ("WALCL", "TGA_DAILY", "RRPONTSYD")):
         calc["NetLiquidity"] = calc["WALCL"] - calc["TGA_DAILY"] - calc["RRPONTSYD"] / 1000.0
     calc = filter_range(calc, date_range)
-
-    add_line(fig, calc, "NetLiquidity", "Net Liquidity", 3.0, unit=" T")
+    if ("NetLiquidity" not in calc or
+            pd.to_numeric(calc["NetLiquidity"], errors="coerce").notna().sum() == 0):
+        _mark_missing_series(fig, "Net Liquidity (components too old or unavailable)")
+    else:
+        add_line(fig, calc, "NetLiquidity", "Net Liquidity", 3.0, unit=" T")
 
     reserve = raw_series.get("WRESBAL")
     if reserve is not None:
