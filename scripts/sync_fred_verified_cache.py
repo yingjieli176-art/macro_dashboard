@@ -87,10 +87,64 @@ def _fetch_api(session, series_id: str) -> pd.DataFrame:
     return _parse_source(text, series_id)
 
 
+def _fetch_primary(session, series_id: str) -> pd.DataFrame:
+    """Get the *same* directly published official rates if FRED is unreachable."""
+    if series_id == "IORB":
+        response = session.get(
+            "https://www.federalreserve.gov/datadownload/Output.aspx",
+            params={
+                "rel": "PRATES", "series": "c27939ee810cb2e929a920a6bd77d9f6",
+                "filetype": "csv", "label": "include", "layout": "seriescolumn",
+                "type": "package",
+            }, timeout=(4, 12),
+        )
+        response.raise_for_status()
+        table = pd.read_csv(StringIO(response.text), header=5)
+        if "Time Period" not in table.columns or "RESBM_N.D" not in table.columns:
+            raise ValueError("Federal Reserve PRATES response has no IORB series")
+        frame = pd.DataFrame({
+            "date": pd.to_datetime(table["Time Period"], errors="coerce"),
+            "value": pd.to_numeric(table["RESBM_N.D"], errors="coerce"),
+        }).dropna()
+        frame = frame.loc[frame["date"] >= pd.Timestamp(START)]
+        if len(frame) < 12:
+            raise ValueError("PRATES/IORB missing observed points")
+        return _parse_source("DATE,IORB\\n" + "\\n".join(
+            f"{date:%Y-%m-%d},{value}" for date, value
+            in zip(frame["date"], frame["value"])
+        ), series_id)
+
+    if series_id in ("EFFR", "SOFR"):
+        rate_type = "unsecured/effr" if series_id == "EFFR" else "secured/sofr"
+        response = session.get(
+            f"https://markets.newyorkfed.org/api/rates/{rate_type}/search.json",
+            params={"startDate": START, "endDate": datetime.now(timezone.utc).strftime("%Y-%m-%d")},
+            timeout=(4, 12),
+        )
+        response.raise_for_status()
+        payload = response.json()
+        records = payload.get("refRates", [])
+        if not isinstance(records, list):
+            raise ValueError("New York Fed reference rate response malformed")
+        data = []
+        for row in records:
+            date, value = row.get("effectiveDate"), row.get("percentRate")
+            if date and value not in (None, "", "N/A"):
+                data.append({"date": date, "value": value})
+        result = pd.DataFrame(data)
+        if result.empty:
+            raise ValueError("New York Fed returned no valid observed rates")
+        return _parse_source("DATE," + series_id + "\\n" + "\\n".join(
+            f"{row['date']},{row['value']}" for row in data
+        ), series_id)
+    raise ValueError("No official direct endpoint for " + series_id)
+
+
 def refresh_one(series_id: str):
     failures = []
     with requests.Session() as session:
-        for fetcher in (_fetch_csv, _fetch_api):
+        fetchers = (_fetch_primary, _fetch_csv, _fetch_api)
+        for fetcher in fetchers:
             try:
                 frame = fetcher(session, series_id)
                 payload = {
