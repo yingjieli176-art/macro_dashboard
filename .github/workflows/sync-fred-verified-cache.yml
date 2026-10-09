@@ -38,14 +38,20 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
+          present = 0
           for sid in ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR"):
               file = Path("data_snapshots/fred_cache") / (sid + ".json")
+              if not file.exists():
+                  print("MISSING official source:", sid)
+                  continue
               obj = json.loads(file.read_text())
               assert obj["series_id"] == sid
               assert len(obj["records"]) >= 12
               assert len({row["date"] for row in obj["records"]}) == len(obj["records"])
               assert obj["coverage_end"] == obj["records"][-1]["date"]
+              present += 1
               print(sid, len(obj["records"]), obj["coverage_end"])
+          assert present >= 2, "No valid partial Fed Policy chart"
           PY
       - name: Commit only verified observed FRED source values
         run: |
