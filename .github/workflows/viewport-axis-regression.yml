@@ -20,6 +20,10 @@ on:
       - tests/test_refresh_optimizations.py
       - tests/test_dashboard_loading.py
       - tests/test_hk_liquidity_real_snapshot.py
+      - tests/test_us_liquidity_source_freshness.py
+      - macro_platform/hk_liquidity.py
+      - scripts/update_vixeq_snapshot.py
+      - .github/workflows/update-vixeq-snapshot.yml
       - tests/test_app_runtime_smoke.py
       - tests/test_fred_verified_cold_boot.py
       - scripts/sync_fred_verified_cache.py
@@ -46,6 +50,10 @@ on:
       - tests/test_refresh_optimizations.py
       - tests/test_dashboard_loading.py
       - tests/test_hk_liquidity_real_snapshot.py
+      - tests/test_us_liquidity_source_freshness.py
+      - macro_platform/hk_liquidity.py
+      - scripts/update_vixeq_snapshot.py
+      - .github/workflows/update-vixeq-snapshot.yml
       - tests/test_app_runtime_smoke.py
       - tests/test_fred_verified_cold_boot.py
       - scripts/sync_fred_verified_cache.py
@@ -110,6 +118,8 @@ jobs:
         run: python -m unittest discover -s tests -p "test_refresh_optimizations.py" -v
       - name: Verify real HKMA charts 6 and 7 survive with stored observations
         run: python -m unittest discover -s tests -p "test_hk_liquidity_real_snapshot.py" -v
+      - name: Verify TGA freshness and reject stale net liquidity
+        run: python -m unittest discover -s tests -p "test_us_liquidity_source_freshness.py" -v
       - name: Verify macro dashboard cache reuse
         run: python -m unittest discover -s tests -p "test_dashboard_loading.py" -v
       - name: Execute complete offline Streamlit page
