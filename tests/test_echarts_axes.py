@@ -148,5 +148,67 @@ class EchartsNativeAxes(unittest.TestCase):
         self.assertEqual(result["future_names"], [])
 
 
+    def test_hkd_reference_guides_do_not_anchor_the_dynamic_axis(self):
+        dates = pd.date_range("2026-09-01", periods=30, freq="D")
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=dates, y=[7.78 + i * 0.0002 for i in range(30)],
+            name="USD/HKD",
+        ))
+        for name, level in [
+            ("Strong-side CU 7.75", 7.75),
+            ("Linked Rate Center 7.80", 7.80),
+            ("Weak-side CU 7.85", 7.85),
+        ]:
+            fig.add_trace(go.Scatter(x=dates, y=[level] * len(dates), name=name))
+        fig.add_hrect(y0=7.75, y1=7.85, fillcolor="rgba(148,163,184,0.08)", line_width=0)
+        fig.add_hrect(y0=7.84, y1=7.85, fillcolor="rgba(220,38,38,0.09)", line_width=0)
+        fig.update_layout(yaxis=dict(range=[7.87, 7.73]))
+        opts = build_adaptive_echarts_option(fig, "1M")
+        self.assertEqual(len(opts["series"]), 1)
+        self.assertEqual(opts["series"][0]["name"], "USD/HKD")
+        self.assertTrue(opts["yAxis"][0]["inverse"])
+        self.assertTrue(opts["yAxis"][0]["scale"])
+        self.assertNotIn("min", opts["yAxis"][0])
+        self.assertNotIn("max", opts["yAxis"][0])
+        self.assertEqual(
+            [item["yAxis"] for item in opts["series"][0]["markLine"]["data"]],
+            [7.75, 7.80, 7.85],
+        )
+        self.assertEqual(len(opts["series"][0]["markArea"]["data"]), 2)
+        self.assertTrue(all(zoom["filterMode"] == "filter" for zoom in opts["dataZoom"]))
+        json.dumps(opts, allow_nan=False)
+
+    def test_all_remaining_macro_charts_use_viewport_adaptive_renderer(self):
+        source = (Path(__file__).resolve().parents[1] / "app.py").read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        functions = {
+            node.name: node for node in tree.body if isinstance(node, ast.FunctionDef)
+        }
+        helper = functions["_render_adaptive_macro_figure"]
+        helper_calls = [
+            node.func.attr for node in ast.walk(helper)
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+        ]
+        self.assertIn("echarts_chart", helper_calls) if "echarts_chart" in helper_calls else self.assertIn(
+            "renderer", [node.func.id for node in ast.walk(helper)
+                         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)]
+        )
+        for name in ["_render_hk_macro_chart"] + [
+            f"render_macro_chart_{i}" for i in range(9, 14)
+        ]:
+            with self.subTest(renderer=name):
+                calls = [
+                    node.func.id for node in ast.walk(functions[name])
+                    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                ]
+                self.assertIn("_render_adaptive_macro_figure", calls)
+                self.assertFalse(any(
+                    isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "plotly_chart"
+                    for node in ast.walk(functions[name])
+                ))
+
+
 if __name__ == "__main__":
     unittest.main()
