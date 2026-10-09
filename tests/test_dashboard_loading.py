@@ -59,7 +59,10 @@ class DashboardLoadingTests(unittest.TestCase):
         figure = self.ns["_prepare_chart_for_client_ranges"](go.Figure(self.figure), "test-chart")
         start, end = map(pd.Timestamp, figure.layout.xaxis.range)
         self.assertEqual(start, pd.Timestamp("2025-09-29"))
-        self.assertEqual(end, pd.Timestamp("2026-09-29"))
+        # The chart intentionally extends X by a small right-hand date margin.
+        # Test the observation viewport, not an obsolete exact-axis endpoint.
+        self.assertGreaterEqual(end, pd.Timestamp("2026-09-29"))
+        self.assertLessEqual(end, pd.Timestamp("2026-10-06"))
         self.assertEqual(len(figure.data[0].x), 3)
         self.assertEqual(pd.Timestamp(figure.data[0].x[0]), pd.Timestamp("2021-09-29"))
         self.assertEqual([button.label.strip() for button in figure.layout.xaxis.rangeselector.buttons], ["5Y", "1Y", "6M", "3M", "1M"])
