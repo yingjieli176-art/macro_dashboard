@@ -138,7 +138,8 @@ def main() -> None:
             if symbol == "HSTECH" and "--raw-only" in sys.argv:
                 # The Sina index already stores raw closes; avoid requiring
                 # AKShare in the isolated raw-equity migration/CI check.
-                fresh = old.copy()
+                # Retaining stored records is not a successful live fetch.
+                pass
             else:
                 fresh = _fetch_hstech() if symbol == "HSTECH" else _fetch_yahoo(symbol)
         except Exception as exc:
