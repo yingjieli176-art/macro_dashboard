@@ -46,6 +46,27 @@ class EchartsNativeAxes(unittest.TestCase):
         self.assertTrue(any(v[1] < 1.0 for v in option["series"][0]["data"]))
         self.assertEqual(option["toolbox"]["feature"]["dataZoom"]["yAxisIndex"], "none")
 
+    def test_native_streamlit_accepts_rich_and_minimal_options(self):
+        """Exercise native Streamlit's spec validation, not just a mocked renderer."""
+        from streamlit.testing.v1 import AppTest
+        dates = pd.date_range("2026-08-01", periods=31, freq="D")
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=dates, y=[100+i for i in range(31)], name="BTC"))
+        fig.add_trace(go.Scatter(x=dates, y=[0.04+i*0.0002 for i in range(31)],
+                                 name="ETH/BTC", yaxis="y2"))
+        fig.update_layout(yaxis2=dict(side="right", overlaying="y"))
+        for build in (build_adaptive_echarts_option, build_safe_echarts_option):
+            with self.subTest(builder=build.__name__):
+                spec = build(fig, "1M")
+                code = ("import streamlit as st\\n"
+                        "st.echarts_chart(" + repr(spec) +
+                        ", height=465, width='stretch', key='test', theme=None)\\n")
+                runner = AppTest.from_string(code, default_timeout=25).run()
+                self.assertFalse(
+                    runner.exception,
+                    [str(problem.message) for problem in runner.exception],
+                )
+
     def test_minimal_native_rescue_keeps_crypto_independent_y_and_real_dates(self):
         dates = pd.date_range("2025-10-01", "2026-10-01", freq="D")
         fig = go.Figure()
