@@ -26,6 +26,12 @@ on:
     branches: [main]
     paths:
       - app.py
+      - data.py
+      - macro_platform/copper.py
+      - macro_platform/asia_rates.py
+      - scripts/update_copper_snapshot.py
+      - tests/test_truth_source_integrity.py
+      - data_snapshots/copper_market_daily.json
       - macro_platform/echarts_axes.py
       - macro_platform/chart_axes.py
       - tests/test_echarts_axes.py

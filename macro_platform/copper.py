@@ -172,7 +172,7 @@ def build_copper_flow_spread_figure(date_range: str) -> go.Figure:
         # This statement is static; avoid rereading 300KB of JSON on each
         # Streamlit rerun just to compose a source-quality explanation.
         fig.update_layout(meta={"data_quality_notes": [
-            "COCHILCO 铜库存出现上游 0 或负值时视为缺失；原始快照保留，图表不伪造替代值。"
+            "COCHILCO 铜库存上游异常零值按缺失处理；原始发布表仍可追溯，图表不伪造替代值。"
         ]})
 
     comex_stock = data.dropna(subset=["comex_stock_t"]).copy() if "comex_stock_t" in data else pd.DataFrame()
