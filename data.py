@@ -256,8 +256,8 @@ def get_tga_daily():
     """Daily Treasury General Account balance from the U.S. Treasury DTS.
 
     The DTS schema has changed account labels/fields over time. Prefer the TGA
-    closing-balance row, then Total Operating Balance, and accept the numeric
-    value from close_today_bal or open_today_bal. If FiscalData is unavailable,
+    closing-balance row, then Total Operating Balance. ONLY the closing balance
+    is used: an opening balance is a different time-of-day measure. If unavailable,
     fall back to the weekly Federal Reserve WTREGEN series.
     """
     url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/dts/operating_cash_balance"
@@ -287,7 +287,7 @@ def get_tga_daily():
             if col not in frame.columns:
                 frame[col] = pd.NA
             frame[col] = pd.to_numeric(frame[col], errors="coerce")
-        frame["_value"] = frame["close_today_bal"].combine_first(frame["open_today_bal"])
+        frame["_value"] = frame["close_today_bal"]
         frame = frame.dropna(subset=["observation_date", "_value"])
         if frame.empty:
             raise RuntimeError("Treasury FiscalData returned no numeric TGA balances")
