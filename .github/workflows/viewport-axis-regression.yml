@@ -12,6 +12,10 @@ on:
       - tests/test_echarts_axes.py
       - tests/test_chart_render_safety.py
       - tests/test_data_axis_integrity.py
+      - tests/test_truth_source_integrity.py
+      - macro_platform/copper.py
+      - macro_platform/asia_rates.py
+      - scripts/update_copper_snapshot.py
       - tests/test_us_five_year_real_yield.py
       - tests/test_refresh_optimizations.py
       - tests/test_dashboard_loading.py
@@ -77,6 +81,8 @@ jobs:
         run: python -m unittest discover -s tests -p "test_chart_render_safety.py" -v
       - name: Verify series dates, units and data integrity
         run: python -m unittest discover -s tests -p "test_data_axis_integrity.py" -v
+      - name: Cross-check market-source integrity and derived-rate disclosure
+        run: python -m unittest discover -s tests -p "test_truth_source_integrity.py" -v
       - name: Verify official 5Y TIPS real yield in US charts
         run: python -m unittest discover -s tests -p "test_us_five_year_real_yield.py" -v
       - name: Verify fragment-only redraw and reuse of prefetched charts
