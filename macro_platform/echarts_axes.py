@@ -14,6 +14,54 @@ import pandas as pd
 from macro_platform.chart_axes import RANGE_OFFSETS, _visible_y_ranges, _figure_latest
 
 
+
+def _axis_unit(axis, traces):
+    """Compact display-only unit from Plotly axis titles and hover values."""
+    text = str(getattr(getattr(axis, "title", None), "text", None) or "").lower()
+    for trace in traces:
+        template = str(getattr(trace, "hovertemplate", None) or "")
+        start = template.find("%{y")
+        if start != -1:
+            end = template.find("}", start)
+            if end != -1:
+                text += " " + template[end + 1:].split("<extra>", 1)[0].strip().lower()
+    if "usd/hkd" in text:
+        return "USD/HKD"
+    if "hk$ bn" in text:
+        return "HK$ bn"
+    if "usd/oz" in text:
+        return "USD/oz"
+    if "usd/t" in text or "$/t" in text:
+        return "USD/t"
+    if "usd t" in text or text.endswith(" t"):
+        return "USD tn"
+    if "usd b" in text or text.endswith(" b"):
+        return "USD bn"
+    if " pp" in text or "(pp)" in text:
+        return "pp"
+    if "%" in text:
+        return "%"
+    if " pts" in text or "index" in text:
+        return "pts"
+    if " hkd" in text:
+        return "HKD"
+    if " usd" in text:
+        return "USD"
+    if " x" in text:
+        return "×"
+    return ""
+
+
+def _axis_readable_title(source_axis, index, traces):
+    title = str(getattr(getattr(source_axis, "title", None), "text", None) or "").strip()
+    unit = _axis_unit(source_axis, traces)
+    if index == 0:
+        if title and len(title) <= 25:
+            return title
+        return "Left · " + (unit or "value")
+    return f"R{index} · {unit or 'value'}"
+
+
 def build_adaptive_echarts_option(fig, date_range="1Y"):
     """Convert a Plotly chart to a native ECharts time-series option object."""
     date_range = date_range if date_range in RANGE_OFFSETS else "1Y"
@@ -148,19 +196,29 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             and old_range[0] is not None and old_range[1] is not None
             and float(old_range[0]) > float(old_range[1])
         )
+        traces_on_axis = [
+            trace for trace in fig.data
+            if (getattr(trace, "yaxis", None) or "y") == axis_ref
+            and getattr(trace, "visible", True) not in (False, "legendonly")
+        ]
         axes.append({
             "type": "value",
-            "name": str(getattr(getattr(source_axis, "title", None), "text", None) or ""),
+            "name": _axis_readable_title(source_axis, index, traces_on_axis),
             "nameLocation": "middle",
-            "nameGap": 42,
+            "nameGap": 52 if index == 0 else 45,
+            "nameTextStyle": {"fontSize": 10, "color": "#475569"},
             "scale": True,
+            "splitNumber": 5,
             "boundaryGap": ["7%", "7%"],
             "inverse": reversed_range,
             "position": "left" if index == 0 else "right",
             "offset": max(0, index - 1) * 58,
             "splitLine": {"show": index == 0, "lineStyle": {"color": "#edf1f5", "type": "dashed"}},
             "axisLine": {"show": True, "lineStyle": {"color": "#cbd5e1"}},
-            "axisLabel": {"color": "#64748b"},
+            "axisLabel": {
+                "color": "#475569", "fontSize": 10,
+                "hideOverlap": True, "margin": 8,
+            },
         })
     return {
         "animation": False,
@@ -172,8 +230,8 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
         "grid": {
             "top": 96,
             "bottom": 75,
-            "left": 73,
-            "right": 43 + max(0, len(axes) - 1) * 66,
+            "left": 81,
+            "right": 50 + max(0, len(axes) - 1) * 70,
             "containLabel": False,
         },
         "tooltip": {"trigger": "axis", "axisPointer": {"type": "cross"}},
@@ -187,7 +245,11 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
         "xAxis": {
             "type": "time",
             "scale": True,
-            "axisLabel": {"color": "#64748b"},
+            "axisLabel": {
+                "color": "#475569", "fontSize": 10,
+                "hideOverlap": True, "margin": 10,
+            },
+            "splitNumber": 6,
             "splitLine": {"show": True, "lineStyle": {"color": "#f1f5f9", "type": "dashed"}},
         },
         "yAxis": axes,
@@ -212,6 +274,54 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
         ],
         "series": series,
     }
+
+
+
+def option_observation_health(option, *, chart_key="", now=None):
+    """Expose the *plotted* last observation, not the snapshot download date.
+
+    This inspects already-serialized ECharts series. A monthly observation is
+    allowed a longer lag than a daily market close; no data is extrapolated.
+    """
+    now = pd.Timestamp.now(tz="UTC").tz_localize(None).normalize() if now is None else pd.Timestamp(now)
+    if now.tzinfo is not None:
+        now = now.tz_localize(None)
+    now = now.normalize()
+    latest_by_name = {}
+    stale_names = []
+    future_names = []
+    monthly_chart = chart_key in ("hk_5_range", "hk_6_range")
+    for series in option.get("series", []):
+        name = str(series.get("name", "Series"))
+        observations = series.get("data", [])
+        # Each point is [ISO date, numeric value]; keep the actual last
+        # finite observation date even when the selected viewport is shorter.
+        valid_dates = [
+            str(point[0]) for point in observations
+            if isinstance(point, (list, tuple)) and len(point) == 2
+            and point[1] is not None
+        ]
+        if not valid_dates:
+            continue
+        latest = pd.Timestamp(max(valid_dates))
+        latest_by_name[name] = latest.strftime("%Y-%m-%d")
+        age = (now - latest.normalize()).days
+        monthly = monthly_chart and (
+            chart_key == "hk_6_range" or any(
+                key in name for key in ("M2 ", "M3 ", "Monetary Base", "Money Growth")
+            )
+        )
+        tolerance = 75 if monthly else 14
+        if age > tolerance:
+            stale_names.append(name)
+        if age < -1:
+            future_names.append(name)
+    return {
+        "latest_by_name": latest_by_name,
+        "stale_names": stale_names,
+        "future_names": future_names,
+    }
+
 
 
 def summarize_series_dates(fig, *, now: pd.Timestamp | None = None,
