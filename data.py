@@ -164,7 +164,7 @@ def _fred_series(series_id):
                 frame.attrs["fetched_at"] = saved.attrs["fetched_at"]
                 return frame
         except Exception as exc:
-            errors.append(f"{fetcher.__name__}: {type(exc).__name__}: {exc}")
+            errors.append(f"{getattr(fetcher, '__name__', type(fetcher).__name__)}: {type(exc).__name__}: {exc}")
 
     with _FRED_LOCK:
         previous = _FRED_LAST_GOOD.get(series_id)
