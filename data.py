@@ -292,7 +292,11 @@ def get_tga_daily():
             url,
             params={
                 "filter": f"record_date:gte:{cutoff}",
-                "sort": "record_date",
+                # Descending is essential: with a 5-year search, ascending
+                # + 10000-row first page can silently stop in 2022, making
+                # TGA *look* freshly queried but contain no recent readings.
+                "sort": "-record_date",
+                "fields": "record_date,account_type,close_today_bal,open_today_bal",
                 "page[size]": 10000,
                 "format": "json",
             },
