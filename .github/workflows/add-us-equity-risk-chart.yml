@@ -1,16 +1,9 @@
 name: Add US equity risk chart
 
+# Legacy chart migration is manual only: the official VIXEQ refresh is now
+# handled by update-vixeq-snapshot.yml. This migration must not run on push.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '30 22 * * 1-5'
-  push:
-    branches: [main]
-    paths:
-      - scripts/update_vixeq_snapshot.py
-      - scripts/add_us_equity_risk_chart.py
-      - macro_platform/us_equity_risk.py
-      - .github/workflows/add-us-equity-risk-chart.yml
 
 permissions:
   contents: write
@@ -64,8 +57,12 @@ jobs:
           ):
               assert token in text, token
           assert 'VIX3M-VIX' in text
-          assert 'title="R1 · S&P 500"' in text
-          assert 'title="R2 · VIX3M−VIX"' in text
+          # Current responsive layout intentionally omits long right-axis
+          # titles; verify actual trace and independent-axis wiring instead.
+          assert 'yaxis2=dict(' in text
+          assert 'yaxis3=dict(' in text
+          assert 'position=0.925' in text
+          assert 'position=0.99' in text
           print('Chart 9 wiring OK')
           PY
       - name: Commit Chart 9 and snapshot
