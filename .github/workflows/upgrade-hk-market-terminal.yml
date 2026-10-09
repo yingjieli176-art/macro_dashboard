@@ -1,12 +1,10 @@
 name: Upgrade HK market terminal
 
+# Historical one-time code migration. Keep for deliberate manual recovery only.
+# Never schedule this workflow or rewrite a live dashboard after data updates.
+# Official snapshot refreshes have dedicated data-only workflows.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/upgrade_hk_market_terminal.py
-      - .github/workflows/upgrade-hk-market-terminal.yml
 
 permissions:
   contents: write

@@ -1,12 +1,10 @@
 name: Refine HK money trend momentum
 
+# Historical one-time code migration. Keep for deliberate manual recovery only.
+# Never schedule this workflow or rewrite a live dashboard after data updates.
+# Official snapshot refreshes have dedicated data-only workflows.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/refine_hk_money_trend_momentum.py
-      - .github/workflows/refine-hk-money-trend-momentum.yml
 
 permissions:
   contents: write

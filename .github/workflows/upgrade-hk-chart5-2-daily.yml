@@ -1,14 +1,10 @@
 name: Upgrade HK Chart 5-2 daily liquidity
 
+# Historical one-time code migration. Keep for deliberate manual recovery only.
+# Never schedule this workflow or rewrite a live dashboard after data updates.
+# Official snapshot refreshes have dedicated data-only workflows.
 on:
-  push:
-    paths:
-      - "scripts/update_hkma_banking_liquidity_snapshot.py"
-      - "scripts/upgrade_hk_chart5_2_daily.py"
-      - ".github/workflows/upgrade-hk-chart5-2-daily.yml"
   workflow_dispatch:
-  schedule:
-    - cron: "30 10 * * 1-5"
 
 permissions:
   contents: write
