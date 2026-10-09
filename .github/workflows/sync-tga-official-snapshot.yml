@@ -1,0 +1,59 @@
+name: Sync official Treasury TGA closing balance
+on:
+  schedule:
+    - cron: '35 23 * * 1-5'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/sync_tga_daily_snapshot.py
+      - macro_platform/treasury_cash.py
+      - .github/workflows/sync-tga-official-snapshot.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: treasury-tga-official-snapshot
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install real Treasury data parser
+        run: python -m pip install pandas requests
+      - name: Fetch official Treasury DTS TGA closing-balance records
+        run: python scripts/sync_tga_daily_snapshot.py
+      - name: Verify source dates, closing semantics, and nonfabricated values
+        run: |
+          python - <<'PY'
+          from macro_platform.treasury_cash import read_verified_tga_snapshot
+          import pandas as pd
+          fig = read_verified_tga_snapshot('data_snapshots/treasury_tga_daily.json')
+          assert len(fig) >= 20
+          assert fig['observation_date'].is_monotonic_increasing
+          assert fig['observation_date'].max() >= pd.Timestamp.now().normalize() - pd.Timedelta(days=12)
+          assert fig.TGA_DAILY.gt(0).all()
+          print("TGA", len(fig), "observed", fig.observation_date.max(),
+                "latest USD trillion:", fig.TGA_DAILY.iloc[-1])
+          PY
+      - name: Commit actual U.S. Treasury DTS balances
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data_snapshots/treasury_tga_daily.json
+          if git diff --cached --quiet; then
+            echo 'Official Treasury observations unchanged'
+            exit 0
+          fi
+          git commit -m 'data: refresh official Treasury TGA daily closes'
+          git pull --rebase origin main
+          git push origin main

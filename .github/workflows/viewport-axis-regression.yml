@@ -21,6 +21,10 @@ on:
       - tests/test_dashboard_loading.py
       - tests/test_hk_liquidity_real_snapshot.py
       - tests/test_us_liquidity_source_freshness.py
+      - macro_platform/treasury_cash.py
+      - scripts/sync_tga_daily_snapshot.py
+      - tests/test_tga_closing_schema_2022.py
+      - .github/workflows/sync-tga-official-snapshot.yml
       - macro_platform/hk_liquidity.py
       - scripts/update_vixeq_snapshot.py
       - .github/workflows/update-vixeq-snapshot.yml
@@ -51,6 +55,10 @@ on:
       - tests/test_dashboard_loading.py
       - tests/test_hk_liquidity_real_snapshot.py
       - tests/test_us_liquidity_source_freshness.py
+      - macro_platform/treasury_cash.py
+      - scripts/sync_tga_daily_snapshot.py
+      - tests/test_tga_closing_schema_2022.py
+      - .github/workflows/sync-tga-official-snapshot.yml
       - macro_platform/hk_liquidity.py
       - scripts/update_vixeq_snapshot.py
       - .github/workflows/update-vixeq-snapshot.yml
@@ -120,6 +128,10 @@ jobs:
         run: python -m unittest discover -s tests -p "test_hk_liquidity_real_snapshot.py" -v
       - name: Verify TGA freshness and reject stale net liquidity
         run: python -m unittest discover -s tests -p "test_us_liquidity_source_freshness.py" -v
+      - name: Verify Treasury Closing Balance semantic schema change since April 2022
+        run: python -m unittest discover -s tests -p "test_tga_closing_schema_2022.py" -v
+      - name: Verify newest real Treasury FiscalData TGA observations are reachable
+        run: python scripts/sync_tga_daily_snapshot.py --verify-only
       - name: Verify macro dashboard cache reuse
         run: python -m unittest discover -s tests -p "test_dashboard_loading.py" -v
       - name: Execute complete offline Streamlit page
