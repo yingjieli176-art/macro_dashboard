@@ -131,6 +131,22 @@ def _fred_series(series_id):
     return that real prior frame marked stale; on a cold start return an empty,
     explicitly unavailable frame rather than manufacturing observations.
     """
+    # Verified official snapshots are synced by CI and shipped in the repo.
+    # During a Streamlit Cloud cold start, use a recent observed snapshot
+    # immediately instead of blocking all macro charts on remote HTTP.
+    # Source dates, missing dates, and "stale" provenance are preserved.
+    disk_copy = _read_fred_success(series_id)
+    if disk_copy is not None:
+        try:
+            fetched_at = float(disk_copy.attrs.get("fetched_at") or 0)
+            age_seconds = time.time() - fetched_at
+        except (TypeError, ValueError, OverflowError):
+            age_seconds = float("inf")
+        # 84h crosses weekends/market holidays; old snapshots still get
+        # a live retry, with fallback to genuine last-good observations.
+        if 0 <= age_seconds <= 84 * 3600:
+            return disk_copy
+
     errors = []
     for fetcher in (_fetch_fred_graph, _fetch_fred_api):
         try:
