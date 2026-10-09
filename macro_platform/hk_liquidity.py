@@ -795,6 +795,79 @@ def _frame_is_daily(frame: pd.DataFrame) -> bool:
     # series must never be promoted to "Daily" merely because its gap is 7 days.
     return float(gaps.median()) <= 4.0 and float((gaps <= 4.0).mean()) >= 0.80
 
+
+def build_hk_core_snapshot_figures(date_range: str = "5Y") -> tuple[go.Figure, go.Figure]:
+    """Independent, zero-network recovery for banking (6) and HIBOR (7).
+
+    The primary HK bundle also fetches optional equities and FX. If one
+    of those overlays raises, do NOT replace valid HKMA banking and HKD
+    funding observations with two blank plots. This path only reads locally
+    persisted official HKMA/HKAB snapshots and does not fill missing values.
+    """
+    banking = load_hk_banking_liquidity_monthly()
+    monthly = load_hk_funding_monthly().set_index("observation_date")
+    daily = load_hk_funding_daily().set_index("observation_date")
+    funding = daily.combine_first(monthly).sort_index().reset_index()
+    banking = _slice_range(banking, date_range)
+    funding = _slice_range(funding, date_range)
+
+    def observed_line(fig, frame, column, title, axis=None, color=None, dash=None):
+        if column not in frame or "observation_date" not in frame:
+            return
+        vals = pd.to_numeric(frame[column], errors="coerce")
+        dates = pd.to_datetime(frame["observation_date"], errors="coerce")
+        valid = vals.notna() & dates.notna()
+        if not valid.any():
+            return
+        line = {"width": 2.3}
+        if color:
+            line["color"] = color
+        if dash:
+            line["dash"] = dash
+        fig.add_trace(go.Scatter(
+            x=dates[valid], y=vals[valid], name=title, mode="lines",
+            line=line, connectgaps=False,
+            yaxis=axis or "y",
+            hovertemplate=title + ": %{y:.3f}<extra></extra>",
+        ))
+
+    balance = go.Figure()
+    observed_line(balance, banking, "Closing Aggregate Balance",
+                  "Closing Aggregate Balance", color="#4474e1")
+    observed_line(balance, banking, "Outstanding EFBN",
+                  "Outstanding EFBN (R1)", axis="y2", color="#7c3aed")
+    observed_line(balance, banking, "EFBN Held by Licensed Banks",
+                  "EFBN Held by Licensed Banks (R1)", axis="y2",
+                  color="#c026d3", dash="dash")
+    balance.update_layout(
+        yaxis=dict(title="Aggregate Balance (HK$ bn)"),
+        yaxis2=dict(title="EFBN (HK$ bn)", overlaying="y", side="right"),
+        height=420, template="plotly_white",
+        meta={"data_quality_notes": [
+            "香港银行流动性：已从 HKMA 官方月度历史独立恢复；显示原始月末观测。"
+        ]},
+    )
+
+    funding_fig = go.Figure()
+    observed_line(funding_fig, funding, "HIBOR O/N", "O/N HIBOR", color="#286bd1")
+    observed_line(funding_fig, funding, "HIBOR 3M", "3M HIBOR",
+                  color="#d97706", dash="dash")
+    observed_line(funding_fig, funding, "HKMA Base Rate", "HKMA Base Rate",
+                  color="#7839c9", dash="dot")
+    observed_line(funding_fig, funding, "O/N-3M Spread",
+                  "O/N−3M Spread (R1)", axis="y2", color="#db2777")
+    funding_fig.update_layout(
+        yaxis=dict(title="Rate (%)"),
+        yaxis2=dict(title="Spread (pp)", overlaying="y", side="right"),
+        height=420, template="plotly_white",
+        meta={"data_quality_notes": [
+            "港元资金利率：已从 HKMA/HKAB 历史快照独立恢复；不补造缺失报价。"
+        ]},
+    )
+    return apply_time_axis(balance, date_range), apply_time_axis(funding_fig, date_range)
+
+
+
 def build_hk_liquidity_figures(
     date_range: str, compact_mode: bool = False, market_mode: str = "Raw"
 ) -> list[go.Figure]:
