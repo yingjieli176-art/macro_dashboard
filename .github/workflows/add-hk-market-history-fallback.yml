@@ -1,10 +1,9 @@
 name: Add HK market history fallback
 
+# Historical one-time code migration. Keep for deliberate manual recovery only.
+# Never schedule this workflow or rewrite a live dashboard after data updates.
+# Official snapshot refreshes have dedicated data-only workflows.
 on:
-  push:
-    paths:
-      - "scripts/add_hk_market_history_fallback.py"
-      - ".github/workflows/add-hk-market-history-fallback.yml"
   workflow_dispatch:
 
 permissions:
