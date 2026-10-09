@@ -1,12 +1,10 @@
 name: Add HSI to Hong Kong overlays
 
+# Historical one-time code migration. Keep for deliberate manual recovery only.
+# Never schedule this workflow or rewrite a live dashboard after data updates.
+# Official snapshot refreshes have dedicated data-only workflows.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/add_hsi_to_hk_overlays.py
-      - .github/workflows/add-hsi-to-hk-overlays.yml
 
 permissions:
   contents: write
