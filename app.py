@@ -51,7 +51,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-09-refresh-fast-r31"
+CHART_BUILD = "2026-10-09-data-truth-r32"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1545,8 +1545,10 @@ def build_fig2(date_range):
     constant-maturity yield, not DGS5 minus an inferred inflation rate.
     Missing DFII5 observations must remain missing, not interpolated.
     """
+    observed_nominal = get_dgs10()
+    inferred_dates = list(observed_nominal.attrs.get("identity_derived_dates", []))
     data = (
-        get_dgs10()
+        observed_nominal
         .merge(get_dfii10(), on="observation_date", how="outer")
         .merge(get_dfii5(), on="observation_date", how="outer")
         .merge(get_fred_series("T10YIE"), on="observation_date", how="outer")
@@ -1554,12 +1556,15 @@ def build_fig2(date_range):
     )
     for column in ("DGS10", "DFII10", "DFII5", "T10YIE"):
         data[column] = pd.to_numeric(data.get(column), errors="coerce")
-    # Existing 10Y identity fallback: do not synthesize or backfill DFII5.
-    data["DGS10"] = data["DGS10"].combine_first(data["DFII10"] + data["T10YIE"])
-    data["DFII10"] = data["DFII10"].combine_first(data["DGS10"] - data["T10YIE"])
-    data["T10YIE"] = data["T10YIE"].combine_first(data["DGS10"] - data["DFII10"])
+    # Do NOT silently manufacture missing DFII10 or T10YIE observations.
+    # DGS10 may contain an algebraic identity backfill from the data layer;
+    # disclose such dates explicitly rather than representing them as measured.
     data = filter_range(data, date_range)
     fig = go.Figure()
+    if inferred_dates:
+        fig.update_layout(meta={"data_quality_notes": [
+            f"10Y 名义收益率有 {len(inferred_dates)} 个日期由 DFII10＋T10YIE 恒等式重建（非独立 DGS10 实测值）。"
+        ]})
     for column, name, width, dash, yaxis in [
         ("DGS10", "10Y Nominal", 2.8, None, None),
         ("DFII10", "10Y Real (R1)", 2.6, None, "y2"),
@@ -1683,7 +1688,9 @@ def build_fig4(date_range):
 
 
 def build_fig3(date_range):
-    data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(get_dgs10(), on="observation_date", how="outer").sort_values("observation_date")
+    dgs10 = get_dgs10()
+    inferred_dates = list(dgs10.attrs.get("identity_derived_dates", []))
+    data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(dgs10, on="observation_date", how="outer").sort_values("observation_date")
     for column in ("DGS3MO", "DGS2", "DGS10"):
         data[column] = pd.to_numeric(data.get(column), errors="coerce")
     # Derive curve spreads locally from the displayed yields. This removes two
@@ -1691,6 +1698,10 @@ def build_fig3(date_range):
     data["T10Y2Y"] = data["DGS10"] - data["DGS2"]
     data["T10Y3M"] = data["DGS10"] - data["DGS3MO"]
     data = filter_range(data, date_range); fig = go.Figure()
+    if inferred_dates:
+        fig.update_layout(meta={"data_quality_notes": [
+            f"10Y 名义收益率有 {len(inferred_dates)} 个日期由 DFII10＋T10YIE 恒等式重建（非独立 DGS10 实测值）。"
+        ]})
     for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8)]: add_line(fig, data, column, name, width)
     add_line(fig, data, "T10Y2Y", "10Y−2Y (R1)", 2.2, "dot", "y2", "%"); add_line(fig, data, "T10Y3M", "10Y−3M (R1)", 2.2, "dash", "y2", "%")
     fig.update_traces(selector=dict(name="10Y−2Y (R1)"), hovertemplate="10Y−2Y (R1): %{y:.3f}%<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M (R1)"), hovertemplate="10Y−3M (R1): %{y:.3f}%<extra></extra>")
@@ -2093,12 +2104,21 @@ def _viewport_scaled_plotly_fallback(base_fig, date_range):
 
 
 
+
+def _show_data_quality_notes(fig):
+    """Disclose known estimated/missing observations without new fetches."""
+    meta = fig.layout.meta if isinstance(fig.layout.meta, dict) else {}
+    for note in (meta or {}).get("data_quality_notes", []):
+        st.caption("数据质量说明：" + str(note))
+
+
 def _show_macro_plot_health(fig, option, element_key):
     """Show timestamps and missing/stale observations without new network I/O."""
     meta = fig.layout.meta if isinstance(fig.layout.meta, dict) else {}
     missing = list((meta or {}).get("missing_series") or [])
     if missing:
         st.warning("以下序列缺少观测数据：" + " · ".join(missing))
+    _show_data_quality_notes(fig)
 
     checker = getattr(_echarts_axes, "option_observation_health", None)
     if not callable(checker):
@@ -2262,6 +2282,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         except Exception:
             logging.exception("Recovery chart failed for %s", range_key)
             st.error("该图表暂时无法显示，其余页面仍可使用。")
+    _show_data_quality_notes(base_fig)
     show_parameter_description(desc_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
