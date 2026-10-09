@@ -20,6 +20,9 @@ on:
       - tests/test_refresh_optimizations.py
       - tests/test_dashboard_loading.py
       - tests/test_app_runtime_smoke.py
+      - tests/test_fred_verified_cold_boot.py
+      - scripts/sync_fred_verified_cache.py
+      - .github/workflows/sync-fred-verified-cache.yml
       - tests/test_app_import_compat.py
       - .github/workflows/viewport-axis-regression.yml
   pull_request:
@@ -42,6 +45,9 @@ on:
       - tests/test_refresh_optimizations.py
       - tests/test_dashboard_loading.py
       - tests/test_app_runtime_smoke.py
+      - tests/test_fred_verified_cold_boot.py
+      - scripts/sync_fred_verified_cache.py
+      - .github/workflows/sync-fred-verified-cache.yml
       - tests/test_viewport_axes.py
       - .github/workflows/viewport-axis-regression.yml
   workflow_dispatch:
@@ -86,6 +92,12 @@ jobs:
         run: python -m unittest discover -s tests -p "test_*axes.py" -v
       - name: Chart renderer crash isolation
         run: python -m unittest discover -s tests -p "test_chart_render_safety.py" -v
+      - name: Validate real FRED downloads and cold-start source snapshots
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/sync_fred_verified_cache.py --core-only
+      - name: Verify cold-start official data integrity and no fabricated observations
+        run: python -m unittest discover -s tests -p "test_fred_verified_cold_boot.py" -v
       - name: Verify series dates, units and data integrity
         run: python -m unittest discover -s tests -p "test_data_axis_integrity.py" -v
       - name: Cross-check market-source integrity and derived-rate disclosure

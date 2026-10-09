@@ -1,6 +1,7 @@
 """Chart-level fault isolation: a failed renderer must not abort the dashboard."""
 import ast
 import logging
+import math
 from copy import deepcopy
 import unittest
 from pathlib import Path
@@ -18,7 +19,8 @@ def _load_renderers():
     names = {"_render_adaptive_macro_figure", "_render_standard_macro_chart",
              "_recoverable_echarts_option", "_viewport_scaled_plotly_fallback",
              "_show_macro_plot_health", "_show_data_quality_notes",
-             "_try_minimal_adaptive_chart"}
+             "_try_minimal_adaptive_chart", "_figure_has_real_observations",
+             "_chart_has_recoverable_data", "_explain_missing_chart_data"}
     functions = [node for node in tree.body
                  if isinstance(node, ast.FunctionDef) and node.name in names]
     ns = {}
@@ -49,6 +51,7 @@ class ChartRendererRecoveryTests(unittest.TestCase):
         self.ns.update({
             "go": go,
             "pd": pd,
+            "math": math,
             "deepcopy": deepcopy,
             "RANGE_OFFSETS": RANGE_OFFSETS,
             "_echarts_axes": SimpleNamespace(
@@ -265,6 +268,39 @@ class ChartRendererRecoveryTests(unittest.TestCase):
         self.assertEqual(self.st.echarts_chart.call_count, 2)
         self.st.plotly_chart.assert_not_called()
 
+
+    def test_empty_source_does_not_claim_dynamic_y_axis_failed(self):
+        empty = go.Figure()
+        self.ns["_render_adaptive_macro_figure"](empty, "hk_5_range")
+        self.st.error.assert_called_once()
+        self.assertIn("有效观测数据", self.st.error.call_args.args[0])
+        self.st.warning.assert_not_called()
+        self.st.plotly_chart.assert_not_called()
+        self.st.echarts_chart.assert_not_called()
+
+    def test_standard_us_chart_distinguishes_missing_feed_from_renderer_failure(self):
+        self.ns["_render_standard_macro_chart"](
+            "Rates", "Rates", "fed_range", Mock(), [], 1, go.Figure()
+        )
+        self.st.error.assert_called_once()
+        self.assertIn("有效观测数据", self.st.error.call_args.args[0])
+        self.st.echarts_chart.assert_not_called()
+        self.st.plotly_chart.assert_not_called()
+
+    def test_valid_numpy_backed_plotly_trace_counts_as_real_source_samples(self):
+        import numpy as np
+        chart = go.Figure(go.Scatter(
+            x=pd.date_range("2026-09-01", periods=4),
+            y=np.asarray([float("nan"), 3.7, 3.8, 3.9]),
+        ))
+        self.assertTrue(self.ns["_figure_has_real_observations"](chart))
+        self.assertFalse(self.ns["_figure_has_real_observations"](go.Figure()))
+
+    def test_last_good_dynamic_chart_can_display_while_current_feed_is_empty(self):
+        self.st.session_state["_echarts_last_good_hk_5_range_default"] = dict(self.option)
+        self.assertTrue(self.ns["_chart_has_recoverable_data"](
+            go.Figure(), "hk_5_range"
+        ))
 
 if __name__ == "__main__":
     unittest.main()

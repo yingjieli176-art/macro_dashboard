@@ -1,5 +1,6 @@
 """Test loading helpers without running the dashboard's top-level network I/O."""
 import ast
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import tempfile
@@ -30,6 +31,7 @@ def load_helpers():
                  and any(isinstance(target, ast.Name) and target.id in {"DEFAULT_CHART_RANGE", "CHART_BUILD"} for target in node.targets)]
     namespace = {
         "__file__": str(source), "st": st, "pd": pd, "go": go,
+        "logging": logging,
         "Path": Path, "ThreadPoolExecutor": ThreadPoolExecutor,
         "as_completed": as_completed, "apply_client_time_controls": apply_client_time_controls,
     }
