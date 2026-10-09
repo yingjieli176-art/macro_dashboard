@@ -26,6 +26,7 @@ on:
     branches: [main]
     paths:
       - app.py
+      - tests/test_app_import_compat.py
       - data.py
       - macro_platform/copper.py
       - macro_platform/asia_rates.py
