@@ -146,6 +146,8 @@ jobs:
         run: python -m unittest discover -s tests -p "test_dashboard_loading.py" -v
       - name: Execute complete offline Streamlit page
         run: python -m unittest discover -s tests -p "test_app_runtime_smoke.py" -v
+      - name: Run complete regression suite including Asia curves and date controls
+        run: python -m unittest discover -s tests -v
 
   raw-history:
     if: github.event_name == 'pull_request'

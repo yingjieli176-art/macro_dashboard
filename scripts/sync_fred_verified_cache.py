@@ -214,7 +214,8 @@ def snapshot_health(series_id, now=None):
         if end != payload.get("coverage_end"):
             raise ValueError("coverage end mismatch")
         # Debt series are monthly/quarterly; market/rate series are daily/weekly.
-        tolerance = 150 if series_id in ("GFDEBTN", "FYGFDPUN", "FDHBFRBN", "FDHBFIN", "FDHBPIN") else 14
+        tolerance = (550 if series_id == "FYGFDPUN" else
+                     150 if series_id in ("GFDEBTN", "FDHBFRBN", "FDHBFIN", "FDHBPIN") else 14)
         status = "stale" if (now.normalize() - dates.max()).days > tolerance else "available"
         return {"series_id": series_id, "status": status, "coverage_end": end, "rows": len(records)}
     except (OSError, ValueError, TypeError, KeyError):
