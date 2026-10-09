@@ -42,6 +42,23 @@ def main() -> None:
         {"observation_date": row.observation_date.strftime("%Y-%m-%d"), "close": float(row.close)}
         for row in out.itertuples(index=False)
     ]
+    # The official Cboe CDN can lag. Never stamp an unchanged old fixing
+    # as an updated market observation, and never replace a newer snapshot
+    # with an earlier upstream export.
+    if SNAPSHOT.exists():
+        try:
+            prior = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
+            old_end = str(prior.get("coverage_end") or "")
+            old_records = prior.get("records") or []
+            if records[-1]["observation_date"] < old_end:
+                raise RuntimeError("Cboe VIXEQ source is older than saved official history")
+            if old_records == records:
+                print("VIXEQ source unchanged; keeping prior observation timestamp",
+                      records[-1]["observation_date"])
+                return
+        except (ValueError, OSError, TypeError):
+            pass
+
     payload = {
         "symbol": "VIXEQ",
         "name": "Cboe S&P 500 Constituent Volatility Index",

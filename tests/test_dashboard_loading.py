@@ -1,6 +1,7 @@
 """Test loading helpers without running the dashboard's top-level network I/O."""
 import ast
 import logging
+import math
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import tempfile
@@ -20,6 +21,7 @@ HELPERS = {
     "_prepare_chart_for_client_ranges", "_macro_snapshot_revision",
     "_cached_macro_figure", "_cached_hk_bundle", "_safe_macro_build",
     "_safe_hk_bundle", "_macro_error_figure", "_build_macro_figures_parallel",
+    "_figure_has_real_observations",
 }
 
 
@@ -32,6 +34,7 @@ def load_helpers():
     namespace = {
         "__file__": str(source), "st": st, "pd": pd, "go": go,
         "logging": logging,
+        "math": math,
         "Path": Path, "ThreadPoolExecutor": ThreadPoolExecutor,
         "as_completed": as_completed, "apply_client_time_controls": apply_client_time_controls,
     }
@@ -51,6 +54,9 @@ class DashboardLoadingTests(unittest.TestCase):
             self.ns[f"build_fig{number}"] = Mock(side_effect=lambda *args: go.Figure(self.figure))
         self.ns["build_asia_rates_figure"] = Mock(side_effect=lambda *args: go.Figure(self.figure))
         self.ns["build_fig5"] = Mock(side_effect=lambda *args, **kwargs: [go.Figure(self.figure) for _ in range(4)])
+        self.ns["build_hk_core_snapshot_figures"] = Mock(
+            side_effect=lambda *args: (go.Figure(self.figure), go.Figure(self.figure))
+        )
 
     def tearDown(self):
         self.ns["_cached_macro_figure"].clear()
@@ -105,6 +111,15 @@ class DashboardLoadingTests(unittest.TestCase):
         second = self.ns["_build_macro_figures_parallel"]()
         self.assertEqual(len(second[1].data), 1)
         self.assertEqual(self.ns["build_fig1"].call_count, 2)
+
+    def test_hk_composite_error_keeps_banking_and_funding_data(self):
+        self.ns["_cached_hk_bundle"].clear()
+        self.ns["build_fig5"].side_effect = OSError("optional market overlay failed")
+        figures = self.ns["_safe_hk_bundle"]("Raw", ())
+        self.assertEqual(len(figures), 4)
+        self.assertEqual(len(figures[1].data), 1)
+        self.assertEqual(len(figures[2].data), 1)
+        self.ns["build_hk_core_snapshot_figures"].assert_called_once_with("5Y")
 
     def test_snapshot_replacement_invalidates_figure_cache(self):
         with tempfile.TemporaryDirectory() as directory:

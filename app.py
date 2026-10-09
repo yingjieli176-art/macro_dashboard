@@ -16,7 +16,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import requests
 import streamlit as st
-from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, load_hk_liquidity
+from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, build_hk_core_snapshot_figures, load_hk_liquidity
 # The renderer is an optional module during rolling Streamlit Cloud deployments.
 # Never import individual newly added helpers at startup: mixed revisions of
 # app.py and macro_platform/echarts_axes.py must not crash the entire app.
@@ -69,7 +69,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-09-fred-coldstart-r36"
+CHART_BUILD = "2026-10-09-data-repair-r37"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1635,9 +1635,10 @@ def build_fig4(date_range):
             _mark_missing_series(fig, name)
         return apply_chart_style(fig, chart_height(320, 430), date_range)
 
-    # Calculate the proxy on a union calendar. Forward filling is only used
-    # inside the mixed-frequency calculation; displayed source traces remain
-    # at their native observation dates.
+    # Mixed-frequency proxy: only use RECENT observations, never carry
+    # an obsolete TGA fixing (e.g. 2022-04-15) into 2026 calculations.
+    # Observed source traces remain at their original dates. The proxy
+    # is unavailable whenever any constituent is older than its tolerance.
     calc = None
     for column in ("WALCL", "TGA_DAILY", "RRPONTSYD"):
         frame = raw_series.get(column)
@@ -1647,12 +1648,21 @@ def build_fig4(date_range):
     calc = pd.DataFrame(columns=["observation_date"]) if calc is None else calc.sort_values("observation_date")
     component_cols = [c for c in ("WALCL", "TGA_DAILY", "RRPONTSYD") if c in calc.columns]
     if component_cols:
-        calc[component_cols] = calc[component_cols].ffill()
+        freshness_days = {"WALCL": 10, "TGA_DAILY": 8, "RRPONTSYD": 7}
+        for column in component_cols:
+            last_observed = calc["observation_date"].where(calc[column].notna()).ffill()
+            age = calc["observation_date"] - last_observed
+            calc[column] = calc[column].ffill().where(
+                age <= pd.Timedelta(days=freshness_days[column])
+            )
     if all(c in calc.columns for c in ("WALCL", "TGA_DAILY", "RRPONTSYD")):
         calc["NetLiquidity"] = calc["WALCL"] - calc["TGA_DAILY"] - calc["RRPONTSYD"] / 1000.0
     calc = filter_range(calc, date_range)
-
-    add_line(fig, calc, "NetLiquidity", "Net Liquidity", 3.0, unit=" T")
+    if ("NetLiquidity" not in calc or
+            pd.to_numeric(calc["NetLiquidity"], errors="coerce").notna().sum() == 0):
+        _mark_missing_series(fig, "Net Liquidity (components too old or unavailable)")
+    else:
+        add_line(fig, calc, "NetLiquidity", "Net Liquidity", 3.0, unit=" T")
 
     reserve = raw_series.get("WRESBAL")
     if reserve is not None:
@@ -2798,9 +2808,23 @@ def _cached_hk_bundle(market_mode, snapshot_revision, build_revision):
 
 def _safe_hk_bundle(market_mode, snapshot_revision):
     try:
-        return _cached_hk_bundle(market_mode, snapshot_revision, CHART_BUILD)
+        figures = _cached_hk_bundle(market_mode, snapshot_revision, CHART_BUILD)
     except Exception:
-        return [_macro_error_figure(f"Chart {number}") for number in range(5, 9)]
+        logging.exception("Composite HK liquidity bundle failed; rescuing core official data")
+        figures = [_macro_error_figure(f"Chart {number}") for number in range(5, 9)]
+
+    # A background refresh may yield an empty composite plot without raising.
+    # Banking and funding are official stored data; salvage them separately.
+    if not _figure_has_real_observations(figures[1]) or not _figure_has_real_observations(figures[2]):
+        try:
+            banking, funding = build_hk_core_snapshot_figures("5Y")
+            if not _figure_has_real_observations(figures[1]) and _figure_has_real_observations(banking):
+                figures[1] = banking
+            if not _figure_has_real_observations(figures[2]) and _figure_has_real_observations(funding):
+                figures[2] = funding
+        except Exception:
+            logging.exception("Independent HKMA banking/HIBOR source recovery failed")
+    return figures
 
 
 def _build_macro_figures_parallel():
