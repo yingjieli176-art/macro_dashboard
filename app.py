@@ -51,7 +51,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-09-us-dfii5-r30"
+CHART_BUILD = "2026-10-09-refresh-fast-r31"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2268,6 +2268,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     return
 
 
+@st.fragment(key="us_macro_chart_1")
 def render_macro_chart_1(prebuilt_fig=None):
     _render_standard_macro_chart(
         '<div class="section-title">1. Fed Policy Rate & Money Market</div>',
@@ -2285,6 +2286,7 @@ def render_macro_chart_1(prebuilt_fig=None):
     )
 
 
+@st.fragment(key="us_macro_chart_2")
 def render_macro_chart_2(prebuilt_fig=None):
     _render_standard_macro_chart(
         '<div class="section-title">2. US Treasury Yield Structure · 5Y / 10Y</div>',
@@ -2302,6 +2304,7 @@ def render_macro_chart_2(prebuilt_fig=None):
     )
 
 
+@st.fragment(key="us_macro_chart_3")
 def render_macro_chart_3(prebuilt_fig=None):
     _render_standard_macro_chart(
         '<div class="section-title">3. Treasury Yield & Curve Spread</div>',
@@ -2320,6 +2323,7 @@ def render_macro_chart_3(prebuilt_fig=None):
     )
 
 
+@st.fragment(key="us_macro_chart_4")
 def render_macro_chart_4(prebuilt_fig=None):
     _render_standard_macro_chart(
         '<div class="section-title">4. US Liquidity</div>',
@@ -2382,7 +2386,7 @@ HK_CHART_CONFIGS = [
 ]
 
 
-def _render_hk_macro_chart(hk_index, prebuilt_fig=None):
+def _render_hk_macro_chart(hk_index, prebuilt_fig=None, prebuilt_mode=None):
     title, description, range_key, sources = HK_CHART_CONFIGS[hk_index]
     st.markdown(title, unsafe_allow_html=True)
     st.markdown(description, unsafe_allow_html=True)
@@ -2396,7 +2400,14 @@ def _render_hk_macro_chart(hk_index, prebuilt_fig=None):
             key=f"{range_key}_market_mode",
             label_visibility="collapsed",
         )
-    fig = prebuilt_fig if prebuilt_fig is not None else _safe_hk_bundle(market_mode, _macro_snapshot_revision())[hk_index]
+    # The parent already loaded a figure for this exact market mode.
+    # On fragment-only radio changes, rebuild ONLY this chart's mode; do
+    # not cause a full dashboard rerun or display the old prebuilt mode.
+    fig = (
+        prebuilt_fig
+        if prebuilt_fig is not None and prebuilt_mode == market_mode
+        else _safe_hk_bundle(market_mode, _macro_snapshot_revision())[hk_index]
+    )
     _render_adaptive_macro_figure(fig, range_key, market_mode)
     show_hk_parameter_description(hk_index)
     add_sources(sources)
@@ -2404,8 +2415,8 @@ def _render_hk_macro_chart(hk_index, prebuilt_fig=None):
 
 
 @st.fragment(key="hk_money_chart")
-def render_macro_chart_5(prebuilt_fig=None):
-    _render_hk_macro_chart(0, prebuilt_fig=prebuilt_fig)
+def render_macro_chart_5(prebuilt_fig=None, prebuilt_mode=None):
+    _render_hk_macro_chart(0, prebuilt_fig=prebuilt_fig, prebuilt_mode=prebuilt_mode)
 
 
 def render_macro_chart_6(prebuilt_fig=None):
@@ -2417,8 +2428,8 @@ def render_macro_chart_7(prebuilt_fig=None):
 
 
 @st.fragment(key="hk_fx_chart")
-def render_macro_chart_8(prebuilt_fig=None):
-    _render_hk_macro_chart(3, prebuilt_fig=prebuilt_fig)
+def render_macro_chart_8(prebuilt_fig=None, prebuilt_mode=None):
+    _render_hk_macro_chart(3, prebuilt_fig=prebuilt_fig, prebuilt_mode=prebuilt_mode)
 
 
 def render_macro_chart_9(prebuilt_fig=None):
@@ -2440,7 +2451,7 @@ def render_macro_chart_9(prebuilt_fig=None):
 
 
 @st.fragment(key="precious_metals_chart")
-def render_macro_chart_10(prebuilt_fig=None):
+def render_macro_chart_10(prebuilt_fig=None, prebuilt_mode=None):
     st.markdown(
         '<div class="section-title">10. Precious Metals</div>'
         '<div class="section-description">Gold · Silver · Gold/Silver Ratio · Gold Volatility GVZ</div>',
@@ -2450,8 +2461,13 @@ def render_macro_chart_10(prebuilt_fig=None):
         "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
         key="precious_metals_mode", label_visibility="collapsed",
     )
-    base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
-        "Chart 10", lambda: _cached_macro_figure(10, market_mode, _macro_snapshot_revision(), CHART_BUILD)
+    base_fig = (
+        prebuilt_fig
+        if prebuilt_fig is not None and prebuilt_mode == market_mode
+        else _safe_macro_build(
+            "Chart 10",
+            lambda: _cached_macro_figure(10, market_mode, _macro_snapshot_revision(), CHART_BUILD),
+        )
     )
     _render_adaptive_macro_figure(base_fig, "precious_metals", market_mode)
     st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
@@ -2465,7 +2481,7 @@ def render_macro_chart_10(prebuilt_fig=None):
 
 
 @st.fragment(key="crypto_chart")
-def render_macro_chart_11(prebuilt_fig=None):
+def render_macro_chart_11(prebuilt_fig=None, prebuilt_mode=None):
     st.markdown(
         '<div class="section-title">11. Crypto Market</div>'
         '<div class="section-description">BTC · ETH · ETH/BTC · BTC 30D 实际波动率</div>',
@@ -2475,8 +2491,13 @@ def render_macro_chart_11(prebuilt_fig=None):
         "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
         key="crypto_market_mode", label_visibility="collapsed",
     )
-    base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
-        "Chart 11", lambda: _cached_macro_figure(11, market_mode, _macro_snapshot_revision(), CHART_BUILD)
+    base_fig = (
+        prebuilt_fig
+        if prebuilt_fig is not None and prebuilt_mode == market_mode
+        else _safe_macro_build(
+            "Chart 11",
+            lambda: _cached_macro_figure(11, market_mode, _macro_snapshot_revision(), CHART_BUILD),
+        )
     )
     _render_adaptive_macro_figure(base_fig, "crypto_market", market_mode)
     st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
@@ -2572,7 +2593,7 @@ def _macro_snapshot_revision():
     return tuple(revision)
 
 
-@st.cache_data(ttl=60, max_entries=32, show_spinner=False)
+@st.cache_data(ttl=300, max_entries=32, show_spinner=False)
 def _cached_macro_figure(chart_number, market_mode, snapshot_revision, build_revision):
     """Reuse successful construction; callers receive isolated figure copies."""
     builders = {
@@ -2586,7 +2607,7 @@ def _cached_macro_figure(chart_number, market_mode, snapshot_revision, build_rev
     return builder("5Y")
 
 
-@st.cache_data(ttl=60, max_entries=8, show_spinner=False)
+@st.cache_data(ttl=300, max_entries=8, show_spinner=False)
 def _cached_hk_bundle(market_mode, snapshot_revision, build_revision):
     figures = build_fig5("5Y", market_mode=market_mode)
     if not isinstance(figures, (list, tuple)) or len(figures) < 4:
@@ -2672,19 +2693,19 @@ render_macro_chart_3(macro_figures[3])
 render_macro_chart_4(macro_figures[4])
 
 st.markdown('<div class="section-kicker">HONG KONG LIQUIDITY</div>', unsafe_allow_html=True)
-render_macro_chart_5()
+render_macro_chart_5(macro_figures[5], prebuilt_mode=st.session_state.get("hk_5_range_market_mode", "Raw"))
 render_macro_chart_6(macro_figures[6])
 render_macro_chart_7(macro_figures[7])
-render_macro_chart_8()
+render_macro_chart_8(macro_figures[8], prebuilt_mode=st.session_state.get("hk_8_range_market_mode", "Raw"))
 
 st.markdown('<div class="section-kicker">US EQUITY RISK</div>', unsafe_allow_html=True)
 render_macro_chart_9(macro_figures[9])
 
 st.markdown('<div class="section-kicker">PRECIOUS METALS</div>', unsafe_allow_html=True)
-render_macro_chart_10()
+render_macro_chart_10(macro_figures[10], prebuilt_mode=st.session_state.get("precious_metals_mode", "Rebased 100"))
 
 st.markdown('<div class="section-kicker">CRYPTO MARKET</div>', unsafe_allow_html=True)
-render_macro_chart_11()
+render_macro_chart_11(macro_figures[11], prebuilt_mode=st.session_state.get("crypto_market_mode", "Rebased 100"))
 
 st.markdown('<div class="section-kicker">INDUSTRIAL METALS · COPPER</div>', unsafe_allow_html=True)
 render_macro_chart_12(macro_figures[12])
