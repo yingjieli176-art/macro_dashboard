@@ -223,6 +223,8 @@ def get_dgs10():
     result.attrs["identity_backfill"] = True
     return result
 @st.cache_data(ttl=3600)
+def get_dfii5(): return _fred_series("DFII5")
+@st.cache_data(ttl=3600)
 def get_dfii10(): return _fred_series("DFII10")
 @st.cache_data(ttl=3600)
 def get_sofr(): return _fred_series("SOFR")
