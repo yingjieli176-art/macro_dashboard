@@ -79,16 +79,3 @@ class WorkflowSafetyTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-)
-        for number in range(1, 14):
-            self.assertIn(f"render_macro_chart_{number}(", app)
-        self.assertIn("_macro_snapshot_revision", app)
-        self.assertIn("_safe_hk_bundle", app)
-        self.assertIn("_build_macro_figures_parallel", app)
-        data = (ROOT / "data.py").read_text(encoding="utf-8")
-        self.assertIn("parse_dts_tga_rows", data)
-        self.assertIn("read_verified_tga_snapshot", data)
-
-
-if __name__ == "__main__":
-    unittest.main()
