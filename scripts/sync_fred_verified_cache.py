@@ -147,11 +147,24 @@ def refresh_one(series_id: str):
         for fetcher in fetchers:
             try:
                 frame = fetcher(session, series_id)
+                primary_source = fetcher is _fetch_primary
+                provenance = {
+                    "IORB": ("Board of Governors of the Federal Reserve System",
+                             "https://www.federalreserve.gov/datadownload/Choose.aspx?rel=PRATES"),
+                    "EFFR": ("Federal Reserve Bank of New York",
+                             "https://www.newyorkfed.org/markets/reference-rates/effr"),
+                    "SOFR": ("Federal Reserve Bank of New York",
+                             "https://www.newyorkfed.org/markets/reference-rates/sofr"),
+                }
+                source_name, source_url = (provenance[series_id]
+                    if primary_source else
+                    ("Federal Reserve Bank of St. Louis FRED",
+                     "https://fred.stlouisfed.org/series/" + series_id))
                 payload = {
                     "series_id": series_id,
                     "fetched_at": int(time.time()),
-                    "source": "Federal Reserve Bank of St. Louis FRED",
-                    "source_series": "https://fred.stlouisfed.org/series/" + series_id,
+                    "source": source_name,
+                    "source_series": source_url,
                     "coverage_end": frame.date.max().strftime("%Y-%m-%d"),
                     "records": [
                         {"date": date.strftime("%Y-%m-%d"), "value": float(value)}
@@ -183,8 +196,9 @@ def save_snapshot(series_id, payload):
 
 def main():
     updated, retained, errors = [], [], []
+    target_series = CRITICAL if "--core-only" in sys.argv else SERIES
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
-        results = pool.map(refresh_one, SERIES)
+        results = pool.map(refresh_one, target_series)
         for sid, payload, error in results:
             if payload:
                 changed = save_snapshot(sid, payload)
