@@ -17,6 +17,7 @@ import time
 import pandas as pd
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from macro_platform.treasury_cash import parse_dts_tga_rows
 
 ENDPOINT = ("https://api.fiscaldata.treasury.gov/services/api/fiscal_service/"
