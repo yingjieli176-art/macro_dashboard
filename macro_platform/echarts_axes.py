@@ -276,6 +276,54 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
     }
 
 
+
+def option_observation_health(option, *, chart_key="", now=None):
+    """Expose the *plotted* last observation, not the snapshot download date.
+
+    This inspects already-serialized ECharts series. A monthly observation is
+    allowed a longer lag than a daily market close; no data is extrapolated.
+    """
+    now = pd.Timestamp.now(tz="UTC").tz_localize(None).normalize() if now is None else pd.Timestamp(now)
+    if now.tzinfo is not None:
+        now = now.tz_localize(None)
+    now = now.normalize()
+    latest_by_name = {}
+    stale_names = []
+    future_names = []
+    monthly_chart = chart_key in ("hk_5_range", "hk_6_range")
+    for series in option.get("series", []):
+        name = str(series.get("name", "Series"))
+        observations = series.get("data", [])
+        # Each point is [ISO date, numeric value]; keep the actual last
+        # finite observation date even when the selected viewport is shorter.
+        valid_dates = [
+            str(point[0]) for point in observations
+            if isinstance(point, (list, tuple)) and len(point) == 2
+            and point[1] is not None
+        ]
+        if not valid_dates:
+            continue
+        latest = pd.Timestamp(max(valid_dates))
+        latest_by_name[name] = latest.strftime("%Y-%m-%d")
+        age = (now - latest.normalize()).days
+        monthly = monthly_chart and (
+            chart_key == "hk_6_range" or any(
+                key in name for key in ("M2 ", "M3 ", "Monetary Base", "Money Growth")
+            )
+        )
+        tolerance = 75 if monthly else 14
+        if age > tolerance:
+            stale_names.append(name)
+        if age < -1:
+            future_names.append(name)
+    return {
+        "latest_by_name": latest_by_name,
+        "stale_names": stale_names,
+        "future_names": future_names,
+    }
+
+
+
 def summarize_series_dates(fig, *, now: pd.Timestamp | None = None,
                            maximum_age_days: int = 10) -> dict:
     """Report actual observation dates, not chart rendering/update timestamps.
