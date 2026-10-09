@@ -10,6 +10,7 @@ on:
       - macro_platform/echarts_axes.py
       - tests/test_viewport_axes.py
       - tests/test_echarts_axes.py
+      - tests/test_app_import_compat.py
       - .github/workflows/viewport-axis-regression.yml
   workflow_dispatch:
 
@@ -47,5 +48,7 @@ jobs:
           exec(compile(imports, "app.py", "exec"), {})
           print("PASS: application startup import chain")
           PY
+      - name: Simulate missing or partially deployed ECharts module
+        run: python -m unittest discover -s tests -p "test_app_import_compat.py" -v
       - name: Regression tests for viewport fit and observation dates
         run: python -m unittest discover -s tests -p "test_*axes.py" -v
