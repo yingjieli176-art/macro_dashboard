@@ -62,6 +62,104 @@ def _axis_readable_title(source_axis, index, traces):
     return f"R{index} · {unit or 'value'}"
 
 
+
+def build_safe_echarts_option(fig, date_range="1Y"):
+    """Minimal native ECharts rescue path, independent of the rich adapter.
+
+    All valid observations retain their *actual dates* and numerical values;
+    unsupported Plotly decorations are omitted. The browser still filters X
+    samples before independently auto-fitting each Y axis. Never fabricate
+    or interpolate a missing observation in the process.
+    """
+    date_range = date_range if date_range in RANGE_OFFSETS else "1Y"
+    series, axis_map = [], {}
+    latest = None
+    for trace in fig.data:
+        if getattr(trace, "visible", True) in (False, "legendonly"):
+            continue
+        xs, ys = getattr(trace, "x", None), getattr(trace, "y", None)
+        if xs is None or ys is None:
+            continue
+        ref = getattr(trace, "yaxis", None) or "y"
+        points = []
+        for x, y in zip(xs, ys):
+            try:
+                when = pd.Timestamp(x)
+                if pd.isna(when):
+                    continue
+                if when.tzinfo is not None:
+                    when = when.tz_localize(None)
+                value = float(y)
+            except (TypeError, ValueError, OverflowError):
+                continue
+            if not math.isfinite(value):
+                # Nulls must remain gaps, not zero-valued data.
+                points.append([when.isoformat(), None])
+                continue
+            latest = when if latest is None else max(latest, when)
+            points.append([when.isoformat(), value])
+        if not any(value is not None for _, value in points):
+            continue
+        if ref not in axis_map:
+            axis_map[ref] = len(axis_map)
+        series.append({
+            "name": str(getattr(trace, "name", None) or "Series"),
+            "type": "line",
+            "showSymbol": False,
+            "connectNulls": False,
+            "data": points,
+            "yAxisIndex": axis_map[ref],
+            "animation": False,
+        })
+    if latest is None or not series:
+        return None
+    axes = []
+    for ref, index in axis_map.items():
+        source = getattr(fig.layout, "yaxis" if ref == "y" else "yaxis" + ref[1:], None)
+        prior = getattr(source, "range", None)
+        inverse = False
+        if prior is not None and len(prior) == 2:
+            try:
+                inverse = float(prior[0]) > float(prior[1])
+            except (ValueError, TypeError):
+                pass
+        axes.append({
+            "type": "value", "scale": True, "inverse": inverse,
+            "position": "left" if index == 0 else "right",
+            "offset": max(index - 1, 0) * 55,
+            "name": _axis_readable_title(source, index, [
+                trace for trace in fig.data
+                if (getattr(trace, "yaxis", None) or "y") == ref
+            ]),
+            "nameLocation": "middle", "nameGap": 42,
+            "splitLine": {"show": index == 0},
+        })
+    window_start = (latest - RANGE_OFFSETS[date_range]).isoformat()
+    return {
+        "animation": False,
+        "legend": {"type": "scroll", "top": 14},
+        "grid": {
+            "left": 80, "right": 55 + max(0, len(axes)-1)*70,
+            "top": 68, "bottom": 72,
+        },
+        "tooltip": {"trigger": "axis"},
+        "xAxis": {
+            "type": "time",
+            "axisLabel": {"hideOverlap": True},
+        },
+        "yAxis": axes,
+        "dataZoom": [
+            {"type": "inside", "xAxisIndex": 0, "filterMode": "filter",
+             "startValue": window_start, "endValue": latest.isoformat()},
+            {"type": "slider", "show": True, "height": 22, "bottom": 12,
+             "xAxisIndex": 0, "filterMode": "filter",
+             "startValue": window_start, "endValue": latest.isoformat()},
+        ],
+        "series": series,
+    }
+
+
+
 def build_adaptive_echarts_option(fig, date_range="1Y"):
     """Convert a Plotly chart to a native ECharts time-series option object."""
     date_range = date_range if date_range in RANGE_OFFSETS else "1Y"
