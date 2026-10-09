@@ -1,13 +1,8 @@
 name: Migrate Chart 5 to platform core
 
+# The one-time migration is complete. Never rewrite app.py automatically
+# after unrelated HK data or axis changes.
 on:
-  push:
-    branches: [main]
-    paths:
-      - scripts/migrate_chart5_to_platform_core.py
-      - macro_platform/hk_liquidity.py
-      - data_snapshots/hkma_monetary_statistics.json
-      - .github/workflows/migrate-chart5-platform-core.yml
   workflow_dispatch:
 
 permissions:
