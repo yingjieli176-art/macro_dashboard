@@ -12,6 +12,7 @@ on:
       - tests/test_echarts_axes.py
       - tests/test_chart_render_safety.py
       - tests/test_data_axis_integrity.py
+      - tests/test_us_five_year_real_yield.py
       - tests/test_app_runtime_smoke.py
       - tests/test_app_import_compat.py
       - .github/workflows/viewport-axis-regression.yml
@@ -24,6 +25,7 @@ on:
       - tests/test_echarts_axes.py
       - tests/test_chart_render_safety.py
       - tests/test_data_axis_integrity.py
+      - tests/test_us_five_year_real_yield.py
       - tests/test_app_runtime_smoke.py
       - tests/test_viewport_axes.py
       - .github/workflows/viewport-axis-regression.yml
@@ -71,5 +73,7 @@ jobs:
         run: python -m unittest discover -s tests -p "test_chart_render_safety.py" -v
       - name: Verify series dates, units and data integrity
         run: python -m unittest discover -s tests -p "test_data_axis_integrity.py" -v
+      - name: Verify official 5Y TIPS real yield in US charts
+        run: python -m unittest discover -s tests -p "test_us_five_year_real_yield.py" -v
       - name: Execute complete offline Streamlit page
         run: python -m unittest discover -s tests -p "test_app_runtime_smoke.py" -v
