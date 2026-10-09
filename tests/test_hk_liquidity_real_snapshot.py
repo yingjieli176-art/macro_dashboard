@@ -17,6 +17,14 @@ class RealHkChartSmoke(unittest.TestCase):
         self.assertGreater(funding["HIBOR 3M"].notna().sum(), 12)
         self.assertGreater(daily["HIBOR O/N"].notna().sum(), 12)
 
+    def test_independent_recovery_from_real_hkma_snapshots(self):
+        banking, funding = hk.build_hk_core_snapshot_figures("5Y")
+        for number, fig in ((6, banking), (7, funding)):
+            finite = [trace for trace in fig.data if
+                      pd.to_numeric(pd.Series(trace.y), errors="coerce").notna().sum() > 12]
+            self.assertTrue(finite, f"Chart {number} snapshot recovery failed")
+            self.assertTrue(all(pd.notna(pd.to_datetime(t.x)).all() for t in finite))
+
     def test_full_hk_builder_has_nonempty_figures_6_and_7(self):
         with patch.object(hk, "_market_history", return_value=pd.DataFrame(
                 columns=["observation_date"])), patch.object(
