@@ -95,6 +95,11 @@ def build_safe_echarts_option(fig, date_range="1Y"):
                 value = float(y)
                 if not math.isfinite(value):
                     value = None
+                else:
+                    # Display-only rounding avoids e.g. 3.429999999999998
+                    # in native ECharts hover panels. Original market
+                    # observations stay unchanged in Plotly/source files.
+                    value = round(value, 8)
             except (TypeError, ValueError, OverflowError):
                 value = None
             # Keep the original date and a null gap even if this source did
@@ -210,6 +215,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
                 if not math.isfinite(number):
                     number = None
                 else:
+                    number = round(number, 8)
                     latest = timestamp if latest is None else max(latest, timestamp)
                 points.append([timestamp_text, number])
             except (ValueError, TypeError, OverflowError):
