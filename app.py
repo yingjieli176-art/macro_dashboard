@@ -2236,6 +2236,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         # the market overview, charts and news from loading.
         st.warning("ECharts 模块尚未同步，临时显示可缩放的 Plotly 图表。")
         fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
+        fallback.layout.updatemenus = ()
         st.plotly_chart(
             fallback, key=f"{range_key}_plotly_fallback_{selected_range}",
             use_container_width=True, config=PLOTLY_CONFIG,
@@ -2250,6 +2251,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     if native_option is None:
         st.warning("动态图表与缓存均不可用，已使用可同时调整 X/Y 的兼容图表。")
         fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
+        fallback.layout.updatemenus = ()
         try:
             st.plotly_chart(
                 fallback, key=f"{range_key}_plotly_recovery_{selected_range}",
@@ -2305,6 +2307,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         logging.exception("ECharts renderer failed for %s", range_key)
         st.warning("图表渲染异常，已改用兼容显示。")
         fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
+        fallback.layout.updatemenus = ()
         try:
             st.plotly_chart(
                 fallback, key=f"{range_key}_renderer_recovery_{selected_range}",
