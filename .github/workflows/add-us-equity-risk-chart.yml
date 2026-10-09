@@ -1,14 +1,9 @@
 name: Add US equity risk chart
 
 # Legacy chart migration is manual only: the official VIXEQ refresh is now
-# handled by update-vixeq-snapshot.yml and must not be re-run twice daily.
+# handled by update-vixeq-snapshot.yml. This migration must not run on push.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/add_us_equity_risk_chart.py
-      - .github/workflows/add-us-equity-risk-chart.yml
 
 permissions:
   contents: write
