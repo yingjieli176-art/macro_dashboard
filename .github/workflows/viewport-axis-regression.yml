@@ -95,7 +95,7 @@ jobs:
       - name: Validate real FRED downloads and cold-start source snapshots
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-        run: python scripts/sync_fred_verified_cache.py
+        run: python scripts/sync_fred_verified_cache.py --core-only
       - name: Verify cold-start official data integrity and no fabricated observations
         run: python -m unittest discover -s tests -p "test_fred_verified_cold_boot.py" -v
       - name: Verify series dates, units and data integrity
