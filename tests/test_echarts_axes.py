@@ -11,6 +11,22 @@ from macro_platform.echarts_axes import build_adaptive_echarts_option, summarize
 
 
 class EchartsNativeAxes(unittest.TestCase):
+    def test_year_month_labels_are_explicit_across_calendar_boundary(self):
+        fig = go.Figure(go.Scatter(
+            x=pd.date_range("2025-09-01", "2026-10-01", freq="7D"),
+            y=[2.0] * len(pd.date_range("2025-09-01", "2026-10-01", freq="7D")),
+        ))
+        for period in ("5Y", "1Y", "6M", "3M", "1M"):
+            with self.subTest(period=period):
+                option = build_adaptive_echarts_option(fig, period)
+                labels = option["xAxis"]["axisLabel"]["formatter"]
+                self.assertEqual(labels["year"], "{yyyy}-01")
+                self.assertEqual(labels["month"], "{yyyy}-{MM}")
+                self.assertEqual(labels["day"], "{MM}-{dd}")
+                self.assertEqual(option["xAxis"]["splitNumber"], 6)
+                self.assertTrue(option["xAxis"]["axisLabel"]["hideOverlap"])
+                json.dumps(option, allow_nan=False)
+
     def test_one_month_uses_filtered_data_without_zero_floor(self):
         dates = pd.date_range("2021-10-01", "2026-10-01", freq="7D")
         vals = [0.7 if d.year < 2025 else 3.62 + ((i % 12) * 0.02)
