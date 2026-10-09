@@ -21,6 +21,7 @@ from macro_platform.copper import (
     build_copper_flow_spread_figure,
 )
 from macro_platform.asia_rates import load_china_gov_yields
+from macro_platform.treasury_cash import parse_dts_tga_rows
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -81,16 +82,19 @@ class TruthAndProvenanceChecks(unittest.TestCase):
         getter = undecorated("data.py", "get_tga_daily", {
             "pd": pd, "requests": requests,
             "_fred_series": Mock(side_effect=AssertionError("unexpected WTREGEN fallback")),
+            "read_verified_tga_snapshot": lambda path: pd.DataFrame(),
+            "TGA_SNAPSHOT_PATH": Path("not-present"),
+            "parse_dts_tga_rows": parse_dts_tga_rows,
         })
         out = getter().set_index("observation_date")
-        self.assertAlmostEqual(out.loc[pd.Timestamp("2026-10-06"), "TGA_DAILY"], 0.7)
+        self.assertAlmostEqual(out.loc[pd.Timestamp("2026-10-06"), "TGA_DAILY"], 0.5)
         self.assertAlmostEqual(out.loc[pd.Timestamp("2026-10-07"), "TGA_DAILY"], 0.6)
         self.assertEqual(len(out), 2)
 
-    def test_us_tga_only_opening_balance_uses_named_weekly_fallback(self):
+    def test_us_tga_unlabeled_opening_balance_uses_named_weekly_fallback(self):
         response = Mock()
         response.json.return_value = {"data": [
-            {"record_date": "2026-10-06", "account_type": "Treasury General Account closing",
+            {"record_date": "2026-10-06", "account_type": "Treasury General Account Opening Balance",
              "open_today_bal": "500000", "close_today_bal": None},
         ]}
         response.raise_for_status.return_value = None
@@ -101,6 +105,9 @@ class TruthAndProvenanceChecks(unittest.TestCase):
         requests.get.return_value = response
         getter = undecorated("data.py", "get_tga_daily", {
             "pd": pd, "requests": requests, "_fred_series": get_weekly,
+            "read_verified_tga_snapshot": lambda path: pd.DataFrame(),
+            "TGA_SNAPSHOT_PATH": Path("not-present"),
+            "parse_dts_tga_rows": parse_dts_tga_rows,
         })
         frame = getter()
         get_weekly.assert_called_once_with("WTREGEN")
