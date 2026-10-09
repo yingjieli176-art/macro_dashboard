@@ -40,6 +40,7 @@ class ChartRendererRecoveryTests(unittest.TestCase):
             "_echarts_axes": SimpleNamespace(build_adaptive_echarts_option=self.adapter),
             "st": self.st,
             "DEFAULT_CHART_RANGE": "1Y",
+            "CHART_BUILD": "test-smoke",
             "_prepare_chart_for_client_ranges": Mock(return_value=self.fig),
             "apply_server_time_window": Mock(return_value=self.fig),
             "apply_time_axis": Mock(return_value=self.fig),
