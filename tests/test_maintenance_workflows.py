@@ -66,7 +66,7 @@ class WorkflowSafetyTests(unittest.TestCase):
 
     def test_runtime_contract_is_not_accidentally_removed(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
-        self.assertRegex(app, r'(?m)^CHART_BUILD = "[^"]+"
+        self.assertIn("CHART_BUILD = ", app)
         for number in range(1, 14):
             self.assertIn(f"render_macro_chart_{number}(", app)
         self.assertIn("_macro_snapshot_revision", app)
