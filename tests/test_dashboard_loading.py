@@ -65,7 +65,12 @@ class DashboardLoadingTests(unittest.TestCase):
         self.assertLessEqual(end, pd.Timestamp("2026-10-06"))
         self.assertEqual(len(figure.data[0].x), 3)
         self.assertEqual(pd.Timestamp(figure.data[0].x[0]), pd.Timestamp("2021-09-29"))
-        self.assertEqual([button.label.strip() for button in figure.layout.xaxis.rangeselector.buttons], ["5Y", "1Y", "6M", "3M", "1M"])
+        # The current fallback uses relayout buttons to rescale both X and Y;
+        # the old Plotly range selector would change X only.
+        buttons = figure.layout.updatemenus[0].buttons
+        self.assertEqual([button.label.strip() for button in buttons], ["5Y", "1Y", "6M", "3M", "1M"])
+        self.assertEqual([button.method for button in buttons], ["relayout"] * 5)
+        self.assertFalse(figure.layout.xaxis.rangeselector.visible)
         self.assertNotEqual(figure.layout.uirevision, "test-chart:client-range")
 
     def test_unchanged_charts_are_reused_and_cached_figures_are_isolated(self):
