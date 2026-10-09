@@ -10,6 +10,7 @@ on:
       - macro_platform/echarts_axes.py
       - tests/test_viewport_axes.py
       - tests/test_echarts_axes.py
+      - tests/test_chart_render_safety.py
       - tests/test_app_import_compat.py
       - .github/workflows/viewport-axis-regression.yml
   pull_request:
@@ -19,6 +20,7 @@ on:
       - macro_platform/echarts_axes.py
       - macro_platform/chart_axes.py
       - tests/test_echarts_axes.py
+      - tests/test_chart_render_safety.py
       - tests/test_viewport_axes.py
       - .github/workflows/viewport-axis-regression.yml
   workflow_dispatch:
@@ -61,3 +63,5 @@ jobs:
         run: python -m unittest discover -s tests -p "test_app_import_compat.py" -v
       - name: Regression tests for viewport fit and observation dates
         run: python -m unittest discover -s tests -p "test_*axes.py" -v
+      - name: Chart renderer crash isolation
+        run: python -m unittest discover -s tests -p "test_chart_render_safety.py" -v
