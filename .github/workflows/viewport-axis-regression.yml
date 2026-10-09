@@ -7,6 +7,7 @@ on:
       - macro_platform/market_history.py
       - macro_platform/background_refresh.py
       - tests/test_accuracy_performance.py
+      - static/deploy_version.json
       - scripts/update_hk_market_daily.py
       - data.py
       - requirements.txt
@@ -45,6 +46,7 @@ on:
       - macro_platform/market_history.py
       - macro_platform/background_refresh.py
       - tests/test_accuracy_performance.py
+      - static/deploy_version.json
       - scripts/update_hk_market_daily.py
       - tests/test_app_import_compat.py
       - data.py

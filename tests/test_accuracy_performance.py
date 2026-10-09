@@ -31,6 +31,13 @@ def helpers(path, names, namespace):
 
 
 class AccuracyPerformanceTests(unittest.TestCase):
+    def test_deployment_fingerprint_matches_application_build(self):
+        tree = ast.parse((ROOT / "app.py").read_text())
+        build = next(node.value.value for node in tree.body if isinstance(node, ast.Assign)
+                     and any(isinstance(target, ast.Name) and target.id == "CHART_BUILD" for target in node.targets))
+        manifest = json.loads((ROOT / "static/deploy_version.json").read_text())
+        self.assertEqual(manifest["release"], build)
+
     def test_closed_and_unknown_us_prices_keep_their_regular_quote_timestamp(self):
         ns = helpers("app.py", {"_quote_session_context", "_active_quote_values", "_valid_market_timestamp"}, {
             "time": time, "_us_overnight_window_now": lambda: False,
