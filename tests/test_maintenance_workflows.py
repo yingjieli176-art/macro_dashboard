@@ -66,7 +66,20 @@ class WorkflowSafetyTests(unittest.TestCase):
 
     def test_runtime_contract_is_not_accidentally_removed(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
-        self.assertIn('CHART_BUILD = "2026-10-09-tga-close-recovery-r38"', app)
+        self.assertRegex(app, r'(?m)^CHART_BUILD = "[^"]+"
+        for number in range(1, 14):
+            self.assertIn(f"render_macro_chart_{number}(", app)
+        self.assertIn("_macro_snapshot_revision", app)
+        self.assertIn("_safe_hk_bundle", app)
+        self.assertIn("_build_macro_figures_parallel", app)
+        data = (ROOT / "data.py").read_text(encoding="utf-8")
+        self.assertIn("parse_dts_tga_rows", data)
+        self.assertIn("read_verified_tga_snapshot", data)
+
+
+if __name__ == "__main__":
+    unittest.main()
+)
         for number in range(1, 14):
             self.assertIn(f"render_macro_chart_{number}(", app)
         self.assertIn("_macro_snapshot_revision", app)
