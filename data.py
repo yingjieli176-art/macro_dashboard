@@ -208,6 +208,9 @@ def get_dgs10():
             "is_stale": bool(real.attrs.get("is_stale") or breakeven.attrs.get("is_stale")),
             "is_fallback": True,
             "derived_fallback": True,
+            "identity_derived_dates": [
+                d.strftime("%Y-%m-%d") for d in result["observation_date"]
+            ],
         })
         return result
 
@@ -216,11 +219,17 @@ def get_dgs10():
 
     # Prefer observed DGS10 where available; use the identity only to fill gaps.
     combined = direct.merge(derived, on="observation_date", how="outer", suffixes=("_direct", "_derived"))
+    derived_only = combined["DGS10_direct"].isna() & combined["DGS10_derived"].notna()
+    derived_dates = [
+        pd.Timestamp(d).strftime("%Y-%m-%d")
+        for d in combined.loc[derived_only, "observation_date"]
+    ]
     combined["DGS10"] = combined["DGS10_direct"].combine_first(combined["DGS10_derived"])
     result = combined.dropna(subset=["observation_date", "DGS10"])[["observation_date", "DGS10"]]
     result = result.sort_values("observation_date").drop_duplicates("observation_date", keep="last")
     result.attrs = dict(direct.attrs)
-    result.attrs["identity_backfill"] = True
+    result.attrs["identity_backfill"] = bool(derived_dates)
+    result.attrs["identity_derived_dates"] = derived_dates
     return result
 @st.cache_data(ttl=3600)
 def get_dfii5(): return _fred_series("DFII5")
