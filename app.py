@@ -2106,10 +2106,18 @@ def _viewport_scaled_plotly_fallback(base_fig, date_range):
     """Fallback stays interactive and updates both X/Y, not full-history Y."""
     copy = go.Figure(base_fig)
     if callable(apply_client_time_controls):
-        return apply_client_time_controls(copy, default_range=date_range)
-    if callable(apply_server_time_window):
-        return apply_server_time_window(copy, date_range)
-    return apply_time_axis(copy, date_range)
+        result = apply_client_time_controls(copy, default_range=date_range)
+    elif callable(apply_server_time_window):
+        result = apply_server_time_window(copy, date_range)
+    else:
+        result = apply_time_axis(copy, date_range)
+    # Align Plotly's degraded-mode time labels with the ECharts calendar:
+    # dates for 1M, year-month for medium and long windows.
+    result.update_xaxes(
+        tickformat="%m-%d" if date_range == "1M" else "%Y-%m",
+        hoverformat="%Y-%m-%d", nticks=7,
+    )
+    return result
 
 
 
