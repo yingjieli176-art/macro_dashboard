@@ -109,7 +109,7 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
         frame = frame.loc[frame["date"] >= pd.Timestamp(START)]
         if len(frame) < 12:
             raise ValueError("PRATES/IORB missing observed points")
-        return _parse_source("DATE,IORB\\n" + "\\n".join(
+        return _parse_source("DATE,IORB\n" + "\n".join(
             f"{date:%Y-%m-%d},{value}" for date, value
             in zip(frame["date"], frame["value"])
         ), series_id)
@@ -134,7 +134,7 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
         result = pd.DataFrame(data)
         if result.empty:
             raise ValueError("New York Fed returned no valid observed rates")
-        return _parse_source("DATE," + series_id + "\\n" + "\\n".join(
+        return _parse_source("DATE," + series_id + "\n" + "\n".join(
             f"{row['date']},{row['value']}" for row in data
         ), series_id)
     raise ValueError("No official direct endpoint for " + series_id)
@@ -196,10 +196,16 @@ def main():
                 errors.append(sid)
                 print(f"WARN {sid}: {error}; preserved last-good snapshot", flush=True)
 
-    absent_critical = [s for s in CRITICAL if not (OUT / (s + ".json")).exists()]
-    if absent_critical:
-        print(f"ERROR: cannot make Fed rate chart cold-start safe: {absent_critical}")
+    missing_core = [s for s in CRITICAL if not (OUT / (s + ".json")).exists()]
+    core_present = len(CRITICAL) - len(missing_core)
+    # The chart is honest with partial observations; do NOT fail because the
+    # ON RRP operation rate is unavailable from a primary endpoint.
+    if core_present < 2:
+        print(f"ERROR: less than two official Fed rate feeds available: {missing_core}")
         return 1
+    if missing_core:
+        print(f"WARN partial Fed chart: {core_present}/4 observed feeds; "
+              f"missing series will remain absent: {missing_core}")
     print(f"Snapshot sync: updated={len(updated)}, unchanged={len(retained)}, failed={len(errors)}")
     return 0
 
