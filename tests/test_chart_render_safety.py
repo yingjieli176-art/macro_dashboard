@@ -17,7 +17,8 @@ def _load_renderers():
     tree = ast.parse(source.read_text(encoding="utf-8"))
     names = {"_render_adaptive_macro_figure", "_render_standard_macro_chart",
              "_recoverable_echarts_option", "_viewport_scaled_plotly_fallback",
-             "_show_macro_plot_health", "_show_data_quality_notes"}
+             "_show_macro_plot_health", "_show_data_quality_notes",
+             "_try_minimal_adaptive_chart"}
     functions = [node for node in tree.body
                  if isinstance(node, ast.FunctionDef) and node.name in names]
     ns = {}
@@ -50,7 +51,10 @@ class ChartRendererRecoveryTests(unittest.TestCase):
             "pd": pd,
             "deepcopy": deepcopy,
             "RANGE_OFFSETS": RANGE_OFFSETS,
-            "_echarts_axes": SimpleNamespace(build_adaptive_echarts_option=self.adapter),
+            "_echarts_axes": SimpleNamespace(
+                build_adaptive_echarts_option=self.adapter,
+                build_safe_echarts_option=Mock(return_value=None),
+            ),
             "st": self.st,
             "DEFAULT_CHART_RANGE": "1Y",
             "RANGES": ["5Y", "1Y", "6M", "3M", "1M"],
@@ -220,6 +224,46 @@ class ChartRendererRecoveryTests(unittest.TestCase):
             pd.Timestamp(zoom["endValue"]) - pd.DateOffset(months=3)
         )
         self.assertEqual(option["xAxis"]["axisLabel"]["formatter"]["month"], "{yyyy}-{MM}")
+
+
+    def test_full_renderer_failure_keeps_native_dynamic_y_when_simple_spec_works(self):
+        from macro_platform.echarts_axes import build_safe_echarts_option
+        dates = pd.date_range("2025-10-01", "2026-10-01", freq="D")
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=dates, y=[50 + i * 0.01 for i in range(len(dates))],
+                                 name="BTC rebased"))
+        fig.add_trace(go.Scatter(x=dates, y=[0.04 + i * 0.00001 for i in range(len(dates))],
+                                 yaxis="y2", name="ETH/BTC"))
+        fig.update_layout(yaxis2=dict(overlaying="y", side="right"))
+        self.ns["_echarts_axes"].build_safe_echarts_option.side_effect = build_safe_echarts_option
+        self.st.echarts_chart.side_effect = [RuntimeError("rich option rejected"), None]
+        self.st.segmented_control.return_value = "3M"
+        self.ns["_render_adaptive_macro_figure"](fig, "crypto_market", "Rebased 100")
+        self.assertEqual(self.st.echarts_chart.call_count, 2)
+        self.st.plotly_chart.assert_not_called()
+        safe = self.st.echarts_chart.call_args.args[0]
+        self.assertEqual(len(safe["yAxis"]), 2)
+        self.assertTrue(all(axis["scale"] for axis in safe["yAxis"]))
+        self.assertTrue(all(z["filterMode"] == "filter" for z in safe["dataZoom"]))
+        self.assertIn("_3M", self.st.echarts_chart.call_args.kwargs["key"])
+        self.st.error.assert_not_called()
+
+    def test_failed_rich_conversion_can_still_show_native_dynamic_y(self):
+        from macro_platform.echarts_axes import build_safe_echarts_option
+        self.adapter.side_effect = ValueError("unsupported Plotly shape")
+        self.ns["_echarts_axes"].build_safe_echarts_option.side_effect = build_safe_echarts_option
+        self.ns["_render_adaptive_macro_figure"](self.fig, "copper_flow")
+        self.st.echarts_chart.assert_called_once()
+        self.st.plotly_chart.assert_not_called()
+        self.assertTrue(self.st.echarts_chart.call_args.args[0]["yAxis"][0]["scale"])
+
+    def test_standard_us_chart_uses_native_recovery_instead_of_plotly(self):
+        from macro_platform.echarts_axes import build_safe_echarts_option
+        self.ns["_echarts_axes"].build_safe_echarts_option.side_effect = build_safe_echarts_option
+        self.st.echarts_chart.side_effect = [RuntimeError("rich option incompatible"), None]
+        self._render_standard()
+        self.assertEqual(self.st.echarts_chart.call_count, 2)
+        self.st.plotly_chart.assert_not_called()
 
 
 if __name__ == "__main__":
