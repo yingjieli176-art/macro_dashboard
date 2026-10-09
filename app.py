@@ -1,5 +1,6 @@
 import html
 from collections.abc import Mapping
+from copy import deepcopy
 import json
 import logging
 import os
@@ -50,7 +51,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-09-render-recovery-r27"
+CHART_BUILD = "2026-10-09-sticky-y-r28"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2007,6 +2008,63 @@ def _prepare_chart_for_client_ranges(fig, element_key, mode=None):
 
 
 
+
+def _recoverable_echarts_option(fig, element_key, date_range, mode=None):
+    """Retain a last-good *full-history* client chart across Streamlit reruns.
+
+    The dashboard rebuilds figures periodically. A transient converter/data
+    failure must not silently replace a working, self-rescaling ECharts chart
+    with Plotly's fixed five-year Y axis. Cached data stays marked stale.
+    """
+    cache_key = f"_echarts_last_good_{element_key}_{mode or 'default'}"
+    builder = getattr(_echarts_axes, "build_adaptive_echarts_option", None)
+    option = None
+    if callable(builder):
+        try:
+            option = builder(fig, date_range)
+        except Exception:
+            logging.exception("ECharts conversion failed for %s (%s)", element_key, date_range)
+
+    state = getattr(st, "session_state", None)
+    if isinstance(option, dict) and option.get("series"):
+        if state is not None:
+            state[cache_key] = deepcopy(option)
+        return option, False
+
+    previous = state.get(cache_key) if state is not None else None
+    if not isinstance(previous, dict) or not previous.get("series"):
+        return None, False
+
+    # Every ECharts option includes all historic observations: only the
+    # requested viewport changes between 5Y/1Y/6M/3M/1M.
+    recovered = deepcopy(previous)
+    try:
+        zooms = recovered["dataZoom"]
+        latest = pd.Timestamp(zooms[0]["endValue"])
+        if pd.isna(latest):
+            return None, False
+        offset = RANGE_OFFSETS.get(date_range, RANGE_OFFSETS["1Y"])
+        first = (latest - offset).isoformat()
+        for zoom in zooms:
+            zoom["startValue"] = first
+            zoom["endValue"] = latest.isoformat()
+    except (KeyError, IndexError, TypeError, ValueError, OverflowError):
+        logging.exception("Invalid cached ECharts viewport for %s", element_key)
+        return None, False
+    return recovered, True
+
+
+def _viewport_scaled_plotly_fallback(base_fig, date_range):
+    """Fallback stays interactive and updates both X/Y, not full-history Y."""
+    copy = go.Figure(base_fig)
+    if callable(apply_client_time_controls):
+        return apply_client_time_controls(copy, default_range=date_range)
+    if callable(apply_server_time_window):
+        return apply_server_time_window(copy, date_range)
+    return apply_time_axis(copy, date_range)
+
+
+
 def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
     """Use viewport-filtered ECharts for every macro chart, not only US 1-4.
 
@@ -2014,12 +2072,13 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
     arbitrary drag/slider zoom. ECharts filters visible data client-side and
     rescales every independent Y axis when the X viewport changes.
     """
-    adapter = getattr(_echarts_axes, "build_adaptive_echarts_option", None)
     renderer = getattr(st, "echarts_chart", None)
-    if callable(adapter) and callable(renderer):
-        try:
-            option = adapter(base_fig, DEFAULT_CHART_RANGE)
-            if option is not None:
+    if callable(renderer):
+        option, reused = _recoverable_echarts_option(
+            base_fig, element_key, DEFAULT_CHART_RANGE, mode
+        )
+        if option is not None:
+            try:
                 renderer(
                     option,
                     height=465,
@@ -2027,15 +2086,16 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
                     key=f"{element_key}_adaptive_{mode or 'default'}",
                     theme=None,
                 )
+                if reused:
+                    st.caption("动态 Y 轴已保留上次有效数据；数据更新暂不可用。")
                 return
-        except Exception:
-            logging.exception("Adaptive chart %s failed; switching to Plotly", element_key)
+            except Exception:
+                logging.exception("Adaptive chart %s renderer failed", element_key)
 
-    # A bad option or a temporary Cloud renderer mismatch must never break
-    # the whole dashboard. Each chart falls back independently.
-    st.warning("动态 Y 轴图表暂不可用，已自动切换兼容图表。")
+    # Per-chart fail-open fallback, with independent viewport-aware Y buttons.
+    st.warning("动态 Y 轴暂不可用，已切换可同时调整 X/Y 的兼容图表。")
     try:
-        fallback = _prepare_chart_for_client_ranges(base_fig, element_key, mode)
+        fallback = _viewport_scaled_plotly_fallback(base_fig, DEFAULT_CHART_RANGE)
         st.plotly_chart(
             fallback,
             key=f"{element_key}_plotly_fallback_{mode or 'default'}",
@@ -2064,16 +2124,11 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     # All standard US macro charts (1–4), not just chart 1, must use the
     # same viewport-filtered engine. A Plotly fallback silently reintroduces
     # the fixed five-year zero-based axes, so never render it here.
-    builder = getattr(_echarts_axes, "build_adaptive_echarts_option", None)
-    if builder is None or not callable(getattr(st, "echarts_chart", None)):
+    if not callable(getattr(st, "echarts_chart", None)):
         # Fail open: even a stale/missing optional chart adapter cannot prevent
         # the market overview, charts and news from loading.
         st.warning("ECharts 模块尚未同步，临时显示可缩放的 Plotly 图表。")
-        if callable(apply_server_time_window):
-            fallback = apply_server_time_window(base_fig, selected_range)
-        else:
-            fallback = apply_time_axis(base_fig, selected_range)
-            fallback.update_yaxes(autorange=True, fixedrange=False, rangemode="normal")
+        fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
         st.plotly_chart(
             fallback, key=f"{range_key}_plotly_fallback_{selected_range}",
             use_container_width=True, config=PLOTLY_CONFIG,
@@ -2082,17 +2137,12 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         add_sources(sources)
         st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
         return
-    try:
-        native_option = builder(base_fig, selected_range)
-    except Exception:
-        logging.exception("ECharts option build failed for %s", range_key)
-        native_option = None
+    native_option, reused = _recoverable_echarts_option(
+        base_fig, range_key, selected_range
+    )
     if native_option is None:
-        st.warning("当前图表无可用的动态视图，已尝试兼容显示。")
-        if callable(apply_server_time_window):
-            fallback = apply_server_time_window(base_fig, selected_range)
-        else:
-            fallback = base_fig
+        st.warning("动态图表与缓存均不可用，已使用可同时调整 X/Y 的兼容图表。")
+        fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
         try:
             st.plotly_chart(
                 fallback, key=f"{range_key}_plotly_recovery_{selected_range}",
@@ -2106,6 +2156,8 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
         st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
         return
     st.caption("动态Y轴：时间切换、底部滑块及框选时按可见样本自适应（左右轴分别计算）。")
+    if reused:
+        st.caption("当前沿用上次正常加载的动态曲线，数据可能未更新；Y 轴缩放仍可使用。")
     # Extra diagnostics are optional: version skew must not break the charts.
     if st.query_params.get("debug_chart") == "1":
         bounds_helper = getattr(_echarts_axes, "expected_viewport_y_bounds", None)
@@ -2142,10 +2194,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     except Exception:
         logging.exception("ECharts renderer failed for %s", range_key)
         st.warning("图表渲染异常，已改用兼容显示。")
-        if callable(apply_server_time_window):
-            fallback = apply_server_time_window(base_fig, selected_range)
-        else:
-            fallback = base_fig
+        fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
         try:
             st.plotly_chart(
                 fallback, key=f"{range_key}_renderer_recovery_{selected_range}",

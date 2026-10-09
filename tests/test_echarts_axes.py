@@ -57,7 +57,7 @@ class EchartsNativeAxes(unittest.TestCase):
         # The legacy Plotly call is now an intentional fail-open fallback when
         # Streamlit Cloud deploys app.py before its optional chart adapter.
         self.assertIn("plotly_chart", calls)
-        self.assertIn('builder is None', ast.get_source_segment(source, renderer))
+        self.assertIn('_recoverable_echarts_option', ast.get_source_segment(source, renderer))
         self.assertNotIn('range_key == "normal_corridor_range"', ast.get_source_segment(source, renderer))
         for chart_no in range(1, 5):
             chart_name = f"render_macro_chart_{chart_no}"
