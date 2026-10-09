@@ -10,6 +10,10 @@ import pandas as pd
 import requests
 import streamlit as st
 
+from macro_platform.treasury_cash import parse_dts_tga_rows, read_verified_tga_snapshot
+
+TGA_SNAPSHOT_PATH = Path(__file__).resolve().parent / 'data_snapshots' / 'treasury_tga_daily.json'
+
 FRED_API_URL = "https://api.stlouisfed.org/fred/series/observations"
 try:
     FRED_API_KEY = st.secrets.get("FRED_API_KEY", "")
@@ -278,13 +282,20 @@ def get_wtre_gen(): return _fred_series("WTREGEN")
 
 @st.cache_data(ttl=3600)
 def get_tga_daily():
-    """Daily Treasury General Account balance from the U.S. Treasury DTS.
+    """Official daily U.S. Treasury TGA close (USD trillions).
 
-    The DTS schema has changed account labels/fields over time. Prefer the TGA
-    closing-balance row, then Total Operating Balance. ONLY the closing balance
-    is used: an opening balance is a different time-of-day measure. If unavailable,
-    fall back to the weekly Federal Reserve WTREGEN series.
+    Important 2022-04-18 schema change: the *TGA Closing Balance* account
+    row puts the close in open_today_bal. This is NOT permission to use
+    arbitrary account opening balances. Both the online fetch and offline
+    source snapshot share the same label-aware parser.
     """
+    snapshot = read_verified_tga_snapshot(TGA_SNAPSHOT_PATH)
+    # The GitHub Actions job ships original official published records so
+    # Streamlit cold starts never have to block on a remote FiscalData API.
+    # A snapshot produced within 72 hours can be used without a network call.
+    if not snapshot.empty and not snapshot.attrs.get("is_stale", True):
+        return snapshot
+
     url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/dts/operating_cash_balance"
     cutoff = (pd.Timestamp.today().normalize() - pd.DateOffset(years=5, months=1)).strftime("%Y-%m-%d")
     try:
@@ -292,9 +303,8 @@ def get_tga_daily():
             url,
             params={
                 "filter": f"record_date:gte:{cutoff}",
-                # Descending is essential: with a 5-year search, ascending
-                # + 10000-row first page can silently stop in 2022, making
-                # TGA *look* freshly queried but contain no recent readings.
+                # Fetch newest records first, rather than a truncated 2022
+                # first-page sample from an ascending multi-year request.
                 "sort": "-record_date",
                 "fields": "record_date,account_type,close_today_bal,open_today_bal",
                 "page[size]": 10000,
@@ -305,50 +315,32 @@ def get_tga_daily():
         )
         response.raise_for_status()
         rows = (response.json() or {}).get("data") or []
-        frame = pd.DataFrame(rows)
-        if frame.empty or "record_date" not in frame.columns:
-            raise RuntimeError("Treasury FiscalData returned no TGA rows")
-        frame["observation_date"] = pd.to_datetime(frame["record_date"], errors="coerce")
-        if "account_type" not in frame.columns:
-            frame["account_type"] = ""
-        frame["account_type"] = frame["account_type"].astype(str)
-        for col in ("close_today_bal", "open_today_bal"):
-            if col not in frame.columns:
-                frame[col] = pd.NA
-            frame[col] = pd.to_numeric(frame[col], errors="coerce")
-        frame["_value"] = frame["close_today_bal"]
-        frame = frame.dropna(subset=["observation_date", "_value"])
-        if frame.empty:
-            raise RuntimeError("Treasury FiscalData returned no numeric TGA balances")
-
-        def _priority(label):
-            text = str(label).lower()
-            if "treasury general account" in text and "closing" in text:
-                return 0
-            if "total operating balance" in text:
-                return 1
-            if "treasury general account" in text:
-                return 2
-            if "federal reserve account" in text:
-                return 3
-            return 9
-
-        frame["_priority"] = frame["account_type"].map(_priority)
-        frame = frame[frame["_priority"] < 9].sort_values(["observation_date", "_priority"])
-        frame = frame.drop_duplicates("observation_date", keep="first")
-        if frame.empty:
-            raise RuntimeError("Treasury FiscalData TGA account labels were not recognized")
-        # DTS balances are USD millions; dashboard chart uses USD trillions.
-        frame["TGA_DAILY"] = frame["_value"] / 1_000_000.0
-        result = frame[["observation_date", "TGA_DAILY"]].sort_values("observation_date")
-        result.attrs.update({"source": "U.S. Treasury Daily Treasury Statement", "frequency": "daily", "is_fallback": False})
-        return result
+        actual = parse_dts_tga_rows(rows)
+        if actual.empty:
+            raise RuntimeError("Treasury FiscalData has no recognizable TGA closing-balance observations")
+        actual.attrs["is_stale"] = (
+            actual["observation_date"].max() <
+            pd.Timestamp.today().normalize() - pd.Timedelta(days=10)
+        )
+        if snapshot.empty or actual["observation_date"].max() >= snapshot["observation_date"].max():
+            return actual
     except Exception:
-        weekly = _fred_series("WTREGEN").copy()
-        weekly["TGA_DAILY"] = pd.to_numeric(weekly["WTREGEN"], errors="coerce") / 1_000_000.0
-        result = weekly[["observation_date", "TGA_DAILY"]].dropna().sort_values("observation_date")
-        result.attrs.update({"source": "FRED WTREGEN", "frequency": "weekly", "is_fallback": True})
-        return result
+        # Preserved official observations, even if old, are preferable to
+        # fabricated values. Existing visual freshness badges use real dates.
+        pass
+    if not snapshot.empty:
+        return snapshot
+    weekly = _fred_series("WTREGEN").copy()
+    weekly["TGA_DAILY"] = pd.to_numeric(weekly["WTREGEN"], errors="coerce") / 1_000_000.0
+    result = weekly[["observation_date", "TGA_DAILY"]].dropna().sort_values("observation_date")
+    result.attrs.update({"source": "FRED WTREGEN", "frequency": "weekly",
+                         "is_fallback": True,
+                         "is_stale": bool(result.empty or (
+                             result["observation_date"].max() <
+                             pd.Timestamp.today().normalize() - pd.Timedelta(days=10)
+                         ))})
+    return result
+
 @st.cache_data(ttl=3600)
 def get_rrp_daily(): return _fred_series("RRPONTSYD")
 
