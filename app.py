@@ -38,7 +38,7 @@ from macro_platform.us_equity_risk import load_vixeq_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_asia_rates_figure
 from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
-from data import (fetch_eastmoney_news, get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_walcl, get_wresbal, get_wtre_gen, get_tga_daily, get_rrp_daily, _fred_series)
+from data import (fetch_eastmoney_news, get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_dfii5, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_walcl, get_wresbal, get_wtre_gen, get_tga_daily, get_rrp_daily, _fred_series)
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
 
@@ -51,7 +51,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-09-axis-audit-r29"
+CHART_BUILD = "2026-10-09-us-dfii5-r30"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1539,17 +1539,44 @@ def build_fig1(date_range):
     fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 def build_fig2(date_range):
-    data = get_dgs10().merge(get_dfii10(), on="observation_date", how="outer").merge(get_fred_series("T10YIE"), on="observation_date", how="outer").sort_values("observation_date")
-    for column in ("DGS10", "DFII10", "T10YIE"):
+    """10Y Treasury yield structure plus observed 5Y TIPS real yield.
+
+    DFII5 is the Federal Reserve's *observed* 5Y inflation-indexed
+    constant-maturity yield, not DGS5 minus an inferred inflation rate.
+    Missing DFII5 observations must remain missing, not interpolated.
+    """
+    data = (
+        get_dgs10()
+        .merge(get_dfii10(), on="observation_date", how="outer")
+        .merge(get_dfii5(), on="observation_date", how="outer")
+        .merge(get_fred_series("T10YIE"), on="observation_date", how="outer")
+        .sort_values("observation_date")
+    )
+    for column in ("DGS10", "DFII10", "DFII5", "T10YIE"):
         data[column] = pd.to_numeric(data.get(column), errors="coerce")
-    # Treasury identity: Nominal ≈ Real + Breakeven. Preserve observed values
-    # first and synthesize only a missing leg when the other two are present.
+    # Existing 10Y identity fallback: do not synthesize or backfill DFII5.
     data["DGS10"] = data["DGS10"].combine_first(data["DFII10"] + data["T10YIE"])
     data["DFII10"] = data["DFII10"].combine_first(data["DGS10"] - data["T10YIE"])
     data["T10YIE"] = data["T10YIE"].combine_first(data["DGS10"] - data["DFII10"])
-    data = filter_range(data, date_range); fig = go.Figure()
-    for column, name, width, dash, yaxis in [("DGS10", "10Y Nominal", 2.8, None, None), ("DFII10", "10Y Real (R1)", 2.6, None, "y2"), ("T10YIE", "10Y Breakeven (R1)", 2.5, "dot", "y2")]: add_line(fig, data, column, name, width, dash, yaxis)
-    fig.update_layout(yaxis_title="Nominal Yield (%)", yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, zeroline=False, fixedrange=True, automargin=False, tickfont=dict(size=9), ticks="outside", ticklen=3)); return apply_chart_style(fig, chart_height(310, 420), date_range)
+    data = filter_range(data, date_range)
+    fig = go.Figure()
+    for column, name, width, dash, yaxis in [
+        ("DGS10", "10Y Nominal", 2.8, None, None),
+        ("DFII10", "10Y Real (R1)", 2.6, None, "y2"),
+        ("DFII5", "5Y Real · TIPS (R1)", 2.6, "dash", "y2"),
+        ("T10YIE", "10Y Breakeven (R1)", 2.5, "dot", "y2"),
+    ]:
+        add_line(fig, data, column, name, width, dash, yaxis)
+    fig.update_layout(
+        yaxis_title="Nominal Yield (%)",
+        yaxis2=dict(
+            title="Real yield / breakeven (%)", overlaying="y", side="right",
+            anchor="free", position=0.99, showgrid=False, zeroline=False,
+            fixedrange=True, automargin=False, tickfont=dict(size=9),
+            ticks="outside", ticklen=3,
+        ),
+    )
+    return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 def build_fig4(date_range):
     """US liquidity chart with separate scales for unlike balance magnitudes.
@@ -1962,7 +1989,7 @@ CRYPTO_MARKET_DESCRIPTION = (
 
 PARAM_DESCRIPTIONS = [
     '<b>读取提示：</b>IORB / ON RRP 是美联储工具利率；EFFR / SOFR 分别反映无担保与国债抵押的隔夜资金成本。',
-    '<b>读取提示：</b>名义收益率≈实际收益率＋盈亏平衡通胀率；后者反映市场隐含的长期通胀预期。',
+    '<b>读取提示：</b>美国 5Y Real（DFII5）与 10Y Real（DFII10）为 TIPS 实际收益率，使用官方原始观测值，均在 R1 右轴；10Y 名义收益率在左轴。10Y Breakeven 为通胀补偿指标，不等同于未来实际通胀。',
     '<b>读取提示：</b>10Y−2Y / 10Y−3M 上升表示曲线变陡，负值表示倒挂；利差单位为百分点。',
     '<b>读取提示：</b>净流动性代理＝美联储资产−TGA−ON RRP。左轴与 R1 为万亿美元，R2 为十亿美元；准备金为周频，TGA 不可用时回退到周频。',
     '<b>读取提示：</b>M2 / M3 同比看货币趋势，总结余与 HIBOR 看资金松紧；港元接近 7.85 时偏弱。月度数据有公布时滞。',
@@ -2260,13 +2287,14 @@ def render_macro_chart_1(prebuilt_fig=None):
 
 def render_macro_chart_2(prebuilt_fig=None):
     _render_standard_macro_chart(
-        '<div class="section-title">2. 10Y Yield Structure</div>',
-        '<div class="section-description">10Y Nominal / 10Y Real (R1) / 10Y Breakeven (R1)</div>',
+        '<div class="section-title">2. US Treasury Yield Structure · 5Y / 10Y</div>',
+        '<div class="section-description">10Y Nominal / 10Y Real (R1) / 5Y Real TIPS (R1) / 10Y Breakeven (R1)</div>',
         "normal_yield10_range",
         build_fig2,
         [
             ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
             ("10Y Real (DFII10)", "https://fred.stlouisfed.org/series/DFII10"),
+            ("5Y Real TIPS (DFII5)", "https://fred.stlouisfed.org/series/DFII5"),
             ("10Y Breakeven (T10YIE)", "https://fred.stlouisfed.org/series/T10YIE"),
         ],
         1,
