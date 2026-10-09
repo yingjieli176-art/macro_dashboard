@@ -38,7 +38,24 @@ from macro_platform.us_equity_risk import load_vixeq_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_asia_rates_figure
 from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
-from data import (fetch_eastmoney_news, get_dgs3mo, get_dgs2, get_dgs10, get_dfii10, get_dfii5, get_sofr, get_iorb, get_effr, get_rrp_rate, get_sina_news, get_walcl, get_wresbal, get_wtre_gen, get_tga_daily, get_rrp_daily, _fred_series)
+# Keep startup-compatible with older data.py during Streamlit Cloud rolling
+# deployments: optional/newer market getters must never crash the whole page.
+import data as _market_data_module
+from data import (
+    fetch_eastmoney_news, get_dgs3mo, get_dgs2, get_dgs10, get_dfii10,
+    get_sofr, get_iorb, get_effr, get_rrp_rate, get_walcl, get_wresbal,
+    get_wtre_gen, get_tga_daily, get_rrp_daily, _fred_series,
+)
+
+get_dfii5 = getattr(_market_data_module, "get_dfii5", None)
+if not callable(get_dfii5):
+    # The DFII5 series itself predates the feature. Its original FRED loader
+    # is present in the earlier data module and maintains the same data source.
+    # This is not an estimated/synthetic yield.
+    def get_dfii5():
+        return _fred_series("DFII5")
+    logging.warning("Older data.py lacks get_dfii5; using direct FRED DFII5 loader.")
+
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
 
@@ -51,7 +68,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-09-unified-calendar-r33"
+CHART_BUILD = "2026-10-09-import-recovery-r34"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
