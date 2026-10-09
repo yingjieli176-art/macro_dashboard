@@ -169,12 +169,11 @@ def build_copper_flow_spread_figure(date_range: str) -> go.Figure:
     # Keep the suspect value in the original source snapshot for auditability.
     # It is deliberately omitted from the plotted observations.
     if not data.empty:
-        source = copper_snapshot_metadata()
-        notes = []
-        if source.get("source"):
-            notes.append("铜库存原始口径：COCHILCO 日度表；来源值为 0 或负数的日期按缺失处理，不补点。")
-        if notes:
-            fig.update_layout(meta={"data_quality_notes": notes})
+        # This statement is static; avoid rereading 300KB of JSON on each
+        # Streamlit rerun just to compose a source-quality explanation.
+        fig.update_layout(meta={"data_quality_notes": [
+            "COCHILCO 铜库存出现上游 0 或负值时视为缺失；原始快照保留，图表不伪造替代值。"
+        ]})
 
     comex_stock = data.dropna(subset=["comex_stock_t"]).copy() if "comex_stock_t" in data else pd.DataFrame()
     if not comex_stock.empty:
