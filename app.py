@@ -2763,7 +2763,9 @@ def _macro_snapshot_revision():
     """Invalidate constructed figures when a repository snapshot is replaced."""
     folder = Path(__file__).resolve().parent / "data_snapshots"
     revision = []
-    for path in sorted(folder.glob("*.json")):
+    # Include FRED's verified nested last-good cache when a scheduled
+    # GitHub sync replaces observations, not only top-level market JSONs.
+    for path in sorted(folder.rglob("*.json")):
         try:
             stat = path.stat()
         except OSError:
