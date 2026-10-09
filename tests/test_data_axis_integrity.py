@@ -101,8 +101,10 @@ class FinancialChartIntegrity(unittest.TestCase):
             "japan_10y": [2.0, 2.2],
             "japan_10y_2y_pct": [1.0, 1.1],
         })
-        with patch("macro_platform.asia_rates.load_china_gov_yields", return_value=china), \\
-             patch("macro_platform.asia_rates.load_japan_gov_yields", return_value=japan):
+        with (
+            patch("macro_platform.asia_rates.load_china_gov_yields", return_value=china),
+            patch("macro_platform.asia_rates.load_japan_gov_yields", return_value=japan),
+        ):
             fig = build_asia_rates_figure("1M")
         spread = [trace for trace in fig.data if "10Y−2Y" in trace.name]
         self.assertEqual(len(spread), 2)
