@@ -150,7 +150,11 @@ def build_safe_echarts_option(fig, date_range="1Y"):
         "tooltip": {"trigger": "axis"},
         "xAxis": {
             "type": "time",
-            "axisLabel": {"hideOverlap": True},
+            # Plain ECharts string template: no JavaScript functions/objects.
+            "axisLabel": {
+                "hideOverlap": True,
+                "formatter": "{MM}-{dd}" if date_range in ("1M", "3M") else "{yyyy}-{MM}",
+            },
         },
         "yAxis": axes,
         "dataZoom": [
