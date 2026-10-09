@@ -39,6 +39,11 @@ def load_copper_snapshot() -> pd.DataFrame:
         if col not in frame.columns:
             frame[col] = pd.NA
         frame[col] = pd.to_numeric(frame[col], errors="coerce")
+        # An exchange price or *published physical inventory* cannot be
+        # negative. A single isolated "0" after 600k tonnes is an invalid
+        # fixing, not a genuine complete withdrawal of all warehouse stock.
+        # Keep missing as NA: NEVER forward-fill or interpolate the date.
+        frame.loc[frame[col] <= 0, col] = float("nan")
     return (
         frame.dropna(subset=["observation_date"])
         .sort_values("observation_date")
@@ -161,6 +166,14 @@ def build_copper_flow_spread_figure(date_range: str) -> go.Figure:
     """
     data = _slice(load_copper_snapshot(), date_range)
     fig = go.Figure()
+    # Keep the suspect value in the original source snapshot for auditability.
+    # It is deliberately omitted from the plotted observations.
+    if not data.empty:
+        # This statement is static; avoid rereading 300KB of JSON on each
+        # Streamlit rerun just to compose a source-quality explanation.
+        fig.update_layout(meta={"data_quality_notes": [
+            "COCHILCO 铜库存出现上游 0 或负值时视为缺失；原始快照保留，图表不伪造替代值。"
+        ]})
 
     comex_stock = data.dropna(subset=["comex_stock_t"]).copy() if "comex_stock_t" in data else pd.DataFrame()
     if not comex_stock.empty:

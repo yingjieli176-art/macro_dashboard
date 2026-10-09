@@ -208,6 +208,9 @@ def get_dgs10():
             "is_stale": bool(real.attrs.get("is_stale") or breakeven.attrs.get("is_stale")),
             "is_fallback": True,
             "derived_fallback": True,
+            "identity_derived_dates": [
+                d.strftime("%Y-%m-%d") for d in result["observation_date"]
+            ],
         })
         return result
 
@@ -216,11 +219,17 @@ def get_dgs10():
 
     # Prefer observed DGS10 where available; use the identity only to fill gaps.
     combined = direct.merge(derived, on="observation_date", how="outer", suffixes=("_direct", "_derived"))
+    derived_only = combined["DGS10_direct"].isna() & combined["DGS10_derived"].notna()
+    derived_dates = [
+        pd.Timestamp(d).strftime("%Y-%m-%d")
+        for d in combined.loc[derived_only, "observation_date"]
+    ]
     combined["DGS10"] = combined["DGS10_direct"].combine_first(combined["DGS10_derived"])
     result = combined.dropna(subset=["observation_date", "DGS10"])[["observation_date", "DGS10"]]
     result = result.sort_values("observation_date").drop_duplicates("observation_date", keep="last")
     result.attrs = dict(direct.attrs)
-    result.attrs["identity_backfill"] = True
+    result.attrs["identity_backfill"] = bool(derived_dates)
+    result.attrs["identity_derived_dates"] = derived_dates
     return result
 @st.cache_data(ttl=3600)
 def get_dfii5(): return _fred_series("DFII5")
@@ -256,8 +265,8 @@ def get_tga_daily():
     """Daily Treasury General Account balance from the U.S. Treasury DTS.
 
     The DTS schema has changed account labels/fields over time. Prefer the TGA
-    closing-balance row, then Total Operating Balance, and accept the numeric
-    value from close_today_bal or open_today_bal. If FiscalData is unavailable,
+    closing-balance row, then Total Operating Balance. ONLY the closing balance
+    is used: an opening balance is a different time-of-day measure. If unavailable,
     fall back to the weekly Federal Reserve WTREGEN series.
     """
     url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/dts/operating_cash_balance"
@@ -287,7 +296,7 @@ def get_tga_daily():
             if col not in frame.columns:
                 frame[col] = pd.NA
             frame[col] = pd.to_numeric(frame[col], errors="coerce")
-        frame["_value"] = frame["close_today_bal"].combine_first(frame["open_today_bal"])
+        frame["_value"] = frame["close_today_bal"]
         frame = frame.dropna(subset=["observation_date", "_value"])
         if frame.empty:
             raise RuntimeError("Treasury FiscalData returned no numeric TGA balances")

@@ -136,6 +136,13 @@ def _parse_cochilco_month(year: int, month: int) -> list[dict]:
             continue
         lme_total = _parse_mt(cells[4])
         comex_total = _parse_mt(cells[6])
+        # COCHILCO 2026-07-07 prints zero despite ~607k t the preceding
+        # day and ~612k t the next day. Treat nonpositive inventory as a
+        # missing/unverified fixing, never a physical zero.
+        if comex_total is not None and comex_total <= 0:
+            comex_total = None
+        if lme_total is not None and lme_total <= 0:
+            lme_total = None
         if lme_total is None and comex_total is None:
             continue
         try:
@@ -219,6 +226,7 @@ def _fetch_comex_inventory() -> pd.DataFrame:
     frame["date"] = pd.to_datetime(frame["date"], errors="coerce")
     for col in ("comex_stock_t", "cochilco_lme_stock_t"):
         frame[col] = pd.to_numeric(frame[col], errors="coerce")
+        frame.loc[frame[col] <= 0, col] = float("nan")
     return frame.dropna(subset=["date"]).drop_duplicates("date", keep="last").sort_values("date")
 
 

@@ -17,7 +17,7 @@ def _load_renderers():
     tree = ast.parse(source.read_text(encoding="utf-8"))
     names = {"_render_adaptive_macro_figure", "_render_standard_macro_chart",
              "_recoverable_echarts_option", "_viewport_scaled_plotly_fallback",
-             "_show_macro_plot_health"}
+             "_show_macro_plot_health", "_show_data_quality_notes"}
     functions = [node for node in tree.body
                  if isinstance(node, ast.FunctionDef) and node.name in names]
     ns = {}

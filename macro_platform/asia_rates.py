@@ -95,17 +95,12 @@ def load_china_gov_yields() -> pd.DataFrame:
         }
     )
 
-    # Eastmoney publishes the same-day China 10Y−2Y spread as a separate
-    # percentage-point series.  When the standalone 2Y field is missing but
-    # 10Y and the source spread are present, recover 2Y algebraically:
-    #     2Y = 10Y - (10Y−2Y)
-    # This is not interpolation or smoothing and does not cross dates.
-    reconstructed_2y = out["china_10y"] - source_spread
-    out["china_2y"] = out["china_2y"].combine_first(reconstructed_2y)
+    # The source 2Y yield is an observed statistic. Never synthesize a 2Y
+    # observation from 10Y minus a separately reported curve spread: that
+    # would label a calculated quantity as a primary market fixing.
+    # The spread itself may be quoted by the upstream provider when a leg is
+    # absent; otherwise recompute from the two observed yield legs.
     computed_spread = out["china_10y"] - out["china_2y"]
-    # Prefer the spread calculated from the two yields shown in the same
-    # chart, so no observer sees a spread contradicting its components.
-    # Retain Eastmoney's source spread only when no calculation is possible.
     out["china_10y_2y_pct"] = computed_spread.combine_first(source_spread)
 
     out = (
