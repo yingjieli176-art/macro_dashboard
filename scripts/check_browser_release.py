@@ -46,12 +46,15 @@ def main():
             report["checks"].append({"chart_positions": 13, "painted_native_charts": len(paints),
                                       "missing_positions_are_explicit": True})
             # All five controls exist for every position, including unavailable charts.
+            report["controls"] = groups.all_text_contents()
             for index in range(13):
                 for label in ("5Y", "1Y", "6M", "3M", "1M"):
-                    assert groups.nth(index).get_by_role("button", name=label, exact=True).count() == 1
+                    # React Aria's selected toggle changes its accessible
+                    # name; the visible range label stays stable.
+                    assert groups.nth(index).get_by_text(label, exact=True).count() == 1, (index, label, report["controls"][index])
             # Use a real HK chart to exercise every server range and both market modes.
             for label in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
-                groups.nth(4).get_by_role("button", name=label, exact=True).click()
+                groups.nth(4).get_by_text(label, exact=True).click()
                 page.locator(f".st-key-hk_5_range_adaptive_Raw_{label}").get_by_test_id("stEChartsChart").wait_for(timeout=30000)
                 assert page.get_by_test_id("stEChartsChartError").count() == 0
             for label in ("Rebased 100", "Raw"):
