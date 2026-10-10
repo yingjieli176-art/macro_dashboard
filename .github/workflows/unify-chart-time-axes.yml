@@ -106,12 +106,29 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import ast
+          import pandas as pd
+          import plotly.graph_objects as go
+          from macro_platform.chart_axes import apply_time_axis, YEAR_BAND_SHAPE_NAME
           app = Path('app.py').read_text(encoding='utf-8')
           hk = Path('macro_platform/hk_liquidity.py').read_text(encoding='utf-8')
           axes = Path('macro_platform/chart_axes.py').read_text(encoding='utf-8')
           assert 'apply_time_axis = _chart_axes.apply_time_axis' in app
           assert 'from macro_platform.chart_axes import apply_time_axis' in hk
-          assert 'return apply_time_axis(fig, date_range)' in app
+          # Exercise the real styling functions without booting the whole app.
+          # The caller may add missing-data annotations after applying the axis.
+          names = {'_xaxis_config', '_year_axis_config', 'apply_chart_style'}
+          functions = [node for node in ast.parse(app).body
+                       if isinstance(node, ast.FunctionDef) and node.name in names]
+          assert {node.name for node in functions} == names
+          namespace = {'compact_mode': False, 'apply_time_axis': apply_time_axis}
+          exec(compile(ast.Module(body=functions, type_ignores=[]), 'app.py', 'exec'), namespace)
+          dates = pd.date_range('2025-01-01', '2026-10-09')
+          fig = go.Figure(go.Scatter(x=dates, y=[1.0] * len(dates)))
+          styled = namespace['apply_chart_style'](fig, 430, '1Y')
+          assert styled.layout.xaxis.tickmode == 'array'
+          assert styled.layout.xaxis2.visible is False
+          assert any(shape.name == YEAR_BAND_SHAPE_NAME for shape in styled.layout.shapes)
           assert 'return apply_time_axis(fig, date_range)' in hk
           assert 'YEAR_DIVIDER_SHAPE_NAME' in axes
           assert 'tickmode="array"' in axes
