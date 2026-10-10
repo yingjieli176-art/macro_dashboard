@@ -45,8 +45,13 @@ Candidate code build: `2026-10-10-release-acceptance-r41`. The PR records the
 exact candidate SHA and merged main parent. Check the actual Cloud branch,
 deployed SHA, build label, dependency versions and logs; an HTTP 200 alone is
 insufficient. No preproduction Cloud URL or usable owner dashboard session was
-available. A direct browser connection to the existing production URL timed
-out in this environment, so Cloud interaction remains **UNVERIFIED**.
+available. On 2026-10-10 the existing production URL became reachable in the
+browser. Its visible build is `2026-10-09-tga-close-recovery-r38`, not the r41
+candidate. It showed all 13 native chart positions with no exception/renderer
+error and visible observation dates, including US yields and liquidity. This
+is old-deployment evidence: it neither proves r41 deployed nor establishes the
+provenance/completeness of the candidate's missing offline FRED backups. r41
+Cloud interaction remains **UNVERIFIED**.
 
 Recorded pre-r41 main candidate for rollback:
 `52e0b5d2c36e1be577b43afcf962878292b1c926`. This is a repository restoration
@@ -55,6 +60,24 @@ including code, requirements and source snapshots. Restore that exact complete
 tree, install its dependencies, restart the app/clear process caches, and repeat
 the browser/data gates. Restoring `app.py` alone is insufficient. A rollback
 exercise in the actual preproduction environment remains outstanding.
+
+The read-only `rollback-restoration` CI job restores that complete recorded Git
+tree into a separate checkout, installs its own requirements in a fresh runner,
+starts a fresh process and tests real snapshot canvas rendering in Chromium.
+It records the restored SHA, code/requirements/snapshot checksums and installed
+dependencies. This proves isolated restoration only; a historical unpinned
+dependency range cannot reproduce an unknown former Cloud environment exactly.
+Missing data in the restored tree still blocks full-data release.
+
+Expanded Chromium candidate checks use real mouse drags for the native slider
+and toolbox box selection. A CI-only React hook bridge finds the existing
+instance in the pinned Streamlit component; ECharts processed samples and actual
+axis extents are then inspected. No chart, bundle or data is replaced by the
+probe, and a framework mismatch fails the test. Two isolated browser contexts
+exercise independent range/mode settings and both manual quote refresh buttons.
+These are CI interaction checks, not a Cloud resource or performance result.
+The server sampling job also records Linux RSS where readable; peak RSS alone
+cannot establish memory convergence.
 
 ## Remaining target-environment checks
 

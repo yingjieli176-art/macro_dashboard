@@ -11,6 +11,8 @@ on:
       - tests/test_release_acceptance.py
       - tests/browser_offline_app.py
       - scripts/check_browser_release.py
+      - scripts/check_rollback_release.py
+      - scripts/benchmark_runtime.py
       - tests/test_accuracy_performance.py
       - static/deploy_version.json
       - scripts/update_hk_market_daily.py
@@ -55,6 +57,8 @@ on:
       - tests/test_release_acceptance.py
       - tests/browser_offline_app.py
       - scripts/check_browser_release.py
+      - scripts/check_rollback_release.py
+      - scripts/benchmark_runtime.py
       - tests/test_accuracy_performance.py
       - static/deploy_version.json
       - scripts/update_hk_market_daily.py
@@ -163,7 +167,7 @@ jobs:
 
   browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     permissions:
       contents: read
     steps:
@@ -201,6 +205,79 @@ jobs:
             browser_acceptance.json
             browser_acceptance.png
             browser-server.log
+          if-no-files-found: error
+
+  rollback-restoration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: 52e0b5d2c36e1be577b43afcf962878292b1c926
+          path: rollback-target
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore the recorded tree's requirements in a fresh CI process
+        run: |
+          python -m pip install -r rollback-target/requirements.txt playwright
+          python -m pip check
+          python -m pip freeze > rollback-dependencies.txt
+          python -m playwright install --with-deps chromium
+      - name: Reboot and execute restored code with its own source snapshots
+        env:
+          MACRO_ACCEPTANCE_APP_ROOT: ${{ github.workspace }}/rollback-target
+        run: |
+          python -m streamlit run tests/browser_offline_app.py --server.port=8502 --server.headless=true --global.developmentMode=false > rollback-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          python - <<'PY'
+          import time, urllib.request
+          for attempt in range(100):
+              try:
+                  urllib.request.urlopen('http://127.0.0.1:8502/_stcore/health', timeout=1)
+                  break
+              except OSError:
+                  time.sleep(.1)
+          else:
+              raise RuntimeError('Restored tree server did not start')
+          PY
+          python scripts/check_rollback_release.py --root rollback-target --sha 52e0b5d2c36e1be577b43afcf962878292b1c926
+      - name: Preserve restoration evidence and unresolved release gates
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: isolated-rollback-restoration
+          path: |
+            rollback_acceptance.json
+            rollback_acceptance.png
+            rollback-server.log
+            rollback-dependencies.txt
+          if-no-files-found: error
+
+  runtime-samples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install the final candidate's pinned runtime
+        run: python -m pip install -r requirements.txt
+      - name: Collect server timings and settled resources in Linux CI
+        run: python scripts/benchmark_runtime.py --cold 3 --warm 100 --interactions 100
+      - name: Preserve timing samples without claiming Cloud latency
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-runtime-samples
+          path: runtime_benchmark.json
           if-no-files-found: error
 
   raw-history:

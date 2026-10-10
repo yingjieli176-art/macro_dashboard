@@ -210,6 +210,58 @@ class ConsolidatedRuntime(unittest.TestCase):
         finally:
             pool.close()
 
+    def test_repeated_session_bursts_and_release_converge_after_requests_finish(self):
+        # Cache release cannot kill a request already executing. Repeated
+        # sessions must still converge after those requests are allowed to end.
+        from macro_platform import request_runtime as runtime
+        lock = threading.Lock()
+        active = peak = 0
+        for cycle in range(6):
+            entered, release = threading.Event(), threading.Event()
+            prefix = f"audit-session-burst-{cycle}"
+            pool = WorkerPool(12, prefix, max_pending=40)
+            def get(*args, **kwargs):
+                nonlocal active, peak
+                with lock:
+                    active += 1
+                    peak = max(peak, active)
+                    if active == 8:
+                        entered.set()
+                try:
+                    self.assertTrue(release.wait(3))
+                    return requests.Response()
+                finally:
+                    with lock:
+                        active -= 1
+            try:
+                with patch("requests.get", side_effect=get):
+                    futures = {session: pool.submit(session, lambda: http_get("https://example.invalid"))
+                               for session in range(40)}
+                    self.assertTrue(entered.wait(3))
+                    for session, future in futures.items():
+                        self.assertIs(pool.submit(session, lambda: None), future)
+                    self.assertLessEqual(len(pool._pending), 40)
+                    pool.close()
+                    self.assertEqual(active, 8, "Closing the pool must not pretend to kill active HTTP")
+                    release.set()
+                    until(lambda: not pool._pending)
+                    until(lambda: not any(thread.name.startswith(prefix) for thread in threading.enumerate()))
+                    self.assertEqual(active, 0)
+            finally:
+                release.set()
+                pool.close()
+                pool._pool.shutdown(wait=True)
+        self.assertEqual(peak, 8)
+        # No HTTP permits were leaked by completion or cancellation.
+        acquired = 0
+        try:
+            for _ in range(8):
+                self.assertTrue(runtime._HTTP_SLOTS.acquire(timeout=.1))
+                acquired += 1
+        finally:
+            for _ in range(acquired):
+                runtime._HTTP_SLOTS.release()
+
     def test_periodic_worker_stops_before_its_next_update(self):
         called = threading.Event()
         worker = PeriodicWorker(called.set, 3600, "audit-periodic")
