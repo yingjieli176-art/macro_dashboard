@@ -70,7 +70,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-10-hk-base-rate-history-r46"
+CHART_BUILD = "2026-10-10-series-calendars-r47"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1541,8 +1541,20 @@ def build_fig5(date_range):
 
 
 def build_fig1(date_range):
-    data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
-    for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]: add_line(fig, data, column, name, width)
+    sources = {}
+    for getter, column in ((get_iorb, "IORB"), (get_rrp_rate, "RRPONTSYAWARD"),
+                           (get_effr, "EFFR"), (get_sofr, "SOFR")):
+        try:
+            sources[column] = getter()
+        except Exception:
+            sources[column] = pd.DataFrame(columns=["observation_date", column])
+    dates = filter_range(pd.concat(list(sources.values()), ignore_index=True), date_range)["observation_date"]
+    fig = go.Figure()
+    # IORB includes weekends; the other rates use business-day calendars.
+    # Keep each source's actual rows, including any explicit missing reading.
+    for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]:
+        frame = sources[column]
+        add_line(fig, frame.loc[frame["observation_date"].isin(dates)], column, name, width)
     fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 def build_fig2(date_range):
@@ -1728,14 +1740,16 @@ def build_fig3(date_range):
 def build_fig9(date_range):
     """US equity risk: index vol, constituent vol, VIX term spread, and SPX."""
     frames = []
+    sources = {}
     for series_id in ("VIXCLS", "VXVCLS", "SP500"):
         try:
             frame = get_fred_series(series_id).copy()
             frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
             frame[series_id] = pd.to_numeric(frame[series_id], errors="coerce")
-            frame = frame.dropna(subset=["observation_date", series_id])[["observation_date", series_id]]
-            if not frame.empty:
+            frame = frame.dropna(subset=["observation_date"])[["observation_date", series_id]]
+            if frame[series_id].notna().any():
                 frames.append(frame)
+                sources[series_id] = frame
         except Exception:
             continue
 
@@ -1743,6 +1757,7 @@ def build_fig9(date_range):
         vixeq = load_vixeq_snapshot()
         if not vixeq.empty:
             frames.append(vixeq)
+            sources["VIXEQ"] = vixeq
     except Exception:
         pass
 
@@ -1761,10 +1776,20 @@ def build_fig9(date_range):
     data = filter_range(data, date_range)
 
     fig = go.Figure()
-    add_line(fig, data, "VIXCLS", "VIX", 2.7, unit="")
-    add_line(fig, data, "VIXEQ", "VIXEQ", 2.4, "dash", unit="")
-    add_line(fig, data, "SP500", "S&P 500 (R1)", 2.4, None, "y2", unit=" pts")
-    add_line(fig, data, "VIX3M-VIX", "VIX3M−VIX (R2)", 2.0, "dot", "y3", unit=" pts")
+    for column, name, width, dash, axis, unit in (
+        ("VIXCLS", "VIX", 2.7, None, None, ""),
+        ("VIXEQ", "VIXEQ", 2.4, "dash", None, ""),
+        ("SP500", "S&P 500 (R1)", 2.4, None, "y2", " pts"),
+    ):
+        source = sources.get(column, pd.DataFrame(columns=["observation_date"]))
+        add_line(fig, data.loc[data["observation_date"].isin(source["observation_date"])],
+                 column, name, width, dash, axis, unit)
+    # A spread requires both volatility legs. Other markets' dates must not
+    # introduce breaks, while a missing leg on its own calendar still must.
+    vol_dates = pd.concat([sources[c]["observation_date"] for c in ("VIXCLS", "VXVCLS")
+                           if c in sources], ignore_index=True) if any(
+                               c in sources for c in ("VIXCLS", "VXVCLS")) else []
+    add_line(fig, data.loc[data["observation_date"].isin(vol_dates)], "VIX3M-VIX", "VIX3M−VIX (R2)", 2.0, "dot", "y3", unit=" pts")
 
     fig.update_layout(
         yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.925),
@@ -1862,10 +1887,18 @@ def build_fig10(date_range):
 
     fig = go.Figure()
 
-    add_line(fig, data, "Gold", "Gold", 2.8, unit=" USD/oz")
-    add_line(fig, data, "Silver", "Silver (R1)", 2.5, None, "y2", " USD/oz")
-    add_line(fig, data, "GoldSilverRatio", "Gold/Silver Ratio (R2)", 2.2, "dash", "y3", "x")
-    add_line(fig, data, "GVZCLS", "Gold Volatility · GVZ (R3)", 2.2, "dot", "y4", "")
+    for column, name, width, dash, axis, unit in (
+        ("Gold", "Gold", 2.8, None, None, " USD/oz"),
+        ("Silver", "Silver (R1)", 2.5, None, "y2", " USD/oz"),
+        ("GVZCLS", "Gold Volatility · GVZ (R3)", 2.2, "dot", "y4", ""),
+    ):
+        source_dates = [date for frame in frames if column in frame
+                        for date in frame["observation_date"]]
+        add_line(fig, data.loc[data["observation_date"].isin(source_dates)],
+                 column, name, width, dash, axis, unit)
+    price_dates = [date for frame in frames if "Gold" in frame or "Silver" in frame
+                   for date in frame["observation_date"]]
+    add_line(fig, data.loc[data["observation_date"].isin(price_dates)], "GoldSilverRatio", "Gold/Silver Ratio (R2)", 2.2, "dash", "y3", "x")
     fig.update_layout(
         yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86),
         yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.93),
@@ -1892,6 +1925,13 @@ def build_fig11(date_range):
         try:
             frame = histories[symbol].rename(columns={"close": column})
             if not frame.empty:
+                if column == "BTC":
+                    # ETH-only rows must not change BTC returns or the number
+                    # of BTC observations in a thirty-observation window.
+                    btc_returns = pd.to_numeric(frame["BTC"], errors="coerce").pct_change(fill_method=None)
+                    frame["BTC_VOL_30D"] = btc_returns.rolling(30, min_periods=20).std() * (365.0 ** 0.5) * 100.0
+                    frames.append(frame[["observation_date", "BTC", "BTC_VOL_30D"]])
+                    continue
                 frames.append(frame[["observation_date", column]])
         except Exception:
             pass
@@ -1908,18 +1948,20 @@ def build_fig11(date_range):
         btc = pd.to_numeric(data["BTC"], errors="coerce")
         eth = pd.to_numeric(data["ETH"], errors="coerce")
         data["ETHBTC"] = eth.where(btc > 0) / btc.where(btc > 0)
-    if "BTC" in data.columns:
-        btc_returns = pd.to_numeric(data["BTC"], errors="coerce").pct_change(fill_method=None)
-        data["BTC_VOL_30D"] = btc_returns.rolling(30, min_periods=20).std() * (365.0 ** 0.5) * 100.0
-
     data = filter_range(data, date_range)
     fig = go.Figure()
 
 
-    add_line(fig, data, "BTC", "BTC · USD", 2.9, unit=" USD")
-    add_line(fig, data, "ETH", "ETH · USD · R1", 2.6, None, "y2", " USD")
+    for column, name, width, dash, axis, unit in (
+        ("BTC", "BTC · USD", 2.9, None, None, " USD"),
+        ("ETH", "ETH · USD · R1", 2.6, None, "y2", " USD"),
+        ("BTC_VOL_30D", "BTC 30D 实际波动率 · R3", 2.2, "dot", "y4", "%"),
+    ):
+        source_dates = [date for frame in frames if column in frame
+                        for date in frame["observation_date"]]
+        add_line(fig, data.loc[data["observation_date"].isin(source_dates)],
+                 column, name, width, dash, axis, unit)
     add_line(fig, data, "ETHBTC", "ETH/BTC 强弱 · R2", 2.2, "dash", "y3", "")
-    add_line(fig, data, "BTC_VOL_30D", "BTC 30D 实际波动率 · R3", 2.2, "dot", "y4", "%")
     fig.update_layout(
         yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86),
         yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.93),

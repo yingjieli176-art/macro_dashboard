@@ -27,6 +27,7 @@ on:
       - tests/test_echarts_axes.py
       - tests/test_chart_render_safety.py
       - tests/test_data_axis_integrity.py
+      - tests/test_series_calendars.py
       - tests/test_truth_source_integrity.py
       - macro_platform/copper.py
       - macro_platform/asia_rates.py
@@ -80,6 +81,7 @@ on:
       - tests/test_echarts_axes.py
       - tests/test_chart_render_safety.py
       - tests/test_data_axis_integrity.py
+      - tests/test_series_calendars.py
       - tests/test_us_five_year_real_yield.py
       - tests/test_refresh_optimizations.py
       - tests/test_dashboard_loading.py

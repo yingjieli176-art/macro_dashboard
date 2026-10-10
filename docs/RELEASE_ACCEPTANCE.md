@@ -1,3 +1,26 @@
+# r47 individual source calendars
+
+Build: `2026-10-10-series-calendars-r47`. Audit all 13 production chart
+descriptions and 245 curve/window combinations from persisted real snapshots.
+In the one-year policy-rate view, union with calendar-day IORB introduced
+115–117 null rows into business-day rates, splitting each into 57 segments.
+VIXEQ and S&P 500 inherited seven unrelated dates and split into eight segments.
+Preserve original source dates/values instead; each of these curves now has
+one segment and the same number of real observations. An unavailable policy
+source no longer removes the other three series.
+
+Apply the same calendar isolation to gold, silver and GVZ. Compute BTC returns
+and thirty-observation volatility before joining ETH, so ETH-only dates cannot
+change BTC's rolling window. Ratios and spreads remain unavailable when a
+required leg is missing. Explicit source nulls still break lines; the three
+all-null historical daily HK funding rows remain intact. No source snapshot,
+refresh schedule or latest-observation retention rule changes.
+
+Four regressions cover actual policy/equity snapshots across all five windows,
+source failure and genuine gaps, differing metals calendars, and ETH-only dates
+in BTC volatility. Production metals/crypto/Asia charts are inspected separately
+because their live feeds are intentionally disabled in the persisted-data audit.
+
 # r46 HKMA Base Rate history
 
 Build: `2026-10-10-hk-base-rate-history-r46`. Chart 7 now preserves official
