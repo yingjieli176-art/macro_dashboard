@@ -183,6 +183,11 @@ def save_snapshot(series_id, payload):
             old = json.loads(target.read_text(encoding="utf-8"))
             if old.get("records") == payload["records"]:
                 return False
+            if snapshot_health(series_id)["status"] != "missing_or_invalid":
+                old_end = max(row["date"] for row in old["records"])
+                new_end = max(row["date"] for row in payload["records"])
+                if pd.Timestamp(new_end) < pd.Timestamp(old_end):
+                    return False
         except (OSError, ValueError):
             pass
     target.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n",
@@ -240,8 +245,9 @@ def main():
             if payload:
                 changed = save_snapshot(sid, payload)
                 (updated if changed else retained).append(sid)
-                print(f"OK {sid}: {len(payload['records'])} real points, "
-                      f"last {payload['coverage_end']} ({'updated' if changed else 'unchanged'})",
+                stored = snapshot_health(sid)
+                print(f"OK {sid}: {stored['rows']} real points, "
+                      f"last {stored['coverage_end']} ({'updated' if changed else 'retained'})",
                       flush=True)
             else:
                 errors.append(sid)

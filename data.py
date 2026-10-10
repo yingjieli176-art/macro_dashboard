@@ -44,6 +44,10 @@ def _save_fred_success(series_id, frame):
     if not rows:
         return
     with _FRED_LOCK:
+        previous = _read_fred_success(series_id)
+        if previous is not None:
+            validate_observations(frame, series_id,
+                                  latest_known_date=previous["observation_date"].max())
         _FRED_SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
         path = _fred_disk_path(series_id)
         temp = path.with_suffix(".json.tmp")
@@ -162,7 +166,8 @@ def _fred_series(series_id):
     # when both copies describe the same successful fetch.
     candidates = [x for x in (memory, disk) if isinstance(x, pd.DataFrame) and not x.empty]
     if candidates:
-        frame = max(candidates, key=fetched_at).copy()
+        frame = max(candidates, key=lambda candidate: (
+            candidate["observation_date"].max(), fetched_at(candidate))).copy()
         age = time.time() - fetched_at(frame)
         if age < 0 or age >= 3600:
             _FRED_REFRESH.submit(series_id, lambda: _refresh_fred_series(series_id))
@@ -188,11 +193,15 @@ def _refresh_fred_series(series_id):
                 saved.attrs = dict(frame.attrs)
                 saved.attrs["fetched_at"] = time.time()
                 with _FRED_LOCK:
+                    for previous in (_FRED_LAST_GOOD.get(series_id), _read_fred_success(series_id)):
+                        if isinstance(previous, pd.DataFrame) and not previous.empty:
+                            validate_observations(saved, series_id,
+                                latest_known_date=previous["observation_date"].max())
+                    try:
+                        _save_fred_success(series_id, saved)
+                    except OSError:
+                        pass
                     _FRED_LAST_GOOD[series_id] = saved
-                try:
-                    _save_fred_success(series_id, saved)
-                except OSError:
-                    pass
                 frame.attrs["fetched_at"] = saved.attrs["fetched_at"]
                 return frame
         except Exception as exc:
@@ -200,8 +209,10 @@ def _refresh_fred_series(series_id):
 
     with _FRED_LOCK:
         previous = _FRED_LAST_GOOD.get(series_id)
-    if previous is None:
-        previous = _read_fred_success(series_id)
+    disk = _read_fred_success(series_id)
+    candidates = [candidate for candidate in (previous, disk)
+                  if isinstance(candidate, pd.DataFrame) and not candidate.empty]
+    previous = max(candidates, key=lambda candidate: candidate["observation_date"].max()) if candidates else None
     if isinstance(previous, pd.DataFrame) and not previous.empty:
         stale = previous.copy()
         stale.attrs = dict(previous.attrs)

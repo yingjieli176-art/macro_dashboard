@@ -8,7 +8,8 @@ RATE_LIMITS = {sid: (-10, 30) for sid in ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR
 
 
 def validate_observations(frame, series_id, *, date_column="observation_date",
-                          value_column=None, now=None, min_rows=1):
+                          value_column=None, now=None, min_rows=1,
+                          latest_known_date=None):
     """Reject invalid observations before publishing or replacing last-good data.
 
     Missing FRED observations (".") are removed by the source parser. This
@@ -24,6 +25,8 @@ def validate_observations(frame, series_id, *, date_column="observation_date",
     today = today.tz_localize("UTC") if today.tzinfo is None else today.tz_convert("UTC")
     if dates.max() > today.normalize():
         raise ValueError(f"{series_id}: observed date in the future")
+    if latest_known_date is not None and dates.max() < pd.to_datetime(latest_known_date, utc=True):
+        raise ValueError(f"{series_id}: older than latest stored observation")
     values = [float(value) for value in frame[value_column]]
     if not all(math.isfinite(value) for value in values):
         raise ValueError(f"{series_id}: invalid/nonfinite source value")

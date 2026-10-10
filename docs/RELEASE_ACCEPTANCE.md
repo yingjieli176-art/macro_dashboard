@@ -1,4 +1,28 @@
-# r43 release acceptance record
+# r44 latest-observation retention
+
+Build: `2026-10-10-latest-observation-r44`. When an upstream response is
+missing, invalid or older than a verified stored observation, keep the stored
+latest value and its original date. Compare coverage before disk or memory
+replacement and prefer the latest observation across both copies. Responses
+with the same latest date may still apply official revisions. Offline sync
+reports the observations actually retained on disk. No forward-filled dates
+or estimated observations are introduced.
+
+Local validation: all 159 regressions pass; `git diff --check` passes.
+
+Two added regressions use actual stored IORB observations to verify older
+successful responses cannot overwrite disk or memory, the API can recover
+after an older CSV response, and same-date revisions remain admissible.
+Current-candidate CI and Cloud acceptance must be evaluated separately from
+the historical evidence below. No main merge or Cloud deployment is performed.
+
+On the preceding r43 SHA, the Actions FRED secret was configured and verified:
+raw-history job `114158542271` fetched 22/23 series, updated FYGFDPUN, retained
+21 unchanged series, and rejected future-dated IORB while preserving its backup.
+Health classified 19 series available and four debt series stale. This verifies
+Actions retrieval only; the Cloud secret configuration remains unverified.
+
+# Historical r43 release acceptance record
 
 This record separates code/CI evidence from acceptance in Streamlit Cloud.
 **Production release is not approved by a green CI result.** No main merge or
