@@ -57,8 +57,13 @@ def chart_state(chart):
             rect.applyTransform(handle.getComputedTransform());
             return {x:rect.x+rect.width/2, y:rect.y+rect.height/2};
         });
+        const toolbox = instance.getViewOfComponentModel(model.getComponent('toolbox'));
+        const icon = toolbox._features.get('dataZoom').model.iconPaths.zoom;
+        const iconRect = icon.getBoundingRect().clone();
+        iconRect.applyTransform(icon.getComputedTransform());
         return {zoom: model.getComponent('dataZoom').getPercentRange(), axes,
                 handles,
+                box_icon: {x:iconRect.x+iconRect.width/2, y:iconRect.y+iconRect.height/2},
                 grid: {x:grid.x, y:grid.y, width:grid.width, height:grid.height},
                 width:instance.getWidth(), height:instance.getHeight()};
     }""")
@@ -98,9 +103,10 @@ def exercise_client_zoom(page, chart):
     slider = chart_state(chart)
     assert slider["zoom"][0] > start+.1, (before, slider)
     assert_visible_axes(slider)
-    # The first native toolbox icon selects an X-only zoom box. Its geometry
-    # follows the unchanged three-icon toolbox in build_adaptive_echarts_option.
-    page.mouse.click(box["x"]+before["width"]-67, box["y"]+8)
+    # Hit the existing zoom feature's real icon, including the native theme's
+    # padding/item gap. Hard-coded guesses can accidentally click restore/back.
+    icon = slider['box_icon']
+    page.mouse.click(box["x"]+icon['x'], box["y"]+icon['y'])
     page.mouse.move(box["x"]+grid["x"]+grid["width"]*.2,
                     box["y"]+grid["y"]+grid["height"]*.25)
     page.mouse.down()
