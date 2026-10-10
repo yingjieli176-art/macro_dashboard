@@ -18,6 +18,8 @@ on:
       - static/deploy_version.json
       - scripts/update_hk_market_daily.py
       - data.py
+      - macro_platform/fred_observations.py
+      - tests/test_fred_observation_admission.py
       - requirements.txt
       - macro_platform/chart_axes.py
       - macro_platform/echarts_axes.py
@@ -66,6 +68,8 @@ on:
       - scripts/update_hk_market_daily.py
       - tests/test_app_import_compat.py
       - data.py
+      - macro_platform/fred_observations.py
+      - tests/test_fred_observation_admission.py
       - macro_platform/copper.py
       - macro_platform/asia_rates.py
       - scripts/update_copper_snapshot.py

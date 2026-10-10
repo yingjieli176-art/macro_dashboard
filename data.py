@@ -11,6 +11,7 @@ import requests
 import streamlit as st
 from macro_platform.background_refresh import BackgroundRefresh
 from macro_platform.request_runtime import http_get, request_budget, observed_cache
+from macro_platform.fred_observations import validate_observations
 
 from macro_platform.treasury_cash import parse_dts_tga_rows, read_verified_tga_snapshot
 
@@ -38,6 +39,7 @@ def _fred_disk_path(series_id):
 
 def _save_fred_success(series_id, frame):
     """Persist only validated nonempty data using an atomic replacement."""
+    validate_observations(frame, series_id)
     rows = [{"date": d.strftime("%Y-%m-%d"), "value": float(v)} for d, v in zip(frame["observation_date"], frame[series_id])]
     if not rows:
         return
@@ -46,7 +48,10 @@ def _save_fred_success(series_id, frame):
         path = _fred_disk_path(series_id)
         temp = path.with_suffix(".json.tmp")
         try:
-            temp.write_text(json.dumps({"series_id": series_id, "fetched_at": time.time(), "records": rows}), encoding="utf-8")
+            payload = {"series_id": series_id,
+                       "fetched_at": frame.attrs.get("fetched_at", time.time()),
+                       "records": rows}
+            temp.write_text(json.dumps(payload), encoding="utf-8")
             os.replace(temp, path)
         finally:
             temp.unlink(missing_ok=True)
@@ -60,6 +65,7 @@ def _read_fred_success(series_id):
         frame = _normalize_fred_frame(rows, series_id)
         if frame.empty:
             return None
+        validate_observations(frame, series_id)
         frame.attrs.update({"source": "FRED persisted last-good", "is_stale": True, "is_fallback": True, "fetched_at": payload.get("fetched_at")})
         return frame
     except (OSError, ValueError, KeyError, TypeError):
@@ -93,6 +99,8 @@ def _fetch_fred_graph(series_id):
     )
     response.raise_for_status()
     frame = pd.read_csv(StringIO(response.text))
+    if series_id not in frame.columns:
+        raise ValueError(f"FRED graph response has no {series_id} series")
     frame = _normalize_fred_frame(frame, series_id)
     if frame.empty:
         raise RuntimeError(f"FRED graph {series_id} 没有返回有效数据。")
@@ -150,7 +158,9 @@ def _fred_series(series_id):
             return value if pd.notna(value) and abs(value) != float("inf") else 0
         except (TypeError, ValueError, OverflowError):
             return 0
-    candidates = [x for x in (disk, memory) if isinstance(x, pd.DataFrame) and not x.empty]
+    # The matching persisted copy is a fallback; prefer the live memory result
+    # when both copies describe the same successful fetch.
+    candidates = [x for x in (memory, disk) if isinstance(x, pd.DataFrame) and not x.empty]
     if candidates:
         frame = max(candidates, key=fetched_at).copy()
         age = time.time() - fetched_at(frame)
@@ -173,6 +183,7 @@ def _refresh_fred_series(series_id):
         try:
             frame = fetcher(series_id)
             if not frame.empty:
+                validate_observations(frame, series_id)
                 saved = frame.copy()
                 saved.attrs = dict(frame.attrs)
                 saved.attrs["fetched_at"] = time.time()

@@ -10,15 +10,16 @@ import concurrent.futures
 from datetime import datetime, timezone
 from io import StringIO
 import json
-import math
 from pathlib import Path
 import os
-import re
 import sys
 import time
 
 import pandas as pd
 import requests
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from macro_platform.fred_observations import validate_observations
 
 OUT = Path("data_snapshots/fred_cache")
 FRED_GRAPH = "https://fred.stlouisfed.org/graph/fredgraph.csv"
@@ -39,8 +40,6 @@ SERIES = (
     "FDHBFRBN", "FDHBFIN", "FDHBPIN",
 )
 CRITICAL = ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR")
-STOCK_LIMITS = {"IORB": (-10, 30), "RRPONTSYAWARD": (-10, 30),
-                "EFFR": (-10, 30), "SOFR": (-10, 30)}
 START = "2020-01-01"
 
 
@@ -54,16 +53,8 @@ def _parse_source(text: str, series_id: str) -> pd.DataFrame:
     }).dropna()
     frame = frame[frame.date >= pd.Timestamp(START)]
     frame = frame.sort_values("date").drop_duplicates("date", keep="last")
-    if len(frame) < 12:
-        raise ValueError(f"{series_id}: too few observed rows: {len(frame)}")
-    if frame.date.max() > pd.Timestamp.now(tz="UTC").tz_localize(None) + pd.Timedelta(days=1):
-        raise ValueError(f"{series_id}: observed date in the future")
-    if not all(math.isfinite(float(v)) for v in frame.value):
-        raise ValueError(f"{series_id}: invalid/nonfinite source value")
-    limits = STOCK_LIMITS.get(series_id)
-    if limits is not None and not frame.value.between(*limits).all():
-        raise ValueError(f"{series_id}: outside plausible rate bounds")
-    return frame
+    return validate_observations(frame, series_id, date_column="date",
+                                 value_column="value", min_rows=12)
 
 
 def _fetch_csv(session, series_id: str) -> pd.DataFrame:
@@ -211,10 +202,8 @@ def snapshot_health(series_id, now=None):
             raise ValueError("too few observations")
         dates = pd.to_datetime([row["date"] for row in records], errors="raise")
         values = [float(row["value"]) for row in records]
-        if not dates.is_unique or not dates.is_monotonic_increasing or not all(math.isfinite(v) for v in values):
-            raise ValueError("invalid dates or values")
-        if dates.max() > now.normalize() + pd.Timedelta(days=1):
-            raise ValueError("future observation")
+        validate_observations(pd.DataFrame({"date": dates, "value": values}), series_id,
+                              date_column="date", value_column="value", now=now, min_rows=12)
         end = dates.max().strftime("%Y-%m-%d")
         if end != payload.get("coverage_end"):
             raise ValueError("coverage end mismatch")

@@ -1,4 +1,4 @@
-# r42 release acceptance record
+# r43 release acceptance record
 
 This record separates code/CI evidence from acceptance in Streamlit Cloud.
 **Production release is not approved by a green CI result.** No main merge or
@@ -25,6 +25,27 @@ Cloud deployment is performed by this change.
    SOFR/HK snapshot samples across cache reads and execute a fresh AppTest
    session against warmed caches. The two-context Chromium assertion remains
    unchanged and must pass before claiming browser session isolation.
+4. Live FRED refreshes admitted tomorrow/future observations, nonfinite values
+   and implausible policy rates that the offline collector rejected. A reproduced
+   live refresh stored a future IORB date and `Infinity` as last-good data. Share
+   observation admission between the collector, live refresh, disk writer and
+   disk reader; reject dates after the current UTC date, nonfinite values and
+   the existing policy-rate bounds. A graph CSV must contain the requested
+   series column; a different series cannot be relabeled as the requested one.
+   Failed admission continues to the API fallback and preserves existing data
+   when all sources fail. Missing points are never filled.
+5. Disk writes stamped a slightly later fetch time than the live memory copy,
+   so the getter selected the persisted fallback and marked a successful live
+   recovery stale. Persist the same fetch timestamp and prefer the live copy on
+   an exact tie. A newer independently updated snapshot still wins by timestamp.
+
+The r43 local suite passes all 157 regressions. New tests use actual stored IORB
+observations to verify invalid-success rejection, byte-for-byte backup retention,
+CSV series identity, API recovery, and source recovery through a warmed getter
+without clearing caches. The current build is `2026-10-10-fred-admission-r43`.
+The r42 CI/browser/performance results below apply to `037283a`, not this new
+candidate; r43 needs its own CI and all remaining Cloud checks. No new upstream
+availability or Cloud deployment is claimed by these admission fixes.
 
 The full-page smoke now asserts native ECharts messages with observed samples,
 dataZoom filtering and independent scaled axes, with no Plotly substitution.
@@ -107,7 +128,7 @@ All Cloud deployment/rollback gates remain outstanding.
 
 ## Deployment and rollback
 
-Candidate code build: `2026-10-10-cache-isolation-r42`. The PR records the
+Candidate code build: `2026-10-10-fred-admission-r43`. The PR records the
 exact candidate SHA and merged main parent. Check the actual Cloud branch,
 deployed SHA, build label, dependency versions and logs; an HTTP 200 alone is
 insufficient. No preproduction Cloud URL or usable owner dashboard session was

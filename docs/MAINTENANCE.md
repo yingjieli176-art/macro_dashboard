@@ -1,6 +1,6 @@
 # Macro Dashboard: maintenance and safe optimization plan
 
-> Current build: `2026-10-10-cache-isolation-r42`. This document is
+> Current build: `2026-10-10-fred-admission-r43`. This document is
 > for maintainers. Do **not** treat a green CI build as proof that Streamlit
 > Cloud has deployed it; check the chart build label and Cloud logs separately.
 
@@ -141,3 +141,13 @@ and the complete test suite. Actions collects every available FRED series with i
 actual coverage and failure status; failed downloads cannot manufacture observations
 or overwrite last-good values. A green test run is not evidence that all data sources
 are current or that a particular user's network route is available.
+
+## FRED observation admission (r43)
+
+Live refreshes and offline collectors share `macro_platform/fred_observations.py`.
+They reject future UTC observation dates, nonfinite values and implausible policy
+rates before replacing backups; live CSV responses must identify the requested
+series. Disk readers apply the same checks. Invalid responses preserve last-good
+observations and continue to the next source. Missing points remain missing.
+Live memory and its persisted copy share a fetch timestamp; the live copy wins
+an exact tie so a successful recovery is not mislabeled as a stale disk fallback.

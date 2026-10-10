@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - scripts/sync_fred_verified_cache.py
+      - macro_platform/fred_observations.py
       - .github/workflows/sync-fred-verified-cache.yml
 
 permissions:

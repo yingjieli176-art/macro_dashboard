@@ -24,6 +24,7 @@ def isolated_fred_reader(ns):
     for func in funcs:
         func.decorator_list = []
     ns.setdefault("_FRED_REFRESH", Mock())
+    ns.setdefault("validate_observations", data.validate_observations)
     ns.setdefault("_fred_disk_path", data._fred_disk_path)
     ns.setdefault("_cached_fred_snapshot", lambda sid, revision: ns["_read_fred_success"](sid))
     exec(compile(ast.Module(body=funcs, type_ignores=[]), "data.py", "exec"), ns)
