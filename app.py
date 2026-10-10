@@ -7,10 +7,11 @@ import math
 import os
 import time
 import uuid
-from macro_platform.request_runtime import http_get, submit_jobs, completed_jobs, PeriodicWorker, observed_cache
+from macro_platform.request_runtime import http_get, submit_jobs, completed_jobs, PeriodicWorker, observed_cache, IncompleteObservedBundle
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from urllib.parse import quote
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -69,7 +70,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-10-consolidated-runtime-r40"
+CHART_BUILD = "2026-10-10-release-acceptance-r41"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1803,7 +1804,7 @@ def build_fig9(date_range):
 @observed_cache()
 def get_yahoo_daily_history(symbol):
     """Fetch five years of completed daily closes from Yahoo chart API."""
-    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{requests.utils.quote(symbol, safe='')}"
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{quote(symbol, safe='')}"
     response = http_get(
         url,
         params={"range": "5y", "interval": "1d", "includePrePost": "false", "events": "div,splits"},
@@ -2709,6 +2710,8 @@ def _cached_hk_common(snapshot_revision, build_revision):
     figures = build_fig5("5Y", market_mode="Raw")
     if not isinstance(figures, (list, tuple)) or len(figures) < 4 or not any(_figure_has_real_observations(f) for f in figures):
         raise ValueError("HK figure bundle unavailable")
+    if not all(_figure_has_real_observations(figure) for figure in figures):
+        raise IncompleteObservedBundle(figures)
     return list(figures)
 
 
@@ -2717,12 +2720,25 @@ def _cached_hk_bundle(market_mode, snapshot_revision, build_revision):
     common = _cached_hk_common(snapshot_revision, build_revision)
     if market_mode == "Raw":
         return common
-    return build_fig5("5Y", market_mode=market_mode, shared_figures=(common[1], common[2]))
+    figures = build_fig5("5Y", market_mode=market_mode, shared_figures=(common[1], common[2]))
+    if not all(_figure_has_real_observations(figure) for figure in figures):
+        raise IncompleteObservedBundle(figures)
+    return figures
 
 
 def _safe_hk_bundle(market_mode, snapshot_revision):
     try:
         figures = _cached_hk_bundle(market_mode, snapshot_revision, CHART_BUILD)
+    except IncompleteObservedBundle as partial:
+        figures = partial.figures
+        if market_mode != "Raw":
+            try:
+                figures = build_fig5("5Y", market_mode=market_mode,
+                                     shared_figures=(figures[1], figures[2]))
+            except Exception:
+                logging.exception("Partial HK market-mode conversion failed")
+                figures = [_macro_error_figure("Chart 5"), figures[1], figures[2],
+                           _macro_error_figure("Chart 8")]
     except Exception:
         logging.exception("Composite HK liquidity bundle failed; rescuing core official data")
         figures = [_macro_error_figure(f"Chart {number}") for number in range(5, 9)]
@@ -2923,6 +2939,34 @@ st.session_state["_source_watch_revision"] = _macro_snapshot_revision()
 st.session_state["_source_watch_until"] = time.monotonic() + 120
 
 
+def _publish_late_dashboard_result(key, value):
+    """Commit delayed observations on the UI thread, retaining newer quotes."""
+    if key not in ("market", "watchlist"):
+        figures = value if isinstance(value, (list, tuple)) else (value,)
+        return any(_figure_has_real_observations(figure) for figure in figures)
+    if not isinstance(value, dict) or not any(
+        row.get("price") is not None for row in value.values() if isinstance(row, dict)
+    ):
+        return False
+    if key == "market":
+        previous = st.session_state.get("_market_quotes_snapshot", {})
+        snapshot = {}
+        for name, symbol in MARKET_SYMBOLS.items():
+            old = previous.get(name, _empty_quote())
+            late = value.get(symbol, _empty_quote())
+            snapshot[name] = _remember_quote(symbol, _newest_quote([old, late]))
+        st.session_state["_market_quotes_snapshot"] = snapshot
+        st.session_state["_market_quotes_snapshot_time"] = time.time()
+    else:
+        symbols = _watchlist_symbols()
+        previous = st.session_state.get("_watchlist_quotes_snapshot", {})
+        requested = [symbol for symbol in symbols if symbol in value]
+        rows = {symbol: _newest_quote([previous.get(symbol, _empty_quote()), value[symbol]])
+                for symbol in requested}
+        _apply_watchlist_quote_rows(symbols, rows, requested)
+    return True
+
+
 @st.fragment(run_every=2, key="source_completion")
 def _poll_source_completion():
     if time.monotonic() > st.session_state.get("_source_watch_until", 0):
@@ -2935,12 +2979,10 @@ def _poll_source_completion():
         pending.pop(future, None)
         try:
             value = future.result()
-            if key in ("market", "watchlist"):
-                ready = ready or any(row.get("price") is not None for row in value.values())
-            elif isinstance(value, (list, tuple)):
-                ready = ready or any(_figure_has_real_observations(f) for f in value)
-            else:
-                ready = ready or _figure_has_real_observations(value)
+            # Persist completed quotes before rerunning: a new refresh bucket
+            # must not discard the successful result and start another fetch.
+            completed = _publish_late_dashboard_result(key, value)
+            ready = ready or completed
         except Exception:
             pass
     revision = _macro_snapshot_revision()

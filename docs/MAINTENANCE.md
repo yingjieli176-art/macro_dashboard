@@ -1,6 +1,6 @@
 # Macro Dashboard: maintenance and safe optimization plan
 
-> Current build: `2026-10-09-data-integrity-progressive-r39`. This document is
+> Current build: `2026-10-10-release-acceptance-r41`. This document is
 > for maintainers. Do **not** treat a green CI build as proof that Streamlit
 > Cloud has deployed it; check the chart build label and Cloud logs separately.
 

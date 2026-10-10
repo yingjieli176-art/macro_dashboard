@@ -1,7 +1,7 @@
 """Test loading helpers without running the dashboard's top-level network I/O."""
 import ast
 import uuid
-from macro_platform.request_runtime import submit_jobs, completed_jobs, observed_cache
+from macro_platform.request_runtime import submit_jobs, completed_jobs, observed_cache, IncompleteObservedBundle
 import logging
 import math
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -36,7 +36,7 @@ def load_helpers():
     namespace = {
         "__file__": str(source), "st": st, "pd": pd, "go": go,
         "logging": logging, "uuid": uuid,
-        "math": math,
+        "math": math, "IncompleteObservedBundle": IncompleteObservedBundle,
         "Path": Path, "ThreadPoolExecutor": ThreadPoolExecutor,
         "as_completed": as_completed, "apply_client_time_controls": apply_client_time_controls,
     }
@@ -117,6 +117,16 @@ class DashboardLoadingTests(unittest.TestCase):
         second = self.ns["_build_macro_figures_parallel"]()
         self.assertEqual(len(second[1].data), 1)
         self.assertEqual(self.ns["build_fig1"].call_count, 2)
+
+    def test_partial_hk_bundle_keeps_good_charts_and_recovers_without_cache_clear(self):
+        partial = [go.Figure(), self.figure, self.figure, self.figure]
+        self.ns["build_fig5"].side_effect = [partial, [self.figure]*4]
+        first = self.ns["_safe_hk_bundle"]("Raw", ())
+        self.assertEqual(len(first[0].data), 0)
+        self.assertEqual(len(first[1].data), 1)
+        second = self.ns["_safe_hk_bundle"]("Raw", ())
+        self.assertEqual(len(second[0].data), 1)
+        self.assertEqual(self.ns["build_fig5"].call_count, 2)
 
     def test_hk_composite_error_keeps_banking_and_funding_data(self):
         self.ns["_cached_hk_bundle"].clear()

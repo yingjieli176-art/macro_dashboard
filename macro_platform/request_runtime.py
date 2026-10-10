@@ -22,6 +22,13 @@ class _UnavailableSource(Exception):
         self.frame = frame
 
 
+class IncompleteObservedBundle(ValueError):
+    """Return usable partial charts to callers without storing a success cache."""
+    def __init__(self, figures):
+        super().__init__("Some chart positions have no observed samples")
+        self.figures = list(figures)
+
+
 def observed_cache(paths=None, ttl=3600):
     """Cache observed frames by snapshot revision; retry empty results after 10s."""
     def decorate(function):

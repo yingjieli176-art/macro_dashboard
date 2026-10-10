@@ -4,6 +4,7 @@ Network is deliberately disabled so a failing external market-data provider does
 not mask a dashboard startup or widget-rendering regression.
 """
 import unittest
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -23,6 +24,19 @@ class DashboardBootSmoke(unittest.TestCase):
                 + "; ".join(str(error.message) for error in instance.exception),
         )
         self.assertEqual(len(instance.get("button_group")), 13)
+        native = instance.get("echarts_chart")
+        # AppTest does not execute browser JavaScript. This assertion proves
+        # the real Streamlit renderer emitted native chart messages, rather
+        # than merely surviving with missing data or Plotly fallbacks.
+        self.assertGreaterEqual(len(native), 8)
+        self.assertEqual(len(instance.get("plotly_chart")), 0)
+        for chart in native:
+            option = json.loads(chart.proto.spec)
+            self.assertTrue(option["series"])
+            self.assertTrue(any(point[1] is not None for series in option["series"]
+                                for point in series["data"]))
+            self.assertTrue(all(axis["scale"] for axis in option["yAxis"]))
+            self.assertTrue(all(zoom["filterMode"] == "filter" for zoom in option["dataZoom"]))
         self.assertEqual({radio.key: radio.value for radio in instance.radio}, {
             "hk_5_range_market_mode": "Raw", "hk_8_range_market_mode": "Raw",
             "precious_metals_mode": "Rebased 100", "crypto_market_mode": "Rebased 100",
@@ -35,6 +49,8 @@ class DashboardBootSmoke(unittest.TestCase):
                 instance.radio(key=key).set_value(value).run()
                 self.assertFalse(instance.exception, key)
                 self.assertEqual(instance.radio(key=key).value, value)
+                self.assertGreaterEqual(len(instance.get("echarts_chart")), 8)
+                self.assertEqual(len(instance.get("plotly_chart")), 0)
 
 
 if __name__ == "__main__":

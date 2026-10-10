@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-10-consolidated-runtime-r40",
+  "release": "2026-10-10-release-acceptance-r41",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -10,4 +10,3 @@
     "diagnostic_version_header"
   ]
 }
-
