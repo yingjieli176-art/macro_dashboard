@@ -16,7 +16,7 @@ from macro_platform.chart_axes import RANGE_OFFSETS, apply_client_time_controls
 def _load_renderers():
     source = Path(__file__).resolve().parents[1] / "app.py"
     tree = ast.parse(source.read_text(encoding="utf-8"))
-    names = {"_render_adaptive_macro_figure", "_render_standard_macro_chart",
+    names = {"_show_standard_chart_health", "_render_adaptive_macro_figure", "_render_standard_macro_chart",
              "_recoverable_echarts_option", "_viewport_scaled_plotly_fallback",
              "_show_macro_plot_health", "_show_data_quality_notes",
              "_try_minimal_adaptive_chart", "_figure_has_real_observations",
@@ -304,3 +304,4 @@ class ChartRendererRecoveryTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

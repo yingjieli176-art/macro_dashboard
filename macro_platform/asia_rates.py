@@ -6,6 +6,7 @@ from typing import Iterable
 import pandas as pd
 import plotly.graph_objects as go
 import requests
+from macro_platform.request_runtime import http_get, observed_cache
 import streamlit as st
 
 from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis
@@ -35,7 +36,7 @@ def _cutoff_date() -> pd.Timestamp:
     return pd.Timestamp.now(tz="Asia/Hong_Kong").tz_localize(None).normalize() - pd.DateOffset(years=5, days=14)
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
+@observed_cache()
 def load_china_gov_yields() -> pd.DataFrame:
     """Daily China 2Y / 10Y government yields from Eastmoney's macro dataset."""
     rows: list[dict] = []
@@ -54,7 +55,7 @@ def load_china_gov_yields() -> pd.DataFrame:
                 "pageNo": str(page),
                 "pageNum": str(page),
             }
-            response = requests.get(
+            response = http_get(
                 CHINA_TREASURY_URL,
                 params=params,
                 headers=HTTP_HEADERS,
@@ -143,7 +144,7 @@ def _parse_japanese_date(value: object) -> pd.Timestamp:
 
 
 def _read_japan_csv(url: str) -> pd.DataFrame:
-    response = requests.get(url, headers=HTTP_HEADERS, timeout=(3.0, 10.0))
+    response = http_get(url, headers=HTTP_HEADERS, timeout=(3.0, 10.0))
     response.raise_for_status()
     raw = pd.read_csv(
         io.BytesIO(response.content),
@@ -170,7 +171,7 @@ def _read_japan_csv(url: str) -> pd.DataFrame:
     return out.dropna(subset=["observation_date"])
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
+@observed_cache()
 def load_japan_gov_yields() -> pd.DataFrame:
     """Daily constant-maturity JGB yields published by Japan's Ministry of Finance."""
     frames: list[pd.DataFrame] = []
@@ -349,3 +350,4 @@ def build_asia_rates_figure(date_range: str) -> go.Figure:
 
     # Apply the selected viewport last so no later layout update can widen it.
     return apply_time_axis(fig, date_range, latest=latest)
+

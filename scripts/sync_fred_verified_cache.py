@@ -10,19 +10,25 @@ import concurrent.futures
 from datetime import datetime, timezone
 from io import StringIO
 import json
-import math
 from pathlib import Path
 import os
-import re
 import sys
 import time
 
 import pandas as pd
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from macro_platform.fred_observations import validate_observations
+
 OUT = Path("data_snapshots/fred_cache")
 FRED_GRAPH = "https://fred.stlouisfed.org/graph/fredgraph.csv"
 FRED_API = "https://api.stlouisfed.org/fred/series/observations"
+# This is an offline snapshot job, not the interactive UI request budget.
+# Official CSV transport can take more than four seconds to establish a
+# connection (including a proxy tunnel). Keep both phases bounded while
+# allowing verified downloads to finish; never substitute estimated values.
+FETCH_TIMEOUT = (12, 30)
 
 # Every US policy/yield/liquidity series used directly or by the app's data
 # module. Snapshot failures are per-series; unknown source values stay absent.
@@ -34,8 +40,6 @@ SERIES = (
     "FDHBFRBN", "FDHBFIN", "FDHBPIN",
 )
 CRITICAL = ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR")
-STOCK_LIMITS = {"IORB": (-10, 30), "RRPONTSYAWARD": (-10, 30),
-                "EFFR": (-10, 30), "SOFR": (-10, 30)}
 START = "2020-01-01"
 
 
@@ -49,22 +53,14 @@ def _parse_source(text: str, series_id: str) -> pd.DataFrame:
     }).dropna()
     frame = frame[frame.date >= pd.Timestamp(START)]
     frame = frame.sort_values("date").drop_duplicates("date", keep="last")
-    if len(frame) < 12:
-        raise ValueError(f"{series_id}: too few observed rows: {len(frame)}")
-    if frame.date.max() > pd.Timestamp.now(tz="UTC").tz_localize(None) + pd.Timedelta(days=1):
-        raise ValueError(f"{series_id}: observed date in the future")
-    if not all(math.isfinite(float(v)) for v in frame.value):
-        raise ValueError(f"{series_id}: invalid/nonfinite source value")
-    limits = STOCK_LIMITS.get(series_id)
-    if limits is not None and not frame.value.between(*limits).all():
-        raise ValueError(f"{series_id}: outside plausible rate bounds")
-    return frame
+    return validate_observations(frame, series_id, date_column="date",
+                                 value_column="value", min_rows=12)
 
 
 def _fetch_csv(session, series_id: str) -> pd.DataFrame:
     response = session.get(FRED_GRAPH, params={"id": series_id},
                            headers={"User-Agent": "Mozilla/5.0 MacroDashboard/1.0"},
-                           timeout=(4, 15))
+                           timeout=FETCH_TIMEOUT)
     response.raise_for_status()
     return _parse_source(response.text, series_id)
 
@@ -76,7 +72,7 @@ def _fetch_api(session, series_id: str) -> pd.DataFrame:
     response = session.get(FRED_API, params={
         "series_id": series_id, "api_key": api_key, "file_type": "json",
         "observation_start": START,
-    }, timeout=(4, 15))
+    }, timeout=FETCH_TIMEOUT)
     response.raise_for_status()
     data = response.json()
     observations = data.get("observations", [])
@@ -96,7 +92,7 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
                 "rel": "PRATES", "series": "c27939ee810cb2e929a920a6bd77d9f6",
                 "filetype": "csv", "label": "include", "layout": "seriescolumn",
                 "type": "package",
-            }, timeout=(4, 12),
+            }, timeout=FETCH_TIMEOUT,
         )
         response.raise_for_status()
         table = pd.read_csv(StringIO(response.text), header=5)
@@ -119,7 +115,7 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
         response = session.get(
             f"https://markets.newyorkfed.org/api/rates/{rate_type}/search.json",
             params={"startDate": START, "endDate": datetime.now(timezone.utc).strftime("%Y-%m-%d")},
-            timeout=(4, 12),
+            timeout=FETCH_TIMEOUT,
         )
         response.raise_for_status()
         payload = response.json()
@@ -187,11 +183,57 @@ def save_snapshot(series_id, payload):
             old = json.loads(target.read_text(encoding="utf-8"))
             if old.get("records") == payload["records"]:
                 return False
+            if snapshot_health(series_id)["status"] != "missing_or_invalid":
+                old_end = max(row["date"] for row in old["records"])
+                new_end = max(row["date"] for row in payload["records"])
+                if pd.Timestamp(new_end) < pd.Timestamp(old_end):
+                    return False
         except (OSError, ValueError):
             pass
     target.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n",
                       encoding="utf-8")
     return True
+
+
+def snapshot_health(series_id, now=None):
+    """Validate each stored series independently of the sync job exit code."""
+    now = pd.Timestamp.now(tz="UTC").tz_localize(None) if now is None else pd.Timestamp(now)
+    try:
+        payload = json.loads((OUT / (series_id + ".json")).read_text())
+        if payload.get("series_id") != series_id:
+            raise ValueError("series ID mismatch")
+        records = payload["records"]
+        if len(records) < 12:
+            raise ValueError("too few observations")
+        dates = pd.to_datetime([row["date"] for row in records], errors="raise")
+        values = [float(row["value"]) for row in records]
+        validate_observations(pd.DataFrame({"date": dates, "value": values}), series_id,
+                              date_column="date", value_column="value", now=now, min_rows=12)
+        end = dates.max().strftime("%Y-%m-%d")
+        if end != payload.get("coverage_end"):
+            raise ValueError("coverage end mismatch")
+        # Debt series are monthly/quarterly; market/rate series are daily/weekly.
+        tolerance = (550 if series_id == "FYGFDPUN" else
+                     150 if series_id in ("GFDEBTN", "FDHBFRBN", "FDHBFIN", "FDHBPIN") else 14)
+        status = "stale" if (now.normalize() - dates.max()).days > tolerance else "available"
+        return {"series_id": series_id, "status": status, "coverage_end": end, "rows": len(records)}
+    except (OSError, ValueError, TypeError, KeyError):
+        return {"series_id": series_id, "status": "missing_or_invalid", "coverage_end": "", "rows": 0}
+
+
+def write_health_report(series_ids, errors):
+    reports = [snapshot_health(sid) for sid in series_ids]
+    Path("fred_sync_health.json").write_text(json.dumps({"series": reports, "fetch_failures": errors}, indent=2) + "\n")
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary:
+        available = sum(row["status"] == "available" for row in reports)
+        lines = [f"## Source availability: {available}/{len(reports)} series", "",
+                 "A successful job does not imply that every source is current.", "",
+                 "| Series | Stored status | Last observed | Rows |", "| --- | --- | --- | --- |"]
+        lines += [f"| {row['series_id']} | {row['status']} | {row['coverage_end']} | {row['rows']} |" for row in reports]
+        with open(summary, "a", encoding="utf-8") as stream:
+            stream.write("\n".join(lines) + "\n")
+    return reports
 
 
 def main():
@@ -203,14 +245,16 @@ def main():
             if payload:
                 changed = save_snapshot(sid, payload)
                 (updated if changed else retained).append(sid)
-                print(f"OK {sid}: {len(payload['records'])} real points, "
-                      f"last {payload['coverage_end']} ({'updated' if changed else 'unchanged'})",
+                stored = snapshot_health(sid)
+                print(f"OK {sid}: {stored['rows']} real points, "
+                      f"last {stored['coverage_end']} ({'updated' if changed else 'retained'})",
                       flush=True)
             else:
                 errors.append(sid)
                 print(f"WARN {sid}: {error}; preserved last-good snapshot", flush=True)
 
-    missing_core = [s for s in CRITICAL if not (OUT / (s + ".json")).exists()]
+    write_health_report(target_series, errors)
+    missing_core = [s for s in CRITICAL if snapshot_health(s)["status"] != "available"]
     core_present = len(CRITICAL) - len(missing_core)
     # The chart is honest with partial observations; do NOT fail because the
     # ON RRP operation rate is unavailable from a primary endpoint.
@@ -226,3 +270,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+

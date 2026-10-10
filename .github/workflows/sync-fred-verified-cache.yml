@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - scripts/sync_fred_verified_cache.py
+      - macro_platform/fred_observations.py
       - .github/workflows/sync-fred-verified-cache.yml
 
 permissions:
@@ -33,6 +34,13 @@ jobs:
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python scripts/sync_fred_verified_cache.py
+      - name: Preserve per-series availability report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fred-source-health
+          path: fred_sync_health.json
+          if-no-files-found: warn
       - name: Validate sources for Fed Policy chart
         run: |
           python - <<'PY'
@@ -65,3 +73,4 @@ jobs:
           git commit -m 'data: refresh last-good FRED historical observations'
           git pull --rebase origin main
           git push origin main
+

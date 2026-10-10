@@ -4,7 +4,22 @@ on:
     branches: [main]
     paths:
       - app.py
+      - macro_platform/market_history.py
+      - macro_platform/background_refresh.py
+      - macro_platform/request_runtime.py
+      - tests/test_consolidated_runtime.py
+      - tests/test_release_acceptance.py
+      - tests/browser_offline_app.py
+      - tests/acceptance_offline.py
+      - scripts/check_browser_release.py
+      - scripts/check_rollback_release.py
+      - scripts/benchmark_runtime.py
+      - tests/test_accuracy_performance.py
+      - static/deploy_version.json
+      - scripts/update_hk_market_daily.py
       - data.py
+      - macro_platform/fred_observations.py
+      - tests/test_fred_observation_admission.py
       - requirements.txt
       - macro_platform/chart_axes.py
       - macro_platform/echarts_axes.py
@@ -38,8 +53,23 @@ on:
     branches: [main]
     paths:
       - app.py
+      - macro_platform/market_history.py
+      - macro_platform/background_refresh.py
+      - macro_platform/request_runtime.py
+      - tests/test_consolidated_runtime.py
+      - tests/test_release_acceptance.py
+      - tests/browser_offline_app.py
+      - tests/acceptance_offline.py
+      - scripts/check_browser_release.py
+      - scripts/check_rollback_release.py
+      - scripts/benchmark_runtime.py
+      - tests/test_accuracy_performance.py
+      - static/deploy_version.json
+      - scripts/update_hk_market_daily.py
       - tests/test_app_import_compat.py
       - data.py
+      - macro_platform/fred_observations.py
+      - tests/test_fred_observation_admission.py
       - macro_platform/copper.py
       - macro_platform/asia_rates.py
       - scripts/update_copper_snapshot.py
@@ -82,6 +112,8 @@ jobs:
           cache: pip
       - name: Install production requirements
         run: python -m pip install -r requirements.txt
+      - name: Verify audit accuracy and progressive loading regressions
+        run: python -m unittest discover -s tests -p "test_accuracy_performance.py" -v
       - name: Syntax check application and chart modules
         run: python -m compileall -q app.py data.py macro_platform tests
       - name: Verify Streamlit native ECharts API
@@ -136,3 +168,160 @@ jobs:
         run: python -m unittest discover -s tests -p "test_dashboard_loading.py" -v
       - name: Execute complete offline Streamlit page
         run: python -m unittest discover -s tests -p "test_app_runtime_smoke.py" -v
+      - name: Run complete regression suite including Asia curves and date controls
+        run: python -m unittest discover -s tests -v
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime and browser test dependencies
+        run: |
+          python -m pip install -r requirements.txt playwright
+          python -m playwright install --with-deps chromium
+      - name: Run Chromium against the actual app with offline real snapshots
+        run: |
+          python -m streamlit run tests/browser_offline_app.py --server.headless=true --global.developmentMode=false > browser-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          python - <<'PY'
+          import time, urllib.request
+          for attempt in range(100):
+              try:
+                  urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=1)
+                  break
+              except OSError:
+                  time.sleep(.1)
+          else:
+              raise RuntimeError('Browser test server did not start')
+          PY
+          python scripts/check_browser_release.py
+      - name: Preserve browser evidence and actual acceptance status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-release-acceptance
+          path: |
+            browser_acceptance.json
+            browser_acceptance.png
+            browser_session_b.png
+            browser-server.log
+          if-no-files-found: error
+
+  rollback-restoration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: 52e0b5d2c36e1be577b43afcf962878292b1c926
+          path: rollback-target
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore the recorded tree's requirements in a fresh CI process
+        run: |
+          python -m pip install -r rollback-target/requirements.txt playwright
+          python -m pip check
+          python -m pip freeze > rollback-dependencies.txt
+          python -m playwright install --with-deps chromium
+      - name: Reboot and execute restored code with its own source snapshots
+        env:
+          MACRO_ACCEPTANCE_APP_ROOT: ${{ github.workspace }}/rollback-target
+        run: |
+          python -m streamlit run tests/browser_offline_app.py --server.port=8502 --server.headless=true --global.developmentMode=false > rollback-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          python - <<'PY'
+          import time, urllib.request
+          for attempt in range(100):
+              try:
+                  urllib.request.urlopen('http://127.0.0.1:8502/_stcore/health', timeout=1)
+                  break
+              except OSError:
+                  time.sleep(.1)
+          else:
+              raise RuntimeError('Restored tree server did not start')
+          PY
+          python scripts/check_rollback_release.py --root rollback-target --sha 52e0b5d2c36e1be577b43afcf962878292b1c926
+      - name: Preserve restoration evidence and unresolved release gates
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: isolated-rollback-restoration
+          path: |
+            rollback_acceptance.json
+            rollback_acceptance.png
+            rollback-server.log
+            rollback-dependencies.txt
+          if-no-files-found: error
+
+  runtime-samples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install the final candidate's pinned runtime
+        run: python -m pip install -r requirements.txt
+      - name: Collect server timings and settled resources in Linux CI
+        run: python scripts/benchmark_runtime.py --cold 3 --warm 100 --interactions 100
+      - name: Preserve timing samples without claiming Cloud latency
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-runtime-samples
+          path: runtime_benchmark.json
+          if-no-files-found: error
+
+  raw-history:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install observation parser dependencies
+        run: python -m pip install pandas requests
+      - name: Validate raw Hong Kong closes from the live source
+        run: python scripts/update_hk_market_daily.py --raw-only
+      - name: Keep corrected observations for review before deployment
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-hk-raw-history
+          path: data_snapshots/hk_market_daily.json
+          if-no-files-found: error
+
+
+      - name: Collect all available verified FRED history for the same review
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/sync_fred_verified_cache.py
+      - name: Preserve verified source snapshots and per-series coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-fred-history
+          path: |
+            data_snapshots/fred_cache/
+            fred_sync_health.json
+          if-no-files-found: error

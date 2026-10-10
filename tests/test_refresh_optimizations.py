@@ -10,6 +10,8 @@ from unittest.mock import Mock
 
 def load_functions(names, namespace):
     source = Path(__file__).resolve().parents[1] / "app.py"
+    if "requests" in namespace:
+        namespace.setdefault("http_get", namespace["requests"].get)
     tree = ast.parse(source.read_text())
     functions = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in names]
     for node in functions:
@@ -182,10 +184,9 @@ class RefreshOptimizationTests(unittest.TestCase):
                 and dec.func.attr == "fragment"
                 for dec in method.decorator_list
             ))
-        self.assertIn("render_macro_chart_5(macro_figures[5]", app)
-        self.assertIn("render_macro_chart_8(macro_figures[8]", app)
-        self.assertIn("render_macro_chart_10(macro_figures[10]", app)
-        self.assertIn("render_macro_chart_11(macro_figures[11]", app)
+        self.assertIn("on_complete=_render_completed_macro_chart", app)
+        for number in (5, 8, 10, 11):
+            self.assertIn(f"{number}: render_macro_chart_{number}", app)
         self.assertIn("@st.cache_data(ttl=300", app)
         # Charts 5, 8, 10 and 11 already have fragments; all remaining
         # macro charts now need them to avoid a full rerun on time clicks.
@@ -201,3 +202,4 @@ class RefreshOptimizationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

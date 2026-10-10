@@ -32,6 +32,8 @@ def undecorated(file, function_name, ns):
     func = next(node for node in tree.body
                 if isinstance(node, ast.FunctionDef) and node.name == function_name)
     func.decorator_list = []
+    if "requests" in ns:
+        ns.setdefault("http_get", ns["requests"].get)
     exec(compile(ast.Module(body=[func], type_ignores=[]), file, "exec"), ns)
     return ns[function_name]
 
@@ -155,3 +157,4 @@ class TruthAndProvenanceChecks(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

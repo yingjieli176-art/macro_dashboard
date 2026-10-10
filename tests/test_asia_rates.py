@@ -76,10 +76,10 @@ class AsiaRatesTraceTests(unittest.TestCase):
             [
                 "China 2Y",
                 "China 10Y",
-                "China 10Y−2Y",
+                "China 10Y−2Y (R1)",
                 "Japan 2Y",
                 "Japan 10Y",
-                "Japan 10Y−2Y",
+                "Japan 10Y−2Y (R1)",
             ],
         )
         japan_spread = fig.data[-1]
@@ -132,7 +132,7 @@ class AsiaRatesTraceTests(unittest.TestCase):
         ):
             fig = build_asia_rates_figure("1Y")
 
-        spreads = [trace for trace in fig.data if trace.name == "Japan 10Y−2Y"]
+        spreads = [trace for trace in fig.data if trace.name == "Japan 10Y−2Y (R1)"]
         self.assertEqual(len(spreads), 1)
         spread = spreads[0]
         self.assertEqual(list(pd.to_datetime(spread.x)), list(dates))
@@ -145,3 +145,4 @@ class AsiaRatesTraceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

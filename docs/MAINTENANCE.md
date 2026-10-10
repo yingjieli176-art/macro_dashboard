@@ -1,6 +1,6 @@
 # Macro Dashboard: maintenance and safe optimization plan
 
-> Current stable baseline: `2026-10-09-tga-close-recovery-r38`. This document is
+> Current build: `2026-10-10-fred-admission-r43`. This document is
 > for maintainers. Do **not** treat a green CI build as proof that Streamlit
 > Cloud has deployed it; check the chart build label and Cloud logs separately.
 
@@ -54,6 +54,27 @@ has been updated and reviewed.
 
 ## Performance work: recommended order (not yet benchmarked)
 
+The r39 audit fixes keep widget keys, modes, defaults, chart order and date
+selectors unchanged. Completed charts now fill their reserved containers on
+the main thread as workers finish. HKMA banking/funding reuse their prebuilt
+figures. Peer Asian quote providers run concurrently, retaining deterministic
+precedence for equal timestamps. Full five-year HK daily observations are
+retained; no price extrema are discarded to speed up rendering.
+
+FRED snapshots return immediately and queue a single-flight refresh once their
+fetch age exceeds one hour, rather than suppressing refreshes for 84 hours.
+The source cache still has its existing hourly TTL; a completed background
+refresh becomes visible on the next source-cache refresh. Observation dates
+remain original and dated cached observations are never represented as live.
+
+Daily market bars are accepted only after completion in their source market
+timezone. HK Raw history is migrated from Yahoo quote.close, with explicit
+price_basis=raw_close; legacy adjusted history must not be mixed with new raw
+closes. The PR's raw-history CI job supplies a verified snapshot artifact for
+review. Scheduled source jobs remain automatic. FRED jobs additionally publish
+per-series status/coverage in their Actions summary and a JSON artifact; green
+CI can still accompany explicitly reported partial coverage.
+
 The largest avoidable costs should be measured, not guessed. Use separate
 timings for (a) cold Streamlit Cloud wake-up, (b) warm page rerun, (c) single
 chart window/mode change and (d) slow/failing external data providers.
@@ -61,10 +82,11 @@ Measure across several runs, with all 13 figures present, and compare medians
 and high-percentile wall times before accepting an optimization.
 
 1. **First priority — measure chart construction and figure serialization.**
-   `_build_macro_figures_parallel()` prepares all 13 figures and serializes
+   `_build_macro_figures_parallel()` prepares all 13 figures, publishes ready
+   sections immediately, and serializes
    several full five-year traces. Profile the worker completion times,
    Streamlit payload size and browser-side ECharts initialization. Only then
-   consider section-by-section lazy initial rendering. This requires browser
+   consider further serialization optimizations. This requires browser
    regression tests because dynamic X/Y behavior is fragile.
 2. **Second — contain provider latency.** Compare cold/last-good snapshot
    reads to remote requests; preserve the existing 3–5 minute figure cache
@@ -85,3 +107,47 @@ and high-percentile wall times before accepting an optimization.
 Any measured optimization must be compared on the same source snapshots and
 the same 5Y/1Y/6M/3M/1M viewports. **Never reduce the number of actual market
 observations solely to make an axis faster.**
+
+
+
+## Consolidated runtime update (r40)
+
+Market overview, watchlist and all thirteen charts share a bounded completion loop,
+with their original containers, widget keys, modes and layout order preserved.
+Ready charts do not wait for slow quote sources. The initial wait budget is eight
+seconds; unfinished workers cannot extend that wait by executor shutdown. Two-second
+completion polling checks local metadata only, replacing late successful data and
+updated FRED snapshots without making periodic quote requests.
+
+Public HTTP concurrency is capped at eight per process. Reusable worker pools bound
+queued work and coalesce matching in-flight tasks across sessions. Budgets limit
+retry chains and time spent waiting; Python threads cannot forcibly terminate an
+already-running request, so connection/read timeouts remain necessary. Cache release
+closes worker pools and signals periodic news workers to exit.
+
+FRED getters use one revision-aware source cache, rather than nested hour-long
+wrappers. Changed snapshot files and successful in-memory refreshes become visible
+without manual cache clearing. Missing sources return explicit unavailable frames
+while a deduplicated background job fetches genuine observations. Empty plots never
+enter the five-minute success cache. Banking and funding plots are reused across HK
+market modes; both market overlays retain their original Raw/Rebased calculations.
+All charts use the same rendering/recovery engine, retaining independent fragments.
+Direct production dependencies are pinned to the versions verified by the suite.
+
+Acceptance covers startup without remote sources, chart-before-quote completion,
+bounded waits, source recovery without cache clearing, cache-release lifecycle,
+shared worker limits, exact HK data/layout parity, all original widgets and modes,
+and the complete test suite. Actions collects every available FRED series with its
+actual coverage and failure status; failed downloads cannot manufacture observations
+or overwrite last-good values. A green test run is not evidence that all data sources
+are current or that a particular user's network route is available.
+
+## FRED observation admission (r43)
+
+Live refreshes and offline collectors share `macro_platform/fred_observations.py`.
+They reject future UTC observation dates, nonfinite values and implausible policy
+rates before replacing backups; live CSV responses must identify the requested
+series. Disk readers apply the same checks. Invalid responses preserve last-good
+observations and continue to the next source. Missing points remain missing.
+Live memory and its persisted copy share a fetch timestamp; the live copy wins
+an exact tie so a successful recovery is not mislabeled as a stale disk fallback.

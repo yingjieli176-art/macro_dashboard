@@ -7,9 +7,12 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
-import akshare as ak
 import pandas as pd
 import requests
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from macro_platform.market_history import completed_daily_closes
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data_snapshots" / "hk_market_daily.json"
@@ -36,6 +39,9 @@ def _read_existing() -> dict[str, Any]:
 
 def _existing_frame(payload: dict[str, Any], symbol: str) -> pd.DataFrame:
     node = ((payload.get("series") or {}).get(symbol) or {}) if isinstance(payload, dict) else {}
+    # A migration must replace adjusted history, never append raw prices to it.
+    if symbol != "HSTECH" and node.get("price_basis") != "raw_close":
+        return pd.DataFrame(columns=["observation_date", "close"])
     frame = pd.DataFrame(node.get("records") or [])
     if frame.empty or "observation_date" not in frame.columns or "close" not in frame.columns:
         return pd.DataFrame(columns=["observation_date", "close"])
@@ -75,26 +81,7 @@ def _fetch_yahoo(symbol: str) -> pd.DataFrame:
                 raise RuntimeError(f"Yahoo returned no result for {symbol}")
             node = result[0] or {}
             timestamps = node.get("timestamp") or []
-            indicators = node.get("indicators") or {}
-            quote_close = (indicators.get("quote") or [{}])[0].get("close") or []
-            adj_close = (indicators.get("adjclose") or [{}])[0].get("adjclose") or []
-            closes = adj_close if len(adj_close) == len(timestamps) else quote_close
-            if len(closes) != len(timestamps):
-                raise RuntimeError(f"Yahoo malformed history for {symbol}")
-            frame = pd.DataFrame(
-                {
-                    "observation_date": pd.to_datetime(
-                        timestamps, unit="s", utc=True, errors="coerce"
-                    ).tz_convert(None),
-                    "close": pd.to_numeric(closes, errors="coerce"),
-                }
-            )
-            frame["observation_date"] = frame["observation_date"].dt.normalize()
-            frame = (
-                frame.dropna(subset=["observation_date", "close"])
-                .sort_values("observation_date")
-                .drop_duplicates("observation_date", keep="last")
-            )
+            frame = completed_daily_closes(node)
             if len(frame) < MIN_POINTS:
                 raise RuntimeError(f"Yahoo history too short for {symbol}: {len(frame)}")
             return frame[["observation_date", "close"]]
@@ -105,6 +92,7 @@ def _fetch_yahoo(symbol: str) -> pd.DataFrame:
 
 
 def _fetch_hstech() -> pd.DataFrame:
+    import akshare as ak
     daily = ak.stock_hk_index_daily_sina(symbol="HSTECH").copy()
     if daily.empty or "date" not in daily.columns or "close" not in daily.columns:
         raise RuntimeError("Sina HSTECH history returned no usable data")
@@ -147,7 +135,13 @@ def main() -> None:
         fresh = pd.DataFrame(columns=["observation_date", "close"])
         error: str | None = None
         try:
-            fresh = _fetch_hstech() if symbol == "HSTECH" else _fetch_yahoo(symbol)
+            if symbol == "HSTECH" and "--raw-only" in sys.argv:
+                # The Sina index already stores raw closes; avoid requiring
+                # AKShare in the isolated raw-equity migration/CI check.
+                # Retaining stored records is not a successful live fetch.
+                pass
+            else:
+                fresh = _fetch_hstech() if symbol == "HSTECH" else _fetch_yahoo(symbol)
         except Exception as exc:
             error = str(exc)
             print(f"warning: {symbol} fresh fetch failed: {error}")
@@ -169,6 +163,7 @@ def main() -> None:
         ]
         output_series[symbol] = {
             **meta,
+            "price_basis": "raw_close",
             "record_count": len(records),
             "coverage_start": records[0]["observation_date"],
             "coverage_end": records[-1]["observation_date"],
@@ -204,3 +199,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

@@ -1,0 +1,229 @@
+{
+  "series": [
+    {
+      "series_id": "DGS3MO",
+      "status": "available",
+      "coverage_end": "2026-10-08",
+      "rows": 1694,
+      "sha256": "a71d69aa81f0085abed23e0424af4ecd5747edd2559ced1aa87fece57fe0ffe8",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/DGS3MO"
+    },
+    {
+      "series_id": "DGS2",
+      "status": "available",
+      "coverage_end": "2026-10-08",
+      "rows": 1694,
+      "sha256": "57ed373c8366dbd898c8eebea8af1391e7c3661810e2cf77c4bc242dfaff9483",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/DGS2"
+    },
+    {
+      "series_id": "DGS10",
+      "status": "available",
+      "coverage_end": "2026-10-08",
+      "rows": 1694,
+      "sha256": "086403dfd0a7da92f0a0e8ba17ca2ae48ce04838badb1f9f9764b824b9cb86d3",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/DGS10"
+    },
+    {
+      "series_id": "DFII5",
+      "status": "available",
+      "coverage_end": "2026-10-08",
+      "rows": 1694,
+      "sha256": "c478cfe280003d7148cfec9dc4b62b24d68b47bc2561865d74555a704e858838",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/DFII5"
+    },
+    {
+      "series_id": "DFII10",
+      "status": "available",
+      "coverage_end": "2026-10-08",
+      "rows": 1694,
+      "sha256": "455a8b70e0b3dc56a1dfbc7f0b507fd6a1ae5706defaf77d8d020b1a84c28ae0",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/DFII10"
+    },
+    {
+      "series_id": "T10YIE",
+      "status": "available",
+      "coverage_end": "2026-10-09",
+      "rows": 1695,
+      "sha256": "9bb5040a9b7069fbf8466039cf60670ce623401634db812c7cde0b3fa5fe3754",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/T10YIE"
+    },
+    {
+      "series_id": "SOFR",
+      "status": "available",
+      "coverage_end": "2026-10-08",
+      "rows": 1691,
+      "sha256": "d179f9e42016b5d5f632ddcff58fa445cd3fd0fe511f9b9b7283234e75210be9",
+      "source": "Federal Reserve Bank of New York",
+      "source_series": "https://www.newyorkfed.org/markets/reference-rates/sofr"
+    },
+    {
+      "series_id": "IORB",
+      "status": "available",
+      "coverage_end": "2026-10-09",
+      "rows": 1899,
+      "sha256": "2a1f7414f74777f7e67f892ecbbeee8f3c31e917500bddde97fe6546a352642d",
+      "source": "Board of Governors of the Federal Reserve System",
+      "source_series": "https://www.federalreserve.gov/datadownload/Choose.aspx?rel=PRATES"
+    },
+    {
+      "series_id": "EFFR",
+      "status": "available",
+      "coverage_end": "2026-10-08",
+      "rows": 1701,
+      "sha256": "dd509866529951c4e13e700cd94f7482b5fd5c5b15c2202b273e5e82890a701a",
+      "source": "Federal Reserve Bank of New York",
+      "source_series": "https://www.newyorkfed.org/markets/reference-rates/effr"
+    },
+    {
+      "series_id": "RRPONTSYAWARD",
+      "status": "available",
+      "coverage_end": "2026-10-09",
+      "rows": 1622,
+      "sha256": "0fa885f65890d2d28f3c9909071ecddb7239c137680338646c5001ffa0398a51",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/RRPONTSYAWARD"
+    },
+    {
+      "series_id": "WALCL",
+      "status": "available",
+      "coverage_end": "2026-10-07",
+      "rows": 354,
+      "sha256": "2f485236e4a11829bc4ac0434940ba21a0c88ba9412d5352f167e017518ead04",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/WALCL"
+    },
+    {
+      "series_id": "WRESBAL",
+      "status": "available",
+      "coverage_end": "2026-10-07",
+      "rows": 354,
+      "sha256": "79828fecae6e8633f09989e93b5b6c285162476fca47747ceb277bed308d6dbe",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/WRESBAL"
+    },
+    {
+      "series_id": "WTREGEN",
+      "status": "available",
+      "coverage_end": "2026-10-07",
+      "rows": 354,
+      "sha256": "87ce42fda86220eaa4d03aaae2218bcfc723e63a408407e4798786c41ce944e2",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/WTREGEN"
+    },
+    {
+      "series_id": "RRPONTSYD",
+      "status": "available",
+      "coverage_end": "2026-10-09",
+      "rows": 1692,
+      "sha256": "fceda383ebccfc1c5e5f7b506c8f87dcd2c91f47d7255a651e38ca7623aa81ef",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/RRPONTSYD"
+    },
+    {
+      "series_id": "VIXCLS",
+      "status": "available",
+      "coverage_end": "2026-10-08",
+      "rows": 1734,
+      "sha256": "abbb2a30535e9b675914e48643d899d6d924dac4fc9cc6864cde3fba48dafd6d",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/VIXCLS"
+    },
+    {
+      "series_id": "VXVCLS",
+      "status": "available",
+      "coverage_end": "2026-10-08",
+      "rows": 1701,
+      "sha256": "1ddc9670d29272da417eaaaff756f51b433c1f2d6f9ced0fe2872096b350926c",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/VXVCLS"
+    },
+    {
+      "series_id": "SP500",
+      "status": "available",
+      "coverage_end": "2026-10-09",
+      "rows": 1702,
+      "sha256": "eb4fa2ed964f300ceba3bbb64342e02d5f2cc7f1eaa3b6584dfbb56870e823d0",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/SP500"
+    },
+    {
+      "series_id": "GVZCLS",
+      "status": "available",
+      "coverage_end": "2026-10-08",
+      "rows": 1703,
+      "sha256": "24b052571ccdd1497863f819d9e8c4615e925b3dddbb72d4906740e86e4e5446",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/GVZCLS"
+    },
+    {
+      "series_id": "GFDEBTN",
+      "status": "stale",
+      "coverage_end": "2026-04-01",
+      "rows": 26,
+      "sha256": "a72ad8c732bf4704ca1d46fd681a2dd39820fd381bbab75de81cf3b978b1970e",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/GFDEBTN"
+    },
+    {
+      "series_id": "FYGFDPUN",
+      "status": "available",
+      "coverage_end": "2026-04-01",
+      "rows": 26,
+      "sha256": "b004d9009896f073ef4573d86d05fe7b6a62e40e4f25b0bf6bbb7d2d2b8a006a",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/FYGFDPUN"
+    },
+    {
+      "series_id": "FDHBFRBN",
+      "status": "stale",
+      "coverage_end": "2026-04-01",
+      "rows": 26,
+      "sha256": "9c10c54f479fcba7ae8e41ff07c6a866d1e23a74ac04172bb686ca88a7595465",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/FDHBFRBN"
+    },
+    {
+      "series_id": "FDHBFIN",
+      "status": "stale",
+      "coverage_end": "2026-01-01",
+      "rows": 25,
+      "sha256": "b42116fd93ff7ee7dca91425c37035c0e9c47cf7ace83f1c3168b72a770497f1",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/FDHBFIN"
+    },
+    {
+      "series_id": "FDHBPIN",
+      "status": "stale",
+      "coverage_end": "2026-04-01",
+      "rows": 26,
+      "sha256": "a96bb737748144378511a5ddd724fcd5a2ed82d9f7bd26e74470e937c2ecde86",
+      "source": "Federal Reserve Bank of St. Louis FRED",
+      "source_series": "https://fred.stlouisfed.org/series/FDHBPIN"
+    }
+  ],
+  "fetch_failures": [
+    "IORB"
+  ],
+  "baseline_sha": "a7de1646fea6dc6e5b8bf48196e8907c4b584e2a",
+  "download_timeout_seconds": {
+    "connect": 12,
+    "read": 30
+  },
+  "valid_stored_series": 23,
+  "current_by_existing_age_rules": 19,
+  "stale_by_existing_age_rules": 4,
+  "newly_recovered_series": 20,
+  "live_fetch_succeeded_series": 22,
+  "notes": [
+    "IORB future-dated response rejected; original verified observations retained.",
+    "Stored observations and currentness are separate; no future observations or estimated values added.",
+    "This report does not prove complete chart data or Streamlit Cloud acceptance."
+  ]
+}

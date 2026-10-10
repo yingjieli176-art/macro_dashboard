@@ -1,0 +1,79 @@
+{
+  "chart_positions": 13,
+  "native_chart_messages": 11,
+  "plotly_substitutions": 0,
+  "exceptions": [],
+  "native_series": [
+    [
+      "IORB",
+      "ON RRP",
+      "EFFR",
+      "SOFR"
+    ],
+    [
+      "10Y Nominal",
+      "10Y Real (R1)",
+      "5Y Real \u00b7 TIPS (R1)",
+      "10Y Breakeven (R1)"
+    ],
+    [
+      "3M",
+      "2Y",
+      "10Y",
+      "10Y\u22122Y (R1)",
+      "10Y\u22123M (R1)"
+    ],
+    [
+      "Net Liquidity",
+      "Reserve Balances (R1)",
+      "TGA (R1)",
+      "ON RRP (R2)"
+    ],
+    [
+      "M2 YoY",
+      "M2 MoM",
+      "Monetary Base YoY",
+      "Tencent Price (R1)",
+      "HKEX Price (R1)",
+      "HSTECH Index (R2)",
+      "HSI Index (R2)"
+    ],
+    [
+      "Closing Aggregate Balance",
+      "Outstanding EFBN (R1)",
+      "EFBN Held by Licensed Banks (R1)"
+    ],
+    [
+      "O/N HIBOR",
+      "3M HIBOR",
+      "HKMA Base Rate",
+      "O/N\u22123M Spread (R1)"
+    ],
+    [
+      "USD/HKD",
+      "Tencent Price (R1)",
+      "HKEX Price (R1)",
+      "HSTECH Index (R2)",
+      "HSI Index (R2)"
+    ],
+    [
+      "VIX",
+      "VIXEQ",
+      "S&P 500 (R1)",
+      "VIX3M\u2212VIX (R2)"
+    ],
+    [
+      "Gold Volatility \u00b7 GVZ (R2)"
+    ],
+    [
+      "COMEX \u5e93\u5b58",
+      "LME \u5e93\u5b58",
+      "LME 3M \u94dc\u4ef7 (R1)",
+      "COMEX HG \u6362\u7b97\u4ef7 (R1)",
+      "COMEX\u2212LME 3M \u4ef7\u5dee (R2)"
+    ]
+  ],
+  "limitations": [
+    "AppTest does not execute browser JavaScript or prove full constituent coverage."
+  ]
+}
