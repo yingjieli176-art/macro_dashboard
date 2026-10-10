@@ -31,6 +31,24 @@ def isolated_fred_reader(ns):
 
 
 class FredVerifiedColdBootTests(unittest.TestCase):
+    def test_repository_backups_preserve_all_official_observation_dates_and_values(self):
+        folder = ROOT / "data_snapshots" / "fred_cache"
+        with patch.object(data, "_FRED_SNAPSHOT_DIR", folder):
+            for sid in sync.SERIES:
+                with self.subTest(series=sid):
+                    payload = json.loads((folder / (sid + ".json")).read_text())
+                    self.assertEqual(payload["series_id"], sid)
+                    records = payload["records"]
+                    self.assertGreaterEqual(len(records), 12)
+                    self.assertEqual(payload["coverage_end"], records[-1]["date"])
+                    frame = data._read_fred_success(sid)
+                    self.assertIsNotNone(frame)
+                    self.assertEqual(frame.observation_date.dt.strftime("%Y-%m-%d").tolist(),
+                                     [row["date"] for row in records])
+                    self.assertEqual(frame[sid].tolist(), [row["value"] for row in records])
+                    self.assertTrue(frame.attrs["is_stale"])
+                    self.assertTrue(frame.attrs["is_fallback"])
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)

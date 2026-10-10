@@ -1,0 +1,143 @@
+{
+  "environment": "AppTest server-script runtime, real snapshots, external requests immediately fail",
+  "offline_transport": "fresh exception per request; no mock call-history accumulation",
+  "limitations": [
+    "No browser JS or transport latency measured",
+    "AppTest range input reruns the script, not a browser fragment",
+    "Cold samples use independent Python processes, not Cloud wake-ups",
+    "Peak RSS is a process high-water mark, not evidence of memory convergence"
+  ],
+  "cloud_verified": false,
+  "cold_script": {
+    "samples": 3,
+    "failures": 0,
+    "failure_rate": 0.0,
+    "median_seconds": 2.763147336999964,
+    "p95_seconds": 2.7998017029999573
+  },
+  "warm_script": {
+    "samples": 100,
+    "failures": 0,
+    "failure_rate": 0.0,
+    "median_seconds": 1.2231116579999366,
+    "p95_seconds": 1.4022718570000734
+  },
+  "range_input_script": {
+    "samples": 100,
+    "failures": 0,
+    "failure_rate": 0.0,
+    "median_seconds": 1.293372454000007,
+    "p95_seconds": 1.4138326529999858
+  },
+  "resource_sample": {
+    "threads": 27,
+    "native_spec_bytes": 1552288,
+    "peak_rss_kib": 295628
+  },
+  "resource_samples": [
+    {
+      "phase": "warm",
+      "sample": 20,
+      "threads": 27,
+      "rss_bytes": null
+    },
+    {
+      "phase": "warm",
+      "sample": 40,
+      "threads": 27,
+      "rss_bytes": null
+    },
+    {
+      "phase": "warm",
+      "sample": 60,
+      "threads": 27,
+      "rss_bytes": null
+    },
+    {
+      "phase": "warm",
+      "sample": 80,
+      "threads": 27,
+      "rss_bytes": null
+    },
+    {
+      "phase": "warm",
+      "sample": 100,
+      "threads": 27,
+      "rss_bytes": null
+    },
+    {
+      "phase": "range_input",
+      "sample": 20,
+      "threads": 27,
+      "rss_bytes": null
+    },
+    {
+      "phase": "range_input",
+      "sample": 40,
+      "threads": 27,
+      "rss_bytes": null
+    },
+    {
+      "phase": "range_input",
+      "sample": 60,
+      "threads": 27,
+      "rss_bytes": null
+    },
+    {
+      "phase": "range_input",
+      "sample": 80,
+      "threads": 27,
+      "rss_bytes": null
+    },
+    {
+      "phase": "range_input",
+      "sample": 100,
+      "threads": 27,
+      "rss_bytes": null
+    }
+  ],
+  "resources_after_cache_release": {
+    "threads": 2,
+    "rss_bytes": null
+  },
+  "thread_names_after_release": [
+    "MainThread",
+    "source-refresh_0"
+  ],
+  "source_fingerprints": {
+    "app.py": "b8c93a4d22d763bd9bdfa314784317a1801ad1a794c3c8a2ac405e360f99e4ef",
+    "data_snapshots/copper_market_daily.json": "0186267a6aeffbfb91987bc176fce3f057144d37d161f3912816e0e6a8c5e277",
+    "data_snapshots/fred_cache/DFII10.json": "455a8b70e0b3dc56a1dfbc7f0b507fd6a1ae5706defaf77d8d020b1a84c28ae0",
+    "data_snapshots/fred_cache/DFII5.json": "c478cfe280003d7148cfec9dc4b62b24d68b47bc2561865d74555a704e858838",
+    "data_snapshots/fred_cache/DGS10.json": "086403dfd0a7da92f0a0e8ba17ca2ae48ce04838badb1f9f9764b824b9cb86d3",
+    "data_snapshots/fred_cache/DGS2.json": "57ed373c8366dbd898c8eebea8af1391e7c3661810e2cf77c4bc242dfaff9483",
+    "data_snapshots/fred_cache/DGS3MO.json": "a71d69aa81f0085abed23e0424af4ecd5747edd2559ced1aa87fece57fe0ffe8",
+    "data_snapshots/fred_cache/EFFR.json": "dd509866529951c4e13e700cd94f7482b5fd5c5b15c2202b273e5e82890a701a",
+    "data_snapshots/fred_cache/FDHBFIN.json": "b42116fd93ff7ee7dca91425c37035c0e9c47cf7ace83f1c3168b72a770497f1",
+    "data_snapshots/fred_cache/FDHBFRBN.json": "9c10c54f479fcba7ae8e41ff07c6a866d1e23a74ac04172bb686ca88a7595465",
+    "data_snapshots/fred_cache/FDHBPIN.json": "a96bb737748144378511a5ddd724fcd5a2ed82d9f7bd26e74470e937c2ecde86",
+    "data_snapshots/fred_cache/FYGFDPUN.json": "b004d9009896f073ef4573d86d05fe7b6a62e40e4f25b0bf6bbb7d2d2b8a006a",
+    "data_snapshots/fred_cache/GFDEBTN.json": "a72ad8c732bf4704ca1d46fd681a2dd39820fd381bbab75de81cf3b978b1970e",
+    "data_snapshots/fred_cache/GVZCLS.json": "24b052571ccdd1497863f819d9e8c4615e925b3dddbb72d4906740e86e4e5446",
+    "data_snapshots/fred_cache/IORB.json": "2a1f7414f74777f7e67f892ecbbeee8f3c31e917500bddde97fe6546a352642d",
+    "data_snapshots/fred_cache/RRPONTSYAWARD.json": "0fa885f65890d2d28f3c9909071ecddb7239c137680338646c5001ffa0398a51",
+    "data_snapshots/fred_cache/RRPONTSYD.json": "fceda383ebccfc1c5e5f7b506c8f87dcd2c91f47d7255a651e38ca7623aa81ef",
+    "data_snapshots/fred_cache/SOFR.json": "d179f9e42016b5d5f632ddcff58fa445cd3fd0fe511f9b9b7283234e75210be9",
+    "data_snapshots/fred_cache/SP500.json": "eb4fa2ed964f300ceba3bbb64342e02d5f2cc7f1eaa3b6584dfbb56870e823d0",
+    "data_snapshots/fred_cache/T10YIE.json": "9bb5040a9b7069fbf8466039cf60670ce623401634db812c7cde0b3fa5fe3754",
+    "data_snapshots/fred_cache/VIXCLS.json": "abbb2a30535e9b675914e48643d899d6d924dac4fc9cc6864cde3fba48dafd6d",
+    "data_snapshots/fred_cache/VXVCLS.json": "1ddc9670d29272da417eaaaff756f51b433c1f2d6f9ced0fe2872096b350926c",
+    "data_snapshots/fred_cache/WALCL.json": "2f485236e4a11829bc4ac0434940ba21a0c88ba9412d5352f167e017518ead04",
+    "data_snapshots/fred_cache/WRESBAL.json": "79828fecae6e8633f09989e93b5b6c285162476fca47747ceb277bed308d6dbe",
+    "data_snapshots/fred_cache/WTREGEN.json": "87ce42fda86220eaa4d03aaae2218bcfc723e63a408407e4798786c41ce944e2",
+    "data_snapshots/hk_market_daily.json": "e8f97da581117937fd7dea07751e8ee0e66a3f982420dbecc58bd7c389459614",
+    "data_snapshots/hkd_hibor_monthly.json": "0ea8aa04fe383dde4bf6bc7778cabec459986b584e1ccd125fcd07d5afd6d098",
+    "data_snapshots/hkma_banking_liquidity_daily.json": "4ee4aad3b170e5b7590cc233363af1d33dde5cc213fde5bfd2ff7bc00d98d994",
+    "data_snapshots/hkma_base_rate_monthly.json": "36012b323f03d19574b58a0a8383897ef9cc5fbe767e2f55f3c880e053b6159f",
+    "data_snapshots/hkma_monetary_statistics.json": "5d650a1c80692b32575a283e2b5e761fb81c308e8cf174738a30ed03ad38b872",
+    "data_snapshots/hstech_monthly.json": "f8a11e4a9ee4f7daec52dbbf52085bbd5d81e920edbc963b27527b710341c0af",
+    "data_snapshots/treasury_tga_daily.json": "dd28624f23ad7bde521f1ff60d495611c91d223d74a0785c8470902c0656a70a",
+    "data_snapshots/usdhkd_daily.json": "f9e9e5757d218965c9935b774d8e76c05655a8aecea7b7feae894c461b177cbb",
+    "data_snapshots/vixeq_daily.json": "cc7a0cefc0032d5f87e0f39ec2f3e40ae70659e05c5a9d0310daf2f0633199e2"
+  }
+}

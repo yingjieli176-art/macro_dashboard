@@ -23,6 +23,11 @@ import requests
 OUT = Path("data_snapshots/fred_cache")
 FRED_GRAPH = "https://fred.stlouisfed.org/graph/fredgraph.csv"
 FRED_API = "https://api.stlouisfed.org/fred/series/observations"
+# This is an offline snapshot job, not the interactive UI request budget.
+# Official CSV transport can take more than four seconds to establish a
+# connection (including a proxy tunnel). Keep both phases bounded while
+# allowing verified downloads to finish; never substitute estimated values.
+FETCH_TIMEOUT = (12, 30)
 
 # Every US policy/yield/liquidity series used directly or by the app's data
 # module. Snapshot failures are per-series; unknown source values stay absent.
@@ -64,7 +69,7 @@ def _parse_source(text: str, series_id: str) -> pd.DataFrame:
 def _fetch_csv(session, series_id: str) -> pd.DataFrame:
     response = session.get(FRED_GRAPH, params={"id": series_id},
                            headers={"User-Agent": "Mozilla/5.0 MacroDashboard/1.0"},
-                           timeout=(4, 15))
+                           timeout=FETCH_TIMEOUT)
     response.raise_for_status()
     return _parse_source(response.text, series_id)
 
@@ -76,7 +81,7 @@ def _fetch_api(session, series_id: str) -> pd.DataFrame:
     response = session.get(FRED_API, params={
         "series_id": series_id, "api_key": api_key, "file_type": "json",
         "observation_start": START,
-    }, timeout=(4, 15))
+    }, timeout=FETCH_TIMEOUT)
     response.raise_for_status()
     data = response.json()
     observations = data.get("observations", [])
@@ -96,7 +101,7 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
                 "rel": "PRATES", "series": "c27939ee810cb2e929a920a6bd77d9f6",
                 "filetype": "csv", "label": "include", "layout": "seriescolumn",
                 "type": "package",
-            }, timeout=(4, 12),
+            }, timeout=FETCH_TIMEOUT,
         )
         response.raise_for_status()
         table = pd.read_csv(StringIO(response.text), header=5)
@@ -119,7 +124,7 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
         response = session.get(
             f"https://markets.newyorkfed.org/api/rates/{rate_type}/search.json",
             params={"startDate": START, "endDate": datetime.now(timezone.utc).strftime("%Y-%m-%d")},
-            timeout=(4, 12),
+            timeout=FETCH_TIMEOUT,
         )
         response.raise_for_status()
         payload = response.json()

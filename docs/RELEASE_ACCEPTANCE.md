@@ -44,11 +44,66 @@ This is not approval to silently release partial charts.
 | --- | --- | --- |
 | HK market history | Snapshot price basis is `raw_close`; tests compare every date/value and preserve extrema | Verify the same files in the deployment |
 | HSTECH live fetch | Preserved last-success metadata; `--raw-only` does not fetch HSTECH | Do not claim a new live HSTECH fetch |
-| FRED history | 3 valid stored series: IORB, EFFR, SOFR; 20/23 absent in the r40 collection | Full-data release blocked |
-| FRED transport | CSV requests timed out in CI; backup FRED_API_KEY was not configured | Provide the key securely in the platform secret manager or restore verified public reads |
-| US yields / curves | DGS3MO/DGS2/DGS10/DFII5/DFII10/T10YIE missing from stored backups | Online recovery must be observed; never fabricate replacements |
+| FRED history | 23/23 valid stored series after the continuation below; 19 current and 4 stale under the existing age rules | Stored-series coverage alone is not full-chart or Cloud acceptance |
+| FRED transport | Official public CSV downloads recovered in the continuation; the earlier CI route timed out and its API fallback was unconfigured | Verify the same candidate and its source updater in CI/Cloud |
+| US yields / curves | DGS3MO/DGS2/DGS10/DFII5/DFII10/T10YIE now have verified official backups | Verify deployed files, observation dates and source labels |
 | US liquidity | TGA alone is not Net Liquidity; WALCL and ON RRP must satisfy age/unit checks | Derived Net Liquidity must remain absent when a constituent is unavailable |
 | Other charts | Genuine stored HKMA, VIXEQ and copper data; live Yahoo/Asia inputs can still fail | Verify each intended series, date, units and missing-state label |
+
+### FRED source recovery continuation (2026-10-10)
+
+The interrupted optimization was resumed from PR head
+`a7de1646fea6dc6e5b8bf48196e8907c4b584e2a`. Its 20 missing series are now
+stored from real official FRED downloads. The first local run reproduced
+four-second connection timeouts (14 fetches failed). A separate DGS10 request
+completed in 6.72 seconds and returned 1,694 genuine observations through
+2026-10-08. The offline collector now allows a bounded 12-second connection
+and 30-second read timeout. The interactive application request budgets,
+worker concurrency and chart controls are unchanged.
+
+The second collector run successfully fetched 22 series. IORB's response
+contained future-dated values and was rejected by the existing validator;
+its original verified snapshot remains byte-for-byte unchanged. The existing
+SOFR/EFFR snapshots also remain unchanged because observations did not change.
+No future values, interpolation or estimates were added. All 23 stored
+series validate, with exact observed dates and values preserved by the runtime
+reader. A regression now checks that parity against every repository backup.
+
+The existing age rules classify 19 series as available and four low-frequency
+debt series as stale: GFDEBTN, FDHBFRBN and FDHBPIN end 2026-04-01; FDHBFIN ends
+2026-01-01. Those are the returned observation dates, not a claim that newer
+official releases exist. The age rules and missing/stale disclosure remain
+unchanged. Per-series rows, provenance and SHA-256 hashes are recorded in
+[`evidence/fred-source-recovery.json`](evidence/fred-source-recovery.json).
+This resolves the absent FRED backup blocker; all intended chart constituents
+and the target-environment gates below still require acceptance.
+
+Validation of the recovered tree: all 153 regression tests pass. The actual
+offline AppTest page emits 11 native chart messages across 13 positions, no
+Plotly substitutions and no startup exceptions. Digital assets and Asian
+rates remain absent offline; the precious-metals chart has only its GVZ
+volatility overlay. Eleven rendered charts therefore do **not** establish
+complete intended-series coverage. Exact emitted trace names are recorded in
+[`evidence/recovered-offline-chart-smoke.json`](evidence/recovered-offline-chart-smoke.json).
+
+Independent-process and repeated server-script samples using the recovered
+snapshots and immediately failing external requests:
+
+| Sample | N | Median seconds | P95 seconds | Runtime/control failures |
+| --- | ---: | ---: | ---: | ---: |
+| Cold server-script startup | 3 | 2.763 | 2.800 | 0 |
+| Warm full-script rerun | 100 | 1.223 | 1.402 | 0 |
+| Range-input full-script rerun | 100 | 1.293 | 1.414 | 0 |
+
+Native option JSON totals 1,552,288 bytes. Threads fall from 27 to 2 after
+resource-cache release. Peak RSS is 295,628 KiB; this environment cannot read
+settled RSS, so no convergence conclusion is drawn. Full samples and source
+fingerprints are in
+[`evidence/recovered-server-runtime.json`](evidence/recovered-server-runtime.json).
+These are local server measurements, not Cloud or browser timings, and the
+earlier CI measurements used different source coverage. The local Chromium
+download was truncated; browser validation must run in CI for the new SHA.
+All Cloud deployment/rollback gates remain outstanding.
 
 ## Deployment and rollback
 
