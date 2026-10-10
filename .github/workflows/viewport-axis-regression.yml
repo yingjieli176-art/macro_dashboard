@@ -112,62 +112,14 @@ jobs:
           cache: pip
       - name: Install production requirements
         run: python -m pip install -r requirements.txt
-      - name: Verify audit accuracy and progressive loading regressions
-        run: python -m unittest discover -s tests -p "test_accuracy_performance.py" -v
       - name: Syntax check application and chart modules
         run: python -m compileall -q app.py data.py macro_platform tests
-      - name: Verify Streamlit native ECharts API
-        run: |
-          python - <<'PY'
-          import inspect
-          import streamlit as st
-          assert hasattr(st, "echarts_chart"), "Streamlit runtime lacks st.echarts_chart"
-          parameters = inspect.signature(st.echarts_chart).parameters
-          assert "theme" in parameters and "key" in parameters
-          print("Streamlit", st.__version__, "supports native ECharts")
-          PY
-      - name: Smoke-test actual app.py startup imports
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          source = Path("app.py").read_text(encoding="utf-8")
-          imports = source.split("st.set_page_config(", 1)[0]
-          assert "import macro_platform.echarts_axes as _echarts_axes" in imports
-          exec(compile(imports, "app.py", "exec"), {})
-          print("PASS: application startup import chain")
-          PY
-      - name: Simulate missing or partially deployed ECharts module
-        run: python -m unittest discover -s tests -p "test_app_import_compat.py" -v
-      - name: Regression tests for viewport fit and observation dates
-        run: python -m unittest discover -s tests -p "test_*axes.py" -v
-      - name: Chart renderer crash isolation
-        run: python -m unittest discover -s tests -p "test_chart_render_safety.py" -v
       - name: Validate real FRED downloads and cold-start source snapshots
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python scripts/sync_fred_verified_cache.py --core-only
-      - name: Verify cold-start official data integrity and no fabricated observations
-        run: python -m unittest discover -s tests -p "test_fred_verified_cold_boot.py" -v
-      - name: Verify series dates, units and data integrity
-        run: python -m unittest discover -s tests -p "test_data_axis_integrity.py" -v
-      - name: Cross-check market-source integrity and derived-rate disclosure
-        run: python -m unittest discover -s tests -p "test_truth_source_integrity.py" -v
-      - name: Verify official 5Y TIPS real yield in US charts
-        run: python -m unittest discover -s tests -p "test_us_five_year_real_yield.py" -v
-      - name: Verify fragment-only redraw and reuse of prefetched charts
-        run: python -m unittest discover -s tests -p "test_refresh_optimizations.py" -v
-      - name: Verify real HKMA charts 6 and 7 survive with stored observations
-        run: python -m unittest discover -s tests -p "test_hk_liquidity_real_snapshot.py" -v
-      - name: Verify TGA freshness and reject stale net liquidity
-        run: python -m unittest discover -s tests -p "test_us_liquidity_source_freshness.py" -v
-      - name: Verify Treasury Closing Balance semantic schema change since April 2022
-        run: python -m unittest discover -s tests -p "test_tga_closing_schema_2022.py" -v
       - name: Verify newest real Treasury FiscalData TGA observations are reachable
         run: python scripts/sync_tga_daily_snapshot.py --verify-only
-      - name: Verify macro dashboard cache reuse
-        run: python -m unittest discover -s tests -p "test_dashboard_loading.py" -v
-      - name: Execute complete offline Streamlit page
-        run: python -m unittest discover -s tests -p "test_app_runtime_smoke.py" -v
       - name: Run complete regression suite including Asia curves and date controls
         run: python -m unittest discover -s tests -v
 

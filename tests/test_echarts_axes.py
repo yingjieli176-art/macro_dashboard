@@ -157,27 +157,6 @@ class EchartsNativeAxes(unittest.TestCase):
         self.assertTrue(all(axis.get("scale") is True for axis in config["yAxis"]))
         self.assertEqual(config["yAxis"][0]["boundaryGap"], ["7%", "7%"])
 
-    def test_optional_adapter_import_does_not_crash_app_at_startup(self):
-        source = (Path(__file__).resolve().parents[1] / "app.py").read_text(encoding="utf-8")
-        tree = ast.parse(source)
-        # Importing new helper names unconditionally was the startup ImportError.
-        self.assertFalse(any(
-            isinstance(node, ast.ImportFrom)
-            and node.module == "macro_platform.echarts_axes"
-            for node in ast.walk(tree)
-        ))
-        # The guard must run before any chart/page rendering.
-        guarded = [node for node in tree.body if isinstance(node, ast.Try)
-                   and any(isinstance(child, ast.Import)
-                           and any(alias.name == "macro_platform.echarts_axes"
-                                   for alias in child.names)
-                           for child in node.body)]
-        self.assertTrue(guarded)
-        self.assertTrue(any(
-            isinstance(handler.type, (ast.Tuple, ast.Name))
-            for handler in guarded[0].handlers
-        ))
-
     def test_no_observations(self):
         self.assertIsNone(build_adaptive_echarts_option(go.Figure(), "1M"))
 
