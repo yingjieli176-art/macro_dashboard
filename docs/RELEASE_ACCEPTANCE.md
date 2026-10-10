@@ -79,6 +79,21 @@ These are CI interaction checks, not a Cloud resource or performance result.
 The server sampling job also records Linux RSS where readable; peak RSS alone
 cannot establish memory convergence.
 
+The first Linux sampling report increased RSS from roughly 299 MB at warm
+sample 20 to 910 MB after 200 reruns, despite settled threads. Investigation
+found the harness reused the same exception object for every simulated HTTP
+failure: its growing traceback retained prior execution frames and figures.
+The harness now raises a fresh exception per call and does not record mock call
+history. A local 80-rerun comparison reduced peak RSS to 231,908 KiB. This fixes
+measurement contamination; it is not proof of Cloud memory convergence. Earlier
+reports from the reused-exception harness must not be used as production leak
+or performance evidence. Final CI collects fresh 3/100/100 samples again.
+
+The standalone Chromium server also installs its offline transport once for
+the whole process. Per-session context-manager patches could overlap and restore
+another session's transport while background work was active. Production
+requests are not patched; both helpers are exclusively acceptance entry points.
+
 ## Remaining target-environment checks
 
 1. Deploy the same final candidate SHA to preproduction, then verify all 13

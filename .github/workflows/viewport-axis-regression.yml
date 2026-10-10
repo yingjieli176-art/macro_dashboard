@@ -10,6 +10,7 @@ on:
       - tests/test_consolidated_runtime.py
       - tests/test_release_acceptance.py
       - tests/browser_offline_app.py
+      - tests/acceptance_offline.py
       - scripts/check_browser_release.py
       - scripts/check_rollback_release.py
       - scripts/benchmark_runtime.py
@@ -56,6 +57,7 @@ on:
       - tests/test_consolidated_runtime.py
       - tests/test_release_acceptance.py
       - tests/browser_offline_app.py
+      - tests/acceptance_offline.py
       - scripts/check_browser_release.py
       - scripts/check_rollback_release.py
       - scripts/benchmark_runtime.py
@@ -204,6 +206,7 @@ jobs:
           path: |
             browser_acceptance.json
             browser_acceptance.png
+            browser_session_b.png
             browser-server.log
           if-no-files-found: error
 

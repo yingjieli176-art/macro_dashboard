@@ -190,7 +190,17 @@ def main():
             context_b = browser.new_context(viewport={"width": 1440, "height": 1000})
             page_b = context_b.new_page()
             page_b.on('pageerror', lambda error: errors.append(str(error)))
-            wait_for_page(page_b, args.url)
+            try:
+                wait_for_page(page_b, args.url)
+            except Exception:
+                page_b.screenshot(path='browser_session_b.png', full_page=True)
+                report['session_b_failure'] = {
+                    'charts': page_b.get_by_test_id('stEChartsChart').count(),
+                    'exceptions': page_b.get_by_test_id('stException').all_text_contents(),
+                    'renderer_errors': page_b.get_by_test_id('stEChartsChartError').all_text_contents(),
+                    'explicit_missing': page_b.get_by_text('该图表目前没有可验证的有效观测数据', exact=False).count(),
+                }
+                raise
             groups.nth(4).get_by_text('1M', exact=True).click()
             page.get_by_test_id('stRadio').nth(0).get_by_text('Rebased 100', exact=True).click()
             expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_Rebased"][class*="_1M"]').get_by_test_id('stEChartsChart')

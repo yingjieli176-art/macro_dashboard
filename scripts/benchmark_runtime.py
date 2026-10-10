@@ -20,6 +20,16 @@ from streamlit.testing.v1 import AppTest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def offline_http(*args, **kwargs):
+    # Reusing one exception instance accumulates traceback frames and retains
+    # prior app runs, creating a false linear RSS leak in the benchmark.
+    raise requests.Timeout("benchmark offline")
+
+
+def offline_urlopen(*args, **kwargs):
+    raise OSError("benchmark offline")
+
+
 def resources():
     gc.collect()
     try:
@@ -49,8 +59,8 @@ def main():
     args = parser.parse_args()
     logging.getLogger("streamlit").setLevel(logging.ERROR)
     if args.child_cold:
-        with patch.object(requests.sessions.Session, "request", side_effect=requests.Timeout("benchmark offline")), \
-             patch("urllib.request.urlopen", side_effect=OSError("benchmark offline")):
+        with patch.object(requests.sessions.Session, "request", new=offline_http), \
+             patch("urllib.request.urlopen", new=offline_urlopen):
             started = time.perf_counter()
             app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60).run()
             print(json.dumps({"seconds": time.perf_counter()-started,
@@ -64,8 +74,8 @@ def main():
         cold.append(result["seconds"]); cold_failed += result["failed"]
     warm, interactions, resource_samples = [], [], []
     warm_failed = interaction_failed = 0
-    with patch.object(requests.sessions.Session, "request", side_effect=requests.Timeout("benchmark offline")), \
-         patch("urllib.request.urlopen", side_effect=OSError("benchmark offline")):
+    with patch.object(requests.sessions.Session, "request", new=offline_http), \
+         patch("urllib.request.urlopen", new=offline_urlopen):
         app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60).run()
         for index in range(args.warm):
             started = time.perf_counter(); app.run()
@@ -91,7 +101,8 @@ def main():
         while threading.active_count() > 4 and time.monotonic() < deadline:
             time.sleep(.05)
         after_release = resources()
-    report = {"environment": "local AppTest, real snapshots, external requests immediately fail",
+    report = {"environment": "AppTest server-script runtime, real snapshots, external requests immediately fail",
+              "offline_transport": "fresh exception per request; no mock call-history accumulation",
               "limitations": ["No browser JS or transport latency measured", "AppTest range input reruns the script, not a browser fragment", "Cold samples use independent Python processes, not Cloud wake-ups", "Peak RSS is a process high-water mark, not evidence of memory convergence"],
               "cloud_verified": False, "cold_script": summary(cold, cold_failed),
               "warm_script": summary(warm, warm_failed),
