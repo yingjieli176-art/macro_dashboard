@@ -70,7 +70,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-10-series-calendars-r47"
+CHART_BUILD = "2026-10-10-series-calendars-r47a"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1890,15 +1890,14 @@ def build_fig10(date_range):
     for column, name, width, dash, axis, unit in (
         ("Gold", "Gold", 2.8, None, None, " USD/oz"),
         ("Silver", "Silver (R1)", 2.5, None, "y2", " USD/oz"),
+        ("GoldSilverRatio", "Gold/Silver Ratio (R2)", 2.2, "dash", "y3", "x"),
         ("GVZCLS", "Gold Volatility · GVZ (R3)", 2.2, "dot", "y4", ""),
     ):
-        source_dates = [date for frame in frames if column in frame
+        source_dates = [date for frame in frames if column in frame or (
+                            column == "GoldSilverRatio" and ("Gold" in frame or "Silver" in frame))
                         for date in frame["observation_date"]]
         add_line(fig, data.loc[data["observation_date"].isin(source_dates)],
                  column, name, width, dash, axis, unit)
-    price_dates = [date for frame in frames if "Gold" in frame or "Silver" in frame
-                   for date in frame["observation_date"]]
-    add_line(fig, data.loc[data["observation_date"].isin(price_dates)], "GoldSilverRatio", "Gold/Silver Ratio (R2)", 2.2, "dash", "y3", "x")
     fig.update_layout(
         yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86),
         yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.93),
@@ -1955,13 +1954,13 @@ def build_fig11(date_range):
     for column, name, width, dash, axis, unit in (
         ("BTC", "BTC · USD", 2.9, None, None, " USD"),
         ("ETH", "ETH · USD · R1", 2.6, None, "y2", " USD"),
+        ("ETHBTC", "ETH/BTC 强弱 · R2", 2.2, "dash", "y3", ""),
         ("BTC_VOL_30D", "BTC 30D 实际波动率 · R3", 2.2, "dot", "y4", "%"),
     ):
-        source_dates = [date for frame in frames if column in frame
+        source_dates = [date for frame in frames if column in frame or column == "ETHBTC"
                         for date in frame["observation_date"]]
         add_line(fig, data.loc[data["observation_date"].isin(source_dates)],
                  column, name, width, dash, axis, unit)
-    add_line(fig, data, "ETHBTC", "ETH/BTC 强弱 · R2", 2.2, "dash", "y3", "")
     fig.update_layout(
         yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86),
         yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.93),

@@ -1,6 +1,6 @@
 # r47 individual source calendars
 
-Build: `2026-10-10-series-calendars-r47`. Audit all 13 production chart
+Build: `2026-10-10-series-calendars-r47a`. Audit all 13 production chart
 descriptions and 245 curve/window combinations from persisted real snapshots.
 In the one-year policy-rate view, union with calendar-day IORB introduced
 115–117 null rows into business-day rates, splitting each into 57 segments.

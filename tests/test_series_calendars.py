@@ -105,6 +105,9 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         self.assertEqual(len(ratio.x), 3)
         self.assertTrue(pd.isna(ratio.y[1]))
         self.assertAlmostEqual(ratio.y[0], 80.)
+        axes = {s["name"]: s["yAxisIndex"] for s in build_adaptive_echarts_option(fig, "1M")["series"]}
+        self.assertEqual(axes["Gold/Silver Ratio (R2)"], 2)
+        self.assertEqual(axes["Gold Volatility · GVZ (R3)"], 3)
 
     def test_eth_only_dates_cannot_change_btc_volatility(self):
         ns = builders()
@@ -119,6 +122,9 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         expected = btc.pct_change(fill_method=None).rolling(30, min_periods=20).std() * 365. ** .5 * 100.
         pd.testing.assert_series_equal(values(actual), pd.Series(expected.to_numpy(), index=dates), check_names=False, check_freq=False)
         self.assertEqual(len(next(t for t in fig.data if t.name == "BTC · USD").x), 60)
+        axes = {s["name"]: s["yAxisIndex"] for s in build_adaptive_echarts_option(fig, "3M")["series"]}
+        self.assertEqual(axes["ETH/BTC 强弱 · R2"], 2)
+        self.assertEqual(axes["BTC 30D 实际波动率 · R3"], 3)
 
 
 if __name__ == "__main__":
