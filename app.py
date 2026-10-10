@@ -70,7 +70,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-10-release-acceptance-r41"
+CHART_BUILD = "2026-10-10-cache-isolation-r42"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2690,6 +2690,30 @@ def _macro_snapshot_revision():
     return tuple(revision)
 
 
+def _cache_safe_figure(figure):
+    """Preserve exact samples through Plotly 6/Streamlit pickle caching.
+
+    Plotly pickles NumPy vectors as dtype/bdata dictionaries. New sessions
+    have no last-good ECharts option to rescue unreadable cached vectors.
+    Store ordinary sequences, preserving dates, null gaps and values.
+    """
+    for trace in figure.data:
+        for field in ("x", "y"):
+            values = getattr(trace, field, None)
+            if values is None or not callable(getattr(values, "tolist", None)):
+                continue
+            if field == "x" and getattr(getattr(values, "dtype", None), "kind", None) == "M":
+                # datetime64[ns].tolist() returns epoch integers, not dates.
+                converted = [pd.Timestamp(value) for value in values]
+            else:
+                converted = values.tolist()
+            # Plotly ignores assignments whose values compare equal. Clear
+            # first so an equivalent list really replaces the binary vector.
+            setattr(trace, field, None)
+            setattr(trace, field, converted)
+    return figure
+
+
 @st.cache_data(ttl=300, max_entries=32, show_spinner=False)
 def _cached_macro_figure(chart_number, market_mode, snapshot_revision, build_revision):
     """Reuse successful construction; callers receive isolated figure copies."""
@@ -2702,7 +2726,7 @@ def _cached_macro_figure(chart_number, market_mode, snapshot_revision, build_rev
     figure = builder("5Y", market_mode) if chart_number in (10, 11) else builder("5Y")
     if not _figure_has_real_observations(figure):
         raise ValueError("Source has no observed chart samples")
-    return figure
+    return _cache_safe_figure(figure)
 
 
 @st.cache_data(ttl=300, max_entries=8, show_spinner=False)
@@ -2712,7 +2736,7 @@ def _cached_hk_common(snapshot_revision, build_revision):
         raise ValueError("HK figure bundle unavailable")
     if not all(_figure_has_real_observations(figure) for figure in figures):
         raise IncompleteObservedBundle(figures)
-    return list(figures)
+    return [_cache_safe_figure(figure) for figure in figures]
 
 
 @st.cache_data(ttl=300, max_entries=8, show_spinner=False)
@@ -2723,7 +2747,7 @@ def _cached_hk_bundle(market_mode, snapshot_revision, build_revision):
     figures = build_fig5("5Y", market_mode=market_mode, shared_figures=(common[1], common[2]))
     if not all(_figure_has_real_observations(figure) for figure in figures):
         raise IncompleteObservedBundle(figures)
-    return figures
+    return [_cache_safe_figure(figure) for figure in figures]
 
 
 def _safe_hk_bundle(market_mode, snapshot_revision):

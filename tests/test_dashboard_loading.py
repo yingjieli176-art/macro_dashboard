@@ -24,6 +24,7 @@ HELPERS = {
     "_cached_macro_figure", "_cached_hk_bundle", "_safe_macro_build",
     "_safe_hk_bundle", "_macro_error_figure", "_build_macro_figures_parallel",
     "_figure_has_real_observations",
+    "_cache_safe_figure",
 }
 
 

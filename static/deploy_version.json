@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-10-release-acceptance-r41",
+  "release": "2026-10-10-cache-isolation-r42",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",

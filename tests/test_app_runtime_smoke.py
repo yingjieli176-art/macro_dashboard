@@ -13,6 +13,20 @@ from streamlit.testing.v1 import AppTest
 
 
 class DashboardBootSmoke(unittest.TestCase):
+    def test_fresh_session_can_render_warmed_shared_chart_caches(self):
+        from scripts.benchmark_runtime import offline_http, offline_urlopen
+        app = Path(__file__).resolve().parents[1] / 'app.py'
+        with patch.object(requests.sessions.Session, 'request', new=offline_http), \
+             patch('urllib.request.urlopen', new=offline_urlopen):
+            first = AppTest.from_file(str(app), default_timeout=90).run()
+            second = AppTest.from_file(str(app), default_timeout=90).run()
+        self.assertFalse(first.exception)
+        self.assertFalse(second.exception)
+        self.assertEqual(len(second.get('button_group')), 13)
+        self.assertGreaterEqual(len(second.get('echarts_chart')), 8)
+        self.assertEqual([chart.proto.spec for chart in first.get('echarts_chart')],
+                         [chart.proto.spec for chart in second.get('echarts_chart')])
+
     def test_full_dashboard_completes_when_sources_are_offline(self):
         app = Path(__file__).resolve().parents[1] / "app.py"
         with patch.object(requests.sessions.Session, "request", side_effect=requests.Timeout("offline CI")), \

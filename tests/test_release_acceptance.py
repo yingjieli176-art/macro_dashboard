@@ -2,6 +2,7 @@
 import ast
 from concurrent.futures import Future
 import json
+import pickle
 from pathlib import Path
 import time
 from types import SimpleNamespace
@@ -9,9 +10,12 @@ import unittest
 from unittest.mock import Mock
 
 import pandas as pd
+import plotly.graph_objects as go
 import streamlit as st
 
 from macro_platform.market_history import completed_daily_closes
+from macro_platform.echarts_axes import build_adaptive_echarts_option
+from test_dashboard_loading import load_helpers
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,6 +33,52 @@ def load_functions(names, namespace):
 
 
 class ReleaseAcceptance(unittest.TestCase):
+    def test_new_session_preserves_real_samples_on_shared_macro_cache_hit(self):
+        rows = json.loads((ROOT/'data_snapshots/fred_cache/SOFR.json').read_text())['records'][-20:]
+        dates = pd.to_datetime([row['date'] for row in rows])
+        values = [row['value'] for row in rows]
+        ns = load_helpers()
+        builder = Mock(side_effect=lambda *args: go.Figure(go.Scatter(
+            x=dates, y=pd.Series(values), name='SOFR')))
+        for number in (1, 2, 3, 4, 9, 10, 11, 12):
+            ns[f'build_fig{number}'] = builder
+        ns['build_asia_rates_figure'] = builder
+        ns['_cached_macro_figure'].clear()
+        self.addCleanup(ns['_cached_macro_figure'].clear)
+        first = ns['_cached_macro_figure'](1, '', (), 'cache-sample-regression')
+        # No per-session last-good chart exists for the second caller.
+        st.session_state.clear()
+        second = ns['_cached_macro_figure'](1, '', (), 'cache-sample-regression')
+        option = build_adaptive_echarts_option(second)
+        self.assertIsNotNone(option)
+        self.assertEqual(option, build_adaptive_echarts_option(first))
+        self.assertEqual(list(second.data[0].y), values)
+        self.assertEqual([pd.Timestamp(value).strftime('%Y-%m-%d') for value in second.data[0].x],
+                         [row['date'] for row in rows])
+        self.assertEqual(builder.call_count, 1)
+
+    def test_hk_raw_and_rebased_caches_survive_plotly_pickle_with_actual_closes(self):
+        rows = json.loads((ROOT/'data_snapshots/hk_market_daily.json').read_text())['series']['0700.HK']['records'][-20:]
+        dates = pd.to_datetime([row['observation_date'] for row in rows])
+        values = [row['close'] for row in rows]
+        ns = load_helpers()
+        ns['build_fig5'] = Mock(side_effect=lambda *args, **kwargs: [go.Figure(go.Scatter(
+            x=dates, y=pd.Series(values), name='Tencent raw close')) for _ in range(4)])
+        for name in ('_cached_hk_common', '_cached_hk_bundle'):
+            ns[name].clear()
+            self.addCleanup(ns[name].clear)
+        for mode in ('Raw', 'Rebased 100'):
+            first = ns['_cached_hk_bundle'](mode, (), 'cache-sample-regression')
+            st.session_state.clear()
+            second = ns['_cached_hk_bundle'](mode, (), 'cache-sample-regression')
+            for original, cached in zip(first, second):
+                restored = pickle.loads(pickle.dumps(cached))
+                self.assertEqual(list(restored.data[0].y), values)
+                self.assertEqual(build_adaptive_echarts_option(restored),
+                                 build_adaptive_echarts_option(original))
+                self.assertIsNotNone(build_adaptive_echarts_option(restored))
+        self.assertEqual(ns['build_fig5'].call_count, 2)
+
     def test_successful_yahoo_read_uses_actual_repository_raw_observations(self):
         records = json.loads((ROOT / "data_snapshots/hk_market_daily.json").read_text())["series"]["0700.HK"]["records"][-3:]
         response = Mock()

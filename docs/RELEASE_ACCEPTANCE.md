@@ -1,4 +1,4 @@
-# r41 release acceptance record
+# r42 release acceptance record
 
 This record separates code/CI evidence from acceptance in Streamlit Cloud.
 **Production release is not approved by a green CI result.** No main merge or
@@ -14,6 +14,17 @@ Cloud deployment is performed by this change.
    app rerun. Persist the result first, retain a newer manual quote, and respect
    the current watchlist so removed symbols are not restored. Failed futures
    do not repeatedly trigger reruns; original chart controls remain unchanged.
+3. A fresh second browser session lost five available chart positions after a
+   shared cache hit. Plotly 6 pickles NumPy numeric arrays as dtype/bdata maps;
+   ECharts expects readable date/value sequences. The first session's last-good
+   native options hid the failure on subsequent reruns. Normalize x/y vectors
+   to ordinary sequences before caching all macro and HK mode bundles. Clear
+   the property before resetting it because Plotly skips equal-value assignments.
+   Preserve exact dates, null gaps, observations and layout; invalidate old
+   bundle entries through the r42 build revision. Regressions compare actual
+   SOFR/HK snapshot samples across cache reads and execute a fresh AppTest
+   session against warmed caches. The two-context Chromium assertion remains
+   unchanged and must pass before claiming browser session isolation.
 
 The full-page smoke now asserts native ECharts messages with observed samples,
 dataZoom filtering and independent scaled axes, with no Plotly substitution.
@@ -41,16 +52,16 @@ This is not approval to silently release partial charts.
 
 ## Deployment and rollback
 
-Candidate code build: `2026-10-10-release-acceptance-r41`. The PR records the
+Candidate code build: `2026-10-10-cache-isolation-r42`. The PR records the
 exact candidate SHA and merged main parent. Check the actual Cloud branch,
 deployed SHA, build label, dependency versions and logs; an HTTP 200 alone is
 insufficient. No preproduction Cloud URL or usable owner dashboard session was
 available. On 2026-10-10 the existing production URL became reachable in the
-browser. Its visible build is `2026-10-09-tga-close-recovery-r38`, not the r41
+browser. Its visible build is `2026-10-09-tga-close-recovery-r38`, not the r42
 candidate. It showed all 13 native chart positions with no exception/renderer
 error and visible observation dates, including US yields and liquidity. This
-is old-deployment evidence: it neither proves r41 deployed nor establishes the
-provenance/completeness of the candidate's missing offline FRED backups. r41
+is old-deployment evidence: it neither proves r42 deployed nor establishes the
+provenance/completeness of the candidate's missing offline FRED backups. r42
 Cloud interaction remains **UNVERIFIED**.
 
 Recorded pre-r41 main candidate for rollback:
