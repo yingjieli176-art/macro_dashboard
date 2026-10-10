@@ -2,11 +2,6 @@ name: Extend HK money YoY history
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/extend_hk_money_yoy_history.py
-      - .github/workflows/extend-hk-money-yoy-history.yml
 
 permissions:
   contents: write

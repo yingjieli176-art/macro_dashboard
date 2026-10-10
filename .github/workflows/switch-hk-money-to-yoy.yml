@@ -2,11 +2,6 @@ name: Switch HK money chart to YoY
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/switch_hk_money_chart_to_yoy.py
-      - .github/workflows/switch-hk-money-to-yoy.yml
 
 permissions:
   contents: write

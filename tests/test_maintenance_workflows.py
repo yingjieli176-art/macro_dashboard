@@ -10,6 +10,8 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 
 HISTORICAL_MIGRATIONS = (
+    "switch-hk-money-to-yoy.yml",
+    "extend-hk-money-yoy-history.yml",
     "upgrade-hk-chart5-2-daily.yml",
     "upgrade-us-tga-freshness.yml",
     "add-hk-market-history-fallback.yml",
