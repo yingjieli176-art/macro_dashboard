@@ -1,5 +1,7 @@
 """Test loading helpers without running the dashboard's top-level network I/O."""
 import ast
+import uuid
+from macro_platform.request_runtime import submit_jobs, completed_jobs, observed_cache
 import logging
 import math
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -17,7 +19,7 @@ from macro_platform.chart_axes import apply_client_time_controls
 
 
 HELPERS = {
-    "_empty_quote", "_load_market_quotes", "_load_yahoo_histories",
+    "_fetch_quote_rows", "_apply_watchlist_quote_rows", "_cached_hk_common", "_empty_quote", "_load_market_quotes", "_load_yahoo_histories",
     "_prepare_chart_for_client_ranges", "_macro_snapshot_revision",
     "_cached_macro_figure", "_cached_hk_bundle", "_safe_macro_build",
     "_safe_hk_bundle", "_macro_error_figure", "_build_macro_figures_parallel",
@@ -30,14 +32,16 @@ def load_helpers():
     tree = ast.parse(source.read_text(encoding="utf-8"))
     selected = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in HELPERS]
     constants = [node for node in tree.body if isinstance(node, ast.Assign)
-                 and any(isinstance(target, ast.Name) and target.id in {"DEFAULT_CHART_RANGE", "CHART_BUILD"} for target in node.targets)]
+                 and any(isinstance(target, ast.Name) and target.id in {"DEFAULT_CHART_RANGE", "CHART_BUILD", "MARKET_SYMBOLS"} for target in node.targets)]
     namespace = {
         "__file__": str(source), "st": st, "pd": pd, "go": go,
-        "logging": logging,
+        "logging": logging, "uuid": uuid,
         "math": math,
         "Path": Path, "ThreadPoolExecutor": ThreadPoolExecutor,
         "as_completed": as_completed, "apply_client_time_controls": apply_client_time_controls,
     }
+    namespace.update({"observed_cache": observed_cache, "submit_jobs": submit_jobs, "completed_jobs": completed_jobs,
+                      "_quote_refresh_key": lambda: 0})
     exec(compile(ast.Module(body=constants + selected, type_ignores=[]), str(source), "exec"), namespace)
     return namespace
 
@@ -47,6 +51,7 @@ class DashboardLoadingTests(unittest.TestCase):
         self.ns = load_helpers()
         self.ns["_cached_macro_figure"].clear()
         self.ns["_cached_hk_bundle"].clear()
+        self.ns["_cached_hk_common"].clear()
         st.session_state.clear()
         dates = pd.to_datetime(["2021-09-29", "2025-09-29", "2026-09-29"])
         self.figure = go.Figure(go.Scatter(x=dates, y=[100, 110, 120], name="full history"))
@@ -61,6 +66,7 @@ class DashboardLoadingTests(unittest.TestCase):
     def tearDown(self):
         self.ns["_cached_macro_figure"].clear()
         self.ns["_cached_hk_bundle"].clear()
+        self.ns["_cached_hk_common"].clear()
         st.session_state.clear()
 
     def test_one_year_view_preserves_five_year_data_and_all_controls(self):
@@ -114,6 +120,7 @@ class DashboardLoadingTests(unittest.TestCase):
 
     def test_hk_composite_error_keeps_banking_and_funding_data(self):
         self.ns["_cached_hk_bundle"].clear()
+        self.ns["_cached_hk_common"].clear()
         self.ns["build_fig5"].side_effect = OSError("optional market overlay failed")
         figures = self.ns["_safe_hk_bundle"]("Raw", ())
         self.assertEqual(len(figures), 4)
@@ -177,3 +184,4 @@ class DashboardLoadingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

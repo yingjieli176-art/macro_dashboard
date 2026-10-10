@@ -10,6 +10,7 @@ import pandas as pd
 import requests
 import streamlit as st
 from macro_platform.background_refresh import BackgroundRefresh
+from macro_platform.request_runtime import http_get, request_budget, observed_cache
 
 from macro_platform.treasury_cash import parse_dts_tga_rows, read_verified_tga_snapshot
 
@@ -28,7 +29,7 @@ FRED_GRAPH_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv"
 _FRED_LAST_GOOD = {}
 _FRED_LOCK = threading.RLock()
 _FRED_REFRESH = BackgroundRefresh()
-_FRED_SNAPSHOT_DIR = Path(os.environ.get("MACRO_FRED_CACHE_DIR", "data_snapshots/fred_cache"))
+_FRED_SNAPSHOT_DIR = Path(os.environ.get("MACRO_FRED_CACHE_DIR", str(Path(__file__).resolve().parent / "data_snapshots/fred_cache")))
 
 def _fred_disk_path(series_id):
     if not re.fullmatch(r"[A-Z0-9_]+", series_id):
@@ -84,7 +85,7 @@ def _normalize_fred_frame(frame, series_id):
 
 
 def _fetch_fred_graph(series_id):
-    response = requests.get(
+    response = http_get(
         FRED_GRAPH_URL,
         params={"id": series_id},
         headers={"User-Agent": "MacroDashboard/1.0"},
@@ -108,7 +109,7 @@ def _fetch_fred_api(series_id):
         "file_type": "json",
         "sort_order": "asc",
     }
-    response = requests.get(FRED_API_URL, params=params, timeout=(2.5, 5.0))
+    response = http_get(FRED_API_URL, params=params, timeout=(2.5, 5.0))
     response.raise_for_status()
     rows = []
     for item in (response.json() or {}).get("observations", []):
@@ -127,33 +128,41 @@ def _fetch_fred_api(series_id):
     return frame
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
+@st.cache_data(max_entries=64, show_spinner=False)
+def _cached_fred_snapshot(series_id, revision):
+    return _read_fred_success(series_id)
+
+
 def _fred_series(series_id):
-    """Retrieve a FRED series without allowing a transient network error to crash the app.
-
-    The public graph CSV endpoint is preferred because it does not depend on an
-    API key. The authenticated API is a secondary route. A successful frame is
-    retained as process-local last-known-good data. If both live routes fail,
-    return that real prior frame marked stale; on a cold start return an empty,
-    explicitly unavailable frame rather than manufacturing observations.
-    """
-    # Verified official snapshots are synced by CI and shipped in the repo.
-    # During a Streamlit Cloud cold start, use a recent observed snapshot
-    # immediately instead of blocking all macro charts on remote HTTP.
-    # Source dates, missing dates, and "stale" provenance are preserved.
-    # Serving a snapshot never suppresses a refresh for multiple days.
-    disk_copy = _read_fred_success(series_id)
-    if disk_copy is not None:
+    """One source cache: changed snapshots and completed refreshes are visible immediately."""
+    path = _fred_disk_path(series_id)
+    try:
+        stat = path.stat()
+        revision = (str(path.resolve()), stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        revision = (str(path.resolve()), None, None)
+    disk = _cached_fred_snapshot(series_id, revision)
+    with _FRED_LOCK:
+        memory = _FRED_LAST_GOOD.get(series_id)
+    def fetched_at(frame):
         try:
-            fetched_at = float(disk_copy.attrs.get("fetched_at") or 0)
-            age_seconds = time.time() - fetched_at
+            value = float(frame.attrs.get("fetched_at") or 0)
+            return value if pd.notna(value) and abs(value) != float("inf") else 0
         except (TypeError, ValueError, OverflowError):
-            age_seconds = float("inf")
-        if age_seconds < 0 or age_seconds >= 3600:
+            return 0
+    candidates = [x for x in (disk, memory) if isinstance(x, pd.DataFrame) and not x.empty]
+    if candidates:
+        frame = max(candidates, key=fetched_at).copy()
+        age = time.time() - fetched_at(frame)
+        if age < 0 or age >= 3600:
             _FRED_REFRESH.submit(series_id, lambda: _refresh_fred_series(series_id))
-        return disk_copy
-
-    return _refresh_fred_series(series_id)
+        return frame
+    # A missing source must not block cold start, nor become an hour-long empty cache.
+    _FRED_REFRESH.submit(series_id, lambda: _refresh_fred_series(series_id))
+    empty = pd.DataFrame(columns=["observation_date", series_id])
+    empty.attrs.update({"source": "FRED unavailable", "is_stale": True,
+                        "is_fallback": True, "unavailable": True, "refresh_pending": True})
+    return empty
 
 
 def _refresh_fred_series(series_id):
@@ -202,11 +211,8 @@ def _refresh_fred_series(series_id):
     })
     return empty
 
-@st.cache_data(ttl=3600)
 def get_dgs3mo(): return _fred_series("DGS3MO")
-@st.cache_data(ttl=3600)
 def get_dgs2(): return _fred_series("DGS2")
-@st.cache_data(ttl=3600)
 def get_dgs10():
     """Return 10Y nominal Treasury yield with an identity-based fallback.
 
@@ -259,36 +265,22 @@ def get_dgs10():
     result.attrs["identity_backfill"] = bool(derived_dates)
     result.attrs["identity_derived_dates"] = derived_dates
     return result
-@st.cache_data(ttl=3600)
 def get_dfii5(): return _fred_series("DFII5")
-@st.cache_data(ttl=3600)
 def get_dfii10(): return _fred_series("DFII10")
-@st.cache_data(ttl=3600)
 def get_sofr(): return _fred_series("SOFR")
-@st.cache_data(ttl=3600)
 def get_iorb(): return _fred_series("IORB")
-@st.cache_data(ttl=3600)
 def get_effr(): return _fred_series("EFFR")
-@st.cache_data(ttl=3600)
 def get_rrp_rate(): return _fred_series("RRPONTSYAWARD")
-@st.cache_data(ttl=3600)
 def get_gfdebtn(): return _fred_series("GFDEBTN")
-@st.cache_data(ttl=3600)
 def get_fygfdpun(): return _fred_series("FYGFDPUN")
-@st.cache_data(ttl=3600)
 def get_fdhbfrbn(): return _fred_series("FDHBFRBN")
-@st.cache_data(ttl=3600)
 def get_fdhbfin(): return _fred_series("FDHBFIN")
-@st.cache_data(ttl=3600)
 def get_fdhbpin(): return _fred_series("FDHBPIN")
-@st.cache_data(ttl=3600)
 def get_walcl(): return _fred_series("WALCL")
-@st.cache_data(ttl=3600)
 def get_wresbal(): return _fred_series("WRESBAL")
-@st.cache_data(ttl=3600)
 def get_wtre_gen(): return _fred_series("WTREGEN")
 
-@st.cache_data(ttl=3600)
+@observed_cache(lambda: (TGA_SNAPSHOT_PATH,))
 def get_tga_daily():
     """Official daily U.S. Treasury TGA close (USD trillions).
 
@@ -307,7 +299,7 @@ def get_tga_daily():
     url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/dts/operating_cash_balance"
     cutoff = (pd.Timestamp.today().normalize() - pd.DateOffset(years=5, months=1)).strftime("%Y-%m-%d")
     try:
-        response = requests.get(
+        response = http_get(
             url,
             params={
                 "filter": f"record_date:gte:{cutoff}",
@@ -349,7 +341,6 @@ def get_tga_daily():
                          ))})
     return result
 
-@st.cache_data(ttl=3600)
 def get_rrp_daily(): return _fred_series("RRPONTSYD")
 
 def _clean_text(value):
@@ -441,7 +432,7 @@ def _extract_id(item): return str(_get_field(item, ["id", "ID", "newsId", "NewsI
 
 def _request_focus_news(page_size=100):
     params = {"client": "web", "biz": "web_724", "fastColumn": "102", "sortEnd": "", "pageSize": str(page_size), "req_trace": str(int(time.time() * 1000))}
-    response = requests.get(EASTMONEY_FOCUS_API, params=params, headers=NEWS_HEADERS, timeout=10); response.raise_for_status()
+    response = http_get(EASTMONEY_FOCUS_API, params=params, headers=NEWS_HEADERS, timeout=10); response.raise_for_status()
     try: return response.json()
     except ValueError:
         text = response.text.strip(); first_brace = text.find("{"); last_brace = text.rfind("}")
@@ -487,7 +478,7 @@ MARKET_SYMBOLS = {"纳斯达克": "^IXIC", "标普500": "^GSPC", "上证指数":
 MARKET_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36"}
 
 def _fetch_yahoo_quote(symbol):
-    response = requests.get(YAHOO_CHART_API + symbol, params={"range": "1d", "interval": "1m", "includePrePost": "true"}, headers=MARKET_HEADERS, timeout=10); response.raise_for_status()
+    response = http_get(YAHOO_CHART_API + symbol, params={"range": "1d", "interval": "1m", "includePrePost": "true"}, headers=MARKET_HEADERS, timeout=10); response.raise_for_status()
     result = (response.json().get("chart", {}).get("result") or [])
     if not result: raise RuntimeError("没有返回行情数据")
     meta = result[0].get("meta", {}); price = meta.get("regularMarketPrice"); previous = meta.get("previousClose")

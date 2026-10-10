@@ -108,3 +108,36 @@ Any measured optimization must be compared on the same source snapshots and
 the same 5Y/1Y/6M/3M/1M viewports. **Never reduce the number of actual market
 observations solely to make an axis faster.**
 
+
+
+## Consolidated runtime update (r40)
+
+Market overview, watchlist and all thirteen charts share a bounded completion loop,
+with their original containers, widget keys, modes and layout order preserved.
+Ready charts do not wait for slow quote sources. The initial wait budget is eight
+seconds; unfinished workers cannot extend that wait by executor shutdown. Two-second
+completion polling checks local metadata only, replacing late successful data and
+updated FRED snapshots without making periodic quote requests.
+
+Public HTTP concurrency is capped at eight per process. Reusable worker pools bound
+queued work and coalesce matching in-flight tasks across sessions. Budgets limit
+retry chains and time spent waiting; Python threads cannot forcibly terminate an
+already-running request, so connection/read timeouts remain necessary. Cache release
+closes worker pools and signals periodic news workers to exit.
+
+FRED getters use one revision-aware source cache, rather than nested hour-long
+wrappers. Changed snapshot files and successful in-memory refreshes become visible
+without manual cache clearing. Missing sources return explicit unavailable frames
+while a deduplicated background job fetches genuine observations. Empty plots never
+enter the five-minute success cache. Banking and funding plots are reused across HK
+market modes; both market overlays retain their original Raw/Rebased calculations.
+All charts use the same rendering/recovery engine, retaining independent fragments.
+Direct production dependencies are pinned to the versions verified by the suite.
+
+Acceptance covers startup without remote sources, chart-before-quote completion,
+bounded waits, source recovery without cache clearing, cache-release lifecycle,
+shared worker limits, exact HK data/layout parity, all original widgets and modes,
+and the complete test suite. Actions collects every available FRED series with its
+actual coverage and failure status; failed downloads cannot manufacture observations
+or overwrite last-good values. A green test run is not evidence that all data sources
+are current or that a particular user's network route is available.

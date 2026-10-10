@@ -1,5 +1,7 @@
 """Regression cases discovered in the final accuracy/performance audit."""
 import ast
+import uuid
+from macro_platform.request_runtime import submit_jobs, completed_jobs
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 import json
@@ -22,6 +24,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def helpers(path, names, namespace):
+    namespace.setdefault("uuid", uuid)
+    namespace.setdefault("submit_jobs", submit_jobs)
+    namespace.setdefault("completed_jobs", completed_jobs)
+    namespace.setdefault("_quote_refresh_key", lambda: 0)
+    if path == "data.py":
+        import data
+        namespace.setdefault("_fred_disk_path", data._fred_disk_path)
+        namespace.setdefault("_cached_fred_snapshot", lambda sid, revision: namespace["_read_fred_success"](sid))
+        namespace.setdefault("_FRED_LOCK", threading.RLock())
+        namespace.setdefault("_FRED_LAST_GOOD", {})
     tree = ast.parse((ROOT / path).read_text())
     selected = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in names]
     for node in selected:

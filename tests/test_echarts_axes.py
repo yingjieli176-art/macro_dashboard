@@ -113,16 +113,14 @@ class EchartsNativeAxes(unittest.TestCase):
             node for node in tree.body
             if isinstance(node, ast.FunctionDef) and node.name == "_render_standard_macro_chart"
         )
-        calls = [
-            node.func.attr for node in ast.walk(renderer)
-            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
-        ]
-        self.assertIn("echarts_chart", calls)
-        # The legacy Plotly call is now an intentional fail-open fallback when
-        # Streamlit Cloud deploys app.py before its optional chart adapter.
-        self.assertIn("plotly_chart", calls)
-        self.assertIn('_recoverable_echarts_option', ast.get_source_segment(source, renderer))
-        self.assertNotIn('range_key == "normal_corridor_range"', ast.get_source_segment(source, renderer))
+        self.assertIn('_render_adaptive_macro_figure', ast.get_source_segment(source, renderer))
+        common = next(node for node in tree.body if isinstance(node, ast.FunctionDef)
+                      and node.name == "_render_adaptive_macro_figure")
+        engine = ast.get_source_segment(source, common)
+        self.assertIn('"echarts_chart"', engine)
+        self.assertIn('plotly_chart', engine)
+        self.assertIn('_recoverable_echarts_option', engine)
+        self.assertNotIn('range_key == "normal_corridor_range"', engine)
         for chart_no in range(1, 5):
             chart_name = f"render_macro_chart_{chart_no}"
             render_method = next(
@@ -276,3 +274,4 @@ class EchartsNativeAxes(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

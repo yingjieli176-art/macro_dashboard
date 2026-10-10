@@ -8,6 +8,7 @@ from typing import Any
 import pandas as pd
 import plotly.graph_objects as go
 import requests
+from macro_platform.request_runtime import http_get, observed_cache
 import streamlit as st
 from plotly.subplots import make_subplots
 
@@ -21,6 +22,12 @@ HK_MARKET_DAILY_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hk_market_daily.json"
 USDHKD_SNAPSHOT_PATH = ROOT / "data_snapshots" / "usdhkd_daily.json"
 HIBOR_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkd_hibor_monthly.json"
 BASE_RATE_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_base_rate_monthly.json"
+def _hk_snapshot_paths():
+    return (SNAPSHOT_PATH, DAILY_BANKING_SNAPSHOT_PATH, HSTECH_SNAPSHOT_PATH,
+            HK_MARKET_DAILY_SNAPSHOT_PATH, USDHKD_SNAPSHOT_PATH,
+            HIBOR_SNAPSHOT_PATH, BASE_RATE_SNAPSHOT_PATH)
+
+
 DAILY_BANKING_COLUMNS = [
     "observation_date",
     "Opening Aggregate Balance",
@@ -29,13 +36,7 @@ DAILY_BANKING_COLUMNS = [
     "Outstanding EFBN",
     "EFBN Held by Licensed Banks",
 ]
-RANGE_OFFSETS = {
-    "5Y": pd.DateOffset(years=5),
-    "1Y": pd.DateOffset(years=1),
-    "6M": pd.DateOffset(months=6),
-    "3M": pd.DateOffset(months=3),
-    "1M": pd.DateOffset(months=1),
-}
+from macro_platform.chart_axes import RANGE_OFFSETS
 
 OUTPUT_COLUMNS = [
     "observation_date",
@@ -99,7 +100,7 @@ def _read_snapshot() -> tuple[list[dict[str, Any]], dict[str, Any]]:
     return rows, meta
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
+@observed_cache(_hk_snapshot_paths)
 def load_hk_liquidity() -> pd.DataFrame:
     rows, _ = _read_snapshot()
     frame = pd.DataFrame(rows)
@@ -181,7 +182,7 @@ def load_hk_liquidity() -> pd.DataFrame:
 
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
+@observed_cache(_hk_snapshot_paths)
 def load_hk_banking_liquidity_monthly() -> pd.DataFrame:
     """Return real monthly HKMA banking-liquidity history for long windows."""
     monthly = load_hk_liquidity()
@@ -242,7 +243,7 @@ def load_hk_banking_liquidity_daily() -> pd.DataFrame:
     return frame[DAILY_BANKING_COLUMNS]
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
+@observed_cache(_hk_snapshot_paths)
 def load_hk_funding_monthly() -> pd.DataFrame:
     """Build a continuous monthly HKD funding history from persisted official data.
 
@@ -295,7 +296,7 @@ def load_hk_funding_monthly() -> pd.DataFrame:
     return funding.reset_index()[columns]
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
+@observed_cache(_hk_snapshot_paths)
 def load_hk_funding_daily() -> pd.DataFrame:
     """Load O/N HIBOR, 3M HIBOR and Base Rate from the daily HKMA snapshot.
 
@@ -331,7 +332,7 @@ def _daily_snapshot_available() -> bool:
         return False
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
+@observed_cache(_hk_snapshot_paths)
 def snapshot_metadata() -> dict[str, Any]:
     _, meta = _read_snapshot()
     data = load_hk_liquidity()
@@ -615,7 +616,7 @@ def _market_snapshot_history(symbol: str, label: str, date_range: str) -> pd.Dat
     return frame.reset_index(drop=True)
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
+@observed_cache(_hk_snapshot_paths)
 def _market_history(symbol: str, label: str, date_range: str) -> pd.DataFrame:
     snapshot_symbol = "HSTECH" if str(symbol).upper() in {"HSTECH", "HSTECH.HK", "^HSTECH"} else symbol
     snapshot = _market_snapshot_history(snapshot_symbol, label, date_range)
@@ -663,7 +664,7 @@ def _market_monthly_close(symbol: str, label: str) -> pd.DataFrame:
     for market_symbol in symbols:
         for host in hosts:
             try:
-                response = requests.get(
+                response = http_get(
                     host + market_symbol,
                     params={
                         "range": "5y",
@@ -732,7 +733,7 @@ def _usdhkd_snapshot_daily(label: str) -> pd.DataFrame:
     return frame[["observation_date", label]]
 
 
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
+@observed_cache(_hk_snapshot_paths)
 def _fred_daily_series(series_id: str, label: str) -> pd.DataFrame:
     """Load a daily series, preferring a repository snapshot for USD/HKD."""
     if series_id == "DEXHKUS":
@@ -741,7 +742,7 @@ def _fred_daily_series(series_id: str, label: str) -> pd.DataFrame:
             cutoff = snapshot["observation_date"].max() - pd.DateOffset(years=5)
             return snapshot.loc[snapshot["observation_date"] >= cutoff].copy()
     try:
-        response = requests.get(
+        response = http_get(
             "https://fred.stlouisfed.org/graph/fredgraph.csv",
             params={"id": series_id},
             headers={"User-Agent": "Mozilla/5.0"},
@@ -852,7 +853,8 @@ def build_hk_core_snapshot_figures(date_range: str = "5Y") -> tuple[go.Figure, g
 
 
 def build_hk_liquidity_figures(
-    date_range: str, compact_mode: bool = False, market_mode: str = "Raw"
+    date_range: str, compact_mode: bool = False, market_mode: str = "Raw",
+    _shared_figures=None
 ) -> list[go.Figure]:
     """Build four independent Hong Kong liquidity charts for the dashboard."""
     all_data = load_hk_liquidity()
@@ -1042,49 +1044,52 @@ def build_hk_liquidity_figures(
     if not market_data.empty:
         market_latest = market_data["observation_date"].max().strftime("%Y-%m-%d")
 
-    # 6 · Monthly banking-system liquidity and monetary-base structure.
-    balance = make_subplots(specs=[[{"secondary_y": True}]])
-    add_line(balance, banking_data, "Closing Aggregate Balance", "Closing Aggregate Balance", COLORS["balance"], 2.9, unit=" HK$ bn", secondary_y=False)
-    add_line(balance, banking_data, "Outstanding EFBN", "Outstanding EFBN (R1)", "#7c3aed", 2.0, unit=" HK$ bn", secondary_y=True)
-    add_line(balance, banking_data, "EFBN Held by Licensed Banks", "EFBN Held by Licensed Banks (R1)", "#c026d3", 1.8, "dash", unit=" HK$ bn", secondary_y=True)
-    balance.update_yaxes(
-        title_text="Aggregate Balance (HK$ bn)", secondary_y=False,
-        showgrid=True, gridcolor="#e5e7eb", griddash="dot",
-        zeroline=False, fixedrange=True,
-    )
-    balance.update_yaxes(
-        title_text="", secondary_y=True,
-        showgrid=False, zeroline=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3,
-    )
-    style(balance, "6. Banking-system Liquidity · Monthly", height=400, right_axis=True)
-
-    # 5-3 · HKD funding.
-    funding = make_subplots(specs=[[{"secondary_y": True}]])
-    add_line(funding, funding_data, "HIBOR O/N", "O/N HIBOR", COLORS["on"], 2.0, secondary_y=False)
-    add_line(funding, funding_data, "HIBOR 3M", "3M HIBOR", COLORS["h3m"], 2.3, "dash", secondary_y=False)
-    add_line(funding, funding_data, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot", secondary_y=False)
-    add_line(funding, funding_data, "O/N-3M Spread", "O/N−3M Spread (R1)", COLORS["spread"], 1.7, "dashdot", "%", secondary_y=True)
-    funding.update_yaxes(
-        title_text="Rate (%)", secondary_y=False,
-        showgrid=True, gridcolor="#e5e7eb", griddash="dot",
-        zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
-    )
-    funding.update_yaxes(
-        title_text="Spread (%)", secondary_y=True,
-        showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
-    )
-    funding_frequency_label = (
-        "Monthly history + recent daily" if date_range == "5Y" and funding_is_daily
-        else ("Daily" if funding_is_daily else "Monthly fallback")
-    )
-    style(funding, f"7. HKD Funding · {funding_frequency_label}", right_axis=True)
-    if date_range != "5Y" and not funding_is_daily:
-        funding.add_annotation(
-            text="⚠ 日频 HIBOR 暂缺，显示月末数据",
-            x=0.006, y=0.988, xref="paper", yref="paper", xanchor="left", yanchor="top",
-            showarrow=False, font=dict(size=10, color="#991b1b"),
-            bgcolor="rgba(254,242,242,0.94)", bordercolor="#fecaca", borderwidth=1, borderpad=3,
+    if _shared_figures is not None:
+        balance, funding = _shared_figures
+    else:
+        # 6 · Monthly banking-system liquidity and monetary-base structure.
+        balance = make_subplots(specs=[[{"secondary_y": True}]])
+        add_line(balance, banking_data, "Closing Aggregate Balance", "Closing Aggregate Balance", COLORS["balance"], 2.9, unit=" HK$ bn", secondary_y=False)
+        add_line(balance, banking_data, "Outstanding EFBN", "Outstanding EFBN (R1)", "#7c3aed", 2.0, unit=" HK$ bn", secondary_y=True)
+        add_line(balance, banking_data, "EFBN Held by Licensed Banks", "EFBN Held by Licensed Banks (R1)", "#c026d3", 1.8, "dash", unit=" HK$ bn", secondary_y=True)
+        balance.update_yaxes(
+            title_text="Aggregate Balance (HK$ bn)", secondary_y=False,
+            showgrid=True, gridcolor="#e5e7eb", griddash="dot",
+            zeroline=False, fixedrange=True,
         )
+        balance.update_yaxes(
+            title_text="", secondary_y=True,
+            showgrid=False, zeroline=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3,
+        )
+        style(balance, "6. Banking-system Liquidity · Monthly", height=400, right_axis=True)
+
+        # 5-3 · HKD funding.
+        funding = make_subplots(specs=[[{"secondary_y": True}]])
+        add_line(funding, funding_data, "HIBOR O/N", "O/N HIBOR", COLORS["on"], 2.0, secondary_y=False)
+        add_line(funding, funding_data, "HIBOR 3M", "3M HIBOR", COLORS["h3m"], 2.3, "dash", secondary_y=False)
+        add_line(funding, funding_data, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot", secondary_y=False)
+        add_line(funding, funding_data, "O/N-3M Spread", "O/N−3M Spread (R1)", COLORS["spread"], 1.7, "dashdot", "%", secondary_y=True)
+        funding.update_yaxes(
+            title_text="Rate (%)", secondary_y=False,
+            showgrid=True, gridcolor="#e5e7eb", griddash="dot",
+            zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
+        )
+        funding.update_yaxes(
+            title_text="Spread (%)", secondary_y=True,
+            showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
+        )
+        funding_frequency_label = (
+            "Monthly history + recent daily" if date_range == "5Y" and funding_is_daily
+            else ("Daily" if funding_is_daily else "Monthly fallback")
+        )
+        style(funding, f"7. HKD Funding · {funding_frequency_label}", right_axis=True)
+        if date_range != "5Y" and not funding_is_daily:
+            funding.add_annotation(
+                text="⚠ 日频 HIBOR 暂缺，显示月末数据",
+                x=0.006, y=0.988, xref="paper", yref="paper", xanchor="left", yanchor="top",
+                showarrow=False, font=dict(size=10, color="#991b1b"),
+                bgcolor="rgba(254,242,242,0.94)", bordercolor="#fecaca", borderwidth=1, borderpad=3,
+            )
 
     # 8 · Convertibility band + market reaction.
     fx = make_subplots(specs=[[{"secondary_y": True}]])

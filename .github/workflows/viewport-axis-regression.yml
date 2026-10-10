@@ -6,6 +6,8 @@ on:
       - app.py
       - macro_platform/market_history.py
       - macro_platform/background_refresh.py
+      - macro_platform/request_runtime.py
+      - tests/test_consolidated_runtime.py
       - tests/test_accuracy_performance.py
       - static/deploy_version.json
       - scripts/update_hk_market_daily.py
@@ -45,6 +47,8 @@ on:
       - app.py
       - macro_platform/market_history.py
       - macro_platform/background_refresh.py
+      - macro_platform/request_runtime.py
+      - tests/test_consolidated_runtime.py
       - tests/test_accuracy_performance.py
       - static/deploy_version.json
       - scripts/update_hk_market_daily.py
@@ -175,3 +179,17 @@ jobs:
           path: data_snapshots/hk_market_daily.json
           if-no-files-found: error
 
+
+      - name: Collect all available verified FRED history for the same review
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/sync_fred_verified_cache.py
+      - name: Preserve verified source snapshots and per-series coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-fred-history
+          path: |
+            data_snapshots/fred_cache/
+            fred_sync_health.json
+          if-no-files-found: error

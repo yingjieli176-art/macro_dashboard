@@ -1,5 +1,7 @@
 """Exercise app helpers without importing its network-heavy top-level dashboard."""
 import ast
+import logging
+from macro_platform.request_runtime import submit_jobs, completed_jobs
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
@@ -11,7 +13,7 @@ from zoneinfo import ZoneInfo
 
 
 HELPERS = {
-    "_empty_quote", "_symbol_market", "_remember_quote", "_stable_quote",
+    "_fetch_quote_rows", "_apply_watchlist_quote_rows", "_cached_hk_common", "_empty_quote", "_symbol_market", "_remember_quote", "_stable_quote",
     "_get_watchlist_quote", "_request_watchlist_refresh", "_watchlist_symbols",
     "_load_watchlist_quotes", "_watchlist_refresh_status", "_active_quote_values",
     "render_watchlists",
@@ -27,12 +29,14 @@ def load_helpers(st):
             node.decorator_list = []
             selected.append(node)
     namespace = {
-        "st": st, "time": time, "datetime": datetime,
+        "st": st, "logging": logging, "time": time, "datetime": datetime,
         "DASHBOARD_TZ": ZoneInfo("Asia/Hong_Kong"),
         "ThreadPoolExecutor": ThreadPoolExecutor, "as_completed": as_completed,
         "WATCHLIST_KEYS": ("market_search_us", "market_search_hk", "market_search_cn"),
         "_quote_session_context": lambda row, market: ("交易中", row.get("regular_market_time")),
     }
+    namespace.update({"submit_jobs": submit_jobs, "completed_jobs": completed_jobs,
+                      "_quote_refresh_key": lambda: 0})
     exec(compile(ast.Module(body=selected, type_ignores=[]), str(source), "exec"), namespace)
     return namespace
 
@@ -184,3 +188,4 @@ class WatchlistRefreshTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

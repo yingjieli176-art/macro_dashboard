@@ -5,18 +5,17 @@ import json
 import logging
 import math
 import os
-import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import uuid
+from macro_platform.request_runtime import http_get, submit_jobs, completed_jobs, PeriodicWorker, observed_cache
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import requests
 import streamlit as st
-from macro_platform.hk_liquidity import build_hk_liquidity_figure, build_hk_liquidity_figures, build_hk_core_snapshot_figures, load_hk_liquidity
+from macro_platform.hk_liquidity import build_hk_liquidity_figures, build_hk_core_snapshot_figures
 # The renderer is an optional module during rolling Streamlit Cloud deployments.
 # Never import individual newly added helpers at startup: mixed revisions of
 # app.py and macro_platform/echarts_axes.py must not crash the entire app.
@@ -70,7 +69,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-09-data-integrity-progressive-r39"
+CHART_BUILD = "2026-10-10-consolidated-runtime-r40"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -106,20 +105,10 @@ def _write_news_snapshot():
 
 
 
-@st.cache_resource(show_spinner=False)
+@st.cache_resource(show_spinner=False, on_release=lambda worker: worker.close())
 def _start_news_background_updater():
-    def worker():
-        while True:
-            started = time.monotonic()
-            try:
-                _write_news_snapshot()
-            except Exception:
-                pass
-            time.sleep(max(1.0, NEWS_BACKGROUND_INTERVAL_SECONDS - (time.monotonic() - started)))
-
-    thread = threading.Thread(target=worker, name="eastmoney-news-updater", daemon=True)
-    thread.start()
-    return thread
+    return PeriodicWorker(_write_news_snapshot, NEWS_BACKGROUND_INTERVAL_SECONDS,
+                          "eastmoney-news-updater")
 
 
 
@@ -375,7 +364,7 @@ def _get_tencent_quote_safe(symbol):
     endpoints = (TENCENT_QUOTE_URL, TENCENT_QUOTE_URL.replace("https://", "http://", 1))
     for endpoint in endpoints:
         try:
-            response = requests.get(
+            response = http_get(
                 endpoint + code + f"&_={int(time.time() * 1000)}",
                 headers={
                     "User-Agent": "Mozilla/5.0",
@@ -433,7 +422,7 @@ def _get_sina_hk_quote_safe(symbol):
     if not code:
         return _empty_quote()
     try:
-        response = requests.get(
+        response = http_get(
             f"https://hq.sinajs.cn/rn={int(time.time() * 1000)}&list={code}",
             headers={
                 "User-Agent": "Mozilla/5.0",
@@ -502,7 +491,7 @@ def _get_tencent_minute_quote_safe(symbol):
         return _empty_quote()
     try:
         var_name = f"min_data_{code}"
-        response = requests.get(
+        response = http_get(
             TENCENT_MINUTE_URL,
             params={"_var": var_name, "code": code, "r": f"{time.time():.6f}"},
             headers={
@@ -642,7 +631,7 @@ def _newest_quote(rows):
 def _get_yahoo_overnight_safe(symbol, previous=None):
     for url in YAHOO_QUOTE_URLS:
         try:
-            response = requests.get(
+            response = http_get(
                 url,
                 params={"symbols": symbol},
                 headers={"User-Agent": "Mozilla/5.0"},
@@ -667,7 +656,7 @@ def _get_yahoo_overnight_safe(symbol, previous=None):
 def _get_yahoo_quote_safe(symbol):
     for base in YAHOO_CHART_BASES:
         try:
-            response = requests.get(
+            response = http_get(
                 base + symbol,
                 params={"range": "1d", "interval": "5m", "includePrePost": "true"},
                 headers={"User-Agent": "Mozilla/5.0"},
@@ -760,7 +749,7 @@ def _get_eastmoney_quote_safe(symbol):
     if not secid:
         return _empty_quote()
     try:
-        response = requests.get(
+        response = http_get(
             EASTMONEY_QUOTE_URL,
             params={
                 "secid": secid,
@@ -932,16 +921,20 @@ def _fetch_quote(symbol):
             if market == "HK"
             else (_get_tencent_quote_safe, _get_eastmoney_quote_safe)
         )
-        with ThreadPoolExecutor(max_workers=len(direct_getters), thread_name_prefix="quote-provider") as executor:
-            futures = [executor.submit(getter, symbol) for getter in direct_getters]
-            # Preserve provider precedence for identical timestamps.
-            for future in futures:
-                try:
-                    row = future.result()
-                except Exception:
-                    continue
-                if row.get("price") is not None:
-                    candidates.append(_tag_quote_role(row, "direct"))
+        jobs = {index: (lambda getter=getter: getter(symbol)) for index, getter in enumerate(direct_getters)}
+        futures = submit_jobs(jobs, name="quote-provider", workers=8, budget=4,
+                              revision=(symbol, _quote_refresh_key()))
+        direct_rows = {}
+        for index, future in completed_jobs(futures, budget=4):
+            try:
+                direct_rows[index] = future.result()
+            except Exception:
+                continue
+        # Deterministic provider precedence for identical quote timestamps.
+        for index in sorted(direct_rows):
+            row = direct_rows[index]
+            if row.get("price") is not None:
+                candidates.append(_tag_quote_role(row, "direct"))
 
         best = _newest_quote(candidates)
         best_age = _quote_regular_age_seconds(best) if best.get("price") is not None else None
@@ -1031,9 +1024,6 @@ def _last_good_quote_store():
     return {}
 
 
-def _stable_quote(symbol, refresh_key=0):
-    row = _get_cached_quote(symbol, refresh_key)
-    return _remember_quote(symbol, row)
 
 
 def _remember_quote(symbol, row):
@@ -1073,39 +1063,26 @@ def _watchlist_symbols():
     return list(dict.fromkeys(symbols))
 
 
-def _load_watchlist_quotes(symbols, manual=False, progress=None):
-    """Fetch in workers; apply last-good fallback and session updates here."""
+def _apply_watchlist_quote_rows(symbols, rows, requested, manual=False, progress=None):
     previous = st.session_state.get("_watchlist_quotes_snapshot", {})
     snapshot = {symbol: previous[symbol] for symbol in symbols if symbol in previous}
-    requested = symbols if manual else [symbol for symbol in symbols if symbol not in snapshot]
-    received = changed = retained = missing = completed = 0
-    if requested:
-        with ThreadPoolExecutor(max_workers=min(6, len(requested)), thread_name_prefix="watchlist-quote") as executor:
-            futures = {executor.submit(_fetch_quote, symbol): symbol for symbol in requested}
-            for future in as_completed(futures):
-                symbol = futures[future]
-                try:
-                    row = future.result()
-                    if not isinstance(row, dict):
-                        row = _empty_quote()
-                except Exception:
-                    row = _empty_quote()
-                fetched = row.get("price") is not None
-                row = _remember_quote(symbol, row)
-                snapshot[symbol] = row
-                if fetched:
-                    received += 1
-                    old = previous.get(symbol)
-                    market = _symbol_market(symbol)
-                    if isinstance(old, dict) and _active_quote_values(old, market) != _active_quote_values(row, market):
-                        changed += 1
-                elif row.get("price") is not None:
-                    retained += 1
-                else:
-                    missing += 1
-                completed += 1
-                if progress is not None:
-                    progress.caption(f"刷新中… {completed}/{len(requested)}")
+    received = changed = retained = missing = 0
+    for completed, symbol in enumerate(requested, 1):
+        row = rows.get(symbol, _empty_quote())
+        fetched = row.get("price") is not None
+        row = _remember_quote(symbol, row)
+        snapshot[symbol] = row
+        if fetched:
+            received += 1
+            old = previous.get(symbol)
+            if isinstance(old, dict) and _active_quote_values(old, _symbol_market(symbol)) != _active_quote_values(row, _symbol_market(symbol)):
+                changed += 1
+        elif row.get("price") is not None:
+            retained += 1
+        else:
+            missing += 1
+        if progress is not None:
+            progress.caption(f"刷新中… {completed}/{len(requested)}")
     st.session_state["_watchlist_quotes_snapshot"] = snapshot
     if manual:
         st.session_state["_watchlist_refresh_result"] = {
@@ -1113,6 +1090,13 @@ def _load_watchlist_quotes(symbols, manual=False, progress=None):
             "total": len(requested), "received": received, "changed": changed,
             "retained": retained, "missing": missing,
         }
+
+
+def _load_watchlist_quotes(symbols, manual=False, progress=None):
+    previous = st.session_state.get("_watchlist_quotes_snapshot", {})
+    requested = symbols if manual else [symbol for symbol in symbols if symbol not in previous]
+    rows = _fetch_quote_rows(requested, progress=progress) if requested else {}
+    _apply_watchlist_quote_rows(symbols, rows, requested, manual)
 
 
 def _watchlist_refresh_status():
@@ -1147,34 +1131,45 @@ def _active_quote_values(row, market=""):
             return row.get("post_price"), row.get("post_change_pct")
     return row.get("price"), row.get("change_pct")
 
+def _fetch_quote_rows(symbols, refresh_key=None, progress=None):
+    jobs = {symbol: (lambda symbol=symbol: _fetch_quote(symbol) if refresh_key is None
+                     else _get_cached_quote(symbol, refresh_key)) for symbol in symbols}
+    futures = submit_jobs(jobs, name="market-quote", workers=6,
+                          revision=refresh_key, budget=6)
+    rows = {symbol: _empty_quote() for symbol in symbols}
+    completed = 0
+    for symbol, future in completed_jobs(futures, budget=6):
+        try:
+            row = future.result()
+            if isinstance(row, dict):
+                rows[symbol] = row
+        except Exception:
+            logging.warning("Quote source unavailable: %s", symbol)
+        completed += 1
+        if progress is not None:
+            progress.caption(f"刷新中… {completed}/{len(rows)}")
+    return rows
+
+
+MARKET_SYMBOLS = {
+    "nasdaq": "^IXIC", "sp500": "^GSPC", "dow": "^DJI",
+    "hsi": "^HSI", "hstech": "HSTECH.HK", "sh": "000001.SS",
+    "sz": "399001.SZ", "csi300": "000300.SS",
+}
+
+
 def _load_market_quotes(refresh_key):
-    """Fetch index quotes together, keeping cache and last-good semantics."""
-    symbols = {
-        "nasdaq": "^IXIC", "sp500": "^GSPC", "dow": "^DJI",
-        "hsi": "^HSI", "hstech": "HSTECH.HK", "sh": "000001.SS",
-        "sz": "399001.SZ", "csi300": "000300.SS",
-    }
-    snapshot = {}
-    with ThreadPoolExecutor(max_workers=6, thread_name_prefix="market-index") as executor:
-        futures = {executor.submit(_get_cached_quote, symbol, refresh_key): (key, symbol)
-                   for key, symbol in symbols.items()}
-        for future in as_completed(futures):
-            key, symbol = futures[future]
-            try:
-                row = future.result()
-            except Exception:
-                row = _empty_quote()
-            snapshot[key] = _remember_quote(symbol, row)
-    return snapshot
+    rows = _fetch_quote_rows(MARKET_SYMBOLS.values(), refresh_key)
+    return {key: _remember_quote(symbol, rows[symbol]) for key, symbol in MARKET_SYMBOLS.items()}
 
 
-def render_market_groups():
+def render_market_groups(defer_initial=False):
     now = time.time(); snapshot = st.session_state.get("_market_quotes_snapshot"); snapshot_time = st.session_state.get("_market_quotes_snapshot_time", 0)
-    if not isinstance(snapshot, dict) or now - snapshot_time >= 60:
+    if not defer_initial and (not isinstance(snapshot, dict) or now - snapshot_time >= 60):
         refresh_key = (_quote_refresh_key(), st.session_state.get("_market_refresh_key", 0))
         snapshot = _load_market_quotes(refresh_key)
         st.session_state["_market_quotes_snapshot"] = snapshot; st.session_state["_market_quotes_snapshot_time"] = now
-    q = snapshot
+    q = snapshot or {key: _empty_quote() for key in MARKET_SYMBOLS}
 
     def overview_item(name, row, market):
         price, change = _active_quote_values(row, market)
@@ -1193,15 +1188,16 @@ st.markdown('<div id="market-overview" class="section-anchor"></div><div class="
 st.markdown('<div class="section-title">市场概览</div><div class="section-description">美股、港股与 A 股主要指数</div>', unsafe_allow_html=True)
 
 @st.fragment(key="market_overview")
-def render_market_overview():
+def render_market_overview(defer_initial=False):
     _, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with refresh_col:
         if st.button("↻ 刷新行情", key="refresh_market_overview", use_container_width=True):
             st.session_state["_market_quotes_snapshot_time"] = 0
             st.session_state["_market_refresh_key"] = st.session_state.get("_market_refresh_key", 0) + 1
-    render_market_groups()
+            defer_initial = False
+    render_market_groups(defer_initial)
 
-render_market_overview()
+market_overview_slot = st.container()
 
 @st.cache_data(ttl=20, show_spinner=False)
 def _search_yahoo(market, query):
@@ -1211,7 +1207,7 @@ def _search_yahoo(market, query):
     quotes = []
     for search_url in YAHOO_SEARCH_URLS:
         try:
-            response = requests.get(
+            response = http_get(
                 search_url,
                 params={"q": query, "quotesCount": 10, "newsCount": 0},
                 headers={"User-Agent": "Mozilla/5.0"},
@@ -1284,7 +1280,7 @@ def _render_quote_block(item):
 def _add_confirmed(key, item):
     confirmed = st.session_state.get(f"{key}_confirmed", []); confirmed = [confirmed] if isinstance(confirmed, dict) else (confirmed if isinstance(confirmed, list) else [])
     if not any(x.get("symbol") == item.get("symbol") for x in confirmed if isinstance(x, dict)): confirmed.append(item)
-    st.session_state[f"{key}_confirmed"] = confirmed; st.session_state[key] = ""; st.session_state[f"{key}_open"] = False; st.session_state.pop(f"{key}_select", None); st.session_state.pop(f"{key}_confirm", None); _save_watchlists()
+    st.session_state["_watchlist_added_pending"] = True; st.session_state[f"{key}_confirmed"] = confirmed; st.session_state[key] = ""; st.session_state[f"{key}_open"] = False; st.session_state.pop(f"{key}_select", None); st.session_state.pop(f"{key}_confirm", None); _save_watchlists()
 
 def _delete_confirmed(key, symbol):
     confirmed = st.session_state.get(f"{key}_confirmed", []); confirmed = [confirmed] if isinstance(confirmed, dict) else (confirmed if isinstance(confirmed, list) else [])
@@ -1311,7 +1307,7 @@ st.markdown('<div id="watchlist" class="section-anchor"></div><div class="sectio
 st.markdown('<div class="section-title">自选观察</div>', unsafe_allow_html=True)
 
 @st.fragment(key="watchlists")
-def render_watchlists():
+def render_watchlists(defer_initial=False):
     pending = st.session_state.get("_watchlist_refresh_pending", False)
     info_col, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with info_col:
@@ -1326,7 +1322,7 @@ def render_watchlists():
     status_slot = st.empty()
     symbols = _watchlist_symbols()
     snapshot = st.session_state.get("_watchlist_quotes_snapshot", {})
-    if pending or any(symbol not in snapshot for symbol in symbols):
+    if pending or ((not defer_initial or st.session_state.pop("_watchlist_added_pending", False)) and any(symbol not in snapshot for symbol in symbols)):
         try:
             with st.spinner("正在获取自选行情…"):
                 _load_watchlist_quotes(symbols, manual=pending, progress=status_slot)
@@ -1404,7 +1400,7 @@ def render_watchlists():
                 elif st.session_state.get(key, "").strip() and f"{key}_results" in st.session_state:
                     st.caption("没有找到匹配标的，请检查名称或代码。")
 
-render_watchlists()
+watchlists_slot = st.container()
 
 def add_sources(sources):
     links = [f'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">{html.escape(text)}</a>' for text, url in sources]
@@ -1537,24 +1533,17 @@ def filter_range(data, date_range):
     return data.loc[dates >= start].copy()
 def chart_height(compact, normal): return compact if compact_mode else normal
 
-@st.cache_data(ttl=3600, show_spinner=False)
 def get_fred_series(series_id): return _fred_series(series_id)
 
 
 
 # === HK LIQUIDITY CHART 5 ===
-@st.cache_data(ttl=3600, show_spinner=False, refresh_mode="background")
-def get_hk_liquidity():
-    return load_hk_liquidity()
 
 
-def build_fig5(date_range, market_mode="Raw"):
-    return build_hk_liquidity_figures(date_range, compact_mode=False, market_mode=market_mode)
+def build_fig5(date_range, market_mode="Raw", shared_figures=None):
+    return build_hk_liquidity_figures(date_range, compact_mode=False, market_mode=market_mode, _shared_figures=shared_figures)
 
 
-def apply_hk_chart_range(fig, date_range):
-    """Apply the same dashboard-wide adaptive time axis to charts 5-8."""
-    return apply_time_axis(fig, date_range)
 
 def build_fig1(date_range):
     data = get_iorb().merge(get_rrp_rate(), on="observation_date", how="outer").merge(get_effr(), on="observation_date", how="outer").merge(get_sofr(), on="observation_date", how="outer").sort_values("observation_date"); data = filter_range(data, date_range); fig = go.Figure()
@@ -1811,11 +1800,11 @@ def build_fig9(date_range):
     return fig
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
+@observed_cache()
 def get_yahoo_daily_history(symbol):
     """Fetch five years of completed daily closes from Yahoo chart API."""
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{requests.utils.quote(symbol, safe='')}"
-    response = requests.get(
+    response = http_get(
         url,
         params={"range": "5y", "interval": "1d", "includePrePost": "false", "events": "div,splits"},
         headers={"User-Agent": "Mozilla/5.0 (compatible; MacroDashboard/1.0)"},
@@ -1837,16 +1826,16 @@ def _rebase_100(series):
 
 
 def _load_yahoo_histories(symbols):
-    """Load independent histories together without changing their data window."""
-    frames = {}
-    with ThreadPoolExecutor(max_workers=min(2, len(symbols)), thread_name_prefix="market-history") as executor:
-        futures = {executor.submit(get_yahoo_daily_history, symbol): symbol for symbol in symbols}
-        for future in as_completed(futures):
-            try:
-                frames[futures[future]] = future.result()
-            except Exception:
-                frames[futures[future]] = pd.DataFrame(columns=["observation_date", "close"])
-    return frames
+    jobs = {symbol: (lambda symbol=symbol: get_yahoo_daily_history(symbol)) for symbol in symbols}
+    futures = submit_jobs(jobs, name="market-history", workers=2, budget=8,
+                          revision=_quote_refresh_key())
+    results = {symbol: pd.DataFrame(columns=["observation_date", "close"]) for symbol in symbols}
+    for symbol, future in completed_jobs(futures, budget=8):
+        try:
+            results[symbol] = future.result()
+        except Exception:
+            logging.warning("Market history unavailable: %s", symbol)
+    return results
 
 
 def build_fig10(date_range, market_mode="Rebased 100"):
@@ -2248,7 +2237,7 @@ def _try_minimal_adaptive_chart(base_fig, element_key, selected_range, mode=None
         return False
 
 
-def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
+def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=False):
     """Use viewport-filtered ECharts for every macro chart, not only US 1-4.
 
     Plotly's native time selector changes X without recalculating Y after
@@ -2273,17 +2262,21 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
             base_fig, element_key, selected_range, mode
         )
         if option is not None:
+            if standard:
+                _show_standard_chart_health(base_fig, element_key, selected_range, reused)
             try:
                 renderer(
                     option,
                     height=465,
                     width="stretch",
-                    key=f"{element_key}_adaptive_{mode or 'default'}_{selected_range}",
+                    key=(f"{element_key}_echarts_{selected_range}" if standard else
+                         f"{element_key}_adaptive_{mode or 'default'}_{selected_range}"),
                     theme=None,
                 )
-                if reused:
-                    st.caption("动态 Y 轴已保留上次有效数据；数据更新暂不可用。")
-                _show_macro_plot_health(base_fig, option, element_key)
+                if not standard:
+                    if reused:
+                        st.caption("动态 Y 轴已保留上次有效数据；数据更新暂不可用。")
+                    _show_macro_plot_health(base_fig, option, element_key)
                 return
             except Exception as exc:
                 failure_kind = type(exc).__name__
@@ -2314,67 +2307,7 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None):
         st.error("该图表暂时无法显示，其余图表及页面可继续使用。")
 
 
-def _render_standard_macro_chart(title, description, range_key, builder, sources, desc_index, prebuilt_fig=None):
-    st.markdown(title, unsafe_allow_html=True)
-    st.markdown(description, unsafe_allow_html=True)
-    # Visible deployment fingerprint: distinguishes deployed code from an old instance.
-    st.caption(f"图表版本 {CHART_BUILD} · X/Y 自适应缩放")
-    base_fig = prebuilt_fig if prebuilt_fig is not None else builder("5Y")
-    # All four standard US charts now share one client-side viewport engine.
-    selected_range = st.segmented_control(
-        "时间范围", options=["5Y", "1Y", "6M", "3M", "1M"],
-        default=DEFAULT_CHART_RANGE, key=f"{range_key}_time_window",
-        label_visibility="collapsed",
-    ) or DEFAULT_CHART_RANGE
-    if not _chart_has_recoverable_data(base_fig, range_key):
-        _explain_missing_chart_data(base_fig, range_key)
-        show_parameter_description(desc_index)
-        add_sources(sources)
-        st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-        return
-    # Native ECharts filters samples outside the active X window and sets
-    # each Y axis to an independent nonzero-based visible-data extent.
-    # All standard US macro charts (1–4), not just chart 1, must use the
-    # same viewport-filtered engine. A Plotly fallback silently reintroduces
-    # the fixed five-year zero-based axes, so never render it here.
-    if not callable(getattr(st, "echarts_chart", None)):
-        # Fail open: even a stale/missing optional chart adapter cannot prevent
-        # the market overview, charts and news from loading.
-        st.warning("原生 ECharts 渲染器不可用，暂时显示兼容图表。")
-        fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
-        fallback.layout.updatemenus = ()
-        st.plotly_chart(
-            fallback, key=f"{range_key}_plotly_fallback_{selected_range}",
-            use_container_width=True, config=PLOTLY_CONFIG,
-        )
-        show_parameter_description(desc_index)
-        add_sources(sources)
-        st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-        return
-    native_option, reused = _recoverable_echarts_option(
-        base_fig, range_key, selected_range
-    )
-    if native_option is None:
-        if _try_minimal_adaptive_chart(base_fig, range_key, selected_range):
-            show_parameter_description(desc_index)
-            add_sources(sources)
-            st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-            return
-        st.warning("动态图表与缓存均不可用，已使用可切换时间范围的兼容图表。")
-        fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
-        fallback.layout.updatemenus = ()
-        try:
-            st.plotly_chart(
-                fallback, key=f"{range_key}_plotly_recovery_{selected_range}",
-                use_container_width=True, config=PLOTLY_CONFIG,
-            )
-        except Exception:
-            logging.exception("Recovery chart failed for %s", range_key)
-            st.error("该图表暂时无法显示，其余页面仍可使用。")
-        show_parameter_description(desc_index)
-        add_sources(sources)
-        st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-        return
+def _show_standard_chart_health(base_fig, element_key, selected_range, reused):
     st.caption("动态Y轴：时间切换、底部滑块及框选时按可见样本自适应（左右轴分别计算）。")
     missing_series = list((base_fig.layout.meta or {}).get("missing_series", [])) if isinstance(base_fig.layout.meta, dict) else []
     if missing_series:
@@ -2396,7 +2329,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     health_helper = getattr(_echarts_axes, "summarize_series_dates", None)
     if callable(health_helper):
         health = health_helper(
-            base_fig, maximum_age_days=15 if range_key == "us_liquidity_range" else 10,
+            base_fig, maximum_age_days=15 if element_key == "us_liquidity_range" else 10,
         )
         if health.get("latest_by_name"):
             st.caption("数据观测日：" + " · ".join(
@@ -2406,37 +2339,18 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
             st.warning("以下序列可能尚未更新：" + "、".join(health["stale_names"]))
         if health.get("future_names"):
             st.warning("以下序列的观测日期超前，请检查源数据：" + "、".join(health["future_names"]))
-    try:
-        st.echarts_chart(
-            native_option,
-            height=465,
-            width="stretch",
-            key=f"{range_key}_echarts_{selected_range}",
-            theme=None,
-        )
-    except Exception:
-        logging.exception("ECharts renderer failed for %s", range_key)
-        if _try_minimal_adaptive_chart(base_fig, range_key, selected_range):
-            show_parameter_description(desc_index)
-            add_sources(sources)
-            st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-            return
-        st.warning("原生图表渲染失败，已改用时间切换兼容视图。")
-        fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
-        fallback.layout.updatemenus = ()
-        try:
-            st.plotly_chart(
-                fallback, key=f"{range_key}_renderer_recovery_{selected_range}",
-                use_container_width=True, config=PLOTLY_CONFIG,
-            )
-        except Exception:
-            logging.exception("Recovery chart failed for %s", range_key)
-            st.error("该图表暂时无法显示，其余页面仍可使用。")
+
+
+def _render_standard_macro_chart(title, description, range_key, builder, sources, desc_index, prebuilt_fig=None):
+    st.markdown(title, unsafe_allow_html=True)
+    st.markdown(description, unsafe_allow_html=True)
+    st.caption(f"图表版本 {CHART_BUILD} · X/Y 自适应缩放")
+    base_fig = prebuilt_fig if prebuilt_fig is not None else builder("5Y")
+    _render_adaptive_macro_figure(base_fig, range_key, standard=True)
     _show_data_quality_notes(base_fig)
     show_parameter_description(desc_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-    return
 
 
 @st.fragment(key="us_macro_chart_1")
@@ -2784,17 +2698,26 @@ def _cached_macro_figure(chart_number, market_mode, snapshot_revision, build_rev
         12: build_fig12, 13: build_asia_rates_figure,
     }
     builder = builders[chart_number]
-    if chart_number in (10, 11):
-        return builder("5Y", market_mode)
-    return builder("5Y")
+    figure = builder("5Y", market_mode) if chart_number in (10, 11) else builder("5Y")
+    if not _figure_has_real_observations(figure):
+        raise ValueError("Source has no observed chart samples")
+    return figure
+
+
+@st.cache_data(ttl=300, max_entries=8, show_spinner=False)
+def _cached_hk_common(snapshot_revision, build_revision):
+    figures = build_fig5("5Y", market_mode="Raw")
+    if not isinstance(figures, (list, tuple)) or len(figures) < 4 or not any(_figure_has_real_observations(f) for f in figures):
+        raise ValueError("HK figure bundle unavailable")
+    return list(figures)
 
 
 @st.cache_data(ttl=300, max_entries=8, show_spinner=False)
 def _cached_hk_bundle(market_mode, snapshot_revision, build_revision):
-    figures = build_fig5("5Y", market_mode=market_mode)
-    if not isinstance(figures, (list, tuple)) or len(figures) < 4:
-        raise ValueError("HK figure bundle incomplete")
-    return list(figures)
+    common = _cached_hk_common(snapshot_revision, build_revision)
+    if market_mode == "Raw":
+        return common
+    return build_fig5("5Y", market_mode=market_mode, shared_figures=(common[1], common[2]))
 
 
 def _safe_hk_bundle(market_mode, snapshot_revision):
@@ -2818,7 +2741,7 @@ def _safe_hk_bundle(market_mode, snapshot_revision):
     return figures
 
 
-def _build_macro_figures_parallel(on_complete=None):
+def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_complete=None, budget=8.0):
     """Build concurrently and optionally publish completed charts immediately.
 
     Only data access and Plotly figure construction run in worker threads.
@@ -2848,24 +2771,51 @@ def _build_macro_figures_parallel(on_complete=None):
     if hk8_mode != hk5_mode:
         jobs["hk8"] = lambda: _safe_hk_bundle(hk8_mode, snapshot_revision)
 
-    # Six workers keeps cold-start I/O parallel without hammering public data
-    # endpoints with one thread per chart.
-    with ThreadPoolExecutor(max_workers=6, thread_name_prefix="macro-chart") as executor:
-        futures = {executor.submit(job): key for key, job in jobs.items()}
-        results = {}
-        for future in as_completed(futures):
-            key = futures[future]
-            results[key] = future.result()
-            if on_complete is not None:
-                if key == "hk5":
-                    for number in (5, 6, 7):
-                        on_complete(number, results[key][number - 5])
-                    if "hk8" not in jobs:
-                        on_complete(8, results[key][3])
-                elif key == "hk8":
-                    on_complete(8, results[key][3])
+    revision = (snapshot_revision, CHART_BUILD, hk5_mode, hk8_mode, metals_mode, crypto_mode)
+    futures = submit_jobs(jobs, name="macro-chart", workers=6, budget=budget, revision=revision)
+    aux_futures = submit_jobs(auxiliary_jobs or {}, name="dashboard-aux", workers=2,
+                              budget=budget, revision=(st.session_state.setdefault("_dashboard_session_token", uuid.uuid4().hex), _quote_refresh_key()))
+    futures.update(aux_futures)
+    results = {}
+    published = set()
+    for key, future in completed_jobs(futures, budget=budget):
+        try:
+            value = future.result()
+        except Exception:
+            logging.exception("Dashboard job failed: %s", key)
+            continue
+        if future in aux_futures:
+            if on_aux_complete is not None:
+                on_aux_complete(key, value)
+            continue
+        results[key] = value
+        if on_complete is not None:
+            if key == "hk5":
+                for number in (5, 6, 7):
+                    on_complete(number, value[number - 5]); published.add(number)
+                if "hk8" not in jobs:
+                    on_complete(8, value[3]); published.add(8)
+            elif key == "hk8":
+                on_complete(8, value[3]); published.add(8)
+            else:
+                on_complete(key, value); published.add(key)
+    # Running tasks remain bounded in shared pools and can warm caches for recovery.
+    st.session_state["_late_dashboard_jobs"] = {future: key for future, key in futures.items()
+                                                if not future.done()}
+    for key in jobs:
+        if key not in results:
+            results[key] = ([_macro_error_figure(f"Chart {n}") for n in range(5, 9)]
+                            if isinstance(key, str) else _macro_error_figure(f"Chart {key}"))
+    if on_complete is not None:
+        for number in range(1, 14):
+            if number not in published:
+                if number in (5, 6, 7):
+                    value = results["hk5"][number-5]
+                elif number == 8:
+                    value = results.get("hk8", results["hk5"])[3]
                 else:
-                    on_complete(key, results[key])
+                    value = results[number]
+                on_complete(number, value)
 
     hk5_bundle = results["hk5"]
     hk8_bundle = results.get("hk8", hk5_bundle)
@@ -2908,37 +2858,98 @@ for number in range(1, 14):
 
 
 def _render_completed_macro_chart(number, figure):
+    renderers = {
+        1: render_macro_chart_1, 2: render_macro_chart_2, 3: render_macro_chart_3,
+        4: render_macro_chart_4, 5: render_macro_chart_5, 6: render_macro_chart_6,
+        7: render_macro_chart_7, 8: render_macro_chart_8, 9: render_macro_chart_9,
+        10: render_macro_chart_10, 11: render_macro_chart_11,
+        12: render_macro_chart_12, 13: render_macro_chart_13,
+    }
+    mode_keys = {5: ("hk_5_range_market_mode", "Raw"), 8: ("hk_8_range_market_mode", "Raw"),
+                 10: ("precious_metals_mode", "Rebased 100"), 11: ("crypto_market_mode", "Rebased 100")}
+    kwargs = {}
+    if number in mode_keys:
+        key, default = mode_keys[number]
+        kwargs["prebuilt_mode"] = st.session_state.get(key, default)
     with macro_slots[number]:
-        if number == 1:
-            render_macro_chart_1(figure)
-        elif number == 2:
-            render_macro_chart_2(figure)
-        elif number == 3:
-            render_macro_chart_3(figure)
-        elif number == 4:
-            render_macro_chart_4(figure)
-        elif number == 5:
-            render_macro_chart_5(figure, prebuilt_mode=st.session_state.get("hk_5_range_market_mode", "Raw"))
-        elif number == 6:
-            render_macro_chart_6(figure)
-        elif number == 7:
-            render_macro_chart_7(figure)
-        elif number == 8:
-            render_macro_chart_8(figure, prebuilt_mode=st.session_state.get("hk_8_range_market_mode", "Raw"))
-        elif number == 9:
-            render_macro_chart_9(figure)
-        elif number == 10:
-            render_macro_chart_10(figure, prebuilt_mode=st.session_state.get("precious_metals_mode", "Rebased 100"))
-        elif number == 11:
-            render_macro_chart_11(figure, prebuilt_mode=st.session_state.get("crypto_market_mode", "Rebased 100"))
-        elif number == 12:
-            render_macro_chart_12(figure)
-        elif number == 13:
-            render_macro_chart_13(figure)
+        renderers[number](figure, **kwargs)
 
 
+_initial_symbols = _watchlist_symbols()
+_initial_watch_missing = [symbol for symbol in _initial_symbols
+                          if symbol not in st.session_state.get("_watchlist_quotes_snapshot", {})]
+_auxiliary = {}
+if not st.session_state.get("_market_quotes_snapshot") or time.time()-st.session_state.get("_market_quotes_snapshot_time", 0) >= 60:
+    _market_key = (_quote_refresh_key(), st.session_state.get("_market_refresh_key", 0))
+    _auxiliary["market"] = lambda: _fetch_quote_rows(MARKET_SYMBOLS.values(), _market_key)
+if _initial_watch_missing:
+    _auxiliary["watchlist"] = lambda: _fetch_quote_rows(_initial_watch_missing)
+_rendered_quote_sections = set()
+
+
+def _publish_quote_section(key, rows=None):
+    if key in _rendered_quote_sections:
+        return
+    _rendered_quote_sections.add(key)
+    if key == "market":
+        if rows is not None:
+            st.session_state["_market_quotes_snapshot"] = {
+                name: _remember_quote(symbol, rows.get(symbol, _empty_quote()))
+                for name, symbol in MARKET_SYMBOLS.items()}
+            st.session_state["_market_quotes_snapshot_time"] = time.time()
+        with market_overview_slot:
+            render_market_overview(defer_initial=True)
+    else:
+        if rows is not None:
+            _apply_watchlist_quote_rows(_initial_symbols, rows, _initial_watch_missing)
+        with watchlists_slot:
+            render_watchlists(defer_initial=True)
+
+
+for _section in ("market", "watchlist"):
+    if _section not in _auxiliary:
+        _publish_quote_section(_section)
 with st.spinner("正在加载图表…"):
-    macro_figures = _build_macro_figures_parallel(on_complete=_render_completed_macro_chart)
+    macro_figures = _build_macro_figures_parallel(
+        on_complete=_render_completed_macro_chart, auxiliary_jobs=_auxiliary,
+        on_aux_complete=_publish_quote_section)
+for _section in ("market", "watchlist"):
+    _publish_quote_section(_section)
+
+
+# Poll only completion/revision metadata; source fetching stays in bounded workers.
+# An app rerun is needed to replace timed-out fragment arguments with ready data.
+st.session_state["_source_watch_revision"] = _macro_snapshot_revision()
+st.session_state["_source_watch_until"] = time.monotonic() + 120
+
+
+@st.fragment(run_every=2, key="source_completion")
+def _poll_source_completion():
+    if time.monotonic() > st.session_state.get("_source_watch_until", 0):
+        return
+    pending = st.session_state.get("_late_dashboard_jobs", {})
+    ready = False
+    for future, key in list(pending.items()):
+        if not future.done():
+            continue
+        pending.pop(future, None)
+        try:
+            value = future.result()
+            if key in ("market", "watchlist"):
+                ready = ready or any(row.get("price") is not None for row in value.values())
+            elif isinstance(value, (list, tuple)):
+                ready = ready or any(_figure_has_real_observations(f) for f in value)
+            else:
+                ready = ready or _figure_has_real_observations(value)
+        except Exception:
+            pass
+    revision = _macro_snapshot_revision()
+    if ready or revision != st.session_state.get("_source_watch_revision"):
+        st.session_state["_source_watch_revision"] = revision
+        st.rerun()
+
+
+_poll_source_completion()
 
 st.markdown('<div id="news" class="section-anchor"></div><div class="section-kicker">NEWS</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)

@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-09-data-integrity-progressive-r39",
+  "release": "2026-10-10-consolidated-runtime-r40",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",

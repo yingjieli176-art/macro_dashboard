@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 import logging
 import threading
 import time
+from macro_platform.request_runtime import request_budget
 
 
 class BackgroundRefresh:
@@ -12,11 +13,12 @@ class BackgroundRefresh:
         self._pending = set()
         self._attempted = {}
         self._retry_seconds = retry_seconds
+        self._closed = False
 
     def submit(self, key, refresh):
         with self._lock:
             now = time.monotonic()
-            if key in self._pending or now - self._attempted.get(key, -float("inf")) < self._retry_seconds:
+            if self._closed or len(self._pending) >= 64 or key in self._pending or now - self._attempted.get(key, -float("inf")) < self._retry_seconds:
                 return False
             self._pending.add(key)
             self._attempted[key] = now
@@ -30,10 +32,16 @@ class BackgroundRefresh:
 
     def _run(self, key, refresh):
         try:
-            refresh()
+            with request_budget(8):
+                refresh()
         except Exception:
             logging.exception("Background source refresh failed: %s", key)
         finally:
             with self._lock:
                 self._pending.discard(key)
+
+    def close(self):
+        with self._lock:
+            self._closed = True
+        self._pool.shutdown(wait=False, cancel_futures=True)
 
