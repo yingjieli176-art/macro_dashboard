@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-10-raw-prices-r45",
+  "release": "2026-10-10-hk-base-rate-history-r46",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",

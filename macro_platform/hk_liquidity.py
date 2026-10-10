@@ -847,17 +847,11 @@ def build_hk_liquidity_figures(
     # to Aggregate Balance / EFBN trend analysis and created unnecessary snapshot
     # fragility. HKD funding below remains daily where available.
     banking_source = load_hk_banking_liquidity_monthly()
-    if date_range == "5Y":
-        # Browser-side zooms retain the same five-year figure. Build a mixed
-        # monthly-history + recent daily dataset so selecting 1M/3M does NOT
-        # show just one old monthly fixing.
-        monthly_funding = load_hk_funding_monthly().set_index("observation_date")
-        daily_funding = load_hk_funding_daily().set_index("observation_date")
-        # Prefer daily readings where they exist; preserve monthly history
-        # and per-column values that have not yet been published daily.
-        funding_source = daily_funding.combine_first(monthly_funding).sort_index().reset_index()
-    else:
-        funding_source = load_hk_funding_daily()
+    # Each rate has its own coverage. Keep official monthly history in every
+    # window, including when daily HIBOR predates the daily Base Rate feed.
+    monthly_funding = load_hk_funding_monthly().set_index("observation_date")
+    daily_funding = load_hk_funding_daily().set_index("observation_date")
+    funding_source = daily_funding.combine_first(monthly_funding).sort_index().reset_index()
     funding_is_daily = _frame_is_daily(funding_source)
     banking_data = _slice_range(banking_source, date_range)
     funding_data = _slice_range(funding_source, date_range)
@@ -1028,7 +1022,11 @@ def build_hk_liquidity_figures(
     funding = make_subplots(specs=[[{"secondary_y": True}]])
     add_line(funding, funding_data, "HIBOR O/N", "O/N HIBOR", COLORS["on"], 2.0, secondary_y=False)
     add_line(funding, funding_data, "HIBOR 3M", "3M HIBOR", COLORS["h3m"], 2.3, "dash", secondary_y=False)
-    add_line(funding, funding_data, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot", secondary_y=False)
+    # Nulls introduced by the union with daily HIBOR are not missing monthly
+    # Base Rate observations. Plot this series on its own observed dates so
+    # those unrelated daily rows do not break every historical monthly segment.
+    base_rate_data = funding_data.dropna(subset=["HKMA Base Rate"])
+    add_line(funding, base_rate_data, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot", secondary_y=False)
     add_line(funding, funding_data, "O/N-3M Spread", "O/N−3M Spread (R1)", COLORS["spread"], 1.7, "dashdot", "%", secondary_y=True)
     funding.update_yaxes(
         title_text="Rate (%)", secondary_y=False,
@@ -1040,8 +1038,7 @@ def build_hk_liquidity_figures(
         showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
     )
     funding_frequency_label = (
-        "Monthly history + recent daily" if date_range == "5Y" and funding_is_daily
-        else ("Daily" if funding_is_daily else "Monthly fallback")
+        "Monthly history + recent daily" if funding_is_daily else "Monthly fallback"
     )
     style(funding, f"7. HKD Funding · {funding_frequency_label}", right_axis=True)
     if date_range != "5Y" and not funding_is_daily:

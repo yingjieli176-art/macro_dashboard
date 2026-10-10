@@ -1,3 +1,13 @@
+# r46 HKMA Base Rate history
+
+Build: `2026-10-10-hk-base-rate-history-r46`. Chart 7 now preserves official
+monthly rate history in every date window, preferring daily values on shared
+dates. Base Rate uses only its own observed dates: unrelated daily HIBOR rows
+with null Base Rate values no longer interrupt every historical month-to-month
+segment. No values are forward-filled and source snapshots are unchanged.
+The regression checks exact observed dates/values and native ECharts output
+across all five windows, including at least 330 days of one-year coverage.
+
 # r45 raw prices only
 
 Build: `2026-10-10-raw-prices-r45`. User requested removal of the Rebased 100
