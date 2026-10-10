@@ -51,7 +51,14 @@ def chart_state(chart):
                        samples: values.length, scale: axis.get('scale')});
         });
         const grid = model.getComponent('grid').coordinateSystem.getRect();
+        const slider = instance.getViewOfComponentModel(model.getComponent('dataZoom', 1));
+        const handles = slider._displayables.handles.map(handle => {
+            const rect = handle.getBoundingRect().clone();
+            rect.applyTransform(handle.getComputedTransform());
+            return {x:rect.x+rect.width/2, y:rect.y+rect.height/2};
+        });
         return {zoom: model.getComponent('dataZoom').getPercentRange(), axes,
+                handles,
                 grid: {x:grid.x, y:grid.y, width:grid.width, height:grid.height},
                 width:instance.getWidth(), height:instance.getHeight()};
     }""")
@@ -80,10 +87,10 @@ def exercise_client_zoom(page, chart):
     box = chart.bounding_box()
     grid = before["grid"]
     start, end = before["zoom"]
-    handle = grid["x"]+grid["width"]*start/100
-    target = handle+grid["width"]*(end-start)/100*.35
-    y = before["height"]-27
-    page.mouse.move(box["x"]+handle, box["y"]+y)
+    handle = before['handles'][0]
+    target = handle['x']+grid["width"]*(end-start)/100*.35
+    y = handle['y']
+    page.mouse.move(box["x"]+handle['x'], box["y"]+y)
     page.mouse.down()
     page.mouse.move(box["x"]+target, box["y"]+y, steps=12)
     page.mouse.up()
@@ -180,7 +187,7 @@ def main():
             wait_for_page(page_b, args.url)
             groups.nth(4).get_by_text('1M', exact=True).click()
             page.get_by_test_id('stRadio').nth(0).get_by_text('Rebased 100', exact=True).click()
-            expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_Rebased_1M"]').get_by_test_id('stEChartsChart')
+            expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_Rebased"][class*="_1M"]').get_by_test_id('stEChartsChart')
             expected_a.wait_for(timeout=30000)
             page_b.get_by_test_id('stButtonGroup').nth(4).get_by_text('3M', exact=True).click()
             expected_b = page_b.locator('.st-key-hk_5_range_adaptive_Raw_3M').get_by_test_id('stEChartsChart')
