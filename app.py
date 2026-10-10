@@ -70,7 +70,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-10-latest-observation-r44"
+CHART_BUILD = "2026-10-10-raw-prices-r45"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -105,12 +105,10 @@ def _write_news_snapshot():
     os.replace(temp_path, NEWS_STATIC_PATH)
 
 
-
 @st.cache_resource(show_spinner=False, on_release=lambda worker: worker.close())
 def _start_news_background_updater():
     return PeriodicWorker(_write_news_snapshot, NEWS_BACKGROUND_INTERVAL_SECONDS,
                           "eastmoney-news-updater")
-
 
 
 _start_news_background_updater()
@@ -1025,8 +1023,6 @@ def _last_good_quote_store():
     return {}
 
 
-
-
 def _remember_quote(symbol, row):
     store = _last_good_quote_store()
     cache_key = str(symbol or "").upper().strip()
@@ -1537,13 +1533,11 @@ def chart_height(compact, normal): return compact if compact_mode else normal
 def get_fred_series(series_id): return _fred_series(series_id)
 
 
-
 # === HK LIQUIDITY CHART 5 ===
 
 
-def build_fig5(date_range, market_mode="Raw", shared_figures=None):
-    return build_hk_liquidity_figures(date_range, compact_mode=False, market_mode=market_mode, _shared_figures=shared_figures)
-
+def build_fig5(date_range):
+    return build_hk_liquidity_figures(date_range, compact_mode=False)
 
 
 def build_fig1(date_range):
@@ -1818,14 +1812,6 @@ def get_yahoo_daily_history(symbol):
     return completed_daily_closes(result[0])
 
 
-def _rebase_100(series):
-    values = pd.to_numeric(series, errors="coerce")
-    valid = values.dropna()
-    if valid.empty or float(valid.iloc[0]) == 0:
-        return values * pd.NA
-    return values / float(valid.iloc[0]) * 100.0
-
-
 def _load_yahoo_histories(symbols):
     jobs = {symbol: (lambda symbol=symbol: get_yahoo_daily_history(symbol)) for symbol in symbols}
     futures = submit_jobs(jobs, name="market-history", workers=2, budget=8,
@@ -1839,7 +1825,7 @@ def _load_yahoo_histories(symbols):
     return results
 
 
-def build_fig10(date_range, market_mode="Rebased 100"):
+def build_fig10(date_range):
     """Precious metals: gold, silver, gold/silver ratio, and GVZ."""
     frames = []
     histories = _load_yahoo_histories(("GC=F", "SI=F"))
@@ -1875,29 +1861,6 @@ def build_fig10(date_range, market_mode="Rebased 100"):
     data = filter_range(data, date_range)
 
     fig = go.Figure()
-    if market_mode == "Rebased 100":
-        if "Gold" in data.columns:
-            data["Gold_R100"] = _rebase_100(data["Gold"])
-        if "Silver" in data.columns:
-            data["Silver_R100"] = _rebase_100(data["Silver"])
-        add_line(fig, data, "Gold_R100", "Gold · R100", 2.8, unit="")
-        add_line(fig, data, "Silver_R100", "Silver · R100", 2.5, unit="")
-        add_line(fig, data, "GoldSilverRatio", "Gold/Silver Ratio (R1)", 2.2, "dash", "y2", "x")
-        add_line(fig, data, "GVZCLS", "Gold Volatility · GVZ (R2)", 2.2, "dot", "y3", "")
-        fig.update_layout(
-            yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.925),
-            yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.99),
-        )
-        fig = apply_chart_style(fig, chart_height(320, 440), date_range)
-        fig.update_layout(
-            margin=dict(l=62, r=92, t=72, b=34, pad=2),
-            legend=dict(y=1.09, x=0.01),
-            xaxis=dict(domain=[0.0, 0.91]),
-            yaxis=dict(title="Gold / Silver · Rebased 100", tickformat=".1f"),
-            yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.925, showgrid=False, fixedrange=True, tickformat=".1f", tickfont=dict(size=9), ticks="outside", ticklen=3),
-            yaxis3=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, fixedrange=True, tickformat=".1f", tickfont=dict(size=9), ticks="outside", ticklen=3),
-        )
-        return fig
 
     add_line(fig, data, "Gold", "Gold", 2.8, unit=" USD/oz")
     add_line(fig, data, "Silver", "Silver (R1)", 2.5, None, "y2", " USD/oz")
@@ -1921,7 +1884,7 @@ def build_fig10(date_range, market_mode="Rebased 100"):
     return fig
 
 
-def build_fig11(date_range, market_mode="Rebased 100"):
+def build_fig11(date_range):
     """Crypto market: BTC, ETH, ETH/BTC and 30-day BTC realized volatility."""
     frames = []
     histories = _load_yahoo_histories(("BTC-USD", "ETH-USD"))
@@ -1952,29 +1915,6 @@ def build_fig11(date_range, market_mode="Rebased 100"):
     data = filter_range(data, date_range)
     fig = go.Figure()
 
-    if market_mode == "Rebased 100":
-        if "BTC" in data.columns:
-            data["BTC_R100"] = _rebase_100(data["BTC"])
-        if "ETH" in data.columns:
-            data["ETH_R100"] = _rebase_100(data["ETH"])
-        add_line(fig, data, "BTC_R100", "BTC · 起点100", 2.9, unit="")
-        add_line(fig, data, "ETH_R100", "ETH · 起点100", 2.6, unit="")
-        add_line(fig, data, "ETHBTC", "ETH/BTC 强弱 · R1", 2.2, "dash", "y2", "")
-        add_line(fig, data, "BTC_VOL_30D", "BTC 30D 实际波动率 · R2", 2.2, "dot", "y3", "%")
-        fig.update_layout(
-            yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.925),
-            yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.99),
-        )
-        fig = apply_chart_style(fig, chart_height(320, 440), date_range)
-        fig.update_layout(
-            margin=dict(l=62, r=92, t=72, b=34, pad=2),
-            legend=dict(y=1.09, x=0.01),
-            xaxis=dict(domain=[0.0, 0.91]),
-            yaxis=dict(title="BTC / ETH · 起点=100", tickformat=".1f"),
-            yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.925, showgrid=False, fixedrange=True, tickformat=".4f", tickfont=dict(size=9), ticks="outside", ticklen=3),
-            yaxis3=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, fixedrange=True, tickformat=".0f", tickfont=dict(size=9), ticks="outside", ticklen=3),
-        )
-        return fig
 
     add_line(fig, data, "BTC", "BTC · USD", 2.9, unit=" USD")
     add_line(fig, data, "ETH", "ETH · USD · R1", 2.6, None, "y2", " USD")
@@ -2003,7 +1943,7 @@ def build_fig12(date_range):
 
 
 CRYPTO_MARKET_DESCRIPTION = (
-    '<b>读取提示：</b>BTC / ETH 看相对表现；ETH/BTC 上升表示 ETH 更强；30D 实际波动率看波动大小。Rebased 100 使用完整 5Y 样本的固定起点，Raw 显示美元价格。R1–R3 为右轴。'
+    '<b>读取提示：</b>BTC / ETH 看相对表现；ETH/BTC 上升表示 ETH 更强；30D 实际波动率看波动大小。BTC / ETH 显示美元价格。R1–R3 为右轴。'
 )
 
 
@@ -2019,10 +1959,10 @@ PARAM_DESCRIPTIONS = [
 def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
 
 HK_PARAMETER_DESCRIPTIONS = [
-    '<b>读取提示：</b>M2 同比看趋势、环比看边际变化；货币基础同比看基础货币变化。Raw 显示价格与点位，Rebased 100 用固定 5Y 起点比较相对涨跌。月度数据有公布时滞。',
+    '<b>读取提示：</b>M2 同比看趋势、环比看边际变化；货币基础同比看基础货币变化。股票显示港元价格，指数显示实际点位。月度数据有公布时滞。',
     '<b>读取提示：</b>总结余下降通常表示港元流动性收紧；EFBN 看票据及债券总量与银行持仓。单位均为十亿港元，历史为月末值。',
     '<b>读取提示：</b>O/N / 3M HIBOR 分别看短端与持续融资成本；O/N−3M 转正提示短端资金压力。历史为月末值，单位为 %。',
-    '<b>读取提示：</b>USD/HKD 左轴反向：上方 7.75 为港元偏强，下方 7.85 为偏弱；红区 7.84–7.85 提示弱方压力。Rebased 100 用固定 5Y 起点比较市场资产。',
+    '<b>读取提示：</b>USD/HKD 左轴反向：上方 7.75 为港元偏强，下方 7.85 为偏弱；红区 7.84–7.85 提示弱方压力。股票显示港元价格，指数显示实际点位。',
 ]
 
 
@@ -2035,9 +1975,8 @@ US_EQUITY_RISK_DESCRIPTION = (
 )
 
 
-
 PRECIOUS_METALS_DESCRIPTION = (
-    '<b>读取提示：</b>金银比上升表示黄金更强；GVZ 看黄金隐含波动。Rebased 100 使用固定 5Y 起点，Raw 显示 USD/oz；R1–R3 为右轴。'
+    '<b>读取提示：</b>金银比上升表示黄金更强；GVZ 看黄金隐含波动。黄金与白银显示 USD/oz；R1–R3 为右轴。'
 )
 
 
@@ -2052,8 +1991,6 @@ def _prepare_chart_for_client_ranges(fig, element_key, mode=None):
     # Do not preserve stale browser axes across a rerun: viewport Y ranges must win.
     fig.update_layout(uirevision=None)
     return fig
-
-
 
 
 def _recoverable_echarts_option(fig, element_key, date_range, mode=None):
@@ -2129,9 +2066,6 @@ def _viewport_scaled_plotly_fallback(base_fig, date_range):
     return result
 
 
-
-
-
 def _show_data_quality_notes(fig):
     """Disclose known estimated/missing observations without new fetches."""
     meta = fig.layout.meta if isinstance(fig.layout.meta, dict) else {}
@@ -2165,8 +2099,6 @@ def _show_macro_plot_health(fig, option, element_key):
                        " · ".join(report["future_names"]))
     except Exception:
         logging.exception("Unable to describe observation health for %s", element_key)
-
-
 
 
 def _figure_has_real_observations(fig):
@@ -2472,37 +2404,20 @@ HK_CHART_CONFIGS = [
 ]
 
 
-def _render_hk_macro_chart(hk_index, prebuilt_fig=None, prebuilt_mode=None):
+def _render_hk_macro_chart(hk_index, prebuilt_fig=None):
     title, description, range_key, sources = HK_CHART_CONFIGS[hk_index]
     st.markdown(title, unsafe_allow_html=True)
     st.markdown(description, unsafe_allow_html=True)
-    market_mode = "Raw"
-    if hk_index in (0, 3):
-        market_mode = st.radio(
-            "市场显示",
-            ["Raw", "Rebased 100"],
-            horizontal=True,
-            index=0,
-            key=f"{range_key}_market_mode",
-            label_visibility="collapsed",
-        )
-    # The parent already loaded a figure for this exact market mode.
-    # On fragment-only radio changes, rebuild ONLY this chart's mode; do
-    # not cause a full dashboard rerun or display the old prebuilt mode.
-    fig = (
-        prebuilt_fig
-        if prebuilt_fig is not None and (hk_index not in (0, 3) or prebuilt_mode == market_mode)
-        else _safe_hk_bundle(market_mode, _macro_snapshot_revision())[hk_index]
-    )
-    _render_adaptive_macro_figure(fig, range_key, market_mode)
+    fig = prebuilt_fig if prebuilt_fig is not None else _safe_hk_bundle(_macro_snapshot_revision())[hk_index]
+    _render_adaptive_macro_figure(fig, range_key)
     show_hk_parameter_description(hk_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
 @st.fragment(key="hk_money_chart")
-def render_macro_chart_5(prebuilt_fig=None, prebuilt_mode=None):
-    _render_hk_macro_chart(0, prebuilt_fig=prebuilt_fig, prebuilt_mode=prebuilt_mode)
+def render_macro_chart_5(prebuilt_fig=None):
+    _render_hk_macro_chart(0, prebuilt_fig=prebuilt_fig)
 
 
 @st.fragment(key="macro_chart_6_viewport")
@@ -2516,8 +2431,8 @@ def render_macro_chart_7(prebuilt_fig=None):
 
 
 @st.fragment(key="hk_fx_chart")
-def render_macro_chart_8(prebuilt_fig=None, prebuilt_mode=None):
-    _render_hk_macro_chart(3, prebuilt_fig=prebuilt_fig, prebuilt_mode=prebuilt_mode)
+def render_macro_chart_8(prebuilt_fig=None):
+    _render_hk_macro_chart(3, prebuilt_fig=prebuilt_fig)
 
 
 @st.fragment(key="macro_chart_9_viewport")
@@ -2540,25 +2455,16 @@ def render_macro_chart_9(prebuilt_fig=None):
 
 
 @st.fragment(key="precious_metals_chart")
-def render_macro_chart_10(prebuilt_fig=None, prebuilt_mode=None):
+def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">10. Precious Metals</div>'
         '<div class="section-description">Gold · Silver · Gold/Silver Ratio · Gold Volatility GVZ</div>',
         unsafe_allow_html=True,
     )
-    market_mode = st.radio(
-        "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
-        key="precious_metals_mode", label_visibility="collapsed",
+    base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
+        "Chart 10", lambda: _cached_macro_figure(10, _macro_snapshot_revision(), CHART_BUILD),
     )
-    base_fig = (
-        prebuilt_fig
-        if prebuilt_fig is not None and prebuilt_mode == market_mode
-        else _safe_macro_build(
-            "Chart 10",
-            lambda: _cached_macro_figure(10, market_mode, _macro_snapshot_revision(), CHART_BUILD),
-        )
-    )
-    _render_adaptive_macro_figure(base_fig, "precious_metals", market_mode)
+    _render_adaptive_macro_figure(base_fig, "precious_metals")
     st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Yahoo Finance · Gold Futures GC=F", "https://finance.yahoo.com/quote/GC=F/history/"),
@@ -2570,25 +2476,16 @@ def render_macro_chart_10(prebuilt_fig=None, prebuilt_mode=None):
 
 
 @st.fragment(key="crypto_chart")
-def render_macro_chart_11(prebuilt_fig=None, prebuilt_mode=None):
+def render_macro_chart_11(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">11. Crypto Market</div>'
         '<div class="section-description">BTC · ETH · ETH/BTC · BTC 30D 实际波动率</div>',
         unsafe_allow_html=True,
     )
-    market_mode = st.radio(
-        "市场显示", ["Rebased 100", "Raw"], horizontal=True, index=0,
-        key="crypto_market_mode", label_visibility="collapsed",
+    base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
+        "Chart 11", lambda: _cached_macro_figure(11, _macro_snapshot_revision(), CHART_BUILD),
     )
-    base_fig = (
-        prebuilt_fig
-        if prebuilt_fig is not None and prebuilt_mode == market_mode
-        else _safe_macro_build(
-            "Chart 11",
-            lambda: _cached_macro_figure(11, market_mode, _macro_snapshot_revision(), CHART_BUILD),
-        )
-    )
-    _render_adaptive_macro_figure(base_fig, "crypto_market", market_mode)
+    _render_adaptive_macro_figure(base_fig, "crypto_market")
     st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Yahoo Finance · Bitcoin BTC-USD", "https://finance.yahoo.com/quote/BTC-USD/history/"),
@@ -2715,7 +2612,7 @@ def _cache_safe_figure(figure):
 
 
 @st.cache_data(ttl=300, max_entries=32, show_spinner=False)
-def _cached_macro_figure(chart_number, market_mode, snapshot_revision, build_revision):
+def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
     """Reuse successful construction; callers receive isolated figure copies."""
     builders = {
         1: build_fig1, 2: build_fig2, 3: build_fig3, 4: build_fig4,
@@ -2723,15 +2620,15 @@ def _cached_macro_figure(chart_number, market_mode, snapshot_revision, build_rev
         12: build_fig12, 13: build_asia_rates_figure,
     }
     builder = builders[chart_number]
-    figure = builder("5Y", market_mode) if chart_number in (10, 11) else builder("5Y")
+    figure = builder("5Y")
     if not _figure_has_real_observations(figure):
         raise ValueError("Source has no observed chart samples")
     return _cache_safe_figure(figure)
 
 
 @st.cache_data(ttl=300, max_entries=8, show_spinner=False)
-def _cached_hk_common(snapshot_revision, build_revision):
-    figures = build_fig5("5Y", market_mode="Raw")
+def _cached_hk_bundle(snapshot_revision, build_revision):
+    figures = build_fig5("5Y")
     if not isinstance(figures, (list, tuple)) or len(figures) < 4 or not any(_figure_has_real_observations(f) for f in figures):
         raise ValueError("HK figure bundle unavailable")
     if not all(_figure_has_real_observations(figure) for figure in figures):
@@ -2739,30 +2636,11 @@ def _cached_hk_common(snapshot_revision, build_revision):
     return [_cache_safe_figure(figure) for figure in figures]
 
 
-@st.cache_data(ttl=300, max_entries=8, show_spinner=False)
-def _cached_hk_bundle(market_mode, snapshot_revision, build_revision):
-    common = _cached_hk_common(snapshot_revision, build_revision)
-    if market_mode == "Raw":
-        return common
-    figures = build_fig5("5Y", market_mode=market_mode, shared_figures=(common[1], common[2]))
-    if not all(_figure_has_real_observations(figure) for figure in figures):
-        raise IncompleteObservedBundle(figures)
-    return [_cache_safe_figure(figure) for figure in figures]
-
-
-def _safe_hk_bundle(market_mode, snapshot_revision):
+def _safe_hk_bundle(snapshot_revision):
     try:
-        figures = _cached_hk_bundle(market_mode, snapshot_revision, CHART_BUILD)
+        figures = _cached_hk_bundle(snapshot_revision, CHART_BUILD)
     except IncompleteObservedBundle as partial:
         figures = partial.figures
-        if market_mode != "Raw":
-            try:
-                figures = build_fig5("5Y", market_mode=market_mode,
-                                     shared_figures=(figures[1], figures[2]))
-            except Exception:
-                logging.exception("Partial HK market-mode conversion failed")
-                figures = [_macro_error_figure("Chart 5"), figures[1], figures[2],
-                           _macro_error_figure("Chart 8")]
     except Exception:
         logging.exception("Composite HK liquidity bundle failed; rescuing core official data")
         figures = [_macro_error_figure(f"Chart {number}") for number in range(5, 9)]
@@ -2787,31 +2665,24 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
     Only data access and Plotly figure construction run in worker threads.
     Streamlit widgets/rendering stay on the main script thread.
     """
-    hk5_mode = st.session_state.get("hk_5_range_market_mode", "Raw")
-    hk8_mode = st.session_state.get("hk_8_range_market_mode", "Raw")
-    metals_mode = st.session_state.get("precious_metals_mode", "Rebased 100")
-    crypto_mode = st.session_state.get("crypto_market_mode", "Rebased 100")
     snapshot_revision = _macro_snapshot_revision()
 
-    def cached_chart(number, mode=""):
-        return _safe_macro_build(f"Chart {number}", lambda: _cached_macro_figure(number, mode, snapshot_revision, CHART_BUILD))
+    def cached_chart(number):
+        return _safe_macro_build(f"Chart {number}", lambda: _cached_macro_figure(number, snapshot_revision, CHART_BUILD))
 
     jobs = {
         1: lambda: cached_chart(1),
         2: lambda: cached_chart(2),
         3: lambda: cached_chart(3),
         4: lambda: cached_chart(4),
-        "hk5": lambda: _safe_hk_bundle(hk5_mode, snapshot_revision),
+        "hk5": lambda: _safe_hk_bundle(snapshot_revision),
         9: lambda: cached_chart(9),
-        10: lambda: cached_chart(10, metals_mode),
-        11: lambda: cached_chart(11, crypto_mode),
+        10: lambda: cached_chart(10),
+        11: lambda: cached_chart(11),
         12: lambda: cached_chart(12),
         13: lambda: cached_chart(13),
     }
-    if hk8_mode != hk5_mode:
-        jobs["hk8"] = lambda: _safe_hk_bundle(hk8_mode, snapshot_revision)
-
-    revision = (snapshot_revision, CHART_BUILD, hk5_mode, hk8_mode, metals_mode, crypto_mode)
+    revision = (snapshot_revision, CHART_BUILD)
     futures = submit_jobs(jobs, name="macro-chart", workers=6, budget=budget, revision=revision)
     aux_futures = submit_jobs(auxiliary_jobs or {}, name="dashboard-aux", workers=2,
                               budget=budget, revision=(st.session_state.setdefault("_dashboard_session_token", uuid.uuid4().hex), _quote_refresh_key()))
@@ -2831,12 +2702,8 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
         results[key] = value
         if on_complete is not None:
             if key == "hk5":
-                for number in (5, 6, 7):
+                for number in (5, 6, 7, 8):
                     on_complete(number, value[number - 5]); published.add(number)
-                if "hk8" not in jobs:
-                    on_complete(8, value[3]); published.add(8)
-            elif key == "hk8":
-                on_complete(8, value[3]); published.add(8)
             else:
                 on_complete(key, value); published.add(key)
     # Running tasks remain bounded in shared pools and can warm caches for recovery.
@@ -2849,16 +2716,13 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
     if on_complete is not None:
         for number in range(1, 14):
             if number not in published:
-                if number in (5, 6, 7):
+                if number in (5, 6, 7, 8):
                     value = results["hk5"][number-5]
-                elif number == 8:
-                    value = results.get("hk8", results["hk5"])[3]
                 else:
                     value = results[number]
                 on_complete(number, value)
 
     hk5_bundle = results["hk5"]
-    hk8_bundle = results.get("hk8", hk5_bundle)
     return {
         1: results[1],
         2: results[2],
@@ -2867,7 +2731,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
         5: hk5_bundle[0],
         6: hk5_bundle[1],
         7: hk5_bundle[2],
-        8: hk8_bundle[3],
+        8: hk5_bundle[3],
         9: results[9],
         10: results[10],
         11: results[11],
@@ -2905,14 +2769,8 @@ def _render_completed_macro_chart(number, figure):
         10: render_macro_chart_10, 11: render_macro_chart_11,
         12: render_macro_chart_12, 13: render_macro_chart_13,
     }
-    mode_keys = {5: ("hk_5_range_market_mode", "Raw"), 8: ("hk_8_range_market_mode", "Raw"),
-                 10: ("precious_metals_mode", "Rebased 100"), 11: ("crypto_market_mode", "Rebased 100")}
-    kwargs = {}
-    if number in mode_keys:
-        key, default = mode_keys[number]
-        kwargs["prebuilt_mode"] = st.session_state.get(key, default)
     with macro_slots[number]:
-        renderers[number](figure, **kwargs)
+        renderers[number](figure)
 
 
 _initial_symbols = _watchlist_symbols()
@@ -3161,7 +3019,6 @@ def render_news_panel():
 </html>
 """
     st.iframe(news_component, width="stretch", height=710)
-
 
 
 render_news_panel()

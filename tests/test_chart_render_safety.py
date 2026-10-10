@@ -234,14 +234,14 @@ class ChartRendererRecoveryTests(unittest.TestCase):
         dates = pd.date_range("2025-10-01", "2026-10-01", freq="D")
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=dates, y=[50 + i * 0.01 for i in range(len(dates))],
-                                 name="BTC rebased"))
+                                 name="BTC · USD"))
         fig.add_trace(go.Scatter(x=dates, y=[0.04 + i * 0.00001 for i in range(len(dates))],
                                  yaxis="y2", name="ETH/BTC"))
         fig.update_layout(yaxis2=dict(overlaying="y", side="right"))
         self.ns["_echarts_axes"].build_safe_echarts_option.side_effect = build_safe_echarts_option
         self.st.echarts_chart.side_effect = [RuntimeError("rich option rejected"), None]
         self.st.segmented_control.return_value = "3M"
-        self.ns["_render_adaptive_macro_figure"](fig, "crypto_market", "Rebased 100")
+        self.ns["_render_adaptive_macro_figure"](fig, "crypto_market")
         self.assertEqual(self.st.echarts_chart.call_count, 2)
         self.st.plotly_chart.assert_not_called()
         safe = self.st.echarts_chart.call_args.args[0]

@@ -42,7 +42,7 @@ jobs:
               assert len(valid) >= 58, (col, len(valid))
               print(col, len(valid), valid.observation_date.min(), '->', valid.observation_date.max())
 
-          fig = build_hk_liquidity_figures('5Y', market_mode='Raw')[0]
+          fig = build_hk_liquidity_figures('5Y')[0]
           names = [str(t.name) for t in fig.data]
           for name in ('M2 YoY', 'M3 YoY', 'Monetary Base YoY'):
               assert name in names, (name, names)

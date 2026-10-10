@@ -113,7 +113,7 @@ observations solely to make an axis faster.**
 ## Consolidated runtime update (r40)
 
 Market overview, watchlist and all thirteen charts share a bounded completion loop,
-with their original containers, widget keys, modes and layout order preserved.
+with their original containers, time-range widget keys and layout order preserved.
 Ready charts do not wait for slow quote sources. The initial wait budget is eight
 seconds; unfinished workers cannot extend that wait by executor shutdown. Two-second
 completion polling checks local metadata only, replacing late successful data and
@@ -129,14 +129,15 @@ FRED getters use one revision-aware source cache, rather than nested hour-long
 wrappers. Changed snapshot files and successful in-memory refreshes become visible
 without manual cache clearing. Missing sources return explicit unavailable frames
 while a deduplicated background job fetches genuine observations. Empty plots never
-enter the five-minute success cache. Banking and funding plots are reused across HK
-market modes; both market overlays retain their original Raw/Rebased calculations.
+enter the five-minute success cache. All four HK plots share one successful bundle cache. Market overlays retain
+original HKD prices and index levels; metals and crypto retain their original
+price units. The Rebased 100 display, its controls and mode caches are removed.
 All charts use the same rendering/recovery engine, retaining independent fragments.
 Direct production dependencies are pinned to the versions verified by the suite.
 
 Acceptance covers startup without remote sources, chart-before-quote completion,
 bounded waits, source recovery without cache clearing, cache-release lifecycle,
-shared worker limits, exact HK data/layout parity, all original widgets and modes,
+shared worker limits, exact HK raw closes and independent price/index axes, time-range controls,
 and the complete test suite. Actions collects every available FRED series with its
 actual coverage and failure status; failed downloads cannot manufacture observations
 or overwrite last-good values. A green test run is not evidence that all data sources

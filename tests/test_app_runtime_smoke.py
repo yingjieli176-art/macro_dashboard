@@ -51,20 +51,12 @@ class DashboardBootSmoke(unittest.TestCase):
                                 for point in series["data"]))
             self.assertTrue(all(axis["scale"] for axis in option["yAxis"]))
             self.assertTrue(all(zoom["filterMode"] == "filter" for zoom in option["dataZoom"]))
-        self.assertEqual({radio.key: radio.value for radio in instance.radio}, {
-            "hk_5_range_market_mode": "Raw", "hk_8_range_market_mode": "Raw",
-            "precious_metals_mode": "Rebased 100", "crypto_market_mode": "Rebased 100",
-        })
-        with patch.object(requests.sessions.Session, "request", side_effect=requests.Timeout("offline CI")):
-            for key, value in (("hk_5_range_market_mode", "Rebased 100"),
-                               ("hk_8_range_market_mode", "Rebased 100"),
-                               ("precious_metals_mode", "Raw"),
-                               ("crypto_market_mode", "Raw")):
-                instance.radio(key=key).set_value(value).run()
-                self.assertFalse(instance.exception, key)
-                self.assertEqual(instance.radio(key=key).value, value)
-                self.assertGreaterEqual(len(instance.get("echarts_chart")), 8)
-                self.assertEqual(len(instance.get("plotly_chart")), 0)
+        self.assertEqual(len(instance.radio), 0)
+        # Market assets retain their original unit and independent price axes.
+        spec_text = " ".join(chart.proto.spec for chart in native)
+        self.assertNotIn("Rebased", spec_text)
+        self.assertNotIn("起点100", spec_text)
+
 
 
 if __name__ == "__main__":

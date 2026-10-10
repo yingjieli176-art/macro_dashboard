@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 
 
 HELPERS = {
-    "_fetch_quote_rows", "_apply_watchlist_quote_rows", "_cached_hk_common", "_empty_quote", "_symbol_market", "_remember_quote", "_stable_quote",
+    "_fetch_quote_rows", "_apply_watchlist_quote_rows", "_empty_quote", "_symbol_market", "_remember_quote", "_stable_quote",
     "_get_watchlist_quote", "_request_watchlist_refresh", "_watchlist_symbols",
     "_load_watchlist_quotes", "_watchlist_refresh_status", "_active_quote_values",
     "render_watchlists",

@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-10-latest-observation-r44",
+  "release": "2026-10-10-raw-prices-r45",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",

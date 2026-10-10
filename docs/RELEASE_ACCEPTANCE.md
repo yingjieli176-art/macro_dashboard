@@ -1,3 +1,20 @@
+# r45 raw prices only
+
+Build: `2026-10-10-raw-prices-r45`. User requested removal of the Rebased 100
+feature and previously authorized updates on main. Charts 5, 8, 10 and 11 now
+use original stock/commodity/crypto prices and index levels with independent
+axes. Remove market display radios, rebasing helpers, alternate construction
+and cache paths, and the historical migration that could restore the feature.
+Original data retrieval, date controls and derived ratio/volatility series remain.
+Old session mode values no longer affect chart construction or cache reuse.
+
+Validation: all 158 unit regressions pass; compileall and diff checks pass.
+Browser acceptance now checks absent mode controls, five ranges, independent
+axis zoom, manual quote refresh and isolated session ranges. Its current-candidate
+CI result and production UI observation are recorded separately from local tests.
+
+# Historical retention and release evidence
+
 # r44 latest-observation retention
 
 Build: `2026-10-10-latest-observation-r44`. When an upstream response is

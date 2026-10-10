@@ -45,10 +45,10 @@ class ReleaseAcceptance(unittest.TestCase):
         ns['build_asia_rates_figure'] = builder
         ns['_cached_macro_figure'].clear()
         self.addCleanup(ns['_cached_macro_figure'].clear)
-        first = ns['_cached_macro_figure'](1, '', (), 'cache-sample-regression')
+        first = ns['_cached_macro_figure'](1, (), 'cache-sample-regression')
         # No per-session last-good chart exists for the second caller.
         st.session_state.clear()
-        second = ns['_cached_macro_figure'](1, '', (), 'cache-sample-regression')
+        second = ns['_cached_macro_figure'](1, (), 'cache-sample-regression')
         option = build_adaptive_echarts_option(second)
         self.assertIsNotNone(option)
         self.assertEqual(option, build_adaptive_echarts_option(first))
@@ -57,27 +57,25 @@ class ReleaseAcceptance(unittest.TestCase):
                          [row['date'] for row in rows])
         self.assertEqual(builder.call_count, 1)
 
-    def test_hk_raw_and_rebased_caches_survive_plotly_pickle_with_actual_closes(self):
+    def test_hk_raw_cache_survives_plotly_pickle_with_actual_closes(self):
         rows = json.loads((ROOT/'data_snapshots/hk_market_daily.json').read_text())['series']['0700.HK']['records'][-20:]
         dates = pd.to_datetime([row['observation_date'] for row in rows])
         values = [row['close'] for row in rows]
         ns = load_helpers()
         ns['build_fig5'] = Mock(side_effect=lambda *args, **kwargs: [go.Figure(go.Scatter(
             x=dates, y=pd.Series(values), name='Tencent raw close')) for _ in range(4)])
-        for name in ('_cached_hk_common', '_cached_hk_bundle'):
-            ns[name].clear()
-            self.addCleanup(ns[name].clear)
-        for mode in ('Raw', 'Rebased 100'):
-            first = ns['_cached_hk_bundle'](mode, (), 'cache-sample-regression')
-            st.session_state.clear()
-            second = ns['_cached_hk_bundle'](mode, (), 'cache-sample-regression')
-            for original, cached in zip(first, second):
-                restored = pickle.loads(pickle.dumps(cached))
-                self.assertEqual(list(restored.data[0].y), values)
-                self.assertEqual(build_adaptive_echarts_option(restored),
-                                 build_adaptive_echarts_option(original))
-                self.assertIsNotNone(build_adaptive_echarts_option(restored))
-        self.assertEqual(ns['build_fig5'].call_count, 2)
+        ns['_cached_hk_bundle'].clear()
+        self.addCleanup(ns['_cached_hk_bundle'].clear)
+        first = ns['_cached_hk_bundle']((), 'cache-sample-regression')
+        st.session_state.clear()
+        second = ns['_cached_hk_bundle']((), 'cache-sample-regression')
+        for original, cached in zip(first, second):
+            restored = pickle.loads(pickle.dumps(cached))
+            self.assertEqual(list(restored.data[0].y), values)
+            self.assertEqual(build_adaptive_echarts_option(restored),
+                             build_adaptive_echarts_option(original))
+            self.assertIsNotNone(build_adaptive_echarts_option(restored))
+        self.assertEqual(ns['build_fig5'].call_count, 1)
 
     def test_successful_yahoo_read_uses_actual_repository_raw_observations(self):
         records = json.loads((ROOT / "data_snapshots/hk_market_daily.json").read_text())["series"]["0700.HK"]["records"][-3:]
@@ -129,12 +127,12 @@ class ReleaseAcceptance(unittest.TestCase):
         self.assertEqual(st.session_state["_market_quotes_snapshot"]["HSI"]["price"], 200)
 
     def test_late_watchlist_result_respects_current_symbols_and_controls(self):
-        st.session_state["precious_metals_mode"] = "Raw"
+        st.session_state["precious_metals_time_window"] = "3M"
         st.session_state["hk_5_range_time_window"] = "1M"
         row = {"price": 123, "regular_market_time": time.time()}
         self.ns["_publish_late_dashboard_result"]("watchlist", {"KEEP": row, "REMOVED": row})
         self.ns["_apply_watchlist_quote_rows"].assert_called_once_with(["KEEP"], {"KEEP": row}, ["KEEP"])
-        self.assertEqual(st.session_state["precious_metals_mode"], "Raw")
+        self.assertEqual(st.session_state["precious_metals_time_window"], "3M")
         self.assertEqual(st.session_state["hk_5_range_time_window"], "1M")
 
     def test_failed_late_results_do_not_request_another_rerun(self):
@@ -147,7 +145,7 @@ class ReleaseAcceptance(unittest.TestCase):
         state = {"_late_dashboard_jobs": {future: "market"},
                  "_source_watch_until": time.monotonic()+60,
                  "_source_watch_revision": ("unchanged",),
-                 "hk_5_range_time_window": "1M", "precious_metals_mode": "Raw"}
+                 "hk_5_range_time_window": "1M", "precious_metals_time_window": "3M"}
         ui = SimpleNamespace(session_state=state, rerun=Mock())
         self.ns.update({"st": ui, "_macro_snapshot_revision": lambda: ("unchanged",)})
         load_functions({"_poll_source_completion"}, self.ns)
@@ -159,7 +157,7 @@ class ReleaseAcceptance(unittest.TestCase):
         self.assertFalse(state["_late_dashboard_jobs"])
         poll(); ui.rerun.assert_called_once()
         self.assertEqual(state["hk_5_range_time_window"], "1M")
-        self.assertEqual(state["precious_metals_mode"], "Raw")
+        self.assertEqual(state["precious_metals_time_window"], "3M")
 
 
 if __name__ == "__main__":

@@ -181,7 +181,6 @@ def load_hk_liquidity() -> pd.DataFrame:
     return result
 
 
-
 @observed_cache(_hk_snapshot_paths)
 def load_hk_banking_liquidity_monthly() -> pd.DataFrame:
     """Return real monthly HKMA banking-liquidity history for long windows."""
@@ -631,18 +630,6 @@ def _market_history(symbol: str, label: str, date_range: str) -> pd.DataFrame:
     return _slice_range(monthly, date_range)
 
 
-def _rebase_market_data(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
-    rebased = frame.copy()
-    for column in columns:
-        if column not in rebased.columns:
-            continue
-        valid = pd.to_numeric(rebased[column], errors="coerce").dropna()
-        if valid.empty or float(valid.iloc[0]) == 0:
-            continue
-        rebased[column] = pd.to_numeric(rebased[column], errors="coerce") / float(valid.iloc[0]) * 100.0
-    return rebased
-
-
 def _market_monthly_close(symbol: str, label: str) -> pd.DataFrame:
     if str(symbol).upper() in {"HSTECH.HK", "^HSTECH", "HSTECH"}:
         snapshot = _hstech_snapshot_monthly(label)
@@ -765,7 +752,6 @@ def _fred_daily_series(series_id: str, label: str) -> pd.DataFrame:
         return pd.DataFrame(columns=["observation_date", label])
 
 
-
 def _frame_is_daily(frame: pd.DataFrame) -> bool:
     if frame is None or frame.empty or "observation_date" not in frame.columns:
         return False
@@ -851,10 +837,8 @@ def build_hk_core_snapshot_figures(date_range: str = "5Y") -> tuple[go.Figure, g
     return apply_time_axis(balance, date_range), apply_time_axis(funding_fig, date_range)
 
 
-
 def build_hk_liquidity_figures(
-    date_range: str, compact_mode: bool = False, market_mode: str = "Raw",
-    _shared_figures=None
+    date_range: str, compact_mode: bool = False
 ) -> list[go.Figure]:
     """Build four independent Hong Kong liquidity charts for the dashboard."""
     all_data = load_hk_liquidity()
@@ -895,7 +879,6 @@ def build_hk_liquidity_figures(
     hkex_price = _market_history("0388.HK", "HKEX Price", date_range)
     hstech_index = _market_history("HSTECH", "HSTECH Index", date_range)
     hsi_index = _market_history("^HSI", "HSI Index", date_range)
-    market_columns = ["Tencent Price", "HKEX Price", "HSTECH Index", "HSI Index"]
     market_data = pd.DataFrame(columns=["observation_date"])
     for frame in (tencent_price, hkex_price, hstech_index, hsi_index):
         if frame.empty:
@@ -918,9 +901,6 @@ def build_hk_liquidity_figures(
         if market_ends:
             common_market_end = min(market_ends)
             market_data = market_data.loc[market_data["observation_date"] <= common_market_end].copy()
-    raw_market = str(market_mode).strip().lower() == "raw"
-    if not raw_market and not market_data.empty:
-        market_data = _rebase_market_data(market_data, market_columns)
 
     # Monthly HKMA FX is useful for consistency, but DEXHKUS gives a much fresher
     # daily five-year USD/HKD history for the convertibility-band panel.
@@ -1001,23 +981,15 @@ def build_hk_liquidity_figures(
         # Initialize charts 5-8 with the same two-level time axis as charts 1-4.
         return apply_time_axis(fig, date_range)
 
-    # 5 · Money supply + Hong Kong equity market. Raw mode separates stock
-    # prices (R1) from index levels (R2); Rebased 100 puts all market assets
-    # onto one comparable relative-performance axis.
+    # 5 · Money supply + market: stock prices (R1) and index levels (R2).
     money = make_subplots(specs=[[{"secondary_y": True}]])
     add_line(money, data, "M2 YoY", "M2 YoY", COLORS["m2"], 2.8, secondary_y=False)
     add_line(money, data, "M2 MoM", "M2 MoM", COLORS["m2_mom"], 2.1, "dash", secondary_y=False)
     add_line(money, data, "Monetary Base YoY", "Monetary Base YoY", COLORS["base"], 1.8, "dot", secondary_y=False)
-    if raw_market:
-        add_line(money, market_data, "Tencent Price", "Tencent Price (R1)", "#111827", 2.3, unit=" HKD", secondary_y=True)
-        add_line(money, market_data, "HKEX Price", "HKEX Price (R1)", "#0891b2", 2.0, "dash", unit=" HKD", secondary_y=True)
-        add_line(money, market_data, "HSTECH Index", "HSTECH Index (R2)", "#db2777", 2.1, "dash", unit=" pts", axis="y3")
-        add_line(money, market_data, "HSI Index", "HSI Index (R2)", "#d97706", 2.0, "dot", unit=" pts", axis="y3")
-    else:
-        add_line(money, market_data, "Tencent Price", "Tencent (R1)", "#111827", 2.3, unit="", secondary_y=True)
-        add_line(money, market_data, "HKEX Price", "HKEX (R1)", "#0891b2", 2.0, "dash", unit="", secondary_y=True)
-        add_line(money, market_data, "HSTECH Index", "HSTECH (R1)", "#db2777", 2.1, "dash", unit="", secondary_y=True)
-        add_line(money, market_data, "HSI Index", "HSI (R1)", "#d97706", 2.0, "dot", unit="", secondary_y=True)
+    add_line(money, market_data, "Tencent Price", "Tencent Price (R1)", "#111827", 2.3, unit=" HKD", secondary_y=True)
+    add_line(money, market_data, "HKEX Price", "HKEX Price (R1)", "#0891b2", 2.0, "dash", unit=" HKD", secondary_y=True)
+    add_line(money, market_data, "HSTECH Index", "HSTECH Index (R2)", "#db2777", 2.1, "dash", unit=" pts", axis="y3")
+    add_line(money, market_data, "HSI Index", "HSI Index (R2)", "#d97706", 2.0, "dot", unit=" pts", axis="y3")
     money.update_yaxes(
         title_text="Money Growth (%)", secondary_y=False,
         showgrid=True, gridcolor="#e5e7eb", griddash="dot",
@@ -1028,68 +1000,57 @@ def build_hk_liquidity_figures(
         showgrid=False, zeroline=False, fixedrange=True,
     )
     style(money, "5. HK Money Supply & Market Pulse", right_axis=True)
-    if raw_market:
-        money.update_layout(
-            margin=dict(l=62, r=92, t=96, b=40, pad=2),
-            xaxis=dict(domain=[0.0, 0.91]),
-            yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.925, title="", showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
-            yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.99, title="", showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
-        )
-    else:
-        money.update_layout(
-            margin=dict(l=62, r=64, t=96, b=40, pad=2),
-            xaxis=dict(domain=[0.0, 0.95]),
-            yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
-        )
+    money.update_layout(
+        margin=dict(l=62, r=92, t=96, b=40, pad=2),
+        xaxis=dict(domain=[0.0, 0.91]),
+        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.925, title="", showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
+        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.99, title="", showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
+    )
     if not market_data.empty:
         market_latest = market_data["observation_date"].max().strftime("%Y-%m-%d")
 
-    if _shared_figures is not None:
-        balance, funding = _shared_figures
-    else:
-        # 6 · Monthly banking-system liquidity and monetary-base structure.
-        balance = make_subplots(specs=[[{"secondary_y": True}]])
-        add_line(balance, banking_data, "Closing Aggregate Balance", "Closing Aggregate Balance", COLORS["balance"], 2.9, unit=" HK$ bn", secondary_y=False)
-        add_line(balance, banking_data, "Outstanding EFBN", "Outstanding EFBN (R1)", "#7c3aed", 2.0, unit=" HK$ bn", secondary_y=True)
-        add_line(balance, banking_data, "EFBN Held by Licensed Banks", "EFBN Held by Licensed Banks (R1)", "#c026d3", 1.8, "dash", unit=" HK$ bn", secondary_y=True)
-        balance.update_yaxes(
-            title_text="Aggregate Balance (HK$ bn)", secondary_y=False,
-            showgrid=True, gridcolor="#e5e7eb", griddash="dot",
-            zeroline=False, fixedrange=True,
-        )
-        balance.update_yaxes(
-            title_text="", secondary_y=True,
-            showgrid=False, zeroline=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3,
-        )
-        style(balance, "6. Banking-system Liquidity · Monthly", height=400, right_axis=True)
+    balance = make_subplots(specs=[[{"secondary_y": True}]])
+    add_line(balance, banking_data, "Closing Aggregate Balance", "Closing Aggregate Balance", COLORS["balance"], 2.9, unit=" HK$ bn", secondary_y=False)
+    add_line(balance, banking_data, "Outstanding EFBN", "Outstanding EFBN (R1)", "#7c3aed", 2.0, unit=" HK$ bn", secondary_y=True)
+    add_line(balance, banking_data, "EFBN Held by Licensed Banks", "EFBN Held by Licensed Banks (R1)", "#c026d3", 1.8, "dash", unit=" HK$ bn", secondary_y=True)
+    balance.update_yaxes(
+        title_text="Aggregate Balance (HK$ bn)", secondary_y=False,
+        showgrid=True, gridcolor="#e5e7eb", griddash="dot",
+        zeroline=False, fixedrange=True,
+    )
+    balance.update_yaxes(
+        title_text="", secondary_y=True,
+        showgrid=False, zeroline=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3,
+    )
+    style(balance, "6. Banking-system Liquidity · Monthly", height=400, right_axis=True)
 
-        # 5-3 · HKD funding.
-        funding = make_subplots(specs=[[{"secondary_y": True}]])
-        add_line(funding, funding_data, "HIBOR O/N", "O/N HIBOR", COLORS["on"], 2.0, secondary_y=False)
-        add_line(funding, funding_data, "HIBOR 3M", "3M HIBOR", COLORS["h3m"], 2.3, "dash", secondary_y=False)
-        add_line(funding, funding_data, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot", secondary_y=False)
-        add_line(funding, funding_data, "O/N-3M Spread", "O/N−3M Spread (R1)", COLORS["spread"], 1.7, "dashdot", "%", secondary_y=True)
-        funding.update_yaxes(
-            title_text="Rate (%)", secondary_y=False,
-            showgrid=True, gridcolor="#e5e7eb", griddash="dot",
-            zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
+    # 5-3 · HKD funding.
+    funding = make_subplots(specs=[[{"secondary_y": True}]])
+    add_line(funding, funding_data, "HIBOR O/N", "O/N HIBOR", COLORS["on"], 2.0, secondary_y=False)
+    add_line(funding, funding_data, "HIBOR 3M", "3M HIBOR", COLORS["h3m"], 2.3, "dash", secondary_y=False)
+    add_line(funding, funding_data, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot", secondary_y=False)
+    add_line(funding, funding_data, "O/N-3M Spread", "O/N−3M Spread (R1)", COLORS["spread"], 1.7, "dashdot", "%", secondary_y=True)
+    funding.update_yaxes(
+        title_text="Rate (%)", secondary_y=False,
+        showgrid=True, gridcolor="#e5e7eb", griddash="dot",
+        zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
+    )
+    funding.update_yaxes(
+        title_text="Spread (%)", secondary_y=True,
+        showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
+    )
+    funding_frequency_label = (
+        "Monthly history + recent daily" if date_range == "5Y" and funding_is_daily
+        else ("Daily" if funding_is_daily else "Monthly fallback")
+    )
+    style(funding, f"7. HKD Funding · {funding_frequency_label}", right_axis=True)
+    if date_range != "5Y" and not funding_is_daily:
+        funding.add_annotation(
+            text="⚠ 日频 HIBOR 暂缺，显示月末数据",
+            x=0.006, y=0.988, xref="paper", yref="paper", xanchor="left", yanchor="top",
+            showarrow=False, font=dict(size=10, color="#991b1b"),
+            bgcolor="rgba(254,242,242,0.94)", bordercolor="#fecaca", borderwidth=1, borderpad=3,
         )
-        funding.update_yaxes(
-            title_text="Spread (%)", secondary_y=True,
-            showgrid=False, zeroline=True, zerolinecolor="#cbd5e1", fixedrange=True,
-        )
-        funding_frequency_label = (
-            "Monthly history + recent daily" if date_range == "5Y" and funding_is_daily
-            else ("Daily" if funding_is_daily else "Monthly fallback")
-        )
-        style(funding, f"7. HKD Funding · {funding_frequency_label}", right_axis=True)
-        if date_range != "5Y" and not funding_is_daily:
-            funding.add_annotation(
-                text="⚠ 日频 HIBOR 暂缺，显示月末数据",
-                x=0.006, y=0.988, xref="paper", yref="paper", xanchor="left", yanchor="top",
-                showarrow=False, font=dict(size=10, color="#991b1b"),
-                bgcolor="rgba(254,242,242,0.94)", bordercolor="#fecaca", borderwidth=1, borderpad=3,
-            )
 
     # 8 · Convertibility band + market reaction.
     fx = make_subplots(specs=[[{"secondary_y": True}]])
@@ -1100,16 +1061,10 @@ def build_hk_liquidity_figures(
     add_constant(fx, 7.75, "Strong-side CU 7.75", COLORS["strong"], "dot", 1.4, secondary_y=False, x_frame=fx_source)
     add_constant(fx, 7.80, "Linked Rate Center 7.80", "#64748b", "dash", 1.5, secondary_y=False, x_frame=fx_source)
     add_constant(fx, 7.85, "Weak-side CU 7.85", COLORS["weak"], "dot", 1.4, secondary_y=False, x_frame=fx_source)
-    if raw_market:
-        add_line(fx, market_data, "Tencent Price", "Tencent Price (R1)", "#111827", 2.3, unit=" HKD", secondary_y=True)
-        add_line(fx, market_data, "HKEX Price", "HKEX Price (R1)", "#0891b2", 2.0, "dash", unit=" HKD", secondary_y=True)
-        add_line(fx, market_data, "HSTECH Index", "HSTECH Index (R2)", "#db2777", 2.1, "dash", unit=" pts", axis="y3")
-        add_line(fx, market_data, "HSI Index", "HSI Index (R2)", "#d97706", 2.0, "dot", unit=" pts", axis="y3")
-    else:
-        add_line(fx, market_data, "Tencent Price", "Tencent (R1)", "#111827", 2.3, unit="", secondary_y=True)
-        add_line(fx, market_data, "HKEX Price", "HKEX (R1)", "#0891b2", 2.0, "dash", unit="", secondary_y=True)
-        add_line(fx, market_data, "HSTECH Index", "HSTECH (R1)", "#db2777", 2.1, "dash", unit="", secondary_y=True)
-        add_line(fx, market_data, "HSI Index", "HSI (R1)", "#d97706", 2.0, "dot", unit="", secondary_y=True)
+    add_line(fx, market_data, "Tencent Price", "Tencent Price (R1)", "#111827", 2.3, unit=" HKD", secondary_y=True)
+    add_line(fx, market_data, "HKEX Price", "HKEX Price (R1)", "#0891b2", 2.0, "dash", unit=" HKD", secondary_y=True)
+    add_line(fx, market_data, "HSTECH Index", "HSTECH Index (R2)", "#db2777", 2.1, "dash", unit=" pts", axis="y3")
+    add_line(fx, market_data, "HSI Index", "HSI Index (R2)", "#d97706", 2.0, "dot", unit=" pts", axis="y3")
     fx.add_hrect(
         y0=7.75, y1=7.85,
         fillcolor="rgba(148,163,184,0.08)",
@@ -1134,19 +1089,12 @@ def build_hk_liquidity_figures(
         showgrid=False, zeroline=False, fixedrange=True,
     )
     style(fx, "8. USD/HKD Convertibility Band & Market", height=410, right_axis=True)
-    if raw_market:
-        fx.update_layout(
-            margin=dict(l=62, r=92, t=96, b=40, pad=2),
-            xaxis=dict(domain=[0.0, 0.91]),
-            yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.925, title="", showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
-            yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.99, title="", showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
-        )
-    else:
-        fx.update_layout(
-            margin=dict(l=62, r=64, t=96, b=40, pad=2),
-            xaxis=dict(domain=[0.0, 0.95]),
-            yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
-        )
+    fx.update_layout(
+        margin=dict(l=62, r=92, t=96, b=40, pad=2),
+        xaxis=dict(domain=[0.0, 0.91]),
+        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.925, title="", showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
+        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.99, title="", showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
+    )
     if not fx_source.empty:
         fx_latest = fx_source["observation_date"].max().strftime("%Y-%m-%d")
 

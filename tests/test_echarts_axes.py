@@ -71,9 +71,9 @@ class EchartsNativeAxes(unittest.TestCase):
         dates = pd.date_range("2025-10-01", "2026-10-01", freq="D")
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=dates, y=[100 + i * 0.1 for i in range(len(dates))],
-                                 name="BTC · 起点100"))
+                                 name="BTC · USD"))
         fig.add_trace(go.Scatter(x=dates, y=[0.06 + 0.00001 * i for i in range(len(dates))],
-                                 name="ETH/BTC 强弱 · R1", yaxis="y2"))
+                                 name="ETH/BTC 强弱 · R2", yaxis="y2"))
         fig.add_trace(go.Scatter(x=dates, y=[None if i == 30 else 55 + i/30
                                              for i in range(len(dates))],
                                  name="30D Vol · R2", yaxis="y3"))

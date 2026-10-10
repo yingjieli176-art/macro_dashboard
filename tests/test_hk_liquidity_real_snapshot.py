@@ -30,7 +30,7 @@ class RealHkChartSmoke(unittest.TestCase):
                 columns=["observation_date"])), patch.object(
                 hk, "_fred_daily_series", return_value=pd.DataFrame(
                 columns=["observation_date", "USD/HKD"])):
-            all_figs = hk.build_hk_liquidity_figures("5Y", market_mode="Raw")
+            all_figs = hk.build_hk_liquidity_figures("5Y")
         self.assertEqual(len(all_figs), 4)
         for number in (1, 2):
             fig = all_figs[number]

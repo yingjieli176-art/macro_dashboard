@@ -146,8 +146,8 @@ class ConsolidatedRuntime(unittest.TestCase):
         ns["build_asia_rates_figure"] = builder
         ns["_cached_macro_figure"].clear()
         with self.assertRaises(ValueError):
-            ns["_cached_macro_figure"](13, "", (), "recovery")
-        recovered = ns["_cached_macro_figure"](13, "", (), "recovery")
+            ns["_cached_macro_figure"](13, (), "recovery")
+        recovered = ns["_cached_macro_figure"](13, (), "recovery")
         self.assertEqual(len(recovered.data), 1)
         self.assertEqual(builder.call_count, 2)
 
@@ -294,7 +294,7 @@ class ConsolidatedRuntime(unittest.TestCase):
             ns[f"build_fig{number}"] = Mock(return_value=figure)
         ns["build_asia_rates_figure"] = Mock(return_value=figure)
         ns["build_fig5"] = Mock(return_value=[figure]*4)
-        for name in ("_cached_macro_figure", "_cached_hk_bundle", "_cached_hk_common"):
+        for name in ("_cached_macro_figure", "_cached_hk_bundle"):
             ns[name].clear()
         release = threading.Event()
         published = []
@@ -312,14 +312,24 @@ class ConsolidatedRuntime(unittest.TestCase):
         self.assertEqual({value for value in published if isinstance(value, int)}, set(range(1, 14)))
         self.assertIn("market", published); self.assertIn("watchlist", published)
 
-    def test_hk_mode_change_reuses_common_plots_with_identical_data_and_layout(self):
+    def test_hk_equity_overlays_preserve_actual_closes_and_separate_index_units(self):
+        import json
+        snapshot = json.loads((ROOT/'data_snapshots/hk_market_daily.json').read_text())['series']
         with patch.object(requests.sessions.Session, "request", side_effect=requests.Timeout("offline")):
-            raw = build_hk_liquidity_figures("5Y", market_mode="Raw")
-            separate = build_hk_liquidity_figures("5Y", market_mode="Rebased 100")
-            shared = build_hk_liquidity_figures("5Y", market_mode="Rebased 100", _shared_figures=(raw[1], raw[2]))
-        self.assertIs(shared[1], raw[1]); self.assertIs(shared[2], raw[2])
-        for actual, expected in zip(shared, separate):
-            self.assertEqual(actual.to_json(), expected.to_json())
+            figures = build_hk_liquidity_figures("5Y")
+        for index in (0, 3):
+            traces = {trace.name: trace for trace in figures[index].data}
+            for name, symbol, axis in (("Tencent Price (R1)", "0700.HK", "y2"),
+                                       ("HKEX Price (R1)", "0388.HK", "y2"),
+                                       ("HSTECH Index (R2)", "HSTECH", "y3"),
+                                       ("HSI Index (R2)", "^HSI", "y3")):
+                trace = traces[name]
+                expected = {row['observation_date']: row['close'] for row in snapshot[symbol]['records']}
+                self.assertEqual(trace.yaxis, axis)
+                self.assertGreater(len(trace.y), 20)
+                for date, value in zip(trace.x, trace.y):
+                    if pd.notna(value):
+                        self.assertAlmostEqual(float(value), expected[pd.Timestamp(date).strftime('%Y-%m-%d')])
 
 
 if __name__ == "__main__":

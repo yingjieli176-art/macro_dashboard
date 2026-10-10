@@ -13,7 +13,6 @@ HISTORICAL_MIGRATIONS = (
     "upgrade-hk-chart5-2-daily.yml",
     "upgrade-us-tga-freshness.yml",
     "add-hk-market-history-fallback.yml",
-    "upgrade-hk-market-terminal.yml",
     "add-hsi-to-hk-overlays.yml",
     "refine-hk-money-trend-momentum.yml",
     "migrate-chart5-platform-core.yml",

@@ -171,22 +171,19 @@ def main():
                     # React Aria's selected toggle changes its accessible
                     # name; the visible range label stays stable.
                     assert groups.nth(index).get_by_text(label, exact=True).count() == 1, (index, label, report["controls"][index])
-            # Use a real HK chart to exercise every server range and both market modes.
+            # Use a real HK chart to exercise every server range with raw prices.
             for label in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
                 groups.nth(4).get_by_text(label, exact=True).click()
-                page.locator(f".st-key-hk_5_range_adaptive_Raw_{label}").get_by_test_id("stEChartsChart").wait_for(timeout=30000)
+                page.locator(f".st-key-hk_5_range_adaptive_default_{label}").get_by_test_id("stEChartsChart").wait_for(timeout=30000)
                 assert page.get_by_test_id("stEChartsChartError").count() == 0
-            for label in ("Rebased 100", "Raw"):
-                page.get_by_test_id("stRadio").nth(0).get_by_text(label, exact=True).click()
-                prefix = "Raw" if label == "Raw" else "Rebased"
-                page.locator(f'[class*="st-key-hk_5_range_adaptive_{prefix}"]').get_by_test_id("stEChartsChart").wait_for(timeout=30000)
-                assert page.get_by_test_id("stEChartsChartError").count() == 0
-            chart = page.locator('.st-key-hk_5_range_adaptive_Raw_1Y').get_by_test_id('stEChartsChart')
+            assert page.get_by_test_id("stRadio").count() == 0
+            assert page.get_by_text("Rebased 100", exact=True).count() == 0
+            chart = page.locator('.st-key-hk_5_range_adaptive_default_1Y').get_by_test_id('stEChartsChart')
             report["client_zoom"] = exercise_client_zoom(page, chart)
             report["checks"].append({"slider": True, "box_zoom": True,
                                       "processed_observations_fit_independent_axes": True})
             # Two separate browser contexts produce independent Streamlit
-            # sessions. Session B must not overwrite session A's range or mode.
+            # sessions. Session B must not overwrite session A's range.
             context_b = browser.new_context(viewport={"width": 1440, "height": 1000})
             page_b = context_b.new_page()
             page_b.on('pageerror', lambda error: errors.append(str(error)))
@@ -202,11 +199,10 @@ def main():
                 }
                 raise
             groups.nth(4).get_by_text('1M', exact=True).click()
-            page.get_by_test_id('stRadio').nth(0).get_by_text('Rebased 100', exact=True).click()
-            expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_Rebased"][class*="_1M"]').get_by_test_id('stEChartsChart')
+            expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_default"][class*="_1M"]').get_by_test_id('stEChartsChart')
             expected_a.wait_for(timeout=30000)
             page_b.get_by_test_id('stButtonGroup').nth(4).get_by_text('3M', exact=True).click()
-            expected_b = page_b.locator('.st-key-hk_5_range_adaptive_Raw_3M').get_by_test_id('stEChartsChart')
+            expected_b = page_b.locator('.st-key-hk_5_range_adaptive_default_3M').get_by_test_id('stEChartsChart')
             expected_b.wait_for(timeout=30000)
             assert expected_a.count() == 1 and expected_b.count() == 1
             for current, expected in ((page, expected_a), (page_b, expected_b)):
@@ -218,11 +214,11 @@ def main():
             assert expected_a.count() == 1 and expected_b.count() == 1
             report['checks'].append({'isolated_browser_sessions': 2,
                                      'manual_market_refresh': True, 'manual_watchlist_refresh': True,
-                                     'range_and_mode_preserved': True})
+                                     'range_preserved': True})
             context_b.close()
             assert not errors, errors
             page.screenshot(path="browser_acceptance.png", full_page=True)
-            report["checks"].append({"hk_ranges": 5, "hk_modes": ["Raw", "Rebased 100"]})
+            report["checks"].append({"hk_ranges": 5, "raw_prices_only": True})
             report["status"] = "passed"
             browser.close()
     except Exception as error:

@@ -39,7 +39,7 @@ jobs:
           assert data['M3 YoY'].notna().sum() >= 58, 'M3 YoY should remain in the data model'
 
           for window in ('5Y', '1Y'):
-              fig = build_hk_liquidity_figures(window, market_mode='Raw')[0]
+              fig = build_hk_liquidity_figures(window)[0]
               traces = {str(trace.name): trace for trace in fig.data}
               for name in ('M2 YoY', 'M2 MoM', 'Monetary Base YoY'):
                   assert name in traces, (window, name, list(traces))
@@ -50,7 +50,7 @@ jobs:
               assert traces['Monetary Base YoY'].line.dash == 'dot', traces['Monetary Base YoY'].line.dash
               print(window, [(name, len(traces[name].x)) for name in ('M2 YoY','M2 MoM','Monetary Base YoY')])
 
-          five = build_hk_liquidity_figures('5Y', market_mode='Raw')[0]
+          five = build_hk_liquidity_figures('5Y')[0]
           traces = {str(trace.name): trace for trace in five.data}
           for name in ('M2 YoY','M2 MoM','Monetary Base YoY'):
               valid = sum(v is not None for v in traces[name].y)

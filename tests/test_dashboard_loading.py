@@ -19,7 +19,7 @@ from macro_platform.chart_axes import apply_client_time_controls
 
 
 HELPERS = {
-    "_fetch_quote_rows", "_apply_watchlist_quote_rows", "_cached_hk_common", "_empty_quote", "_load_market_quotes", "_load_yahoo_histories",
+    "_fetch_quote_rows", "_apply_watchlist_quote_rows", "_empty_quote", "_load_market_quotes", "_load_yahoo_histories",
     "_prepare_chart_for_client_ranges", "_macro_snapshot_revision",
     "_cached_macro_figure", "_cached_hk_bundle", "_safe_macro_build",
     "_safe_hk_bundle", "_macro_error_figure", "_build_macro_figures_parallel",
@@ -52,7 +52,6 @@ class DashboardLoadingTests(unittest.TestCase):
         self.ns = load_helpers()
         self.ns["_cached_macro_figure"].clear()
         self.ns["_cached_hk_bundle"].clear()
-        self.ns["_cached_hk_common"].clear()
         st.session_state.clear()
         dates = pd.to_datetime(["2021-09-29", "2025-09-29", "2026-09-29"])
         self.figure = go.Figure(go.Scatter(x=dates, y=[100, 110, 120], name="full history"))
@@ -67,7 +66,6 @@ class DashboardLoadingTests(unittest.TestCase):
     def tearDown(self):
         self.ns["_cached_macro_figure"].clear()
         self.ns["_cached_hk_bundle"].clear()
-        self.ns["_cached_hk_common"].clear()
         st.session_state.clear()
 
     def test_one_year_view_preserves_five_year_data_and_all_controls(self):
@@ -97,19 +95,17 @@ class DashboardLoadingTests(unittest.TestCase):
         for number in (1, 2, 3, 4, 9, 10, 11, 12):
             self.ns[f"build_fig{number}"].assert_called_once()
         self.ns["build_asia_rates_figure"].assert_called_once()
-        self.ns["build_fig5"].assert_called_once_with("5Y", market_mode="Raw")
+        self.ns["build_fig5"].assert_called_once_with("5Y")
 
-    def test_mode_change_rebuilds_only_affected_charts(self):
+    def test_legacy_market_mode_state_cannot_change_raw_charts_or_duplicate_cache(self):
         self.ns["_build_macro_figures_parallel"]()
-        st.session_state["precious_metals_mode"] = "Raw"
-        st.session_state["hk_8_range_market_mode"] = "Rebased 100"
+        for key in ("precious_metals_mode", "crypto_market_mode", "hk_5_range_market_mode", "hk_8_range_market_mode"):
+            st.session_state[key] = "Rebased 100"
         result = self.ns["_build_macro_figures_parallel"]()
         self.assertEqual(set(result), set(range(1, 14)))
-        self.ns["build_fig10"].assert_called_with("5Y", "Raw")
-        self.assertEqual(self.ns["build_fig10"].call_count, 2)
-        self.assertEqual(self.ns["build_fig5"].call_count, 2)
-        self.ns["build_fig11"].assert_called_once_with("5Y", "Rebased 100")
-        self.ns["build_fig1"].assert_called_once()
+        for number in (1, 10, 11):
+            self.ns[f"build_fig{number}"].assert_called_once_with("5Y")
+        self.ns["build_fig5"].assert_called_once_with("5Y")
 
     def test_failed_figure_is_not_cached_and_can_recover_immediately(self):
         self.ns["build_fig1"].side_effect = [TimeoutError("source unavailable"), self.figure]
@@ -122,18 +118,17 @@ class DashboardLoadingTests(unittest.TestCase):
     def test_partial_hk_bundle_keeps_good_charts_and_recovers_without_cache_clear(self):
         partial = [go.Figure(), self.figure, self.figure, self.figure]
         self.ns["build_fig5"].side_effect = [partial, [self.figure]*4]
-        first = self.ns["_safe_hk_bundle"]("Raw", ())
+        first = self.ns["_safe_hk_bundle"](())
         self.assertEqual(len(first[0].data), 0)
         self.assertEqual(len(first[1].data), 1)
-        second = self.ns["_safe_hk_bundle"]("Raw", ())
+        second = self.ns["_safe_hk_bundle"](())
         self.assertEqual(len(second[0].data), 1)
         self.assertEqual(self.ns["build_fig5"].call_count, 2)
 
     def test_hk_composite_error_keeps_banking_and_funding_data(self):
         self.ns["_cached_hk_bundle"].clear()
-        self.ns["_cached_hk_common"].clear()
         self.ns["build_fig5"].side_effect = OSError("optional market overlay failed")
-        figures = self.ns["_safe_hk_bundle"]("Raw", ())
+        figures = self.ns["_safe_hk_bundle"](())
         self.assertEqual(len(figures), 4)
         self.assertEqual(len(figures[1].data), 1)
         self.assertEqual(len(figures[2].data), 1)
@@ -148,11 +143,11 @@ class DashboardLoadingTests(unittest.TestCase):
             snapshot.write_text("{}")
             self.ns["__file__"] = str(root / "app.py")
             before = self.ns["_macro_snapshot_revision"]()
-            self.ns["_cached_macro_figure"](1, "", before, self.ns["CHART_BUILD"])
+            self.ns["_cached_macro_figure"](1, before, self.ns["CHART_BUILD"])
             snapshot.write_text('{"updated": true}')
             after = self.ns["_macro_snapshot_revision"]()
             self.assertNotEqual(before, after)
-            self.ns["_cached_macro_figure"](1, "", after, self.ns["CHART_BUILD"])
+            self.ns["_cached_macro_figure"](1, after, self.ns["CHART_BUILD"])
             self.assertEqual(self.ns["build_fig1"].call_count, 2)
 
     def test_index_quotes_are_concurrent_and_fallback_runs_on_main_thread(self):
