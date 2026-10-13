@@ -8,7 +8,7 @@
 
 | Source | Responsibility | Reliability rule |
 | --- | --- | --- |
-| `app.py` | 13-chart layout, Streamlit widgets/fragments, rendering recovery, market overview | Only the main Streamlit script creates widgets; keep chart controls fragment-local |
+| `app.py` | 14-chart layout, Streamlit widgets/fragments, rendering recovery, market overview | Only the main Streamlit script creates widgets; keep chart controls fragment-local |
 | `data.py` | FRED, NY Fed, Treasury, market/news clients | Cache **observed** values; label missing and stale data, never fake market observations |
 | `macro_platform/chart_axes.py` | Plotly date ranges, multi-axis fallback | A zoom must refit visible samples, never silently revert to full-range Y |
 | `macro_platform/echarts_axes.py` | Native ECharts time slider and independently rescaled axes | Preserve real observation timestamps and null gaps; keep `filterMode: filter` |
@@ -78,11 +78,11 @@ CI can still accompany explicitly reported partial coverage.
 The largest avoidable costs should be measured, not guessed. Use separate
 timings for (a) cold Streamlit Cloud wake-up, (b) warm page rerun, (c) single
 chart window/mode change and (d) slow/failing external data providers.
-Measure across several runs, with all 13 figures present, and compare medians
+Measure across several runs, with all 14 figures present, and compare medians
 and high-percentile wall times before accepting an optimization.
 
 1. **First priority — measure chart construction and figure serialization.**
-   `_build_macro_figures_parallel()` prepares all 13 figures, publishes ready
+   `_build_macro_figures_parallel()` prepares all 14 figures, publishes ready
    sections immediately, and serializes
    several full five-year traces. Profile the worker completion times,
    Streamlit payload size and browser-side ECharts initialization. Only then

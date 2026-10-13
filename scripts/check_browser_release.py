@@ -122,7 +122,7 @@ def exercise_client_zoom(page, chart):
 
 def wait_for_page(page, url):
     page.goto(url, wait_until="domcontentloaded", timeout=60000)
-    page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 13", timeout=60000)
+    page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 14", timeout=60000)
     page.wait_for_function("document.querySelectorAll('[data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
 
 
@@ -142,11 +142,11 @@ def main():
             page.on("pageerror", lambda error: errors.append(str(error)))
             wait_for_page(page, args.url)
             groups = page.get_by_test_id("stButtonGroup")
-            page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 13", timeout=60000)
-            page.get_by_text("13. China & Japan Government Yield Curves", exact=False).wait_for(timeout=60000)
+            page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 14", timeout=60000)
+            page.get_by_text("14. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
             charts = page.get_by_test_id("stEChartsChart")
             page.wait_for_function("document.querySelectorAll('[data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
-            assert groups.count() == 13
+            assert groups.count() == 14
             assert charts.count() >= 8
             assert page.get_by_test_id("stException").count() == 0
             assert page.get_by_test_id("stEChartsChartError").count() == 0
@@ -162,11 +162,11 @@ def main():
             })""")
             assert all(paints), paints
             assert page.get_by_text("该图表目前没有可验证的有效观测数据", exact=False).count() > 0
-            report["checks"].append({"chart_positions": 13, "painted_native_charts": len(paints),
+            report["checks"].append({"chart_positions": 14, "painted_native_charts": len(paints),
                                       "missing_positions_are_explicit": True})
             # All five controls exist for every position, including unavailable charts.
             report["controls"] = groups.all_text_contents()
-            for index in range(13):
+            for index in range(14):
                 for label in ("5Y", "1Y", "6M", "3M", "1M"):
                     # React Aria's selected toggle changes its accessible
                     # name; the visible range label stays stable.
@@ -178,6 +178,16 @@ def main():
                 assert page.get_by_test_id("stEChartsChartError").count() == 0
             assert page.get_by_test_id("stRadio").count() == 0
             assert page.get_by_text("Rebased 100", exact=True).count() == 0
+            page.get_by_text("13. China Government Yields & US 5Y Real Yield", exact=False).wait_for()
+            assert page.get_by_text("China & Japan Government Yield Curves", exact=False).count() == 0
+            groups.nth(12).get_by_text("3M", exact=True).click()
+            china_selected = page.locator(".st-key-china_rates_adaptive_default_3M").get_by_test_id("stEChartsChart")
+            china_selected.wait_for(timeout=30000)
+            groups.nth(13).get_by_text("1M", exact=True).click()
+            china_selected.wait_for(timeout=30000)
+            groups.nth(12).get_by_text("1Y", exact=True).click()
+            groups.nth(13).get_by_text("1Y", exact=True).click()
+            report["checks"].append({"china_japan_separate": True, "country_ranges_independent": True})
             chart = page.locator('.st-key-hk_5_range_adaptive_default_1Y').get_by_test_id('stEChartsChart')
             report["client_zoom"] = exercise_client_zoom(page, chart)
             report["checks"].append({"slider": True, "box_zoom": True,

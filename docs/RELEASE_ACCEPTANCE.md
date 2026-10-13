@@ -1,3 +1,21 @@
+# r48 separate China and Japan charts
+
+Build: `2026-10-13-china-japan-split-r48`. Chart 13 contains China 2Y/10Y,
+China 10Y–2Y and observed US five-year TIPS real yield (FRED DFII5).
+Chart 14 contains Japan 2Y/10Y, Japan 10Y–2Y and completed daily Nikkei 225
+index closes (Yahoo ^N225). Yield units are percent, spreads use R1 in
+percentage points, and Nikkei index points use their own R2 scale.
+Country data loaders, chart caches, range keys and fragment controls are
+independent. Each trace retains its source calendar and original values;
+unavailable sources are labeled without removing available companion traces.
+The dashboard and current-candidate browser/runtime checks now have 14 chart
+positions. Historical rollback checks keep their recorded 13-position contract.
+
+Validation: 165 unit regressions pass; compileall and diff checks pass.
+Coverage includes all five date windows, separate country content, exact overlay
+dates and values, correct native axis units, and partial source failures.
+Current candidate CI and production observations are checked after publishing.
+
 # r47 individual source calendars
 
 Build: `2026-10-10-series-calendars-r47a`. Audit all 13 production chart

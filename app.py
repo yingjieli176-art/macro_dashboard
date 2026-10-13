@@ -37,7 +37,7 @@ apply_client_time_controls = getattr(
 apply_server_time_window = getattr(_chart_axes, "apply_server_time_window", None)
 from macro_platform.us_equity_risk import load_vixeq_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
-from macro_platform.asia_rates import build_asia_rates_figure
+from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
 from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
 from macro_platform.market_history import completed_daily_closes
 # Keep startup-compatible with older data.py during Streamlit Cloud rolling
@@ -70,7 +70,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-10-series-calendars-r47a"
+CHART_BUILD = "2026-10-13-china-japan-split-r48"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1983,6 +1983,22 @@ def build_fig12(date_range):
     return build_copper_flow_spread_figure(date_range)
 
 
+def build_fig13(date_range):
+    try:
+        real = get_dfii5()
+    except Exception:
+        real = pd.DataFrame(columns=["observation_date", "DFII5"])
+    return build_china_rates_figure(date_range, us_real_yield=real)
+
+
+def build_fig14(date_range):
+    try:
+        nikkei = _load_yahoo_histories(("^N225",))["^N225"]
+    except Exception:
+        nikkei = pd.DataFrame(columns=["observation_date", "close"])
+    return build_japan_rates_figure(date_range, nikkei=nikkei)
+
+
 CRYPTO_MARKET_DESCRIPTION = (
     '<b>读取提示：</b>BTC / ETH 看相对表现；ETH/BTC 上升表示 ETH 更强；30D 实际波动率看波动大小。BTC / ETH 显示美元价格。R1–R3 为右轴。'
 )
@@ -2218,7 +2234,7 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=Fal
     arbitrary drag/slider zoom. ECharts filters visible data client-side and
     rescales every independent Y axis when the X viewport changes.
     """
-    # Uniform Streamlit buttons work for all 13 charts, regardless of
+    # Uniform Streamlit buttons work for all 14 charts, regardless of
     # whether ECharts or Plotly is currently the available renderer.
     # Their parent fragments prevent an X/Y viewport change from rerunning
     # the entire dashboard and refetching unrelated market data.
@@ -2563,20 +2579,44 @@ def render_macro_chart_12(prebuilt_fig=None):
 @st.fragment(key="macro_chart_13_viewport")
 def render_macro_chart_13(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">13. China & Japan Government Yield Curves</div>'
-        '<div class="section-description">China 2Y / 10Y / 10Y−2Y · Japan 2Y / 10Y / 10Y−2Y · all in %</div>',
+        '<div class="section-title">13. China Government Yields & US 5Y Real Yield</div>'
+        '<div class="section-description">China 2Y / 10Y · US 5Y Real · TIPS · China 10Y−2Y (R1)</div>',
         unsafe_allow_html=True,
     )
-    base_fig = prebuilt_fig if prebuilt_fig is not None else build_asia_rates_figure("5Y")
-    _render_adaptive_macro_figure(base_fig, "asia_rates")
+    base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
+        "Chart 13", lambda: _cached_macro_figure(13, _macro_snapshot_revision(), CHART_BUILD))
+    _render_adaptive_macro_figure(base_fig, "china_rates")
     st.markdown(
         '<div class="mini-description"><b>读取方法：</b>'
-        '10Y−2Y 上升表示曲线变陡，下降表示趋平，负值表示倒挂。</div>',
+        '中国国债与美国 5 年 TIPS 实际收益率均以 % 显示；美国实际利率使用 FRED DFII5 原始观测。'
+        '10Y−2Y 为右轴 R1，单位百分点。</div>',
         unsafe_allow_html=True,
     )
     add_sources([
         ("Eastmoney · China Treasury Yield History", "https://data.eastmoney.com/cjsj/zmgzsyl.html"),
+        ("FRED · US 5Y TIPS Real Yield (DFII5)", "https://fred.stlouisfed.org/series/DFII5"),
+    ])
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+
+@st.fragment(key="macro_chart_14_viewport")
+def render_macro_chart_14(prebuilt_fig=None):
+    st.markdown(
+        '<div class="section-title">14. Japan Government Yields & Nikkei 225</div>'
+        '<div class="section-description">Japan 2Y / 10Y · Japan 10Y−2Y (R1) · Nikkei 225 (R2)</div>',
+        unsafe_allow_html=True,
+    )
+    base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
+        "Chart 14", lambda: _cached_macro_figure(14, _macro_snapshot_revision(), CHART_BUILD))
+    _render_adaptive_macro_figure(base_fig, "japan_rates")
+    st.markdown(
+        '<div class="mini-description"><b>读取方法：</b>日本国债收益率为 %；10Y−2Y 为右轴 R1，单位百分点。'
+        '日经 225 使用已完成交易日的收盘点位，独立右轴 R2；各曲线保留实际观测日期。</div>',
+        unsafe_allow_html=True,
+    )
+    add_sources([
         ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
+        ("Yahoo Finance · Nikkei 225", "https://finance.yahoo.com/quote/%5EN225/history/"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -2658,7 +2698,7 @@ def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
     builders = {
         1: build_fig1, 2: build_fig2, 3: build_fig3, 4: build_fig4,
         9: build_fig9, 10: build_fig10, 11: build_fig11,
-        12: build_fig12, 13: build_asia_rates_figure,
+        12: build_fig12, 13: build_fig13, 14: build_fig14,
     }
     builder = builders[chart_number]
     figure = builder("5Y")
@@ -2722,6 +2762,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
         11: lambda: cached_chart(11),
         12: lambda: cached_chart(12),
         13: lambda: cached_chart(13),
+        14: lambda: cached_chart(14),
     }
     revision = (snapshot_revision, CHART_BUILD)
     futures = submit_jobs(jobs, name="macro-chart", workers=6, budget=budget, revision=revision)
@@ -2755,7 +2796,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
             results[key] = ([_macro_error_figure(f"Chart {n}") for n in range(5, 9)]
                             if isinstance(key, str) else _macro_error_figure(f"Chart {key}"))
     if on_complete is not None:
-        for number in range(1, 14):
+        for number in range(1, 15):
             if number not in published:
                 if number in (5, 6, 7, 8):
                     value = results["hk5"][number-5]
@@ -2778,6 +2819,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
         11: results[11],
         12: results[12],
         13: results[13],
+        14: results[14],
     }
 
 
@@ -2791,11 +2833,11 @@ st.markdown(
 # Reserve the existing document order, then fill sections as workers finish.
 # Only the main Streamlit thread creates containers, fragments and widgets.
 macro_slots = {}
-for number in range(1, 14):
+for number in range(1, 15):
     section_headers = {
         5: "HONG KONG LIQUIDITY", 9: "US EQUITY RISK",
         10: "PRECIOUS METALS", 11: "CRYPTO MARKET",
-        12: "INDUSTRIAL METALS · COPPER", 13: "ASIA RATES",
+        12: "INDUSTRIAL METALS · COPPER", 13: "CHINA RATES", 14: "JAPAN RATES & EQUITY",
     }
     if number in section_headers:
         st.markdown(f'<div class="section-kicker">{section_headers[number]}</div>', unsafe_allow_html=True)
@@ -2808,7 +2850,7 @@ def _render_completed_macro_chart(number, figure):
         4: render_macro_chart_4, 5: render_macro_chart_5, 6: render_macro_chart_6,
         7: render_macro_chart_7, 8: render_macro_chart_8, 9: render_macro_chart_9,
         10: render_macro_chart_10, 11: render_macro_chart_11,
-        12: render_macro_chart_12, 13: render_macro_chart_13,
+        12: render_macro_chart_12, 13: render_macro_chart_13, 14: render_macro_chart_14,
     }
     with macro_slots[number]:
         renderers[number](figure)

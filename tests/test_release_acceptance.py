@@ -42,7 +42,8 @@ class ReleaseAcceptance(unittest.TestCase):
             x=dates, y=pd.Series(values), name='SOFR')))
         for number in (1, 2, 3, 4, 9, 10, 11, 12):
             ns[f'build_fig{number}'] = builder
-        ns['build_asia_rates_figure'] = builder
+        ns['build_fig13'] = builder
+        ns['build_fig14'] = builder
         ns['_cached_macro_figure'].clear()
         self.addCleanup(ns['_cached_macro_figure'].clear)
         first = ns['_cached_macro_figure'](1, (), 'cache-sample-regression')

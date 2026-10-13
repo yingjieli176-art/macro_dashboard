@@ -16,7 +16,7 @@ from macro_platform.hk_liquidity import (
     load_hk_funding_daily,
     build_hk_liquidity_figures,
 )
-from macro_platform.asia_rates import build_asia_rates_figure, load_china_gov_yields
+from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure, load_china_gov_yields
 
 
 class FinancialChartIntegrity(unittest.TestCase):
@@ -105,11 +105,11 @@ class FinancialChartIntegrity(unittest.TestCase):
             patch("macro_platform.asia_rates.load_china_gov_yields", return_value=china),
             patch("macro_platform.asia_rates.load_japan_gov_yields", return_value=japan),
         ):
-            fig = build_asia_rates_figure("1M")
-        spread = [trace for trace in fig.data if "10Y−2Y" in trace.name]
+            figs = [build_china_rates_figure("1M"), build_japan_rates_figure("1M")]
+        spread = [trace for fig in figs for trace in fig.data if "10Y−2Y" in trace.name]
         self.assertEqual(len(spread), 2)
         self.assertTrue(all(trace.yaxis == "y2" for trace in spread))
-        self.assertIn("pp", fig.layout.yaxis2.title.text)
+        self.assertTrue(all("pp" in fig.layout.yaxis2.title.text for fig in figs))
 
     def test_eastmoney_yield_spread_matches_displayed_components(self):
         class Response:
