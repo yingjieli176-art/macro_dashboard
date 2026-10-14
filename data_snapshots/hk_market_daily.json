@@ -1,20 +1,20 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-13T17:07:38.398472+00:00",
+  "updated_at": "2026-10-14T14:39:39.909623+00:00",
   "retention": "rolling 5 years plus one month buffer",
   "policy": "merge fresh observations into last-known-good history; never erase a usable series on fetch failure",
-  "coverage_start": "2021-09-13",
-  "coverage_end": "2026-10-13",
+  "coverage_start": "2021-09-14",
+  "coverage_end": "2026-10-14",
   "series": {
     "0700.HK": {
       "name": "Tencent Holdings",
       "unit": "HKD",
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
-      "record_count": 1228,
+      "record_count": 1231,
       "coverage_start": "2021-10-11",
-      "coverage_end": "2026-10-09",
-      "last_successful_fetch": "2026-10-13T17:07:38.398472+00:00",
+      "coverage_end": "2026-10-14",
+      "last_successful_fetch": "2026-10-14T14:39:39.909623+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -4929,6 +4929,18 @@
         {
           "observation_date": "2026-10-09",
           "close": 424.799988
+        },
+        {
+          "observation_date": "2026-10-12",
+          "close": 425.799988
+        },
+        {
+          "observation_date": "2026-10-13",
+          "close": 425.200012
+        },
+        {
+          "observation_date": "2026-10-14",
+          "close": 423.399994
         }
       ]
     },
@@ -4937,10 +4949,10 @@
       "unit": "HKD",
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
-      "record_count": 1228,
+      "record_count": 1231,
       "coverage_start": "2021-10-11",
-      "coverage_end": "2026-10-09",
-      "last_successful_fetch": "2026-10-13T17:07:38.398472+00:00",
+      "coverage_end": "2026-10-14",
+      "last_successful_fetch": "2026-10-14T14:39:39.909623+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -9855,6 +9867,18 @@
         {
           "observation_date": "2026-10-09",
           "close": 377.799988
+        },
+        {
+          "observation_date": "2026-10-12",
+          "close": 375.399994
+        },
+        {
+          "observation_date": "2026-10-13",
+          "close": 379.600006
+        },
+        {
+          "observation_date": "2026-10-14",
+          "close": 373.600006
         }
       ]
     },
@@ -9863,10 +9887,10 @@
       "unit": "points",
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
-      "record_count": 1229,
+      "record_count": 1231,
       "coverage_start": "2021-10-11",
-      "coverage_end": "2026-10-12",
-      "last_successful_fetch": "2026-10-13T17:07:38.398472+00:00",
+      "coverage_end": "2026-10-14",
+      "last_successful_fetch": "2026-10-14T14:39:39.909623+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -14785,6 +14809,14 @@
         {
           "observation_date": "2026-10-12",
           "close": 24271.199219
+        },
+        {
+          "observation_date": "2026-10-13",
+          "close": 24345.220703
+        },
+        {
+          "observation_date": "2026-10-14",
+          "close": 24314.169922
         }
       ]
     },
@@ -14794,16 +14826,12 @@
       "source": "Sina Finance via AKShare",
       "price_basis": "raw_close",
       "record_count": 1248,
-      "coverage_start": "2021-09-13",
-      "coverage_end": "2026-10-13",
-      "last_successful_fetch": "2026-10-13T17:07:38.398472+00:00",
+      "coverage_start": "2021-09-14",
+      "coverage_end": "2026-10-14",
+      "last_successful_fetch": "2026-10-14T14:39:39.909623+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
-        {
-          "observation_date": "2021-09-13",
-          "close": 6595.02979
-        },
         {
           "observation_date": "2021-09-14",
           "close": 6502.3501
@@ -19791,6 +19819,10 @@
         {
           "observation_date": "2026-10-13",
           "close": 4136.62988
+        },
+        {
+          "observation_date": "2026-10-14",
+          "close": 4174.47022
         }
       ]
     }
