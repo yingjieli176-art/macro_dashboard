@@ -36,6 +36,44 @@ def values(trace):
 
 
 class SeriesCalendarIntegrity(unittest.TestCase):
+    def test_equity_ratio_uses_same_date_valid_legs_and_independent_axis(self):
+        ns = builders()
+        dates = pd.date_range("2026-10-01", periods=9)
+        risk = {
+            "VIXCLS": frame(dates, "VIXCLS", [20., None, 0., -1., float("inf"), 20., 20., 20., 25.]),
+            "VXVCLS": frame(dates.union(pd.DatetimeIndex(["2026-10-10"])), "VXVCLS", [22.] * 10),
+            "SP500": frame(["2026-10-11"], "SP500", [6000.]),
+        }
+        ns["get_fred_series"] = lambda c: risk[c].copy()
+        ns["load_vixeq_snapshot"] = lambda: frame(
+            dates.delete(7), "VIXEQ", [40., 41., 42., 43., 44., float("inf"), -2., 75.])
+        fig = ns["build_fig9"]("1M")
+        ratio = next(t for t in fig.data if t.name == "VIXEQ/VIX (R3)")
+        self.assertEqual(list(pd.to_datetime(ratio.x)), list(dates))
+        self.assertEqual(list(pd.Series(ratio.y).dropna()), [2., 3.])
+        self.assertEqual(list(pd.Series(ratio.y).isna()), [False] + [True] * 7 + [False])
+        self.assertEqual(ratio.yaxis, "y4")
+        self.assertIn("x<extra>", ratio.hovertemplate)
+        for window in RANGE_OFFSETS:
+            option = build_adaptive_echarts_option(fig, window)
+            rendered = next(s for s in option["series"] if s["name"] == ratio.name)
+            self.assertEqual(rendered["yAxisIndex"], 3)
+            self.assertIsNone(rendered["data"][1][1])
+            self.assertFalse(rendered["connectNulls"])
+            axis = option["yAxis"][3]
+            self.assertTrue(axis["scale"])
+            self.assertNotIn("min", axis)
+            self.assertNotIn("max", axis)
+
+    def test_equity_ratio_missing_leg_is_reported_without_hiding_other_series(self):
+        ns = builders()
+        dates = ["2026-10-01", "2026-10-02"]
+        ns["get_fred_series"] = lambda c: frame(dates, c, [20., 21.])
+        ns["load_vixeq_snapshot"] = lambda: frame([], "VIXEQ", [])
+        fig = ns["build_fig9"]("1M")
+        self.assertIn("VIXEQ/VIX (R3)", fig.layout.meta["missing_series"])
+        self.assertEqual({t.name for t in fig.data}, {"VIX", "S&P 500 (R1)", "VIX3M−VIX (R2)"})
+
     def test_real_policy_and_equity_sources_keep_exact_dates_in_all_windows(self):
         ns = builders()
         with patch.object(requests.sessions.Session, "request", side_effect=requests.Timeout("offline")):
