@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-16T14:14:06.927352+00:00",
+  "updated_at": "2026-10-19T16:37:43.658278+00:00",
   "retention": "rolling 5 years plus one month buffer",
   "policy": "merge fresh observations into last-known-good history; never erase a usable series on fetch failure",
-  "coverage_start": "2021-09-16",
+  "coverage_start": "2021-09-20",
   "coverage_end": "2026-10-16",
   "series": {
     "0700.HK": {
@@ -14,7 +14,7 @@
       "record_count": 1233,
       "coverage_start": "2021-10-11",
       "coverage_end": "2026-10-16",
-      "last_successful_fetch": "2026-10-16T14:14:06.927352+00:00",
+      "last_successful_fetch": "2026-10-19T16:37:43.658278+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -4960,7 +4960,7 @@
       "record_count": 1233,
       "coverage_start": "2021-10-11",
       "coverage_end": "2026-10-16",
-      "last_successful_fetch": "2026-10-16T14:14:06.927352+00:00",
+      "last_successful_fetch": "2026-10-19T16:37:43.658278+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -9906,7 +9906,7 @@
       "record_count": 1233,
       "coverage_start": "2021-10-11",
       "coverage_end": "2026-10-16",
-      "last_successful_fetch": "2026-10-16T14:14:06.927352+00:00",
+      "last_successful_fetch": "2026-10-19T16:37:43.658278+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -14849,21 +14849,13 @@
       "unit": "points",
       "source": "Sina Finance via AKShare",
       "price_basis": "raw_close",
-      "record_count": 1247,
-      "coverage_start": "2021-09-16",
-      "coverage_end": "2026-10-15",
-      "last_successful_fetch": "2026-10-16T14:14:06.927352+00:00",
+      "record_count": 1246,
+      "coverage_start": "2021-09-20",
+      "coverage_end": "2026-10-16",
+      "last_successful_fetch": "2026-10-19T16:37:43.658278+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
-        {
-          "observation_date": "2021-09-16",
-          "close": 6232.93018
-        },
-        {
-          "observation_date": "2021-09-17",
-          "close": 6452.18994
-        },
         {
           "observation_date": "2021-09-20",
           "close": 6271.37012
@@ -19843,6 +19835,10 @@
         {
           "observation_date": "2026-10-15",
           "close": 4060.98999
+        },
+        {
+          "observation_date": "2026-10-16",
+          "close": 4108.24023
         }
       ]
     }
