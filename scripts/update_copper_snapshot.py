@@ -2,22 +2,60 @@ from __future__ import annotations
 
 import io
 import json
+import math
 import re
 import time
+import sys
 from calendar import monthrange
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from macro_platform.market_history import completed_daily_closes
 OUT = ROOT / "data_snapshots" / "copper_market_daily.json"
 
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF"
 WESTMETALL_URL = "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash&year={year}"
 COCHILCO_URL = "https://boletin.cochilco.cl/productos/boletin.asp?anio={year}&mes={month:02d}&tabla=tabla4_2"
+CME_STOCKS_URL = "https://www.cmegroup.com/delivery_reports/Copper_Stocks.xls"
+SHORT_TON_TO_METRIC_TONNE = 0.90718474
+
+
+def parse_cme_stocks(frame: pd.DataFrame, today: date | None = None) -> dict:
+    """Use the activity date and TOTAL TODAY, converting short tons to tonnes."""
+    cells = [str(v).strip() for v in frame.to_numpy().ravel() if pd.notna(v)]
+    text = " ".join(cells)
+    if "COPPER - HIGH GRADE" not in text or "Short Tons" not in text:
+        raise ValueError("Unexpected CME commodity or inventory unit")
+    match = re.search(r"Activity Date:\s*(\d{2}/\d{2}/\d{4})", text)
+    if not match:
+        raise ValueError("CME activity date missing; report date is not a substitute")
+    activity = datetime.strptime(match[1], "%m/%d/%Y").date()
+    if activity > (today or date.today()):
+        raise ValueError("CME inventory has a future activity date")
+    header = next((i for i, row in frame.iterrows()
+                   if any(str(v).strip() == "TOTAL TODAY" for v in row)), None)
+    if header is None:
+        raise ValueError("CME TOTAL TODAY column missing")
+    total_col = next(j for j, v in enumerate(frame.loc[header]) if str(v).strip() == "TOTAL TODAY")
+    def number(label):
+        rows = frame.loc[frame.apply(lambda row: any(str(v).strip() == label for v in row), axis=1)]
+        if len(rows) != 1:
+            raise ValueError(f"Ambiguous CME {label}")
+        value = float(str(rows.iloc[0, total_col]).replace(",", ""))
+        if not math.isfinite(value) or value < 0:
+            raise ValueError(f"Invalid CME {label}")
+        return value
+    total = number("TOTAL COPPER")
+    if total <= 0 or abs(total - number("Total Registered (warranted)")
+                         - number("Total Eligible (non-warranted)")) > 1:
+        raise ValueError("CME copper totals do not reconcile")
+    return {"date": activity.isoformat(), "comex_stock_t": total * SHORT_TON_TO_METRIC_TONNE,
+            "comex_stock_source": CME_STOCKS_URL, "comex_stock_short_tons": total}
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; MacroDashboard/1.0; +https://github.com/yingjieli176-art/macro_dashboard)",
@@ -62,12 +100,8 @@ def _fetch_comex_price() -> pd.DataFrame:
     size = min(len(timestamps), len(closes))
     if not size:
         raise RuntimeError("Yahoo HG=F returned no daily closes")
-    frame = pd.DataFrame(
-        {
-            "date": pd.to_datetime(timestamps[:size], unit="s", utc=True).tz_convert("America/New_York").tz_localize(None).normalize(),
-            "comex_price_usd_lb": pd.to_numeric(closes[:size], errors="coerce"),
-        }
-    )
+    frame = completed_daily_closes(node).rename(
+        columns={"observation_date": "date", "close": "comex_price_usd_lb"})
     return frame.dropna().drop_duplicates("date", keep="last").sort_values("date")
 
 
@@ -119,6 +153,7 @@ def _parse_cochilco_month(year: int, month: int) -> list[dict]:
       day | LME America | Asia | Europe | LME total | change |
       COMEX total | change | SHFE total | change | combined total | change
     """
+    from bs4 import BeautifulSoup
     url = COCHILCO_URL.format(year=year, month=month)
     response = _request(url, timeout=25, attempts=2)
     soup = BeautifulSoup(response.text, "html.parser")
@@ -191,6 +226,8 @@ def _load_existing_inventory() -> dict[str, dict]:
             "date": stamp,
             "comex_stock_t": row.get("comex_stock_t"),
             "cochilco_lme_stock_t": row.get("cochilco_lme_stock_t"),
+            "comex_stock_source": row.get("comex_stock_source"),
+            "comex_stock_short_tons": row.get("comex_stock_short_tons"),
         }
     return result
 
@@ -211,6 +248,11 @@ def _fetch_comex_inventory() -> pd.DataFrame:
         try:
             batch = _parse_cochilco_month(year, month)
             for row in batch:
+                prior = existing.get(row["date"], {})
+                if prior.get("comex_stock_source") == CME_STOCKS_URL:
+                    row["comex_stock_t"] = prior["comex_stock_t"]
+                    row["comex_stock_source"] = CME_STOCKS_URL
+                    row["comex_stock_short_tons"] = prior.get("comex_stock_short_tons")
                 existing[row["date"]] = row
             print("COCHILCO", year, f"{month:02d}", "rows", len(batch), flush=True)
         except Exception as exc:
@@ -218,6 +260,14 @@ def _fetch_comex_inventory() -> pd.DataFrame:
             # gaps remain visible rather than blocking the entire snapshot.
             print("COCHILCO unavailable", year, f"{month:02d}", repr(exc), flush=True)
         time.sleep(0.15)
+
+    try:
+        response = _request(CME_STOCKS_URL, timeout=25, attempts=2)
+        latest = parse_cme_stocks(pd.read_excel(io.BytesIO(response.content), header=None))
+        existing.setdefault(latest["date"], {"date": latest["date"]}).update(latest)
+        print("CME copper inventory", latest, flush=True)
+    except Exception as exc:
+        print("CME inventory unavailable; keeping last-good history:", repr(exc), flush=True)
 
     rows = [row for stamp, row in sorted(existing.items()) if stamp >= start.isoformat()]
     frame = pd.DataFrame(rows)
@@ -269,6 +319,8 @@ def main() -> None:
         "lme_3m_usd_t",
         "lme_stock_t",
         "cochilco_lme_stock_t",
+        "comex_stock_source",
+        "comex_stock_short_tons",
     ]
     for col in columns:
         if col not in data.columns:
@@ -278,14 +330,15 @@ def main() -> None:
     for row in data[columns].itertuples(index=False, name=None):
         item = {"date": row[0].strftime("%Y-%m-%d")}
         for col, value in zip(columns[1:], row[1:]):
-            item[col] = None if pd.isna(value) else float(value)
+            item[col] = (None if pd.isna(value) else str(value) if col == "comex_stock_source" else float(value))
         records.append(item)
 
     payload = {
-        "source": "COMEX HG price via Yahoo chart API; LME copper price/stock via Westmetall LME tables; COMEX/LME inventory cross-check via COCHILCO Table 4.2",
+        "source": "CME official copper warehouse stocks (short tons converted to metric tonnes); COMEX HG via Yahoo; LME via Westmetall; historical inventory via COCHILCO Table 4.2",
         "source_urls": {
             "comex_price": "https://finance.yahoo.com/quote/HG=F/history/",
             "cme_inventory_reference": "https://www.cmegroup.com/solutions/clearing/operations-and-deliveries/nymex-delivery-notices.html",
+            "cme_inventory": CME_STOCKS_URL,
             "lme_reference": "https://www.lme.com/copper",
             "lme_price_stock": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
             "cochilco_inventory": "https://boletin.cochilco.cl/productos/boletin.asp?tabla=tabla4_2",
@@ -294,6 +347,8 @@ def main() -> None:
         "coverage_start": records[0]["date"],
         "coverage_end": records[-1]["date"],
         "counts": counts,
+        "latest_by_field": {col: max((row["date"] for row in records if row.get(col) is not None), default=None)
+                            for col in columns[1:] if col != "comex_stock_source"},
         "units": {
             "comex_price_usd_lb": "USD/lb",
             "comex_stock_t": "metric tonnes",

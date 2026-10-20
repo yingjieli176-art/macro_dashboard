@@ -74,14 +74,15 @@ def _parse_proxy_json(text: str) -> dict[str, Any]:
 
 
 def _fetch_proxy_records(official_url: str, params: dict[str, Any]) -> list[dict[str, Any]]:
-    url = _proxy_url(official_url, params)
+    direct = requests.Request("GET", official_url, params=params).prepare().url
+    urls = (direct, _proxy_url(official_url, params))
     last_error: Exception | None = None
-    for attempt in range(3):
+    for url in urls:
         try:
             response = requests.get(
                 url,
                 headers={"User-Agent": "MacroDashboard/1.0"},
-                timeout=50,
+                timeout=25,
             )
             response.raise_for_status()
             payload = _parse_proxy_json(response.text)
@@ -91,8 +92,6 @@ def _fetch_proxy_records(official_url: str, params: dict[str, Any]) -> list[dict
             return [row for row in records if isinstance(row, dict)]
         except Exception as exc:
             last_error = exc
-            if attempt < 2:
-                time.sleep(1.5 * (attempt + 1))
     raise RuntimeError(f"HKMA proxy fetch failed: {last_error}")
 
 
@@ -219,10 +218,6 @@ def main() -> None:
         "m3_hkd": 58,
         "monetary_base_total": 60,
         "aggr_balance": 60,
-        "hibor_fixing_overnight": 58,
-        "hibor_fixing_3m": 58,
-        "discount_window_base_rate": 58,
-        "exrate_hkd_usd": 58,
         "outstanding_efbn": 60,
         "ow_lb_bf_disc_win": 60,
     }
@@ -243,6 +238,9 @@ def main() -> None:
         "coverage_end": records[0]["end_of_month"],
         "fetch_strategy": "HKMA official APIs via repository-only text transport; 12-month windows + field-level merge",
         "coverage_counts": coverage,
+        "optional_coverage_counts": {field: _valid_count(records, field) for field in
+                                     ("hibor_fixing_overnight", "hibor_fixing_3m",
+                                      "discount_window_base_rate", "exrate_hkd_usd")},
         "records": records,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)

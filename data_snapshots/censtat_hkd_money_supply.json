@@ -1,0 +1,413 @@
+{
+  "source": "HKMA original monthly money supply; retained verified monthly history (C&SD table currently quarterly/yearly)",
+  "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics",
+  "cross_check_url": "https://www.censtatd.gov.hk/api/get.php?id=340-45012&lang=en&full_series=1",
+  "updated_at": "2026-10-20T09:06:47.787802+00:00",
+  "record_count": 78,
+  "coverage_start": "2020-04",
+  "coverage_end": "2026-08",
+  "records": [
+    {
+      "end_of_month": "2026-09"
+    },
+    {
+      "end_of_month": "2026-08",
+      "m2_hkd": 9573224.866,
+      "m3_hkd": 9586156.603,
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    },
+    {
+      "end_of_month": "2026-07",
+      "m2_hkd": 9374090.495,
+      "m3_hkd": 9386805.378,
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    },
+    {
+      "end_of_month": "2026-06",
+      "m2_hkd": 9283574.65,
+      "m3_hkd": 9295676.592,
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    },
+    {
+      "end_of_month": "2026-05",
+      "m2_hkd": 9214013.05,
+      "m3_hkd": 9224978.799,
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    },
+    {
+      "end_of_month": "2026-04",
+      "m2_hkd": 9113652.486,
+      "m3_hkd": 9125304.403,
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    },
+    {
+      "end_of_month": "2026-03",
+      "m2_hkd": 8998459.3,
+      "m3_hkd": 9010718.093,
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    },
+    {
+      "end_of_month": "2026-02",
+      "m2_hkd": 8943629.605,
+      "m3_hkd": 8956883.676,
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    },
+    {
+      "end_of_month": "2026-01",
+      "m2_hkd": 8929546.025,
+      "m3_hkd": 8943513.9,
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    },
+    {
+      "end_of_month": "2025-12",
+      "m2_hkd": 8830871.38,
+      "m3_hkd": 8844257.173,
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    },
+    {
+      "end_of_month": "2025-11",
+      "m2_hkd": 8792873.682,
+      "m3_hkd": 8806557.812,
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    },
+    {
+      "end_of_month": "2025-10",
+      "m2_hkd": 8776052.544,
+      "m3_hkd": 8789082.784,
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    },
+    {
+      "end_of_month": "2025-09",
+      "m2_hkd": 8830159.634,
+      "m3_hkd": 8843703.577,
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    },
+    {
+      "end_of_month": "2025-08",
+      "m2_hkd": 8711490.988,
+      "m3_hkd": 8725519.544,
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    },
+    {
+      "end_of_month": "2025-07",
+      "m2_hkd": 8879999.392,
+      "m3_hkd": 8895408.792,
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+    },
+    {
+      "end_of_month": "2025-06",
+      "m2_hkd": 9044195.795,
+      "m3_hkd": 9059766.718
+    },
+    {
+      "end_of_month": "2025-05",
+      "m2_hkd": 9116086.116,
+      "m3_hkd": 9132139.776
+    },
+    {
+      "end_of_month": "2025-04",
+      "m2_hkd": 8835732.0,
+      "m3_hkd": 8851746.0
+    },
+    {
+      "end_of_month": "2025-03",
+      "m2_hkd": 8890247.0,
+      "m3_hkd": 8906242.0
+    },
+    {
+      "end_of_month": "2025-02",
+      "m2_hkd": 8759421.0,
+      "m3_hkd": 8774608.0
+    },
+    {
+      "end_of_month": "2025-01",
+      "m2_hkd": 8600791.0,
+      "m3_hkd": 8618343.0
+    },
+    {
+      "end_of_month": "2024-12",
+      "m2_hkd": 8474517.0,
+      "m3_hkd": 8490464.0
+    },
+    {
+      "end_of_month": "2024-11",
+      "m2_hkd": 8411012.0,
+      "m3_hkd": 8427256.0
+    },
+    {
+      "end_of_month": "2024-10",
+      "m2_hkd": 8476507.0,
+      "m3_hkd": 8491623.0
+    },
+    {
+      "end_of_month": "2024-09",
+      "m2_hkd": 8450647.0,
+      "m3_hkd": 8465626.0
+    },
+    {
+      "end_of_month": "2024-08",
+      "m2_hkd": 8377650.0,
+      "m3_hkd": 8391240.0
+    },
+    {
+      "end_of_month": "2024-07",
+      "m2_hkd": 8364413.0,
+      "m3_hkd": 8377654.0
+    },
+    {
+      "end_of_month": "2024-06",
+      "m2_hkd": 8341838.0,
+      "m3_hkd": 8355640.0
+    },
+    {
+      "end_of_month": "2024-05",
+      "m2_hkd": 8323536.0,
+      "m3_hkd": 8336756.0
+    },
+    {
+      "end_of_month": "2024-04",
+      "m2_hkd": 8294065.0,
+      "m3_hkd": 8307180.0
+    },
+    {
+      "end_of_month": "2024-03",
+      "m2_hkd": 8253008.0,
+      "m3_hkd": 8265805.0
+    },
+    {
+      "end_of_month": "2024-02",
+      "m2_hkd": 8205436.0,
+      "m3_hkd": 8218720.0
+    },
+    {
+      "end_of_month": "2024-01",
+      "m2_hkd": 8231186.0,
+      "m3_hkd": 8245139.0
+    },
+    {
+      "end_of_month": "2023-12",
+      "m2_hkd": 8250109.0,
+      "m3_hkd": 8262831.0
+    },
+    {
+      "end_of_month": "2023-11",
+      "m2_hkd": 8220104.0,
+      "m3_hkd": 8232849.0
+    },
+    {
+      "end_of_month": "2023-10",
+      "m2_hkd": 8175120.0,
+      "m3_hkd": 8188556.0
+    },
+    {
+      "end_of_month": "2023-09",
+      "m2_hkd": 8206059.0,
+      "m3_hkd": 8219643.0
+    },
+    {
+      "end_of_month": "2023-08",
+      "m2_hkd": 8225177.0,
+      "m3_hkd": 8238066.0
+    },
+    {
+      "end_of_month": "2023-07",
+      "m2_hkd": 8199712.0,
+      "m3_hkd": 8212820.0
+    },
+    {
+      "end_of_month": "2023-06",
+      "m2_hkd": 8217612.0,
+      "m3_hkd": 8230408.0
+    },
+    {
+      "end_of_month": "2023-05",
+      "m2_hkd": 8199255.0,
+      "m3_hkd": 8212388.0
+    },
+    {
+      "end_of_month": "2023-04",
+      "m2_hkd": 8254440.0,
+      "m3_hkd": 8267009.0
+    },
+    {
+      "end_of_month": "2023-03",
+      "m2_hkd": 8285625.0,
+      "m3_hkd": 8298864.0
+    },
+    {
+      "end_of_month": "2023-02",
+      "m2_hkd": 8193376.0,
+      "m3_hkd": 8206635.0
+    },
+    {
+      "end_of_month": "2023-01",
+      "m2_hkd": 8290449.0,
+      "m3_hkd": 8303100.0
+    },
+    {
+      "end_of_month": "2022-12",
+      "m2_hkd": 8095990.0,
+      "m3_hkd": 8108473.0
+    },
+    {
+      "end_of_month": "2022-11",
+      "m2_hkd": 8008413.0,
+      "m3_hkd": 8020907.0
+    },
+    {
+      "end_of_month": "2022-10",
+      "m2_hkd": 7914302.0,
+      "m3_hkd": 7928236.0
+    },
+    {
+      "end_of_month": "2022-09",
+      "m2_hkd": 8020725.0,
+      "m3_hkd": 8034409.0
+    },
+    {
+      "end_of_month": "2022-08",
+      "m2_hkd": 8109954.0,
+      "m3_hkd": 8123196.0
+    },
+    {
+      "end_of_month": "2022-07",
+      "m2_hkd": 8178848.0,
+      "m3_hkd": 8190288.0
+    },
+    {
+      "end_of_month": "2022-06",
+      "m2_hkd": 8226610.0,
+      "m3_hkd": 8239057.0
+    },
+    {
+      "end_of_month": "2022-05",
+      "m2_hkd": 8121452.0,
+      "m3_hkd": 8133617.0
+    },
+    {
+      "end_of_month": "2022-04",
+      "m2_hkd": 8178724.0,
+      "m3_hkd": 8191017.0
+    },
+    {
+      "end_of_month": "2022-03",
+      "m2_hkd": 8210310.0,
+      "m3_hkd": 8223237.0
+    },
+    {
+      "end_of_month": "2022-02",
+      "m2_hkd": 8184645.0,
+      "m3_hkd": 8197647.0
+    },
+    {
+      "end_of_month": "2022-01",
+      "m2_hkd": 8159919.0,
+      "m3_hkd": 8173007.0
+    },
+    {
+      "end_of_month": "2021-12",
+      "m2_hkd": 8043994.0,
+      "m3_hkd": 8057408.0
+    },
+    {
+      "end_of_month": "2021-11",
+      "m2_hkd": 8097979.0,
+      "m3_hkd": 8110892.0
+    },
+    {
+      "end_of_month": "2021-10",
+      "m2_hkd": 8095045.0,
+      "m3_hkd": 8108849.0
+    },
+    {
+      "end_of_month": "2021-09",
+      "m2_hkd": 8085088.0,
+      "m3_hkd": 8098753.0
+    },
+    {
+      "end_of_month": "2021-08",
+      "m2_hkd": 8056309.0,
+      "m3_hkd": 8070041.0
+    },
+    {
+      "end_of_month": "2021-07",
+      "m2_hkd": 8081344.0,
+      "m3_hkd": 8095721.0
+    },
+    {
+      "end_of_month": "2021-06",
+      "m2_hkd": 8461821.0,
+      "m3_hkd": 8477737.0
+    },
+    {
+      "end_of_month": "2021-05",
+      "m2_hkd": 8125343.0,
+      "m3_hkd": 8141589.0
+    },
+    {
+      "end_of_month": "2021-04",
+      "m2_hkd": 8080041.0,
+      "m3_hkd": 8095371.0
+    },
+    {
+      "end_of_month": "2021-03",
+      "m2_hkd": 8128388.0,
+      "m3_hkd": 8143300.0
+    },
+    {
+      "end_of_month": "2021-02",
+      "m2_hkd": 8276695.0,
+      "m3_hkd": 8291190.0
+    },
+    {
+      "end_of_month": "2021-01",
+      "m2_hkd": 9292550.0,
+      "m3_hkd": 9307825.0
+    },
+    {
+      "end_of_month": "2020-12",
+      "m2_hkd": 7922089.0,
+      "m3_hkd": 7937038.0
+    },
+    {
+      "end_of_month": "2020-11",
+      "m2_hkd": 7949837.0,
+      "m3_hkd": 7964856.0
+    },
+    {
+      "end_of_month": "2020-10",
+      "m2_hkd": 8999851.0,
+      "m3_hkd": 9014327.0
+    },
+    {
+      "end_of_month": "2020-09",
+      "m2_hkd": 8243060.0,
+      "m3_hkd": 8258067.0
+    },
+    {
+      "end_of_month": "2020-08",
+      "m2_hkd": 8300652.0,
+      "m3_hkd": 8317023.0
+    },
+    {
+      "end_of_month": "2020-07",
+      "m2_hkd": 7940990.0,
+      "m3_hkd": 7957865.0
+    },
+    {
+      "end_of_month": "2020-06",
+      "m2_hkd": 7629436.0,
+      "m3_hkd": 7645848.0
+    },
+    {
+      "end_of_month": "2020-05",
+      "m2_hkd": 7487691.0,
+      "m3_hkd": 7504828.0
+    },
+    {
+      "end_of_month": "2020-04",
+      "m2_hkd": 7477673.0,
+      "m3_hkd": 7495200.0
+    }
+  ]
+}

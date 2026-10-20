@@ -55,5 +55,4 @@ jobs:
             exit 0
           fi
           git commit -m 'data: refresh official Treasury TGA daily closes'
-          git pull --rebase origin main
-          git push origin main
+          bash scripts/push_snapshot.sh

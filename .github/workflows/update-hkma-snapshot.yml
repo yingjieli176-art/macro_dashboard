@@ -14,8 +14,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: hkma-snapshot
-  cancel-in-progress: true
+  group: hkma-monetary-statistics-data
+  cancel-in-progress: false
 
 jobs:
   refresh:
@@ -23,6 +23,8 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -72,4 +74,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Refresh HKMA monetary statistics snapshot"
-          git push
+          bash scripts/push_snapshot.sh

@@ -22,10 +22,11 @@ HK_MARKET_DAILY_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hk_market_daily.json"
 USDHKD_SNAPSHOT_PATH = ROOT / "data_snapshots" / "usdhkd_daily.json"
 HIBOR_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkd_hibor_monthly.json"
 BASE_RATE_SNAPSHOT_PATH = ROOT / "data_snapshots" / "hkma_base_rate_monthly.json"
+MONEY_SNAPSHOT_PATH = ROOT / "data_snapshots" / "censtat_hkd_money_supply.json"
 def _hk_snapshot_paths():
     return (SNAPSHOT_PATH, DAILY_BANKING_SNAPSHOT_PATH, HSTECH_SNAPSHOT_PATH,
             HK_MARKET_DAILY_SNAPSHOT_PATH, USDHKD_SNAPSHOT_PATH,
-            HIBOR_SNAPSHOT_PATH, BASE_RATE_SNAPSHOT_PATH)
+            HIBOR_SNAPSHOT_PATH, BASE_RATE_SNAPSHOT_PATH, MONEY_SNAPSHOT_PATH)
 
 
 DAILY_BANKING_COLUMNS = [
@@ -103,6 +104,20 @@ def _read_snapshot() -> tuple[list[dict[str, Any]], dict[str, Any]]:
 @observed_cache(_hk_snapshot_paths)
 def load_hk_liquidity() -> pd.DataFrame:
     rows, _ = _read_snapshot()
+    # The independent money-supply job may succeed while another HKMA
+    # component fails. Merge its genuine monthly observations by period.
+    merged = {str(row.get("end_of_month")): dict(row) for row in rows if isinstance(row, dict)}
+    try:
+        money = json.loads(MONEY_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+        for row in money.get("records") or []:
+            period = str(row.get("end_of_month") or "")
+            target = merged.setdefault(period, {"end_of_month": period})
+            for key in ("m2_hkd", "m3_hkd"):
+                if row.get(key) is not None and target.get(key) is None:
+                    target[key] = row[key]
+        rows = list(merged.values())
+    except (OSError, ValueError, TypeError, AttributeError):
+        pass
     frame = pd.DataFrame(rows)
     if frame.empty or "end_of_month" not in frame.columns:
         return _empty_frame()

@@ -53,5 +53,4 @@ jobs:
             exit 0
           fi
           git commit -m 'data: update official Cboe VIXEQ observations'
-          git pull --rebase origin main
-          git push origin main
+          bash scripts/push_snapshot.sh

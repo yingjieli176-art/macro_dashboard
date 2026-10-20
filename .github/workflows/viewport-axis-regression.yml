@@ -4,6 +4,12 @@ on:
     branches: [main]
     paths:
       - app.py
+      - tests/test_source_freshness.py
+      - scripts/push_snapshot.sh
+      - scripts/update_hkma_snapshot.py
+      - scripts/update_hkma_daily_snapshot.py
+      - scripts/update_usdhkd_snapshot.py
+      - scripts/update_censtat_money_supply.py
       - macro_platform/us_equity_risk.py
       - scripts/update_correlation_snapshot.py
       - tests/test_correlation_snapshot.py
@@ -61,6 +67,12 @@ on:
     branches: [main]
     paths:
       - app.py
+      - tests/test_source_freshness.py
+      - scripts/push_snapshot.sh
+      - scripts/update_hkma_snapshot.py
+      - scripts/update_hkma_daily_snapshot.py
+      - scripts/update_usdhkd_snapshot.py
+      - scripts/update_censtat_money_supply.py
       - macro_platform/us_equity_risk.py
       - scripts/update_correlation_snapshot.py
       - tests/test_correlation_snapshot.py

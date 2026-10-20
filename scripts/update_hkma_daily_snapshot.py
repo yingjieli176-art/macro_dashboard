@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import re
+from html.parser import HTMLParser
 import time
 import urllib.parse
 import urllib.request
@@ -21,6 +23,34 @@ HIBOR_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-s
 # daily backbone above.
 INTERBANK_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity"
 CURRENT_BASE_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-monetary-base"
+HKAB_URL = "https://www.hkab.org.hk/en/rates/hibor"
+
+
+def parse_hkab_latest(html: str, today: date | None = None) -> dict:
+    class Text(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.parts = []
+        def handle_data(self, value):
+            if value.strip():
+                self.parts.append(value.strip())
+    parser = Text()
+    parser.feed(html)
+    text = " ".join(parser.parts)
+    match = re.search(r"Rates as at.*?Hong Kong Time on\s+(\d{4}-\d{2}-\d{2})", text)
+    if not match:
+        raise ValueError("HKAB publication date missing")
+    day = date.fromisoformat(match[1])
+    if day > (today or datetime.now(timezone.utc).date()):
+        raise ValueError("HKAB future publication date")
+    section = text[match.end():].split("Historical Rates", 1)[0]
+    row = {"end_of_date": day.isoformat(), "hibor_source": HKAB_URL}
+    for label, field in (("Overnight", "hibor_overnight"), ("3 Months", "hibor_3m")):
+        rate = re.search(re.escape(label) + r"\s+(-?\d+(?:\.\d+)?)", section)
+        if not rate or not 0 <= float(rate[1]) <= 30:
+            raise ValueError(f"HKAB {label} fixing missing or invalid")
+        row[field] = float(rate[1])
+    return row
 
 PAGE_SIZE = 20
 ROLLING_DAYS = 550
@@ -186,7 +216,13 @@ def main() -> None:
     current_base = _optional_latest(CURRENT_BASE_URL, "end_of_date")
     interbank = _optional_latest(INTERBANK_URL, "end_of_date")
 
+    # Persist previously collected official fixings when a source shortens its
+    # current export. Missing values from a new response cannot erase history.
     merged: dict[str, dict] = {}
+    if OUT.exists():
+        prior = json.loads(OUT.read_text(encoding="utf-8"))
+        merged = {r["end_of_date"]: dict(r) for r in prior.get("records", [])
+                  if start_day.isoformat() <= str(r.get("end_of_date", "")) <= end_day.isoformat()}
 
     def target_for(key: str) -> dict:
         return merged.setdefault(
@@ -259,7 +295,14 @@ def main() -> None:
                 if row.get(field) is not None:
                     target[field] = row.get(field)
 
-    records = [merged[key] for key in sorted(merged)]
+    try:
+        hkab = parse_hkab_latest(_fetch_bytes(HKAB_URL, 20).decode("utf-8"))
+        target_for(hkab["end_of_date"]).update(hkab)
+        print("HKAB latest official fixing", hkab, flush=True)
+    except Exception as exc:
+        print("HKAB latest fixing unavailable; keeping original dated HIBOR:", repr(exc), flush=True)
+
+    records = [merged[key] for key in sorted(merged) if key <= end_day.isoformat()]
     funding_rows = [r for r in records if r.get("hibor_overnight") is not None and r.get("hibor_3m") is not None]
     balance_rows = [r for r in records if r.get("closing_balance") is not None]
     if len(records) < 200 or len(funding_rows) < 200 or len(balance_rows) < 200:
@@ -269,7 +312,7 @@ def main() -> None:
 
     payload = {
         "source": "HKMA official daily bulletin datasets; current daily-statistics enrichment when available",
-        "source_urls": [MARKET_OP_URL, BASE_URL, HIBOR_URL, CURRENT_BASE_URL, INTERBANK_URL],
+        "source_urls": [MARKET_OP_URL, BASE_URL, HIBOR_URL, CURRENT_BASE_URL, INTERBANK_URL, HKAB_URL],
         "transport_fallback": "r.jina.ai relay when direct api.hkma.gov.hk access is unavailable from CI",
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "coverage_start": records[0]["end_of_date"],
