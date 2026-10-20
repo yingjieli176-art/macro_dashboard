@@ -19,6 +19,7 @@ def builders():
     names = {"add_line", "_mark_missing_series", "filter_range",
              "build_fig1", "build_fig9", "build_fig10", "build_fig11"}
     ns = {"pd": pd, "go": go, "RANGE_OFFSETS": RANGE_OFFSETS,
+          "load_correlation_snapshot": lambda symbol: frame([], symbol, []),
           "apply_chart_style": lambda fig, *args: fig,
           "chart_height": lambda *args: 420}
     nodes = [n for n in ast.parse(source.read_text()).body
@@ -36,6 +37,50 @@ def values(trace):
 
 
 class SeriesCalendarIntegrity(unittest.TestCase):
+    def test_equity_correlation_calendars_and_same_date_spread(self):
+        ns = builders()
+        dates = pd.date_range("2026-10-01", periods=5)
+        ns["get_fred_series"] = lambda c: frame(dates, c, [20., 21., 22., 23., 24.])
+        ns["load_vixeq_snapshot"] = lambda: frame(
+            dates.delete(2), "VIXEQ", [40., 42., 46., 48.])
+        correlations = {
+            "COR1M": frame(dates.delete(1), "COR1M", [10., None, 12., 13.]),
+            "COR3M": frame(dates.union(pd.DatetimeIndex(["2026-10-06"])),
+                           "COR3M", [15., 16., 17., 18., 19., 20.]),
+        }
+        ns["load_correlation_snapshot"] = lambda symbol: correlations[symbol].copy()
+        fig = ns["build_fig9"]("5Y")
+        spread = next(t for t in fig.data if t.name == "VIXEQ−VIX (R2)")
+        self.assertEqual(list(pd.to_datetime(spread.x)), list(dates))
+        self.assertEqual(list(pd.Series(spread.y).dropna()), [20., 21., 23., 24.])
+        self.assertTrue(pd.isna(spread.y[2]))
+        self.assertEqual(spread.yaxis, "y3")
+        self.assertIn(" pts<extra>", spread.hovertemplate)
+        for symbol in correlations:
+            trace = next(t for t in fig.data if t.name == f"{symbol} (R4)")
+            self.assertEqual(list(pd.to_datetime(trace.x)), list(correlations[symbol].observation_date))
+            self.assertEqual(trace.yaxis, "y5")
+        for window in RANGE_OFFSETS:
+            option = build_adaptive_echarts_option(fig, window)
+            for name, axis in (("VIXEQ−VIX (R2)", 2), ("COR1M (R4)", 4), ("COR3M (R4)", 4)):
+                series = next(s for s in option["series"] if s["name"] == name)
+                self.assertEqual(series["yAxisIndex"], axis)
+                self.assertFalse(series["connectNulls"])
+                self.assertTrue(option["yAxis"][axis]["scale"])
+                self.assertNotIn("min", option["yAxis"][axis])
+                self.assertNotIn("max", option["yAxis"][axis])
+
+    def test_correlation_failure_does_not_hide_available_risk_series(self):
+        ns = builders()
+        dates = ["2026-10-01", "2026-10-02"]
+        ns["get_fred_series"] = lambda c: frame(dates, c, [20., 21.])
+        ns["load_vixeq_snapshot"] = lambda: frame(dates, "VIXEQ", [40., 42.])
+        ns["load_correlation_snapshot"] = lambda symbol: (_ for _ in ()).throw(OSError("unavailable"))
+        fig = ns["build_fig9"]("1M")
+        self.assertIn("COR1M (R4)", fig.layout.meta["missing_series"])
+        self.assertIn("COR3M (R4)", fig.layout.meta["missing_series"])
+        self.assertIn("VIXEQ−VIX (R2)", {t.name for t in fig.data})
+
     def test_equity_ratio_uses_same_date_valid_legs_and_independent_axis(self):
         ns = builders()
         dates = pd.date_range("2026-10-01", periods=9)
@@ -54,6 +99,9 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         self.assertEqual(list(pd.Series(ratio.y).isna()), [False] + [True] * 7 + [False])
         self.assertEqual(ratio.yaxis, "y4")
         self.assertIn("x<extra>", ratio.hovertemplate)
+        spread = next(t for t in fig.data if t.name == "VIXEQ−VIX (R2)")
+        self.assertEqual(list(pd.Series(spread.y).dropna()), [20., 50.])
+        self.assertEqual(list(pd.Series(spread.y).isna()), [False] + [True] * 7 + [False])
         for window in RANGE_OFFSETS:
             option = build_adaptive_echarts_option(fig, window)
             rendered = next(s for s in option["series"] if s["name"] == ratio.name)
