@@ -2,12 +2,6 @@ name: Apply copper dashboard integration
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/apply_copper_dashboard.py
-      - macro_platform/copper.py
-      - .github/workflows/apply-copper-dashboard.yml
 
 permissions:
   contents: write

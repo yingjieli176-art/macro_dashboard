@@ -1,11 +1,6 @@
 name: Align Chart 5 legend icons
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - scripts/align_chart5_legend_icons.py
-      - .github/workflows/align-chart5-legend-icons.yml
   workflow_dispatch:
 
 permissions:

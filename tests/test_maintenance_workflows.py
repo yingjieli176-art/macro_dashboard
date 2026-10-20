@@ -52,6 +52,14 @@ def workflow_events(filename):
 
 
 class WorkflowSafetyTests(unittest.TestCase):
+    def test_every_runtime_code_patcher_is_manual_only(self):
+        for path in WORKFLOWS.glob("*.yml"):
+            content = path.read_text()
+            if re.search(r"git add[^\n]*(?:app\.py|macro_platform/|data\.py)", content):
+                with self.subTest(workflow=path.name):
+                    events, _ = workflow_events(path.name)
+                    self.assertEqual(events, {"workflow_dispatch"})
+
     def test_obsolete_code_migrations_are_never_automatic(self):
         for name in HISTORICAL_MIGRATIONS:
             with self.subTest(workflow=name):

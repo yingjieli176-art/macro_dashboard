@@ -2,11 +2,6 @@ name: Fix watchlist refresh defaults v2
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/fix_watchlist_refresh_defaults_v2.py
-      - .github/workflows/fix-watchlist-refresh-defaults-v2.yml
 
 permissions:
   contents: write

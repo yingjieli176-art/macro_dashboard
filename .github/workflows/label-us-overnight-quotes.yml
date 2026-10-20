@@ -2,11 +2,6 @@ name: Label US overnight quotes
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/label_us_overnight_quotes.py
-      - .github/workflows/label-us-overnight-quotes.yml
 
 permissions:
   contents: write

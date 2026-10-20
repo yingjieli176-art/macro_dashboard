@@ -1,10 +1,6 @@
 name: Harden FRED requests
 
 on:
-  push:
-    paths:
-      - 'scripts/harden_fred_requests.py'
-      - '.github/workflows/harden-fred-requests.yml'
   workflow_dispatch:
 
 permissions:

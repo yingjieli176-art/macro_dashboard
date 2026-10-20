@@ -1,10 +1,6 @@
 name: Add independent Hong Kong chart date ranges
 
 on:
-  push:
-    paths:
-      - 'scripts/add_independent_hk_date_ranges.py'
-      - '.github/workflows/add-independent-hk-date-ranges.yml'
   workflow_dispatch:
 
 permissions:

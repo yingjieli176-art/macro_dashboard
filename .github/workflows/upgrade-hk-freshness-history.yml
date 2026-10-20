@@ -1,10 +1,6 @@
 name: Upgrade HK freshness and 5Y history
 
 on:
-  push:
-    paths:
-      - "scripts/upgrade_hk_freshness_and_history.py"
-      - ".github/workflows/upgrade-hk-freshness-history.yml"
   workflow_dispatch:
 
 permissions:
