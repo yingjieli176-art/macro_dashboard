@@ -3,15 +3,11 @@
   "name": "Hang Seng TECH Index",
   "source": "Sina Finance Hong Kong Index History",
   "source_page": "https://stock.finance.sina.com.cn/hkstock/quotes/HSTECH.html",
-  "updated_at": "2026-09-09T13:47:44.131498+00:00",
+  "updated_at": "2026-10-20T09:14:50.830641+00:00",
   "record_count": 63,
-  "coverage_start": "2021-07-01",
-  "coverage_end": "2026-09-01",
+  "coverage_start": "2021-08-01",
+  "coverage_end": "2026-10-01",
   "records": [
-    {
-      "observation_date": "2021-07-01",
-      "close": 6780.97
-    },
     {
       "observation_date": "2021-08-01",
       "close": 6607.77979
@@ -258,7 +254,11 @@
     },
     {
       "observation_date": "2026-09-01",
-      "close": 4454.8501
+      "close": 4253.89014
+    },
+    {
+      "observation_date": "2026-10-01",
+      "close": 4108.24023
     }
   ]
 }
