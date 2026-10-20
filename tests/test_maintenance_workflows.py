@@ -30,6 +30,10 @@ OFFICIAL_REFRESHES = (
     "sync-tga-official-snapshot.yml",
     "update-vixeq-snapshot.yml",
     "update-correlation-snapshot.yml",
+    "update-hstech-snapshot.yml",
+    "update-usdhkd-snapshot.yml",
+    "update-censtat-money-supply.yml",
+    "update-hkma-monetary-base-history.yml",
 )
 
 
@@ -65,6 +69,16 @@ class WorkflowSafetyTests(unittest.TestCase):
                 self.assertNotRegex(
                     content, r"(?m)^\s*git add\s+(?:app\.py|data\.py|macro_platform/)",
                 )
+                self.assertNotIn("python scripts/apply_hk_freshness_v3.py", content)
+
+    def test_snapshot_publishers_retry_without_force_pushing(self):
+        for name in OFFICIAL_REFRESHES:
+            with self.subTest(workflow=name):
+                content = (WORKFLOWS / name).read_text()
+                self.assertIn("bash scripts/push_snapshot.sh", content)
+        helper = (ROOT / "scripts/push_snapshot.sh").read_text()
+        self.assertIn("git rebase origin/main", helper)
+        self.assertNotIn("--force", helper)
 
     def test_runtime_contract_is_not_accidentally_removed(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")

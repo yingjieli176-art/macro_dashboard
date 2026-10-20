@@ -39,8 +39,11 @@ jobs:
           rows=p.get('records') or []
           assert p.get('symbol')=='HKD=X'
           assert len(rows)>=1000, len(rows)
-          assert rows[0]['observation_date'] <= '2021-09-30', rows[0]
-          assert rows[-1]['observation_date'] >= '2026-08-01', rows[-1]
+          import pandas as pd
+          now = pd.Timestamp.now(tz='UTC').tz_localize(None).normalize()
+          assert pd.Timestamp(rows[0]['observation_date']) <= now-pd.DateOffset(years=4, months=10), rows[0]
+          assert pd.Timestamp(rows[-1]['observation_date']) >= now-pd.Timedelta(days=10), rows[-1]
+          assert pd.Timestamp(rows[-1]['observation_date']) <= now, rows[-1]
           print('USDHKD snapshot OK',len(rows),rows[0],rows[-1])
           PY
       - name: Commit refreshed snapshot
@@ -53,5 +56,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Refresh five-year USDHKD snapshot"
-          git pull --rebase origin main
-          git push origin main
+          bash scripts/push_snapshot.sh

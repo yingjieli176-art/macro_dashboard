@@ -22,6 +22,23 @@ If an external feed is unavailable, the dashboard may use a *dated, verified*
 last-good snapshot, or display a missing-series warning. Do not read a cached
 observation as a live quote.
 
+Source freshness uses **each field's actual observation date**, not a JSON
+download timestamp. Daily/weekly feeds receive seven weekdays of grace (this
+is not an exchange holiday calendar). HK monthly monetary statistics allow
+the following publication cycle plus a one-week buffer. Genuine late series
+remain visible with their date, age and frequency; missing dates are not filled.
+
+`Audit actual source freshness` runs daily and after snapshot updates. Its
+Actions summary and `actual-source-freshness` artifact show field-level dates;
+overdue or absent observations fail the audit even when a collector fetched
+other series successfully. Run locally with `python scripts/audit_source_freshness.py`.
+
+CME copper warehouse totals use **Activity Date**, not Report Date, and convert
+short tons to metric tonnes. COCHILCO remains the historical backup. HKAB's
+dated O/N and 3M HIBOR fixing supplements the lagging HKMA daily bulletin.
+Snapshot publishers retry fetch/rebase/push races without force-pushing;
+automatic data jobs never run the obsolete HSTECH code-wiring patch.
+
 ## Chart sections
 
 | # | Section |

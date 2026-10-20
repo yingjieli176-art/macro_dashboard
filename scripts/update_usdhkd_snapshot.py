@@ -5,9 +5,13 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
+import sys
 
 import pandas as pd
 import requests
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from macro_platform.market_history import completed_daily_closes
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data_snapshots" / "usdhkd_daily.json"
@@ -41,20 +45,7 @@ def _fetch_yahoo() -> tuple[pd.DataFrame, str]:
                     raise RuntimeError("Yahoo chart result missing")
                 node = result[0] or {}
                 timestamps = node.get("timestamp") or []
-                indicators = node.get("indicators") or {}
-                quote_close = (indicators.get("quote") or [{}])[0].get("close") or []
-                adj_close = (indicators.get("adjclose") or [{}])[0].get("adjclose") or []
-                closes = adj_close if len(adj_close) == len(timestamps) else quote_close
-                if not timestamps or len(closes) != len(timestamps):
-                    raise RuntimeError("Yahoo timestamps/close length mismatch")
-                frame = pd.DataFrame(
-                    {
-                        "observation_date": pd.to_datetime(
-                            timestamps, unit="s", utc=True, errors="coerce"
-                        ).tz_convert(None),
-                        "value": pd.to_numeric(closes, errors="coerce"),
-                    }
-                ).dropna(subset=["observation_date", "value"])
+                frame = completed_daily_closes(node).rename(columns={"close": "value"})
                 frame = frame.sort_values("observation_date").drop_duplicates(
                     "observation_date", keep="last"
                 )
@@ -70,6 +61,15 @@ def _fetch_yahoo() -> tuple[pd.DataFrame, str]:
 
 def main() -> None:
     frame, source_url = _fetch_yahoo()
+    if OUT.exists():
+        previous = json.loads(OUT.read_text(encoding="utf-8"))
+        old = pd.DataFrame(previous.get("records") or [])
+        if not old.empty:
+            old["observation_date"] = pd.to_datetime(old["observation_date"], errors="coerce")
+            if frame.observation_date.max() < old.observation_date.max():
+                raise RuntimeError("USDHKD source would roll back the saved latest close")
+            frame = pd.concat([old, frame], ignore_index=True).dropna()
+            frame = frame.drop_duplicates("observation_date", keep="last").sort_values("observation_date")
     records = [
         {
             "observation_date": row.observation_date.strftime("%Y-%m-%d"),

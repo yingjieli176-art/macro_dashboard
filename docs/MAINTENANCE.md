@@ -30,6 +30,18 @@ disabled as part of legacy migration cleanup:
 - `sync-tga-official-snapshot.yml`: official US Treasury daily cash closing balance
 - `update-vixeq-snapshot.yml`: Cboe VIXEQ official history
 - `update-correlation-snapshot.yml`: Cboe COR1M / COR3M official daily closes
+- `source-freshness-audit.yml`: read-only field-level freshness audit and Actions artifact
+
+The r51 collectors preserve last-good per-field history, use original activity
+dates and never use fetch timestamps as observation dates. Copper uses the CME
+official total in short tons converted to metric tonnes; HKAB's current dated
+HIBOR pair supplements the HKMA bulletin. C&SD table 340-45012 currently has
+Q/Y records, so the money-supply backup uses the underlying HKMA monthly API
+and retained monthly history. It never manufactures monthly points from quarters.
+The HKMA monthly collector validates critical monetary fields independently
+from optional HIBOR/FX coverage. Data publishers share `scripts/push_snapshot.sh`
+for non-force, bounded rebase/push retries; jobs writing the HKMA monetary JSON
+share a concurrency group. The HSTECH job publishes data only.
 
 Data-only jobs may commit **snapshot JSON only**. Review any workflow that
 edits `app.py`, `data.py`, or `macro_platform/` as a code migration requiring a

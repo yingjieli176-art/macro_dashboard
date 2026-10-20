@@ -77,7 +77,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-20-correlation-vixeq-spread-r50"
+CHART_BUILD = "2026-10-20-source-freshness-r51"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2066,7 +2066,7 @@ def show_parameter_description(index): st.markdown(f'<div class="mini-descriptio
 HK_PARAMETER_DESCRIPTIONS = [
     '<b>读取提示：</b>M2 同比看趋势、环比看边际变化；货币基础同比看基础货币变化。股票显示港元价格，指数显示实际点位。月度数据有公布时滞。',
     '<b>读取提示：</b>总结余下降通常表示港元流动性收紧；EFBN 看票据及债券总量与银行持仓。单位均为十亿港元，历史为月末值。',
-    '<b>读取提示：</b>O/N / 3M HIBOR 分别看短端与持续融资成本；O/N−3M 转正提示短端资金压力。历史为月末值，单位为 %。',
+    '<b>读取提示：</b>O/N / 3M HIBOR 分别看短端与持续融资成本；O/N−3M 转正提示短端资金压力。近期使用日频定盘，长期历史以官方月末值补充，单位为 %；缺失日期不补造。',
     '<b>读取提示：</b>USD/HKD 左轴反向：上方 7.75 为港元偏强，下方 7.85 为偏弱；红区 7.84–7.85 提示弱方压力。股票显示港元价格，指数显示实际点位。',
 ]
 
@@ -2198,7 +2198,9 @@ def _show_macro_plot_health(fig, option, element_key):
             ))
         if report.get("stale_names"):
             st.warning("部分数据未及时更新（使用最后有效观测，非实时）：" +
-                       " · ".join(report["stale_names"]))
+                       " · ".join(report.get("stale_details") or report["stale_names"]))
+        if report.get("monthly_names"):
+            st.caption("月度数据按公布周期判断时效，观测日为统计月末；未公布的月份保持空缺。")
         if report.get("future_names"):
             st.warning("发现超前观测日期，请检查数据源：" +
                        " · ".join(report["future_names"]))
@@ -2492,6 +2494,7 @@ HK_CHART_CONFIGS = [
         "hk_7_range",
         [
             ("HKMA Open API", "https://apidocs.hkma.gov.hk/"),
+            ("HKAB 当日 HIBOR 定盘", "https://www.hkab.org.hk/en/rates/hibor"),
             ("HKMA Base Rate", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/disc-win-liquid-adj-win-rates-endperiod/"),
         ],
     ),
@@ -2616,6 +2619,7 @@ def render_macro_chart_12(prebuilt_fig=None):
     )
     add_sources([
         ("CME · COMEX Warehouse & Depository Stocks", "https://www.cmegroup.com/solutions/clearing/operations-and-deliveries/nymex-delivery-notices.html"),
+        ("CME · Copper Stocks 原始日报", "https://www.cmegroup.com/delivery_reports/Copper_Stocks.xls"),
         ("Yahoo Finance · COMEX Copper HG=F", "https://finance.yahoo.com/quote/HG=F/history/"),
         ("LME Copper", "https://www.lme.com/copper"),
         ("LME Warehouse & Stocks Reports", "https://www.lme.com/Market-data/Reports-and-data/Warehouse-and-stocks-reports"),

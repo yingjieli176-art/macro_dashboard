@@ -1,21 +1,52 @@
 {
-  "source": "HKMA Monetary Statistics",
+  "source": "HKMA Monetary Statistics + Monetary Base end-of-period",
   "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics",
-  "updated_at": "2026-09-10T00:16:23.308701+00:00",
-  "record_count": 100,
-  "coverage_start": "2018-05",
-  "coverage_end": "2026-08",
-  "fetch_strategy": "six-month range chunks merged with last good snapshot",
+  "monetary_base_source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod",
+  "updated_at": "2026-10-20T09:04:21.964715+00:00",
+  "record_count": 78,
+  "coverage_start": "2020-04",
+  "coverage_end": "2026-09",
+  "fetch_strategy": "HKMA official APIs via repository-only text transport; 12-month windows + field-level merge",
+  "coverage_counts": {
+    "m2_hkd": 77,
+    "m3_hkd": 77,
+    "monetary_base_total": 78,
+    "aggr_balance": 78,
+    "outstanding_efbn": 78,
+    "ow_lb_bf_disc_win": 78
+  },
+  "optional_coverage_counts": {
+    "hibor_fixing_overnight": 17,
+    "hibor_fixing_3m": 17,
+    "discount_window_base_rate": 17,
+    "exrate_hkd_usd": 17
+  },
   "records": [
+    {
+      "end_of_month": "2026-09",
+      "notes_coins_circulation": 676719,
+      "aggr_balance": 54108,
+      "ef_bills_notes": 1359377,
+      "monetary_base_total": 2090204,
+      "exrate_hkd_usd": 7.847,
+      "nominal_eff_exrate_index": 100.5484,
+      "hibor_fixing_overnight": 4.0875,
+      "hibor_fixing_3m": 3.24167,
+      "discount_window_base_rate": 4.25,
+      "cert_of_indebt": 663475,
+      "gov_notes_coins_circulation": 13244,
+      "outstanding_efbn": 1359377,
+      "ow_lb_bf_disc_win": 1175850
+    },
     {
       "end_of_month": "2026-08",
       "notes_coins_circulation": 669850,
       "aggr_balance": 54190,
       "ef_bills_notes": 1356240,
       "monetary_base_total": 2080280,
-      "m1_hkd": null,
-      "m2_hkd": null,
-      "m3_hkd": null,
+      "m1_hkd": 1870129.853,
+      "m2_hkd": 9573224.866,
+      "m3_hkd": 9586156.603,
       "exrate_hkd_usd": 7.839,
       "nominal_eff_exrate_index": 100.5946,
       "hibor_fixing_overnight": 4.09857,
@@ -977,272 +1008,6 @@
       "monetary_base_total": 1709876,
       "m2_hkd": 7477673.0,
       "m3_hkd": 7495200.0
-    },
-    {
-      "end_of_month": "2020-03",
-      "cert_of_indebt": 527465,
-      "gov_notes_coins_circulation": 13210,
-      "aggr_balance": 54054,
-      "outstanding_efbn": 1086330,
-      "ow_lb_bf_disc_win": 953122,
-      "monetary_base_total": 1681059,
-      "m2_hkd": 7444053.0,
-      "m3_hkd": 7461444.0
-    },
-    {
-      "end_of_month": "2020-02",
-      "cert_of_indebt": 532245,
-      "gov_notes_coins_circulation": 13302,
-      "aggr_balance": 54259,
-      "outstanding_efbn": 1083927,
-      "ow_lb_bf_disc_win": 953170,
-      "monetary_base_total": 1683733,
-      "m2_hkd": 7499120.0,
-      "m3_hkd": 7515413.0
-    },
-    {
-      "end_of_month": "2020-01",
-      "cert_of_indebt": 540555,
-      "gov_notes_coins_circulation": 13485,
-      "aggr_balance": 54235,
-      "outstanding_efbn": 1081109,
-      "ow_lb_bf_disc_win": 1003601,
-      "monetary_base_total": 1689384,
-      "m2_hkd": 7537431.0,
-      "m3_hkd": 7553080.0
-    },
-    {
-      "end_of_month": "2019-12",
-      "cert_of_indebt": 516605,
-      "gov_notes_coins_circulation": 13254,
-      "aggr_balance": 54288,
-      "outstanding_efbn": 1078736,
-      "ow_lb_bf_disc_win": 995967,
-      "monetary_base_total": 1662883,
-      "m2_hkd": 7438789.0,
-      "m3_hkd": 7454655.0
-    },
-    {
-      "end_of_month": "2019-11",
-      "cert_of_indebt": 505565,
-      "gov_notes_coins_circulation": 12987,
-      "aggr_balance": 54390,
-      "outstanding_efbn": 1077197,
-      "ow_lb_bf_disc_win": 990406,
-      "monetary_base_total": 1650139,
-      "m2_hkd": 7465211.0,
-      "m3_hkd": 7480962.0
-    },
-    {
-      "end_of_month": "2019-10",
-      "cert_of_indebt": 503915,
-      "gov_notes_coins_circulation": 12981,
-      "aggr_balance": 54334,
-      "outstanding_efbn": 1075695,
-      "ow_lb_bf_disc_win": 987094,
-      "monetary_base_total": 1646925,
-      "m2_hkd": 7468588.0,
-      "m3_hkd": 7483793.0
-    },
-    {
-      "end_of_month": "2019-09",
-      "cert_of_indebt": 504105,
-      "gov_notes_coins_circulation": 12984,
-      "aggr_balance": 54272,
-      "outstanding_efbn": 1073913,
-      "ow_lb_bf_disc_win": 984987,
-      "monetary_base_total": 1645274,
-      "m2_hkd": 7441069.0,
-      "m3_hkd": 7457142.0
-    },
-    {
-      "end_of_month": "2019-08",
-      "cert_of_indebt": 499715,
-      "gov_notes_coins_circulation": 12981,
-      "aggr_balance": 54359,
-      "outstanding_efbn": 1072176,
-      "ow_lb_bf_disc_win": 984373,
-      "monetary_base_total": 1639231,
-      "m2_hkd": 7395896.0,
-      "m3_hkd": 7417032.0
-    },
-    {
-      "end_of_month": "2019-07",
-      "cert_of_indebt": 496395,
-      "gov_notes_coins_circulation": 12975,
-      "aggr_balance": 54243,
-      "outstanding_efbn": 1070232,
-      "ow_lb_bf_disc_win": 986372,
-      "monetary_base_total": 1633845,
-      "m2_hkd": 7505594.0,
-      "m3_hkd": 7525970.0
-    },
-    {
-      "end_of_month": "2019-06",
-      "cert_of_indebt": 491605,
-      "gov_notes_coins_circulation": 12977,
-      "aggr_balance": 54268,
-      "outstanding_efbn": 1066335,
-      "ow_lb_bf_disc_win": 973975,
-      "monetary_base_total": 1625185
-    },
-    {
-      "end_of_month": "2019-05",
-      "cert_of_indebt": 490265,
-      "gov_notes_coins_circulation": 12981,
-      "aggr_balance": 54295,
-      "outstanding_efbn": 1066726,
-      "ow_lb_bf_disc_win": 975615,
-      "monetary_base_total": 1624267
-    },
-    {
-      "end_of_month": "2019-04",
-      "cert_of_indebt": 498485,
-      "gov_notes_coins_circulation": 12999,
-      "aggr_balance": 54441,
-      "outstanding_efbn": 1064531,
-      "ow_lb_bf_disc_win": 972115,
-      "monetary_base_total": 1630456
-    },
-    {
-      "end_of_month": "2019-03",
-      "cert_of_indebt": 492935,
-      "gov_notes_coins_circulation": 13039,
-      "aggr_balance": 64753,
-      "outstanding_efbn": 1064608,
-      "ow_lb_bf_disc_win": 977567,
-      "monetary_base_total": 1635335
-    },
-    {
-      "end_of_month": "2019-02",
-      "cert_of_indebt": 493925,
-      "gov_notes_coins_circulation": 13176,
-      "aggr_balance": 76314,
-      "outstanding_efbn": 1063539,
-      "ow_lb_bf_disc_win": 978995,
-      "monetary_base_total": 1646954
-    },
-    {
-      "end_of_month": "2019-01",
-      "cert_of_indebt": 503745,
-      "gov_notes_coins_circulation": 13338,
-      "aggr_balance": 76242,
-      "outstanding_efbn": 1062784,
-      "ow_lb_bf_disc_win": 978247,
-      "monetary_base_total": 1656109
-    },
-    {
-      "end_of_month": "2018-12",
-      "cert_of_indebt": 483845,
-      "gov_notes_coins_circulation": 12845,
-      "aggr_balance": 76398,
-      "outstanding_efbn": 1059784,
-      "ow_lb_bf_disc_win": 980744,
-      "monetary_base_total": 1632872
-    },
-    {
-      "end_of_month": "2018-11",
-      "cert_of_indebt": 469815,
-      "gov_notes_coins_circulation": 12767,
-      "aggr_balance": 76501,
-      "outstanding_efbn": 1057794,
-      "ow_lb_bf_disc_win": 981373,
-      "monetary_base_total": 1616877
-    },
-    {
-      "end_of_month": "2018-10",
-      "cert_of_indebt": 468845,
-      "gov_notes_coins_circulation": 12751,
-      "aggr_balance": 76405,
-      "outstanding_efbn": 1056741,
-      "ow_lb_bf_disc_win": 973202,
-      "monetary_base_total": 1614742
-    },
-    {
-      "end_of_month": "2018-09",
-      "cert_of_indebt": 468905,
-      "gov_notes_coins_circulation": 12737,
-      "aggr_balance": 76394,
-      "outstanding_efbn": 1054130,
-      "ow_lb_bf_disc_win": 974856,
-      "monetary_base_total": 1612166
-    },
-    {
-      "end_of_month": "2018-08",
-      "cert_of_indebt": 468095,
-      "gov_notes_coins_circulation": 12707,
-      "aggr_balance": 76350,
-      "outstanding_efbn": 1053892,
-      "ow_lb_bf_disc_win": 976834,
-      "monetary_base_total": 1611044
-    },
-    {
-      "end_of_month": "2018-07",
-      "cert_of_indebt": 469825,
-      "gov_notes_coins_circulation": 12700,
-      "aggr_balance": 109546,
-      "outstanding_efbn": 1052903,
-      "ow_lb_bf_disc_win": 979584,
-      "monetary_base_total": 1644974
-    },
-    {
-      "end_of_month": "2018-06",
-      "cert_of_indebt": 471565,
-      "gov_notes_coins_circulation": 12697,
-      "aggr_balance": 109451,
-      "outstanding_efbn": 1051120,
-      "ow_lb_bf_disc_win": 978338,
-      "monetary_base_total": 1644833
-    },
-    {
-      "end_of_month": "2018-05",
-      "cert_of_indebt": 471285,
-      "gov_notes_coins_circulation": 12705,
-      "aggr_balance": 109435,
-      "outstanding_efbn": 1050666,
-      "ow_lb_bf_disc_win": 974453,
-      "monetary_base_total": 1644091
     }
-  ],
-  "monetary_base_history": {
-    "source": "Hong Kong Monetary Authority Monetary Base end-of-period API",
-    "official_source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod",
-    "transport": "direct HKMA first; r.jina.ai fallback used only by repository snapshot job",
-    "updated_at": "2026-09-26T00:49:59.943512+00:00",
-    "record_count": 100,
-    "coverage_start": "2018-05",
-    "coverage_end": "2026-08",
-    "coverage_counts_latest_78_months": {
-      "monetary_base_total": 78,
-      "aggr_balance": 78,
-      "outstanding_efbn": 78,
-      "ow_lb_bf_disc_win": 78
-    },
-    "fields": [
-      "cert_of_indebt",
-      "gov_notes_coins_circulation",
-      "aggr_balance",
-      "outstanding_efbn",
-      "ow_lb_bf_disc_win",
-      "monetary_base_total"
-    ]
-  },
-  "yoy_history_backfill": {
-    "source": "C&SD Hong Kong Monthly Digest of Statistics, adjusted money-supply table",
-    "underlying_source": "Hong Kong Monetary Authority",
-    "concept": "HKD M2/M3 adjusted for foreign currency swap deposits",
-    "purpose": "Provide 12-month comparison base for a full five-year YoY display",
-    "updated_at": "2026-09-10T02:29:33.994042+00:00",
-    "source_urls": [
-      "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022020MM12B0100.pdf",
-      "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022021MM06B0100.pdf",
-      "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022021MM10B0100.pdf",
-      "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022021MM12B0100.pdf",
-      "https://www.censtatd.gov.hk/en/data/stat_report/product/B1010002/att/B10100022022MM06B0100.pdf"
-    ],
-    "failed_issues": [],
-    "complete_start": "2020-07",
-    "complete_end": "2026-07",
-    "complete_months": 73
-  }
+  ]
 }
