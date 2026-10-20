@@ -1,11 +1,6 @@
 name: Split Hong Kong parameter descriptions
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - scripts/split_hk_parameter_descriptions.py
-      - .github/workflows/split-hk-parameter-descriptions.yml
   workflow_dispatch:
 
 permissions:

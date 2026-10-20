@@ -2,11 +2,6 @@ name: Refine watchlist workspace
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/refine_watchlist_workspace.py
-      - .github/workflows/refine-watchlist-workspace.yml
 
 permissions:
   contents: write

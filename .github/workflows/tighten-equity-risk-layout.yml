@@ -2,11 +2,6 @@ name: Tighten equity risk layout
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/tighten_equity_risk_layout.py
-      - .github/workflows/tighten-equity-risk-layout.yml
 
 permissions:
   contents: write

@@ -1,11 +1,6 @@
 name: Refine large chart layout
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - scripts/refine_large_chart_layout.py
-      - .github/workflows/refine-large-chart-layout.yml
   workflow_dispatch:
 
 permissions:

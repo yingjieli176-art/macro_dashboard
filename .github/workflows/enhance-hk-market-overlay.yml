@@ -1,11 +1,6 @@
 name: Enhance Hong Kong market overlay
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - scripts/enhance_hk_market_overlay.py
-      - .github/workflows/enhance-hk-market-overlay.yml
   workflow_dispatch:
 
 permissions:

@@ -2,11 +2,6 @@ name: Improve watchlist quote freshness
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/improve_watchlist_quote_freshness.py
-      - .github/workflows/improve-watchlist-quote-freshness.yml
 
 permissions:
   contents: write

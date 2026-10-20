@@ -2,11 +2,6 @@ name: Finalize watchlist stability
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/finalize_watchlist_stability.py
-      - .github/workflows/finalize-watchlist-stability.yml
 
 permissions:
   contents: write

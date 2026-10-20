@@ -2,11 +2,6 @@ name: Harden DGS10 fallback
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/harden_dgs10_fallback.py
-      - .github/workflows/harden-dgs10-fallback.yml
 
 permissions:
   contents: write

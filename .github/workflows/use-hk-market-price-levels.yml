@@ -1,10 +1,6 @@
 name: Use Hong Kong market price levels
 
 on:
-  push:
-    paths:
-      - "scripts/use_hk_market_price_levels.py"
-      - ".github/workflows/use-hk-market-price-levels.yml"
   workflow_dispatch:
 
 permissions:

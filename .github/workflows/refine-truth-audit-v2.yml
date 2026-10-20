@@ -1,10 +1,6 @@
 name: Refine truth audit v2
 
 on:
-  push:
-    paths:
-      - 'scripts/refine_truth_audit_v2.py'
-      - '.github/workflows/refine-truth-audit-v2.yml'
   workflow_dispatch:
 
 permissions:

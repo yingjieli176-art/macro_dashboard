@@ -1,10 +1,6 @@
 name: Fix truthful freshness labels
 
 on:
-  push:
-    paths:
-      - 'scripts/fix_truthful_freshness_labels.py'
-      - '.github/workflows/fix-truthful-freshness-labels.yml'
   workflow_dispatch:
 
 permissions:

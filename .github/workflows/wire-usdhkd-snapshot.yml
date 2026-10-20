@@ -2,12 +2,6 @@ name: Wire USDHKD snapshot
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/wire_usdhkd_snapshot.py
-      - .github/workflows/wire-usdhkd-snapshot.yml
-      - data_snapshots/usdhkd_daily.json
 
 permissions:
   contents: write

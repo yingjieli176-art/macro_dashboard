@@ -1,12 +1,6 @@
 name: Split Chart 5 and normalize spread units
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - scripts/split_hk_liquidity_chart5.py
-      - scripts/convert_treasury_spreads_to_percent.py
-      - .github/workflows/split-chart5-and-normalize-spreads.yml
   workflow_dispatch:
 
 permissions:

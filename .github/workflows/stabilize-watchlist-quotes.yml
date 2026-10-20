@@ -2,13 +2,6 @@ name: Stabilize watchlist quotes
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - macro_platform/watchlist_state.py
-      - scripts/stabilize_watchlist_quotes.py
-      - scripts/fix_eastmoney_quote_scaling.py
-      - .github/workflows/stabilize-watchlist-quotes.yml
 
 permissions:
   contents: write

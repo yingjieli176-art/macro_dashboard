@@ -2,11 +2,6 @@ name: Renumber Hong Kong charts 5 to 8
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/renumber_hk_charts_5_to_8.py
-      - .github/workflows/renumber-hk-charts-5-to-8.yml
 
 permissions:
   contents: write

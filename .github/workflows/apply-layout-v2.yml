@@ -1,11 +1,6 @@
 name: Apply dashboard layout v2
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/apply_layout_v2.py'
-      - '.github/workflows/apply-layout-v2.yml'
   workflow_dispatch:
 
 permissions:

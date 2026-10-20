@@ -42,6 +42,9 @@ The HKMA monthly collector validates critical monetary fields independently
 from optional HIBOR/FX coverage. Data publishers share `scripts/push_snapshot.sh`
 for non-force, bounded rebase/push retries; jobs writing the HKMA monetary JSON
 share a concurrency group. The HSTECH job publishes data only.
+All historical workflows that stage runtime code are manual-only, including
+USD/HKD wiring and copper integration. Data snapshot updates must never trigger
+old code-wiring migrations. A repository-wide guard checks every workflow.
 
 Data-only jobs may commit **snapshot JSON only**. Review any workflow that
 edits `app.py`, `data.py`, or `macro_platform/` as a code migration requiring a

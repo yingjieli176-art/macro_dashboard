@@ -2,11 +2,6 @@ name: Harden data health and compact chart layout
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/harden_data_health_and_compact_layout.py
-      - .github/workflows/harden-data-health-and-compact-layout.yml
 
 permissions:
   contents: write

@@ -1,10 +1,6 @@
 name: Fix truthful market quote status
 
 on:
-  push:
-    paths:
-      - 'scripts/fix_market_quote_truth.py'
-      - '.github/workflows/fix-market-quote-truth.yml'
   workflow_dispatch:
 
 permissions:

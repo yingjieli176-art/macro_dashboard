@@ -2,11 +2,6 @@ name: Finish Hong Kong 5Y wiring
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/finish_hk_5y_wiring.py
-      - .github/workflows/finish-hk-5y-wiring.yml
 
 permissions:
   contents: write
