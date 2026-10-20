@@ -52,6 +52,13 @@ def workflow_events(filename):
 
 
 class WorkflowSafetyTests(unittest.TestCase):
+    def test_serialized_hkma_writers_checkout_the_latest_main_after_queueing(self):
+        for name in ("update-hkma-snapshot.yml", "update-hkma-monetary-base-history.yml"):
+            content = (WORKFLOWS / name).read_text()
+            self.assertIn("group: hkma-monetary-statistics-data", content)
+            self.assertIn("cancel-in-progress: false", content)
+            self.assertIn("ref: main", content)
+
     def test_every_runtime_code_patcher_is_manual_only(self):
         for path in WORKFLOWS.glob("*.yml"):
             content = path.read_text()
