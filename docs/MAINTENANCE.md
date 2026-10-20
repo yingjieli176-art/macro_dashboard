@@ -29,6 +29,7 @@ disabled as part of legacy migration cleanup:
 - `sync-fred-verified-cache.yml`: official US rates backup
 - `sync-tga-official-snapshot.yml`: official US Treasury daily cash closing balance
 - `update-vixeq-snapshot.yml`: Cboe VIXEQ official history
+- `update-correlation-snapshot.yml`: Cboe COR1M / COR3M official daily closes
 
 Data-only jobs may commit **snapshot JSON only**. Review any workflow that
 edits `app.py`, `data.py`, or `macro_platform/` as a code migration requiring a

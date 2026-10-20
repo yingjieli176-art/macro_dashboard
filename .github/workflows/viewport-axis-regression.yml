@@ -4,6 +4,12 @@ on:
     branches: [main]
     paths:
       - app.py
+      - macro_platform/us_equity_risk.py
+      - scripts/update_correlation_snapshot.py
+      - tests/test_correlation_snapshot.py
+      - data_snapshots/cor1m_daily.json
+      - data_snapshots/cor3m_daily.json
+      - .github/workflows/update-correlation-snapshot.yml
       - macro_platform/market_history.py
       - macro_platform/background_refresh.py
       - macro_platform/request_runtime.py
@@ -55,6 +61,12 @@ on:
     branches: [main]
     paths:
       - app.py
+      - macro_platform/us_equity_risk.py
+      - scripts/update_correlation_snapshot.py
+      - tests/test_correlation_snapshot.py
+      - data_snapshots/cor1m_daily.json
+      - data_snapshots/cor3m_daily.json
+      - .github/workflows/update-correlation-snapshot.yml
       - macro_platform/market_history.py
       - macro_platform/background_refresh.py
       - macro_platform/request_runtime.py

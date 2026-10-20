@@ -54,6 +54,13 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertEqual(len(instance.radio), 0)
         # Market assets retain their original unit and independent price axes.
         spec_text = " ".join(chart.proto.spec for chart in native)
+        risk = next(json.loads(chart.proto.spec) for chart in native
+                    if 'COR1M (R4)' in chart.proto.spec)
+        risk_series = {series["name"]: series for series in risk["series"]}
+        self.assertEqual(len(risk["yAxis"]), 5)
+        for name in ("COR1M (R4)", "COR3M (R4)", "VIXEQ−VIX (R2)"):
+            self.assertIn(name, risk_series)
+            self.assertTrue(any(point[1] is not None for point in risk_series[name]["data"]))
         self.assertNotIn("Rebased", spec_text)
         self.assertNotIn("起点100", spec_text)
 

@@ -29,6 +29,7 @@ OFFICIAL_REFRESHES = (
     "sync-fred-verified-cache.yml",
     "sync-tga-official-snapshot.yml",
     "update-vixeq-snapshot.yml",
+    "update-correlation-snapshot.yml",
 )
 
 

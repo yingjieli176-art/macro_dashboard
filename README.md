@@ -28,7 +28,7 @@ observation as a live quote.
 |---|---|
 | 1–4 | Federal Reserve rates, nominal/real Treasury yields, curve, US liquidity |
 | 5–8 | Hong Kong monetary pulse, bank liquidity, HIBOR funding, HKD / market overlays |
-| 9 | US equity risk (VIX/VIXEQ and term structure) |
+| 9 | US equity risk (VIX/VIXEQ, VIX3M−VIX, VIXEQ−VIX, VIXEQ/VIX, COR1M/COR3M) |
 | 10 | Precious metals |
 | 11 | Digital assets |
 | 12 | Copper price/inventory |
@@ -37,6 +37,13 @@ observation as a live quote.
 The 5Y / 1Y / 6M / 3M / 1M selectors must keep **both X and each Y axis
 adaptive**. A Plotly compatibility view is not proof that native ECharts
 X/Y autoscaling works.
+
+Chart 9 retains the VIXEQ/VIX ratio and adds the **VIXEQ−VIX difference**
+in volatility points on R2. Both use same-date observations with no forward
+fill. **COR1M / COR3M** use original Cboe index points on their own R4 axis;
+they are correlation indices, not volatility readings. Official Cboe histories
+are bundled for cold start and refreshed each weekday by
+`update-correlation-snapshot.yml`. Early history includes Cboe back-calculations.
 
 ## Validation
 

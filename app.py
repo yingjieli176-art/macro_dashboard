@@ -36,6 +36,13 @@ apply_client_time_controls = getattr(
 )
 apply_server_time_window = getattr(_chart_axes, "apply_server_time_window", None)
 from macro_platform.us_equity_risk import load_vixeq_snapshot
+import macro_platform.us_equity_risk as _us_equity_risk
+
+# Keep the page available during a mixed-revision Streamlit Cloud rollout.
+load_correlation_snapshot = getattr(
+    _us_equity_risk, "load_correlation_snapshot",
+    lambda symbol: pd.DataFrame(columns=["observation_date", symbol]),
+)
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
 from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
@@ -70,7 +77,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-16-vixeq-vix-ratio-r49"
+CHART_BUILD = "2026-10-20-correlation-vixeq-spread-r50"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1738,7 +1745,7 @@ def build_fig3(date_range):
 
 
 def build_fig9(date_range):
-    """US equity risk, including the same-date constituent/index vol ratio."""
+    """US equity risk with implied correlation and same-date vol spreads."""
     frames = []
     sources = {}
     for series_id in ("VIXCLS", "VXVCLS", "SP500"):
@@ -1761,9 +1768,19 @@ def build_fig9(date_range):
     except Exception:
         pass
 
+    for symbol in ("COR1M", "COR3M"):
+        try:
+            correlation = load_correlation_snapshot(symbol)
+            if not correlation.empty:
+                frames.append(correlation)
+                sources[symbol] = correlation
+        except Exception:
+            continue
+
     if not frames:
         fig = go.Figure()
-        for name in ("VIX", "VIXEQ", "S&P 500 (R1)", "VIX3M−VIX (R2)", "VIXEQ/VIX (R3)"):
+        for name in ("VIX", "VIXEQ", "S&P 500 (R1)", "VIX3M−VIX (R2)",
+                     "VIXEQ−VIX (R2)", "VIXEQ/VIX (R3)", "COR1M (R4)", "COR3M (R4)"):
             _mark_missing_series(fig, name)
         return apply_chart_style(fig, chart_height(320, 440), date_range)
 
@@ -1779,6 +1796,7 @@ def build_fig9(date_range):
         vix = data["VIXCLS"].where(data["VIXCLS"].gt(0) & data["VIXCLS"].lt(float("inf")))
         vixeq = data["VIXEQ"].where(data["VIXEQ"].ge(0) & data["VIXEQ"].lt(float("inf")))
         data["VIXEQ/VIX"] = (vixeq / vix).replace([float("inf"), -float("inf")], float("nan"))
+        data["VIXEQ-VIX"] = vixeq - vix
     data = filter_range(data, date_range)
 
     fig = go.Figure()
@@ -1799,18 +1817,25 @@ def build_fig9(date_range):
     ratio_dates = [date for column in ("VIXEQ", "VIXCLS") if column in sources
                    for date in sources[column]["observation_date"]]
     add_line(fig, data.loc[data["observation_date"].isin(ratio_dates)],
+             "VIXEQ-VIX", "VIXEQ−VIX (R2)", 2.2, "dash", "y3", unit=" pts")
+    add_line(fig, data.loc[data["observation_date"].isin(ratio_dates)],
              "VIXEQ/VIX", "VIXEQ/VIX (R3)", 2.2, "dashdot", "y4", unit="x")
+    for symbol, dash in (("COR1M", None), ("COR3M", "dot")):
+        source = sources.get(symbol, pd.DataFrame(columns=["observation_date"]))
+        add_line(fig, data.loc[data["observation_date"].isin(source["observation_date"])],
+                 symbol, f"{symbol} (R4)", 2.0, dash, "y5", unit=" pts")
 
     fig.update_layout(
-        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.86),
-        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.93),
-        yaxis4=dict(overlaying="y", side="right", anchor="free", position=0.99),
+        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.78),
+        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.85),
+        yaxis4=dict(overlaying="y", side="right", anchor="free", position=0.92),
+        yaxis5=dict(overlaying="y", side="right", anchor="free", position=0.99),
     )
     fig = apply_chart_style(fig, chart_height(320, 440), date_range)
     fig.update_layout(
-        margin=dict(l=62, r=132, t=68, b=36, pad=2),
+        margin=dict(l=62, r=180, t=100, b=36, pad=2),
         legend=dict(y=1.095),
-        xaxis=dict(domain=[0.0, 0.84]),
+        xaxis=dict(domain=[0.0, 0.76]),
         yaxis=dict(
             title="VIX / VIXEQ",
             showgrid=True, gridcolor="#e5e7eb", griddash="dot",
@@ -1818,19 +1843,25 @@ def build_fig9(date_range):
         ),
         yaxis2=dict(
             title="",
-            overlaying="y", side="right", anchor="free", position=0.86,
+            overlaying="y", side="right", anchor="free", position=0.78,
             showgrid=False, zeroline=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3,
         ),
         yaxis3=dict(
             title="",
-            overlaying="y", side="right", anchor="free", position=0.93,
+            overlaying="y", side="right", anchor="free", position=0.85,
             showgrid=False, zeroline=True, zerolinecolor="#94a3b8",
             zerolinewidth=1, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3,
         ),
         yaxis4=dict(
             title="R3 · VIXEQ/VIX (倍)",
-            overlaying="y", side="right", anchor="free", position=0.99,
+            overlaying="y", side="right", anchor="free", position=0.92,
             showgrid=False, zeroline=False, fixedrange=True, tickformat=".2f",
+            tickfont=dict(size=9), ticks="outside", ticklen=3,
+        ),
+        yaxis5=dict(
+            title="R4 · COR (pts)",
+            overlaying="y", side="right", anchor="free", position=0.99,
+            showgrid=False, zeroline=False, fixedrange=True, tickformat=".1f",
             tickfont=dict(size=9), ticks="outside", ticklen=3,
         ),
     )
@@ -2045,7 +2076,7 @@ def show_hk_parameter_description(index):
 
 
 US_EQUITY_RISK_DESCRIPTION = (
-    '<b>读取提示：</b>VIX 看指数隐含波动，VIXEQ 看成分股隐含波动；VIXEQ/VIX（R3，倍）为同日两者比值，升高表示成分股相对指数的隐含波动更高，任一数据缺失则留空。VIX3M−VIX 收窄或转负提示近端压力。VIXEQ 早期数据为官方回溯序列。'
+    '<b>读取提示：</b>VIX 看指数隐含波动，VIXEQ 看成分股隐含波动；VIXEQ−VIX（R2，波动率点）为同日差值，VIXEQ/VIX（R3，倍）为同日比值，任一数据缺失则留空。VIX3M−VIX（R2）收窄或转负提示近端压力。COR1M / COR3M（R4，指数点）分别反映未来 1 / 3 个月的隐含相关性，使用独立刻度。VIXEQ 和 COR 早期数据包含官方回溯序列。'
 )
 
 
@@ -2513,7 +2544,7 @@ def render_macro_chart_8(prebuilt_fig=None):
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">9. US Equity Risk & Volatility Structure</div>'
-        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIX3M−VIX (R2) · VIXEQ/VIX (R3)</div>',
+        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIX3M−VIX / VIXEQ−VIX (R2) · VIXEQ/VIX (R3) · COR1M / COR3M (R4)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig9("5Y")
@@ -2522,6 +2553,7 @@ def render_macro_chart_9(prebuilt_fig=None):
     add_sources([
         ("Cboe VIX", "https://www.cboe.com/tradable-products/vix/"),
         ("Cboe VIXEQ / Dispersion", "https://www.cboe.com/us/indices/dispersion/"),
+        ("Cboe COR1M / COR3M", "https://www.cboe.com/us/indices/implied/"),
         ("FRED VIX3M (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),
         ("FRED S&P 500 (SP500)", "https://fred.stlouisfed.org/series/SP500"),
     ])
