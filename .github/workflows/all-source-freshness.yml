@@ -27,6 +27,8 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r requirements.txt akshare xlrd curl_cffi==0.13.0
       - name: Compare every configured source with its own observation calendar
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python scripts/probe_all_sources.py --output data_snapshots/all_source_freshness.json --strict
       - uses: actions/upload-artifact@v4
         if: always()
