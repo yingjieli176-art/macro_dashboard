@@ -12,6 +12,12 @@ import requests
 from streamlit.testing.v1 import AppTest
 
 
+def chart_specs(app):
+    return [json.dumps(json.loads(chart.proto.json)["option"], sort_keys=True)
+            for chart in app.get("bidi_component")
+            if chart.proto.component_name.endswith("macro_linked_chart")]
+
+
 class DashboardBootSmoke(unittest.TestCase):
     def test_fresh_session_can_render_warmed_shared_chart_caches(self):
         from scripts.benchmark_runtime import offline_http, offline_urlopen
@@ -23,9 +29,8 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertFalse(first.exception)
         self.assertFalse(second.exception)
         self.assertEqual(len(second.get('button_group')), 14)
-        self.assertGreaterEqual(len(second.get('echarts_chart')), 8)
-        self.assertEqual([chart.proto.spec for chart in first.get('echarts_chart')],
-                         [chart.proto.spec for chart in second.get('echarts_chart')])
+        self.assertGreaterEqual(len(chart_specs(second)), 8)
+        self.assertEqual(chart_specs(first), chart_specs(second))
 
     def test_full_dashboard_completes_when_sources_are_offline(self):
         app = Path(__file__).resolve().parents[1] / "app.py"
@@ -38,14 +43,14 @@ class DashboardBootSmoke(unittest.TestCase):
                 + "; ".join(str(error.message) for error in instance.exception),
         )
         self.assertEqual(len(instance.get("button_group")), 14)
-        native = instance.get("echarts_chart")
+        specs = chart_specs(instance)
         # AppTest does not execute browser JavaScript. This assertion proves
         # the real Streamlit renderer emitted native chart messages, rather
         # than merely surviving with missing data or Plotly fallbacks.
-        self.assertGreaterEqual(len(native), 8)
+        self.assertGreaterEqual(len(specs), 8)
         self.assertEqual(len(instance.get("plotly_chart")), 0)
-        for chart in native:
-            option = json.loads(chart.proto.spec)
+        for spec in specs:
+            option = json.loads(spec)
             self.assertTrue(option["series"])
             self.assertTrue(any(point[1] is not None for series in option["series"]
                                 for point in series["data"]))
@@ -53,9 +58,8 @@ class DashboardBootSmoke(unittest.TestCase):
             self.assertTrue(all(zoom["filterMode"] == "filter" for zoom in option["dataZoom"]))
         self.assertEqual(len(instance.radio), 0)
         # Market assets retain their original unit and independent price axes.
-        spec_text = " ".join(chart.proto.spec for chart in native)
-        risk = next(json.loads(chart.proto.spec) for chart in native
-                    if 'COR1M (R4)' in chart.proto.spec)
+        spec_text = " ".join(specs)
+        risk = next(json.loads(spec) for spec in specs if 'COR1M (R4)' in spec)
         risk_series = {series["name"]: series for series in risk["series"]}
         self.assertEqual(len(risk["yAxis"]), 5)
         for name in ("COR1M (R4)", "COR3M (R4)", "VIXEQ−VIX (R2)"):

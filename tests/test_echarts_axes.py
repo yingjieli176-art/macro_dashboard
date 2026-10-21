@@ -163,7 +163,7 @@ class EchartsNativeAxes(unittest.TestCase):
         common = next(node for node in tree.body if isinstance(node, ast.FunctionDef)
                       and node.name == "_render_adaptive_macro_figure")
         engine = ast.get_source_segment(source, common)
-        self.assertIn('"echarts_chart"', engine)
+        self.assertIn('_get_echarts_renderer', engine)
         self.assertIn('plotly_chart', engine)
         self.assertIn('_recoverable_echarts_option', engine)
         self.assertNotIn('range_key == "normal_corridor_range"', engine)

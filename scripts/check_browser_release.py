@@ -1,6 +1,7 @@
 """Execute native charts in Chromium; this is CI evidence, not Cloud acceptance."""
 import argparse
 import json
+import re
 from pathlib import Path
 import time
 
@@ -13,6 +14,7 @@ from playwright.sync_api import sync_playwright
 # A framework change must fail this probe, never silently skip it. This does
 # not replace, patch, or create any chart or observations.
 INSTANCE_JS = """element => {
+    if (element.__macroChart && !element.__macroChart.isDisposed()) return element.__macroChart;
     const key = Object.keys(element).find(key => key.startsWith('__reactFiber$'));
     let fiber = element[key];
     for (let level=0; fiber && level<30; level++, fiber=fiber.return) {
@@ -123,7 +125,7 @@ def exercise_client_zoom(page, chart):
 def wait_for_page(page, url):
     page.goto(url, wait_until="domcontentloaded", timeout=60000)
     page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 14", timeout=60000)
-    page.wait_for_function("document.querySelectorAll('[data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
+    page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
 
 
 def check_mobile_layout(page):
@@ -145,7 +147,7 @@ def check_mobile_layout(page):
             series:chart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,data:s.data})),
             zoom:model.getComponent('dataZoom').getPercentRange()};
     }"""
-    charts = page.get_by_test_id('stEChartsChart')
+    charts = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
     before = charts.evaluate_all("elements => elements.map(element => (" + probe + ")(element))")
     report = []
     for width, height in ((390, 844), (844, 390), (360, 800), (1440, 1000)):
@@ -174,8 +176,68 @@ def check_mobile_layout(page):
         if width == 390:
             charts.nth(3).scroll_into_view_if_needed()
             page.screenshot(path='browser_mobile.png')
-    assert page.get_by_test_id('stEChartsChartError').count() == 0
+    assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
     return report
+
+
+def exercise_legend_axes(page, chart):
+    """Click real legend hit targets, including shared and re-packed axes."""
+    chart.scroll_into_view_if_needed()
+    state_js = """element => {
+        const chart = (""" + INSTANCE_JS + """)(element), option = chart.getOption();
+        const model = chart.getModel();
+        const rect = model.getComponent('grid').coordinateSystem.getRect();
+        return {axes:option.yAxis.map(a=>({show:a.show,offset:a.offset,inverse:a.inverse})),
+            selected:option.legend[0].selected, width:rect.width,
+            series:option.series.map(s=>({name:s.name,axis:s.yAxisIndex,data:s.data})),
+            zoom:model.getComponent('dataZoom').getPercentRange()};
+    }"""
+    def snapshot():
+        return chart.evaluate(state_js)
+
+    def click(name):
+        point = chart.evaluate("""(element,name) => {
+            const chart = (""" + INSTANCE_JS + """)(element);
+            const model = chart.getModel().getComponent('legend');
+            const index = model.getData().findIndex(item=>item.get('name')===name);
+            const view = chart.getViewOfComponentModel(model);
+            const item = view._contentGroup.children().find(item=>item.__legendDataIndex===index);
+            if(!item) throw new Error('Missing legend target: '+name);
+            const rect = item.getBoundingRect().clone();
+            rect.applyTransform(item.getComputedTransform());
+            return {x:rect.x+rect.width/2,y:rect.y+rect.height/2};
+        }""", name)
+        box = chart.bounding_box()
+        page.mouse.click(box['x']+point['x'], box['y']+point['y'])
+        page.wait_for_timeout(100)
+        state = snapshot()
+        assert state['series'] == original['series'], 'Legend changed raw observations or axis mapping'
+        assert state['zoom'] == original['zoom'], 'Legend reset zoom'
+        assert [a['inverse'] for a in state['axes']] == [a['inverse'] for a in original['axes']]
+        return state
+
+    original = snapshot()
+    names = [s['name'] for s in original['series']]
+    shared = [s['name'] for s in original['series'] if s['axis']==1]
+    last = next(s['name'] for s in original['series'] if s['axis']==2)
+    state = click(last)
+    assert state['axes'][2]['show'] is False and state['width'] > original['width']
+    state = click(shared[0])
+    assert state['axes'][1]['show'] is True, 'Shared axis disappeared with another series visible'
+    state = click(shared[1])
+    assert state['axes'][1]['show'] is False
+    state = click(last)
+    assert state['axes'][2]['show'] is True and state['axes'][2]['offset'] == 0
+    state = click(names[0])
+    assert state['axes'][0]['show'] is False
+    state = click(last)
+    assert all(a['show'] is False for a in state['axes'])
+    for name in names:
+        state = click(name)
+    assert state['axes'] == original['axes'], 'Restored axes changed identity or offsets'
+    assert abs(state['width']-original['width']) < 1
+    return {'shared_axis':True, 'empty_axis_hidden':True, 'spacing_reclaimed':True,
+            'all_off_and_restore':True, 'data_and_zoom_preserved':True}
 
 
 def main():
@@ -196,12 +258,12 @@ def main():
             groups = page.get_by_test_id("stButtonGroup")
             page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 14", timeout=60000)
             page.get_by_text("14. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
-            charts = page.get_by_test_id("stEChartsChart")
-            page.wait_for_function("document.querySelectorAll('[data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
+            charts = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
+            page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
             assert groups.count() == 14
             assert charts.count() >= 8
             assert page.get_by_test_id("stException").count() == 0
-            assert page.get_by_test_id("stEChartsChartError").count() == 0
+            assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
             # Confirm actual canvas paint, not just a server-emitted option.
             paints = charts.evaluate_all("""elements => elements.map(element => {
                 const canvases = [...element.querySelectorAll('canvas')];
@@ -226,23 +288,30 @@ def main():
             # Use a real HK chart to exercise every server range with raw prices.
             for label in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
                 groups.nth(4).get_by_text(label, exact=True).click()
-                page.locator(f".st-key-hk_5_range_adaptive_default_{label}").get_by_test_id("stEChartsChart").wait_for(timeout=30000)
-                assert page.get_by_test_id("stEChartsChartError").count() == 0
+                page.locator(f".st-key-hk_5_range_adaptive_default_{label}").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$")).wait_for(timeout=30000)
+                assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
             assert page.get_by_test_id("stRadio").count() == 0
             assert page.get_by_text("Rebased 100", exact=True).count() == 0
             page.get_by_text("13. China Government Yields & US 5Y Real Yield", exact=False).wait_for()
             assert page.get_by_text("China & Japan Government Yield Curves", exact=False).count() == 0
             groups.nth(12).get_by_text("3M", exact=True).click()
-            china_selected = page.locator(".st-key-china_rates_adaptive_default_3M").get_by_test_id("stEChartsChart")
+            china_selected = page.locator(".st-key-china_rates_adaptive_default_3M").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             china_selected.wait_for(timeout=30000)
             groups.nth(13).get_by_text("1M", exact=True).click()
             china_selected.wait_for(timeout=30000)
             groups.nth(12).get_by_text("1Y", exact=True).click()
             groups.nth(13).get_by_text("1Y", exact=True).click()
             report["checks"].append({"china_japan_separate": True, "country_ranges_independent": True})
-            chart = page.locator('.st-key-hk_5_range_adaptive_default_1Y').get_by_test_id('stEChartsChart')
+            chart = page.locator('.st-key-hk_5_range_adaptive_default_1Y').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             report["client_zoom"] = exercise_client_zoom(page, chart)
             report["mobile_layout"] = check_mobile_layout(page)
+            liquidity = page.locator('.st-key-normal_liquidity_range_echarts_1Y').get_by_test_id(
+                re.compile(r"^(macro|st)EChartsChart$"))
+            report['legend_axes_desktop'] = exercise_legend_axes(page, liquidity)
+            page.set_viewport_size({'width':390, 'height':844})
+            page.wait_for_timeout(300)
+            report['legend_axes_mobile'] = exercise_legend_axes(page, liquidity)
+            page.set_viewport_size({'width':1440, 'height':1000})
             report["checks"].append({"slider": True, "box_zoom": True,
                                       "processed_observations_fit_independent_axes": True})
             # Two separate browser contexts produce independent Streamlit
@@ -255,17 +324,17 @@ def main():
             except Exception:
                 page_b.screenshot(path='browser_session_b.png', full_page=True)
                 report['session_b_failure'] = {
-                    'charts': page_b.get_by_test_id('stEChartsChart').count(),
+                    'charts': page_b.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$")).count(),
                     'exceptions': page_b.get_by_test_id('stException').all_text_contents(),
-                    'renderer_errors': page_b.get_by_test_id('stEChartsChartError').all_text_contents(),
+                    'renderer_errors': page_b.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).all_text_contents(),
                     'explicit_missing': page_b.get_by_text('该图表目前没有可验证的有效观测数据', exact=False).count(),
                 }
                 raise
             groups.nth(4).get_by_text('1M', exact=True).click()
-            expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_default"][class*="_1M"]').get_by_test_id('stEChartsChart')
+            expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_default"][class*="_1M"]').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             expected_a.wait_for(timeout=30000)
             page_b.get_by_test_id('stButtonGroup').nth(4).get_by_text('3M', exact=True).click()
-            expected_b = page_b.locator('.st-key-hk_5_range_adaptive_default_3M').get_by_test_id('stEChartsChart')
+            expected_b = page_b.locator('.st-key-hk_5_range_adaptive_default_3M').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             expected_b.wait_for(timeout=30000)
             assert expected_a.count() == 1 and expected_b.count() == 1
             for current, expected in ((page, expected_a), (page_b, expected_b)):
@@ -273,7 +342,7 @@ def main():
                 current.locator('.st-key-refresh_watchlist_quotes').get_by_role('button').click()
                 expected.wait_for(timeout=30000)
                 assert current.get_by_test_id('stException').count() == 0
-                assert current.get_by_test_id('stEChartsChartError').count() == 0
+                assert current.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
             assert expected_a.count() == 1 and expected_b.count() == 1
             report['checks'].append({'isolated_browser_sessions': 2,
                                      'manual_market_refresh': True, 'manual_watchlist_refresh': True,

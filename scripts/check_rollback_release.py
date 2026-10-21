@@ -3,6 +3,7 @@ import argparse
 import hashlib
 from importlib.metadata import version
 import json
+import re
 from pathlib import Path
 import subprocess
 
@@ -32,10 +33,10 @@ def main():
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.goto(args.url, wait_until='domcontentloaded', timeout=60000)
             page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 13", timeout=60000)
-            page.wait_for_function("document.querySelectorAll('[data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
+            page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
             assert page.get_by_test_id('stException').count() == 0
-            assert page.get_by_test_id('stEChartsChartError').count() == 0
-            paints = page.get_by_test_id('stEChartsChart').evaluate_all("""elements => elements.map(element =>
+            assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
+            paints = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$")).evaluate_all("""elements => elements.map(element =>
                 [...element.querySelectorAll('canvas')].some(canvas => {
                     if (!canvas.width || !canvas.height) return false;
                     const data=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;

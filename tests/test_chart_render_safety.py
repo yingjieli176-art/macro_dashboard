@@ -20,7 +20,7 @@ def _load_renderers():
              "_recoverable_echarts_option", "_viewport_scaled_plotly_fallback",
              "_show_macro_plot_health", "_show_data_quality_notes",
              "_try_minimal_adaptive_chart", "_figure_has_real_observations",
-             "_chart_has_recoverable_data", "_explain_missing_chart_data"}
+             "_chart_has_recoverable_data", "_explain_missing_chart_data", "_get_echarts_renderer"}
     functions = [node for node in tree.body
                  if isinstance(node, ast.FunctionDef) and node.name in names]
     ns = {}
