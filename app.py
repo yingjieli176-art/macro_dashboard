@@ -49,7 +49,7 @@ load_correlation_snapshot = getattr(
 )
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
-from macro_platform.yen_index import load_yen_index
+from macro_platform.yen_index import load_yen_market_index
 from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
 from macro_platform.market_history import completed_daily_closes
 # Keep startup-compatible with older data.py during Streamlit Cloud rolling
@@ -82,7 +82,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-21-published-source-catchup-r55"
+CHART_BUILD = "2026-10-21-yen-fresh-r56"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2050,9 +2050,9 @@ def build_fig14(date_range):
     except Exception:
         nikkei = pd.DataFrame(columns=["observation_date", "close"])
     try:
-        yen = load_yen_index()
+        yen = load_yen_market_index()
     except Exception:
-        yen = pd.DataFrame(columns=["observation_date", "jpy_neer"])
+        yen = pd.DataFrame(columns=["observation_date", "jpy_usd_index"])
     return build_japan_rates_figure(date_range, nikkei=nikkei, yen_index=yen)
 
 
@@ -2671,7 +2671,7 @@ def render_macro_chart_13(prebuilt_fig=None):
 def render_macro_chart_14(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">14. Japan Government Yields & Nikkei 225 & Yen Index</div>'
-        '<div class="section-description">Japan 2Y / 10Y · Japan 10Y−2Y (R1) · Nikkei 225 (R2) · 日元指数 JPY NEER (R3)</div>',
+        '<div class="section-description">Japan 2Y / 10Y · Japan 10Y−2Y (R1) · Nikkei 225 (R2) · 日元指数 JPY/USD (R3)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2680,14 +2680,15 @@ def render_macro_chart_14(prebuilt_fig=None):
     st.markdown(
         '<div class="mini-description"><b>读取方法：</b>日本国债收益率为 %；10Y−2Y 为右轴 R1，单位百分点。'
         '日经 225 使用已完成交易日的收盘点位，独立右轴 R2。'
-        '日元指数为 BIS 广义名义有效汇率（2020=100），右轴 R3；上涨表示日元对一篮子货币走强。'
-        'BIS 日频数据通常每周公布，图表保留各自实际观测日期，不延伸至今天；此口径不同于 TradingView JXY。</div>',
+        '日元指数采用美元口径，公式为 10000÷USD/JPY，独立右轴 R3；上涨表示日元对美元走强。'
+        '使用 Yahoo 已完成交易日的日线收盘价，每小时检查更新；此为汇率换算指数，区别于 BIS 贸易加权指数，'
+        '口径也不同于 TradingView JXY。各曲线保留实际观测日期，盘中报价不作为已完成日线。</div>',
         unsafe_allow_html=True,
     )
     add_sources([
         ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
         ("Yahoo Finance · Nikkei 225", "https://finance.yahoo.com/quote/%5EN225/history/"),
-        ("BIS · Yen Nominal Effective Exchange Rate (D.N.B.JP, 2020=100)", "https://data.bis.org/topics/EER/BIS,WS_EER,1.0/D.N.B.JP"),
+        ("Yahoo · USD/JPY daily closes (Yen Index = 10000 / USDJPY)", "https://finance.yahoo.com/quote/JPY%3DX/history/"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 

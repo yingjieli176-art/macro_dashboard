@@ -50,6 +50,9 @@ on:
       - scripts/update_yen_index.py
       - tests/test_yen_index.py
       - data_snapshots/jpy_neer_daily.json
+      - data_snapshots/jpy_market_daily.json
+      - scripts/update_yen_market.py
+      - tests/test_yen_market.py
       - tests/test_asia_rates.py
       - scripts/update_copper_snapshot.py
       - tests/test_us_five_year_real_yield.py
@@ -109,6 +112,9 @@ on:
       - scripts/update_yen_index.py
       - tests/test_yen_index.py
       - data_snapshots/jpy_neer_daily.json
+      - data_snapshots/jpy_market_daily.json
+      - scripts/update_yen_market.py
+      - tests/test_yen_market.py
       - tests/test_asia_rates.py
       - scripts/update_copper_snapshot.py
       - tests/test_truth_source_integrity.py

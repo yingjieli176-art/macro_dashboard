@@ -1,4 +1,4 @@
-"""Original BIS daily broad nominal yen index (2020=100), D.N.B.JP."""
+"""Separate, explicitly measured yen series; never splice BIS and FX observations."""
 from __future__ import annotations
 
 import io
@@ -8,11 +8,58 @@ from pathlib import Path
 import pandas as pd
 
 from macro_platform.request_runtime import observed_cache
+from macro_platform.market_history import completed_daily_closes
 
 SERIES = "D.N.B.JP"
 SOURCE_URL = "https://data.bis.org/topics/EER/BIS,WS_EER,1.0/D.N.B.JP"
 API_URL = "https://stats.bis.org/api/v2/data/dataflow/BIS/WS_EER/1.0/D.N.B.JP"
 SNAPSHOT = Path(__file__).resolve().parents[1] / "data_snapshots/jpy_neer_daily.json"
+MARKET_SNAPSHOT = SNAPSHOT.with_name("jpy_market_daily.json")
+MARKET_SOURCE_URL = "https://finance.yahoo.com/quote/JPY%3DX/history/"
+MARKET_FORMULA = "10000 / USDJPY"
+
+
+def yen_index_from_fx(frame):
+    """Dollar-denominated yen strength: 10,000 divided by observed USD/JPY."""
+    out = frame[["observation_date", "usd_jpy_close"]].copy()
+    out["usd_jpy_close"] = pd.to_numeric(out["usd_jpy_close"], errors="coerce")
+    out["observation_date"] = pd.to_datetime(out["observation_date"], errors="coerce")
+    valid = out.usd_jpy_close.gt(0) & out.usd_jpy_close.lt(float("inf"))
+    out = out.loc[valid].dropna().sort_values("observation_date").drop_duplicates("observation_date", keep="last")
+    out["jpy_usd_index"] = 10000.0 / out["usd_jpy_close"]
+    return out.reset_index(drop=True)
+
+
+def parse_yahoo_yen(payload, now=None):
+    nodes = (payload.get("chart") or {}).get("result") or []
+    if len(nodes) != 1:
+        raise ValueError("Yahoo USD/JPY response missing")
+    node = nodes[0]
+    meta = node.get("meta") or {}
+    if meta.get("symbol") != "JPY=X" or meta.get("currency") != "JPY" or meta.get("instrumentType") != "CURRENCY":
+        raise ValueError("Wrong currency series; expected JPY=X (JPY per USD)")
+    # Include completed sessions only. A running intraday quote is not a close.
+    frame = completed_daily_closes(node, now=now).rename(columns={"close": "usd_jpy_close"})
+    return yen_index_from_fx(frame)
+
+
+@observed_cache(paths=lambda: (MARKET_SNAPSHOT,))
+def load_yen_market_index():
+    try:
+        payload = json.loads(MARKET_SNAPSHOT.read_text())
+        if payload.get("symbol") != "JPY=X" or payload.get("formula") != MARKET_FORMULA:
+            raise ValueError("Wrong market yen index snapshot")
+        rows = pd.DataFrame(payload["records"]).rename(columns={"date": "observation_date"})
+        # The updater only persists completed daily observations. Retain the
+        # source close so every displayed index value can be recomputed.
+        frame = yen_index_from_fx(rows)
+        today = pd.Timestamp.now(tz="UTC").tz_localize(None).normalize()
+        frame = frame.loc[frame.observation_date < today]
+        frame.attrs.update({"source": MARKET_SOURCE_URL, "fetched_at": payload.get("fetched_at"),
+                            "formula": MARKET_FORMULA})
+        return frame
+    except (OSError, ValueError, KeyError, TypeError):
+        return pd.DataFrame(columns=["observation_date", "usd_jpy_close", "jpy_usd_index"])
 
 
 def _observations(dates, values, today=None):
