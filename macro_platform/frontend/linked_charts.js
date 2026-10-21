@@ -33,6 +33,14 @@ export default function({data, parentElement}) {
   const source = copy(data.option);
   const base = copy(source);
   delete base.media;
+  // Legend filtering must not change the time domain, especially when every
+  // series is hidden. Bounds come only from existing observation dates.
+  let first = Infinity, last = -Infinity;
+  for (const series of base.series) for (const point of series.data) {
+    const time = typeof point[0] === 'number' ? point[0] : Date.parse(point[0]);
+    if (Number.isFinite(time)) { first = Math.min(first, time); last = Math.max(last, time); }
+  }
+  if (first < last) base.xAxis = {...base.xAxis, min:first, max:last};
   let chart, observer, disposed = false, frame = 0;
   const saved = parentElement.__macroChartState;
   let selected = copy(saved?.selected || base.legend?.selected || {});

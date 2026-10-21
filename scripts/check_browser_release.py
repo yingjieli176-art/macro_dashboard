@@ -217,7 +217,7 @@ def exercise_legend_axes(page, chart):
         page.wait_for_timeout(100)
         state = snapshot()
         assert state['series'] == original['series'], 'Legend changed raw observations or axis mapping'
-        assert state['zoom'] == original['zoom'], 'Legend reset zoom'
+        assert state['zoom'] == original['zoom'], ('Legend reset zoom', name, original['zoom'], state['zoom'])
         assert [a['inverse'] for a in state['axes']] == [a['inverse'] for a in original['axes']]
         return state
 
