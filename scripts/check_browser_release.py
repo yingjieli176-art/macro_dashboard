@@ -254,6 +254,34 @@ def exercise_legend_axes(page, chart):
             'all_off_and_restore':True, 'data_and_zoom_preserved':True}
 
 
+def exercise_yen_legend(page):
+    chart = page.locator('.st-key-japan_rates_adaptive_default_1Y').get_by_test_id(
+        re.compile(r"^(macro|st)EChartsChart$"))
+    chart.scroll_into_view_if_needed()
+    inspect = """element => {
+        const chart=element.__macroChart, option=chart.getOption();
+        const yen=option.series.find(s=>s.name==='JPY NEER · BIS (R3)');
+        const model=chart.getModel().getComponent('legend'), view=chart.getViewOfComponentModel(model);
+        const index=model.getData().findIndex(item=>item.get('name')===yen.name);
+        const item=view._contentGroup.children().find(item=>item.__legendDataIndex===index);
+        const rect=item.getBoundingRect().clone(); rect.applyTransform(item.getComputedTransform());
+        return {show:option.yAxis[yen.yAxisIndex].show!==false,data:yen.data,
+            point:{x:rect.x+rect.width/2,y:rect.y+rect.height/2},
+            zoom:chart.getModel().getComponent('dataZoom').getPercentRange()};
+    }"""
+    original = chart.evaluate(inspect)
+    assert original['show'] and len(original['data']) > 200
+    for expected in (False, True):
+        box = chart.bounding_box()
+        point = chart.evaluate(inspect)['point']
+        page.mouse.click(box['x']+point['x'], box['y']+point['y'])
+        page.wait_for_timeout(100)
+        state = chart.evaluate(inspect)
+        assert state['show'] is expected, state
+        assert state['data'] == original['data'] and state['zoom'] == original['zoom']
+    return {'original_bis_observations':True, 'axis_hides_and_restores':True, 'data_and_zoom_preserved':True}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="http://127.0.0.1:8501")
@@ -325,7 +353,9 @@ def main():
             page.set_viewport_size({'width':390, 'height':844})
             page.wait_for_timeout(300)
             report['legend_axes_mobile'] = exercise_legend_axes(page, liquidity)
+            report['yen_legend_mobile'] = exercise_yen_legend(page)
             page.set_viewport_size({'width':1440, 'height':1000})
+            report['yen_legend_desktop'] = exercise_yen_legend(page)
             report["checks"].append({"slider": True, "box_zoom": True,
                                       "processed_observations_fit_independent_axes": True})
             # Two separate browser contexts produce independent Streamlit
