@@ -2,9 +2,11 @@
   "source": "HKMA original monthly money supply; retained verified monthly history (C&SD table currently quarterly/yearly)",
   "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics",
   "cross_check_url": "https://www.censtatd.gov.hk/api/get.php?id=340-45012&lang=en&full_series=1",
-  "updated_at": "2026-10-20T09:14:37.361949+00:00",
-  "record_count": 78,
-  "coverage_start": "2020-04",
+  "updated_at": "2026-10-21T07:09:22.906535+00:00",
+  "fresh_fetch_ok": true,
+  "fetch_error": null,
+  "record_count": 100,
+  "coverage_start": "2018-06",
   "coverage_end": "2026-08",
   "records": [
     {
@@ -408,6 +410,72 @@
       "end_of_month": "2020-04",
       "m2_hkd": 7477673.0,
       "m3_hkd": 7495200.0
+    },
+    {
+      "end_of_month": "2020-03"
+    },
+    {
+      "end_of_month": "2020-02"
+    },
+    {
+      "end_of_month": "2020-01"
+    },
+    {
+      "end_of_month": "2019-12"
+    },
+    {
+      "end_of_month": "2019-11"
+    },
+    {
+      "end_of_month": "2019-10"
+    },
+    {
+      "end_of_month": "2019-09"
+    },
+    {
+      "end_of_month": "2019-08"
+    },
+    {
+      "end_of_month": "2019-07"
+    },
+    {
+      "end_of_month": "2019-06"
+    },
+    {
+      "end_of_month": "2019-05"
+    },
+    {
+      "end_of_month": "2019-04"
+    },
+    {
+      "end_of_month": "2019-03"
+    },
+    {
+      "end_of_month": "2019-02"
+    },
+    {
+      "end_of_month": "2019-01"
+    },
+    {
+      "end_of_month": "2018-12"
+    },
+    {
+      "end_of_month": "2018-11"
+    },
+    {
+      "end_of_month": "2018-10"
+    },
+    {
+      "end_of_month": "2018-09"
+    },
+    {
+      "end_of_month": "2018-08"
+    },
+    {
+      "end_of_month": "2018-07"
+    },
+    {
+      "end_of_month": "2018-06"
     }
   ]
 }
