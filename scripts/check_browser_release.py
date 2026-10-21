@@ -60,7 +60,9 @@ def chart_state(chart):
             return {x:rect.x+rect.width/2, y:rect.y+rect.height/2};
         });
         const toolbox = instance.getViewOfComponentModel(model.getComponent('toolbox'));
-        const icon = toolbox._features.get('dataZoom').model.iconPaths.zoom;
+        const feature = typeof toolbox._features.get === 'function' ?
+            toolbox._features.get('dataZoom') : toolbox._features.dataZoom;
+        const icon = feature.model.iconPaths.zoom;
         const iconRect = icon.getBoundingRect().clone();
         iconRect.applyTransform(icon.getComputedTransform());
         return {zoom: model.getComponent('dataZoom').getPercentRange(), axes,
@@ -226,6 +228,15 @@ def exercise_legend_axes(page, chart):
     assert state['axes'][2]['show'] is False and state['width'] > original['width']
     state = click(shared[0])
     assert state['axes'][1]['show'] is True, 'Shared axis disappeared with another series visible'
+    viewport = page.viewport_size
+    page.set_viewport_size({'width':844 if viewport['width'] < 700 else 390, 'height':844})
+    page.wait_for_timeout(300)
+    rotated = snapshot()
+    assert rotated['axes'][2]['show'] is False
+    assert rotated['selected'] == state['selected']
+    assert rotated['series'] == original['series'] and rotated['zoom'] == original['zoom']
+    page.set_viewport_size(viewport)
+    page.wait_for_timeout(300)
     state = click(shared[1])
     assert state['axes'][1]['show'] is False
     state = click(last)
@@ -238,7 +249,7 @@ def exercise_legend_axes(page, chart):
         state = click(name)
     assert state['axes'] == original['axes'], 'Restored axes changed identity or offsets'
     assert abs(state['width']-original['width']) < 1
-    return {'shared_axis':True, 'empty_axis_hidden':True, 'spacing_reclaimed':True,
+    return {'shared_axis':True, 'empty_axis_hidden':True, 'spacing_reclaimed':True, 'rotation_preserved':True,
             'all_off_and_restore':True, 'data_and_zoom_preserved':True}
 
 
