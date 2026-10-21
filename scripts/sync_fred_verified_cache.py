@@ -133,10 +133,13 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
         )
         response.raise_for_status()
         rows = pd.read_csv(StringIO(response.text))
-        if not {"DATE", "CLOSE"} <= set(rows.columns):
+        value_column = "CLOSE" if "CLOSE" in rows.columns else {
+            "GVZCLS": "GVZ", "VXVCLS": "VIX3M", "VIXCLS": "VIX"
+        }.get(series_id)
+        if "DATE" not in rows.columns or value_column not in rows.columns:
             raise ValueError("Cboe daily close schema changed")
         text = "DATE," + series_id + "\n" + "\n".join(
-            f"{day},{value}" for day, value in zip(rows["DATE"], rows["CLOSE"])
+            f"{day},{value}" for day, value in zip(rows["DATE"], rows[value_column])
         )
         return _parse_source(text, series_id)
 

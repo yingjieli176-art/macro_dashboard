@@ -15,6 +15,7 @@ from macro_platform.echarts_axes import option_observation_health
 SPECS = [
     ("jpy_market_daily.json", "date", "", ["usd_jpy_close"]),
     ("jpy_neer_daily.json", "date", "", ["value"]),
+    ("censtat_hkd_money_supply.json", "end_of_month", "hk_6_range", ["m2_hkd", "m3_hkd"]),
     ("copper_market_daily.json", "date", "", ["comex_stock_t", "lme_stock_t", "comex_price_usd_lb", "lme_3m_usd_t"]),
     ("usdhkd_daily.json", "observation_date", "", ["value"]),
     ("vixeq_daily.json", "observation_date", "", ["close"]),
@@ -22,7 +23,7 @@ SPECS = [
     ("cor3m_daily.json", "observation_date", "", ["close"]),
     ("hkma_monetary_statistics.json", "end_of_month", "hk_6_range",
      ["m2_hkd", "m3_hkd", "monetary_base_total", "aggr_balance", "outstanding_efbn", "ow_lb_bf_disc_win"]),
-    ("hkma_banking_liquidity_daily.json", "end_of_date", "", ["hibor_overnight", "hibor_3m", "closing_balance"]),
+    ("hkma_banking_liquidity_daily.json", "end_of_date", "", ["hibor_overnight", "hibor_3m", "disc_win_base_rate", "closing_balance"]),
 ]
 
 
@@ -61,7 +62,7 @@ def audit(root=ROOT, now=None):
     reports.append({"file": "treasury_tga_daily.json", **tga_health,
                     "missing_names": [] if "TGA_DAILY" in tga_health["latest_by_name"] else ["TGA_DAILY"]})
     for symbol in ("IORB", "EFFR", "SOFR", "RRPONTSYAWARD", "DGS3MO", "DGS2", "DGS10",
-                   "DFII5", "DFII10", "T10YIE", "WALCL", "WRESBAL", "RRPONTSYD", "VIXCLS", "VXVCLS", "SP500"):
+                   "DFII5", "DFII10", "T10YIE", "WALCL", "WRESBAL", "RRPONTSYD", "VIXCLS", "VXVCLS", "SP500", "GVZCLS"):
         payload = json.loads((root / "data_snapshots" / "fred_cache" / f"{symbol}.json").read_text())
         rows = payload.get("records") or []
         option = {"series": [{"name": symbol, "observation_cadence": "weekly" if symbol in ("WALCL", "WRESBAL") else "daily", "data": [[r.get("date"), r.get("value")] for r in rows]}]}

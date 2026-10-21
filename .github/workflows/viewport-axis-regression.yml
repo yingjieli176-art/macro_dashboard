@@ -65,6 +65,9 @@ on:
       - tests/test_tga_closing_schema_2022.py
       - .github/workflows/sync-tga-official-snapshot.yml
       - macro_platform/hk_liquidity.py
+      - macro_platform/freshness_overview.py
+      - scripts/probe_all_sources.py
+      - tests/test_full_freshness.py
       - scripts/update_vixeq_snapshot.py
       - .github/workflows/update-vixeq-snapshot.yml
       - tests/test_app_runtime_smoke.py
@@ -138,6 +141,9 @@ on:
       - tests/test_tga_closing_schema_2022.py
       - .github/workflows/sync-tga-official-snapshot.yml
       - macro_platform/hk_liquidity.py
+      - macro_platform/freshness_overview.py
+      - scripts/probe_all_sources.py
+      - tests/test_full_freshness.py
       - scripts/update_vixeq_snapshot.py
       - .github/workflows/update-vixeq-snapshot.yml
       - tests/test_app_runtime_smoke.py
@@ -216,6 +222,7 @@ jobs:
             browser_acceptance.json
             browser_acceptance.png
             browser_mobile.png
+            browser_freshness.png
             browser_session_b.png
             browser-server.log
           if-no-files-found: error
