@@ -79,6 +79,13 @@ class FullFreshness(unittest.TestCase):
         self.assertEqual(next(r for r in rows if r["图表"]==6)["频率"],"月频")
         self.assertEqual(next(r for r in rows if r["图表"]==14)["状态"],"待恢复")
 
+    def test_reference_guide_levels_are_not_dated_observations(self):
+        fig=go.Figure(go.Scatter(x=["2026-10-20"],y=[7.8],name="USD/HKD"))
+        for name in ("Strong-side CU 7.75","Linked Rate Center 7.80","Weak-side CU 7.85"):
+            fig.add_trace(go.Scatter(x=["2026-10-21"],y=[7.8],name=name))
+        rows=[r for r in figure_rows({8:fig}) if r["图表"]==8]
+        self.assertEqual([r["指标"] for r in rows],["USD/HKD"])
+
     def test_gvz_original_export_uses_named_value_column(self):
         text="DATE,GVZ\n"+"\n".join(f"{d:%m/%d/%Y},21.5" for d in pd.date_range(end="2026-10-20",periods=20))
         session=Mock();session.get.return_value=Mock(text=text)
