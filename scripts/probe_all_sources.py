@@ -74,7 +74,7 @@ def yahoo(symbol):
     if symbol == "HSTECH":
         from scripts.update_hk_market_daily import _fetch_hstech
         frame = _fetch_hstech()
-        return latest(frame, "observation_date", "close"), "https://stock.finance.sina.com.cn/hkstock/history/HSTECH.html"
+        return latest(frame, "observation_date", "close"), "https://finance.sina.com.cn/stock/hkstock/HSTECH/klc2_kl.js"
     url = "https://query1.finance.yahoo.com/v8/finance/chart/" + quote(symbol, safe="")
     node = get(url, params={"range": "1mo", "interval": "1d"}).json()["chart"]["result"][0]
     frame = completed_daily_closes(node)
