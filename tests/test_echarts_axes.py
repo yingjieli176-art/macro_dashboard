@@ -11,6 +11,48 @@ from macro_platform.echarts_axes import build_adaptive_echarts_option, summarize
 
 
 class EchartsNativeAxes(unittest.TestCase):
+    def test_mobile_axis_title_retains_copper_inventory_unit(self):
+        fig = go.Figure(go.Scatter(x=pd.date_range("2026-09-01", periods=3),
+                                  y=[300, 310, 305], name="COMEX 库存"))
+        fig.update_layout(yaxis_title="Exchange inventory · kt")
+        for builder in (build_adaptive_echarts_option, build_safe_echarts_option):
+            option = builder(fig)
+            self.assertTrue(all(media["option"]["yAxis"][0]["name"] == "L\nkt"
+                                for media in option["media"] if "query" in media))
+
+    def test_mobile_layout_preserves_five_independent_axes_and_observations(self):
+        dates = pd.date_range("2026-09-01", periods=5)
+        fig = go.Figure()
+        for index in range(5):
+            ref = "y" if index == 0 else f"y{index + 1}"
+            fig.add_trace(go.Scatter(x=dates, y=[index + 1, float('nan'), 3, 4, 5],
+                                     name=f"Indicator {index}", yaxis=ref))
+            fig.update_layout(**{"yaxis" if index == 0 else f"yaxis{index + 1}":
+                                 dict(title="Rate (%)", range=[6, 0] if index == 2 else [0, 6])})
+        for builder in (build_adaptive_echarts_option, build_safe_echarts_option):
+            option = builder(fig, "1M")
+            self.assertEqual([item["yAxisIndex"] for item in option["series"]], list(range(5)))
+            self.assertTrue(all(item["data"][1][1] is None for item in option["series"]))
+            for media in option["media"]:
+                layout = media["option"]
+                self.assertNotIn("series", layout)
+                self.assertNotIn("dataZoom", layout)
+                self.assertEqual(len(layout["yAxis"]), 5)
+                self.assertTrue(all(axis["scale"] for axis in layout["yAxis"]))
+                self.assertTrue(layout["yAxis"][2]["inverse"])
+                if "query" in media:
+                    self.assertEqual(layout["legend"]["type"], "plain")
+                    self.assertEqual([name for name in layout["legend"]["data"] if name != "\n"],
+                                     [item["name"] for item in option["series"]])
+                    self.assertTrue(all(axis["show"] for axis in layout["yAxis"]))
+                    self.assertLess(layout["grid"]["right"], option["grid"]["right"])
+                else:
+                    self.assertEqual(layout["grid"], option["grid"])
+                    self.assertEqual(layout["legend"]["type"], option["legend"]["type"])
+                    self.assertEqual([axis["offset"] for axis in layout["yAxis"]],
+                                     [axis["offset"] for axis in option["yAxis"]])
+            json.dumps(option, allow_nan=False)
+
     def test_year_month_labels_are_explicit_across_calendar_boundary(self):
         fig = go.Figure(go.Scatter(
             x=pd.date_range("2025-09-01", "2026-10-01", freq="7D"),
