@@ -26,13 +26,17 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install pandas requests xlrd curl_cffi==0.13.0
+      - name: Verify transport fallback and observation semantics
+        run: python -m unittest discover -s tests -p test_cme_transport.py -v
       - name: Read original CME workbook through alternate HTTP transport
         run: |
           python - <<'PY'
           from curl_cffi import requests
-          from scripts.update_copper_snapshot import parse_cme_stocks, CME_STOCKS_URL
+          from scripts.update_copper_snapshot import parse_cme_stocks, CME_STOCKS_URL, _fetch_cme_stocks
           import pandas as pd, io, time
           from pathlib import Path
+          actual = _fetch_cme_stocks()
+          print("PRODUCTION CME FETCHER", actual, flush=True)
           errors = []
           for suffix in ("", "?_=" + str(int(time.time()))):
               try:
