@@ -22,3 +22,5 @@ The independent source audit runs every three hours and requires all four Hong K
 An old daily value cannot be made current by a new download timestamp or null observation.
 
 Validation: full production regression suite and browser checks run on the pull request.
+
+Daily Treasury nominal/real constant-maturity yields and Cboe VIX/VIX3M/GVZ closes now try the original publisher before FRED's mirror, preserving the same series definition and source date. FRED remains a fallback.

@@ -210,5 +210,35 @@ class SourceFreshnessTests(unittest.TestCase):
             self.assertFalse(data["fresh_fetch_ok"])
             self.assertEqual(data["fetch_error"], "timeout")
 
+
+    def test_original_treasury_source_advances_fred_mirror_without_losing_history(self):
+        from scripts import sync_fred_verified_cache as sync
+        from unittest.mock import Mock
+        previous = [{"date": d.strftime("%Y-%m-%d"), "value": 4.1}
+                    for d in pd.date_range(end="2026-10-19", periods=20)]
+        xml = '<feed xmlns:m="urn:m" xmlns:d="urn:d"><m:properties><d:NEW_DATE>2026-10-20T00:00:00</d:NEW_DATE><d:BC_10YEAR>4.20</d:BC_10YEAR></m:properties></feed>'
+        response = Mock(text=xml)
+        session = Mock()
+        session.get.return_value = response
+        with tempfile.TemporaryDirectory() as folder, patch.object(sync, "OUT", Path(folder)):
+            (Path(folder)/"DGS10.json").write_text(json.dumps({"records": previous}))
+            actual = sync._fetch_treasury(session, "DGS10")
+        self.assertEqual(len(actual), 21)
+        self.assertEqual(actual.iloc[-1]["date"], pd.Timestamp("2026-10-20"))
+        self.assertEqual(actual.iloc[-1]["value"], 4.2)
+        self.assertIn("home.treasury.gov", session.get.call_args.args[0])
+
+    def test_original_cboe_close_keeps_source_date_and_correct_index(self):
+        from scripts import sync_fred_verified_cache as sync
+        from unittest.mock import Mock
+        csv = "DATE,OPEN,HIGH,LOW,CLOSE\n" + "\n".join(
+            f"{d:%m/%d/%Y},15,20,12,18.5" for d in pd.date_range(end="2026-10-20", periods=20))
+        session = Mock()
+        session.get.return_value = Mock(text=csv)
+        actual = sync._fetch_primary(session, "VXVCLS")
+        self.assertEqual(actual.iloc[-1]["date"], pd.Timestamp("2026-10-20"))
+        self.assertEqual(actual.iloc[-1]["value"], 18.5)
+        self.assertTrue(session.get.call_args.args[0].endswith("/VIX3M_History.csv"))
+
 if __name__ == "__main__":
     unittest.main()
