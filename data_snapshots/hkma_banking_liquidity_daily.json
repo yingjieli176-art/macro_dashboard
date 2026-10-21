@@ -9,11 +9,12 @@
     "https://www.hkab.org.hk/en/rates/hibor"
   ],
   "transport_fallback": "r.jina.ai relay when direct api.hkma.gov.hk access is unavailable from CI",
-  "updated_at": "2026-10-20T15:41:11.375447+00:00",
+  "updated_at": "2026-10-21T07:09:24.617163+00:00",
+  "source_errors": [],
   "coverage_start": "2025-04-22",
-  "coverage_end": "2026-10-20",
-  "record_count": 370,
-  "fetch_strategy": "small newest-first pagesize=20 offset pagination; no date-filter query; proxy/direct transport fallback; optional current enrichment",
+  "coverage_end": "2026-10-21",
+  "record_count": 371,
+  "fetch_strategy": "30-day incremental overlap over retained history; parallel independent endpoints; direct/relay fallback; HKAB current fixing",
   "records": [
     {
       "end_of_date": "2025-04-22",
@@ -5184,7 +5185,7 @@
     {
       "end_of_date": "2026-10-20",
       "hibor_source": "https://www.hkab.org.hk/en/rates/hibor",
-      "hibor_overnight": 2.33411,
+      "hibor_overnight": 2.16,
       "hibor_3m": 3.28536,
       "outstanding_efbn": 1361714,
       "ow_lb_bf_disc_win": 1151241,
@@ -5195,6 +5196,21 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75
+    },
+    {
+      "end_of_date": "2026-10-21",
+      "opening_balance": null,
+      "closing_balance": null,
+      "forecast_aggregate_bal_t1": null,
+      "outstanding_efbn": null,
+      "ow_lb_bf_disc_win": null,
+      "aggr_balance_bf_disc_win": null,
+      "hibor_overnight": 2.34476,
+      "hibor_3m": 3.26744,
+      "disc_win_base_rate": null,
+      "cu_weakside": null,
+      "cu_strongside": null,
+      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor"
     }
   ]
 }
