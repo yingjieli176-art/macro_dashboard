@@ -139,7 +139,8 @@ class AccuracyPerformanceTests(unittest.TestCase):
                 {"date": date.strftime("%Y-%m-%d"), "value": 3.88} for date in dates]}
             file = Path(folder) / "SOFR.json"
             file.write_text(json.dumps(payload))
-            self.assertEqual(fred_sync.snapshot_health("SOFR", now="2026-10-09")["status"], "available")
+            self.assertEqual(fred_sync.snapshot_health("SOFR", now="2026-10-05")["status"], "available")
+            self.assertEqual(fred_sync.snapshot_health("SOFR", now="2026-10-06")["status"], "stale")
             self.assertEqual(fred_sync.snapshot_health("SOFR", now="2026-11-09")["status"], "stale")
             self.assertEqual(fred_sync.snapshot_health("EFFR", now="2026-10-09")["status"], "missing_or_invalid")
             payload["records"][-1]["value"] = float("inf")

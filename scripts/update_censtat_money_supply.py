@@ -58,7 +58,15 @@ def main() -> None:
 
     sys.path.insert(0, str(ROOT))
     from scripts.update_hkma_snapshot import _fetch_proxy_records
-    original = _fetch_proxy_records(MONTHLY_URL, {"pagesize": 100, "sortby": "end_of_month", "sortorder": "desc"})
+    fetch_error = None
+    try:
+        original = _fetch_proxy_records(MONTHLY_URL, {"pagesize": 100, "sortby": "end_of_month", "sortorder": "desc"})
+    except Exception as exc:
+        # A transport outage must not discard the newer verified main snapshot.
+        # Preserve actual observation months and expose this failed live attempt.
+        fetch_error = str(exc)
+        print("::warning::HKMA source unavailable; retaining verified monthly data:", fetch_error)
+        original = []
     for row in original:
         month = str(row.get("end_of_month") or "")
         if len(month) != 7 or month[5:] not in {f"{m:02d}" for m in range(1, 13)}:
@@ -79,6 +87,8 @@ def main() -> None:
         "source_url": MONTHLY_URL,
         "cross_check_url": URL,
         "updated_at": datetime.now(timezone.utc).isoformat(),
+        "fresh_fetch_ok": bool(original),
+        "fetch_error": fetch_error,
         "record_count": len(records),
         "coverage_start": records[-1]["end_of_month"],
         "coverage_end": complete[0]["end_of_month"],

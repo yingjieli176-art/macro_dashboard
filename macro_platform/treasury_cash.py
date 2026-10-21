@@ -97,7 +97,7 @@ def read_verified_tga_snapshot(path: str | Path) -> pd.DataFrame:
         result.attrs.update({
             "source": "U.S. Treasury DTS verified source snapshot",
             "is_fallback": False,
-            "is_stale": age > 3 * 86400,
+            "is_stale": age > 6 * 3600 or pd.Timestamp.now().normalize() > result["observation_date"].max().normalize() + pd.offsets.BDay(2),
             "fetched_at": fetched_at,
             "frequency": "daily",
         })

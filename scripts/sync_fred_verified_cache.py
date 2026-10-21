@@ -83,8 +83,63 @@ def _fetch_api(session, series_id: str) -> pd.DataFrame:
     return _parse_source(text, series_id)
 
 
+TREASURY_FIELDS = {"DGS3MO": "BC_3MONTH", "DGS2": "BC_2YEAR", "DGS10": "BC_10YEAR",
+                   "DFII5": "TC_5YEAR", "DFII10": "TC_10YEAR"}
+CBOE_FILES = {"VIXCLS": "VIX_History.csv", "VXVCLS": "VIX3M_History.csv", "GVZCLS": "GVZ_History.csv"}
+
+
+def _fetch_treasury(session, series_id):
+    """Use the original same-definition Treasury close before the FRED mirror."""
+    import xml.etree.ElementTree as ET
+    field = TREASURY_FIELDS[series_id]
+    kind = "daily_treasury_real_yield_curve" if series_id.startswith("DFII") else "daily_treasury_yield_curve"
+    response = session.get(
+        "https://home.treasury.gov/resource-center-data-chart-center/interest-rates/pages/xml",
+        params={"data": kind, "field_tdr_date_value": datetime.now(timezone.utc).year},
+        timeout=FETCH_TIMEOUT,
+    )
+    response.raise_for_status()
+    root = ET.fromstring(response.text)
+    observed = []
+    for props in root.iter():
+        if props.tag.rsplit("}", 1)[-1] != "properties":
+            continue
+        row = {child.tag.rsplit("}", 1)[-1]: child.text for child in props}
+        if row.get("NEW_DATE") and row.get(field) not in (None, ""):
+            observed.append({"date": row["NEW_DATE"].split("T")[0], "value": row[field]})
+    if not observed:
+        raise ValueError("Treasury XML has no dated " + field + " values")
+    # Download only this year's original observations; preserve the same-series
+    # verified history instead of downloading seven years every few hours.
+    previous = []
+    target = OUT / (series_id + ".json")
+    if target.exists():
+        previous = json.loads(target.read_text()).get("records") or []
+    frame = pd.DataFrame(previous + observed).drop_duplicates("date", keep="last")
+    text = "DATE," + series_id + "\n" + "\n".join(
+        f"{row.date},{row.value}" for row in frame.itertuples(index=False)
+    )
+    return _parse_source(text, series_id)
+
+
 def _fetch_primary(session, series_id: str) -> pd.DataFrame:
     """Get the *same* directly published official rates if FRED is unreachable."""
+    if series_id in TREASURY_FIELDS:
+        return _fetch_treasury(session, series_id)
+    if series_id in CBOE_FILES:
+        response = session.get(
+            "https://cdn.cboe.com/api/global/us_indices/daily_prices/" + CBOE_FILES[series_id],
+            timeout=FETCH_TIMEOUT,
+        )
+        response.raise_for_status()
+        rows = pd.read_csv(StringIO(response.text))
+        if not {"DATE", "CLOSE"} <= set(rows.columns):
+            raise ValueError("Cboe daily close schema changed")
+        text = "DATE," + series_id + "\n" + "\n".join(
+            f"{day},{value}" for day, value in zip(rows["DATE"], rows["CLOSE"])
+        )
+        return _parse_source(text, series_id)
+
     if series_id == "IORB":
         response = session.get(
             "https://www.federalreserve.gov/datadownload/Output.aspx",
@@ -152,6 +207,12 @@ def refresh_one(series_id: str):
                     "SOFR": ("Federal Reserve Bank of New York",
                              "https://www.newyorkfed.org/markets/reference-rates/sofr"),
                 }
+                for symbol in TREASURY_FIELDS:
+                    provenance[symbol] = ("U.S. Treasury original constant-maturity yields",
+                                          "https://home.treasury.gov/resource-center-data-chart-center/interest-rates")
+                for symbol, filename in CBOE_FILES.items():
+                    provenance[symbol] = ("Cboe original daily index close",
+                                          "https://cdn.cboe.com/api/global/us_indices/daily_prices/" + filename)
                 source_name, source_url = (provenance[series_id]
                     if primary_source else
                     ("Federal Reserve Bank of St. Louis FRED",
@@ -214,8 +275,13 @@ def snapshot_health(series_id, now=None):
             raise ValueError("coverage end mismatch")
         # Debt series are monthly/quarterly; market/rate series are daily/weekly.
         tolerance = (550 if series_id == "FYGFDPUN" else
-                     150 if series_id in ("GFDEBTN", "FDHBFRBN", "FDHBFIN", "FDHBPIN") else 14)
-        status = "stale" if (now.normalize() - dates.max()).days > tolerance else "available"
+                     150 if series_id in ("GFDEBTN", "FDHBFRBN", "FDHBFIN", "FDHBPIN") else None)
+        deadline = (dates.max().normalize() + pd.Timedelta(days=tolerance)
+                    if tolerance is not None else
+                    dates.max().normalize() + pd.Timedelta(days=10)
+                    if series_id in ("WALCL", "WRESBAL", "WTREGEN") else
+                    dates.max().normalize() + pd.offsets.BDay(2))
+        status = "stale" if now.normalize() > deadline else "available"
         return {"series_id": series_id, "status": status, "coverage_end": end, "rows": len(records)}
     except (OSError, ValueError, TypeError, KeyError):
         return {"series_id": series_id, "status": "missing_or_invalid", "coverage_end": "", "rows": 0}
@@ -247,7 +313,7 @@ def main():
                 (updated if changed else retained).append(sid)
                 stored = snapshot_health(sid)
                 print(f"OK {sid}: {stored['rows']} real points, "
-                      f"last {stored['coverage_end']} ({'updated' if changed else 'retained'})",
+                      f"last {stored['coverage_end']} ({'updated' if changed else 'retained'}), source={payload['source']}",
                       flush=True)
             else:
                 errors.append(sid)

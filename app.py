@@ -82,7 +82,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-21-japan-yen-r54"
+CHART_BUILD = "2026-10-21-published-source-catchup-r55"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2208,6 +2208,7 @@ def _show_macro_plot_health(fig, option, element_key):
         if report.get("stale_names"):
             st.warning("部分数据未及时更新（使用最后有效观测，非实时）：" +
                        " · ".join(report.get("stale_details") or report["stale_names"]))
+        st.caption("时效检查：日频超过 2 个工作日、周频超过 10 天会告警；实际观测日保留源站日期。")
         if report.get("monthly_names"):
             st.caption("月度数据按公布周期判断时效，观测日为统计月末；未公布的月份保持空缺。")
         if report.get("future_names"):

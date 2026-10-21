@@ -314,7 +314,7 @@ def get_tga_daily():
     snapshot = read_verified_tga_snapshot(TGA_SNAPSHOT_PATH)
     # The GitHub Actions job ships original official published records so
     # Streamlit cold starts never have to block on a remote FiscalData API.
-    # A snapshot produced within 72 hours can be used without a network call.
+    # A snapshot verified within six hours can be used without a network call.
     if not snapshot.empty and not snapshot.attrs.get("is_stale", True):
         return snapshot
 
@@ -342,7 +342,7 @@ def get_tga_daily():
             raise RuntimeError("Treasury FiscalData has no recognizable TGA closing-balance observations")
         actual.attrs["is_stale"] = (
             actual["observation_date"].max() <
-            pd.Timestamp.today().normalize() - pd.Timedelta(days=10)
+            pd.Timestamp.today().normalize() - pd.offsets.BDay(2)
         )
         if snapshot.empty or actual["observation_date"].max() >= snapshot["observation_date"].max():
             return actual
