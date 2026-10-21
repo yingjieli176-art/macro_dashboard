@@ -34,6 +34,9 @@ on:
       - tests/test_fred_observation_admission.py
       - requirements.txt
       - macro_platform/chart_axes.py
+      - macro_platform/linked_charts.py
+      - macro_platform/frontend/**
+      - static/macro-echarts-6.0.0.js.txt
       - macro_platform/echarts_axes.py
       - tests/test_viewport_axes.py
       - tests/test_echarts_axes.py
@@ -102,6 +105,9 @@ on:
       - scripts/update_copper_snapshot.py
       - tests/test_truth_source_integrity.py
       - data_snapshots/copper_market_daily.json
+      - macro_platform/linked_charts.py
+      - macro_platform/frontend/**
+      - static/macro-echarts-6.0.0.js.txt
       - macro_platform/echarts_axes.py
       - macro_platform/chart_axes.py
       - tests/test_echarts_axes.py
@@ -167,6 +173,9 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Run Chromium against the actual app with offline real snapshots
         run: |
+          # Static serving is relative to the entry point. The offline wrapper
+          # lives in tests/, while production app.py serves the root static/.
+          ln -s ../static tests/static
           python -m streamlit run tests/browser_offline_app.py --server.headless=true --global.developmentMode=false > browser-server.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT

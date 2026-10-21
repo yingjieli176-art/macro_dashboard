@@ -26,6 +26,10 @@ except (ImportError, AttributeError) as _echarts_module_error:
     _echarts_axes = None
 else:
     _echarts_module_error = None
+try:
+    from macro_platform import linked_charts as _linked_charts
+except ImportError:
+    _linked_charts = None
 from macro_platform import chart_axes as _chart_axes
 RANGE_OFFSETS = _chart_axes.RANGE_OFFSETS
 apply_time_axis = _chart_axes.apply_time_axis
@@ -77,7 +81,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-21-mobile-layout-r52"
+CHART_BUILD = "2026-10-21-legend-axis-r53"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2246,6 +2250,11 @@ def _explain_missing_chart_data(fig, element_key):
     logging.warning("No valid chart samples for %s", element_key)
 
 
+def _get_echarts_renderer():
+    linked = getattr(globals().get("_linked_charts"), "render_echarts_chart", None)
+    return linked if callable(linked) else getattr(st, "echarts_chart", None)
+
+
 def _try_minimal_adaptive_chart(base_fig, element_key, selected_range, mode=None):
     """Retry a *native* adaptive renderer before degrading to Plotly.
 
@@ -2254,7 +2263,7 @@ def _try_minimal_adaptive_chart(base_fig, element_key, selected_range, mode=None
     retains dataZoom(filter) and independent per-axis Y autoscaling.
     """
     builder = getattr(_echarts_axes, "build_safe_echarts_option", None)
-    renderer = getattr(st, "echarts_chart", None)
+    renderer = _get_echarts_renderer()
     if not callable(builder) or not callable(renderer):
         return False
     try:
@@ -2295,7 +2304,7 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=Fal
     if not _chart_has_recoverable_data(base_fig, element_key, mode):
         _explain_missing_chart_data(base_fig, element_key)
         return
-    renderer = getattr(st, "echarts_chart", None)
+    renderer = _get_echarts_renderer()
     failure_kind = "原生图表组件缺失" if not callable(renderer) else "数据转换无有效图表"
     if callable(renderer):
         option, reused = _recoverable_echarts_option(

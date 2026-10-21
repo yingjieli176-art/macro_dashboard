@@ -94,6 +94,8 @@ def main():
                 resource_samples.append({"phase": "range_input", "sample": index+1, **resources()})
                 print(f"Range-input samples: {index+1}", flush=True)
         native_bytes = sum(len(chart.proto.spec.encode()) for chart in app.get("echarts_chart"))
+        native_bytes += sum(len(chart.proto.json.encode()) for chart in app.get("bidi_component")
+                            if chart.proto.component_name.endswith("macro_linked_chart"))
         resources_before = {"threads": threading.active_count(), "native_spec_bytes": native_bytes,
                             "peak_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss}
         st.cache_resource.clear()
