@@ -126,6 +126,58 @@ def wait_for_page(page, url):
     page.wait_for_function("document.querySelectorAll('[data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
 
 
+def check_mobile_layout(page):
+    """Rotate the actual painted charts; no alternate renderer or test data."""
+    probe = """element => {
+        const chart = (""" + INSTANCE_JS + """)(element), model = chart.getModel();
+        const grid = model.getComponent('grid').coordinateSystem.getRect();
+        const legend = model.getComponent('legend');
+        const view = chart.getViewOfComponentModel(legend);
+        const rect = view.group.getBoundingRect().clone();
+        rect.applyTransform(view.group.getComputedTransform());
+        const axes = [];
+        model.eachComponent('yAxis', axis => axes.push({
+            show: axis.get('show'), name: axis.get('name'),
+            scale: axis.get('scale'), offset: axis.get('offset')}));
+        return {width:chart.getWidth(), grid:{x:grid.x,y:grid.y,width:grid.width},
+            legend_type:legend.get('type'), legend_data:legend.get('data').filter(x => x !== '\\n'),
+            legend_bounds:{x:rect.x,y:rect.y,width:rect.width,height:rect.height}, axes,
+            series:chart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,data:s.data})),
+            zoom:model.getComponent('dataZoom').getPercentRange()};
+    }"""
+    charts = page.get_by_test_id('stEChartsChart')
+    before = charts.evaluate_all("elements => elements.map(element => (" + probe + ")(element))")
+    report = []
+    for width, height in ((390, 844), (844, 390), (360, 800), (1440, 1000)):
+        page.set_viewport_size({"width": width, "height": height})
+        page.wait_for_timeout(600)
+        states = charts.evaluate_all("elements => elements.map(element => (" + probe + ")(element))")
+        for original, state in zip(before, states):
+            assert state['series'] == original['series'], (width, 'observations changed')
+            assert state['zoom'] == original['zoom'], (width, 'zoom changed')
+            assert len(state['axes']) == len(original['axes'])
+            assert all(axis['show'] and axis['scale'] and axis['name'] for axis in state['axes']), state
+            assert state['grid']['width'] > 80, (width, state)
+            if state['width'] <= 700:
+                assert state['legend_type'] == 'plain', state
+                assert state['legend_data'] == [series['name'] for series in state['series']], state
+                bounds = state['legend_bounds']
+                assert bounds['x'] >= -1 and bounds['x']+bounds['width'] <= state['width']+1, state
+                assert bounds['y']+bounds['height'] <= state['grid']['y']-24, state
+                assert state['width']-state['grid']['width'] < original['width']-original['grid']['width'], state
+            else:
+                assert state['legend_type'] == original['legend_type'], state
+                assert state['grid']['x'] == original['grid']['x'], state
+                assert [axis['offset'] for axis in state['axes']] == [axis['offset'] for axis in original['axes']], state
+        report.append({'viewport': [width, height], 'charts': len(states),
+                       'min_plot_width': min(state['grid']['width'] for state in states)})
+        if width == 390:
+            charts.nth(3).scroll_into_view_if_needed()
+            page.screenshot(path='browser_mobile.png')
+    assert page.get_by_test_id('stEChartsChartError').count() == 0
+    return report
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="http://127.0.0.1:8501")
@@ -190,6 +242,7 @@ def main():
             report["checks"].append({"china_japan_separate": True, "country_ranges_independent": True})
             chart = page.locator('.st-key-hk_5_range_adaptive_default_1Y').get_by_test_id('stEChartsChart')
             report["client_zoom"] = exercise_client_zoom(page, chart)
+            report["mobile_layout"] = check_mobile_layout(page)
             report["checks"].append({"slider": True, "box_zoom": True,
                                       "processed_observations_fit_independent_axes": True})
             # Two separate browser contexts produce independent Streamlit

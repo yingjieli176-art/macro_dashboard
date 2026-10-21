@@ -190,6 +190,7 @@ jobs:
           path: |
             browser_acceptance.json
             browser_acceptance.png
+            browser_mobile.png
             browser_session_b.png
             browser-server.log
           if-no-files-found: error

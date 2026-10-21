@@ -8,6 +8,8 @@ arbitrary zoom-box selection, without a Streamlit rerun.
 from __future__ import annotations
 
 import math
+from copy import deepcopy
+import unicodedata
 
 import pandas as pd
 
@@ -60,6 +62,92 @@ def _axis_readable_title(source_axis, index, traces):
             return title
         return "Left · " + (unit or "value")
     return f"R{index} · {unit or 'value'}"
+
+
+def _responsive_chart_layout(option, fig, axis_map):
+    """Keep every independent axis; compact only the narrow-container layout.
+
+    Media options contain presentation only, so rotation cannot reset zoom,
+    replace observations, or merge axes. The final default restores desktop
+    geometry when a phone rotates or a browser window grows again.
+    """
+    desktop = {key: deepcopy(option[key]) for key in ("legend", "grid", "yAxis", "xAxis")}
+    for axis in desktop["yAxis"]:
+        axis["nameRotate"] = 90
+        axis.setdefault("nameTextStyle", {}).update({"lineHeight": 12, "align": "center"})
+        axis["nameTextStyle"].setdefault("fontSize", 12)
+        axis.setdefault("axisLabel", {}).setdefault("fontSize", 12)
+        axis["axisLabel"].setdefault("margin", 8)
+        axis.setdefault("splitNumber", 5)
+    if "toolbox" in option:
+        desktop["toolbox"] = deepcopy(option["toolbox"])
+
+    units = []
+    for ref, index in sorted(axis_map.items(), key=lambda pair: pair[1]):
+        source = getattr(fig.layout, "yaxis" if ref == "y" else "yaxis" + ref[1:], None)
+        traces = [trace for trace in fig.data if (getattr(trace, "yaxis", None) or "y") == ref]
+        units.append(_axis_unit(source, traces) or "value")
+
+    media = []
+    # Estimate legend rows conservatively at each band's lower width. Explicit
+    # row breaks keep the plain legend complete without a pagination control.
+    for maximum, usable, spacing, label_size in (
+        (700, 456, 48, 10),
+        (480, 336, 44, 10),
+        (360, 236, 40, 9),
+    ):
+        names, used, rows = [], 0, 1
+        for series in option["series"]:
+            name = series["name"]
+            if name in names:
+                continue
+            width = 30 + sum(10 if unicodedata.east_asian_width(char) in "WF" else 6.2 for char in name)
+            if used and used + width > usable:
+                names.append("\n")
+                rows += 1
+                used = 0
+            names.append(name)
+            used += width
+        axes = deepcopy(option["yAxis"])
+        for index, axis in enumerate(axes):
+            axis.update({
+                "show": True,
+                "name": f"{'L' if index == 0 else 'R' + str(index)}\n{units[index]}",
+                "nameLocation": "end", "nameRotate": 0, "nameGap": 10,
+                "nameTextStyle": {"fontSize": 9, "lineHeight": 12,
+                                  "align": "center", "color": "#475569"},
+                "offset": max(0, index - 1) * spacing,
+                "splitNumber": 3,
+                "axisLabel": {"color": "#475569", "fontSize": label_size,
+                              "hideOverlap": True, "margin": 4},
+            })
+        override = {
+            "legend": {"type": "plain", "top": 26, "left": 4, "right": 4,
+                       "data": names, "itemWidth": 14, "itemHeight": 8,
+                       "itemGap": 8, "textStyle": {"fontSize": 10, "lineHeight": 14}},
+            "grid": {"left": 42, "right": 38 + max(0, len(axes) - 2) * spacing,
+                     "top": 26 + rows * 22 + 40, "bottom": 58, "containLabel": False},
+            "yAxis": axes,
+            "xAxis": {"splitNumber": 3, "axisLabel": {"margin": 8, "fontSize": 9}},
+        }
+        if "toolbox" in option:
+            override["toolbox"] = {"right": 4, "top": 0, "itemSize": 13}
+        media.append({"query": {"maxWidth": maximum}, "option": override})
+    # Reset every property introduced by a media override, including the
+    # legend's explicit row breaks and toolbox icon size.
+    desktop["legend"].update({"data": [series["name"] for series in option["series"]],
+                              "right": "auto", "itemWidth": 25, "itemHeight": 14,
+                              "itemGap": 10})
+    desktop["legend"].setdefault("textStyle", {})["lineHeight"] = 14
+    desktop["legend"]["textStyle"].setdefault("fontSize", 12)
+    desktop["xAxis"].setdefault("axisLabel", {}).setdefault("fontSize", 12)
+    desktop["xAxis"]["axisLabel"].setdefault("margin", 8)
+    desktop["xAxis"].setdefault("splitNumber", 5)
+    if "toolbox" in desktop:
+        desktop["toolbox"]["itemSize"] = 15
+    media.append({"option": desktop})
+    option["media"] = media
+    return option
 
 
 
@@ -145,7 +233,7 @@ def build_safe_echarts_option(fig, date_range="1Y"):
             "splitLine": {"show": index == 0},
         })
     window_start = (latest - RANGE_OFFSETS[date_range]).isoformat()
-    return {
+    return _responsive_chart_layout({
         "animation": False,
         "legend": {"type": "scroll", "top": 14},
         "grid": {
@@ -170,7 +258,7 @@ def build_safe_echarts_option(fig, date_range="1Y"):
              "startValue": window_start, "endValue": latest.isoformat()},
         ],
         "series": series,
-    }
+    }, fig, axis_map)
 
 
 
@@ -333,7 +421,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
                 "hideOverlap": True, "margin": 8,
             },
         })
-    return {
+    return _responsive_chart_layout({
         "animation": False,
         "legend": {
             "type": "scroll",
@@ -398,7 +486,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             },
         ],
         "series": series,
-    }
+    }, fig, y_axis_map)
 
 
 
