@@ -11,11 +11,26 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from macro_platform.freshness_overview import figure_rows, source_rows
-from scripts.probe_all_sources import check, jobs
+from scripts.probe_all_sources import check, jobs, fred
 from scripts import sync_fred_verified_cache as sync
 
 
 class FullFreshness(unittest.TestCase):
+    def test_fred_api_fallback_keeps_dates_and_does_not_leak_request_details(self):
+        frame=pd.DataFrame({"date":pd.to_datetime(["2026-10-20"]),"value":[4.]})
+        with patch('scripts.probe_all_sources.get',side_effect=TimeoutError('export unavailable')), \
+             patch.object(sync,'_fetch_api',return_value=frame):
+            # A requests transport failure is handled, while arbitrary coding
+            # errors must still remain errors rather than becoming success.
+            import requests
+            with patch('scripts.probe_all_sources.get',side_effect=requests.Timeout('export unavailable')):
+                self.assertEqual(fred('WALCL')[0],'2026-10-20')
+        with patch('scripts.probe_all_sources.get',side_effect=requests.Timeout('export unavailable')), \
+             patch.object(sync,'_fetch_api',side_effect=RuntimeError('secret-bearing-request-url')):
+            row=check(('WALCL',[4],'weekly','2026-10-14',lambda:fred('WALCL')))
+        self.assertEqual(row['status'],'unverified')
+        self.assertNotIn('secret-bearing',row['error'])
+
     def test_long_open_page_checks_revision_after_startup_window(self):
         source = Path(__file__).resolve().parents[1] / "app.py"
         node = next(n for n in ast.parse(source.read_text()).body

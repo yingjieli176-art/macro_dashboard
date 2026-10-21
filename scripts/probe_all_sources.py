@@ -49,7 +49,7 @@ def snapshot(filename, date, value, symbol=None):
 
 
 def fred(symbol):
-    from scripts.sync_fred_verified_cache import CBOE_FILES, TREASURY_FIELDS
+    from scripts.sync_fred_verified_cache import CBOE_FILES, TREASURY_FIELDS, _fetch_primary, _fetch_api
     if symbol in CBOE_FILES:
         name = CBOE_FILES[symbol].removesuffix("_History.csv")
         return cboe(name)
@@ -65,9 +65,28 @@ def fred(symbol):
             if node is not None:
                 records.append({child.tag.rsplit("}",1)[-1]:child.text for child in node})
         return latest(pd.DataFrame(records),"NEW_DATE",TREASURY_FIELDS[symbol]),url
+    if symbol in ("IORB", "EFFR", "SOFR"):
+        try:
+            frame = _fetch_primary(requests.Session(), symbol)
+            url = ("https://www.federalreserve.gov/datadownload/Choose.aspx?rel=PRATES" if symbol == "IORB"
+                   else "https://www.newyorkfed.org/markets/reference-rates/" + symbol.lower())
+            return latest(frame, "date", "value"), url
+        except (requests.RequestException, ValueError, RuntimeError, KeyError):
+            pass
+    if symbol == "SP500":
+        return yahoo("^GSPC")
     url = "https://fred.stlouisfed.org/graph/fredgraph.csv"
-    frame = pd.read_csv(io.StringIO(get(url, params={"id": symbol}).text))
-    return latest(frame, frame.columns[0], symbol), url + "?id=" + symbol
+    try:
+        frame = pd.read_csv(io.StringIO(get(url, params={"id": symbol}).text))
+        return latest(frame, frame.columns[0], symbol), url + "?id=" + symbol
+    except (requests.RequestException, ValueError, KeyError):
+        try:
+            frame = _fetch_api(requests.Session(), symbol)
+            return latest(frame, "date", "value"), "https://fred.stlouisfed.org/series/" + symbol
+        except Exception:
+            # Never store a credential-bearing API request URL in the public
+            # report or exception chain. The configured key stays in Actions.
+            raise RuntimeError("FRED export and authenticated API could not be verified") from None
 
 
 def yahoo(symbol):
