@@ -86,7 +86,14 @@ def _responsive_chart_layout(option, fig, axis_map):
     for ref, index in sorted(axis_map.items(), key=lambda pair: pair[1]):
         source = getattr(fig.layout, "yaxis" if ref == "y" else "yaxis" + ref[1:], None)
         traces = [trace for trace in fig.data if (getattr(trace, "yaxis", None) or "y") == ref]
-        units.append(_axis_unit(source, traces) or "value")
+        unit = _axis_unit(source, traces)
+        if not unit:
+            # Keep compact source units the older desktop title helper does
+            # not recognize (for example copper inventories in kt).
+            title = str(getattr(getattr(source, "title", None), "text", None) or "")
+            suffix = title.rsplit(" · ", 1)[-1].strip()
+            unit = suffix if suffix and len(suffix) <= 12 else "value"
+        units.append(unit)
 
     media = []
     # Estimate legend rows conservatively at each band's lower width. Explicit

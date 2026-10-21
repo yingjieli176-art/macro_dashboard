@@ -11,6 +11,15 @@ from macro_platform.echarts_axes import build_adaptive_echarts_option, summarize
 
 
 class EchartsNativeAxes(unittest.TestCase):
+    def test_mobile_axis_title_retains_copper_inventory_unit(self):
+        fig = go.Figure(go.Scatter(x=pd.date_range("2026-09-01", periods=3),
+                                  y=[300, 310, 305], name="COMEX 库存"))
+        fig.update_layout(yaxis_title="Exchange inventory · kt")
+        for builder in (build_adaptive_echarts_option, build_safe_echarts_option):
+            option = builder(fig)
+            self.assertTrue(all(media["option"]["yAxis"][0]["name"] == "L\nkt"
+                                for media in option["media"] if "query" in media))
+
     def test_mobile_layout_preserves_five_independent_axes_and_observations(self):
         dates = pd.date_range("2026-09-01", periods=5)
         fig = go.Figure()
