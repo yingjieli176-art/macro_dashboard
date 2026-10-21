@@ -1,0 +1,40 @@
+name: Refresh official BIS yen index
+on:
+  schedule:
+    - cron: '20 18 * * 1-5'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - macro_platform/yen_index.py
+      - scripts/update_yen_index.py
+      - .github/workflows/update-yen-index.yml
+permissions:
+  contents: write
+concurrency:
+  group: official-bis-yen-index
+  cancel-in-progress: true
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pandas requests streamlit==1.64.0
+      - run: python scripts/update_yen_index.py
+      - name: Commit verified BIS observations
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data_snapshots/jpy_neer_daily.json
+          if git diff --cached --quiet; then
+            echo 'BIS yen index unchanged'
+            exit 0
+          fi
+          git commit -m 'data: refresh official BIS yen index'
+          bash scripts/push_snapshot.sh

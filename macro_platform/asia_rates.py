@@ -278,18 +278,20 @@ def build_china_rates_figure(date_range: str, us_real_yield: pd.DataFrame | None
                                ("China 2Y", "China 10Y", "US 5Y Real · TIPS", "China 10Y−2Y (R1)"))
 
 
-def build_japan_rates_figure(date_range: str, nikkei: pd.DataFrame | None = None) -> go.Figure:
-    """Japan yields and completed Nikkei 225 closes; index points use R2."""
+def build_japan_rates_figure(date_range: str, nikkei: pd.DataFrame | None = None,
+                             yen_index: pd.DataFrame | None = None) -> go.Figure:
+    """Japan yields, Nikkei closes (R2), and BIS nominal effective yen index (R3)."""
     try:
         japan = load_japan_gov_yields()
     except Exception:
         japan = _empty_frame("japan")
     index = nikkei if nikkei is not None else pd.DataFrame()
-    latest = _latest_date((japan, index))
+    yen = yen_index if yen_index is not None else pd.DataFrame()
+    latest = _latest_date((japan, index, yen))
     fig = go.Figure()
     if latest is not None:
         start = latest - RANGE_OFFSETS.get(date_range, RANGE_OFFSETS["1Y"])
-        japan, index = _slice(japan, start), _slice(index, start)
+        japan, index, yen = _slice(japan, start), _slice(index, start), _slice(yen, start)
         if not japan.empty:
             japan = japan.copy()
             japan["japan_10y_2y_pct"] = (pd.to_numeric(japan["japan_10y"], errors="coerce")
@@ -299,12 +301,16 @@ def build_japan_rates_figure(date_range: str, nikkei: pd.DataFrame | None = None
         _add_trace(fig, japan, "japan_10y_2y_pct", "Japan 10Y−2Y (R1)",
                    width=2.0, dash="dot", yaxis="y2", suffix=" pp")
         _add_trace(fig, index, "close", "Nikkei 225 (R2)", width=2.5, yaxis="y3", suffix=" pts")
+        _add_trace(fig, yen, "jpy_neer", "JPY NEER · BIS (R3)", width=2.5,
+                   dash="dash", yaxis="y4", suffix=" pts · 2020=100")
+    expected = ("Japan 2Y", "Japan 10Y", "Japan 10Y−2Y (R1)", "Nikkei 225 (R2)")
+    if yen_index is not None:
+        expected += ("JPY NEER · BIS (R3)",)
     return _finish_rates_figure(fig, date_range, latest,
-                               ("Japan 2Y", "Japan 10Y", "Japan 10Y−2Y (R1)", "Nikkei 225 (R2)"),
-                               nikkei_axis=True)
+                               expected, nikkei_axis=True, yen_axis=yen_index is not None)
 
 
-def _finish_rates_figure(fig, date_range, latest, expected, nikkei_axis=False):
+def _finish_rates_figure(fig, date_range, latest, expected, nikkei_axis=False, yen_axis=False):
     missing = [name for name in expected if not any(t.name == name for t in fig.data)]
     if missing:
         fig.update_layout(meta={"missing_series": missing})
@@ -352,6 +358,16 @@ def _finish_rates_figure(fig, date_range, latest, expected, nikkei_axis=False):
             yaxis3=dict(title="Nikkei 225 (pts)", overlaying="y", side="right",
                         anchor="free", position=0.995, showgrid=False, fixedrange=True,
                         tickformat=",.0f"),
+        )
+    if yen_axis:
+        fig.update_layout(
+            margin=dict(l=64, r=170, t=74, b=36, pad=2),
+            xaxis=dict(domain=[0.0, 0.82]),
+            yaxis2=dict(anchor="free", position=0.84),
+            yaxis3=dict(position=0.915),
+            yaxis4=dict(title="JPY NEER (index, 2020=100)", overlaying="y", side="right",
+                        anchor="free", position=0.995, showgrid=False, fixedrange=True,
+                        tickformat=".2f"),
         )
     if latest is None:
         fig.add_annotation(text="数据暂不可用", x=0.5, y=0.5,
