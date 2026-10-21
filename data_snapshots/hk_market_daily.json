@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-20T14:28:43.147808+00:00",
+  "updated_at": "2026-10-21T07:09:36.405972+00:00",
   "retention": "rolling 5 years plus one month buffer",
   "policy": "merge fresh observations into last-known-good history; never erase a usable series on fetch failure",
-  "coverage_start": "2021-09-20",
+  "coverage_start": "2021-09-21",
   "coverage_end": "2026-10-20",
   "series": {
     "0700.HK": {
@@ -14,7 +14,7 @@
       "record_count": 1234,
       "coverage_start": "2021-10-11",
       "coverage_end": "2026-10-20",
-      "last_successful_fetch": "2026-10-20T14:28:43.147808+00:00",
+      "last_successful_fetch": "2026-10-21T07:09:36.405972+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -4964,7 +4964,7 @@
       "record_count": 1234,
       "coverage_start": "2021-10-11",
       "coverage_end": "2026-10-20",
-      "last_successful_fetch": "2026-10-20T14:28:43.147808+00:00",
+      "last_successful_fetch": "2026-10-21T07:09:36.405972+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -9914,7 +9914,7 @@
       "record_count": 1234,
       "coverage_start": "2021-10-11",
       "coverage_end": "2026-10-20",
-      "last_successful_fetch": "2026-10-20T14:28:43.147808+00:00",
+      "last_successful_fetch": "2026-10-21T07:09:36.405972+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -14861,17 +14861,13 @@
       "unit": "points",
       "source": "Sina Finance via AKShare",
       "price_basis": "raw_close",
-      "record_count": 1247,
-      "coverage_start": "2021-09-20",
+      "record_count": 1246,
+      "coverage_start": "2021-09-21",
       "coverage_end": "2026-10-20",
-      "last_successful_fetch": "2026-10-20T14:28:43.147808+00:00",
+      "last_successful_fetch": "2026-10-21T07:09:36.405972+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
-        {
-          "observation_date": "2021-09-20",
-          "close": 6271.37012
-        },
         {
           "observation_date": "2021-09-21",
           "close": 6242.60986
