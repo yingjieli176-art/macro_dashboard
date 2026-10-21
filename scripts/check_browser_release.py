@@ -200,6 +200,7 @@ def exercise_legend_axes(page, chart):
         return chart.evaluate(state_js)
 
     def click(name):
+        chart.scroll_into_view_if_needed()
         point = chart.evaluate("""(element,name) => {
             const chart = (""" + INSTANCE_JS + """)(element);
             const model = chart.getModel().getComponent('legend');
