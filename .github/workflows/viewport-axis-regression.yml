@@ -168,6 +168,8 @@ jobs:
         run: python scripts/sync_fred_verified_cache.py --core-only
       - name: Verify newest real Treasury FiscalData TGA observations are reachable
         run: python scripts/sync_tga_daily_snapshot.py --verify-only
+      - name: Verify the completed daily yen market source from this runner
+        run: python scripts/update_yen_market.py
       - name: Run complete regression suite including Asia curves and date controls
         run: python -m unittest discover -s tests -v
 

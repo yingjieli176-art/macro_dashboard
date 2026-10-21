@@ -69,7 +69,9 @@ class YenMarketTests(unittest.TestCase):
         option = {"series": [{"name": "JPY/USD Index (R3)", "data": [["2026-10-16", 63.]]}]}
         self.assertFalse(option_observation_health(option, now="2026-10-19")["stale_names"])
         self.assertEqual(option_observation_health(option, now="2026-10-21")["stale_names"], ["JPY/USD Index (R3)"])
-        reports = audit(now="2026-10-21")
+        from macro_platform.yen_index import MARKET_SNAPSHOT
+        latest = max(row["date"] for row in json.loads(MARKET_SNAPSHOT.read_text())["records"])
+        reports = audit(now=pd.Timestamp(latest) + pd.offsets.BDay(1))
         yen = next(r for r in reports if r["file"] == "jpy_market_daily.json")
-        self.assertEqual(yen["latest_by_name"]["usd_jpy_close"], "2026-10-20")
+        self.assertEqual(yen["latest_by_name"]["usd_jpy_close"], latest)
         self.assertFalse(yen["stale_names"])
