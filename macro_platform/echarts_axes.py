@@ -512,6 +512,8 @@ def option_observation_health(option, *, chart_key="", now=None):
     future_names = []
     stale_details = []
     monthly_names = []
+    due_by_name = {}
+    cadence_by_name = {}
     monthly_chart = chart_key in ("hk_5_range", "hk_6_range")
     for series in option.get("series", []):
         name = str(series.get("name", "Series"))
@@ -538,17 +540,24 @@ def option_observation_health(option, *, chart_key="", now=None):
                 key in name for key in ("M2 ", "M3 ", "Monetary Base", "Money Growth")
             )
         )
-        # Monthly monetary data is normally published at the end of the
-        # following month. Wait until the next publication cycle plus one
-        # week before declaring the previous observation overdue.
-        # Daily feeds get seven weekdays of grace (not an exchange calendar).
-        due = (latest.normalize() + pd.offsets.MonthEnd(2) + pd.Timedelta(days=7)
-               if monthly else latest.normalize() + pd.offsets.BDay(7))
+        # Daily observations must not silently remain a week behind. Weekly
+        # series have their own cadence; monthly data is due after the next
+        # month's publication cycle, with one day of processing allowance.
+        weekly = series.get("observation_cadence") == "weekly" or any(
+            key in name for key in ("WALCL", "WRESBAL", "WTREGEN", "Reserve Balances", "Weekly fallback")
+        )
+        monthly = monthly or series.get("observation_cadence") == "monthly"
+        due = (latest.normalize() + pd.offsets.MonthEnd(2) + pd.Timedelta(days=1)
+               if monthly else latest.normalize() + pd.Timedelta(days=10)
+               if weekly else latest.normalize() + pd.offsets.BDay(2))
+        cadence = "月频" if monthly else "周频" if weekly else "日频"
+        due_by_name[name] = due.strftime("%Y-%m-%d")
+        cadence_by_name[name] = cadence
         if monthly:
             monthly_names.append(name)
         if now > due:
             stale_names.append(name)
-            stale_details.append(f"{name}（截至 {latest:%Y-%m-%d}，距今 {age} 天，{'月频' if monthly else '日/周频'}）")
+            stale_details.append(f"{name}（截至 {latest:%Y-%m-%d}，距今 {age} 天，{cadence}）")
         if age < -1:
             future_names.append(name)
     return {
@@ -557,6 +566,8 @@ def option_observation_health(option, *, chart_key="", now=None):
         "future_names": future_names,
         "stale_details": stale_details,
         "monthly_names": monthly_names,
+        "due_by_name": due_by_name,
+        "cadence_by_name": cadence_by_name,
     }
 
 

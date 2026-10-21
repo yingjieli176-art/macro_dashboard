@@ -142,5 +142,73 @@ class SourceFreshnessTests(unittest.TestCase):
             self.assertEqual(run([git, 'show', 'main:second.json'], remote).stdout, '{"observed":true}')
 
 
+    def test_daily_warns_after_two_weekdays_but_weekly_keeps_its_cadence(self):
+        points = [["2026-10-16", 1.0]]
+        report = option_observation_health({"series": [
+            {"name": "10Y", "data": points},
+            {"name": "Reserve Balances (R1)", "data": points},
+        ]}, now="2026-10-21")
+        self.assertEqual(report["stale_names"], ["10Y"])
+        self.assertEqual(report["due_by_name"]["10Y"], "2026-10-20")
+        self.assertEqual(report["cadence_by_name"]["Reserve Balances (R1)"], "周频")
+        monday = option_observation_health({"series": [{"name": "VIX", "data": points}]}, now="2026-10-19")
+        self.assertFalse(monday["stale_names"])
+
+    def test_hkab_can_advance_when_a_historical_endpoint_times_out(self):
+        from scripts import update_hkma_daily_snapshot as updater
+        today = pd.Timestamp.now(tz="UTC").date()
+        records = [{"end_of_date": d.strftime("%Y-%m-%d"), "hibor_overnight": 2.1,
+                    "hibor_3m": 3.1, "closing_balance": 54000}
+                   for d in pd.date_range(end=pd.Timestamp(today)-pd.Timedelta(days=1), periods=350)]
+        html = f"Rates as at 11:15a.m. Hong Kong Time on {today.isoformat()}. Overnight 2.2 3 Months 3.2 Historical Rates"
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder)/"daily.json"
+            output.write_text(json.dumps({"records": records}))
+            with patch.object(updater, "OUT", output), \
+                 patch.object(updater, "_fetch_recent_pages", side_effect=RuntimeError("transport timed out")) as fetch, \
+                 patch.object(updater, "_optional_latest", return_value=[]), \
+                 patch.object(updater, "_fetch_bytes", return_value=html.encode()):
+                updater.main()
+            payload = json.loads(output.read_text())
+            self.assertEqual(payload["records"][-1]["end_of_date"], today.isoformat())
+            self.assertEqual(payload["records"][-1]["hibor_3m"], 3.2)
+            self.assertEqual(len(payload["records"]), 351)
+            self.assertEqual(len(payload["source_errors"]), 3)
+            self.assertEqual((today - fetch.call_args.args[2]).days, 30)
+
+    def test_market_audit_does_not_silently_accept_a_missing_required_symbol(self):
+        from scripts import audit_source_freshness as checker
+        original = checker.json.loads
+        def missing_hstech(text, *args, **kwargs):
+            data = original(text, *args, **kwargs)
+            if isinstance(data.get("series"), dict) and "HSTECH" in data["series"]:
+                data["series"].pop("HSTECH")
+            return data
+        with patch.object(checker.json, "loads", side_effect=missing_hstech):
+            report = next(r for r in checker.audit(now="2026-10-21") if r["file"] == "hk_market_daily.json")
+        self.assertEqual(report["missing_names"], ["HSTECH"])
+
+
+
+    def test_monthly_backup_retains_main_updates_when_live_transport_fails(self):
+        from scripts import update_censtat_money_supply as backup
+        from io import BytesIO
+        rows = [{"end_of_month": d.strftime("%Y-%m"), "m2_hkd": 100, "m3_hkd": 101}
+                for d in pd.date_range(end="2026-08-01", periods=72, freq="MS")]
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "data_snapshots").mkdir()
+            (root / "data_snapshots/hkma_monetary_statistics.json").write_text(json.dumps({"records": rows}))
+            out = root / "data_snapshots/backup.json"
+            with patch.object(backup, "ROOT", root), patch.object(backup, "OUT", out), \
+                 patch.object(backup.urllib.request, "urlopen", return_value=BytesIO(b'{"dataSet": []}')), \
+                 patch.object(update_hkma_snapshot, "_fetch_proxy_records", side_effect=RuntimeError("timeout")):
+                backup.main()
+            data = json.loads(out.read_text())
+            self.assertEqual(data["coverage_end"], "2026-08")
+            self.assertEqual(data["record_count"], 72)
+            self.assertFalse(data["fresh_fetch_ok"])
+            self.assertEqual(data["fetch_error"], "timeout")
+
 if __name__ == "__main__":
     unittest.main()

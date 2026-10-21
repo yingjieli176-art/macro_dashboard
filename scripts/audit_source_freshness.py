@@ -46,8 +46,10 @@ def audit(root=ROOT, now=None):
     series = [{"name": symbol, "data": [[r["observation_date"], r.get("close")]
                                           for r in node.get("records", [])]}
               for symbol, node in market.get("series", {}).items()]
-    reports.append({"file": "hk_market_daily.json",
-                    **option_observation_health({"series": series}, now=now), "missing_names": []})
+    health = option_observation_health({"series": series}, now=now)
+    reports.append({"file": "hk_market_daily.json", **health,
+                    "missing_names": [symbol for symbol in ("0700.HK", "0388.HK", "^HSI", "HSTECH")
+                                      if symbol not in health["latest_by_name"]]})
     from macro_platform.treasury_cash import read_verified_tga_snapshot
     tga = read_verified_tga_snapshot(root / "data_snapshots" / "treasury_tga_daily.json")
     tga_option = {"series": [{"name": "TGA_DAILY", "data": [[str(row.observation_date), row.TGA_DAILY]
@@ -59,7 +61,7 @@ def audit(root=ROOT, now=None):
                    "DFII5", "DFII10", "T10YIE", "WALCL", "WRESBAL", "RRPONTSYD", "VIXCLS", "VXVCLS", "SP500"):
         payload = json.loads((root / "data_snapshots" / "fred_cache" / f"{symbol}.json").read_text())
         rows = payload.get("records") or []
-        option = {"series": [{"name": symbol, "data": [[r.get("date"), r.get("value")] for r in rows]}]}
+        option = {"series": [{"name": symbol, "observation_cadence": "weekly" if symbol in ("WALCL", "WRESBAL") else "daily", "data": [[r.get("date"), r.get("value")] for r in rows]}]}
         health = option_observation_health(option, now=now)
         reports.append({"file": f"fred_cache/{symbol}.json", **health,
                         "missing_names": [] if symbol in health["latest_by_name"] else [symbol]})
@@ -69,21 +71,26 @@ def audit(root=ROOT, now=None):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", default="source_health.json")
+    parser.add_argument("--only", action="append", help="Audit only these snapshot files (repeatable)")
     args = parser.parse_args()
     reports = audit()
+    if args.only:
+        reports = [report for report in reports if report["file"] in args.only]
+        if not reports:
+            raise SystemExit("No matching source snapshots selected")
     Path(args.output).write_text(json.dumps(reports, ensure_ascii=False, indent=2) + "\n")
-    summary = ["## Actual source observation dates", "", "| Snapshot | Series | Last observation | Status |",
-               "|---|---|---|---|"]
+    summary = ["## Actual source observation dates", "", "| Snapshot | Series | Last observation | Update due by | Status |",
+               "|---|---|---|---|---|"]
     failed = False
     for report in reports:
         for name, day in report["latest_by_name"].items():
             bad = name in report["stale_names"] or name in report["future_names"]
             failed |= bad
-            status = "OVERDUE / invalid future date" if bad else "within publication window"
-            summary.append(f"| {report['file']} | {name} | {day} | {status} |")
+            status = "OVERDUE / invalid future date" if bad else "within cadence limit (not source-latest verification)"
+            summary.append(f"| {report['file']} | {name} | {day} | {report['due_by_name'][name]} | {status} |")
         failed |= bool(report["missing_names"])
         for name in report["missing_names"]:
-            summary.append(f"| {report['file']} | {name} | missing | UNAVAILABLE |")
+            summary.append(f"| {report['file']} | {name} | missing | — | UNAVAILABLE |")
     text = "\n".join(summary) + "\n"
     print(text)
     if os.getenv("GITHUB_STEP_SUMMARY"):

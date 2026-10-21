@@ -214,8 +214,13 @@ def snapshot_health(series_id, now=None):
             raise ValueError("coverage end mismatch")
         # Debt series are monthly/quarterly; market/rate series are daily/weekly.
         tolerance = (550 if series_id == "FYGFDPUN" else
-                     150 if series_id in ("GFDEBTN", "FDHBFRBN", "FDHBFIN", "FDHBPIN") else 14)
-        status = "stale" if (now.normalize() - dates.max()).days > tolerance else "available"
+                     150 if series_id in ("GFDEBTN", "FDHBFRBN", "FDHBFIN", "FDHBPIN") else None)
+        deadline = (dates.max().normalize() + pd.Timedelta(days=tolerance)
+                    if tolerance is not None else
+                    dates.max().normalize() + pd.Timedelta(days=10)
+                    if series_id in ("WALCL", "WRESBAL", "WTREGEN") else
+                    dates.max().normalize() + pd.offsets.BDay(2))
+        status = "stale" if now.normalize() > deadline else "available"
         return {"series_id": series_id, "status": status, "coverage_end": end, "rows": len(records)}
     except (OSError, ValueError, TypeError, KeyError):
         return {"series_id": series_id, "status": "missing_or_invalid", "coverage_end": "", "rows": 0}

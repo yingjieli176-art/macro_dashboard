@@ -2,7 +2,7 @@ name: Update HKMA daily liquidity snapshot
 
 on:
   schedule:
-    - cron: '15 11 * * 1-5'
+    - cron: '23 4-12/2 * * 1-5'
   workflow_dispatch:
   push:
     branches: [main]
@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: hkma-daily-snapshot
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   refresh:
@@ -24,6 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
@@ -58,3 +59,8 @@ jobs:
           fi
           git commit -m "Refresh HKMA daily liquidity snapshot"
           bash scripts/push_snapshot.sh
+
+      - name: Check actual source dates after publishing good observations
+        run: |
+          python -m pip install --disable-pip-version-check pandas plotly
+          python scripts/audit_source_freshness.py --only hkma_banking_liquidity_daily.json

@@ -1,7 +1,7 @@
 name: Refresh official Cboe implied correlation
 on:
   schedule:
-    - cron: '45 23 * * 1-5'
+    - cron: '43 0,2,6,12,22 * * *'
   workflow_dispatch:
   push:
     branches: [main]
@@ -14,7 +14,7 @@ permissions:
 
 concurrency:
   group: official-cboe-correlation-data
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   refresh:
@@ -23,6 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
@@ -42,3 +43,8 @@ jobs:
           fi
           git commit -m 'data: update official Cboe implied correlation closes'
           bash scripts/push_snapshot.sh
+
+      - name: Check actual source dates after publishing good observations
+        run: |
+          python -m pip install --disable-pip-version-check pandas plotly
+          python scripts/audit_source_freshness.py --only cor1m_daily.json --only cor3m_daily.json

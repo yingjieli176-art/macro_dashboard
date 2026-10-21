@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import concurrent.futures
 import re
 from html.parser import HTMLParser
 import time
@@ -102,7 +103,7 @@ def _request(url: str, params: dict[str, str], *, timeout: int = 12, attempts: i
     query = urllib.parse.urlencode(params)
     official = f"{url}?{query}"
     proxy = "https://r.jina.ai/http://" + official.removeprefix("https://")
-    candidates = ((proxy, max(timeout, 35)), (official, timeout))
+    candidates = ((official, timeout), (proxy, max(timeout, 20)))
     errors: list[str] = []
 
     for candidate, candidate_timeout in candidates:
@@ -201,20 +202,32 @@ def main() -> None:
     end_day = datetime.now(timezone.utc).date()
     start_day = end_day - timedelta(days=ROLLING_DAYS)
 
-    market_ops = _fetch_recent_pages(MARKET_OP_URL, "end_of_day", start_day)
-    monetary_base = _fetch_recent_pages(BASE_URL, "end_of_day", start_day)
-    hibor = _fetch_recent_pages(
-        HIBOR_URL,
-        "end_of_day",
-        start_day,
-        {"segment": "hibor.fixing"},
-    )
-
-    # Best-effort latest enrichment. These add opening balance, T+1 forecast,
-    # current Aggregate Balance and Base Rate when the newer daily-statistics
-    # service is reachable, but are never required for snapshot publication.
-    current_base = _optional_latest(CURRENT_BASE_URL, "end_of_date")
-    interbank = _optional_latest(INTERBANK_URL, "end_of_date")
+    # Durable history is already stored. Refresh a 30-day overlap instead of
+    # downloading 550 days from three endpoints on every intraday poll.
+    history_start = start_day
+    if OUT.exists():
+        saved = json.loads(OUT.read_text(encoding="utf-8")).get("records") or []
+        if len(saved) >= 200:
+            start_day = end_day - timedelta(days=30)
+    source_errors = []
+    def recent(url, extra=None):
+        try:
+            return _fetch_recent_pages(url, "end_of_day", start_day, extra)
+        except Exception as exc:
+            source_errors.append(url.rsplit("/", 1)[-1] + ": " + str(exc))
+            print("::warning::Source failed; preserving its history:", source_errors[-1], flush=True)
+            return []
+    # Independent historical transports cannot block a current HIBOR fixing.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
+        tasks = [
+            pool.submit(recent, MARKET_OP_URL),
+            pool.submit(recent, BASE_URL),
+            pool.submit(recent, HIBOR_URL, {"segment": "hibor.fixing"}),
+            pool.submit(_optional_latest, CURRENT_BASE_URL, "end_of_date"),
+            pool.submit(_optional_latest, INTERBANK_URL, "end_of_date"),
+        ]
+        market_ops, monetary_base, hibor, current_base, interbank = [job.result() for job in tasks]
+    start_day = history_start
 
     # Persist previously collected official fixings when a source shortens its
     # current export. Missing values from a new response cannot erase history.
@@ -315,10 +328,11 @@ def main() -> None:
         "source_urls": [MARKET_OP_URL, BASE_URL, HIBOR_URL, CURRENT_BASE_URL, INTERBANK_URL, HKAB_URL],
         "transport_fallback": "r.jina.ai relay when direct api.hkma.gov.hk access is unavailable from CI",
         "updated_at": datetime.now(timezone.utc).isoformat(),
+        "source_errors": source_errors,
         "coverage_start": records[0]["end_of_date"],
         "coverage_end": records[-1]["end_of_date"],
         "record_count": len(records),
-        "fetch_strategy": "small newest-first pagesize=20 offset pagination; no date-filter query; proxy/direct transport fallback; optional current enrichment",
+        "fetch_strategy": "30-day incremental overlap over retained history; parallel independent endpoints; direct/relay fallback; HKAB current fixing",
         "records": records,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
