@@ -1,0 +1,82 @@
+name: Check official report transport
+on:
+  push:
+    branches: [codex/cme-transport-check]
+    paths:
+      - .github/workflows/source-transport-check.yml
+      - macro_platform/source_transport.py
+      - scripts/update_copper_snapshot.py
+      - scripts/sync_fred_verified_cache.py
+  pull_request:
+    paths:
+      - .github/workflows/source-transport-check.yml
+      - macro_platform/source_transport.py
+      - scripts/update_copper_snapshot.py
+      - scripts/sync_fred_verified_cache.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pandas plotly requests xlrd curl_cffi==0.13.0
+      - name: Verify transport fallback and observation semantics
+        run: python -m unittest discover -s tests -p test_cme_transport.py -v
+      - name: Read original CME workbook through alternate HTTP transport
+        run: |
+          python - <<'PY'
+          from curl_cffi import requests
+          from scripts.update_copper_snapshot import parse_cme_stocks, CME_STOCKS_URL, _fetch_cme_stocks
+          import pandas as pd, io, time
+          from pathlib import Path
+          actual = _fetch_cme_stocks()
+          print("PRODUCTION CME FETCHER", actual, flush=True)
+          errors = []
+          for suffix in ("", "?_=" + str(int(time.time()))):
+              try:
+                  response = requests.get(CME_STOCKS_URL + suffix, impersonate="chrome", timeout=25,
+                                          headers={"Cache-Control": "no-cache", "Pragma": "no-cache"})
+                  response.raise_for_status()
+                  row = parse_cme_stocks(pd.read_excel(io.BytesIO(response.content), header=None))
+                  print("CME ORIGINAL OBSERVATION", row, flush=True)
+                  print("HTTP METADATA", dict(response.headers), flush=True)
+                  Path("verified-cme.xls").write_bytes(response.content)
+                  assert pd.Timestamp.now().normalize() <= pd.Timestamp(row["date"]) + pd.offsets.BDay(2), row
+                  break
+              except Exception as exc:
+                  errors.append(repr(exc))
+                  print("Transport attempt failed", errors[-1], flush=True)
+          else:
+              raise RuntimeError("Original CME report still unavailable/current: " + str(errors))
+          PY
+      - name: Check original Treasury yield transport without changing observations
+        if: always()
+        run: |
+          python - <<'PY'
+          from curl_cffi import requests
+          import xml.etree.ElementTree as ET
+          from datetime import datetime, timezone
+          url = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml"
+          try:
+              r = requests.get(url, params={"data":"daily_treasury_yield_curve",
+                               "field_tdr_date_value":datetime.now(timezone.utc).year}, impersonate="chrome", timeout=25)
+              r.raise_for_status()
+              root = ET.fromstring(r.text)
+              rows = [{c.tag.rsplit("}",1)[-1]:c.text for c in p} for p in root.iter() if p.tag.rsplit("}",1)[-1]=="properties"]
+              rows = [r for r in rows if r.get("NEW_DATE") and r.get("BC_10YEAR")]
+              print("TREASURY LATEST", max(rows, key=lambda r:r["NEW_DATE"]), flush=True)
+          except Exception as exc:
+              print("::warning::Original Treasury still unavailable:", repr(exc), flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verified-original-cme-report
+          path: verified-cme.xls
+          if-no-files-found: warn

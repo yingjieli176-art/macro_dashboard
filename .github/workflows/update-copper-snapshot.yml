@@ -30,7 +30,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install snapshot dependencies
-        run: python -m pip install --disable-pip-version-check pandas requests beautifulsoup4 lxml xlrd
+        run: python -m pip install --disable-pip-version-check pandas requests beautifulsoup4 lxml xlrd curl_cffi==0.13.0
       - name: Refresh copper snapshot
         run: python scripts/update_copper_snapshot.py
       - name: Validate copper snapshot

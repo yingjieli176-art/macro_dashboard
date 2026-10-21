@@ -232,6 +232,29 @@ def _load_existing_inventory() -> dict[str, dict]:
     return result
 
 
+def _fetch_cme_stocks() -> dict:
+    """Download the original workbook using two independent HTTP clients."""
+    errors = []
+    for browser_transport in (True, False):
+        try:
+            if browser_transport:
+                from curl_cffi import requests as curl_requests
+                response = curl_requests.get(
+                    CME_STOCKS_URL, impersonate="chrome", timeout=25,
+                    headers={"Cache-Control": "no-cache", "Pragma": "no-cache"},
+                )
+                response.raise_for_status()
+            else:
+                response = _request(CME_STOCKS_URL, timeout=25, attempts=1)
+            latest = parse_cme_stocks(pd.read_excel(io.BytesIO(response.content), header=None))
+            print("CME original workbook", latest["date"], "last-modified",
+                  response.headers.get("last-modified"), flush=True)
+            return latest
+        except Exception as exc:
+            errors.append(type(exc).__name__ + ": " + str(exc))
+    raise RuntimeError("CME workbook transports failed: " + " | ".join(errors))
+
+
 def _fetch_comex_inventory() -> pd.DataFrame:
     existing = _load_existing_inventory()
     today = date.today()
@@ -262,8 +285,7 @@ def _fetch_comex_inventory() -> pd.DataFrame:
         time.sleep(0.15)
 
     try:
-        response = _request(CME_STOCKS_URL, timeout=25, attempts=2)
-        latest = parse_cme_stocks(pd.read_excel(io.BytesIO(response.content), header=None))
+        latest = _fetch_cme_stocks()
         existing.setdefault(latest["date"], {"date": latest["date"]}).update(latest)
         print("CME copper inventory", latest, flush=True)
     except Exception as exc:

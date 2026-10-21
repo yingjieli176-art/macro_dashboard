@@ -226,7 +226,7 @@ class SourceFreshnessTests(unittest.TestCase):
         self.assertEqual(len(actual), 21)
         self.assertEqual(actual.iloc[-1]["date"], pd.Timestamp("2026-10-20"))
         self.assertEqual(actual.iloc[-1]["value"], 4.2)
-        self.assertIn("home.treasury.gov", session.get.call_args.args[0])
+        self.assertIn("home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml", session.get.call_args.args[0])
 
     def test_original_cboe_close_keeps_source_date_and_correct_index(self):
         from scripts import sync_fred_verified_cache as sync
