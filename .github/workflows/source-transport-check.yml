@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install pandas requests xlrd curl_cffi==0.13.0
+      - run: python -m pip install pandas plotly requests xlrd curl_cffi==0.13.0
       - name: Verify transport fallback and observation semantics
         run: python -m unittest discover -s tests -p test_cme_transport.py -v
       - name: Read original CME workbook through alternate HTTP transport
