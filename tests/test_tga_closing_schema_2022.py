@@ -55,7 +55,7 @@ class Treasury2022SchemaTests(unittest.TestCase):
         self.assertAlmostEqual(frame.TGA_DAILY.iloc[0], .720)
         self.assertEqual(frame.attrs["total_operating_fallback_dates"], 1)
 
-    def test_verified_snapshot_can_cold_start_without_fabrication(self):
+    def test_recent_download_of_old_observations_is_stale_but_still_readable(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "treasury_tga_daily.json"
             observations = [
@@ -73,7 +73,7 @@ class Treasury2022SchemaTests(unittest.TestCase):
             }), encoding="utf-8")
             result = read_verified_tga_snapshot(path)
             self.assertEqual(len(result), 8)
-            self.assertFalse(result.attrs["is_stale"])
+            self.assertTrue(result.attrs["is_stale"])
             self.assertAlmostEqual(result.TGA_DAILY.iloc[-1], 0.708)
             path.write_text(path.read_text().replace(
                 '"coverage_end": "2026-10-08"', '"coverage_end": "2026-10-01"'
