@@ -62,7 +62,7 @@ jobs:
           from curl_cffi import requests
           import xml.etree.ElementTree as ET
           from datetime import datetime, timezone
-          url = "https://home.treasury.gov/resource-center-data-chart-center/interest-rates/pages/xml"
+          url = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml"
           try:
               r = requests.get(url, params={"data":"daily_treasury_yield_curve",
                                "field_tdr_date_value":datetime.now(timezone.utc).year}, impersonate="chrome", timeout=25)

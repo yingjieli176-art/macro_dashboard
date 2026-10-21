@@ -94,7 +94,7 @@ def _fetch_treasury(session, series_id):
     field = TREASURY_FIELDS[series_id]
     kind = "daily_treasury_real_yield_curve" if series_id.startswith("DFII") else "daily_treasury_yield_curve"
     response = session.get(
-        "https://home.treasury.gov/resource-center-data-chart-center/interest-rates/pages/xml",
+        "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml",
         params={"data": kind, "field_tdr_date_value": datetime.now(timezone.utc).year},
         timeout=FETCH_TIMEOUT,
     )
@@ -209,7 +209,7 @@ def refresh_one(series_id: str):
                 }
                 for symbol in TREASURY_FIELDS:
                     provenance[symbol] = ("U.S. Treasury original constant-maturity yields",
-                                          "https://home.treasury.gov/resource-center-data-chart-center/interest-rates")
+                                          "https://home.treasury.gov/resource-center/data-chart-center/interest-rates")
                 for symbol, filename in CBOE_FILES.items():
                     provenance[symbol] = ("Cboe original daily index close",
                                           "https://cdn.cboe.com/api/global/us_indices/daily_prices/" + filename)
