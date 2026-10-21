@@ -173,6 +173,9 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Run Chromium against the actual app with offline real snapshots
         run: |
+          # Static serving is relative to the entry point. The offline wrapper
+          # lives in tests/, while production app.py serves the root static/.
+          ln -s ../static tests/static
           python -m streamlit run tests/browser_offline_app.py --server.headless=true --global.developmentMode=false > browser-server.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT

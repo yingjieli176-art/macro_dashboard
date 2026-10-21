@@ -125,7 +125,9 @@ def exercise_client_zoom(page, chart):
 def wait_for_page(page, url):
     page.goto(url, wait_until="domcontentloaded", timeout=60000)
     page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 14", timeout=60000)
-    page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
+    page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8 || document.querySelector('[data-testid=macroEChartsChartError]')", timeout=60000)
+    failures = page.locator('.macro-chart-error:not([hidden])').all_text_contents()
+    assert not failures, failures
 
 
 def check_mobile_layout(page):
