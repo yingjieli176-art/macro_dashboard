@@ -15,16 +15,16 @@ class AsiaRatesTraceTests(unittest.TestCase):
         japan = pd.DataFrame({"observation_date": dates, "japan_2y": 1.,
                               "japan_10y": 2., "japan_10y_2y_pct": 1.})
         nikkei = pd.DataFrame({"observation_date": dates, "close": 50000.})
-        yen = pd.DataFrame({"observation_date": dates[::3], "jpy_neer": 69.21})
+        yen = pd.DataFrame({"observation_date": dates[::3], "jpy_usd_index": 69.21})
         with patch("macro_platform.asia_rates.load_japan_gov_yields", return_value=japan):
             for window, offset in RANGE_OFFSETS.items():
                 fig = build_japan_rates_figure(window, nikkei, yen)
                 expected = yen.loc[yen.observation_date >= dates.max() - offset]
                 trace = fig.data[-1]
-                self.assertEqual(trace.name, "JPY NEER · BIS (R3)")
+                self.assertEqual(trace.name, "JPY/USD Index (R3)")
                 self.assertEqual(trace.yaxis, "y4")
                 self.assertEqual(list(trace.x), list(expected.observation_date))
-                self.assertEqual(list(trace.y), list(expected.jpy_neer))
+                self.assertEqual(list(trace.y), list(expected.jpy_usd_index))
                 option = build_adaptive_echarts_option(fig, window)
                 self.assertEqual(option["series"][-1]["yAxisIndex"], 3)
                 self.assertEqual(len(option["yAxis"]), 4)
@@ -36,7 +36,7 @@ class AsiaRatesTraceTests(unittest.TestCase):
         with patch("macro_platform.asia_rates.load_japan_gov_yields", side_effect=TimeoutError):
             fig = build_japan_rates_figure("1Y", index, pd.DataFrame())
         self.assertEqual([t.name for t in fig.data], ["Nikkei 225 (R2)"])
-        self.assertIn("JPY NEER · BIS (R3)", fig.layout.meta["missing_series"])
+        self.assertIn("JPY/USD Index (R3)", fig.layout.meta["missing_series"])
 
     def test_country_overlays_keep_original_dates_values_and_units_in_all_windows(self):
         dates = pd.date_range("2021-10-01", "2026-10-09", freq="B")

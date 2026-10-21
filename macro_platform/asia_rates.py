@@ -280,7 +280,7 @@ def build_china_rates_figure(date_range: str, us_real_yield: pd.DataFrame | None
 
 def build_japan_rates_figure(date_range: str, nikkei: pd.DataFrame | None = None,
                              yen_index: pd.DataFrame | None = None) -> go.Figure:
-    """Japan yields, Nikkei closes (R2), and BIS nominal effective yen index (R3)."""
+    """Japan yields, Nikkei closes (R2), and dollar-based yen index (R3)."""
     try:
         japan = load_japan_gov_yields()
     except Exception:
@@ -301,11 +301,11 @@ def build_japan_rates_figure(date_range: str, nikkei: pd.DataFrame | None = None
         _add_trace(fig, japan, "japan_10y_2y_pct", "Japan 10Y−2Y (R1)",
                    width=2.0, dash="dot", yaxis="y2", suffix=" pp")
         _add_trace(fig, index, "close", "Nikkei 225 (R2)", width=2.5, yaxis="y3", suffix=" pts")
-        _add_trace(fig, yen, "jpy_neer", "JPY NEER · BIS (R3)", width=2.5,
-                   dash="dash", yaxis="y4", suffix=" pts · 2020=100")
+        _add_trace(fig, yen, "jpy_usd_index", "JPY/USD Index (R3)", width=2.5,
+                   dash="dash", yaxis="y4", suffix=" pts · 10000 / USDJPY")
     expected = ("Japan 2Y", "Japan 10Y", "Japan 10Y−2Y (R1)", "Nikkei 225 (R2)")
     if yen_index is not None:
-        expected += ("JPY NEER · BIS (R3)",)
+        expected += ("JPY/USD Index (R3)",)
     return _finish_rates_figure(fig, date_range, latest,
                                expected, nikkei_axis=True, yen_axis=yen_index is not None)
 
@@ -365,7 +365,7 @@ def _finish_rates_figure(fig, date_range, latest, expected, nikkei_axis=False, y
             xaxis=dict(domain=[0.0, 0.82]),
             yaxis2=dict(anchor="free", position=0.84),
             yaxis3=dict(position=0.915),
-            yaxis4=dict(title="JPY NEER (index, 2020=100)", overlaying="y", side="right",
+            yaxis4=dict(title="Yen Index (10000 / USDJPY)", overlaying="y", side="right",
                         anchor="free", position=0.995, showgrid=False, fixedrange=True,
                         tickformat=".2f"),
         )

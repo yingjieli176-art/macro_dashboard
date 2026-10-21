@@ -260,7 +260,7 @@ def exercise_yen_legend(page):
     chart.scroll_into_view_if_needed()
     inspect = """element => {
         const chart=element.__macroChart, option=chart.getOption();
-        const yen=option.series.find(s=>s.name==='JPY NEER · BIS (R3)');
+        const yen=option.series.find(s=>s.name==='JPY/USD Index (R3)');
         const model=chart.getModel().getComponent('legend'), view=chart.getViewOfComponentModel(model);
         const index=model.getData().findIndex(item=>item.get('name')===yen.name);
         const item=view._contentGroup.children().find(item=>item.__legendDataIndex===index);
@@ -279,7 +279,7 @@ def exercise_yen_legend(page):
         state = chart.evaluate(inspect)
         assert state['show'] is expected, state
         assert state['data'] == original['data'] and state['zoom'] == original['zoom']
-    return {'original_bis_observations':True, 'axis_hides_and_restores':True, 'data_and_zoom_preserved':True}
+    return {'completed_fx_observations':True, 'axis_hides_and_restores':True, 'data_and_zoom_preserved':True}
 
 
 def main():
