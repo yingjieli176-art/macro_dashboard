@@ -100,14 +100,18 @@ class EchartsNativeAxes(unittest.TestCase):
         for build in (build_adaptive_echarts_option, build_safe_echarts_option):
             with self.subTest(builder=build.__name__):
                 spec = build(fig, "1M")
-                code = ("import streamlit as st\\n"
+                code = ("import streamlit as st\n"
                         "st.echarts_chart(" + repr(spec) +
-                        ", height=465, width='stretch', key='test', theme=None)\\n")
+                        ", height=465, width='stretch', key='test', theme=None)\n")
+                # AppTest may not expose script compilation failures through
+                # runner.exception. Validate the source and rendered element.
+                compile(code, "<native-echarts-test>", "exec")
                 runner = AppTest.from_string(code, default_timeout=25).run()
                 self.assertFalse(
                     runner.exception,
                     [str(problem.message) for problem in runner.exception],
                 )
+                self.assertEqual(len(runner.get("echarts_chart")), 1)
 
     def test_minimal_native_rescue_keeps_crypto_independent_y_and_real_dates(self):
         dates = pd.date_range("2025-10-01", "2026-10-01", freq="D")
