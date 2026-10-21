@@ -21,6 +21,10 @@ def figure_rows(figures, now=None):
             rows.append({"图表": number, "指标": "整图", "实际观测日": "缺失", "频率": "—", "状态": "待恢复"})
             continue
         for trace in figure.data:
+            if str(trace.name) in {"Strong-side CU 7.75", "Linked Rate Center 7.80", "Weak-side CU 7.85"}:
+                # Convertibility guide levels are annotations, not dated
+                # source observations. Keep the inventory equal to the chart.
+                continue
             dates = []
             xs, ys = getattr(trace, "x", None), getattr(trace, "y", None)
             for day, value in zip(xs if xs is not None else [], ys if ys is not None else []):
