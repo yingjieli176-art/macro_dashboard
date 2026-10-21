@@ -898,18 +898,9 @@ def build_hk_liquidity_figures(
             market_data = market_data.merge(frame, on="observation_date", how="outer")
     if not market_data.empty:
         market_data = market_data.sort_values("observation_date")
-        # Cross-market comparisons must share the same last completed
-        # observation. Never compare a same-day partial HSI/HKEX print against
-        # a prior-day HSTECH close at the right edge of the chart.
-        market_ends = [
-            pd.to_datetime(frame["observation_date"], errors="coerce").max()
-            for frame in (tencent_price, hkex_price, hstech_index, hsi_index)
-            if frame is not None and not frame.empty and "observation_date" in frame.columns
-        ]
-        market_ends = [value for value in market_ends if pd.notna(value)]
-        if market_ends:
-            common_market_end = min(market_ends)
-            market_data = market_data.loc[market_data["observation_date"] <= common_market_end].copy()
+        # These are independent, completed daily series. A slower index
+        # export must not discard another market's valid newer close.
+        # Each trace's actual last observation is disclosed below the chart.
 
     # Monthly HKMA FX is useful for consistency, but DEXHKUS gives a much fresher
     # daily five-year USD/HKD history for the convertibility-band panel.

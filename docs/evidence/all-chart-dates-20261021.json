@@ -1,0 +1,356 @@
+{
+  "checked_at": "2026-10-21T08:59:25.061Z",
+  "charts": [
+    {
+      "chart": 1,
+      "title": "1. Fed Policy Rate & Money Market",
+      "series": [
+        {
+          "name": "IORB",
+          "date": "2026-10-21"
+        },
+        {
+          "name": "ON RRP",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "EFFR",
+          "date": "2026-10-19"
+        },
+        {
+          "name": "SOFR",
+          "date": "2026-10-19"
+        }
+      ]
+    },
+    {
+      "chart": 2,
+      "title": "2. US Treasury Yield Structure · 5Y / 10Y",
+      "series": [
+        {
+          "name": "10Y Nominal",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "10Y Real (R1)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "5Y Real · TIPS (R1)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "10Y Breakeven (R1)",
+          "date": "2026-10-20"
+        }
+      ]
+    },
+    {
+      "chart": 3,
+      "title": "3. Treasury Yield & Curve Spread",
+      "series": [
+        {
+          "name": "3M",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "2Y",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "10Y",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "10Y−2Y (R1)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "10Y−3M (R1)",
+          "date": "2026-10-20"
+        }
+      ]
+    },
+    {
+      "chart": 4,
+      "title": "4. US Liquidity",
+      "series": [
+        {
+          "name": "Net Liquidity",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "Reserve Balances (R1)",
+          "date": "2026-10-14"
+        },
+        {
+          "name": "TGA (R1)",
+          "date": "2026-10-19"
+        },
+        {
+          "name": "ON RRP (R2)",
+          "date": "2026-10-20"
+        }
+      ]
+    },
+    {
+      "chart": 5,
+      "title": "5. HK Money Supply & Market Pulse",
+      "series": [
+        {
+          "name": "M2 YoY",
+          "date": "2026-08-31"
+        },
+        {
+          "name": "M2 MoM",
+          "date": "2026-08-31"
+        },
+        {
+          "name": "Monetary Base YoY",
+          "date": "2026-09-30"
+        },
+        {
+          "name": "Tencent Price (R1)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "HKEX Price (R1)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "HSTECH Index (R2)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "HSI Index (R2)",
+          "date": "2026-10-20"
+        }
+      ]
+    },
+    {
+      "chart": 6,
+      "title": "6. Banking-system Liquidity",
+      "series": [
+        {
+          "name": "Closing Aggregate Balance",
+          "date": "2026-09-30"
+        },
+        {
+          "name": "Outstanding EFBN (R1)",
+          "date": "2026-09-30"
+        },
+        {
+          "name": "EFBN Held by Licensed Banks (R1)",
+          "date": "2026-09-30"
+        }
+      ]
+    },
+    {
+      "chart": 7,
+      "title": "7. HKD Funding",
+      "series": [
+        {
+          "name": "O/N HIBOR",
+          "date": "2026-10-21"
+        },
+        {
+          "name": "3M HIBOR",
+          "date": "2026-10-21"
+        },
+        {
+          "name": "HKMA Base Rate",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "O/N−3M Spread (R1)",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "chart": 8,
+      "title": "8. USD/HKD Convertibility Band & Market",
+      "series": [
+        {
+          "name": "USD/HKD",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "Tencent Price (R1)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "HKEX Price (R1)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "HSTECH Index (R2)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "HSI Index (R2)",
+          "date": "2026-10-20"
+        }
+      ]
+    },
+    {
+      "chart": 9,
+      "title": "9. US Equity Risk & Volatility Structure",
+      "series": [
+        {
+          "name": "VIX",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "VIXEQ",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "S&P 500 (R1)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "VIX3M−VIX (R2)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "VIXEQ−VIX (R2)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "VIXEQ/VIX (R3)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "COR1M (R4)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "COR3M (R4)",
+          "date": "2026-10-20"
+        }
+      ]
+    },
+    {
+      "chart": 10,
+      "title": "10. Precious Metals",
+      "series": [
+        {
+          "name": "Gold",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "Silver (R1)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "Gold/Silver Ratio (R2)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "Gold Volatility · GVZ (R3)",
+          "date": "2026-10-19"
+        }
+      ]
+    },
+    {
+      "chart": 11,
+      "title": "11. Crypto Market",
+      "series": [
+        {
+          "name": "BTC · USD",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "ETH · USD · R1",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "ETH/BTC 强弱 · R2",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "BTC 30D 实际波动率 · R3",
+          "date": "2026-10-20"
+        }
+      ]
+    },
+    {
+      "chart": 12,
+      "title": "12. Copper Flow & COMEX–LME Spread",
+      "series": [
+        {
+          "name": "COMEX 库存",
+          "date": "2026-10-19"
+        },
+        {
+          "name": "LME 库存",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "LME 3M 铜价 (R1)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "COMEX HG 换算价 (R1)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "COMEX−LME 3M 价差 (R2)",
+          "date": "2026-10-20"
+        }
+      ]
+    },
+    {
+      "chart": 13,
+      "title": "13. China Government Yields & US 5Y Real Yield",
+      "series": [
+        {
+          "name": "China 2Y",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "China 10Y",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "US 5Y Real · TIPS",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "China 10Y−2Y (R1)",
+          "date": "2026-10-20"
+        }
+      ]
+    },
+    {
+      "chart": 14,
+      "title": "14. Japan Government Yields & Nikkei 225 & Yen Index",
+      "series": [
+        {
+          "name": "Japan 2Y",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "Japan 10Y",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "Japan 10Y−2Y (R1)",
+          "date": "2026-10-20"
+        },
+        {
+          "name": "Nikkei 225 (R2)",
+          "date": "2026-10-21"
+        },
+        {
+          "name": "JPY/USD Index (R3)",
+          "date": "2026-10-20"
+        }
+      ]
+    }
+  ],
+  "market_overview_count": 8,
+  "watchlist_count": 11,
+  "news_last_checked": "2026-10-21 17:00:57+08:00"
+}

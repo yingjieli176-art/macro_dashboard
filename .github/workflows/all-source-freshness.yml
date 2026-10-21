@@ -1,0 +1,45 @@
+name: Verify all dashboard source dates
+on:
+  schedule:
+    - cron: '37 */3 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/probe_all_sources.py
+      - .github/workflows/all-source-freshness.yml
+permissions:
+  contents: write
+concurrency:
+  group: full-dashboard-source-dates
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt akshare xlrd curl_cffi==0.13.0
+      - name: Compare every configured source with its own observation calendar
+        run: python scripts/probe_all_sources.py --output data_snapshots/all_source_freshness.json --strict
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: complete-source-date-comparison
+          path: data_snapshots/all_source_freshness.json
+      - name: Publish verification results including unresolved sources
+        if: always()
+        run: |
+          test -s data_snapshots/all_source_freshness.json || exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data_snapshots/all_source_freshness.json
+          git diff --cached --quiet && exit 0
+          git commit -m 'data: record complete source freshness verification'
+          bash scripts/push_snapshot.sh

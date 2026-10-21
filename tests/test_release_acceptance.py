@@ -90,7 +90,11 @@ class ReleaseAcceptance(unittest.TestCase):
         get = Mock(return_value=response)
         ns = load_functions({"get_yahoo_daily_history"}, {
             "pd": pd, "http_get": get,
-            "completed_daily_closes": completed_daily_closes,
+            # Repository histories can now include today's completed HK close.
+            # This fixture has no session metadata, so use a deterministic
+            # later clock instead of depending on the machine's wall clock.
+            "completed_daily_closes": lambda node: completed_daily_closes(
+                node, now=pd.Timestamp(records[-1]["observation_date"]) + pd.Timedelta(days=2)),
         })
         # Intentionally no requests global: production removed that import.
         frame = ns["get_yahoo_daily_history"]("0700.HK")

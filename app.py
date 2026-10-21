@@ -50,6 +50,7 @@ load_correlation_snapshot = getattr(
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
 from macro_platform.yen_index import load_yen_market_index
+from macro_platform.freshness_overview import render_freshness_overview
 from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
 from macro_platform.market_history import completed_daily_closes
 # Keep startup-compatible with older data.py during Streamlit Cloud rolling
@@ -82,7 +83,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-21-yen-fresh-r56"
+CHART_BUILD = "2026-10-21-all-source-freshness-r57"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1093,6 +1094,7 @@ def _apply_watchlist_quote_rows(symbols, rows, requested, manual=False, progress
         if progress is not None:
             progress.caption(f"刷新中… {completed}/{len(requested)}")
     st.session_state["_watchlist_quotes_snapshot"] = snapshot
+    st.session_state["_watchlist_last_poll"] = time.time()
     if manual:
         st.session_state["_watchlist_refresh_result"] = {
             "completed_at": datetime.now(DASHBOARD_TZ).strftime("%m-%d %H:%M:%S"),
@@ -1196,8 +1198,11 @@ def render_market_groups(defer_initial=False):
 st.markdown('<div id="market-overview" class="section-anchor"></div><div class="section-kicker">MARKET OVERVIEW</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">市场概览</div><div class="section-description">美股、港股与 A 股主要指数</div>', unsafe_allow_html=True)
 
-@st.fragment(key="market_overview")
+@st.fragment(run_every=60, key="market_overview")
 def render_market_overview(defer_initial=False):
+    if st.session_state.get("_market_overview_started"):
+        defer_initial = False
+    st.session_state["_market_overview_started"] = True
     _, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with refresh_col:
         if st.button("↻ 刷新行情", key="refresh_market_overview", use_container_width=True):
@@ -1315,12 +1320,12 @@ def _cancel_search(key):
 st.markdown('<div id="watchlist" class="section-anchor"></div><div class="section-kicker">WATCHLIST</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">自选观察</div>', unsafe_allow_html=True)
 
-@st.fragment(key="watchlists")
+@st.fragment(run_every=60, key="watchlists")
 def render_watchlists(defer_initial=False):
     pending = st.session_state.get("_watchlist_refresh_pending", False)
     info_col, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
     with info_col:
-        st.markdown('<div class="watch-toolbar">自选股票与指数 · 可添加或删除</div>', unsafe_allow_html=True)
+        st.markdown('<div class="watch-toolbar">自选股票与指数 · 可添加或删除 · 每 60 秒检查报价</div>', unsafe_allow_html=True)
     with refresh_col:
         refresh_slot = st.empty()
         if pending:
@@ -1331,6 +1336,13 @@ def render_watchlists(defer_initial=False):
     status_slot = st.empty()
     symbols = _watchlist_symbols()
     snapshot = st.session_state.get("_watchlist_quotes_snapshot", {})
+    now = time.time()
+    last_poll = st.session_state.setdefault("_watchlist_last_poll", now)
+    if not pending and now - last_poll >= 60:
+        # Refresh only this fragment's symbols; preserve user controls and
+        # manual refresh results, even when a quote provider is unavailable.
+        _apply_watchlist_quote_rows(symbols, _fetch_quote_rows(symbols), symbols)
+        snapshot = st.session_state.get("_watchlist_quotes_snapshot", {})
     if pending or ((not defer_initial or st.session_state.pop("_watchlist_added_pending", False)) and any(symbol not in snapshot for symbol in symbols)):
         try:
             with st.spinner("正在获取自选行情…"):
@@ -3007,7 +3019,12 @@ def _publish_late_dashboard_result(key, value):
 @st.fragment(run_every=2, key="source_completion")
 def _poll_source_completion():
     if time.monotonic() > st.session_state.get("_source_watch_until", 0):
-        return
+        # A long-open page still needs to notice new repository snapshots.
+        # After startup, check only file metadata once per minute.
+        now = time.monotonic()
+        if now - st.session_state.get("_last_source_revision_check", 0) < 60:
+            return
+        st.session_state["_last_source_revision_check"] = now
     pending = st.session_state.get("_late_dashboard_jobs", {})
     ready = False
     for future, key in list(pending.items()):
@@ -3029,6 +3046,18 @@ def _poll_source_completion():
 
 
 _poll_source_completion()
+
+@st.fragment(run_every=60, key="all_source_freshness")
+def _render_all_source_freshness(figures):
+    rows = []
+    for label, symbol in MARKET_SYMBOLS.items():
+        row = st.session_state.get("_market_quotes_snapshot", {}).get(label, {})
+        rows.append({"模块": "市场概览", "代码": symbol, "报价说明": _quote_meta(row, _symbol_market(symbol))})
+    for symbol, row in st.session_state.get("_watchlist_quotes_snapshot", {}).items():
+        rows.append({"模块": "自选", "代码": symbol, "报价说明": _quote_meta(row, _symbol_market(symbol))})
+    render_freshness_overview(figures, quote_rows=rows, news=_read_existing_news_snapshot())
+
+_render_all_source_freshness(macro_figures)
 
 st.markdown('<div id="news" class="section-anchor"></div><div class="section-kicker">NEWS</div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">📰 7×24 重点财经快讯</div>', unsafe_allow_html=True)
