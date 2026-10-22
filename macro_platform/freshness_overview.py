@@ -80,19 +80,13 @@ def source_rows(path=SOURCE_REPORT):
 def render_freshness_overview(figures, *, quote_rows=None, news=None):
     import streamlit as st
     plotted = figure_rows(figures)
-    checked, sources = source_rows()
-    with st.expander(f"全站数据时效 · 14 张图 / {len(plotted)} 条曲线", expanded=False):
-        st.caption("实际观测日是数据所属日期。在发布周期内不等于已追到源站最新值；源站核对失败会明确列为未核实。")
-        st.dataframe(pd.DataFrame(plotted), hide_index=True, height=380, width="stretch")
-        st.markdown("**独立数据源核对**")
-        if checked:
-            st.caption("源站核对截至 " + checked + "；此表按定时核对更新，页面曲线日期以上表为准。")
-            st.dataframe(pd.DataFrame(sources), hide_index=True, height=380, width="stretch")
-        else:
-            st.info("尚无源站核对记录；不能据此声称全站已追到最新。")
+    with st.expander(f"数据最新时间 · 14 张图 / {len(plotted)} 条曲线", expanded=False):
+        st.dataframe(pd.DataFrame(plotted)[["图表", "指标", "实际观测日"]],
+                     hide_index=True, height=380, width="stretch")
         if quote_rows:
             st.markdown("**市场概览与自选报价**")
             st.dataframe(pd.DataFrame(quote_rows), hide_index=True, height=260, width="stretch")
-        if news:
-            st.caption("财经快讯最近拉取：" + str(news.get("updated_at") or "未取得") +
-                       "；每 60 秒检查。最新稿件时间与最近拉取时间分开显示。")
+        items = (news or {}).get("items") or []
+        times = [str(item["time"]) for item in items if item.get("time")]
+        if times:
+            st.caption("最新快讯时间：" + times[0])

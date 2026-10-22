@@ -1,3 +1,4 @@
+import time
 """Test loading helpers without running the dashboard's top-level network I/O."""
 import ast
 import uuid
@@ -35,7 +36,7 @@ def load_helpers():
     constants = [node for node in tree.body if isinstance(node, ast.Assign)
                  and any(isinstance(target, ast.Name) and target.id in {"DEFAULT_CHART_RANGE", "CHART_BUILD", "MARKET_SYMBOLS"} for target in node.targets)]
     namespace = {
-        "__file__": str(source), "st": st, "pd": pd, "go": go,
+        "__file__": str(source), "st": st, "pd": pd, "go": go, "time": time,
         "logging": logging, "uuid": uuid,
         "math": math, "IncompleteObservedBundle": IncompleteObservedBundle,
         "Path": Path, "ThreadPoolExecutor": ThreadPoolExecutor,

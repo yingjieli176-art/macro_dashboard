@@ -65,6 +65,14 @@ def fred(symbol):
             if node is not None:
                 records.append({child.tag.rsplit("}",1)[-1]:child.text for child in node})
         return latest(pd.DataFrame(records),"NEW_DATE",TREASURY_FIELDS[symbol]),url
+    if symbol in ("WALCL", "WRESBAL"):
+        from scripts.sync_fred_verified_cache import _fetch_h41_current
+        frame = _fetch_h41_current(requests.Session(), symbol)
+        return latest(frame, "date", "value"), "https://www.federalreserve.gov/releases/h41/current/h41.htm"
+    if symbol in ("RRPONTSYAWARD", "RRPONTSYD"):
+        from scripts.sync_fred_verified_cache import _fetch_reverse_repo
+        frame = _fetch_reverse_repo(requests.Session(), symbol)
+        return latest(frame, "date", "value"), "https://markets.newyorkfed.org/api/rp/results/search.json"
     if symbol in ("IORB", "EFFR", "SOFR"):
         try:
             frame = _fetch_primary(requests.Session(), symbol)

@@ -83,7 +83,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-21-all-source-freshness-r57"
+CHART_BUILD = "2026-10-22-latest-observations-r58"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2217,12 +2217,6 @@ def _show_macro_plot_health(fig, option, element_key):
             st.caption("实际观测日：" + " · ".join(
                 f"{name} {day}" for name, day in dates.items()
             ))
-        if report.get("stale_names"):
-            st.warning("部分数据未及时更新（使用最后有效观测，非实时）：" +
-                       " · ".join(report.get("stale_details") or report["stale_names"]))
-        st.caption("时效检查：日频超过 2 个工作日、周频超过 10 天会告警；实际观测日保留源站日期。")
-        if report.get("monthly_names"):
-            st.caption("月度数据按公布周期判断时效，观测日为统计月末；未公布的月份保持空缺。")
         if report.get("future_names"):
             st.warning("发现超前观测日期，请检查数据源：" +
                        " · ".join(report["future_names"]))
@@ -2740,7 +2734,8 @@ def _safe_macro_build(label, builder):
 def _macro_snapshot_revision():
     """Invalidate constructed figures when a repository snapshot is replaced."""
     folder = Path(__file__).resolve().parent / "data_snapshots"
-    revision = []
+    # Live-only daily feeds must refresh even without a snapshot commit.
+    revision = [("live_refresh", int(time.time() // 300))]
     # Include FRED's verified nested last-good cache when a scheduled
     # GitHub sync replaces observations, not only top-level market JSONs.
     for path in sorted(folder.rglob("*.json")):
@@ -3050,11 +3045,15 @@ _poll_source_completion()
 @st.fragment(run_every=60, key="all_source_freshness")
 def _render_all_source_freshness(figures):
     rows = []
+    def add(module, symbol, row):
+        _, quote_ts = _quote_session_context(row, _symbol_market(symbol))
+        when = (datetime.fromtimestamp(quote_ts, DASHBOARD_TZ).strftime("%Y-%m-%d %H:%M:%S HKT")
+                if quote_ts is not None else "未取得")
+        rows.append({"模块": module, "代码": symbol, "最新报价时间": when})
     for label, symbol in MARKET_SYMBOLS.items():
-        row = st.session_state.get("_market_quotes_snapshot", {}).get(label, {})
-        rows.append({"模块": "市场概览", "代码": symbol, "报价说明": _quote_meta(row, _symbol_market(symbol))})
+        add("市场概览", symbol, st.session_state.get("_market_quotes_snapshot", {}).get(label, {}))
     for symbol, row in st.session_state.get("_watchlist_quotes_snapshot", {}).items():
-        rows.append({"模块": "自选", "代码": symbol, "报价说明": _quote_meta(row, _symbol_market(symbol))})
+        add("自选", symbol, row)
     render_freshness_overview(figures, quote_rows=rows, news=_read_existing_news_snapshot())
 
 _render_all_source_freshness(macro_figures)

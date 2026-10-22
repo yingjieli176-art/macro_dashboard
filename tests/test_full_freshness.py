@@ -16,6 +16,36 @@ from scripts import sync_fred_verified_cache as sync
 
 
 class FullFreshness(unittest.TestCase):
+    def test_reverse_repo_uses_only_completed_overnight_results_and_dollar_units(self):
+        operations = [{"operationType": "Reverse Repo", "term": "Overnight", "auctionStatus": "Results",
+                       "operationDate": f"2026-09-{day:02d}", "totalAmtAccepted": 237_000_000,
+                       "details": [{"percentAwardRate": 3.75}]} for day in range(1,21)]
+        for operation_type, term, status in (("Repo", "Overnight", "Results"),
+                                              ("Reverse Repo", "Term", "Results"),
+                                              ("Reverse Repo", "Overnight", "Announcement")):
+            operations.append(dict(operations[0], operationType=operation_type, term=term, auctionStatus=status,
+                                   operationDate="2026-10-01", totalAmtAccepted=999_000_000_000))
+        payload={"repo":{"operations":operations}}
+        amounts=sync._reverse_repo_frame(payload,"RRPONTSYD")
+        rates=sync._reverse_repo_frame(payload,"RRPONTSYAWARD")
+        self.assertEqual(amounts.date.max(),pd.Timestamp("2026-09-20"))
+        self.assertAlmostEqual(amounts.value.iloc[-1],.237)
+        self.assertEqual(rates.value.iloc[-1],3.75)
+        payload["repo"]["operations"][0]["details"].append({"percentAwardRate":4.0})
+        with self.assertRaises(ValueError):sync._reverse_repo_frame(payload,"RRPONTSYAWARD")
+
+    def test_h41_reserve_balances_keeps_weekly_average_instead_of_wednesday_level(self):
+        html="""<table><thead><tr><th rowspan="2">Reserve balances</th>
+        <th>Averages of daily figures</th><th>Wednesday Oct 14, 2026</th></tr>
+        <tr><th>Week ended Oct 14, 2026</th><th>Wednesday Oct 14, 2026</th></tr></thead>
+        <tbody><tr><td>Reserve balances with Federal Reserve Banks</td><td>3022140</td><td>3030854</td></tr></tbody></table>
+        <table><thead><tr><th>Assets, liabilities, and capital</th><th>Eliminations from consolidation</th>
+        <th>Wednesday Oct 14, 2026</th></tr></thead>
+        <tbody><tr><td>Total assets</td><td>0</td><td>6755639</td></tr></tbody></table>"""
+        self.assertEqual(sync._h41_current_frame(html,"WRESBAL").value.iloc[0],3022140)
+        self.assertEqual(sync._h41_current_frame(html,"WALCL").value.iloc[0],6755639)
+        with self.assertRaises(ValueError):sync._h41_current_frame(html.replace("Week ended","Other"),"WRESBAL")
+
     def test_fred_api_fallback_keeps_dates_and_does_not_leak_request_details(self):
         frame=pd.DataFrame({"date":pd.to_datetime(["2026-10-20"]),"value":[4.]})
         with patch('scripts.probe_all_sources.get',side_effect=TimeoutError('export unavailable')), \
@@ -24,10 +54,10 @@ class FullFreshness(unittest.TestCase):
             # errors must still remain errors rather than becoming success.
             import requests
             with patch('scripts.probe_all_sources.get',side_effect=requests.Timeout('export unavailable')):
-                self.assertEqual(fred('WALCL')[0],'2026-10-20')
+                self.assertEqual(fred('T10YIE')[0],'2026-10-20')
         with patch('scripts.probe_all_sources.get',side_effect=requests.Timeout('export unavailable')), \
              patch.object(sync,'_fetch_api',side_effect=RuntimeError('secret-bearing-request-url')):
-            row=check(('WALCL',[4],'weekly','2026-10-14',lambda:fred('WALCL')))
+            row=check(('T10YIE',[2],'daily','2026-10-19',lambda:fred('T10YIE')))
         self.assertEqual(row['status'],'unverified')
         self.assertNotIn('secret-bearing',row['error'])
 
@@ -46,6 +76,15 @@ class FullFreshness(unittest.TestCase):
         self.assertEqual(state["hk_5_range_time_window"],"1M")
         ns["_poll_source_completion"]()
         ui.rerun.assert_called_once()
+
+    def test_long_open_live_feeds_expire_without_a_snapshot_change(self):
+        from test_dashboard_loading import load_helpers
+        ns=load_helpers()
+        with patch.object(ns["time"],"time",return_value=3000):before=ns["_macro_snapshot_revision"]()
+        with patch.object(ns["time"],"time",return_value=3299):same=ns["_macro_snapshot_revision"]()
+        with patch.object(ns["time"],"time",return_value=3300):after=ns["_macro_snapshot_revision"]()
+        self.assertEqual(before,same)
+        self.assertNotEqual(before,after)
 
     def test_market_and_watchlist_have_automatic_refresh_fragments(self):
         source=Path(__file__).resolve().parents[1]/"app.py"

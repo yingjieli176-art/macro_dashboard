@@ -2,7 +2,7 @@ name: Update copper market snapshot
 
 on:
   schedule:
-    - cron: '31 0,6,12,18,22 * * *'
+    - cron: '31 0-6,12,18,22 * * *'
   workflow_dispatch:
   push:
     branches: [main]
