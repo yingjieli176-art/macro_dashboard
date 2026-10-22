@@ -59,15 +59,8 @@ def chart_state(chart):
             rect.applyTransform(handle.getComputedTransform());
             return {x:rect.x+rect.width/2, y:rect.y+rect.height/2};
         });
-        const toolbox = instance.getViewOfComponentModel(model.getComponent('toolbox'));
-        const feature = typeof toolbox._features.get === 'function' ?
-            toolbox._features.get('dataZoom') : toolbox._features.dataZoom;
-        const icon = feature.model.iconPaths.zoom;
-        const iconRect = icon.getBoundingRect().clone();
-        iconRect.applyTransform(icon.getComputedTransform());
         return {zoom: model.getComponent('dataZoom').getPercentRange(), axes,
-                handles,
-                box_icon: {x:iconRect.x+iconRect.width/2, y:iconRect.y+iconRect.height/2},
+                handles, toolbox: !!model.getComponent('toolbox'),
                 grid: {x:grid.x, y:grid.y, width:grid.width, height:grid.height},
                 width:instance.getWidth(), height:instance.getHeight()};
     }""")
@@ -93,6 +86,11 @@ def assert_visible_axes(state):
 def exercise_client_zoom(page, chart):
     chart.scroll_into_view_if_needed()
     before = chart_state(chart)
+    assert before['toolbox'] is False, 'Removed zoom/back/reset toolbar is still present'
+    tools = chart.locator('xpath=..').locator('.macro-chart-tools button')
+    assert tools.count() == 2
+    assert tools.nth(0).get_attribute('aria-label') == 'Download as PNG'
+    assert tools.nth(1).get_attribute('aria-label') == 'Fullscreen'
     box = chart.bounding_box()
     grid = before["grid"]
     start, end = before["zoom"]
@@ -107,21 +105,7 @@ def exercise_client_zoom(page, chart):
     slider = chart_state(chart)
     assert slider["zoom"][0] > start+.1, (before, slider)
     assert_visible_axes(slider)
-    # Hit the existing zoom feature's real icon, including the native theme's
-    # padding/item gap. Hard-coded guesses can accidentally click restore/back.
-    icon = slider['box_icon']
-    page.mouse.click(box["x"]+icon['x'], box["y"]+icon['y'])
-    page.mouse.move(box["x"]+grid["x"]+grid["width"]*.2,
-                    box["y"]+grid["y"]+grid["height"]*.25)
-    page.mouse.down()
-    page.mouse.move(box["x"]+grid["x"]+grid["width"]*.8,
-                    box["y"]+grid["y"]+grid["height"]*.75, steps=12)
-    page.mouse.up()
-    page.wait_for_timeout(200)
-    selected = chart_state(chart)
-    assert selected["zoom"][1]-selected["zoom"][0] < slider["zoom"][1]-slider["zoom"][0]-.1, (slider, selected)
-    assert_visible_axes(selected)
-    return {"before": before, "slider": slider, "box_zoom": selected}
+    return {"before": before, "slider": slider, "download_and_fullscreen_only": True}
 
 
 def wait_for_page(page, url):
@@ -339,19 +323,6 @@ def exercise_range_legend_persistence(page, prefix, group_index):
     state=chart_for('3M').evaluate(inspect)
     assert all(state['selected'].get(name,True) for name in hidden)
     assert all(axis['show'] for axis in state['axes'])
-    chart=chart_for('3M')
-    for name in hidden:toggle(chart,name)
-    point=chart.evaluate("""element => {
-        const chart=element.__macroChart;
-        const toolbox=chart.getViewOfComponentModel(chart.getModel().getComponent('toolbox'));
-        const feature=typeof toolbox._features.get==='function' ? toolbox._features.get('restore') : toolbox._features.restore;
-        const icon=feature.model.iconPaths.restore;
-        const rect=icon.getBoundingRect().clone();rect.applyTransform(icon.getComputedTransform());
-        return {x:rect.x+rect.width/2,y:rect.y+rect.height/2};
-    }""")
-    box=chart.bounding_box();page.mouse.click(box['x']+point['x'],box['y']+point['y'])
-    page.wait_for_timeout(100)
-    assert all(axis['show'] for axis in chart.evaluate(inspect)['axes']), 'Explicit restore did not show all axes'
     page.get_by_test_id('stButtonGroup').nth(group_index).get_by_text('1Y',exact=True).click()
     assert all(axis['show'] for axis in chart_for('1Y').evaluate(inspect)['axes'])
     return {'hidden_choices_preserved':True,'axis_visibility_preserved':True,
@@ -451,7 +422,7 @@ def main():
             page.screenshot(path='browser_freshness.png')
             freshness.click()
             report['all_source_freshness_overview'] = {'chart_positions':14,'observation_dates_visible':True}
-            report["checks"].append({"slider": True, "box_zoom": True,
+            report["checks"].append({"slider": True, "download_and_fullscreen_only": True,
                                       "processed_observations_fit_independent_axes": True})
             # Two separate browser contexts produce independent Streamlit
             # sessions. Session B must not overwrite session A's range.

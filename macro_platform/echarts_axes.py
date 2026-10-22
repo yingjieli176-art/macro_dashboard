@@ -451,13 +451,6 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             "containLabel": False,
         },
         "tooltip": {"trigger": "axis", "axisPointer": {"type": "cross"}},
-        "toolbox": {
-            "show": True, "right": 10, "top": 0,
-            "feature": {
-                "dataZoom": {"yAxisIndex": "none", "title": {"zoom": "框选缩放", "back": "返回上一步"}},
-                "restore": {"title": "重置缩放"},
-            },
-        },
         "xAxis": {
             "type": "time",
             "scale": True,
