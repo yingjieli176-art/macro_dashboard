@@ -8,21 +8,21 @@
     "lme_price_stock": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
     "cochilco_inventory": "https://boletin.cochilco.cl/productos/boletin.asp?tabla=tabla4_2"
   },
-  "updated_at": "2026-10-21T21:54:33.880866+00:00",
-  "coverage_start": "2021-10-21",
-  "coverage_end": "2026-10-20",
+  "updated_at": "2026-10-22T00:50:39.458756+00:00",
+  "coverage_start": "2021-10-22",
+  "coverage_end": "2026-10-21",
   "counts": {
-    "comex_price": 1257,
-    "comex_stock": 1284,
+    "comex_price": 1256,
+    "comex_stock": 1283,
     "lme_price": 1262,
     "lme_stock": 1295
   },
   "latest_by_field": {
     "comex_price_usd_lb": "2026-10-20",
     "comex_stock_t": "2026-10-20",
-    "lme_cash_usd_t": "2026-10-20",
-    "lme_3m_usd_t": "2026-10-20",
-    "lme_stock_t": "2026-10-20",
+    "lme_cash_usd_t": "2026-10-21",
+    "lme_3m_usd_t": "2026-10-21",
+    "lme_stock_t": "2026-10-21",
     "cochilco_lme_stock_t": "2026-09-30",
     "comex_stock_short_tons": "2026-10-20"
   },
@@ -34,17 +34,6 @@
     "lme_stock_t": "metric tonnes"
   },
   "records": [
-    {
-      "date": "2021-10-21",
-      "comex_price_usd_lb": 4.58650016784668,
-      "comex_stock_t": 50825.0,
-      "lme_cash_usd_t": 10051.0,
-      "lme_3m_usd_t": 9935.0,
-      "lme_stock_t": 165925.0,
-      "cochilco_lme_stock_t": 165925.0,
-      "comex_stock_source": null,
-      "comex_stock_short_tons": null
-    },
     {
       "date": "2021-10-22",
       "comex_price_usd_lb": 4.526000022888184,
@@ -14300,6 +14289,17 @@
       "cochilco_lme_stock_t": null,
       "comex_stock_source": "https://www.cmegroup.com/delivery_reports/Copper_Stocks.xls",
       "comex_stock_short_tons": 794450.0
+    },
+    {
+      "date": "2026-10-21",
+      "comex_price_usd_lb": null,
+      "comex_stock_t": null,
+      "lme_cash_usd_t": 14441.0,
+      "lme_3m_usd_t": 14315.0,
+      "lme_stock_t": 245275.0,
+      "cochilco_lme_stock_t": null,
+      "comex_stock_source": null,
+      "comex_stock_short_tons": null
     }
   ]
 }
