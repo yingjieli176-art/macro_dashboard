@@ -356,13 +356,14 @@ def main():
             report['yen_legend_mobile'] = exercise_yen_legend(page)
             page.set_viewport_size({'width':1440, 'height':1000})
             report['yen_legend_desktop'] = exercise_yen_legend(page)
-            freshness = page.get_by_text(re.compile(r'^全站数据时效 · 14 张图'))
+            freshness = page.get_by_text(re.compile(r'^数据最新时间 · 14 张图'))
             freshness.click()
-            page.get_by_text('独立数据源核对', exact=True).wait_for()
-            assert page.get_by_test_id('stDataFrame').count() >= 3
+            page.get_by_test_id('stDataFrame').first.wait_for()
+            assert page.get_by_test_id('stDataFrame').count() >= 2
+            assert page.get_by_text('独立数据源核对', exact=True).count() == 0
             page.screenshot(path='browser_freshness.png')
             freshness.click()
-            report['all_source_freshness_overview'] = {'chart_positions':14,'source_tables_visible':True}
+            report['all_source_freshness_overview'] = {'chart_positions':14,'observation_dates_visible':True}
             report["checks"].append({"slider": True, "box_zoom": True,
                                       "processed_observations_fit_independent_axes": True})
             # Two separate browser contexts produce independent Streamlit

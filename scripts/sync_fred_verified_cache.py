@@ -122,8 +122,102 @@ def _fetch_treasury(session, series_id):
     return _parse_source(text, series_id)
 
 
+def _h41_current_frame(text, series_id):
+    import re
+    for table in pd.read_html(StringIO(text)):
+        columns = [" | ".join(map(str, col if isinstance(col, tuple) else (col,))) for col in table.columns]
+        labels = table.iloc[:, 0].astype(str).str.strip()
+        if series_id == "WALCL":
+            if not any("Eliminations from consolidation" in col for col in columns):
+                continue
+            rows = table.loc[labels.eq("Total assets")]
+            indices = [i for i, col in enumerate(columns) if col.startswith("Wednesday ")]
+        else:
+            rows = table.loc[labels.eq("Reserve balances with Federal Reserve Banks")]
+            indices = [i for i, col in enumerate(columns)
+                       if col.startswith("Averages of daily figures") and "Week ended" in col]
+        if len(rows) != 1 or len(indices) != 1:
+            continue
+        index = indices[0]
+        match = re.search(r"(?:Wednesday|Week ended)\s+([A-Z][a-z]{2} \d{1,2}, \d{4})", columns[index])
+        if match is None:
+            raise ValueError("H.4.1 observation date unavailable")
+        frame = pd.DataFrame({"date": [pd.Timestamp(match.group(1))],
+                              "value": [float(str(rows.iloc[0, index]).replace(",", ""))]})
+        return validate_observations(frame, series_id, date_column="date", value_column="value")
+    raise ValueError("H.4.1 same-definition observation unavailable for " + series_id)
+
+
+def _fetch_h41_current(session, series_id):
+    response = session.get("https://www.federalreserve.gov/releases/h41/current/h41.htm", timeout=FETCH_TIMEOUT)
+    response.raise_for_status()
+    return _h41_current_frame(response.text, series_id)
+
+
+def _reverse_repo_frame(payload, series_id):
+    records = []
+    for row in payload.get("repo", {}).get("operations", []):
+        if (row.get("operationType") != "Reverse Repo" or row.get("term") != "Overnight"
+                or row.get("auctionStatus") != "Results"):
+            continue
+        details = row.get("details") or []
+        if series_id == "RRPONTSYD":
+            # FRED reports billions of dollars; NY Fed reports dollars.
+            value = float(row["totalAmtAccepted"]) / 1_000_000_000
+        else:
+            rates = {float(d["percentAwardRate"]) for d in details if d.get("percentAwardRate") is not None}
+            if not rates:
+                continue
+            if len(rates) != 1:
+                raise ValueError("Ambiguous overnight reverse repo award rate")
+            value = rates.pop()
+        records.append({"date": row["operationDate"], "value": value})
+    if not records:
+        raise ValueError("No completed overnight reverse repo results")
+    frame = pd.DataFrame(records)
+    if series_id == "RRPONTSYD":
+        frame = frame.groupby("date", as_index=False)["value"].sum()
+    elif frame.groupby("date")["value"].nunique().gt(1).any():
+        raise ValueError("Conflicting award rates for one operation date")
+    return _parse_source("DATE," + series_id + "\n" + "\n".join(
+        f"{row.date},{row.value}" for row in frame.itertuples(index=False)), series_id)
+
+
+def _fetch_reverse_repo(session, series_id):
+    response = session.get("https://markets.newyorkfed.org/api/rp/results/search.json",
+                           params={"startDate": START, "endDate": datetime.now(timezone.utc).strftime("%Y-%m-%d")},
+                           timeout=FETCH_TIMEOUT)
+    response.raise_for_status()
+    return _reverse_repo_frame(response.json(), series_id)
+
+
+def _merge_verified_history(series_id, frame):
+    target = OUT / (series_id + ".json")
+    if target.exists():
+        previous = pd.DataFrame(json.loads(target.read_text()).get("records") or [])
+        if not previous.empty:
+            previous["date"] = pd.to_datetime(previous["date"])
+            frame = pd.concat([previous, frame]).drop_duplicates("date", keep="last").sort_values("date")
+    return validate_observations(frame, series_id, date_column="date", value_column="value", min_rows=12)
+
+
 def _fetch_primary(session, series_id: str) -> pd.DataFrame:
     """Get the *same* directly published official rates if FRED is unreachable."""
+    if series_id in ("WALCL", "WRESBAL"):
+        return _merge_verified_history(series_id, _fetch_h41_current(session, series_id))
+    if series_id in ("RRPONTSYAWARD", "RRPONTSYD"):
+        return _merge_verified_history(series_id, _fetch_reverse_repo(session, series_id))
+    if series_id == "SP500":
+        from macro_platform.market_history import completed_daily_closes
+        response = session.get("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC",
+                               params={"range": "1y", "interval": "1d"},
+                               headers={"User-Agent": "Mozilla/5.0 MacroDashboard/1.0"}, timeout=FETCH_TIMEOUT)
+        response.raise_for_status()
+        node = response.json()["chart"]["result"][0]
+        frame = completed_daily_closes(node).rename(columns={"observation_date": "date", "close": "value"})
+        if frame.empty:
+            raise ValueError("No completed S&P 500 daily closes")
+        return _merge_verified_history(series_id, frame)
     if series_id in TREASURY_FIELDS:
         return _fetch_treasury(session, series_id)
     if series_id in CBOE_FILES:
@@ -203,6 +297,16 @@ def refresh_one(series_id: str):
                 frame = fetcher(session, series_id)
                 primary_source = fetcher is _fetch_primary
                 provenance = {
+                    "WALCL": ("Federal Reserve H.4.1 total assets, Wednesday level (USD millions)",
+                              "https://www.federalreserve.gov/releases/h41/current/h41.htm"),
+                    "WRESBAL": ("Federal Reserve H.4.1 reserve balances, weekly average (USD millions)",
+                                "https://www.federalreserve.gov/releases/h41/current/h41.htm"),
+                    "RRPONTSYAWARD": ("Federal Reserve Bank of New York overnight reverse repo results",
+                                      "https://markets.newyorkfed.org/api/rp/results/search.json"),
+                    "RRPONTSYD": ("Federal Reserve Bank of New York overnight reverse repo results (USD billions)",
+                                  "https://markets.newyorkfed.org/api/rp/results/search.json"),
+                    "SP500": ("S&P 500 unadjusted completed closes via Yahoo Finance",
+                              "https://finance.yahoo.com/quote/%5EGSPC/history/"),
                     "IORB": ("Board of Governors of the Federal Reserve System",
                              "https://www.federalreserve.gov/datadownload/Choose.aspx?rel=PRATES"),
                     "EFFR": ("Federal Reserve Bank of New York",

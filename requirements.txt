@@ -1,6 +1,6 @@
-# Deployment refresh for mobile-layout-r52; dependency versions unchanged.
+# Runtime and official H.4.1 source parser dependencies.
 streamlit==1.64.0
 pandas==3.0.6
 plotly==6.9.0
 requests==2.34.2
-
+lxml==6.1.3
