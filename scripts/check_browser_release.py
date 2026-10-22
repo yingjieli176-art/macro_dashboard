@@ -339,8 +339,21 @@ def exercise_range_legend_persistence(page, prefix, group_index):
     state=chart_for('3M').evaluate(inspect)
     assert all(state['selected'].get(name,True) for name in hidden)
     assert all(axis['show'] for axis in state['axes'])
+    chart=chart_for('3M')
+    for name in hidden:toggle(chart,name)
+    point=chart.evaluate("""element => {
+        const chart=element.__macroChart;
+        const toolbox=chart.getViewOfComponentModel(chart.getModel().getComponent('toolbox'));
+        const feature=typeof toolbox._features.get==='function' ? toolbox._features.get('restore') : toolbox._features.restore;
+        const icon=feature.model.iconPaths.restore;
+        const rect=icon.getBoundingRect().clone();rect.applyTransform(icon.getComputedTransform());
+        return {x:rect.x+rect.width/2,y:rect.y+rect.height/2};
+    }""")
+    box=chart.bounding_box();page.mouse.click(box['x']+point['x'],box['y']+point['y'])
+    page.wait_for_timeout(100)
+    assert all(axis['show'] for axis in chart.evaluate(inspect)['axes']), 'Explicit restore did not show all axes'
     page.get_by_test_id('stButtonGroup').nth(group_index).get_by_text('1Y',exact=True).click()
-    chart_for('1Y')
+    assert all(axis['show'] for axis in chart_for('1Y').evaluate(inspect)['axes'])
     return {'hidden_choices_preserved':True,'axis_visibility_preserved':True,
             'reselected_choices_preserved':True,'period_windows':windows,'observations_unchanged':True}
 

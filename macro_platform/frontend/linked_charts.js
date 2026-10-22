@@ -125,7 +125,8 @@ export default function({data, parentElement}) {
       });
     }
     chart.on('restore', () => {
-      selected = copy(base.legend?.selected || {});
+      selected = Object.fromEntries(base.series.map(series =>
+        [series.name, base.legend?.selected?.[series.name] !== false]));
       rememberSelection(); updateLayout();
     });
     chart.on('datazoom', () => {
