@@ -86,7 +86,7 @@ class EchartsNativeAxes(unittest.TestCase):
         self.assertGreaterEqual((end-start).days, 27)
         self.assertLessEqual((end-start).days, 32)
         self.assertTrue(any(v[1] < 1.0 for v in option["series"][0]["data"]))
-        self.assertEqual(option["toolbox"]["feature"]["dataZoom"]["yAxisIndex"], "none")
+        self.assertNotIn("toolbox", option)
 
     def test_native_streamlit_accepts_rich_and_minimal_options(self):
         """Exercise native Streamlit's spec validation, not just a mocked renderer."""
