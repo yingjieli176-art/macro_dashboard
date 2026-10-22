@@ -43,7 +43,16 @@ export default function({data, parentElement}) {
   if (first < last) base.xAxis = {...base.xAxis, min:first, max:last};
   let chart, observer, disposed = false, frame = 0;
   const saved = parentElement.__macroChartState;
-  let selected = copy(saved?.selected || base.legend?.selected || {});
+  // Period switches remount the component, so DOM-local state alone is lost.
+  // Keep only legend choices in this app window, isolated by logical chart.
+  // Zoom remains local: a new period must use its newly requested X window.
+  const legendStates = window.__macroLegendStates ||= new Map();
+  const legendKey = data.legend_state_key;
+  let selected = copy((legendKey && legendStates.get(legendKey)) ||
+    saved?.selected || base.legend?.selected || {});
+  function rememberSelection() {
+    if (legendKey) legendStates.set(legendKey, copy(selected));
+  }
   element.style.height = `${data.height || 465}px`;
 
   function presentation() {
@@ -110,9 +119,16 @@ export default function({data, parentElement}) {
     element.setAttribute('aria-busy', 'false');
     for (const event of ['legendselectchanged','legendselected','legendunselected',
                          'legendselectall','legendinverseselect']) {
-      chart.on(event, params => { selected = copy(params.selected); updateLayout(); });
+      chart.on(event, params => {
+        selected = {...selected, ...copy(params.selected || {})};
+        rememberSelection(); updateLayout();
+      });
     }
-    chart.on('restore', () => { selected = copy(base.legend?.selected || {}); updateLayout(); });
+    chart.on('restore', () => {
+      selected = Object.fromEntries(base.series.map(series =>
+        [series.name, base.legend?.selected?.[series.name] !== false]));
+      rememberSelection(); updateLayout();
+    });
     chart.on('datazoom', () => {
       parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom};
     });

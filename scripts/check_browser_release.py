@@ -282,6 +282,82 @@ def exercise_yen_legend(page):
     return {'completed_fx_observations':True, 'axis_hides_and_restores':True, 'data_and_zoom_preserved':True}
 
 
+def exercise_range_legend_persistence(page, prefix, group_index):
+    """Real legend clicks survive remounts while each requested period changes X."""
+    inspect = """element => {
+        const chart=element.__macroChart, option=chart.getOption();
+        return {selected:option.legend[0].selected,
+            axes:option.yAxis.map(a=>({show:a.show,offset:a.offset})),
+            series:option.series.map(s=>({name:s.name,axis:s.yAxisIndex||0,data:s.data})),
+            zoom:chart.getModel().getComponent('dataZoom').getPercentRange()};
+    }"""
+    def chart_for(period):
+        chart=page.locator(f'.st-key-{prefix}_{period} [data-testid=macroEChartsChart][aria-busy=false]')
+        chart.wait_for(timeout=30000)
+        return chart
+
+    def toggle(chart, name):
+        chart.scroll_into_view_if_needed()
+        point=chart.evaluate("""(element,name) => {
+            const chart=element.__macroChart, model=chart.getModel().getComponent('legend');
+            const index=model.getData().findIndex(item=>item.get('name')===name);
+            const item=chart.getViewOfComponentModel(model)._contentGroup.children()
+                .find(item=>item.__legendDataIndex===index);
+            if(!item) throw new Error('Missing legend target: '+name);
+            const rect=item.getBoundingRect().clone();rect.applyTransform(item.getComputedTransform());
+            return {x:rect.x+rect.width/2,y:rect.y+rect.height/2};
+        }""", name)
+        box=chart.bounding_box()
+        page.mouse.click(box['x']+point['x'],box['y']+point['y'])
+        page.wait_for_timeout(100)
+
+    chart=chart_for('1Y')
+    original=chart.evaluate(inspect)
+    last_axis=max(s['axis'] for s in original['series'])
+    hidden=[s['name'] for s in original['series'] if s['axis']==last_axis]
+    shared=[s['name'] for s in original['series'] if s['axis']==1]
+    if last_axis != 1 and len(shared)>1:
+        hidden.append(shared[0])
+    for name in hidden:toggle(chart,name)
+    expected=chart.evaluate(inspect)
+    assert expected['axes'][last_axis]['show'] is False
+    assert all(expected['selected'][name] is False for name in hidden)
+    if len(shared)>1:assert expected['axes'][1]['show'] is True
+    windows={}
+    for period in ('1M','6M','1Y'):
+        page.get_by_test_id('stButtonGroup').nth(group_index).get_by_text(period,exact=True).click()
+        chart=chart_for(period)
+        state=chart.evaluate(inspect)
+        assert all(state['selected'].get(name) is False for name in hidden), (prefix,period,state['selected'])
+        assert state['axes']==expected['axes'], (prefix,period,state['axes'],expected['axes'])
+        assert state['series']==original['series'], 'Range switch changed raw observations'
+        windows[period]=state['zoom'][1]-state['zoom'][0]
+    assert windows['1M'] < windows['6M'] < windows['1Y'], windows
+    # A later re-selection is also carried into a different month.
+    for name in hidden:toggle(chart,name)
+    page.get_by_test_id('stButtonGroup').nth(group_index).get_by_text('3M',exact=True).click()
+    state=chart_for('3M').evaluate(inspect)
+    assert all(state['selected'].get(name,True) for name in hidden)
+    assert all(axis['show'] for axis in state['axes'])
+    chart=chart_for('3M')
+    for name in hidden:toggle(chart,name)
+    point=chart.evaluate("""element => {
+        const chart=element.__macroChart;
+        const toolbox=chart.getViewOfComponentModel(chart.getModel().getComponent('toolbox'));
+        const feature=typeof toolbox._features.get==='function' ? toolbox._features.get('restore') : toolbox._features.restore;
+        const icon=feature.model.iconPaths.restore;
+        const rect=icon.getBoundingRect().clone();rect.applyTransform(icon.getComputedTransform());
+        return {x:rect.x+rect.width/2,y:rect.y+rect.height/2};
+    }""")
+    box=chart.bounding_box();page.mouse.click(box['x']+point['x'],box['y']+point['y'])
+    page.wait_for_timeout(100)
+    assert all(axis['show'] for axis in chart.evaluate(inspect)['axes']), 'Explicit restore did not show all axes'
+    page.get_by_test_id('stButtonGroup').nth(group_index).get_by_text('1Y',exact=True).click()
+    assert all(axis['show'] for axis in chart_for('1Y').evaluate(inspect)['axes'])
+    return {'hidden_choices_preserved':True,'axis_visibility_preserved':True,
+            'reselected_choices_preserved':True,'period_windows':windows,'observations_unchanged':True}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="http://127.0.0.1:8501")
@@ -356,6 +432,17 @@ def main():
             report['yen_legend_mobile'] = exercise_yen_legend(page)
             page.set_viewport_size({'width':1440, 'height':1000})
             report['yen_legend_desktop'] = exercise_yen_legend(page)
+            report['range_legend_desktop'] = {
+                'liquidity':exercise_range_legend_persistence(page,'normal_liquidity_range_echarts',3),
+                'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',4),
+            }
+            page.set_viewport_size({'width':390,'height':844})
+            page.wait_for_timeout(300)
+            report['range_legend_mobile'] = {
+                'liquidity':exercise_range_legend_persistence(page,'normal_liquidity_range_echarts',3),
+                'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',4),
+            }
+            page.set_viewport_size({'width':1440,'height':1000})
             freshness = page.get_by_text(re.compile(r'^数据最新时间 · 14 张图'))
             freshness.click()
             page.get_by_test_id('stDataFrame').first.wait_for()

@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-22-latest-observations-r58",
+  "release": "2026-10-22-persistent-legend-r59",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
