@@ -2378,7 +2378,7 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=Fal
 
 
 def _show_standard_chart_health(base_fig, element_key, selected_range, reused):
-    st.caption("动态Y轴：时间切换、底部滑块及框选时按可见样本自适应（左右轴分别计算）。")
+    st.caption("动态Y轴：切换时间范围或拖动底部滑块时，按可见样本自适应（左右轴分别计算）。")
     missing_series = list((base_fig.layout.meta or {}).get("missing_series", [])) if isinstance(base_fig.layout.meta, dict) else []
     if missing_series:
         st.warning("以下序列缺少观测数据：" + " · ".join(missing_series))
