@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-22-distinct-risk-colors-r60",
+  "release": "2026-10-22-distinct-risk-colors-r60.1",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",

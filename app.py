@@ -83,7 +83,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-22-distinct-risk-colors-r60"
+CHART_BUILD = "2026-10-22-distinct-risk-colors-r60.1"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1843,8 +1843,13 @@ def build_fig9(date_range):
                  symbol, f"{symbol} (R4)", 2.0, dash, "y5", unit=" pts")
 
     # Fixed contrasting colors remain readable where these two lines overlap.
-    fig.update_traces(line_color="#15803d", selector=dict(name="VIXEQ"))
-    fig.update_traces(line_color="#92400e", selector=dict(name="VIXEQ/VIX (R3)"))
+    risk_colors = {
+        "VIX": "#5070dd", "VIXEQ": "#15803d", "S&P 500 (R1)": "#505372",
+        "VIX3M−VIX (R2)": "#ff994d", "VIXEQ−VIX (R2)": "#0ca8df",
+        "VIXEQ/VIX (R3)": "#92400e", "COR1M (R4)": "#fb628b", "COR3M (R4)": "#785db0",
+    }
+    for name, color in risk_colors.items():
+        fig.update_traces(line_color=color, selector=dict(name=name))
 
     fig.update_layout(
         yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.78),
