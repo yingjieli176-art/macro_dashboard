@@ -129,13 +129,13 @@ def hkma(endpoint, value, date):
 
 
 def asia(country, value):
-    from macro_platform.asia_rates import load_china_gov_yields, load_japan_gov_yields, JAPAN_CURRENT_URL, CHINA_TREASURY_URL
+    from macro_platform.asia_rates import load_china_gov_yields, load_japan_gov_yields, JAPAN_CURRENT_URL, CHINA_TREASURY_URL, _read_japan_csv
     if country == "china":
         params={"type":"RPTA_WEB_TREASURYYIELD","sty":"ALL","st":"SOLAR_DATE","sr":"-1",
                 "token":"894050c76af8597a853f5b408b759f5d","p":1,"ps":10,"pageNo":1,"pageNum":1}
         rows=get(CHINA_TREASURY_URL,params=params).json()["result"]["data"]
         return latest(pd.DataFrame(rows),"SOLAR_DATE",{"china_2y":"EMM00588704","china_10y":"EMM00166466"}[value]),CHINA_TREASURY_URL
-    frame = load_japan_gov_yields() if country == "japan" else load_china_gov_yields()
+    frame = _read_japan_csv(JAPAN_CURRENT_URL, offline=True) if country == "japan" else load_china_gov_yields()
     return latest(frame, "observation_date", value), JAPAN_CURRENT_URL if country == "japan" else CHINA_TREASURY_URL
 
 
@@ -200,7 +200,8 @@ def jobs():
     for country, chart in (("china", 13), ("japan", 14)):
         for tenor in ("2y", "10y"):
             key = f"{country}_{tenor}"
-            add(key, [chart], "daily", None, lambda country=country,key=key: asia(country,key))
+            add(key, [chart], "daily", snapshot("japan_gov_yields.json", "observation_date", key) if country == "japan" else None,
+                lambda country=country,key=key: asia(country,key))
     from macro_platform.treasury_cash import read_verified_tga_snapshot
     saved_tga = read_verified_tga_snapshot(ROOT / "data_snapshots/treasury_tga_daily.json")
     add("TGA_DAILY", [4], "daily", latest(saved_tga, "observation_date", "TGA_DAILY"), tga)

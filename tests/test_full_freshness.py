@@ -16,6 +16,27 @@ from scripts import sync_fred_verified_cache as sync
 
 
 class FullFreshness(unittest.TestCase):
+    def test_japan_cold_start_preserves_newer_snapshot_when_live_release_fails(self):
+        from macro_platform import asia_rates as asia
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/"japan.json"
+            path.write_text(json.dumps({"records":[
+                {"observation_date":"2021-01-04","japan_2y":.1,"japan_10y":.5},
+                {"observation_date":"2026-10-21","japan_2y":1.1,"japan_10y":2.5}]}))
+            with patch.object(asia,"JAPAN_SNAPSHOT",path), \
+                 patch.object(asia,"_read_japan_csv",side_effect=TimeoutError) as get:
+                asia.load_japan_gov_yields.clear()
+                frame=asia.load_japan_gov_yields()
+                self.assertEqual(frame.observation_date.max(),pd.Timestamp("2026-10-21"))
+                self.assertEqual(frame.japan_10y.iloc[-1],2.5)
+                self.assertAlmostEqual(frame.japan_10y_2y_pct.iloc[-1],1.4)
+                get.assert_called_once_with(asia.JAPAN_CURRENT_URL)
+                # A scheduled replacement invalidates the same process cache.
+                payload=json.loads(path.read_text());payload["records"][-1]["japan_10y"]=2.6
+                path.write_text(json.dumps(payload)+" ")
+                self.assertEqual(asia.load_japan_gov_yields().japan_10y.iloc[-1],2.6)
+            asia.load_japan_gov_yields.clear()
+
     def test_reverse_repo_uses_only_completed_overnight_results_and_dollar_units(self):
         operations = [{"operationType": "Reverse Repo", "term": "Overnight", "auctionStatus": "Results",
                        "operationDate": f"2026-09-{day:02d}", "totalAmtAccepted": 237_000_000,

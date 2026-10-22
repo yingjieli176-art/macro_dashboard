@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import io
+import json
+from pathlib import Path
 from typing import Iterable
 
 import pandas as pd
@@ -14,6 +16,8 @@ from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis
 CHINA_TREASURY_URL = "https://datacenter.eastmoney.com/api/data/get"
 JAPAN_CURRENT_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.csv"
 JAPAN_HISTORY_URL = "https://www.mof.go.jp/jgbs/reference/interest_rate/data/jgbcm_all.csv"
+
+JAPAN_SNAPSHOT = Path(__file__).resolve().parents[1] / "data_snapshots/japan_gov_yields.json"
 
 HTTP_HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; MacroDashboard/1.0)",
@@ -143,8 +147,9 @@ def _parse_japanese_date(value: object) -> pd.Timestamp:
         return pd.NaT
 
 
-def _read_japan_csv(url: str) -> pd.DataFrame:
-    response = http_get(url, headers=HTTP_HEADERS, timeout=(3.0, 10.0))
+def _read_japan_csv(url: str, *, offline=False) -> pd.DataFrame:
+    get = requests.get if offline else http_get
+    response = get(url, headers=HTTP_HEADERS, timeout=(12.0, 35.0) if offline else (3.0, 10.0))
     response.raise_for_status()
     raw = pd.read_csv(
         io.BytesIO(response.content),
@@ -171,28 +176,47 @@ def _read_japan_csv(url: str) -> pd.DataFrame:
     return out.dropna(subset=["observation_date"])
 
 
-@observed_cache()
-def load_japan_gov_yields() -> pd.DataFrame:
-    """Daily constant-maturity JGB yields published by Japan's Ministry of Finance."""
-    frames: list[pd.DataFrame] = []
-    for url in (JAPAN_HISTORY_URL, JAPAN_CURRENT_URL):
-        try:
-            frame = _read_japan_csv(url)
-            if not frame.empty:
-                frames.append(frame)
-        except Exception:
-            continue
-
-    if not frames:
+def _read_japan_snapshot() -> pd.DataFrame:
+    try:
+        frame = pd.DataFrame(json.loads(JAPAN_SNAPSHOT.read_text())["records"])
+        frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
+        for field in ("japan_2y", "japan_10y"):
+            frame[field] = pd.to_numeric(frame[field], errors="coerce")
+            frame[field] = frame[field].where(frame[field].between(-10, 30))
+        frame["japan_10y_2y_pct"] = frame["japan_10y"] - frame["japan_2y"]
+        today = pd.Timestamp.now(tz="Asia/Tokyo").tz_localize(None).normalize()
+        return frame.loc[frame.observation_date.le(today)].dropna(subset=["japan_2y", "japan_10y"], how="all")
+    except (OSError, ValueError, TypeError, KeyError):
         return _empty_frame("japan")
 
-    combined = (
-        pd.concat(frames, ignore_index=True)
-        .sort_values("observation_date")
-        .drop_duplicates("observation_date", keep="last")
-    )
+
+@observed_cache(paths=lambda: [JAPAN_SNAPSHOT], ttl=300)
+def load_japan_gov_yields() -> pd.DataFrame:
+    """Prioritize current MOF fixes and keep verified history across cold starts."""
+    snapshot = _read_japan_snapshot()
+    frames = [snapshot] if not snapshot.empty else []
+    # Fetch the current release before spending the shared request budget on
+    # the large archive. A partial archive must not cache September for an hour.
+    current = _empty_frame("japan")
+    try:
+        current = _read_japan_csv(JAPAN_CURRENT_URL)
+    except Exception:
+        pass
     cutoff = _cutoff_date()
-    return combined[combined["observation_date"] >= cutoff].reset_index(drop=True)
+    if snapshot.empty or snapshot.observation_date.min() > cutoff + pd.Timedelta(days=7):
+        try:
+            history = _read_japan_csv(JAPAN_HISTORY_URL)
+            if not history.empty:
+                frames.append(history)
+        except Exception:
+            pass
+    if not current.empty:
+        frames.append(current)
+    if not frames:
+        return _empty_frame("japan")
+    combined = (pd.concat(frames, ignore_index=True).sort_values("observation_date", kind="stable")
+                .drop_duplicates("observation_date", keep="last"))
+    return combined.loc[combined.observation_date.ge(cutoff)].reset_index(drop=True)
 
 
 def _latest_date(frames: Iterable[pd.DataFrame]) -> pd.Timestamp | None:
