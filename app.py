@@ -83,7 +83,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-22-persistent-legend-r59"
+CHART_BUILD = "2026-10-22-distinct-risk-colors-r60"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1836,11 +1836,15 @@ def build_fig9(date_range):
     add_line(fig, data.loc[data["observation_date"].isin(ratio_dates)],
              "VIXEQ-VIX", "VIXEQ−VIX (R2)", 2.2, "dash", "y3", unit=" pts")
     add_line(fig, data.loc[data["observation_date"].isin(ratio_dates)],
-             "VIXEQ/VIX", "VIXEQ/VIX (R3)", 2.2, "dashdot", "y4", unit="x")
+             "VIXEQ/VIX", "VIXEQ/VIX (R3)", 2.2, "dot", "y4", unit="x")
     for symbol, dash in (("COR1M", None), ("COR3M", "dot")):
         source = sources.get(symbol, pd.DataFrame(columns=["observation_date"]))
         add_line(fig, data.loc[data["observation_date"].isin(source["observation_date"])],
                  symbol, f"{symbol} (R4)", 2.0, dash, "y5", unit=" pts")
+
+    # Fixed contrasting colors remain readable where these two lines overlap.
+    fig.update_traces(line_color="#15803d", selector=dict(name="VIXEQ"))
+    fig.update_traces(line_color="#92400e", selector=dict(name="VIXEQ/VIX (R3)"))
 
     fig.update_layout(
         yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.78),

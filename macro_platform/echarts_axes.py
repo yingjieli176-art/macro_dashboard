@@ -216,6 +216,10 @@ def build_safe_echarts_option(fig, date_range="1Y"):
             "yAxisIndex": axis_map[ref],
             "animation": False,
         })
+        color = getattr(getattr(trace, "line", None), "color", None)
+        if isinstance(color, str) and color:
+            series[-1]["lineStyle"] = {"color": color}
+            series[-1]["itemStyle"] = {"color": color}
     if latest is None or not series:
         return None
     axes = []
@@ -352,6 +356,10 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             "emphasis": {"focus": "series"},
             "animation": False,
         })
+        if isinstance(color, str) and color:
+            # ECharts uses itemStyle for legend symbols and tooltip markers.
+            # Match them to the explicit line color instead of its palette.
+            series[-1]["itemStyle"] = {"color": color}
 
     if latest is None or not series:
         return None
