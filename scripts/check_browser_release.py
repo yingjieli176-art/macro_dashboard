@@ -331,17 +331,18 @@ def exercise_range_legend_persistence(page, prefix, group_index):
 
 
 def exercise_security_search(page):
-    page.locator('.st-key-market_search_hk_open_button button').click()
-    search = page.locator('.st-key-market_search_hk input')
+    page.locator('.st-key-market_search_hk_open_button button:visible').filter(has_text='＋ 添加标的').click()
+    search = page.locator('.st-key-market_search_hk input:visible')
     search.fill('小米')
     search.press('Enter')
-    selected = page.locator('.st-key-market_search_hk_result_select')
-    selected.get_by_text('小米集团-W', exact=False).wait_for(timeout=15000)
-    page.locator('.st-key-market_search_hk_confirm_selected button').click()
+    selected = page.locator('.st-key-market_search_hk_result_select').get_by_role('combobox').filter(visible=True)
+    selected.click(timeout=15000)
+    page.get_by_role('option', name='小米集团-W · 1810.HK · HK', exact=True).click()
+    page.locator('.st-key-market_search_hk_confirm_selected button:visible').filter(has_text='确认添加').click()
     card = page.locator('.watch-card-body').filter(has_text='1810.HK')
     card.wait_for(timeout=15000)
     assert '小米集团-W' in card.inner_text()
-    page.locator('[class*="st-key-market_search_hk_delete_"] button').last().click()
+    page.locator('[class*="st-key-market_search_hk_delete_"] button:visible').last().click()
     card.wait_for(state='detached', timeout=15000)
     assert card.count() == 0
     return {'chinese_name':True, 'enter_to_search':True, 'confirmed_symbol':'1810.HK', 'add_remove':True}
