@@ -282,7 +282,7 @@ class EchartsNativeAxes(unittest.TestCase):
                          if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)]
         )
         for name in ["_render_hk_macro_chart"] + [
-            f"render_macro_chart_{i}" for i in range(9, 14)
+            f"render_macro_chart_{i}" for i in range(9, 16)
         ]:
             with self.subTest(renderer=name):
                 calls = [

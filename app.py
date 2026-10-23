@@ -83,7 +83,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-22-simplified-chart-toolbar-r61"
+CHART_BUILD = "2026-10-23-vix-term-structure-r62"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1765,7 +1765,7 @@ def build_fig9(date_range):
     """US equity risk with implied correlation and same-date vol spreads."""
     frames = []
     sources = {}
-    for series_id in ("VIXCLS", "VXVCLS", "SP500"):
+    for series_id in ("VIXCLS", "SP500"):
         try:
             frame = get_fred_series(series_id).copy()
             frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
@@ -1796,7 +1796,7 @@ def build_fig9(date_range):
 
     if not frames:
         fig = go.Figure()
-        for name in ("VIX", "VIXEQ", "S&P 500 (R1)", "VIX3M−VIX (R2)",
+        for name in ("VIX", "VIXEQ", "S&P 500 (R1)",
                      "VIXEQ−VIX (R2)", "VIXEQ/VIX (R3)", "COR1M (R4)", "COR3M (R4)"):
             _mark_missing_series(fig, name)
         return apply_chart_style(fig, chart_height(320, 440), date_range)
@@ -1805,8 +1805,6 @@ def build_fig9(date_range):
     for frame in frames[1:]:
         data = data.merge(frame, on="observation_date", how="outer")
     data = data.sort_values("observation_date")
-    if "VIXCLS" in data.columns and "VXVCLS" in data.columns:
-        data["VIX3M-VIX"] = data["VXVCLS"] - data["VIXCLS"]
     if "VIXEQ" in data.columns and "VIXCLS" in data.columns:
         # Only divide valid observations from the same date; never carry a
         # stale leg forward or turn a zero/invalid denominator into a ratio.
@@ -1825,12 +1823,6 @@ def build_fig9(date_range):
         source = sources.get(column, pd.DataFrame(columns=["observation_date"]))
         add_line(fig, data.loc[data["observation_date"].isin(source["observation_date"])],
                  column, name, width, dash, axis, unit)
-    # A spread requires both volatility legs. Other markets' dates must not
-    # introduce breaks, while a missing leg on its own calendar still must.
-    vol_dates = pd.concat([sources[c]["observation_date"] for c in ("VIXCLS", "VXVCLS")
-                           if c in sources], ignore_index=True) if any(
-                               c in sources for c in ("VIXCLS", "VXVCLS")) else []
-    add_line(fig, data.loc[data["observation_date"].isin(vol_dates)], "VIX3M-VIX", "VIX3M−VIX (R2)", 2.0, "dot", "y3", unit=" pts")
     ratio_dates = [date for column in ("VIXEQ", "VIXCLS") if column in sources
                    for date in sources[column]["observation_date"]]
     add_line(fig, data.loc[data["observation_date"].isin(ratio_dates)],
@@ -1845,7 +1837,7 @@ def build_fig9(date_range):
     # Fixed contrasting colors remain readable where these two lines overlap.
     risk_colors = {
         "VIX": "#5070dd", "VIXEQ": "#15803d", "S&P 500 (R1)": "#505372",
-        "VIX3M−VIX (R2)": "#ff994d", "VIXEQ−VIX (R2)": "#0ca8df",
+        "VIXEQ−VIX (R2)": "#0ca8df",
         "VIXEQ/VIX (R3)": "#92400e", "COR1M (R4)": "#fb628b", "COR3M (R4)": "#785db0",
     }
     for name, color in risk_colors.items():
@@ -1894,6 +1886,38 @@ def build_fig9(date_range):
     return fig
 
 
+def build_fig10(date_range):
+    """One/three-month index volatility and their observed same-date spread."""
+    sources = {}
+    for column in ("VIXCLS", "VXVCLS"):
+        try:
+            frame = get_fred_series(column).copy()
+            frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
+            values = pd.to_numeric(frame[column], errors="coerce")
+            frame[column] = values.where(values.ge(0) & values.lt(float("inf")))
+            sources[column] = frame.dropna(subset=["observation_date"])[["observation_date", column]]
+        except Exception:
+            sources[column] = pd.DataFrame(columns=["observation_date", column])
+    data = sources["VIXCLS"].merge(sources["VXVCLS"], on="observation_date", how="outer").sort_values("observation_date")
+    # A missing or unpublished leg must leave a gap, including explicit nulls.
+    data["VIX3M-VIX"] = data["VXVCLS"] - data["VIXCLS"]
+    data = filter_range(data, date_range)
+    fig = go.Figure()
+    for column, name in (("VIXCLS", "VIX"), ("VXVCLS", "VIX3M")):
+        add_line(fig, data.loc[data["observation_date"].isin(sources[column]["observation_date"])],
+                 column, name, 2.6, unit=" pts")
+    add_line(fig, data, "VIX3M-VIX", "VIX3M−VIX (R1)", 2.3, "dash", "y2", " pts")
+    for name, color in (("VIX", "#5070dd"), ("VIX3M", "#785db0"), ("VIX3M−VIX (R1)", "#ff994d")):
+        fig.update_traces(line_color=color, selector=dict(name=name))
+    fig.update_layout(
+        yaxis_title="VIX / VIX3M · pts",
+        yaxis2=dict(title="R1 · VIX3M−VIX · pts", overlaying="y", side="right",
+                    anchor="free", position=0.99, showgrid=False, zeroline=True,
+                    zerolinecolor="#94a3b8", fixedrange=True),
+    )
+    return apply_chart_style(fig, chart_height(310, 420), date_range)
+
+
 @observed_cache()
 def get_yahoo_daily_history(symbol):
     """Fetch five years of completed daily closes from Yahoo chart API."""
@@ -1924,7 +1948,7 @@ def _load_yahoo_histories(symbols):
     return results
 
 
-def build_fig10(date_range):
+def build_fig11(date_range):
     """Precious metals: gold, silver, gold/silver ratio, and GVZ."""
     frames = []
     histories = _load_yahoo_histories(("GC=F", "SI=F"))
@@ -1990,7 +2014,7 @@ def build_fig10(date_range):
     return fig
 
 
-def build_fig11(date_range):
+def build_fig12(date_range):
     """Crypto market: BTC, ETH, ETH/BTC and 30-day BTC realized volatility."""
     frames = []
     histories = _load_yahoo_histories(("BTC-USD", "ETH-USD"))
@@ -2053,11 +2077,11 @@ def build_fig11(date_range):
     return fig
 
 
-def build_fig12(date_range):
+def build_fig13(date_range):
     return build_copper_flow_spread_figure(date_range)
 
 
-def build_fig13(date_range):
+def build_fig14(date_range):
     try:
         real = get_dfii5()
     except Exception:
@@ -2065,7 +2089,7 @@ def build_fig13(date_range):
     return build_china_rates_figure(date_range, us_real_yield=real)
 
 
-def build_fig14(date_range):
+def build_fig15(date_range):
     try:
         nikkei = _load_yahoo_histories(("^N225",))["^N225"]
     except Exception:
@@ -2106,7 +2130,7 @@ def show_hk_parameter_description(index):
 
 
 US_EQUITY_RISK_DESCRIPTION = (
-    '<b>读取提示：</b>VIX 看指数隐含波动，VIXEQ 看成分股隐含波动；VIXEQ−VIX（R2，波动率点）为同日差值，VIXEQ/VIX（R3，倍）为同日比值，任一数据缺失则留空。VIX3M−VIX（R2）收窄或转负提示近端压力。COR1M / COR3M（R4，指数点）分别反映未来 1 / 3 个月的隐含相关性，使用独立刻度。VIXEQ 和 COR 早期数据包含官方回溯序列。'
+    '<b>读取提示：</b>VIX 看指数隐含波动，VIXEQ 看成分股隐含波动；VIXEQ−VIX（R2，波动率点）为同日差值，VIXEQ/VIX（R3，倍）为同日比值，任一数据缺失则留空。COR1M / COR3M（R4，指数点）分别反映未来 1 / 3 个月的隐含相关性，使用独立刻度。VIXEQ 和 COR 早期数据包含官方回溯序列。'
 )
 
 
@@ -2314,7 +2338,7 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=Fal
     arbitrary drag/slider zoom. ECharts filters visible data client-side and
     rescales every independent Y axis when the X viewport changes.
     """
-    # Uniform Streamlit buttons work for all 14 charts, regardless of
+    # Uniform Streamlit buttons work for all 15 charts, regardless of
     # whether ECharts or Plotly is currently the available renderer.
     # Their parent fragments prevent an X/Y viewport change from rerunning
     # the entire dashboard and refetching unrelated market data.
@@ -2577,7 +2601,7 @@ def render_macro_chart_8(prebuilt_fig=None):
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">9. US Equity Risk & Volatility Structure</div>'
-        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIX3M−VIX / VIXEQ−VIX (R2) · VIXEQ/VIX (R3) · COR1M / COR3M (R4)</div>',
+        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ−VIX (R2) · VIXEQ/VIX (R3) · COR1M / COR3M (R4)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig9("5Y")
@@ -2587,21 +2611,43 @@ def render_macro_chart_9(prebuilt_fig=None):
         ("Cboe VIX", "https://www.cboe.com/tradable-products/vix/"),
         ("Cboe VIXEQ / Dispersion", "https://www.cboe.com/us/indices/dispersion/"),
         ("Cboe COR1M / COR3M", "https://www.cboe.com/us/indices/implied/"),
-        ("FRED VIX3M (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),
         ("FRED S&P 500 (SP500)", "https://fred.stlouisfed.org/series/SP500"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-@st.fragment(key="precious_metals_chart")
+@st.fragment(key="vix_term_structure_chart")
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">10. Precious Metals</div>'
-        '<div class="section-description">Gold · Silver · Gold/Silver Ratio · Gold Volatility GVZ</div>',
+        '<div class="section-title">10. VIX & VIX3M Term Structure</div>'
+        '<div class="section-description">VIX · VIX3M · VIX3M−VIX (R1)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 10", lambda: _cached_macro_figure(10, _macro_snapshot_revision(), CHART_BUILD),
+    )
+    _render_adaptive_macro_figure(base_fig, "vix_term_structure")
+    st.markdown(
+        '<div class="mini-description"><b>读取提示：</b>VIX / VIX3M 分别反映未来约 1 / 3 个月的指数隐含波动率，使用左轴。'
+        'VIX3M−VIX 使用右轴 R1，单位为波动率点；收窄或转负提示近端压力。'
+        '差值仅使用同日有效观测，缺失日期留空。</div>', unsafe_allow_html=True,
+    )
+    add_sources([
+        ("FRED · VIX (VIXCLS)", "https://fred.stlouisfed.org/series/VIXCLS"),
+        ("FRED · VIX3M (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),
+    ])
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+
+@st.fragment(key="precious_metals_chart")
+def render_macro_chart_11(prebuilt_fig=None):
+    st.markdown(
+        '<div class="section-title">11. Precious Metals</div>'
+        '<div class="section-description">Gold · Silver · Gold/Silver Ratio · Gold Volatility GVZ</div>',
+        unsafe_allow_html=True,
+    )
+    base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
+        "Chart 11", lambda: _cached_macro_figure(11, _macro_snapshot_revision(), CHART_BUILD),
     )
     _render_adaptive_macro_figure(base_fig, "precious_metals")
     st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
@@ -2615,14 +2661,14 @@ def render_macro_chart_10(prebuilt_fig=None):
 
 
 @st.fragment(key="crypto_chart")
-def render_macro_chart_11(prebuilt_fig=None):
+def render_macro_chart_12(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">11. Crypto Market</div>'
+        '<div class="section-title">12. Crypto Market</div>'
         '<div class="section-description">BTC · ETH · ETH/BTC · BTC 30D 实际波动率</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
-        "Chart 11", lambda: _cached_macro_figure(11, _macro_snapshot_revision(), CHART_BUILD),
+        "Chart 12", lambda: _cached_macro_figure(12, _macro_snapshot_revision(), CHART_BUILD),
     )
     _render_adaptive_macro_figure(base_fig, "crypto_market")
     st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
@@ -2633,14 +2679,14 @@ def render_macro_chart_11(prebuilt_fig=None):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-@st.fragment(key="macro_chart_12_viewport")
-def render_macro_chart_12(prebuilt_fig=None):
+@st.fragment(key="macro_chart_13_viewport")
+def render_macro_chart_13(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">12. Copper Flow & COMEX–LME Spread</div>'
+        '<div class="section-title">13. Copper Flow & COMEX–LME Spread</div>'
         '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2)</div>',
         unsafe_allow_html=True,
     )
-    base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig12("5Y")
+    base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig13("5Y")
     _render_adaptive_macro_figure(base_fig, "copper_flow")
     st.markdown(
         '<div class="mini-description"><b>读取提示：</b>库存单位为千吨，铜价统一为 USD/t；价差＝COMEX−LME 3M。'
@@ -2659,15 +2705,15 @@ def render_macro_chart_12(prebuilt_fig=None):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-@st.fragment(key="macro_chart_13_viewport")
-def render_macro_chart_13(prebuilt_fig=None):
+@st.fragment(key="macro_chart_14_viewport")
+def render_macro_chart_14(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">13. China Government Yields & US 5Y Real Yield</div>'
+        '<div class="section-title">14. China Government Yields & US 5Y Real Yield</div>'
         '<div class="section-description">China 2Y / 10Y · US 5Y Real · TIPS · China 10Y−2Y (R1)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
-        "Chart 13", lambda: _cached_macro_figure(13, _macro_snapshot_revision(), CHART_BUILD))
+        "Chart 14", lambda: _cached_macro_figure(14, _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(base_fig, "china_rates")
     st.markdown(
         '<div class="mini-description"><b>读取方法：</b>'
@@ -2682,15 +2728,15 @@ def render_macro_chart_13(prebuilt_fig=None):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-@st.fragment(key="macro_chart_14_viewport")
-def render_macro_chart_14(prebuilt_fig=None):
+@st.fragment(key="macro_chart_15_viewport")
+def render_macro_chart_15(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">14. Japan Government Yields & Nikkei 225 & Yen Index</div>'
+        '<div class="section-title">15. Japan Government Yields & Nikkei 225 & Yen Index</div>'
         '<div class="section-description">Japan 2Y / 10Y · Japan 10Y−2Y (R1) · Nikkei 225 (R2) · 日元指数 JPY/USD (R3)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
-        "Chart 14", lambda: _cached_macro_figure(14, _macro_snapshot_revision(), CHART_BUILD))
+        "Chart 15", lambda: _cached_macro_figure(15, _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(base_fig, "japan_rates")
     st.markdown(
         '<div class="mini-description"><b>读取方法：</b>日本国债收益率为 %；10Y−2Y 为右轴 R1，单位百分点。'
@@ -2785,8 +2831,8 @@ def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
     """Reuse successful construction; callers receive isolated figure copies."""
     builders = {
         1: build_fig1, 2: build_fig2, 3: build_fig3, 4: build_fig4,
-        9: build_fig9, 10: build_fig10, 11: build_fig11,
-        12: build_fig12, 13: build_fig13, 14: build_fig14,
+        9: build_fig9, 10: build_fig10, 11: build_fig11, 12: build_fig12,
+        13: build_fig13, 14: build_fig14, 15: build_fig15,
     }
     builder = builders[chart_number]
     figure = builder("5Y")
@@ -2851,6 +2897,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
         12: lambda: cached_chart(12),
         13: lambda: cached_chart(13),
         14: lambda: cached_chart(14),
+        15: lambda: cached_chart(15),
     }
     revision = (snapshot_revision, CHART_BUILD)
     futures = submit_jobs(jobs, name="macro-chart", workers=6, budget=budget, revision=revision)
@@ -2884,7 +2931,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
             results[key] = ([_macro_error_figure(f"Chart {n}") for n in range(5, 9)]
                             if isinstance(key, str) else _macro_error_figure(f"Chart {key}"))
     if on_complete is not None:
-        for number in range(1, 15):
+        for number in range(1, 16):
             if number not in published:
                 if number in (5, 6, 7, 8):
                     value = results["hk5"][number-5]
@@ -2908,6 +2955,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
         12: results[12],
         13: results[13],
         14: results[14],
+        15: results[15],
     }
 
 
@@ -2921,11 +2969,12 @@ st.markdown(
 # Reserve the existing document order, then fill sections as workers finish.
 # Only the main Streamlit thread creates containers, fragments and widgets.
 macro_slots = {}
-for number in range(1, 15):
+for number in range(1, 16):
     section_headers = {
         5: "HONG KONG LIQUIDITY", 9: "US EQUITY RISK",
-        10: "PRECIOUS METALS", 11: "CRYPTO MARKET",
-        12: "INDUSTRIAL METALS · COPPER", 13: "CHINA RATES", 14: "JAPAN RATES & EQUITY",
+        10: "US VOLATILITY TERM STRUCTURE",
+        11: "PRECIOUS METALS", 12: "CRYPTO MARKET",
+        13: "INDUSTRIAL METALS · COPPER", 14: "CHINA RATES", 15: "JAPAN RATES & EQUITY",
     }
     if number in section_headers:
         st.markdown(f'<div class="section-kicker">{section_headers[number]}</div>', unsafe_allow_html=True)
@@ -2937,8 +2986,8 @@ def _render_completed_macro_chart(number, figure):
         1: render_macro_chart_1, 2: render_macro_chart_2, 3: render_macro_chart_3,
         4: render_macro_chart_4, 5: render_macro_chart_5, 6: render_macro_chart_6,
         7: render_macro_chart_7, 8: render_macro_chart_8, 9: render_macro_chart_9,
-        10: render_macro_chart_10, 11: render_macro_chart_11,
-        12: render_macro_chart_12, 13: render_macro_chart_13, 14: render_macro_chart_14,
+        10: render_macro_chart_10, 11: render_macro_chart_11, 12: render_macro_chart_12,
+        13: render_macro_chart_13, 14: render_macro_chart_14, 15: render_macro_chart_15,
     }
     with macro_slots[number]:
         renderers[number](figure)

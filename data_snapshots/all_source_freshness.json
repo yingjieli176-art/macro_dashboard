@@ -30,7 +30,7 @@
     {
       "id": "BTC-USD",
       "charts": [
-        11
+        12
       ],
       "cadence": "daily",
       "repository_latest": null,
@@ -79,7 +79,7 @@
       "id": "DFII5",
       "charts": [
         2,
-        13
+        14
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-22",
@@ -140,7 +140,7 @@
     {
       "id": "ETH-USD",
       "charts": [
-        11
+        12
       ],
       "cadence": "daily",
       "repository_latest": null,
@@ -152,7 +152,7 @@
     {
       "id": "GC=F",
       "charts": [
-        10
+        11
       ],
       "cadence": "daily",
       "repository_latest": null,
@@ -164,7 +164,7 @@
     {
       "id": "GVZCLS",
       "charts": [
-        10
+        11
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-21",
@@ -176,7 +176,7 @@
     {
       "id": "HG=F",
       "charts": [
-        12
+        13
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-21",
@@ -225,7 +225,7 @@
     {
       "id": "JPY=X",
       "charts": [
-        14
+        15
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-21",
@@ -261,7 +261,7 @@
     {
       "id": "SI=F",
       "charts": [
-        10
+        11
       ],
       "cadence": "daily",
       "repository_latest": null,
@@ -321,7 +321,8 @@
     {
       "id": "VIXCLS",
       "charts": [
-        9
+        9,
+        10
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-21",
@@ -345,7 +346,7 @@
     {
       "id": "VXVCLS",
       "charts": [
-        9
+        10
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-22",
@@ -394,7 +395,7 @@
     {
       "id": "^N225",
       "charts": [
-        14
+        15
       ],
       "cadence": "daily",
       "repository_latest": null,
@@ -419,7 +420,7 @@
     {
       "id": "china_10y",
       "charts": [
-        13
+        14
       ],
       "cadence": "daily",
       "repository_latest": null,
@@ -431,7 +432,7 @@
     {
       "id": "china_2y",
       "charts": [
-        13
+        14
       ],
       "cadence": "daily",
       "repository_latest": null,
@@ -455,7 +456,7 @@
     {
       "id": "comex_stock_t",
       "charts": [
-        12
+        13
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-21",
@@ -503,7 +504,7 @@
     {
       "id": "japan_10y",
       "charts": [
-        14
+        15
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-21",
@@ -515,7 +516,7 @@
     {
       "id": "japan_2y",
       "charts": [
-        14
+        15
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-21",
@@ -527,7 +528,7 @@
     {
       "id": "lme_3m_usd_t",
       "charts": [
-        12
+        13
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-21",
@@ -539,7 +540,7 @@
     {
       "id": "lme_stock_t",
       "charts": [
-        12
+        13
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-21",
