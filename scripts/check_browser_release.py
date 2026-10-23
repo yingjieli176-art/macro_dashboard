@@ -244,7 +244,7 @@ def exercise_yen_legend(page):
     chart.scroll_into_view_if_needed()
     inspect = """element => {
         const chart=element.__macroChart, option=chart.getOption();
-        const yen=option.series.find(s=>s.name==='JPY/USD Index (R3)');
+        const yen=option.series.find(s=>s.name==='USD/JPY (R3)');
         const model=chart.getModel().getComponent('legend'), view=chart.getViewOfComponentModel(model);
         const index=model.getData().findIndex(item=>item.get('name')===yen.name);
         const item=view._contentGroup.children().find(item=>item.__legendDataIndex===index);
@@ -329,6 +329,23 @@ def exercise_range_legend_persistence(page, prefix, group_index):
             'reselected_choices_preserved':True,'period_windows':windows,'observations_unchanged':True}
 
 
+
+def exercise_security_search(page):
+    page.locator('.st-key-market_search_hk_open_button button').click()
+    search = page.locator('.st-key-market_search_hk input')
+    search.fill('小米')
+    search.press('Enter')
+    selected = page.locator('.st-key-market_search_hk_result_select')
+    selected.get_by_text('小米集团-W', exact=False).wait_for(timeout=15000)
+    page.locator('.st-key-market_search_hk_confirm_selected button').click()
+    card = page.locator('.watch-card-body').filter(has_text='1810.HK')
+    card.wait_for(timeout=15000)
+    assert '小米集团-W' in card.inner_text()
+    page.locator('[class*="st-key-market_search_hk_delete_"] button').last().click()
+    assert card.count() == 0
+    return {'chinese_name':True, 'enter_to_search':True, 'confirmed_symbol':'1810.HK', 'add_remove':True}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="http://127.0.0.1:8501")
@@ -369,6 +386,7 @@ def main():
             assert page.get_by_text("该图表目前没有可验证的有效观测数据", exact=False).count() > 0
             report["checks"].append({"chart_positions": 15, "painted_native_charts": len(paints),
                                       "missing_positions_are_explicit": True})
+            report["security_search"] = exercise_security_search(page)
             # All five controls exist for every position, including unavailable charts.
             report["controls"] = groups.all_text_contents()
             for index in range(15):
