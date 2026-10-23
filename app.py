@@ -50,6 +50,7 @@ load_correlation_snapshot = getattr(
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
 from macro_platform.yen_index import load_yen_market_index
+from macro_platform.security_search import search_securities
 from macro_platform.freshness_overview import render_freshness_overview
 from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
 from macro_platform.market_history import completed_daily_closes
@@ -83,7 +84,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-23-hstech-etf-watchlist-r63"
+CHART_BUILD = "2026-10-23-search-usdjpy-r64"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1214,44 +1215,8 @@ def render_market_overview(defer_initial=False):
 market_overview_slot = st.container()
 
 @st.cache_data(ttl=20, show_spinner=False)
-def _search_yahoo(market, query):
-    query = str(query or "").strip()
-    if not query:
-        return []
-    quotes = []
-    for search_url in YAHOO_SEARCH_URLS:
-        try:
-            response = http_get(
-                search_url,
-                params={"q": query, "quotesCount": 10, "newsCount": 0},
-                headers={"User-Agent": "Mozilla/5.0"},
-                timeout=3.5,
-            )
-            response.raise_for_status()
-            quotes = response.json().get("quotes") or []
-            if quotes:
-                break
-        except Exception:
-            continue
-    results = []
-    for item in quotes:
-        quote_type = str(item.get("quoteType") or "").upper()
-        allowed_types = {"EQUITY", "INDEX"} if market == "US" else {"EQUITY"}
-        if quote_type not in allowed_types:
-            continue
-        symbol = str(item.get("symbol") or "")
-        if market == "US" and ("." in symbol or symbol.endswith(("=F", "=X"))):
-            continue
-        if market == "HK" and not symbol.upper().endswith(".HK"):
-            continue
-        if market == "CN" and not symbol.upper().endswith((".SS", ".SZ")):
-            continue
-        results.append({
-            "symbol": symbol,
-            "name": item.get("longname") or item.get("shortname") or symbol,
-            "exchange": item.get("exchange") or item.get("exchDisp") or "",
-        })
-    return results[:6]
+def _search_market(market, query):
+    return search_securities(market, query)
 
 def _render_quote_block(item):
     row = _get_watchlist_quote(item["symbol"])
@@ -1306,8 +1271,14 @@ def _open_search(key): st.session_state[f"{key}_open"] = True
 
 def _run_search(key, market):
     query = str(st.session_state.get(key, "")).strip()
-    if not query: return
-    results = _search_yahoo(market, query); st.session_state[f"{key}_results"] = [{**item, "market": market} for item in results]
+    st.session_state.pop(f"{key}_result_select", None)
+    if not query:
+        st.session_state.pop(f"{key}_results", None)
+        st.session_state.pop(f"{key}_search_unavailable", None)
+        return
+    result = _search_market(market, query)
+    st.session_state[f"{key}_results"] = [{**item, "market": market} for item in result["items"]]
+    st.session_state[f"{key}_search_unavailable"] = result["unavailable"]
 
 def _confirm_selected(key):
     results = st.session_state.get(f"{key}_results", []); index = st.session_state.get(f"{key}_result_select")
@@ -1404,7 +1375,7 @@ def render_watchlists(defer_initial=False):
                 st.markdown('<div class="watch-search-note">输入名称或代码，搜索后确认添加。</div>', unsafe_allow_html=True)
                 input_col, search_col, cancel_col = st.columns([5.0, 1.25, 1.25], gap="small")
                 with input_col:
-                    st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed")
+                    st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed", on_change=_run_search, args=(key, market))
                 with search_col:
                     st.button("搜索", key=f"{key}_search_button", use_container_width=True, on_click=_run_search, args=(key, market))
                 with cancel_col:
@@ -1420,6 +1391,8 @@ def render_watchlists(defer_initial=False):
                         label_visibility="collapsed",
                     )
                     st.button("确认添加", key=f"{key}_confirm_selected", use_container_width=True, on_click=_confirm_selected, args=(key,), type="primary")
+                elif st.session_state.get(f"{key}_search_unavailable"):
+                    st.caption("搜索服务暂时不可用，请稍后重试，或直接输入完整代码。")
                 elif st.session_state.get(key, "").strip() and f"{key}_results" in st.session_state:
                     st.caption("没有找到匹配标的，请检查名称或代码。")
 
@@ -2099,7 +2072,7 @@ def build_fig15(date_range):
     try:
         yen = load_yen_market_index()
     except Exception:
-        yen = pd.DataFrame(columns=["observation_date", "jpy_usd_index"])
+        yen = pd.DataFrame(columns=["observation_date", "usd_jpy_close"])
     return build_japan_rates_figure(date_range, nikkei=nikkei, yen_index=yen)
 
 
@@ -2733,8 +2706,8 @@ def render_macro_chart_14(prebuilt_fig=None):
 @st.fragment(key="macro_chart_15_viewport")
 def render_macro_chart_15(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">15. Japan Government Yields & Nikkei 225 & Yen Index</div>'
-        '<div class="section-description">Japan 2Y / 10Y · Japan 10Y−2Y (R1) · Nikkei 225 (R2) · 日元指数 JPY/USD (R3)</div>',
+        '<div class="section-title">15. Japan Government Yields & Nikkei 225 & USD/JPY</div>'
+        '<div class="section-description">Japan 2Y / 10Y · Japan 10Y−2Y (R1) · Nikkei 225 (R2) · USD/JPY (R3)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2743,15 +2716,14 @@ def render_macro_chart_15(prebuilt_fig=None):
     st.markdown(
         '<div class="mini-description"><b>读取方法：</b>日本国债收益率为 %；10Y−2Y 为右轴 R1，单位百分点。'
         '日经 225 使用已完成交易日的收盘点位，独立右轴 R2。'
-        '日元指数采用美元口径，公式为 10000÷USD/JPY，独立右轴 R3；上涨表示日元对美元走强。'
-        '使用 Yahoo 已完成交易日的日线收盘价，每小时检查更新；此为汇率换算指数，区别于 BIS 贸易加权指数，'
-        '口径也不同于 TradingView JXY。各曲线保留实际观测日期，盘中报价不作为已完成日线。</div>',
+        'USD/JPY（美元/日元）使用原始汇率，表示 1 美元兑换多少日元，独立右轴 R3；上涨表示日元对美元走弱。'
+        '使用 Yahoo 已完成交易日的日线收盘价，每小时检查更新。各曲线保留实际观测日期，盘中报价不作为已完成日线。</div>',
         unsafe_allow_html=True,
     )
     add_sources([
         ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
         ("Yahoo Finance · Nikkei 225", "https://finance.yahoo.com/quote/%5EN225/history/"),
-        ("Yahoo · USD/JPY daily closes (Yen Index = 10000 / USDJPY)", "https://finance.yahoo.com/quote/JPY%3DX/history/"),
+        ("Yahoo · USD/JPY daily closes", "https://finance.yahoo.com/quote/JPY%3DX/history/"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 

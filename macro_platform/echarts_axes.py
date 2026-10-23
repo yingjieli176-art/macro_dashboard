@@ -27,6 +27,8 @@ def _axis_unit(axis, traces):
             end = template.find("}", start)
             if end != -1:
                 text += " " + template[end + 1:].split("<extra>", 1)[0].strip().lower()
+    if "usd/jpy" in text or "jpy per usd" in text:
+        return "USD/JPY"
     if "usd/hkd" in text:
         return "USD/HKD"
     if "hk$ bn" in text:
