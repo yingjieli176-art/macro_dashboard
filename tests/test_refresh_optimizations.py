@@ -85,7 +85,7 @@ class RefreshOptimizationTests(unittest.TestCase):
 
     def test_manual_overview_refresh_bypasses_same_time_bucket_cache(self):
         state = {}
-        quotes = {name: {} for name in ("nasdaq", "sp500", "dow", "hsi", "hstech", "sh", "sz", "csi300")}
+        quotes = {name: {} for name in ("nasdaq", "sp500", "dow", "hsi", "hstech", "sh", "sz", "chinext")}
         loader = Mock(return_value=quotes)
         ns = load_functions({"render_market_groups"}, {
             "time": SimpleNamespace(time=lambda: 1000),

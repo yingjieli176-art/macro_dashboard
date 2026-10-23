@@ -173,7 +173,7 @@ class DashboardLoadingTests(unittest.TestCase):
         self.ns["_get_cached_quote"] = fetch
         self.ns["_remember_quote"] = remember
         result = self.ns["_load_market_quotes"](123)
-        self.assertEqual(set(result), {"nasdaq", "sp500", "dow", "hsi", "hstech", "sh", "sz", "csi300"})
+        self.assertEqual(set(result), {"nasdaq", "sp500", "dow", "hsi", "hstech", "sh", "sz", "chinext"})
         self.assertEqual(result["hsi"], {"price": 99, "_stale": True})
 
     def test_history_pair_is_concurrent_and_one_failure_keeps_other_series(self):

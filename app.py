@@ -84,7 +84,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-23-search-usdjpy-r64"
+CHART_BUILD = "2026-10-23-chinext-overview-r65"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1166,7 +1166,7 @@ def _fetch_quote_rows(symbols, refresh_key=None, progress=None):
 MARKET_SYMBOLS = {
     "nasdaq": "^IXIC", "sp500": "^GSPC", "dow": "^DJI",
     "hsi": "^HSI", "hstech": "HSTECH.HK", "sh": "000001.SS",
-    "sz": "399001.SZ", "csi300": "000300.SS",
+    "sz": "399001.SZ", "chinext": "399006.SZ",
 }
 
 
@@ -1190,7 +1190,7 @@ def render_market_groups(defer_initial=False):
     groups = [
         ("🇺🇸 美股", [overview_item("纳斯达克", q["nasdaq"], "US"), overview_item("标普500", q["sp500"], "US"), overview_item("道琼斯", q["dow"], "US")], "three"),
         ("🇭🇰 港股", [overview_item("恒生指数", q["hsi"], "HK"), overview_item("恒生科技", q["hstech"], "HK")], "two"),
-        ("🇨🇳 A股", [overview_item("上证指数", q["sh"], "CN"), overview_item("深证成指", q["sz"], "CN"), overview_item("沪深300", q["csi300"], "CN")], "three"),
+        ("🇨🇳 A股", [overview_item("上证指数", q["sh"], "CN"), overview_item("深证成指", q["sz"], "CN"), overview_item("创业板指数", q.get("chinext", {}), "CN")], "three"),
     ]
     cards = []
     for title, items, grid_class in groups: cards.append(f'<div class="market-group"><div class="market-group-title">{title}</div><div class="market-group-row {grid_class}">' + "".join(items) + '</div></div>')
