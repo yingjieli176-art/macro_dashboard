@@ -168,18 +168,18 @@ def jobs():
         output.append((key, charts, cadence, stored, fetch))
     for symbol, charts in {
         "IORB": [1], "RRPONTSYAWARD": [1], "EFFR": [1], "SOFR": [1],
-        "DGS3MO": [3], "DGS2": [3], "DGS10": [2,3], "DFII5": [2,13], "DFII10": [2], "T10YIE": [2],
-        "WALCL": [4], "WRESBAL": [4], "RRPONTSYD": [4], "VIXCLS": [9], "VXVCLS": [9], "SP500": [9], "GVZCLS": [10],
+        "DGS3MO": [3], "DGS2": [3], "DGS10": [2,3], "DFII5": [2,14], "DFII10": [2], "T10YIE": [2],
+        "WALCL": [4], "WRESBAL": [4], "RRPONTSYD": [4], "VIXCLS": [9,10], "VXVCLS": [10], "SP500": [9], "GVZCLS": [11],
     }.items():
         add(symbol, charts, "weekly" if symbol in ("WALCL", "WRESBAL") else "daily",
             snapshot(f"fred_cache/{symbol}.json", "date", "value"), lambda symbol=symbol: fred(symbol))
     for symbol, charts, filename, field in (
-        ("HKD=X", [8], "usdhkd_daily.json", "value"), ("JPY=X", [14], "jpy_market_daily.json", "usd_jpy_close"),
+        ("HKD=X", [8], "usdhkd_daily.json", "value"), ("JPY=X", [15], "jpy_market_daily.json", "usd_jpy_close"),
         ("0700.HK", [5,8], "hk_market_daily.json", "close"), ("0388.HK", [5,8], "hk_market_daily.json", "close"),
         ("^HSI", [5,8], "hk_market_daily.json", "close"), ("HSTECH", [5,8], "hk_market_daily.json", "close"),
-        ("GC=F", [10], None, "close"), ("SI=F", [10], None, "close"),
-        ("BTC-USD", [11], None, "close"), ("ETH-USD", [11], None, "close"),
-        ("^N225", [14], None, "close"), ("HG=F", [12], "copper_market_daily.json", "comex_price_usd_lb"),
+        ("GC=F", [11], None, "close"), ("SI=F", [11], None, "close"),
+        ("BTC-USD", [12], None, "close"), ("ETH-USD", [12], None, "close"),
+        ("^N225", [15], None, "close"), ("HG=F", [13], "copper_market_daily.json", "comex_price_usd_lb"),
     ):
         key = "date" if filename in ("jpy_market_daily.json", "copper_market_daily.json") else "observation_date"
         stored = snapshot(filename, key, field, symbol if filename == "hk_market_daily.json" else None) if filename else None
@@ -197,7 +197,7 @@ def jobs():
         add(field, [7], "daily", snapshot("hkma_banking_liquidity_daily.json", "end_of_date", field),
             (lambda field=field: hibor(field)) if field.startswith("hibor_") else
             (lambda field=field: hkma("daily-monetary-statistics/daily-figures-interbank-liquidity", field, "end_of_date")))
-    for country, chart in (("china", 13), ("japan", 14)):
+    for country, chart in (("china", 14), ("japan", 15)):
         for tenor in ("2y", "10y"):
             key = f"{country}_{tenor}"
             add(key, [chart], "daily", snapshot("japan_gov_yields.json", "observation_date", key) if country == "japan" else None,
@@ -205,9 +205,9 @@ def jobs():
     from macro_platform.treasury_cash import read_verified_tga_snapshot
     saved_tga = read_verified_tga_snapshot(ROOT / "data_snapshots/treasury_tga_daily.json")
     add("TGA_DAILY", [4], "daily", latest(saved_tga, "observation_date", "TGA_DAILY"), tga)
-    add("comex_stock_t", [12], "daily", snapshot("copper_market_daily.json", "date", "comex_stock_t"), cme)
+    add("comex_stock_t", [13], "daily", snapshot("copper_market_daily.json", "date", "comex_stock_t"), cme)
     for field in ("lme_stock_t", "lme_3m_usd_t"):
-        add(field, [12], "daily", snapshot("copper_market_daily.json", "date", field), lambda field=field: lme(field))
+        add(field, [13], "daily", snapshot("copper_market_daily.json", "date", field), lambda field=field: lme(field))
     return output
 
 

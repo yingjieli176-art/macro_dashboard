@@ -140,15 +140,15 @@ class ConsolidatedRuntime(unittest.TestCase):
     def test_empty_plot_is_not_a_success_cache_entry(self):
         ns = load_helpers()
         figure = go.Figure(go.Scatter(x=["2026-10-09"], y=[4.0]))
-        for number in (1, 2, 3, 4, 9, 10, 11, 12):
+        for number in (1, 2, 3, 4, 9, 10, 11, 12, 13):
             ns[f"build_fig{number}"] = Mock(return_value=figure)
         builder = Mock(side_effect=[go.Figure(), figure])
-        ns["build_fig13"] = builder
         ns["build_fig14"] = builder
+        ns["build_fig15"] = builder
         ns["_cached_macro_figure"].clear()
         with self.assertRaises(ValueError):
-            ns["_cached_macro_figure"](13, (), "recovery")
-        recovered = ns["_cached_macro_figure"](13, (), "recovery")
+            ns["_cached_macro_figure"](14, (), "recovery")
+        recovered = ns["_cached_macro_figure"](14, (), "recovery")
         self.assertEqual(len(recovered.data), 1)
         self.assertEqual(builder.call_count, 2)
 
@@ -291,10 +291,10 @@ class ConsolidatedRuntime(unittest.TestCase):
         ns = load_helpers()
         st.session_state.clear()
         figure = go.Figure(go.Scatter(x=["2026-10-09"], y=[4.0]))
-        for number in (1, 2, 3, 4, 9, 10, 11, 12):
+        for number in (1, 2, 3, 4, 9, 10, 11, 12, 13):
             ns[f"build_fig{number}"] = Mock(return_value=figure)
-        ns["build_fig13"] = Mock(return_value=figure)
         ns["build_fig14"] = Mock(return_value=figure)
+        ns["build_fig15"] = Mock(return_value=figure)
         ns["build_fig5"] = Mock(return_value=[figure]*4)
         for name in ("_cached_macro_figure", "_cached_hk_bundle"):
             ns[name].clear()
@@ -311,7 +311,7 @@ class ConsolidatedRuntime(unittest.TestCase):
                                                lambda key, _: published.append(key))
         self.assertLess(published.index(1) if 1 in published else 99, len(published))
         self.assertIsInstance(published[0], int)
-        self.assertEqual({value for value in published if isinstance(value, int)}, set(range(1, 15)))
+        self.assertEqual({value for value in published if isinstance(value, int)}, set(range(1, 16)))
         self.assertIn("market", published); self.assertIn("watchlist", published)
 
     def test_hk_equity_overlays_preserve_actual_closes_and_separate_index_units(self):

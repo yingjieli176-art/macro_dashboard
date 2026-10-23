@@ -113,7 +113,7 @@ class RefreshOptimizationTests(unittest.TestCase):
             markdown=Mock(), radio=Mock(side_effect=AssertionError("Market display toggle was removed")),
         )
         ns = load_functions(
-            {"_render_hk_macro_chart", "render_macro_chart_10", "render_macro_chart_11"},
+            {"_render_hk_macro_chart", "render_macro_chart_11", "render_macro_chart_12"},
             {
                 "st": st,
                 "HK_CHART_CONFIGS": [
@@ -147,7 +147,7 @@ class RefreshOptimizationTests(unittest.TestCase):
         ns["_render_adaptive_macro_figure"].assert_called_with("rebuilt", "hk_5_range")
 
     def test_metals_and_crypto_initial_render_does_not_duplicate_data_build(self):
-        for no, name in ((10, "precious_metals"), (11, "crypto_market")):
+        for no, name in ((11, "precious_metals"), (12, "crypto_market")):
             with self.subTest(chart=no):
                 ns, state, chart, _ = self._fragment_test_namespace()
                 ns[f"render_macro_chart_{no}"](chart)
@@ -172,12 +172,12 @@ class RefreshOptimizationTests(unittest.TestCase):
                 for dec in method.decorator_list
             ))
         self.assertIn("on_complete=_render_completed_macro_chart", app)
-        for number in (5, 8, 10, 11):
+        for number in (5, 8, 11, 12):
             self.assertIn(f"{number}: render_macro_chart_{number}", app)
         self.assertIn("@st.cache_data(ttl=300", app)
         # Charts 5, 8, 10 and 11 already have fragments; all remaining
         # macro charts now need them to avoid a full rerun on time clicks.
-        for number in (6, 7, 9, 12, 13, 14):
+        for number in (6, 7, 9, 10, 13, 14, 15):
             function = functions[f"render_macro_chart_{number}"]
             self.assertTrue(any(
                 isinstance(decorator, ast.Call)

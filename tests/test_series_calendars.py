@@ -17,7 +17,7 @@ from macro_platform.us_equity_risk import load_vixeq_snapshot
 def builders():
     source = Path(__file__).resolve().parents[1] / "app.py"
     names = {"add_line", "_mark_missing_series", "filter_range",
-             "build_fig1", "build_fig9", "build_fig10", "build_fig11"}
+             "build_fig1", "build_fig9", "build_fig10", "build_fig11", "build_fig12"}
     ns = {"pd": pd, "go": go, "RANGE_OFFSETS": RANGE_OFFSETS,
           "load_correlation_snapshot": lambda symbol: frame([], symbol, []),
           "apply_chart_style": lambda fig, *args: fig,
@@ -37,6 +37,48 @@ def values(trace):
 
 
 class SeriesCalendarIntegrity(unittest.TestCase):
+    def test_term_chart_keeps_source_calendars_and_never_fills_missing_legs(self):
+        ns = builders()
+        sources = {
+            "VIXCLS": frame(["2026-10-01", "2026-10-02", "2026-10-04", "2026-10-05"],
+                            "VIXCLS", [20., None, 24., float("inf")]),
+            "VXVCLS": frame(["2026-10-01", "2026-10-03", "2026-10-04", "2026-10-05"],
+                            "VXVCLS", [22., 23., 21., 25.]),
+            "SP500": frame(["2026-10-01"], "SP500", [6000.]),
+        }
+        requested = []
+        def load(column):
+            requested.append(column)
+            return sources[column].copy()
+        ns["get_fred_series"] = load
+        ns["load_vixeq_snapshot"] = lambda: frame([], "VIXEQ", [])
+        risk = ns["build_fig9"]("1M")
+        self.assertNotIn("VXVCLS", requested)
+        self.assertNotIn("VIX3M−VIX (R2)", {t.name for t in risk.data})
+        for window in RANGE_OFFSETS:
+            term = ns["build_fig10"](window)
+            self.assertEqual([t.name for t in term.data], ["VIX", "VIX3M", "VIX3M−VIX (R1)"])
+            for column, name in (("VIXCLS", "VIX"), ("VXVCLS", "VIX3M")):
+                trace = next(t for t in term.data if t.name == name)
+                self.assertEqual(list(pd.to_datetime(trace.x)), list(sources[column].observation_date))
+            spread = term.data[2]
+            self.assertEqual(list(pd.Series(spread.y).dropna()), [2., -3.])
+            self.assertEqual(list(pd.Series(spread.y).isna()), [False, True, True, False, True])
+            option = build_adaptive_echarts_option(term, window)
+            self.assertEqual([s["yAxisIndex"] for s in option["series"]], [0, 0, 1])
+            self.assertFalse(option["series"][2]["connectNulls"])
+
+    def test_term_chart_reports_failed_leg_without_losing_available_vix(self):
+        ns = builders()
+        def load(column):
+            if column == "VXVCLS":
+                raise OSError("unavailable")
+            return frame(["2026-10-01"], column, [20.])
+        ns["get_fred_series"] = load
+        figure = ns["build_fig10"]("1M")
+        self.assertEqual([t.name for t in figure.data], ["VIX"])
+        self.assertEqual(set(figure.layout.meta["missing_series"]), {"VIX3M", "VIX3M−VIX (R1)"})
+
     def test_equity_correlation_calendars_and_same_date_spread(self):
         ns = builders()
         dates = pd.date_range("2026-10-01", periods=5)
@@ -120,7 +162,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         ns["load_vixeq_snapshot"] = lambda: frame([], "VIXEQ", [])
         fig = ns["build_fig9"]("1M")
         self.assertIn("VIXEQ/VIX (R3)", fig.layout.meta["missing_series"])
-        self.assertEqual({t.name for t in fig.data}, {"VIX", "S&P 500 (R1)", "VIX3M−VIX (R2)"})
+        self.assertEqual({t.name for t in fig.data}, {"VIX", "S&P 500 (R1)"})
 
     def test_real_policy_and_equity_sources_keep_exact_dates_in_all_windows(self):
         ns = builders()
@@ -171,7 +213,8 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         trace = next(t for t in fig.data if t.name == "VIX")
         self.assertEqual(list(pd.to_datetime(trace.x)), list(pd.to_datetime(dates)))
         self.assertTrue(pd.isna(trace.y[1]))
-        spread = next(t for t in fig.data if t.name == "VIX3M−VIX (R2)")
+        term = ns["build_fig10"]("1M")
+        spread = next(t for t in term.data if t.name == "VIX3M−VIX (R1)")
         self.assertEqual(list(pd.Series(spread.y).isna()), [False, True, True, False])
         rendered = next(s for s in build_adaptive_echarts_option(fig, "1M")["series"] if s["name"] == "VIX")
         self.assertIsNone(rendered["data"][1][1])
@@ -184,7 +227,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
             "GC=F": frame(dates, "close", [4000., None, 4100.]),
             "SI=F": frame([dates[0], dates[2]], "close", [50., 51.])}
         ns["get_fred_series"] = lambda c: frame([dates[0], "2026-10-04"], c, [20., 21.])
-        fig = ns["build_fig10"]("1M")
+        fig = ns["build_fig11"]("1M")
         self.assertEqual(len(next(t for t in fig.data if t.name == "Gold").x), 3)
         self.assertEqual(len(next(t for t in fig.data if t.name == "Silver (R1)").x), 2)
         ratio = next(t for t in fig.data if t.name == "Gold/Silver Ratio (R2)")
@@ -203,7 +246,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         ns["_load_yahoo_histories"] = lambda symbols: {
             "BTC-USD": frame(dates, "close", btc),
             "ETH-USD": frame(eth_dates, "close", [4000.] * len(eth_dates))}
-        fig = ns["build_fig11"]("3M")
+        fig = ns["build_fig12"]("3M")
         actual = next(t for t in fig.data if t.name == "BTC 30D 实际波动率 · R3")
         expected = btc.pct_change(fill_method=None).rolling(30, min_periods=20).std() * 365. ** .5 * 100.
         pd.testing.assert_series_equal(values(actual), pd.Series(expected.to_numpy(), index=dates), check_names=False, check_freq=False)

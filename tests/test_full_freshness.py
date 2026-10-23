@@ -118,7 +118,7 @@ class FullFreshness(unittest.TestCase):
 
     def test_inventory_covers_every_chart_and_previously_omitted_live_sources(self):
         config = jobs()
-        self.assertEqual({c for _, charts, _, _, _ in config for c in charts}, set(range(1,15)))
+        self.assertEqual({c for _, charts, _, _, _ in config for c in charts}, set(range(1,16)))
         self.assertTrue({"GC=F","SI=F","BTC-USD","ETH-USD","^N225","china_2y","japan_2y","GVZCLS"}
                         <= {row[0] for row in config})
 
@@ -134,7 +134,7 @@ class FullFreshness(unittest.TestCase):
                                  y=[4.,None], name="10Y−2Y (R1)"))
         monthly = go.Figure(go.Scatter(x=pd.to_datetime(["2026-09-30"]), y=[1.], name="Balance"))
         rows = figure_rows({3:fig,6:monthly}, now="2026-10-21")
-        self.assertEqual(len(rows),14)
+        self.assertEqual(len(rows),15)
         self.assertEqual(next(r for r in rows if r["图表"]==3)["实际观测日"],"2026-10-19")
         self.assertEqual(next(r for r in rows if r["图表"]==6)["频率"],"月频")
         self.assertEqual(next(r for r in rows if r["图表"]==14)["状态"],"待恢复")
