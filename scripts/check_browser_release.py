@@ -342,6 +342,7 @@ def exercise_security_search(page):
     card.wait_for(timeout=15000)
     assert '小米集团-W' in card.inner_text()
     page.locator('[class*="st-key-market_search_hk_delete_"] button').last().click()
+    card.wait_for(state='detached', timeout=15000)
     assert card.count() == 0
     return {'chinese_name':True, 'enter_to_search':True, 'confirmed_symbol':'1810.HK', 'add_remove':True}
 
