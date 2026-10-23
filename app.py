@@ -83,7 +83,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-23-vix-term-structure-r62"
+CHART_BUILD = "2026-10-23-hstech-etf-watchlist-r63"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1257,7 +1257,9 @@ def _render_quote_block(item):
     row = _get_watchlist_quote(item["symbol"])
     price = row.get("price")
     change = row.get("change_pct")
-    price_text = "--" if price is None else f"{price:,.2f}"
+    symbol_code = str(item["symbol"]).upper()
+    is_cn_fund = symbol_code.endswith((".SS", ".SZ")) and symbol_code.startswith(("15", "16", "18", "50", "51", "52", "56", "58"))
+    price_text = "--" if price is None else f"{price:,.{3 if is_cn_fund else 2}f}"
     change_text = "数据暂缺" if price is None else ("--" if change is None else f"{change:+.2f}%")
     direction_class = "watch-flat"
     if change is not None:

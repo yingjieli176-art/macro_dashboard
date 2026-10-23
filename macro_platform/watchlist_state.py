@@ -18,7 +18,7 @@ _MARKET = {
 }
 MAX_ITEMS_PER_MARKET = 40
 WATCHLIST_SCHEMA_VERSION = 3
-DEFAULT_WATCHLIST_REVISION = 6
+DEFAULT_WATCHLIST_REVISION = 7
 
 DEFAULT_WATCHLISTS = {
     "market_search_us": [
@@ -37,6 +37,7 @@ DEFAULT_WATCHLISTS = {
         {"symbol": "600510.SS", "name": "黑牡丹"},
         {"symbol": "000980.SZ", "name": "众泰汽车"},
         {"symbol": "002501.SZ", "name": "*ST利源"},
+        {"symbol": "159740.SZ", "name": "大成恒生科技ETF"},
     ],
 }
 
