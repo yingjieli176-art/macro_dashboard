@@ -3,10 +3,10 @@
   "name": "USD/HKD spot exchange rate",
   "source": "Yahoo Finance market history",
   "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/HKD%3DX",
-  "updated_at": "2026-10-23T17:27:00.257422+00:00",
-  "record_count": 1466,
+  "updated_at": "2026-10-24T01:05:46.619890+00:00",
+  "record_count": 1467,
   "coverage_start": "2021-09-30",
-  "coverage_end": "2026-10-22",
+  "coverage_end": "2026-10-23",
   "records": [
     {
       "observation_date": "2021-09-30",
@@ -5871,6 +5871,10 @@
     {
       "observation_date": "2026-10-22",
       "value": 7.846409797668457
+    },
+    {
+      "observation_date": "2026-10-23",
+      "value": 7.841300010681152
     }
   ]
 }
