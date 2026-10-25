@@ -2,9 +2,9 @@
   "source": "HKMA original monthly money supply; retained verified monthly history (C&SD table currently quarterly/yearly)",
   "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics",
   "cross_check_url": "https://www.censtatd.gov.hk/api/get.php?id=340-45012&lang=en&full_series=1",
-  "updated_at": "2026-10-24T01:09:53.751976+00:00",
-  "fresh_fetch_ok": true,
-  "fetch_error": null,
+  "updated_at": "2026-10-25T00:34:48.154206+00:00",
+  "fresh_fetch_ok": false,
+  "fetch_error": "HKMA proxy fetch failed: HTTPSConnectionPool(host='r.jina.ai', port=443): Read timed out. (read timeout=25)",
   "record_count": 100,
   "coverage_start": "2018-06",
   "coverage_end": "2026-08",
@@ -15,86 +15,72 @@
     {
       "end_of_month": "2026-08",
       "m2_hkd": 9573224.866,
-      "m3_hkd": 9586156.603,
-      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+      "m3_hkd": 9586156.603
     },
     {
       "end_of_month": "2026-07",
       "m2_hkd": 9374090.495,
-      "m3_hkd": 9386805.378,
-      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+      "m3_hkd": 9386805.378
     },
     {
       "end_of_month": "2026-06",
       "m2_hkd": 9283574.65,
-      "m3_hkd": 9295676.592,
-      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+      "m3_hkd": 9295676.592
     },
     {
       "end_of_month": "2026-05",
       "m2_hkd": 9214013.05,
-      "m3_hkd": 9224978.799,
-      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+      "m3_hkd": 9224978.799
     },
     {
       "end_of_month": "2026-04",
       "m2_hkd": 9113652.486,
-      "m3_hkd": 9125304.403,
-      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+      "m3_hkd": 9125304.403
     },
     {
       "end_of_month": "2026-03",
       "m2_hkd": 8998459.3,
-      "m3_hkd": 9010718.093,
-      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+      "m3_hkd": 9010718.093
     },
     {
       "end_of_month": "2026-02",
       "m2_hkd": 8943629.605,
-      "m3_hkd": 8956883.676,
-      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+      "m3_hkd": 8956883.676
     },
     {
       "end_of_month": "2026-01",
       "m2_hkd": 8929546.025,
-      "m3_hkd": 8943513.9,
-      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+      "m3_hkd": 8943513.9
     },
     {
       "end_of_month": "2025-12",
       "m2_hkd": 8830871.38,
-      "m3_hkd": 8844257.173,
-      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+      "m3_hkd": 8844257.173
     },
     {
       "end_of_month": "2025-11",
       "m2_hkd": 8792873.682,
-      "m3_hkd": 8806557.812,
-      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+      "m3_hkd": 8806557.812
     },
     {
       "end_of_month": "2025-10",
       "m2_hkd": 8776052.544,
-      "m3_hkd": 8789082.784,
-      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+      "m3_hkd": 8789082.784
     },
     {
       "end_of_month": "2025-09",
       "m2_hkd": 8830159.634,
-      "m3_hkd": 8843703.577,
-      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+      "m3_hkd": 8843703.577
     },
     {
       "end_of_month": "2025-08",
       "m2_hkd": 8711490.988,
-      "m3_hkd": 8725519.544,
-      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+      "m3_hkd": 8725519.544
     },
     {
       "end_of_month": "2025-07",
       "m2_hkd": 8879999.392,
-      "m3_hkd": 8895408.792,
-      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
+      "m3_hkd": 8895408.792
     },
     {
       "end_of_month": "2025-06",
