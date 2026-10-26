@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T14:15:01.324401+00:00",
+  "updated_at": "2026-10-26T16:07:53.747626+00:00",
   "retention": "rolling 5 years plus one month buffer",
   "policy": "merge fresh observations into last-known-good history; never erase a usable series on fetch failure",
-  "coverage_start": "2021-09-23",
-  "coverage_end": "2026-10-23",
+  "coverage_start": "2021-09-27",
+  "coverage_end": "2026-10-26",
   "series": {
     "0700.HK": {
       "name": "Tencent Holdings",
@@ -14,7 +14,7 @@
       "record_count": 1237,
       "coverage_start": "2021-10-11",
       "coverage_end": "2026-10-23",
-      "last_successful_fetch": "2026-10-23T14:15:01.324401+00:00",
+      "last_successful_fetch": "2026-10-26T16:07:53.747626+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -4976,7 +4976,7 @@
       "record_count": 1237,
       "coverage_start": "2021-10-11",
       "coverage_end": "2026-10-23",
-      "last_successful_fetch": "2026-10-23T14:15:01.324401+00:00",
+      "last_successful_fetch": "2026-10-26T16:07:53.747626+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -9938,7 +9938,7 @@
       "record_count": 1237,
       "coverage_start": "2021-10-11",
       "coverage_end": "2026-10-23",
-      "last_successful_fetch": "2026-10-23T14:15:01.324401+00:00",
+      "last_successful_fetch": "2026-10-26T16:07:53.747626+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -14898,20 +14898,12 @@
       "source": "Sina Finance via AKShare",
       "price_basis": "raw_close",
       "record_count": 1247,
-      "coverage_start": "2021-09-23",
-      "coverage_end": "2026-10-22",
-      "last_successful_fetch": "2026-10-23T14:15:01.324401+00:00",
+      "coverage_start": "2021-09-27",
+      "coverage_end": "2026-10-26",
+      "last_successful_fetch": "2026-10-26T16:07:53.747626+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
-        {
-          "observation_date": "2021-09-23",
-          "close": 6300.49023
-        },
-        {
-          "observation_date": "2021-09-24",
-          "close": 6159.95996
-        },
         {
           "observation_date": "2021-09-27",
           "close": 6103.89014
@@ -19891,6 +19883,14 @@
         {
           "observation_date": "2026-10-22",
           "close": 3793.92993
+        },
+        {
+          "observation_date": "2026-10-23",
+          "close": 3871.65991
+        },
+        {
+          "observation_date": "2026-10-26",
+          "close": 3857.53003
         }
       ]
     }
