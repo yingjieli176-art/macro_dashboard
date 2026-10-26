@@ -9,7 +9,7 @@
     "https://www.hkab.org.hk/en/rates/hibor"
   ],
   "transport_fallback": "r.jina.ai relay when direct api.hkma.gov.hk access is unavailable from CI",
-  "updated_at": "2026-10-26T10:17:51.335525+00:00",
+  "updated_at": "2026-10-26T16:50:15.439991+00:00",
   "source_errors": [],
   "coverage_start": "2025-04-24",
   "coverage_end": "2026-10-26",
@@ -5216,17 +5216,17 @@
     },
     {
       "end_of_date": "2026-10-26",
-      "opening_balance": null,
-      "closing_balance": null,
-      "forecast_aggregate_bal_t1": null,
-      "outstanding_efbn": null,
-      "ow_lb_bf_disc_win": null,
-      "aggr_balance_bf_disc_win": null,
+      "opening_balance": 54125,
+      "closing_balance": 54125,
+      "forecast_aggregate_bal_t1": 54125,
+      "outstanding_efbn": 1362260,
+      "ow_lb_bf_disc_win": 1184556,
+      "aggr_balance_bf_disc_win": 54125,
       "hibor_overnight": 2.5225,
       "hibor_3m": 3.25167,
-      "disc_win_base_rate": null,
-      "cu_weakside": null,
-      "cu_strongside": null,
+      "disc_win_base_rate": 4.25,
+      "cu_weakside": 7.85,
+      "cu_strongside": 7.75,
       "hibor_source": "https://www.hkab.org.hk/en/rates/hibor"
     }
   ]
