@@ -57,8 +57,9 @@ class DashboardBootSmoke(unittest.TestCase):
             self.assertTrue(all(axis["scale"] for axis in option["yAxis"]))
             self.assertTrue(all(zoom["filterMode"] == "filter" for zoom in option["dataZoom"]))
         self.assertEqual(len(instance.radio), 0)
-        self.assertIn("SPX（标普500市值加权）", " ".join(specs))
-        self.assertIn("RSP（标普500等权ETF）", " ".join(specs))
+        drawdown = next(json.loads(spec) for spec in specs if 'SPX' in spec)
+        self.assertEqual([series["name"] for series in drawdown["series"]],
+                         ["SPX（标普500市值加权）", "RSP（标普500等权ETF）"])
         self.assertFalse(any("距前高跌幅" in element.value.columns for element in instance.dataframe))
         # Market assets retain their original unit and independent price axes.
         spec_text = " ".join(specs)
