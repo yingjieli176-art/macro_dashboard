@@ -109,12 +109,12 @@ def exercise_client_zoom(page, chart, minimum_axes=2):
 
 
 def exercise_equity_drawdown(page):
-    page.get_by_text('10. SPX / RSP · 距前高回撤', exact=True).wait_for(timeout=30000)
+    page.get_by_text('11. SPX / RSP · 距前高回撤', exact=True).wait_for(timeout=30000)
     assert page.get_by_text('9B.', exact=False).count() == 0
     baseline = None
     ranges = []
     for period in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
-        page.get_by_test_id("stButtonGroup").nth(9).get_by_text(period, exact=True).click()
+        page.get_by_test_id("stButtonGroup").nth(10).get_by_text(period, exact=True).click()
         chart = page.locator(f'.st-key-us_equity_drawdown_echarts_{period}').get_by_test_id(
             re.compile(r"^(macro|st)EChartsChart$"))
         chart.wait_for(timeout=30000)
@@ -141,9 +141,33 @@ def exercise_equity_drawdown(page):
             'historical_peaks_preserved': True, 'slider': zoom}
 
 
+def exercise_china_drawdown(page):
+    page.get_by_text('12. A股宽基 · 沪深300 / 中证1000 / 中证2000 距前高回撤', exact=True).wait_for(timeout=30000)
+    baseline = None
+    for period in ('5Y', '1Y', '6M', '3M', '1M', '1Y'):
+        page.get_by_test_id('stButtonGroup').nth(11).get_by_text(period, exact=True).click()
+        selector = f'.st-key-china_equity_drawdown_echarts_{period}'
+        chart = page.locator(selector).get_by_test_id(re.compile(r'^(macro|st)EChartsChart$'))
+        chart.wait_for(timeout=30000)
+        page.wait_for_function("selector => document.querySelector(selector)?.getAttribute('aria-busy') === 'false'",
+                               arg=selector+' [data-testid$="EChartsChart"]', timeout=30000)
+        points = chart.evaluate("""element => {
+            const instance = (""" + INSTANCE_JS + """)(element);
+            return instance.getOption().series.map(s => ({name:s.name,
+                latest:s.data.filter(p=>Number.isFinite(p[1])).at(-1)}));
+        }""")
+        assert [p['name'] for p in points] == ['沪深300', '中证1000', '中证2000'], points
+        assert all(p['latest'][1] <= 0 for p in points), points
+        if baseline is None: baseline = points
+        assert points == baseline, 'China viewport reset a historical peak'
+    zoom = exercise_client_zoom(page, chart, minimum_axes=1)
+    chart.screenshot(path='browser_china_drawdown.png')
+    return {'latest_drawdowns':baseline, 'historical_peaks_preserved':True, 'slider':zoom}
+
+
 def wait_for_page(page, url):
     page.goto(url, wait_until="domcontentloaded", timeout=60000)
-    page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 16", timeout=60000)
+    page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 17", timeout=60000)
     page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8 || document.querySelector('[data-testid=macroEChartsChartError]')", timeout=60000)
     failures = page.locator('.macro-chart-error:not([hidden])').all_text_contents()
     assert not failures, failures
@@ -400,13 +424,13 @@ def main():
             page.on("pageerror", lambda error: errors.append(str(error)))
             wait_for_page(page, args.url)
             groups = page.get_by_test_id("stButtonGroup")
-            page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 16", timeout=60000)
-            page.get_by_text("16. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
+            page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 17", timeout=60000)
+            page.get_by_text("14. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
             charts = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
-            page.get_by_text("11. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
-            page.get_by_text("12. Precious Metals", exact=True).wait_for(timeout=30000)
-            assert groups.count() == 16
+            page.get_by_text("10. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
+            page.get_by_text("15. Precious Metals", exact=True).wait_for(timeout=30000)
+            assert groups.count() == 17
             assert charts.count() >= 8
             assert page.get_by_test_id("stException").count() == 0
             assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
@@ -422,13 +446,14 @@ def main():
             })""")
             assert all(paints), paints
             assert page.get_by_text("该图表目前没有可验证的有效观测数据", exact=False).count() > 0
-            report["checks"].append({"chart_positions": 16, "painted_native_charts": len(paints),
+            report["checks"].append({"chart_positions": 17, "painted_native_charts": len(paints),
                                       "missing_positions_are_explicit": True})
             report["equity_drawdown"] = exercise_equity_drawdown(page)
+            report["china_drawdown"] = exercise_china_drawdown(page)
             report["security_search"] = exercise_security_search(page)
             # All five controls exist for every position, including unavailable charts.
             report["controls"] = groups.all_text_contents()
-            for index in range(16):
+            for index in range(17):
                 for label in ("5Y", "1Y", "6M", "3M", "1M"):
                     # React Aria's selected toggle changes its accessible
                     # name; the visible range label stays stable.
@@ -442,15 +467,15 @@ def main():
                 assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
             assert page.get_by_test_id("stRadio").count() == 0
             assert page.get_by_text("Rebased 100", exact=True).count() == 0
-            page.get_by_text("15. China Government Yields & US 5Y Real Yield", exact=False).wait_for()
+            page.get_by_text("13. China Government Yields & US 5Y Real Yield", exact=False).wait_for()
             assert page.get_by_text("China & Japan Government Yield Curves", exact=False).count() == 0
-            groups.nth(14).get_by_text("3M", exact=True).click()
+            groups.nth(12).get_by_text("3M", exact=True).click()
             china_selected = page.locator(".st-key-china_rates_adaptive_default_3M").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             china_selected.wait_for(timeout=30000)
-            groups.nth(15).get_by_text("1M", exact=True).click()
+            groups.nth(13).get_by_text("1M", exact=True).click()
             china_selected.wait_for(timeout=30000)
-            groups.nth(14).get_by_text("1Y", exact=True).click()
-            groups.nth(15).get_by_text("1Y", exact=True).click()
+            groups.nth(12).get_by_text("1Y", exact=True).click()
+            groups.nth(13).get_by_text("1Y", exact=True).click()
             report["checks"].append({"china_japan_separate": True, "country_ranges_independent": True})
             chart = page.locator('.st-key-hk_5_range_adaptive_default_1Y').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             report["client_zoom"] = exercise_client_zoom(page, chart)
@@ -467,24 +492,24 @@ def main():
             report['range_legend_desktop'] = {
                 'liquidity':exercise_range_legend_persistence(page,'normal_liquidity_range_echarts',3),
                 'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',4),
-                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',10),
+                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',9),
             }
             page.set_viewport_size({'width':390,'height':844})
             page.wait_for_timeout(300)
             report['range_legend_mobile'] = {
                 'liquidity':exercise_range_legend_persistence(page,'normal_liquidity_range_echarts',3),
                 'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',4),
-                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',10),
+                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',9),
             }
             page.set_viewport_size({'width':1440,'height':1000})
-            freshness = page.get_by_text(re.compile(r'^数据最新时间 · 16 张图'))
+            freshness = page.get_by_text(re.compile(r'^数据最新时间 · 17 张图'))
             freshness.click()
             page.get_by_test_id('stDataFrame').first.wait_for()
             assert page.get_by_test_id('stDataFrame').count() >= 2
             assert page.get_by_text('独立数据源核对', exact=True).count() == 0
             page.screenshot(path='browser_freshness.png')
             freshness.click()
-            report['all_source_freshness_overview'] = {'chart_positions':16,'observation_dates_visible':True}
+            report['all_source_freshness_overview'] = {'chart_positions':17,'observation_dates_visible':True}
             report["checks"].append({"slider": True, "download_and_fullscreen_only": True,
                                       "processed_observations_fit_independent_axes": True})
             # Two separate browser contexts produce independent Streamlit

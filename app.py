@@ -45,6 +45,10 @@ try:
     import macro_platform.equity_drawdown as _equity_drawdown
 except ImportError:
     _equity_drawdown = None
+try:
+    import macro_platform.china_equity as _china_equity
+except ImportError:
+    _china_equity = None
 
 # Keep the page available during a mixed-revision Streamlit Cloud rollout.
 load_correlation_snapshot = getattr(
@@ -88,7 +92,9 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-27-chart-numbering-r70"
+MACRO_DISPLAY_ORDER = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "us_drawdown", "cn_drawdown", 14, 15, 11, 13, 12)
+MACRO_DISPLAY_NUMBER = {key: index for index, key in enumerate(MACRO_DISPLAY_ORDER, 1)}
+CHART_BUILD = "2026-10-27-china-equity-layout-r71"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2596,7 +2602,7 @@ def _build_equity_drawdown():
 
 @st.fragment(key="equity_drawdown_viewport")
 def _render_equity_drawdown():
-    st.markdown('<div class="section-title">10. SPX / RSP · 距前高回撤</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">11. SPX / RSP · 距前高回撤</div>', unsafe_allow_html=True)
     st.caption("回撤＝（当日收盘÷截至当日的最高收盘－1）×100%；创新高为0%，下跌显示负值。切换时间范围不重置前高。")
     figure = _build_equity_drawdown()
     _render_adaptive_macro_figure(figure, "us_equity_drawdown", standard=True)
@@ -2609,6 +2615,34 @@ def _render_equity_drawdown():
         ("RSP 日线价格", "https://finance.yahoo.com/quote/RSP/history/"),
         ("Invesco RSP", "https://www.invesco.com/us/financial-products/etfs/product-detail?productId=RSP"),
     ])
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+
+def _build_china_drawdown():
+    if _china_equity is None:
+        figure = go.Figure()
+        _mark_missing_series(figure, "沪深300 / 中证1000 / 中证2000")
+    else:
+        try:
+            figure = _china_equity.build_china_drawdown_figure()
+        except Exception:
+            logging.exception("China index drawdown history unavailable")
+            figure = go.Figure()
+            _mark_missing_series(figure, "沪深300 / 中证1000 / 中证2000")
+    return apply_chart_style(figure, chart_height(310, 420), "5Y")
+
+
+@st.fragment(key="china_equity_drawdown_viewport")
+def _render_china_drawdown():
+    st.markdown('<div class="section-title">12. A股宽基 · 沪深300 / 中证1000 / 中证2000 距前高回撤</div>', unsafe_allow_html=True)
+    st.caption("同一百分比坐标对比大盘、小盘与更小市值股票的回撤；0%为截至当日的最高收盘，负值为下跌。")
+    figure = _build_china_drawdown()
+    _render_adaptive_macro_figure(figure, "china_equity_drawdown", standard=True)
+    for row in (figure.layout.meta or {}).get("drawdown_summary", []):
+        st.caption(f'{row["name"]}（{row["symbol"]}）：前高 {row["peak"]:,.2f}（{row["peak_date"]}）→ 最新收盘 {row["close"]:,.2f}，下跌 {row["decline_pct"]:.2f}%')
+    st.caption("中证指数官网已完成交易日收盘，价格指数，不含股息再投资。发布前数据为中证官方回溯数据；前高按各指数基日以来可用完整历史计算，切换窗口不重置。最新日期以图中观测日为准。")
+    add_sources([(name, f"https://www.csindex.com.cn/zh-CN/indices/index-detail/{code}")
+                 for code, name in (("000300", "沪深300"), ("000852", "中证1000"), ("932000", "中证2000"))])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2634,7 +2668,7 @@ def render_macro_chart_9(prebuilt_fig=None):
 @st.fragment(key="vix_term_structure_chart")
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">11. VIX & VIX3M Term Structure</div>'
+        '<div class="section-title">10. VIX & VIX3M Term Structure</div>'
         '<div class="section-description">VIX · VIX3M · VIX3M−VIX (R1)</div>',
         unsafe_allow_html=True,
     )
@@ -2653,7 +2687,7 @@ def render_macro_chart_10(prebuilt_fig=None):
 @st.fragment(key="precious_metals_chart")
 def render_macro_chart_11(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">12. Precious Metals</div>'
+        '<div class="section-title">15. Precious Metals</div>'
         '<div class="section-description">Gold · Silver · Gold/Silver Ratio · Gold Volatility GVZ</div>',
         unsafe_allow_html=True,
     )
@@ -2674,7 +2708,7 @@ def render_macro_chart_11(prebuilt_fig=None):
 @st.fragment(key="crypto_chart")
 def render_macro_chart_12(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">13. Crypto Market</div>'
+        '<div class="section-title">17. Crypto Market</div>'
         '<div class="section-description">BTC · ETH · ETH/BTC · BTC 30D 实际波动率</div>',
         unsafe_allow_html=True,
     )
@@ -2693,7 +2727,7 @@ def render_macro_chart_12(prebuilt_fig=None):
 @st.fragment(key="macro_chart_13_viewport")
 def render_macro_chart_13(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">14. Copper Flow & COMEX–LME Spread</div>'
+        '<div class="section-title">16. Copper Flow & COMEX–LME Spread</div>'
         '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2)</div>',
         unsafe_allow_html=True,
     )
@@ -2715,7 +2749,7 @@ def render_macro_chart_13(prebuilt_fig=None):
 @st.fragment(key="macro_chart_14_viewport")
 def render_macro_chart_14(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">15. China Government Yields & US 5Y Real Yield</div>'
+        '<div class="section-title">13. China Government Yields & US 5Y Real Yield</div>'
         '<div class="section-description">China 2Y / 10Y · US 5Y Real · TIPS · China 10Y−2Y (R1)</div>',
         unsafe_allow_html=True,
     )
@@ -2733,7 +2767,7 @@ def render_macro_chart_14(prebuilt_fig=None):
 @st.fragment(key="macro_chart_15_viewport")
 def render_macro_chart_15(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">16. Japan Government Yields & Nikkei 225 & USD/JPY</div>'
+        '<div class="section-title">14. Japan Government Yields & Nikkei 225 & USD/JPY</div>'
         '<div class="section-description">Japan 2Y / 10Y · Japan 10Y−2Y (R1) · Nikkei 225 (R2) · USD/JPY (R3)</div>',
         unsafe_allow_html=True,
     )
@@ -2964,18 +2998,17 @@ st.markdown(
 # Reserve the existing document order, then fill sections as workers finish.
 # Only the main Streamlit thread creates containers, fragments and widgets.
 macro_slots = {}
-for number in range(1, 16):
-    section_headers = {
-        5: "HONG KONG LIQUIDITY", 9: "US EQUITY RISK",
-        10: "US VOLATILITY TERM STRUCTURE",
-        11: "PRECIOUS METALS", 12: "CRYPTO MARKET",
-        13: "INDUSTRIAL METALS · COPPER", 14: "CHINA RATES", 15: "JAPAN RATES & EQUITY",
-    }
-    if number in section_headers:
-        st.markdown(f'<div class="section-kicker">{section_headers[number]}</div>', unsafe_allow_html=True)
-    macro_slots[number] = st.container()
-    if number == 9:
+section_headers = {5: "HONG KONG LIQUIDITY", 9: "EQUITY RISK & DRAWDOWNS",
+                   14: "ASIA RATES", 11: "COMMODITIES", 12: "CRYPTO MARKET"}
+for number in MACRO_DISPLAY_ORDER:
+    if number == "us_drawdown":
         _render_equity_drawdown()
+    elif number == "cn_drawdown":
+        _render_china_drawdown()
+    else:
+        if number in section_headers:
+            st.markdown(f'<div class="section-kicker">{section_headers[number]}</div>', unsafe_allow_html=True)
+        macro_slots[number] = st.container()
 
 
 def _render_completed_macro_chart(number, figure):
@@ -3109,9 +3142,10 @@ def _render_all_source_freshness(figures):
         add("市场概览", symbol, st.session_state.get("_market_quotes_snapshot", {}).get(label, {}))
     for symbol, row in st.session_state.get("_watchlist_quotes_snapshot", {}).items():
         add("自选", symbol, row)
-    display_figures = {number if number < 10 else number + 1: figure
+    display_figures = {MACRO_DISPLAY_NUMBER[number]: figure
                        for number, figure in figures.items()}
-    display_figures[10] = _build_equity_drawdown()
+    display_figures[11] = _build_equity_drawdown()
+    display_figures[12] = _build_china_drawdown()
     render_freshness_overview(display_figures, quote_rows=rows, news=_read_existing_news_snapshot())
 
 _render_all_source_freshness(macro_figures)
