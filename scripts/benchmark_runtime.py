@@ -64,7 +64,7 @@ def main():
             started = time.perf_counter()
             app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60).run()
             print(json.dumps({"seconds": time.perf_counter()-started,
-                              "failed": bool(app.exception) or len(app.button_group) != 16}))
+                              "failed": bool(app.exception) or len(app.button_group) != 15}))
         return
     cold, cold_failed = [], 0
     for _ in range(args.cold):
@@ -80,7 +80,7 @@ def main():
         for index in range(args.warm):
             started = time.perf_counter(); app.run()
             warm.append(time.perf_counter()-started)
-            warm_failed += bool(app.exception) or len(app.button_group) != 16
+            warm_failed += bool(app.exception) or len(app.button_group) != 15
             if (index+1) % 20 == 0:
                 resource_samples.append({"phase": "warm", "sample": index+1, **resources()})
                 print(f"Warm samples: {index+1}", flush=True)
