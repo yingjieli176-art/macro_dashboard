@@ -232,6 +232,7 @@ jobs:
             browser_acceptance.json
             browser_acceptance.png
             browser_mobile.png
+            browser_equity_drawdown.png
             browser_freshness.png
             browser_session_b.png
             browser-server.log

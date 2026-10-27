@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-27-spx-rsp-table-r68",
+  "release": "2026-10-27-spx-rsp-chart-r69",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -8,6 +8,6 @@
     "optional_adapter_fallback",
     "viewport_dynamic_y",
     "diagnostic_version_header",
-    "spx_rsp_drawdown_table"
+    "spx_rsp_standalone_chart"
   ]
 }

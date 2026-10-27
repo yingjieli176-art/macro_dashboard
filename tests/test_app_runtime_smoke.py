@@ -28,7 +28,7 @@ class DashboardBootSmoke(unittest.TestCase):
             second = AppTest.from_file(str(app), default_timeout=90).run()
         self.assertFalse(first.exception)
         self.assertFalse(second.exception)
-        self.assertEqual(len(second.get('button_group')), 15)
+        self.assertEqual(len(second.get('button_group')), 16)
         self.assertGreaterEqual(len(chart_specs(second)), 8)
         self.assertEqual(chart_specs(first), chart_specs(second))
 
@@ -42,7 +42,7 @@ class DashboardBootSmoke(unittest.TestCase):
             msg="Streamlit app crashed during full script execution: "
                 + "; ".join(str(error.message) for error in instance.exception),
         )
-        self.assertEqual(len(instance.get("button_group")), 15)
+        self.assertEqual(len(instance.get("button_group")), 16)
         specs = chart_specs(instance)
         # AppTest does not execute browser JavaScript. This assertion proves
         # the real Streamlit renderer emitted native chart messages, rather
@@ -57,12 +57,9 @@ class DashboardBootSmoke(unittest.TestCase):
             self.assertTrue(all(axis["scale"] for axis in option["yAxis"]))
             self.assertTrue(all(zoom["filterMode"] == "filter" for zoom in option["dataZoom"]))
         self.assertEqual(len(instance.radio), 0)
-        tables = [element.value for element in instance.dataframe
-                  if "距前高跌幅" in element.value.columns]
-        self.assertEqual(len(tables), 1)
-        self.assertEqual(len(tables[0]), 2)
-        self.assertTrue(tables[0]["标的"].str.contains("SPX|RSP").all())
-        self.assertNotIn("SPX（标普500市值加权）", " ".join(specs))
+        self.assertIn("SPX（标普500市值加权）", " ".join(specs))
+        self.assertIn("RSP（标普500等权ETF）", " ".join(specs))
+        self.assertFalse(any("距前高跌幅" in element.value.columns for element in instance.dataframe))
         # Market assets retain their original unit and independent price axes.
         spec_text = " ".join(specs)
         risk = next(json.loads(spec) for spec in specs if 'COR1M (R4)' in spec)
