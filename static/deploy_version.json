@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-26-parameter-notes-r66",
+  "release": "2026-10-27-spx-rsp-drawdown-r67",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -7,6 +7,7 @@
     "startup_import_guard",
     "optional_adapter_fallback",
     "viewport_dynamic_y",
-    "diagnostic_version_header"
+    "diagnostic_version_header",
+    "spx_rsp_price_drawdown"
   ]
 }

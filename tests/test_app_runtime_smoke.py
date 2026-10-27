@@ -28,7 +28,7 @@ class DashboardBootSmoke(unittest.TestCase):
             second = AppTest.from_file(str(app), default_timeout=90).run()
         self.assertFalse(first.exception)
         self.assertFalse(second.exception)
-        self.assertEqual(len(second.get('button_group')), 15)
+        self.assertEqual(len(second.get('button_group')), 16)
         self.assertGreaterEqual(len(chart_specs(second)), 8)
         self.assertEqual(chart_specs(first), chart_specs(second))
 
@@ -42,7 +42,7 @@ class DashboardBootSmoke(unittest.TestCase):
             msg="Streamlit app crashed during full script execution: "
                 + "; ".join(str(error.message) for error in instance.exception),
         )
-        self.assertEqual(len(instance.get("button_group")), 15)
+        self.assertEqual(len(instance.get("button_group")), 16)
         specs = chart_specs(instance)
         # AppTest does not execute browser JavaScript. This assertion proves
         # the real Streamlit renderer emitted native chart messages, rather

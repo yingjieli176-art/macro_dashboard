@@ -87,3 +87,23 @@ Do not commit a plot or a new estimated rate as an original observation.
 The Treasury DTS TGA closing account changed field placement in April 2022;
 `macro_platform/treasury_cash.py` records the correct account-label-based
 interpretation.
+
+## SPX / RSP drawdowns (Chart 9B)
+
+SPX uses the S&P 500 float-adjusted market-cap-weighted **price index**;
+RSP is the Invesco S&P 500 Equal Weight ETF. RSP is a fund, not an index:
+its price reflects fund fees, distributions and tracking differences.
+Both histories use completed US daily `quote.close` prices, split-adjusted
+but **without dividend reinvestment**. Never mix Yahoo `adjclose` total-return
+adjustments with the SPX price index. `range=max` monthly responses are rejected.
+
+For every date, drawdown = `(close / cumulative_max(close) - 1) * 100`.
+Peaks are calculated on each security's full available daily history **before**
+limiting the rendered chart to five years or changing its viewport. This is
+close-to-close drawdown, not intraday-high drawdown. The panel shows the history
+start date, latest completed close/date, prior peak/date, absolute drop and
+percentage decline. Missing or stale observations remain labeled.
+
+The data-only `update-us-equity-snapshot.yml` job refreshes both histories and
+atomically publishes `data_snapshots/us_equity_daily.json`. Partial, stale,
+future, non-daily or truncated responses cannot replace last-good data.

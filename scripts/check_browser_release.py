@@ -66,7 +66,7 @@ def chart_state(chart):
     }""")
 
 
-def assert_visible_axes(state):
+def assert_visible_axes(state, minimum_axes=2):
     populated = 0
     for axis in state["axes"]:
         assert axis["scale"], axis
@@ -80,10 +80,10 @@ def assert_visible_axes(state):
         # A full-history or shared-axis scale would be far wider than these
         # filtered samples. Allow ECharts' own nice-tick rounding and flat data.
         assert maximum-minimum <= max((high-low)*2, max(abs(low), abs(high), 1)*.05), axis
-    assert populated >= 2, state
+    assert populated >= minimum_axes, state
 
 
-def exercise_client_zoom(page, chart):
+def exercise_client_zoom(page, chart, minimum_axes=2):
     chart.scroll_into_view_if_needed()
     before = chart_state(chart)
     assert before['toolbox'] is False, 'Removed zoom/back/reset toolbar is still present'
@@ -104,13 +104,44 @@ def exercise_client_zoom(page, chart):
     page.wait_for_timeout(200)
     slider = chart_state(chart)
     assert slider["zoom"][0] > start+.1, (before, slider)
-    assert_visible_axes(slider)
+    assert_visible_axes(slider, minimum_axes=minimum_axes)
     return {"before": before, "slider": slider, "download_and_fullscreen_only": True}
+
+
+def exercise_equity_drawdown(page):
+    baseline = None
+    ranges = []
+    for period in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
+        page.get_by_test_id("stButtonGroup").nth(9).get_by_text(period, exact=True).click()
+        chart = page.locator(f'.st-key-us_equity_drawdown_echarts_{period}').get_by_test_id(
+            re.compile(r"^(macro|st)EChartsChart$"))
+        chart.wait_for(timeout=30000)
+        page.wait_for_function("selector => document.querySelector(selector)?.getAttribute('aria-busy') === 'false'",
+                               arg=f'.st-key-us_equity_drawdown_echarts_{period} [data-testid$="EChartsChart"]',
+                               timeout=30000)
+        points = chart.evaluate("""element => {
+            const chart = (""" + INSTANCE_JS + """)(element);
+            return chart.getOption().series.map(series => ({name: series.name,
+                latest: series.data.filter(point => Number.isFinite(point[1])).at(-1)}));
+        }""")
+        assert len(points) == 2 and all(p['latest'][1] <= 0 for p in points), points
+        if baseline is None:
+            baseline = points
+        assert points == baseline, 'Changing the viewport reset a historical peak'
+        ranges.append(period)
+    assert page.get_by_text('高点计算的可用历史起始日：', exact=False).count() == 1
+    assert page.get_by_test_id('stDataFrame').count() > 0
+    chart = page.locator('.st-key-us_equity_drawdown_echarts_1Y').get_by_test_id(
+        re.compile(r"^(macro|st)EChartsChart$"))
+    zoom = exercise_client_zoom(page, chart, minimum_axes=1)
+    chart.screenshot(path='browser_equity_drawdown.png')
+    return {'range_controls': ranges, 'latest_drawdowns': baseline,
+            'historical_peaks_preserved': True, 'slider': zoom}
 
 
 def wait_for_page(page, url):
     page.goto(url, wait_until="domcontentloaded", timeout=60000)
-    page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 15", timeout=60000)
+    page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 16", timeout=60000)
     page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8 || document.querySelector('[data-testid=macroEChartsChartError]')", timeout=60000)
     failures = page.locator('.macro-chart-error:not([hidden])').all_text_contents()
     assert not failures, failures
@@ -344,6 +375,10 @@ def exercise_security_search(page):
     page.locator('[class*="st-key-market_search_hk_delete_"] button:visible').last.click()
     card.wait_for(state='detached', timeout=15000)
     assert card.count() == 0
+    # A removed card can disappear before its full rerun registers all fragments.
+    # Wait for the server's completion signal before clicking chart controls.
+    page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'",
+                           timeout=30000)
     return {'chinese_name':True, 'enter_to_search':True, 'confirmed_symbol':'1810.HK', 'add_remove':True}
 
 
@@ -363,13 +398,13 @@ def main():
             page.on("pageerror", lambda error: errors.append(str(error)))
             wait_for_page(page, args.url)
             groups = page.get_by_test_id("stButtonGroup")
-            page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 15", timeout=60000)
+            page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 16", timeout=60000)
             page.get_by_text("15. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
             charts = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
             page.get_by_text("10. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
             page.get_by_text("11. Precious Metals", exact=True).wait_for(timeout=30000)
-            assert groups.count() == 15
+            assert groups.count() == 16
             assert charts.count() >= 8
             assert page.get_by_test_id("stException").count() == 0
             assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
@@ -387,10 +422,11 @@ def main():
             assert page.get_by_text("该图表目前没有可验证的有效观测数据", exact=False).count() > 0
             report["checks"].append({"chart_positions": 15, "painted_native_charts": len(paints),
                                       "missing_positions_are_explicit": True})
+            report["equity_drawdown"] = exercise_equity_drawdown(page)
             report["security_search"] = exercise_security_search(page)
             # All five controls exist for every position, including unavailable charts.
             report["controls"] = groups.all_text_contents()
-            for index in range(15):
+            for index in range(16):
                 for label in ("5Y", "1Y", "6M", "3M", "1M"):
                     # React Aria's selected toggle changes its accessible
                     # name; the visible range label stays stable.
@@ -399,18 +435,20 @@ def main():
             for label in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
                 groups.nth(4).get_by_text(label, exact=True).click()
                 page.locator(f".st-key-hk_5_range_adaptive_default_{label}").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$")).wait_for(timeout=30000)
+                page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'",
+                                       timeout=30000)
                 assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
             assert page.get_by_test_id("stRadio").count() == 0
             assert page.get_by_text("Rebased 100", exact=True).count() == 0
             page.get_by_text("14. China Government Yields & US 5Y Real Yield", exact=False).wait_for()
             assert page.get_by_text("China & Japan Government Yield Curves", exact=False).count() == 0
-            groups.nth(13).get_by_text("3M", exact=True).click()
+            groups.nth(14).get_by_text("3M", exact=True).click()
             china_selected = page.locator(".st-key-china_rates_adaptive_default_3M").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             china_selected.wait_for(timeout=30000)
-            groups.nth(14).get_by_text("1M", exact=True).click()
+            groups.nth(15).get_by_text("1M", exact=True).click()
             china_selected.wait_for(timeout=30000)
-            groups.nth(13).get_by_text("1Y", exact=True).click()
             groups.nth(14).get_by_text("1Y", exact=True).click()
+            groups.nth(15).get_by_text("1Y", exact=True).click()
             report["checks"].append({"china_japan_separate": True, "country_ranges_independent": True})
             chart = page.locator('.st-key-hk_5_range_adaptive_default_1Y').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             report["client_zoom"] = exercise_client_zoom(page, chart)
@@ -427,14 +465,14 @@ def main():
             report['range_legend_desktop'] = {
                 'liquidity':exercise_range_legend_persistence(page,'normal_liquidity_range_echarts',3),
                 'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',4),
-                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',9),
+                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',10),
             }
             page.set_viewport_size({'width':390,'height':844})
             page.wait_for_timeout(300)
             report['range_legend_mobile'] = {
                 'liquidity':exercise_range_legend_persistence(page,'normal_liquidity_range_echarts',3),
                 'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',4),
-                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',9),
+                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',10),
             }
             page.set_viewport_size({'width':1440,'height':1000})
             freshness = page.get_by_text(re.compile(r'^数据最新时间 · 15 张图'))
