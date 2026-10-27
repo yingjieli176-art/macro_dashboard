@@ -1,4 +1,4 @@
-"""One inventory for all fifteen plotted charts, including derived series."""
+"""One inventory for all plotted charts, including derived series."""
 from datetime import datetime, timezone
 import json
 import math
@@ -15,7 +15,7 @@ def figure_rows(figures, now=None):
     except ImportError:
         option_observation_health = None
     rows = []
-    for number in range(1, 16):
+    for number in range(1, max(15, max(figures, default=0)) + 1):
         figure = figures.get(number)
         if figure is None or not getattr(figure, "data", None):
             rows.append({"图表": number, "指标": "整图", "实际观测日": "缺失", "频率": "—", "状态": "待恢复"})
@@ -80,7 +80,7 @@ def source_rows(path=SOURCE_REPORT):
 def render_freshness_overview(figures, *, quote_rows=None, news=None):
     import streamlit as st
     plotted = figure_rows(figures)
-    with st.expander(f"数据最新时间 · 15 张图 / {len(plotted)} 条曲线", expanded=False):
+    with st.expander(f"数据最新时间 · {max(15, max(figures, default=0))} 张图 / {len(plotted)} 条曲线", expanded=False):
         st.dataframe(pd.DataFrame(plotted)[["图表", "指标", "实际观测日"]],
                      hide_index=True, height=380, width="stretch")
         if quote_rows:

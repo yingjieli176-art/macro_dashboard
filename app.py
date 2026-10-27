@@ -88,7 +88,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-27-spx-rsp-chart-r69"
+CHART_BUILD = "2026-10-27-chart-numbering-r70"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2596,7 +2596,7 @@ def _build_equity_drawdown():
 
 @st.fragment(key="equity_drawdown_viewport")
 def _render_equity_drawdown():
-    st.markdown('<div class="section-title">SPX / RSP · 距前高回撤</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">10. SPX / RSP · 距前高回撤</div>', unsafe_allow_html=True)
     st.caption("回撤＝（当日收盘÷截至当日的最高收盘－1）×100%；创新高为0%，下跌显示负值。切换时间范围不重置前高。")
     figure = _build_equity_drawdown()
     _render_adaptive_macro_figure(figure, "us_equity_drawdown", standard=True)
@@ -2634,7 +2634,7 @@ def render_macro_chart_9(prebuilt_fig=None):
 @st.fragment(key="vix_term_structure_chart")
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">10. VIX & VIX3M Term Structure</div>'
+        '<div class="section-title">11. VIX & VIX3M Term Structure</div>'
         '<div class="section-description">VIX · VIX3M · VIX3M−VIX (R1)</div>',
         unsafe_allow_html=True,
     )
@@ -2653,7 +2653,7 @@ def render_macro_chart_10(prebuilt_fig=None):
 @st.fragment(key="precious_metals_chart")
 def render_macro_chart_11(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">11. Precious Metals</div>'
+        '<div class="section-title">12. Precious Metals</div>'
         '<div class="section-description">Gold · Silver · Gold/Silver Ratio · Gold Volatility GVZ</div>',
         unsafe_allow_html=True,
     )
@@ -2674,7 +2674,7 @@ def render_macro_chart_11(prebuilt_fig=None):
 @st.fragment(key="crypto_chart")
 def render_macro_chart_12(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">12. Crypto Market</div>'
+        '<div class="section-title">13. Crypto Market</div>'
         '<div class="section-description">BTC · ETH · ETH/BTC · BTC 30D 实际波动率</div>',
         unsafe_allow_html=True,
     )
@@ -2693,7 +2693,7 @@ def render_macro_chart_12(prebuilt_fig=None):
 @st.fragment(key="macro_chart_13_viewport")
 def render_macro_chart_13(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">13. Copper Flow & COMEX–LME Spread</div>'
+        '<div class="section-title">14. Copper Flow & COMEX–LME Spread</div>'
         '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2)</div>',
         unsafe_allow_html=True,
     )
@@ -2715,7 +2715,7 @@ def render_macro_chart_13(prebuilt_fig=None):
 @st.fragment(key="macro_chart_14_viewport")
 def render_macro_chart_14(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">14. China Government Yields & US 5Y Real Yield</div>'
+        '<div class="section-title">15. China Government Yields & US 5Y Real Yield</div>'
         '<div class="section-description">China 2Y / 10Y · US 5Y Real · TIPS · China 10Y−2Y (R1)</div>',
         unsafe_allow_html=True,
     )
@@ -2733,7 +2733,7 @@ def render_macro_chart_14(prebuilt_fig=None):
 @st.fragment(key="macro_chart_15_viewport")
 def render_macro_chart_15(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">15. Japan Government Yields & Nikkei 225 & USD/JPY</div>'
+        '<div class="section-title">16. Japan Government Yields & Nikkei 225 & USD/JPY</div>'
         '<div class="section-description">Japan 2Y / 10Y · Japan 10Y−2Y (R1) · Nikkei 225 (R2) · USD/JPY (R3)</div>',
         unsafe_allow_html=True,
     )
@@ -3109,7 +3109,10 @@ def _render_all_source_freshness(figures):
         add("市场概览", symbol, st.session_state.get("_market_quotes_snapshot", {}).get(label, {}))
     for symbol, row in st.session_state.get("_watchlist_quotes_snapshot", {}).items():
         add("自选", symbol, row)
-    render_freshness_overview(figures, quote_rows=rows, news=_read_existing_news_snapshot())
+    display_figures = {number if number < 10 else number + 1: figure
+                       for number, figure in figures.items()}
+    display_figures[10] = _build_equity_drawdown()
+    render_freshness_overview(display_figures, quote_rows=rows, news=_read_existing_news_snapshot())
 
 _render_all_source_freshness(macro_figures)
 
