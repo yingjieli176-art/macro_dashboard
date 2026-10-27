@@ -1,0 +1,41 @@
+name: Refresh completed SPX and RSP price history
+on:
+  schedule:
+    - cron: '37 0,6,12,22 * * 1-5'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - macro_platform/equity_drawdown.py
+      - scripts/update_us_equity_snapshot.py
+      - .github/workflows/update-us-equity-snapshot.yml
+permissions:
+  contents: write
+concurrency:
+  group: us-equity-price-observations
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - run: python scripts/update_us_equity_snapshot.py
+      - name: Commit observed daily closes only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data_snapshots/us_equity_daily.json
+          if git diff --cached --quiet; then
+            echo 'SPX/RSP daily observations unchanged'
+            exit 0
+          fi
+          git commit -m 'data: refresh completed SPX and RSP daily closes'
+          bash scripts/push_snapshot.sh

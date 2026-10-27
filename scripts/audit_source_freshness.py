@@ -54,6 +54,19 @@ def audit(root=ROOT, now=None):
     reports.append({"file": "hk_market_daily.json", **health,
                     "missing_names": [symbol for symbol in ("0700.HK", "0388.HK", "^HSI", "HSTECH")
                                       if symbol not in health["latest_by_name"]]})
+    equity_path = root / "data_snapshots" / "us_equity_daily.json"
+    try:
+        equity = json.loads(equity_path.read_text())
+    except (OSError, ValueError):
+        equity = {}
+    equity_series = [{"name": symbol, "data": [
+        [row.get("date"), row.get("close")] for row in
+        ((equity.get("series") or {}).get(symbol) or {}).get("records", [])]}
+        for symbol in ("SPX", "RSP")]
+    equity_health = option_observation_health({"series": equity_series}, now=now)
+    reports.append({"file": "us_equity_daily.json", **equity_health,
+                    "missing_names": [symbol for symbol in ("SPX", "RSP")
+                                      if symbol not in equity_health["latest_by_name"]]})
     from macro_platform.treasury_cash import read_verified_tga_snapshot
     tga = read_verified_tga_snapshot(root / "data_snapshots" / "treasury_tga_daily.json")
     tga_option = {"series": [{"name": "TGA_DAILY", "data": [[str(row.observation_date), row.TGA_DAILY]

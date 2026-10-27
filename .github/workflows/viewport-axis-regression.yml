@@ -11,6 +11,11 @@ on:
       - scripts/update_usdhkd_snapshot.py
       - scripts/update_censtat_money_supply.py
       - macro_platform/us_equity_risk.py
+      - macro_platform/equity_drawdown.py
+      - scripts/update_us_equity_snapshot.py
+      - tests/test_equity_drawdown.py
+      - data_snapshots/us_equity_daily.json
+      - .github/workflows/update-us-equity-snapshot.yml
       - scripts/update_correlation_snapshot.py
       - tests/test_correlation_snapshot.py
       - data_snapshots/cor1m_daily.json
@@ -87,6 +92,11 @@ on:
       - scripts/update_usdhkd_snapshot.py
       - scripts/update_censtat_money_supply.py
       - macro_platform/us_equity_risk.py
+      - macro_platform/equity_drawdown.py
+      - scripts/update_us_equity_snapshot.py
+      - tests/test_equity_drawdown.py
+      - data_snapshots/us_equity_daily.json
+      - .github/workflows/update-us-equity-snapshot.yml
       - scripts/update_correlation_snapshot.py
       - tests/test_correlation_snapshot.py
       - data_snapshots/cor1m_daily.json
@@ -222,6 +232,7 @@ jobs:
             browser_acceptance.json
             browser_acceptance.png
             browser_mobile.png
+            browser_equity_drawdown.png
             browser_freshness.png
             browser_session_b.png
             browser-server.log

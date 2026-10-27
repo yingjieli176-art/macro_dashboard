@@ -41,6 +41,10 @@ apply_client_time_controls = getattr(
 apply_server_time_window = getattr(_chart_axes, "apply_server_time_window", None)
 from macro_platform.us_equity_risk import load_vixeq_snapshot
 import macro_platform.us_equity_risk as _us_equity_risk
+try:
+    import macro_platform.equity_drawdown as _equity_drawdown
+except ImportError:
+    _equity_drawdown = None
 
 # Keep the page available during a mixed-revision Streamlit Cloud rollout.
 load_correlation_snapshot = getattr(
@@ -84,7 +88,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-26-parameter-notes-r66"
+CHART_BUILD = "2026-10-27-spx-rsp-drawdown-r67"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2575,6 +2579,46 @@ def render_macro_chart_8(prebuilt_fig=None):
     _render_hk_macro_chart(3, prebuilt_fig=prebuilt_fig)
 
 
+def _build_equity_drawdown():
+    if _equity_drawdown is None:
+        fig = go.Figure()
+        _mark_missing_series(fig, "SPX / RSP")
+    else:
+        histories = {}
+        for symbol in _equity_drawdown.SERIES:
+            try:
+                histories[symbol] = _equity_drawdown.load_equity_history(symbol)
+            except Exception:
+                logging.exception("Equity drawdown history unavailable: %s", symbol)
+        fig = _equity_drawdown.build_drawdown_figure(histories)
+    return apply_chart_style(fig, chart_height(310, 420), "5Y")
+
+
+def _render_equity_drawdown():
+    st.markdown('<div class="section-title">9B. SPX / RSP · 距前高回撤</div>', unsafe_allow_html=True)
+    st.caption("回撤＝（当日收盘÷截至当日的最高收盘－1）×100%；创新高为0%，下跌显示负值。切换时间范围不重置前高。")
+    figure = _build_equity_drawdown()
+    _render_adaptive_macro_figure(figure, "us_equity_drawdown", standard=True)
+    summaries = (figure.layout.meta or {}).get("drawdown_summary", [])
+    if summaries:
+        table = [{
+            "标的": row["name"], "最新收盘日期": row["date"],
+            "此前最高收盘": f'{row["peak"]:,.2f}', "前高日期": row["peak_date"],
+            "最新收盘": f'{row["close"]:,.2f}',
+            "前高－当前": f'{row["drop_amount"]:,.2f}',
+            "距前高跌幅": f'{row["decline_pct"]:.2f}%',
+        } for row in summaries]
+        st.dataframe(pd.DataFrame(table), hide_index=True, width="stretch")
+        st.caption("高点计算的可用历史起始日：" + " · ".join(
+            f'{row["symbol"]} {row["history_start"]}' for row in summaries))
+    st.caption("SPX为自由流通市值加权价格指数，单位为点；RSP为跟踪标普500等权指数的ETF，单位为美元。RSP价格已处理拆股，不含股息再投资，并存在费用及跟踪误差；两者只比较回撤百分比。数据为已完成交易日收盘，非实时行情。")
+    add_sources([
+        ("SPX 日线价格", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
+        ("RSP 日线价格", "https://finance.yahoo.com/quote/RSP/history/"),
+        ("Invesco RSP", "https://www.invesco.com/us/financial-products/etfs/product-detail?productId=RSP"),
+    ])
+
+
 @st.fragment(key="macro_chart_9_viewport")
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
@@ -2591,6 +2635,8 @@ def render_macro_chart_9(prebuilt_fig=None):
         ("Cboe COR1M / COR3M", "https://www.cboe.com/us/indices/implied/"),
         ("FRED S&P 500 (SP500)", "https://fred.stlouisfed.org/series/SP500"),
     ])
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+    _render_equity_drawdown()
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
