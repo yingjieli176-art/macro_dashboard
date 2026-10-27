@@ -88,7 +88,7 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-CHART_BUILD = "2026-10-27-spx-rsp-drawdown-r67"
+CHART_BUILD = "2026-10-27-spx-rsp-table-r68"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2595,10 +2595,8 @@ def _build_equity_drawdown():
 
 
 def _render_equity_drawdown():
-    st.markdown('<div class="section-title">9B. SPX / RSP · 距前高回撤</div>', unsafe_allow_html=True)
-    st.caption("回撤＝（当日收盘÷截至当日的最高收盘－1）×100%；创新高为0%，下跌显示负值。切换时间范围不重置前高。")
+    st.markdown("**SPX / RSP · 距前高跌幅**")
     figure = _build_equity_drawdown()
-    _render_adaptive_macro_figure(figure, "us_equity_drawdown", standard=True)
     summaries = (figure.layout.meta or {}).get("drawdown_summary", [])
     if summaries:
         table = [{
@@ -2611,7 +2609,12 @@ def _render_equity_drawdown():
         st.dataframe(pd.DataFrame(table), hide_index=True, width="stretch")
         st.caption("高点计算的可用历史起始日：" + " · ".join(
             f'{row["symbol"]} {row["history_start"]}' for row in summaries))
-    st.caption("SPX为自由流通市值加权价格指数，单位为点；RSP为跟踪标普500等权指数的ETF，单位为美元。RSP价格已处理拆股，不含股息再投资，并存在费用及跟踪误差；两者只比较回撤百分比。数据为已完成交易日收盘，非实时行情。")
+    else:
+        st.info("SPX / RSP 暂无可验证的收盘数据。")
+    missing = (figure.layout.meta or {}).get("missing_series", [])
+    if missing:
+        st.caption("缺失数据：" + "、".join(missing))
+    st.caption("跌幅＝（前高－当前收盘）÷前高×100%。SPX为自由流通市值加权价格指数，单位为点；RSP为跟踪标普500等权指数的ETF，单位为美元。RSP价格已处理拆股，不含股息再投资，并存在费用及跟踪误差；两者只比较回撤百分比。数据为已完成交易日收盘，非实时行情。")
     add_sources([
         ("SPX 日线价格", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
         ("RSP 日线价格", "https://finance.yahoo.com/quote/RSP/history/"),

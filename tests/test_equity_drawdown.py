@@ -125,12 +125,13 @@ class EquityDrawdownTests(unittest.TestCase):
                 self.assertEqual(load_equity_history("SPX").close.tolist(), [100., 90.])
                 load_equity_history.clear()
 
-    def test_app_calls_panel_with_independent_range_and_summary_table(self):
+    def test_app_renders_standalone_table_without_extra_chart(self):
         source = (ROOT / "app.py").read_text()
         tree = ast.parse(source)
         render = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "render_macro_chart_9")
         self.assertIn("_render_equity_drawdown()", ast.get_source_segment(source, render))
-        self.assertIn('"us_equity_drawdown", standard=True', source)
+        self.assertNotIn('"us_equity_drawdown", standard=True', source)
+        self.assertNotIn('9B.', source)
         self.assertIn('"前高－当前"', source)
         self.assertIn('"距前高跌幅"', source)
 
