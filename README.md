@@ -88,7 +88,7 @@ The Treasury DTS TGA closing account changed field placement in April 2022;
 `macro_platform/treasury_cash.py` records the correct account-label-based
 interpretation.
 
-## SPX / RSP standalone drawdown chart
+## SPX / RSP drawdown chart (10)
 
 SPX uses the S&P 500 float-adjusted market-cap-weighted **price index**;
 RSP is the Invesco S&P 500 Equal Weight ETF. RSP is a fund, not an index:
@@ -100,8 +100,8 @@ adjustments with the SPX price index. `range=max` monthly responses are rejected
 For every date, drawdown = `(close / cumulative_max(close) - 1) * 100`.
 Peaks are calculated on each security's full available daily history **before**
 limiting the rendered chart to five years or changing its viewport. This is
-close-to-close drawdown, not intraday-high drawdown. The independent chart has its own fragment and time controls, with no 9B
-number or data table. Captions show latest completed close, prior peak/date,
+close-to-close drawdown, not intraday-high drawdown. Chart 10 has its own fragment and time controls, without a data table.
+The previous charts 10–15 are displayed as 11–16. Captions show latest completed close, prior peak/date,
 absolute drop and percentage decline. Missing or stale observations remain labeled.
 
 The data-only `update-us-equity-snapshot.yml` job refreshes both histories and
