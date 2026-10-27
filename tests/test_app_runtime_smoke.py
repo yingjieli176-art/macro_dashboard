@@ -28,7 +28,7 @@ class DashboardBootSmoke(unittest.TestCase):
             second = AppTest.from_file(str(app), default_timeout=90).run()
         self.assertFalse(first.exception)
         self.assertFalse(second.exception)
-        self.assertEqual(len(second.get('button_group')), 16)
+        self.assertEqual(len(second.get('button_group')), 17)
         self.assertGreaterEqual(len(chart_specs(second)), 8)
         self.assertEqual(chart_specs(first), chart_specs(second))
 
@@ -42,7 +42,7 @@ class DashboardBootSmoke(unittest.TestCase):
             msg="Streamlit app crashed during full script execution: "
                 + "; ".join(str(error.message) for error in instance.exception),
         )
-        self.assertEqual(len(instance.get("button_group")), 16)
+        self.assertEqual(len(instance.get("button_group")), 17)
         specs = chart_specs(instance)
         # AppTest does not execute browser JavaScript. This assertion proves
         # the real Streamlit renderer emitted native chart messages, rather
@@ -60,6 +60,9 @@ class DashboardBootSmoke(unittest.TestCase):
         drawdown = next(json.loads(spec) for spec in specs if 'SPX' in spec)
         self.assertEqual([series["name"] for series in drawdown["series"]],
                          ["SPX（标普500市值加权）", "RSP（标普500等权ETF）"])
+        china = next(json.loads(spec) for spec in specs
+                     if any(series["name"] == "沪深300" for series in json.loads(spec)["series"]))
+        self.assertEqual([series["name"] for series in china["series"]], ["沪深300", "中证1000", "中证2000"])
         self.assertFalse(any("距前高跌幅" in element.value.columns for element in instance.dataframe))
         # Market assets retain their original unit and independent price axes.
         spec_text = " ".join(specs)

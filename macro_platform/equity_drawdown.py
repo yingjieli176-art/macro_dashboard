@@ -89,12 +89,12 @@ def load_equity_history(key):
         return empty
 
 
-def build_drawdown_figure(histories, years=5):
+def build_drawdown_figure(histories, years=5, series=None):
     import plotly.graph_objects as go
 
     fig = go.Figure()
     summaries, missing = [], []
-    for key, config in SERIES.items():
+    for key, config in (SERIES if series is None else series).items():
         frame = calculate_drawdown(histories.get(key, pd.DataFrame(columns=["observation_date", "close"])))
         actual = frame.dropna(subset=["close", "drawdown_pct"])
         if actual.empty:

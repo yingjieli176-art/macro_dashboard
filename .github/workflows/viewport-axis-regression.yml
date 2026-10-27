@@ -12,6 +12,11 @@ on:
       - scripts/update_censtat_money_supply.py
       - macro_platform/us_equity_risk.py
       - macro_platform/equity_drawdown.py
+      - macro_platform/china_equity.py
+      - scripts/update_china_equity_snapshot.py
+      - tests/test_china_equity.py
+      - data_snapshots/china_equity_daily.json
+      - .github/workflows/update-china-equity-snapshot.yml
       - scripts/update_us_equity_snapshot.py
       - tests/test_equity_drawdown.py
       - data_snapshots/us_equity_daily.json
@@ -93,6 +98,11 @@ on:
       - scripts/update_censtat_money_supply.py
       - macro_platform/us_equity_risk.py
       - macro_platform/equity_drawdown.py
+      - macro_platform/china_equity.py
+      - scripts/update_china_equity_snapshot.py
+      - tests/test_china_equity.py
+      - data_snapshots/china_equity_daily.json
+      - .github/workflows/update-china-equity-snapshot.yml
       - scripts/update_us_equity_snapshot.py
       - tests/test_equity_drawdown.py
       - data_snapshots/us_equity_daily.json
@@ -233,6 +243,7 @@ jobs:
             browser_acceptance.png
             browser_mobile.png
             browser_equity_drawdown.png
+            browser_china_drawdown.png
             browser_freshness.png
             browser_session_b.png
             browser-server.log
