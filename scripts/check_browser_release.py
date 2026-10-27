@@ -375,6 +375,10 @@ def exercise_security_search(page):
     page.locator('[class*="st-key-market_search_hk_delete_"] button:visible').last.click()
     card.wait_for(state='detached', timeout=15000)
     assert card.count() == 0
+    # A removed card can disappear before its full rerun registers all fragments.
+    # Wait for the server's completion signal before clicking chart controls.
+    page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'",
+                           timeout=30000)
     return {'chinese_name':True, 'enter_to_search':True, 'confirmed_symbol':'1810.HK', 'add_remove':True}
 
 
@@ -431,6 +435,8 @@ def main():
             for label in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
                 groups.nth(4).get_by_text(label, exact=True).click()
                 page.locator(f".st-key-hk_5_range_adaptive_default_{label}").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$")).wait_for(timeout=30000)
+                page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'",
+                                       timeout=30000)
                 assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
             assert page.get_by_test_id("stRadio").count() == 0
             assert page.get_by_text("Rebased 100", exact=True).count() == 0
