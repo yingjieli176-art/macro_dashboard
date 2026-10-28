@@ -54,5 +54,28 @@
     "Source date match does not independently validate every historical value.",
     "Seven live-only feeds require their rendered observation dates to be checked separately.",
     "Business-day cadence warnings are not exchange holiday calendars."
-  ]
+  ],
+  "latest_check": {
+    "release": "2026-10-28-price-ratio-footer-r74",
+    "ci_run": 40620546671,
+    "tested_head": "6d183f55b77df2bebbcb9bd8d8e707ffcecdcbfb",
+    "test_count": 261,
+    "checked_at": "2026-10-28T02:25:43.635514+00:00",
+    "status_counts": {
+      "at_source_latest": 40,
+      "live_only": 7,
+      "unverified": 8
+    },
+    "unverified": [
+      "aggr_balance_bf_disc_win",
+      "closing_balance",
+      "disc_win_base_rate",
+      "m2_hkd",
+      "m3_hkd",
+      "mb_bf_disc_win_total",
+      "outstanding_efbn",
+      "ow_lb_bf_disc_win"
+    ],
+    "reason": "HKMA direct request and proxy fallback were unavailable; preserve dated last-good snapshots and report unverified."
+  }
 }
