@@ -4,7 +4,7 @@
   "source": "Cboe Global Indices",
   "source_url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/COR1M_History.csv",
   "unit": "index points",
-  "updated_at": "2026-10-28T01:14:50.297938+00:00",
+  "updated_at": "2026-10-28T01:43:55.350453+00:00",
   "record_count": 5237,
   "coverage_start": "2006-01-03",
   "coverage_end": "2026-10-27",
