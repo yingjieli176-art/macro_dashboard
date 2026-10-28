@@ -57,6 +57,7 @@ export default function({data, parentElement}) {
 
   const isPriceGuide = line => / · (最高收盘|最新收盘)$/.test(line.name || '');
   const hasPriceGuides = base.series.some(series => (series.markLine?.data || []).some(isPriceGuide));
+  const footerSpace = hasPriceGuides ? data.price_footer_height || 0 : 0;
   const priceNumber = value => value.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
   function refreshPriceGuides(zooms) {
     if (!hasPriceGuides) return;
@@ -94,7 +95,38 @@ export default function({data, parentElement}) {
       const fallback = (source.media || []).find(item => !item.query);
       if (fallback) merge(result, fallback.option);
     }
+    if (footerSpace) {
+      // Keep the original price plot height; the extra canvas space holds
+      // exportable ratios below the date slider, including on phones.
+      result.grid.bottom = (Number(result.grid.bottom) || 75) + footerSpace;
+      result.dataZoom = result.dataZoom.map(zoom => zoom.type === 'slider' ?
+        {...zoom, bottom:(Number(zoom.bottom) || 16) + footerSpace} : zoom);
+    }
     return result;
+  }
+
+  function priceRatioFooter() {
+    const assets = base.series.filter(series => (series.markLine?.data || []).some(isPriceGuide));
+    const lines = assets.map((series, index) => {
+      const high = series.markLine.data.find(line => / · 最高收盘$/.test(line.name));
+      const current = series.markLine.data.find(line => / · 最新收盘$/.test(line.name));
+      const short = high.label.formatter.split(' 高 ')[0];
+      let text = '';
+      if (selected[series.name] !== false) {
+        if (high.label.show === false || !Number.isFinite(high.yAxis) || high.yAxis <= 0 ||
+            !Number.isFinite(current?.yAxis)) text = `${short} · 所选区间暂无有效观测`;
+        else {
+          const percent = (high.yAxis-current.yAxis)/high.yAxis*100;
+          const label = percent < 0 ? '高于区间前高' : '距区间前高回撤';
+          text = `${short} · ${label} ${Math.abs(percent).toFixed(2)}%`;
+        }
+      }
+      return {id:`macro-price-ratio-${index}`, type:'text', left:12,
+        bottom:8+(assets.length-index-1)*20, silent:true,
+        style:{text, fill:series.lineStyle?.color || '#475569', fontSize:12, lineHeight:20}};
+    });
+    element.setAttribute('aria-description', lines.map(line=>line.style.text).filter(Boolean).join('；'));
+    return lines;
   }
 
   function axisLayout(option) {
@@ -149,8 +181,10 @@ export default function({data, parentElement}) {
     // when the visible interval changes; other charts keep their series intact.
     const patch = {legend: {...option.legend, selected}, grid: option.grid,
       yAxis: option.yAxis, xAxis: option.xAxis, toolbox: option.toolbox};
-    if (hasPriceGuides) patch.series = base.series.map(series =>
-      ({name:series.name, markLine:copy(series.markLine)}));
+    if (hasPriceGuides) {
+      patch.series = base.series.map(series => ({name:series.name, markLine:copy(series.markLine)}));
+      patch.graphic = priceRatioFooter();
+    }
     chart.setOption(patch, {silent:true});
     parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom};
   }

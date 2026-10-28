@@ -94,7 +94,7 @@ RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 MACRO_DISPLAY_ORDER = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "us_drawdown", "cn_drawdown", 14, 15, 11, 13, 12)
 MACRO_DISPLAY_NUMBER = {key: index for index, key in enumerate(MACRO_DISPLAY_ORDER, 1)}
-CHART_BUILD = "2026-10-28-source-date-audit-r73"
+CHART_BUILD = "2026-10-28-price-ratio-footer-r74"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2614,7 +2614,7 @@ def _render_equity_drawdown():
     summaries = (figure.layout.meta or {}).get("price_summary", [])
     for row in summaries:
         st.caption(f'{row["symbol"]} 最新收盘：{row["close"]:,.2f}（{row["date"]}）')
-    st.caption("SPX为自由流通市值加权价格指数，单位为点；RSP为跟踪标普500等权指数的ETF，单位为美元。RSP价格已处理拆股，不含股息再投资，并存在费用及跟踪误差；两者使用独立坐标轴。数据为已完成交易日收盘，非实时行情。")
+    st.caption("图底回撤比例＝（所选区间前高−最新收盘）÷所选区间前高×100%；最新价高于历史选区前高时，显示高出比例。SPX以点计、RSP以美元计，使用独立坐标轴；均为已完成交易日收盘，非实时行情。RSP已处理拆股，不含股息再投资，存在费用及跟踪误差。")
     add_sources([
         ("SPX 日线价格", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
         ("RSP 日线价格", "https://finance.yahoo.com/quote/RSP/history/"),
@@ -2645,7 +2645,7 @@ def _render_china_drawdown():
     _render_adaptive_macro_figure(figure, "china_equity_drawdown", standard=True)
     for row in (figure.layout.meta or {}).get("price_summary", []):
         st.caption(f'{row["name"]}（{row["symbol"]}）最新收盘：{row["close"]:,.2f}（{row["date"]}）')
-    st.caption("中证指数官网已完成交易日收盘，价格指数，不含股息再投资。发布前数据为中证官方回溯数据；区间高点只按当前可见时间内的有效收盘价计算。最新日期以图中观测日为准。")
+    st.caption("图底回撤比例＝（所选区间前高−最新收盘）÷所选区间前高×100%，随时间选区自动更新；最新价高于历史选区前高时，显示高出比例。中证官网已完成交易日价格指数，不含股息再投资；发布前数据为官方回溯数据。最新日期以观测日为准。")
     add_sources([(name, f"https://www.csindex.com.cn/zh-CN/indices/index-detail/{code}")
                  for code, name in (("000300", "沪深300"), ("000852", "中证1000"), ("932000", "中证2000"))])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)

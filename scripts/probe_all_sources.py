@@ -122,7 +122,7 @@ def fred(symbol):
         except (requests.RequestException, ValueError, RuntimeError, KeyError):
             pass
     if symbol == "SP500":
-        return yahoo("^GSPC")
+        return us_equity("SPX")
     url = "https://fred.stlouisfed.org/graph/fredgraph.csv"
     try:
         frame = pd.read_csv(io.StringIO(get(url, params={"id": symbol}).text))
@@ -229,6 +229,14 @@ def csindex(code):
     return latest(frame, "observation_date", "close"), SOURCE
 
 
+@shared_fetch
+def us_equity(key):
+    from scripts.update_us_equity_snapshot import collect_history
+    from macro_platform.equity_drawdown import SERIES
+    frame = collect_history(key)
+    return latest(frame, "observation_date", "close"), frame.attrs.get("source_url", SERIES[key]["source"])
+
+
 def jobs():
     output = []
     def add(key, charts, cadence, stored, fetch):
@@ -271,7 +279,7 @@ def jobs():
                 lambda country=country,key=key: asia(country,key))
     for key, symbol in (("SPX", "^GSPC"), ("RSP", "RSP")):
         add(key, [11], "daily", snapshot("us_equity_daily.json", "date", "close", key),
-            lambda symbol=symbol: yahoo(symbol))
+            lambda key=key: us_equity(key))
     for code in ("000300", "000852", "932000"):
         add(code, [12], "daily", snapshot("china_equity_daily.json", "date", "close", code),
             lambda code=code: csindex(code))

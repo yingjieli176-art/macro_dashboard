@@ -117,6 +117,8 @@ def exercise_client_zoom(page, chart, minimum_axes=2):
 def assert_price_guides_follow_viewport(chart):
     values = chart.evaluate("""element => {
         const instance = (""" + INSTANCE_JS + """)(element), values = [];
+        const option = instance.getOption();
+        const graphics = (option.graphic || []).flatMap(group => group.elements || [group]);
         instance.getModel().eachSeries(series => {
             const data = series.getData(), y = data.mapDimension('y');
             const raw = instance.getOption().series.find(item => item.name === series.name).data;
@@ -130,8 +132,12 @@ def assert_price_guides_follow_viewport(chart):
             const guides = series.get('markLine').data;
             const high = guides.find(line => / · 最高收盘$/.test(line.name));
             const current = guides.find(line => / · 最新收盘$/.test(line.name));
+            const index = option.series.findIndex(item => item.name === series.name);
+            const footer = graphics.find(item => item.id === `macro-price-ratio-${index}`);
             values.push({name:series.name, expected:best, high:high.yAxis,
                 label:high.label.formatter, current:current.yAxis,
+                ratio_text:footer?.style?.text, footer_bottom:footer?.bottom,
+                slider_bottom:option.dataZoom.find(zoom=>zoom.type==='slider').bottom,
                 latest:raw.filter(point=>Number.isFinite(point[1])).at(-1)[1]});
         });
         return values;
@@ -142,6 +148,10 @@ def assert_price_guides_follow_viewport(chart):
         assert abs(value['high'] - value['expected']['value']) < .00001, value
         assert value['expected']['date'] in value['label'], value
         assert abs(value['current'] - value['latest']) < .00001, value
+        percent = (value['high']-value['current'])/value['high']*100
+        label = '高于区间前高' if percent < 0 else '距区间前高回撤'
+        assert f'{label} {abs(percent):.2f}%' in (value['ratio_text'] or ''), value
+        assert value['footer_bottom'] < value['slider_bottom'], value
     return values
 
 

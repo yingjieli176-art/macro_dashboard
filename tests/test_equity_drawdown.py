@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pandas as pd
 
@@ -35,6 +35,18 @@ def yahoo_payload():
 
 
 class EquityDrawdownTests(unittest.TestCase):
+    def test_stale_but_valid_first_host_does_not_hide_a_newer_completed_close(self):
+        from scripts import update_us_equity_snapshot as collector
+        older = prices([217.29], ["2026-10-26"])
+        newer = prices([217.52], ["2026-10-27"])
+        with patch.object(collector, 'completed_us_date', return_value=pd.Timestamp('2026-10-27')), \
+             patch.object(collector.requests, 'get', return_value=Mock(url='https://query.finance.yahoo.com')) as get, \
+             patch.object(collector, 'parse_yahoo_history', side_effect=[older, newer]):
+            frame = collector.collect_history('RSP')
+        self.assertEqual(get.call_count, 2)
+        self.assertEqual(frame.observation_date.max(), pd.Timestamp('2026-10-27'))
+        self.assertEqual(frame.close.iloc[-1], 217.52)
+
     def test_running_peak_recovers_and_never_looks_ahead(self):
         frame = calculate_drawdown(prices([100, 120, 90, 110, 125, 100]))
         self.assertEqual(frame.peak.tolist(), [100, 120, 120, 120, 125, 125])
