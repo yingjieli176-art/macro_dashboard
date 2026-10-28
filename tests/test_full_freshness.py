@@ -90,7 +90,10 @@ class FullFreshness(unittest.TestCase):
         state={"_source_watch_until":0,"_source_watch_revision":("old",),"_late_dashboard_jobs":{},
                "hk_5_range_time_window":"1M"}
         ui=SimpleNamespace(session_state=state,rerun=Mock())
-        ns={"st":ui,"time":time,"_macro_snapshot_revision":lambda:("new",)}
+        # A fresh CI VM can have a monotonic uptime below the 60s throttle.
+        # Model an actually long-open page without depending on runner uptime.
+        ns={"st":ui,"time":SimpleNamespace(monotonic=lambda:1000.),
+            "_macro_snapshot_revision":lambda:("new",)}
         exec(compile(ast.Module(body=[node],type_ignores=[]),str(source),"exec"),ns)
         ns["_poll_source_completion"]()
         ui.rerun.assert_called_once()
