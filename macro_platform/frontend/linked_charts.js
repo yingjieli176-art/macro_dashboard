@@ -203,7 +203,7 @@ export default function({data, parentElement}) {
       }
       return {id:`macro-price-ratio-${index}`, type:'text', left:12,
         bottom:8+(assets.length-index-1)*20, silent:true,
-        style:{text, fill:series.lineStyle?.color || '#475569', fontSize:12, lineHeight:20}};
+        style:{text, fill:ratioColors[index % ratioColors.length], fontSize:12, lineHeight:20}};
     });
     element.setAttribute('aria-description', lines.map(line=>line.style.text).filter(Boolean).join('；'));
     return lines;
