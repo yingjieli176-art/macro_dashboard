@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-28-same-grid-drawdown-r76",
+  "release": "2026-10-28-daily-drawdown-parameter-r77",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -13,6 +13,7 @@
     "complete_date_source_audit",
     "viewport_price_ratio_footer",
     "viewport_peak_anchored_drawdown_path",
-    "same_grid_price_drawdown_overlay"
+    "same_grid_price_drawdown_overlay",
+    "named_daily_drawdown_parameter"
   ]
 }
