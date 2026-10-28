@@ -36,5 +36,11 @@ def render_echarts_chart(option, *, height=465, width="stretch", key=None, theme
     # own X window. Legend choices belong to the chart, independently of it.
     parts = str(key or "").rsplit("_", 1)
     legend_key = parts[0] if len(parts) == 2 and parts[1] in {"5Y", "1Y", "6M", "3M", "1M"} else str(key or "")
-    return _component()(data={"option": option, "height": height, "legend_state_key": legend_key},
-                        key=key, height=height, width=width)
+    price_series = [series for series in option.get("series", []) if any(
+        str(line.get("name", "")).endswith(" · 最高收盘")
+        for line in (series.get("markLine") or {}).get("data", []))]
+    footer_height = 16 + 20 * len(price_series) if price_series else 0
+    component_height = height + footer_height
+    return _component()(data={"option": option, "height": component_height,
+                              "price_footer_height": footer_height, "legend_state_key": legend_key},
+                        key=key, height=component_height, width=width)

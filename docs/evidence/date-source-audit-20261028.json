@@ -1,0 +1,81 @@
+{
+  "release": "2026-10-28-source-date-audit-r73",
+  "ci_run": 40613604251,
+  "tested_head": "78131a76839d3d82ef3dd9d34b51f8c4ee94ecbb",
+  "chart_count": 17,
+  "source_count": 55,
+  "raw_snapshot_count": 32,
+  "raw_field_count": 51,
+  "test_count": 259,
+  "before_checked_at": "2026-10-28T01:13:25.467853+00:00",
+  "after_checked_at": "2026-10-28T01:15:32.499269+00:00",
+  "before_status_counts": {
+    "at_source_latest": 37,
+    "live_only": 7,
+    "pipeline_lag": 10,
+    "source_behind_repository": 1
+  },
+  "after_status_counts": {
+    "at_source_latest": 47,
+    "live_only": 7,
+    "source_behind_repository": 1
+  },
+  "source_audit_seconds": 25.942,
+  "shared_http_downloads": 29,
+  "shared_http_reuses": 8,
+  "updated_snapshots": [
+    "data_snapshots/fred_cache/IORB.json",
+    "data_snapshots/fred_cache/VXVCLS.json",
+    "data_snapshots/fred_cache/GVZCLS.json",
+    "data_snapshots/usdhkd_daily.json",
+    "data_snapshots/jpy_market_daily.json",
+    "data_snapshots/japan_gov_yields.json",
+    "data_snapshots/cor1m_daily.json",
+    "data_snapshots/cor3m_daily.json",
+    "data_snapshots/copper_market_daily.json",
+    "data_snapshots/all_source_freshness.json"
+  ],
+  "remaining": [
+    {
+      "id": "^HSI",
+      "charts": [
+        5,
+        8
+      ],
+      "cadence": "daily",
+      "repository_latest": "2026-10-27",
+      "checked_at": "2026-10-28T01:15:07.656783+00:00",
+      "source_latest": "2026-10-26",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EHSI",
+      "status": "source_behind_repository"
+    }
+  ],
+  "limits": [
+    "Source date match does not independently validate every historical value.",
+    "Seven live-only feeds require their rendered observation dates to be checked separately.",
+    "Business-day cadence warnings are not exchange holiday calendars."
+  ],
+  "latest_check": {
+    "release": "2026-10-28-price-ratio-footer-r74",
+    "ci_run": 40620546671,
+    "tested_head": "6d183f55b77df2bebbcb9bd8d8e707ffcecdcbfb",
+    "test_count": 261,
+    "checked_at": "2026-10-28T02:25:43.635514+00:00",
+    "status_counts": {
+      "at_source_latest": 40,
+      "live_only": 7,
+      "unverified": 8
+    },
+    "unverified": [
+      "aggr_balance_bf_disc_win",
+      "closing_balance",
+      "disc_win_base_rate",
+      "m2_hkd",
+      "m3_hkd",
+      "mb_bf_disc_win_total",
+      "outstanding_efbn",
+      "ow_lb_bf_disc_win"
+    ],
+    "reason": "HKMA direct request and proxy fallback were unavailable; preserve dated last-good snapshots and report unverified."
+  }
+}

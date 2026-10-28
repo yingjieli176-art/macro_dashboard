@@ -422,9 +422,10 @@ def _extract_time(item):
             if pd.isna(dt):
                 return ""
             dt = dt.tz_convert("Asia/Hong_Kong")
-            if dt.year < 2000 or dt > now_hkt + pd.Timedelta(days=1):
+            if dt.year < 2000 or dt > now_hkt + pd.Timedelta(minutes=5):
                 return ""
-            return dt.strftime("%H:%M:%S") if dt.date() == now_hkt.date() else dt.strftime("%m-%d %H:%M")
+            return dt.strftime("%H:%M:%S") if dt.date() == now_hkt.date() else dt.strftime(
+                "%m-%d %H:%M" if dt.year == now_hkt.year else "%Y-%m-%d %H:%M")
         except Exception:
             return ""
 
@@ -435,7 +436,12 @@ def _extract_time(item):
         normalized = full.group(1).replace("/", "-").replace(".", "-") + " " + full.group(2)
         dt = pd.to_datetime(normalized, errors="coerce")
         if not pd.isna(dt):
-            return dt.strftime("%H:%M:%S") if dt.date() == now_hkt.date() else dt.strftime("%m-%d %H:%M")
+            dt = dt.tz_localize("Asia/Hong_Kong")
+            if dt.year < 2000 or dt > now_hkt + pd.Timedelta(minutes=5):
+                return ""
+            return dt.strftime("%H:%M:%S") if dt.date() == now_hkt.date() else dt.strftime(
+                "%m-%d %H:%M" if dt.year == now_hkt.year else "%Y-%m-%d %H:%M")
+        return ""
 
     short = re.search(r"(\d{1,2}[-/.]\d{1,2})[ T]+(\d{1,2}:\d{2}(?::\d{2})?)", text)
     if short:

@@ -70,7 +70,8 @@ def source_rows(path=SOURCE_REPORT):
     labels = {"at_source_latest": "与本次源站返回一致", "pipeline_lag": "本地落后源站",
               "source_behind_repository": "源站本次导出较旧，保留较新已验数据",
               "live_only": "页面实时构建，核对图表日期", "unverified": "源站尚未核实"}
-    return _local_time(report.get("checked_at")), [{"源指标": row["id"], "图表": ",".join(map(str,row["charts"])),
+    return _local_time(report.get("checked_at")), [{"源指标": row["id"], "图表": (",".join(map(str,row["charts"]))
+        if report.get("chart_numbering") == "display_17" else "待按新图号复核"),
         "本地数据日期": row.get("repository_latest") or "实时构建",
         "源站数据日期": row.get("source_latest") or "未取得", "核对结果": labels.get(row["status"],row["status"]),
         "本次核对时间": _local_time(row.get("checked_at")), "说明": row.get("error", "")}
@@ -81,8 +82,12 @@ def render_freshness_overview(figures, *, quote_rows=None, news=None):
     import streamlit as st
     plotted = figure_rows(figures)
     with st.expander(f"数据最新时间 · {max(15, max(figures, default=0))} 张图 / {len(plotted)} 条曲线", expanded=False):
-        st.dataframe(pd.DataFrame(plotted)[["图表", "指标", "实际观测日"]],
+        st.dataframe(pd.DataFrame(plotted)[["图表", "指标", "实际观测日", "频率", "状态"]],
                      hide_index=True, height=380, width="stretch")
+        checked_at, verified = source_rows()
+        if verified:
+            st.caption("源站逐项核对时间：" + checked_at + "。频率窗口仅作提醒，不代表已与源站最新数据一致。")
+            st.dataframe(pd.DataFrame(verified), hide_index=True, height=330, width="stretch")
         if quote_rows:
             st.markdown("**市场概览与自选报价**")
             st.dataframe(pd.DataFrame(quote_rows), hide_index=True, height=260, width="stretch")

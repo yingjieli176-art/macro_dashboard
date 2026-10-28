@@ -9,6 +9,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import requests
 from macro_platform.request_runtime import http_get, observed_cache
+from macro_platform.market_history import completed_daily_closes
 import streamlit as st
 from plotly.subplots import make_subplots
 
@@ -127,6 +128,8 @@ def load_hk_liquidity() -> pd.DataFrame:
     frame["observation_date"] = pd.to_datetime(
         frame["end_of_month"], format="%Y-%m", errors="coerce"
     )
+    today = pd.Timestamp.now(tz="Asia/Hong_Kong").tz_localize(None).normalize()
+    frame = frame.loc[(frame.observation_date + pd.offsets.MonthEnd(0)).le(today)]
     frame = (
         frame.dropna(subset=["observation_date"])
         .sort_values("observation_date")
@@ -240,6 +243,8 @@ def load_hk_banking_liquidity_daily() -> pd.DataFrame:
         return load_hk_banking_liquidity_monthly()
 
     frame["observation_date"] = pd.to_datetime(frame["end_of_date"], errors="coerce")
+    today = pd.Timestamp.now(tz="Asia/Hong_Kong").tz_localize(None).normalize()
+    frame = frame.loc[frame.observation_date.le(today)].copy()
     mapping = {
         "opening_balance": "Opening Aggregate Balance",
         "closing_balance": "Closing Aggregate Balance",
@@ -327,6 +332,8 @@ def load_hk_funding_daily() -> pd.DataFrame:
         frame = pd.DataFrame()
     if not frame.empty and "end_of_date" in frame.columns:
         frame["observation_date"] = pd.to_datetime(frame["end_of_date"], errors="coerce")
+        today = pd.Timestamp.now(tz="Asia/Hong_Kong").tz_localize(None).normalize()
+        frame = frame.loc[frame.observation_date.le(today)].copy()
         frame["HIBOR O/N"] = pd.to_numeric(frame.get("hibor_overnight"), errors="coerce")
         frame["HIBOR 3M"] = pd.to_numeric(frame.get("hibor_3m"), errors="coerce")
         frame["HKMA Base Rate"] = pd.to_numeric(frame.get("disc_win_base_rate"), errors="coerce")
@@ -617,6 +624,10 @@ def _market_snapshot_history(symbol: str, label: str, date_range: str) -> pd.Dat
         return pd.DataFrame(columns=["observation_date", label])
     frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
     frame[label] = pd.to_numeric(frame["close"], errors="coerce")
+    clock = pd.Timestamp.now(tz="Asia/Hong_Kong")
+    cutoff = clock.tz_localize(None).normalize() - pd.Timedelta(days=int((clock.hour, clock.minute) < (16, 15)))
+    frame = frame.loc[frame.observation_date.le(cutoff) & frame[label].gt(0)
+                      & frame[label].lt(float("inf"))]
     frame = (
         frame.dropna(subset=["observation_date", label])
         .sort_values("observation_date")
@@ -639,75 +650,34 @@ def _market_history(symbol: str, label: str, date_range: str) -> pd.DataFrame:
         return snapshot
     # Emergency fallback only. Normal dashboard renders should never need live
     # history because GitHub Actions maintains the last-known-good snapshot.
-    monthly = _market_monthly_close(symbol, label)
-    if monthly.empty:
-        return monthly
-    return _slice_range(monthly, date_range)
+    fallback = _market_monthly_close(symbol, label)
+    if fallback.empty:
+        return fallback
+    return _slice_range(fallback, date_range)
 
 
 def _market_monthly_close(symbol: str, label: str) -> pd.DataFrame:
-    if str(symbol).upper() in {"HSTECH.HK", "^HSTECH", "HSTECH"}:
-        snapshot = _hstech_snapshot_monthly(label)
-        if len(snapshot) >= 48:
-            return snapshot
-    """Fetch up to five years of month-end market levels.
+    """Legacy entry point: recover true daily closes, preserving session dates.
 
-    Yahoo market history is enrichment only. Try both public chart hosts and,
-    for Hang Seng TECH, a secondary symbol alias. A failure must never blank
-    the HKMA liquidity charts.
+    Monthly bars are stamped at the period start and can still be partial.
+    They cannot stand in for a dated completed daily market observation.
     """
-    symbols = [symbol]
-    if str(symbol).upper() == "HSTECH.HK":
-        symbols.append("^HSTECH")
-    hosts = (
-        "https://query1.finance.yahoo.com/v8/finance/chart/",
-        "https://query2.finance.yahoo.com/v8/finance/chart/",
-    )
-    for market_symbol in symbols:
-        for host in hosts:
-            try:
-                response = http_get(
-                    host + market_symbol,
-                    params={
-                        "range": "5y",
-                        "interval": "1mo",
-                        "includeAdjustedClose": "true",
-                        "events": "div,splits",
-                    },
-                    headers={"User-Agent": "Mozilla/5.0"},
-                    timeout=4.0,
-                )
-                response.raise_for_status()
-                result = (((response.json() or {}).get("chart") or {}).get("result") or [])
-                if not result:
-                    continue
-                node = result[0] or {}
-                timestamps = node.get("timestamp") or []
-                indicators = node.get("indicators") or {}
-                quote_close = (indicators.get("quote") or [{}])[0].get("close") or []
-                closes = quote_close
-                if len(closes) != len(timestamps):
-                    continue
-                frame = pd.DataFrame(
-                    {
-                        "observation_date": pd.to_datetime(
-                            timestamps, unit="s", utc=True, errors="coerce"
-                        ).tz_convert(None),
-                        label: pd.to_numeric(closes, errors="coerce"),
-                    }
-                ).dropna(subset=["observation_date", label])
-                if frame.empty:
-                    continue
-                frame["observation_date"] = (
-                    frame["observation_date"].dt.to_period("M").dt.to_timestamp()
-                )
-                return (
-                    frame.sort_values("observation_date")
-                    .drop_duplicates("observation_date", keep="last")
-                    [["observation_date", label]]
-                )
-            except Exception:
+    for host in ("query1.finance.yahoo.com", "query2.finance.yahoo.com"):
+        try:
+            response = http_get(
+                f"https://{host}/v8/finance/chart/{symbol}",
+                params={"range": "5y", "interval": "1d", "includePrePost": "false"},
+                headers={"User-Agent": "Mozilla/5.0"}, timeout=4.0,
+            )
+            response.raise_for_status()
+            nodes = ((response.json().get("chart") or {}).get("result") or [])
+            if not nodes:
                 continue
+            frame = completed_daily_closes(nodes[0])
+            if not frame.empty:
+                return frame.rename(columns={"close": label})
+        except (requests.RequestException, ValueError, KeyError, TypeError):
+            continue
     return pd.DataFrame(columns=["observation_date", label])
 
 

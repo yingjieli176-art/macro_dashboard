@@ -140,3 +140,18 @@ the dynamic Y range during time selection, slider zoom and resizing. They are
 annotations and never enter observation counts or source freshness dates.
 VIX is the official 30-calendar-day (~1M) index; the 1M/3M chart buttons change
 the historical display window rather than the volatility forecast horizon.
+
+### 全看板日期与取数核对（r73）
+
+“数据最新时间”同时列出每条曲线的实际观测日、日/周/月频率和频率窗口状态；另列源站逐项核对结果及核对时间。“在频率窗口内”不等于已追上源站，工作日窗口也不是各市场节假日日历。
+
+- `scripts/audit_source_freshness.py` 核对本地原始记录，包含日本国债、SPX/RSP及三只CSI指数；无效日期、未来日期、重复日期和非有限数值会使核对失败。
+- `scripts/probe_all_sources.py --strict` 按当前17张图号核对55个源指标。相同接口的并发读取合并，报告记录耗时与共享请求复用次数；网络失败保持“未核实”，本地落后源站保持“落后”。
+- 港股备用行情使用已完成的日线及交易所当地日期；不再用月线月初时间戳代替实际收盘日。临时传输失败保留原观测日的最后有效数据并短暂限制重试。
+- SPX/RSP任务包含UTC周六补抓，覆盖周五美股收盘后的延迟发布；快照仍只在校验通过后原子替换。
+
+2026-10-28核对结果：32份快照/51个原始字段未发现无效日期、未来日期、重复日期或非有限数值；55个源指标中10项快照滞后已补采，补采后47项与源站返回日期一致、7项页面实时构建、1项恒指源站导出较旧而保留本地较新已验记录。完整回归259项及浏览器交互通过。核对用时25.942秒，共享HTTP下载29次、复用8次；这些数字只覆盖共享HTTP层，不代表全部源站调用。记录见 `docs/evidence/date-source-audit-20261028.json`。
+
+r74：SPX/RSP及A股三指数图底增加“距区间前高回撤”比例，随周期、滑块、图例同步更新并包含在图片导出中。公式为（所选区间最高收盘−最新收盘）÷所选区间最高收盘；若现价高于历史选区前高，明确显示高出比例。增加画布底部空间，不压缩原价格绘图区。美股采集器遇到有效但落后一个交易日的首选主机时，会核对第二主机并保留较新响应。
+
+2026-10-28 10:25北京时间再次核对：40项源站日期一致、7项页面实时构建，8项HKMA指标因直连接口及代理回退不可用而保持“未核实”；未发现已确认的快照滞后。保留上次有效观测，最新核对状态以 `data_snapshots/all_source_freshness.json` 为准。r74完整回归261项和浏览器比例/滑块测试通过；源站核对仍严格保留这8项失败状态。

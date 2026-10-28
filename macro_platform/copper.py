@@ -43,7 +43,9 @@ def load_copper_snapshot() -> pd.DataFrame:
         # negative. A single isolated "0" after 600k tonnes is an invalid
         # fixing, not a genuine complete withdrawal of all warehouse stock.
         # Keep missing as NA: NEVER forward-fill or interpolate the date.
-        frame.loc[frame[col] <= 0, col] = float("nan")
+        frame.loc[~(frame[col].gt(0) & frame[col].lt(float("inf"))), col] = float("nan")
+    today = pd.Timestamp.now(tz="Europe/London").tz_localize(None).normalize()
+    frame = frame.loc[frame.observation_date.le(today)]
     return (
         frame.dropna(subset=["observation_date"])
         .sort_values("observation_date")

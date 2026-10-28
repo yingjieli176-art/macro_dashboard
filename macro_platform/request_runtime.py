@@ -82,6 +82,19 @@ def observed_cache(paths=None, ttl=3600):
                     if len(_SOURCE_FAILURES) > 64:
                         _SOURCE_FAILURES.pop(next(iter(_SOURCE_FAILURES)))
                 return frame
+            except requests.RequestException:
+                # A temporary transport error must not discard a verified
+                # previous frame. Do not hide parser/programming exceptions.
+                with _SOURCE_LOCK:
+                    previous = _SOURCE_LAST_GOOD.get(good_key)
+                    if previous is None:
+                        raise
+                    frame = previous.copy()
+                    frame.attrs.update({"is_stale": True, "is_fallback": True})
+                    _SOURCE_FAILURES[key] = (now, frame.copy())
+                    if len(_SOURCE_FAILURES) > 64:
+                        _SOURCE_FAILURES.pop(next(iter(_SOURCE_FAILURES)))
+                return frame
 
         def clear():
             cached.clear()

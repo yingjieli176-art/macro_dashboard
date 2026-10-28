@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+import pandas as pd
 import os
 from pathlib import Path
 import sys
@@ -13,6 +15,7 @@ from macro_platform.echarts_axes import option_observation_health
 
 
 SPECS = [
+    ("japan_gov_yields.json", "observation_date", "", ["japan_2y", "japan_10y"]),
     ("jpy_market_daily.json", "date", "", ["usd_jpy_close"]),
     ("jpy_neer_daily.json", "date", "", ["value"]),
     ("censtat_hkd_money_supply.json", "end_of_month", "hk_6_range", ["m2_hkd", "m3_hkd"]),
@@ -27,10 +30,56 @@ SPECS = [
 ]
 
 
+def read_payload(path):
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else {}
+    except (OSError, ValueError, TypeError):
+        return {}
+
+
+def raw_record_issues(payload, now=None):
+    """Catch malformed/interior rows that a max-date-only check would omit."""
+    today = pd.Timestamp.now(tz="Asia/Hong_Kong") if now is None else pd.Timestamp(now)
+    today = today.tz_localize(None).normalize() if today.tzinfo else today.normalize()
+    issues = {"invalid_date_rows": 0, "future_date_rows": 0,
+              "duplicate_date_rows": 0, "invalid_value_cells": 0}
+    nodes = list((payload.get("series") or {}).values()) if payload.get("series") else [payload]
+    numeric = {"value", "close", "japan_2y", "japan_10y", "close_today_bal", "open_today_bal"}
+    numeric.update(field for _, _, _, fields in SPECS for field in fields)
+    for node in nodes:
+        seen = set()
+        for row in node.get("records") or []:
+            key = next((key for key in ("observation_date", "date", "end_of_date", "end_of_month", "record_date") if key in row), None)
+            try:
+                date = pd.Timestamp(row.get(key))
+                if pd.isna(date):
+                    raise ValueError("missing date")
+                if key == "end_of_month":
+                    date += pd.offsets.MonthEnd(0)
+                if date.tzinfo:
+                    date = date.tz_localize(None)
+                issues["future_date_rows"] += int(date.normalize() > today)
+                issues["duplicate_date_rows"] += int(date in seen)
+                seen.add(date)
+            except (ValueError, TypeError, OverflowError):
+                issues["invalid_date_rows"] += 1
+            for key in numeric.intersection(row):
+                value = row[key]
+                if value in (None, "", ".", "null"):
+                    continue
+                try:
+                    if not math.isfinite(float(value)):
+                        raise ValueError("nonfinite")
+                except (ValueError, TypeError, OverflowError):
+                    issues["invalid_value_cells"] += 1
+    return issues
+
+
 def audit(root=ROOT, now=None):
     reports = []
     for filename, date_key, cadence, fields in SPECS:
-        payload = json.loads((root / "data_snapshots" / filename).read_text(encoding="utf-8"))
+        payload = read_payload(root / "data_snapshots" / filename)
         rows = payload.get("records") or []
         series = []
         for field in fields:
@@ -46,7 +95,7 @@ def audit(root=ROOT, now=None):
         health = option_observation_health({"series": series}, chart_key=cadence, now=now)
         missing = [field for field in fields if field not in health["latest_by_name"]]
         reports.append({"file": filename, **health, "missing_names": missing})
-    market = json.loads((root / "data_snapshots" / "hk_market_daily.json").read_text())
+    market = read_payload(root / "data_snapshots" / "hk_market_daily.json")
     series = [{"name": symbol, "data": [[r["observation_date"], r.get("close")]
                                           for r in node.get("records", [])]}
               for symbol, node in market.get("series", {}).items()]
@@ -88,12 +137,16 @@ def audit(root=ROOT, now=None):
                     "missing_names": [] if "TGA_DAILY" in tga_health["latest_by_name"] else ["TGA_DAILY"]})
     for symbol in ("IORB", "EFFR", "SOFR", "RRPONTSYAWARD", "DGS3MO", "DGS2", "DGS10",
                    "DFII5", "DFII10", "T10YIE", "WALCL", "WRESBAL", "RRPONTSYD", "VIXCLS", "VXVCLS", "SP500", "GVZCLS"):
-        payload = json.loads((root / "data_snapshots" / "fred_cache" / f"{symbol}.json").read_text())
+        payload = read_payload(root / "data_snapshots" / "fred_cache" / f"{symbol}.json")
         rows = payload.get("records") or []
         option = {"series": [{"name": symbol, "observation_cadence": "weekly" if symbol in ("WALCL", "WRESBAL") else "daily", "data": [[r.get("date"), r.get("value")] for r in rows]}]}
         health = option_observation_health(option, now=now)
         reports.append({"file": f"fred_cache/{symbol}.json", **health,
                         "missing_names": [] if symbol in health["latest_by_name"] else [symbol]})
+    for report in reports:
+        payload = read_payload(root / "data_snapshots" / report["file"])
+        report["invalid_snapshot"] = not bool(payload)
+        report["record_issues"] = raw_record_issues(payload, now=now)
     return reports
 
 
@@ -112,6 +165,10 @@ def main():
                "|---|---|---|---|---|"]
     failed = False
     for report in reports:
+        issues = {key: count for key, count in report["record_issues"].items() if count}
+        if report["invalid_snapshot"] or issues:
+            failed = True
+            summary.append(f"| {report['file']} | raw records | — | — | INVALID: {issues or 'missing/corrupt snapshot'} |")
         for name, day in report["latest_by_name"].items():
             bad = name in report["stale_names"] or name in report["future_names"]
             failed |= bad

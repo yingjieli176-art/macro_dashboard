@@ -50,6 +50,8 @@ def save_snapshot(histories, path=SNAPSHOT, now=None):
 
 def collect_history(key):
     errors = []
+    best = None
+    cutoff = completed_us_date()
     for host in ("query1.finance.yahoo.com", "query2.finance.yahoo.com"):
         try:
             # range=max can silently downgrade interval=1d to MONTHLY.
@@ -62,9 +64,20 @@ def collect_history(key):
                 timeout=(5, 25),
             )
             response.raise_for_status()
-            return parse_yahoo_history(response.json(), key)
+            frame = parse_yahoo_history(response.json(), key)
+            if frame.empty:
+                raise ValueError("No completed daily observations")
+            frame.attrs["source_url"] = response.url
+            if best is None or frame.observation_date.max() > best.observation_date.max():
+                best = frame
+            if frame.observation_date.max() >= cutoff:
+                return frame
         except (requests.RequestException, ValueError, KeyError, TypeError) as error:
             errors.append(f"{host}: {type(error).__name__}: {error}")
+    # A valid first host can be cached one session behind. Check the second
+    # host before accepting that lag; never replace a newer valid response.
+    if best is not None:
+        return best
     raise RuntimeError(f"{key}: no valid daily price source; " + "; ".join(errors))
 
 

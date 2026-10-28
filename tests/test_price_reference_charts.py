@@ -1,5 +1,6 @@
 """Original prices and annotations must stay separate from observations."""
 import unittest
+from unittest.mock import Mock, patch
 
 import pandas as pd
 
@@ -14,6 +15,20 @@ def history(values):
 
 
 class PriceReferenceTests(unittest.TestCase):
+    def test_ratio_footer_reserves_space_without_changing_price_observations(self):
+        from macro_platform.linked_charts import render_echarts_chart
+        figure = build_price_figure({"SPX": history([9999, 8000, 7600]),
+                                    "RSP": history([999, 230, 220])}, split_axes=True)
+        option = build_adaptive_echarts_option(figure)
+        component = Mock()
+        with patch('macro_platform.linked_charts._component', return_value=component):
+            render_echarts_chart(option, height=465)
+        args = component.call_args.kwargs
+        self.assertEqual(args['data']['price_footer_height'], 56)
+        self.assertEqual(args['height'], 521)
+        self.assertIs(args['data']['option'], option)
+        self.assertEqual([len(series['data']) for series in option['series']], [2, 2])
+
     def test_prices_are_unchanged_and_distinct_units_have_separate_axes(self):
         figure = build_price_figure({"SPX": history([9999, 8000, 7600]),
                                     "RSP": history([999, 230, 220])}, split_axes=True)
