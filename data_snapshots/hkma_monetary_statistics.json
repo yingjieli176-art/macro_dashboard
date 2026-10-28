@@ -3,8 +3,8 @@
   "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics",
   "monetary_base_source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod",
   "updated_at": "2026-10-28T01:24:49.955932+00:00",
-  "record_count": 78,
-  "coverage_start": "2020-04",
+  "record_count": 100,
+  "coverage_start": "2018-06",
   "coverage_end": "2026-09",
   "fetch_strategy": "HKMA official APIs via repository-only text transport; 12-month windows + field-level merge",
   "coverage_counts": {
@@ -1008,6 +1008,227 @@
       "monetary_base_total": 1709876,
       "m2_hkd": 7477673.0,
       "m3_hkd": 7495200.0
+    },
+    {
+      "end_of_month": "2020-03",
+      "cert_of_indebt": 527465,
+      "gov_notes_coins_circulation": 13210,
+      "aggr_balance": 54054,
+      "outstanding_efbn": 1086330,
+      "ow_lb_bf_disc_win": 953122,
+      "monetary_base_total": 1681059
+    },
+    {
+      "end_of_month": "2020-02",
+      "cert_of_indebt": 532245,
+      "gov_notes_coins_circulation": 13302,
+      "aggr_balance": 54259,
+      "outstanding_efbn": 1083927,
+      "ow_lb_bf_disc_win": 953170,
+      "monetary_base_total": 1683733
+    },
+    {
+      "end_of_month": "2020-01",
+      "cert_of_indebt": 540555,
+      "gov_notes_coins_circulation": 13485,
+      "aggr_balance": 54235,
+      "outstanding_efbn": 1081109,
+      "ow_lb_bf_disc_win": 1003601,
+      "monetary_base_total": 1689384
+    },
+    {
+      "end_of_month": "2019-12",
+      "cert_of_indebt": 516605,
+      "gov_notes_coins_circulation": 13254,
+      "aggr_balance": 54288,
+      "outstanding_efbn": 1078736,
+      "ow_lb_bf_disc_win": 995967,
+      "monetary_base_total": 1662883
+    },
+    {
+      "end_of_month": "2019-11",
+      "cert_of_indebt": 505565,
+      "gov_notes_coins_circulation": 12987,
+      "aggr_balance": 54390,
+      "outstanding_efbn": 1077197,
+      "ow_lb_bf_disc_win": 990406,
+      "monetary_base_total": 1650139
+    },
+    {
+      "end_of_month": "2019-10",
+      "cert_of_indebt": 503915,
+      "gov_notes_coins_circulation": 12981,
+      "aggr_balance": 54334,
+      "outstanding_efbn": 1075695,
+      "ow_lb_bf_disc_win": 987094,
+      "monetary_base_total": 1646925
+    },
+    {
+      "end_of_month": "2019-09",
+      "cert_of_indebt": 504105,
+      "gov_notes_coins_circulation": 12984,
+      "aggr_balance": 54272,
+      "outstanding_efbn": 1073913,
+      "ow_lb_bf_disc_win": 984987,
+      "monetary_base_total": 1645274
+    },
+    {
+      "end_of_month": "2019-08",
+      "cert_of_indebt": 499715,
+      "gov_notes_coins_circulation": 12981,
+      "aggr_balance": 54359,
+      "outstanding_efbn": 1072176,
+      "ow_lb_bf_disc_win": 984373,
+      "monetary_base_total": 1639231
+    },
+    {
+      "end_of_month": "2019-07",
+      "cert_of_indebt": 496395,
+      "gov_notes_coins_circulation": 12975,
+      "aggr_balance": 54243,
+      "outstanding_efbn": 1070232,
+      "ow_lb_bf_disc_win": 986372,
+      "monetary_base_total": 1633845
+    },
+    {
+      "end_of_month": "2019-06",
+      "cert_of_indebt": 491605,
+      "gov_notes_coins_circulation": 12977,
+      "aggr_balance": 54268,
+      "outstanding_efbn": 1066335,
+      "ow_lb_bf_disc_win": 973975,
+      "monetary_base_total": 1625185
+    },
+    {
+      "end_of_month": "2019-05",
+      "cert_of_indebt": 490265,
+      "gov_notes_coins_circulation": 12981,
+      "aggr_balance": 54295,
+      "outstanding_efbn": 1066726,
+      "ow_lb_bf_disc_win": 975615,
+      "monetary_base_total": 1624267
+    },
+    {
+      "end_of_month": "2019-04",
+      "cert_of_indebt": 498485,
+      "gov_notes_coins_circulation": 12999,
+      "aggr_balance": 54441,
+      "outstanding_efbn": 1064531,
+      "ow_lb_bf_disc_win": 972115,
+      "monetary_base_total": 1630456
+    },
+    {
+      "end_of_month": "2019-03",
+      "cert_of_indebt": 492935,
+      "gov_notes_coins_circulation": 13039,
+      "aggr_balance": 64753,
+      "outstanding_efbn": 1064608,
+      "ow_lb_bf_disc_win": 977567,
+      "monetary_base_total": 1635335
+    },
+    {
+      "end_of_month": "2019-02",
+      "cert_of_indebt": 493925,
+      "gov_notes_coins_circulation": 13176,
+      "aggr_balance": 76314,
+      "outstanding_efbn": 1063539,
+      "ow_lb_bf_disc_win": 978995,
+      "monetary_base_total": 1646954
+    },
+    {
+      "end_of_month": "2019-01",
+      "cert_of_indebt": 503745,
+      "gov_notes_coins_circulation": 13338,
+      "aggr_balance": 76242,
+      "outstanding_efbn": 1062784,
+      "ow_lb_bf_disc_win": 978247,
+      "monetary_base_total": 1656109
+    },
+    {
+      "end_of_month": "2018-12",
+      "cert_of_indebt": 483845,
+      "gov_notes_coins_circulation": 12845,
+      "aggr_balance": 76398,
+      "outstanding_efbn": 1059784,
+      "ow_lb_bf_disc_win": 980744,
+      "monetary_base_total": 1632872
+    },
+    {
+      "end_of_month": "2018-11",
+      "cert_of_indebt": 469815,
+      "gov_notes_coins_circulation": 12767,
+      "aggr_balance": 76501,
+      "outstanding_efbn": 1057794,
+      "ow_lb_bf_disc_win": 981373,
+      "monetary_base_total": 1616877
+    },
+    {
+      "end_of_month": "2018-10",
+      "cert_of_indebt": 468845,
+      "gov_notes_coins_circulation": 12751,
+      "aggr_balance": 76405,
+      "outstanding_efbn": 1056741,
+      "ow_lb_bf_disc_win": 973202,
+      "monetary_base_total": 1614742
+    },
+    {
+      "end_of_month": "2018-09",
+      "cert_of_indebt": 468905,
+      "gov_notes_coins_circulation": 12737,
+      "aggr_balance": 76394,
+      "outstanding_efbn": 1054130,
+      "ow_lb_bf_disc_win": 974856,
+      "monetary_base_total": 1612166
+    },
+    {
+      "end_of_month": "2018-08",
+      "cert_of_indebt": 468095,
+      "gov_notes_coins_circulation": 12707,
+      "aggr_balance": 76350,
+      "outstanding_efbn": 1053892,
+      "ow_lb_bf_disc_win": 976834,
+      "monetary_base_total": 1611044
+    },
+    {
+      "end_of_month": "2018-07",
+      "cert_of_indebt": 469825,
+      "gov_notes_coins_circulation": 12700,
+      "aggr_balance": 109546,
+      "outstanding_efbn": 1052903,
+      "ow_lb_bf_disc_win": 979584,
+      "monetary_base_total": 1644974
+    },
+    {
+      "end_of_month": "2018-06",
+      "cert_of_indebt": 471565,
+      "gov_notes_coins_circulation": 12697,
+      "aggr_balance": 109451,
+      "outstanding_efbn": 1051120,
+      "ow_lb_bf_disc_win": 978338,
+      "monetary_base_total": 1644833
     }
-  ]
+  ],
+  "monetary_base_history": {
+    "source": "Hong Kong Monetary Authority Monetary Base end-of-period API",
+    "official_source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod",
+    "transport": "direct HKMA first; r.jina.ai fallback used only by repository snapshot job",
+    "updated_at": "2026-10-28T01:38:34.011434+00:00",
+    "record_count": 100,
+    "coverage_start": "2018-06",
+    "coverage_end": "2026-09",
+    "coverage_counts_latest_78_months": {
+      "monetary_base_total": 78,
+      "aggr_balance": 78,
+      "outstanding_efbn": 78,
+      "ow_lb_bf_disc_win": 78
+    },
+    "fields": [
+      "cert_of_indebt",
+      "gov_notes_coins_circulation",
+      "aggr_balance",
+      "outstanding_efbn",
+      "ow_lb_bf_disc_win",
+      "monetary_base_total"
+    ]
+  }
 }
