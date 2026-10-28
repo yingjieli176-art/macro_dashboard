@@ -14,7 +14,7 @@ class PeakDrawdownPathTests(unittest.TestCase):
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 const source = readFileSync(process.argv[1], 'utf8');
-const {peakDrawdown} = await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const {peakDrawdown,dailyPriceTooltip} = await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 const points = [['2026-10-01',999],['2026-10-02',100],['2026-10-05',120],
   ['2026-10-06',120],['2026-10-07',90],['2026-10-08',null],
   ['2026-10-09',110],['2026-10-12',130],['2026-10-13',117]];
@@ -37,6 +37,11 @@ const single = peakDrawdown(points,Date.parse('2026-10-13'),Date.parse('2026-10-
 assert.deepEqual(single.data,[['2026-10-13',0,117]]);
 const trailing = peakDrawdown([...points,['2026-10-14',null]],Date.parse('2026-10-12'),Date.parse('2026-10-13'));
 assert.equal(trailing.data.at(-1)[0],'2026-10-13');
+assert.equal(dailyPriceTooltip([{seriesId:'macro-price-0',value:['2026-10-07',90]},
+  {seriesId:'macro-peak-drawdown-0',value:['2026-10-07',-25,90]}],['SPX']),
+  '2026-10-07\nSPX 收盘：90.00\nSPX 回撤比例：-25.00%');
+assert.equal(dailyPriceTooltip({seriesId:'macro-peak-drawdown-0',value:['2026-10-05',0,120]},['沪深300']),
+  '2026-10-05\n沪深300 回撤比例：0.00%');
 console.log(JSON.stringify({passed:true}));
 '''
         result = subprocess.run([shutil.which("node"), "--input-type=module", "-e", script, str(source)],

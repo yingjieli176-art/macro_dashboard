@@ -18,6 +18,21 @@ export function peakDrawdown(points, lower, upper) {
     .map(([day, value]) => [day, Number.isFinite(value) && value > 0 ?
       (value / peak.value - 1) * 100 : null, value]) : []};
 }
+
+export function dailyPriceTooltip(params, labels) {
+  const rows = (Array.isArray(params) ? params : [params]).filter(row => Array.isArray(row.value));
+  if (!rows.length) return '';
+  const rawDay = rows[0].value[0];
+  const day = typeof rawDay === 'string' ? rawDay.slice(0,10) : new Date(rawDay).toISOString().slice(0,10);
+  return [day, ...rows.map(row => {
+    const ratio = row.seriesId.startsWith('macro-peak-drawdown-');
+    const index = Number(row.seriesId.split('-').at(-1));
+    const value = row.value[1];
+    const text = Number.isFinite(value) ? (ratio ? value.toFixed(2) + '%' :
+      value.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})) : '暂无观测';
+    return `${labels[index]} ${ratio ? '回撤比例' : '收盘'}：${text}`;
+  })].join('\n');
+}
 function merge(target, source) {
   for (const [key, value] of Object.entries(source)) {
     if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -76,6 +91,9 @@ export default function({data, parentElement}) {
   const isPriceGuide = line => / · (最高收盘|最新收盘)$/.test(line.name || '');
   const hasPriceGuides = base.series.some(series => (series.markLine?.data || []).some(isPriceGuide));
   if (hasPriceGuides) base.series.forEach((series, index) => { series.id = `macro-price-${index}`; });
+  const shortNames = hasPriceGuides ? base.series.map(series => series.markLine.data.find(line =>
+    / · 最高收盘$/.test(line.name)).label.formatter.split(' 高 ')[0]) : [];
+  const ratioNames = shortNames.map(name => `${name} 回撤比例`);
   const footerSpace = hasPriceGuides ? data.price_footer_height || 0 : 0;
   let drawdowns = [];
   const priceNumber = value => value.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -123,23 +141,23 @@ export default function({data, parentElement}) {
   function withDrawdownOverlay(option) {
     if (!hasPriceGuides) return option;
     const axisIndex = option.yAxis.length;
-    const active = drawdowns.some((path, index) => selected[base.series[index].name] !== false && path.peak);
+    const active = drawdowns.some((path, index) => selected[ratioNames[index]] !== false && path.peak);
     const mobile = element.clientWidth <= 700;
     const spacing = mobile ? (element.clientWidth <= 360 ? 40 : element.clientWidth <= 480 ? 44 : 48) : 58;
     const rightAxes = option.yAxis.filter(axis => axis.position === 'right' && axis.show !== false).length;
     if (active) option.grid.right += mobile ? spacing : 70;
     option.yAxis.push({id:'macro-peak-drawdown-axis', type:'value', gridIndex:0,
-      position:'right', offset:rightAxes * spacing, name:active ? '回撤 (%)' : '',
+      position:'right', offset:rightAxes * spacing, name:active ? '回撤比例 (%)' : '',
       nameLocation:'end', nameGap:12, nameTextStyle:{fontSize:11, align:'right'},
       scale:true, show:active,
       axisLabel:{formatter:value => `${Number(value.toFixed(2))}%`, fontSize:10,
         showMinLabel:false, showMaxLabel:false}, splitLine:{show:false},
       min:extent => Math.min(extent.min, 0), max:extent => Math.max(extent.max, 0)});
     option.series = [...base.series.map(series => copy(series)), ...drawdowns.map((path, index) => ({
-      id:`macro-peak-drawdown-${index}`, name:base.series[index].name, type:'line',
+      id:`macro-peak-drawdown-${index}`, name:ratioNames[index], type:'line',
       xAxisIndex:0, yAxisIndex:axisIndex, data:path.data, encode:{x:0, y:1, tooltip:[1]},
-      showSymbol:path.data.length === 1, symbolSize:6, connectNulls:false, animation:false, z:4,
-      lineStyle:{color:base.series[index].lineStyle?.color, width:2, type:'dashed', opacity:.8},
+      showSymbol:true, symbol:'circle', symbolSize:3, connectNulls:false, animation:false, z:4,
+      lineStyle:{color:base.series[index].lineStyle?.color, width:3, type:'dashed', opacity:1},
       itemStyle:{color:base.series[index].lineStyle?.color},
       tooltip:{valueFormatter:value => `${Number(value).toFixed(2)}%`},
       markPoint:{symbol:'circle', symbolSize:6, label:{show:false},
@@ -147,6 +165,19 @@ export default function({data, parentElement}) {
       markLine:{silent:true, symbol:'none', label:{show:false},
         lineStyle:{color:'#94a3b8', type:'dashed', width:1}, data:[{yAxis:0}]}
     }))];
+    const names = [...base.series.map(series => series.name), ...ratioNames];
+    if (mobile) {
+      const packed = [], usable = Math.max(element.clientWidth - 32, 120);
+      let used = 0, rows = 1;
+      for (const name of names) {
+        const width = 30 + [...name].reduce((total, char) => total + (/[^\x00-\x7f]/.test(char) ? 10 : 6.2), 0);
+        if (used && used + width > usable) { packed.push('\n'); used = 0; rows++; }
+        packed.push(name); used += width;
+      }
+      option.legend.data = packed;
+      option.grid.top = Math.max(option.grid.top, 26 + rows * 22 + 40);
+    } else option.legend.data = names;
+    option.tooltip = {...option.tooltip, trigger:'axis', formatter:params => dailyPriceTooltip(params, shortNames)};
     // Price and percentage paths share one grid and one calendar axis.
     // Both slider handles clip both kinds of series to the same dates.
     option.dataZoom = option.dataZoom.map(zoom => ({...zoom, xAxisIndex:[0]}));
@@ -160,7 +191,7 @@ export default function({data, parentElement}) {
       const current = series.markLine.data.find(line => / · 最新收盘$/.test(line.name));
       const short = high.label.formatter.split(' 高 ')[0];
       let text = '';
-      if (selected[series.name] !== false) {
+      if (selected[series.name] !== false || selected[ratioNames[index]] !== false) {
         if (high.label.show === false || !Number.isFinite(high.yAxis) || high.yAxis <= 0 ||
             !Number.isFinite(current?.yAxis)) text = `${short} · 所选区间暂无有效观测`;
         else {
@@ -228,7 +259,7 @@ export default function({data, parentElement}) {
     // Price observations stay intact. Only derived paths and annotations
     // change with the selection; the live dataZoom bounds are preserved.
     const patch = {legend: {...option.legend, selected}, grid: option.grid,
-      yAxis: option.yAxis, xAxis: option.xAxis, toolbox: option.toolbox};
+      yAxis: option.yAxis, xAxis: option.xAxis, toolbox: option.toolbox, tooltip:option.tooltip};
     if (hasPriceGuides) {
       patch.series = option.series.map((series, index) => index < base.series.length ?
         {id:series.id, name:series.name, markLine:copy(series.markLine)} : series);
@@ -263,6 +294,7 @@ export default function({data, parentElement}) {
     chart.on('restore', () => {
       selected = Object.fromEntries(base.series.map(series =>
         [series.name, base.legend?.selected?.[series.name] !== false]));
+      for (const name of ratioNames) selected[name] = true;
       rememberSelection(); updateLayout();
     });
     chart.on('datazoom', () => {

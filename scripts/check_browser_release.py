@@ -159,6 +159,8 @@ def assert_price_guides_follow_viewport(chart):
         assert value['expected'] is not None, value
         assert value['overlay']['xAxisIndex'] == 0, value
         assert value['overlay']['lineStyle']['type'] == 'dashed', value
+        assert value['overlay']['name'].endswith(' 回撤比例'), value
+        assert value['overlay']['name'] != value['name'], value
         assert value['percent_axis']['position'] == 'right', value
         assert abs(value['high'] - value['expected']['value']) < .00001, value
         assert value['expected']['date'] in value['label'], value
@@ -192,7 +194,7 @@ def exercise_price_historical_window(page, chart):
 
 
 def exercise_price_path_legend(page, chart):
-    """The same real legend hides/shows prices and their derived paths."""
+    """Daily drawdown is an independent named parameter in the same plot."""
     before = chart_state(chart)['zoom']
     names = chart.evaluate("element => element.__macroChart.getOption().legend[0].data.filter(name=>name!=='\\n')")
     for name in names + names:
@@ -216,11 +218,20 @@ def exercise_price_path_legend(page, chart):
         }""")
         for asset in names:
             assert [s['kind'] for s in state['visible'] if s['name']==asset] == (
-                [] if state['selected'].get(asset) is False else ['price','drawdown']), state
-        assert state['panel_show'] == bool(state['visible']), state
+                [] if state['selected'].get(asset) is False else ['drawdown' if asset.endswith(' 回撤比例') else 'price']), state
+        assert state['panel_show'] == any(s['kind']=='drawdown' for s in state['visible']), state
         assert chart_state(chart)['zoom'] == before
     assert_price_guides_follow_viewport(chart)
-    return {'shared_price_path_legend':True,'all_off_and_restore':True}
+    tooltip = chart.evaluate("""element => {
+        const chart=element.__macroChart, option=chart.getOption();
+        const series=option.series.find(s=>s.id.startsWith('macro-peak-drawdown-') && s.data.length>1);
+        const point=series.data[1];
+        return {text:option.tooltip[0].formatter([{seriesId:series.id,value:point}]),
+            expected:point[1].toFixed(2)+'%',date:point[0].slice(0,10)};
+    }""")
+    assert '回撤比例' in tooltip['text'] and tooltip['expected'] in tooltip['text'], tooltip
+    assert tooltip['date'] in tooltip['text'], tooltip
+    return {'independent_daily_drawdown_parameters':True,'all_off_and_restore':True}
 
 
 def exercise_equity_drawdown(page):

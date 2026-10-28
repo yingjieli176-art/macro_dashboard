@@ -94,7 +94,7 @@ RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 MACRO_DISPLAY_ORDER = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "us_drawdown", "cn_drawdown", 14, 15, 11, 13, 12)
 MACRO_DISPLAY_NUMBER = {key: index for index, key in enumerate(MACRO_DISPLAY_ORDER, 1)}
-CHART_BUILD = "2026-10-28-same-grid-drawdown-r76"
+CHART_BUILD = "2026-10-28-daily-drawdown-parameter-r77"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2608,13 +2608,13 @@ def _build_equity_drawdown():
 @st.fragment(key="equity_drawdown_viewport")
 def _render_equity_drawdown():
     st.markdown('<div class="section-title">11. SPX / RSP · 价格走势与区间高点</div>', unsafe_allow_html=True)
-    st.caption("实线为实际收盘走势；点线“高”标记当前坐标时间内的最高收盘价和日期，虚线“现”为最新收盘价。切换时间或拖动滑块会自动重算区间高点。SPX左轴（点），RSP右轴（美元）；同色虚线为回撤曲线，使用最右侧百分比轴。")
+    st.caption("实线为实际收盘走势；点线“高”标记当前坐标时间内的最高收盘价和日期，虚线“现”为最新收盘价。切换时间或拖动滑块会自动重算区间高点。SPX左轴（点），RSP右轴（美元）；同色虚线为独立的“回撤比例”日线参数，使用最右侧百分比轴；点击图例可单独开关。")
     figure = _build_equity_drawdown()
     _render_adaptive_macro_figure(figure, "us_equity_drawdown", standard=True)
     summaries = (figure.layout.meta or {}).get("price_summary", [])
     for row in summaries:
         st.caption(f'{row["symbol"]} 最新收盘：{row["close"]:,.2f}（{row["date"]}）')
-    st.caption("同图回撤曲线以所选区间最高收盘日为起点（0%），固定该高点为基准，逐日计算（当日收盘÷区间最高收盘−1）×100%，一直画到最新收盘；高点前不画线。价格与回撤共用同一日期轴，切换周期或拖动左右滑块，会自动重选高点、重算回撤并同步显示所选日期。图底列最新回撤幅度；超过选区前高时显示高出比例。SPX以点计、RSP以美元计，使用独立坐标轴；均为已完成交易日收盘，非实时行情。RSP已处理拆股，不含股息再投资，存在费用及跟踪误差。")
+    st.caption("同图回撤曲线以所选区间最高收盘日为起点（0%），固定该高点为基准，逐日计算（当日收盘÷区间最高收盘−1）×100%，一直画到最新收盘；高点前不画线。价格与回撤共用同一日期轴，切换周期或拖动左右滑块，会自动重选高点、重算回撤并同步显示所选日期。“回撤比例”作为独立日线持续显示各交易日从高点起的回撤变化（下跌为负值），在图例可单独开关；图底另列最新回撤幅度，超过选区前高时显示高出比例。SPX以点计、RSP以美元计，使用独立坐标轴；均为已完成交易日收盘，非实时行情。RSP已处理拆股，不含股息再投资，存在费用及跟踪误差。")
     add_sources([
         ("SPX 日线价格", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
         ("RSP 日线价格", "https://finance.yahoo.com/quote/RSP/history/"),
@@ -2640,12 +2640,12 @@ def _build_china_drawdown():
 @st.fragment(key="china_equity_drawdown_viewport")
 def _render_china_drawdown():
     st.markdown('<div class="section-title">12. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势</div>', unsafe_allow_html=True)
-    st.caption("实线为三只指数的实际收盘点位（左轴），同色虚线为回撤曲线（右轴百分比）。点线“高”为当前坐标时间内的最高收盘价和日期，随时间切换、滑块缩放自动更新；虚线“现”保持最新收盘价。")
+    st.caption("实线为三只指数的实际收盘点位（左轴），同色虚线为独立的“回撤比例”日线参数（右轴百分比），可在图例单独开关。点线“高”为当前坐标时间内的最高收盘价和日期，随时间切换、滑块缩放自动更新；虚线“现”保持最新收盘价。")
     figure = _build_china_drawdown()
     _render_adaptive_macro_figure(figure, "china_equity_drawdown", standard=True)
     for row in (figure.layout.meta or {}).get("price_summary", []):
         st.caption(f'{row["name"]}（{row["symbol"]}）最新收盘：{row["close"]:,.2f}（{row["date"]}）')
-    st.caption("同图回撤曲线以各指数所选区间最高收盘日为起点（0%），固定该高点为基准，逐日计算（当日收盘÷区间最高收盘−1）×100%，一直画到最新收盘；高点前不画线。价格与回撤共用同一日期轴，切换周期或拖动左右滑块，会自动重选高点、重算回撤并同步显示所选日期。图底列最新回撤幅度；超过选区前高时显示高出比例。中证官网已完成交易日价格指数，不含股息再投资；发布前数据为官方回溯数据。最新日期以观测日为准。")
+    st.caption("同图回撤曲线以各指数所选区间最高收盘日为起点（0%），固定该高点为基准，逐日计算（当日收盘÷区间最高收盘−1）×100%，一直画到最新收盘；高点前不画线。价格与回撤共用同一日期轴，切换周期或拖动左右滑块，会自动重选高点、重算回撤并同步显示所选日期。“回撤比例”作为独立日线持续显示各交易日从高点起的回撤变化（下跌为负值），在图例可单独开关；图底另列最新回撤幅度，超过选区前高时显示高出比例。中证官网已完成交易日价格指数，不含股息再投资；发布前数据为官方回溯数据。最新日期以观测日为准。")
     add_sources([(name, f"https://www.csindex.com.cn/zh-CN/indices/index-detail/{code}")
                  for code, name in (("000300", "沪深300"), ("000852", "中证1000"), ("932000", "中证2000"))])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
