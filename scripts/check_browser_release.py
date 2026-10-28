@@ -120,6 +120,7 @@ def assert_price_guides_follow_viewport(chart):
         const option = instance.getOption();
         const graphics = (option.graphic || []).flatMap(group => group.elements || [group]);
         instance.getModel().eachSeries(series => {
+            if (series.get('xAxisIndex') === 1) return;
             const data = series.getData(), y = data.mapDimension('y');
             const raw = instance.getOption().series.find(item => item.name === series.name).data;
             let best = null;
@@ -138,11 +139,21 @@ def assert_price_guides_follow_viewport(chart):
                 label:high.label.formatter, current:current.yAxis,
                 ratio_text:footer?.style?.text, footer_bottom:footer?.bottom,
                 slider_bottom:option.dataZoom.find(zoom=>zoom.type==='slider').bottom,
+                path:option.series.find(item => item.id === `macro-peak-drawdown-${index}`)?.data,
+                expected_path:raw.filter(point => Date.parse(point[0]) >= Date.parse(best.date))
+                    .map(point => [point[0], Number.isFinite(point[1]) && point[1] > 0 ?
+                        (point[1]/best.value-1)*100 : null, point[1]]),
+                panel_end:option.xAxis[1]?.max,
+                panel_start:option.xAxis[1]?.min,
+                zoom_axes:option.dataZoom.map(zoom=>zoom.xAxisIndex),
+                latest_time:Date.parse(raw.filter(point=>Number.isFinite(point[1])).at(-1)[0]),
                 latest:raw.filter(point=>Number.isFinite(point[1])).at(-1)[1]});
         });
         return values;
     }""")
     assert values
+    assert all(value['zoom_axes'] == [[0], [0]] for value in values), values
+    assert values[0]['panel_end'] >= max(value['latest_time'] for value in values), values
     for value in values:
         assert value['expected'] is not None, value
         assert abs(value['high'] - value['expected']['value']) < .00001, value
@@ -152,6 +163,11 @@ def assert_price_guides_follow_viewport(chart):
         label = '高于区间前高' if percent < 0 else '距区间前高回撤'
         assert f'{label} {abs(percent):.2f}%' in (value['ratio_text'] or ''), value
         assert value['footer_bottom'] < value['slider_bottom'], value
+        assert value['path'] == value['expected_path'], value
+        assert value['path'][0][1] == 0, value
+        assert value['path'][0][0][:10] == value['expected']['date'], value
+        assert abs(value['path'][-1][1] + percent) < .00001, value
+        assert value['path'][-1][2] == value['latest'], value
     return values
 
 
@@ -171,6 +187,38 @@ def exercise_price_historical_window(page, chart):
     return {'zoom':after['zoom'], 'guides':assert_price_guides_follow_viewport(chart)}
 
 
+def exercise_price_path_legend(page, chart):
+    """The same real legend hides/shows prices and their derived paths."""
+    before = chart_state(chart)['zoom']
+    names = chart.evaluate("element => element.__macroChart.getOption().legend[0].data.filter(name=>name!=='\\n')")
+    for name in names + names:
+        point = chart.evaluate("""(element,name) => {
+            const chart=element.__macroChart, legend=chart.getModel().getComponent('legend');
+            const index=legend.getData().findIndex(item=>item.get('name')===name);
+            const view=chart.getViewOfComponentModel(legend);
+            const item=view._contentGroup.children().find(item=>item.__legendDataIndex===index);
+            const rect=item.getBoundingRect().clone(); rect.applyTransform(item.getComputedTransform());
+            return {x:rect.x+rect.width/2,y:rect.y+rect.height/2};
+        }""", name)
+        chart.scroll_into_view_if_needed()
+        box=chart.bounding_box()
+        page.mouse.click(box['x']+point['x'],box['y']+point['y'])
+        page.wait_for_timeout(100)
+        state=chart.evaluate("""element => {
+            const chart=element.__macroChart, option=chart.getOption(), visible=[];
+            chart.getModel().eachSeries(series=>visible.push({name:series.name,axis:series.get('xAxisIndex')||0}));
+            return {selected:option.legend[0].selected, visible,
+                panel_show:option.yAxis.at(-1).show};
+        }""")
+        for asset in names:
+            assert [s['axis'] for s in state['visible'] if s['name']==asset] == (
+                [] if state['selected'].get(asset) is False else [0,1]), state
+        assert state['panel_show'] == bool(state['visible']), state
+        assert chart_state(chart)['zoom'] == before
+    assert_price_guides_follow_viewport(chart)
+    return {'shared_price_path_legend':True,'all_off_and_restore':True}
+
+
 def exercise_equity_drawdown(page):
     page.get_by_text('11. SPX / RSP · 价格走势与区间高点', exact=True).wait_for(timeout=30000)
     assert page.get_by_text('9B.', exact=False).count() == 0
@@ -186,7 +234,7 @@ def exercise_equity_drawdown(page):
                                timeout=30000)
         points = chart.evaluate("""element => {
             const chart = (""" + INSTANCE_JS + """)(element);
-            return chart.getOption().series.map(series => ({name: series.name,
+            return chart.getOption().series.filter(series => series.xAxisIndex !== 1).map(series => ({name: series.name,
                 latest: series.data.filter(point => Number.isFinite(point[1])).at(-1),
                 guides: series.markLine?.data.map(line => ({name:line.name,value:line.yAxis,label:line.label.formatter}))}));
         }""")
@@ -201,13 +249,14 @@ def exercise_equity_drawdown(page):
     assert page.get_by_text('RSP 最新收盘：', exact=False).count() == 1
     chart = page.locator('.st-key-us_equity_drawdown_echarts_1Y').get_by_test_id(
         re.compile(r"^(macro|st)EChartsChart$"))
-    assert len(chart_state(chart)['axes']) == 2
+    assert len(chart_state(chart)['axes']) == 3
     zoom = exercise_client_zoom(page, chart, minimum_axes=2)
     assert_price_guides_follow_viewport(chart)
     historical = exercise_price_historical_window(page, chart)
+    legend = exercise_price_path_legend(page, chart)
     chart.screenshot(path='browser_equity_drawdown.png')
     return {'range_controls': ranges, 'latest_prices_and_guides': baseline,
-            'visible_window_highs_verified': True, 'slider': zoom, 'historical_window':historical}
+            'visible_window_highs_verified': True, 'slider': zoom, 'historical_window':historical, 'path_legend':legend}
 
 
 def exercise_china_drawdown(page):
@@ -222,7 +271,7 @@ def exercise_china_drawdown(page):
                                arg=selector+' [data-testid$="EChartsChart"]', timeout=30000)
         points = chart.evaluate("""element => {
             const instance = (""" + INSTANCE_JS + """)(element);
-            return instance.getOption().series.map(s => ({name:s.name,
+            return instance.getOption().series.filter(s => s.xAxisIndex !== 1).map(s => ({name:s.name,
                 latest:s.data.filter(p=>Number.isFinite(p[1])).at(-1),
                 guides:s.markLine?.data.map(line=>({name:line.name,value:line.yAxis,label:line.label.formatter}))}));
         }""")
@@ -235,8 +284,9 @@ def exercise_china_drawdown(page):
     zoom = exercise_client_zoom(page, chart, minimum_axes=1)
     assert_price_guides_follow_viewport(chart)
     historical = exercise_price_historical_window(page, chart)
+    legend = exercise_price_path_legend(page, chart)
     chart.screenshot(path='browser_china_drawdown.png')
-    return {'latest_prices_and_guides':baseline, 'visible_window_highs_verified':True, 'slider':zoom, 'historical_window':historical}
+    return {'latest_prices_and_guides':baseline, 'visible_window_highs_verified':True, 'slider':zoom, 'historical_window':historical, 'path_legend':legend}
 
 
 def wait_for_page(page, url):
@@ -281,7 +331,7 @@ def check_mobile_layout(page):
             assert state['grid']['width'] > 80, (width, state)
             if state['width'] <= 700:
                 assert state['legend_type'] == 'plain', state
-                assert state['legend_data'] == [series['name'] for series in state['series']], state
+                assert state['legend_data'] == list(dict.fromkeys(series['name'] for series in state['series'])), state
                 bounds = state['legend_bounds']
                 assert bounds['x'] >= -1 and bounds['x']+bounds['width'] <= state['width']+1, state
                 assert bounds['y']+bounds['height'] <= state['grid']['y']-24, state
@@ -588,6 +638,13 @@ def main():
                                       "processed_observations_fit_independent_axes": True})
             # Two separate browser contexts produce independent Streamlit
             # sessions. Session B must not overwrite session A's range.
+            # Fix A's choice before opening B. B's cold start can complete a
+            # shared background fetch and cause a full rerun in A; clicking
+            # A's old fragment during that rerun tests a stale event race,
+            # rather than whether B preserves A's already selected period.
+            groups.nth(4).get_by_text('1M', exact=True).click()
+            expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_default"][class*="_1M"]').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
+            expected_a.wait_for(timeout=30000)
             context_b = browser.new_context(viewport={"width": 1440, "height": 1000})
             page_b = context_b.new_page()
             page_b.on('pageerror', lambda error: errors.append(str(error)))
@@ -602,8 +659,7 @@ def main():
                     'explicit_missing': page_b.get_by_text('该图表目前没有可验证的有效观测数据', exact=False).count(),
                 }
                 raise
-            groups.nth(4).get_by_text('1M', exact=True).click()
-            expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_default"][class*="_1M"]').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
+            page_b.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'", timeout=30000)
             expected_a.wait_for(timeout=30000)
             page_b.get_by_test_id('stButtonGroup').nth(4).get_by_text('3M', exact=True).click()
             expected_b = page_b.locator('.st-key-hk_5_range_adaptive_default_3M').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))

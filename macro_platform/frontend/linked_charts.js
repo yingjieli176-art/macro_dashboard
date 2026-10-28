@@ -1,5 +1,23 @@
 // App-owned component. Never reach into Streamlit's React internals.
 const copy = value => JSON.parse(JSON.stringify(value));
+const asTime = value => typeof value === 'number' ? value : Date.parse(value);
+
+// One fixed peak inside the selection; only observations on/after it belong
+// to this path. The right selection handle never truncates the path to now.
+export function peakDrawdown(points, lower, upper) {
+  let peak = null, latest = -Infinity;
+  for (const [day, value] of points) {
+    const time = asTime(day);
+    if (Number.isFinite(time) && Number.isFinite(value) && value > 0) latest = Math.max(latest, time);
+    if (Number.isFinite(time) && Number.isFinite(value) && value > 0 &&
+        time >= lower && time <= upper && (!peak || value > peak.value)) {
+      peak = {day, time, value};
+    }
+  }
+  return {peak, data:peak ? points.filter(point => asTime(point[0]) >= peak.time && asTime(point[0]) <= latest)
+    .map(([day, value]) => [day, Number.isFinite(value) && value > 0 ?
+      (value / peak.value - 1) * 100 : null, value]) : []};
+}
 function merge(target, source) {
   for (const [key, value] of Object.entries(source)) {
     if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -57,24 +75,22 @@ export default function({data, parentElement}) {
 
   const isPriceGuide = line => / · (最高收盘|最新收盘)$/.test(line.name || '');
   const hasPriceGuides = base.series.some(series => (series.markLine?.data || []).some(isPriceGuide));
+  if (hasPriceGuides) base.series.forEach((series, index) => { series.id = `macro-price-${index}`; });
   const footerSpace = hasPriceGuides ? data.price_footer_height || 0 : 0;
+  const drawdownSpace = hasPriceGuides ? data.price_drawdown_height || 0 : 0;
+  let drawdowns = [];
   const priceNumber = value => value.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
   function refreshPriceGuides(zooms) {
     if (!hasPriceGuides) return;
     const zoom = (zooms || [])[0] || {};
-    const asTime = value => typeof value === 'number' ? value : Date.parse(value);
     const start = asTime(zoom.startValue), end = asTime(zoom.endValue);
     const lower = Number.isFinite(start) ? start : first + (last-first)*(zoom.start ?? 0)/100;
     const upper = Number.isFinite(end) ? end : first + (last-first)*(zoom.end ?? 100)/100;
-    for (const series of base.series) {
+    drawdowns = base.series.map(series => peakDrawdown(series.data, lower, upper));
+    for (const [index, series] of base.series.entries()) {
       const high = (series.markLine?.data || []).find(line => / · 最高收盘$/.test(line.name || ''));
       if (!high) continue;
-      let best = null;
-      for (const [day, value] of series.data) {
-        const time = asTime(day);
-        if (Number.isFinite(time) && Number.isFinite(value) && time >= lower && time <= upper &&
-            (!best || value > best.value)) best = {day, time, value};
-      }
+      const best = drawdowns[index].peak;
       high.label.show = !!best;
       high.lineStyle.opacity = best ? 1 : 0;
       if (best) {
@@ -98,11 +114,48 @@ export default function({data, parentElement}) {
     if (footerSpace) {
       // Keep the original price plot height; the extra canvas space holds
       // exportable ratios below the date slider, including on phones.
-      result.grid.bottom = (Number(result.grid.bottom) || 75) + footerSpace;
+      result.grid.bottom = (Number(result.grid.bottom) || 75) + footerSpace + drawdownSpace;
       result.dataZoom = result.dataZoom.map(zoom => zoom.type === 'slider' ?
-        {...zoom, bottom:(Number(zoom.bottom) || 16) + footerSpace} : zoom);
+        {...zoom, bottom:(Number(zoom.bottom) || 16) + footerSpace + drawdownSpace} : zoom);
     }
     return result;
+  }
+
+  function withDrawdownPanel(option) {
+    if (!drawdownSpace) return option;
+    const axisIndex = option.yAxis.length;
+    const active = drawdowns.filter((path, index) => selected[base.series[index].name] !== false && path.peak);
+    const start = active.length ? Math.min(...active.map(path => path.peak.time)) : first;
+    const current = active.flatMap(path => path.data).map(point => asTime(point[0])).filter(Number.isFinite);
+    const end = current.length ? Math.max(...current) : last;
+    const plot = option.grid;
+    option.grid = [plot, {left:plot.left, right:plot.right, bottom:footerSpace + 32,
+      height:drawdownSpace - 64, containLabel:false}];
+    option.xAxis = [option.xAxis, {type:'time', gridIndex:1, min:start,
+      max:end > start ? end : start + 86400000, axisLabel:{fontSize:10, hideOverlap:true},
+      axisLine:{lineStyle:{color:'#cbd5e1'}}, splitLine:{show:false}}];
+    option.yAxis.push({id:'macro-peak-drawdown-axis', gridIndex:1, type:'value',
+      name:'从区间最高收盘起的回撤 (%)', nameLocation:'end', nameGap:16,
+      nameTextStyle:{fontSize:11, align:'left'}, scale:true, show:active.length > 0,
+      axisLabel:{formatter:value => `${Number(value.toFixed(2))}%`, fontSize:10,
+        showMinLabel:false, showMaxLabel:false}, splitLine:{lineStyle:{color:'#f1f5f9'}},
+      min:extent => Math.min(extent.min, 0), max:extent => Math.max(extent.max, 0)});
+    option.series = [...base.series.map(series => copy(series)), ...drawdowns.map((path, index) => ({
+      id:`macro-peak-drawdown-${index}`, name:base.series[index].name, type:'line',
+      xAxisIndex:1, yAxisIndex:axisIndex, data:path.data, encode:{x:0, y:1, tooltip:[1]},
+      showSymbol:path.data.length === 1, symbolSize:6, connectNulls:false, animation:false,
+      lineStyle:{color:base.series[index].lineStyle?.color, width:2},
+      itemStyle:{color:base.series[index].lineStyle?.color},
+      tooltip:{valueFormatter:value => `${Number(value).toFixed(2)}%`},
+      markPoint:{symbol:'circle', symbolSize:6, label:{show:false},
+        data:path.data.length ? [{coord:path.data[0].slice(0,2)}] : []},
+      markLine:{silent:true, symbol:'none', label:{show:false},
+        lineStyle:{color:'#94a3b8', type:'dashed', width:1}, data:[{yAxis:0}]}
+    }))];
+    // Only the original price axes select the peak. The lower panel always
+    // spans the selected peak through the latest actual observation.
+    option.dataZoom = option.dataZoom.map(zoom => ({...zoom, xAxisIndex:[0]}));
+    return option;
   }
 
   function priceRatioFooter() {
@@ -175,14 +228,15 @@ export default function({data, parentElement}) {
   function updateLayout() {
     if (!chart || disposed) return;
     refreshPriceGuides(chart.getOption().dataZoom);
-    const option = axisLayout(presentation());
+    const option = withDrawdownPanel(axisLayout(presentation()));
     if (option.toolbox) option.toolbox.right = 54;
-    // Never replace observations or dataZoom. Only price annotations change
-    // when the visible interval changes; other charts keep their series intact.
+    // Price observations stay intact. Only derived paths and annotations
+    // change with the selection; the live dataZoom bounds are preserved.
     const patch = {legend: {...option.legend, selected}, grid: option.grid,
       yAxis: option.yAxis, xAxis: option.xAxis, toolbox: option.toolbox};
     if (hasPriceGuides) {
-      patch.series = base.series.map(series => ({name:series.name, markLine:copy(series.markLine)}));
+      patch.series = option.series.map((series, index) => index < base.series.length ?
+        {id:series.id, name:series.name, markLine:copy(series.markLine)} : series);
       patch.graphic = priceRatioFooter();
     }
     chart.setOption(patch, {silent:true});
@@ -191,7 +245,8 @@ export default function({data, parentElement}) {
 
   loadEngine().then(echarts => {
     if (disposed) return;
-    const option = axisLayout(presentation());
+    if (hasPriceGuides) refreshPriceGuides(saved?.zoom || base.dataZoom);
+    const option = withDrawdownPanel(axisLayout(presentation()));
     option.legend.selected = selected;
     option.aria = {enabled:true};
     option.tooltip = {...option.tooltip, renderMode:'richText'};
