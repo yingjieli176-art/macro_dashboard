@@ -5,15 +5,16 @@ const asTime = value => typeof value === 'number' ? value : Date.parse(value);
 // One fixed peak inside the selection; only observations on/after it belong
 // to this path. The right selection handle never truncates the path to now.
 export function peakDrawdown(points, lower, upper) {
-  let peak = null;
+  let peak = null, latest = -Infinity;
   for (const [day, value] of points) {
     const time = asTime(day);
+    if (Number.isFinite(time) && Number.isFinite(value) && value > 0) latest = Math.max(latest, time);
     if (Number.isFinite(time) && Number.isFinite(value) && value > 0 &&
         time >= lower && time <= upper && (!peak || value > peak.value)) {
       peak = {day, time, value};
     }
   }
-  return {peak, data:peak ? points.filter(point => asTime(point[0]) >= peak.time)
+  return {peak, data:peak ? points.filter(point => asTime(point[0]) >= peak.time && asTime(point[0]) <= latest)
     .map(([day, value]) => [day, Number.isFinite(value) && value > 0 ?
       (value / peak.value - 1) * 100 : null, value]) : []};
 }

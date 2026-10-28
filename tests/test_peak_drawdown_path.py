@@ -35,6 +35,8 @@ assert.deepEqual(peakDrawdown([],0,Infinity), {peak:null,data:[]});
 assert.equal(peakDrawdown([['2026-10-01',Infinity],['2026-10-02',-1]],0,Infinity).peak,null);
 const single = peakDrawdown(points,Date.parse('2026-10-13'),Date.parse('2026-10-13'));
 assert.deepEqual(single.data,[['2026-10-13',0,117]]);
+const trailing = peakDrawdown([...points,['2026-10-14',null]],Date.parse('2026-10-12'),Date.parse('2026-10-13'));
+assert.equal(trailing.data.at(-1)[0],'2026-10-13');
 console.log(JSON.stringify({passed:true}));
 '''
         result = subprocess.run([shutil.which("node"), "--input-type=module", "-e", script, str(source)],

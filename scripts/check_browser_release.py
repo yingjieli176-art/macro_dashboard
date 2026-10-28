@@ -144,11 +144,16 @@ def assert_price_guides_follow_viewport(chart):
                     .map(point => [point[0], Number.isFinite(point[1]) && point[1] > 0 ?
                         (point[1]/best.value-1)*100 : null, point[1]]),
                 panel_end:option.xAxis[1]?.max,
+                panel_start:option.xAxis[1]?.min,
+                zoom_axes:option.dataZoom.map(zoom=>zoom.xAxisIndex),
+                latest_time:Date.parse(raw.filter(point=>Number.isFinite(point[1])).at(-1)[0]),
                 latest:raw.filter(point=>Number.isFinite(point[1])).at(-1)[1]});
         });
         return values;
     }""")
     assert values
+    assert all(value['zoom_axes'] == [[0], [0]] for value in values), values
+    assert values[0]['panel_end'] >= max(value['latest_time'] for value in values), values
     for value in values:
         assert value['expected'] is not None, value
         assert abs(value['high'] - value['expected']['value']) < .00001, value
@@ -160,6 +165,7 @@ def assert_price_guides_follow_viewport(chart):
         assert value['footer_bottom'] < value['slider_bottom'], value
         assert value['path'] == value['expected_path'], value
         assert value['path'][0][1] == 0, value
+        assert value['path'][0][0][:10] == value['expected']['date'], value
         assert abs(value['path'][-1][1] + percent) < .00001, value
         assert value['path'][-1][2] == value['latest'], value
     return values
@@ -179,6 +185,38 @@ def exercise_price_historical_window(page, chart):
     assert after['zoom'][1] < before['zoom'][1]-.1, (before, after)
     assert_visible_axes(after, minimum_axes=1)
     return {'zoom':after['zoom'], 'guides':assert_price_guides_follow_viewport(chart)}
+
+
+def exercise_price_path_legend(page, chart):
+    """The same real legend hides/shows prices and their derived paths."""
+    before = chart_state(chart)['zoom']
+    names = chart.evaluate("element => element.__macroChart.getOption().legend[0].data.filter(name=>name!=='\\n')")
+    for name in names + names:
+        point = chart.evaluate("""(element,name) => {
+            const chart=element.__macroChart, legend=chart.getModel().getComponent('legend');
+            const index=legend.getData().findIndex(item=>item.get('name')===name);
+            const view=chart.getViewOfComponentModel(legend);
+            const item=view._contentGroup.children().find(item=>item.__legendDataIndex===index);
+            const rect=item.getBoundingRect().clone(); rect.applyTransform(item.getComputedTransform());
+            return {x:rect.x+rect.width/2,y:rect.y+rect.height/2};
+        }""", name)
+        chart.scroll_into_view_if_needed()
+        box=chart.bounding_box()
+        page.mouse.click(box['x']+point['x'],box['y']+point['y'])
+        page.wait_for_timeout(100)
+        state=chart.evaluate("""element => {
+            const chart=element.__macroChart, option=chart.getOption(), visible=[];
+            chart.getModel().eachSeries(series=>visible.push({name:series.name,axis:series.get('xAxisIndex')||0}));
+            return {selected:option.legend[0].selected, visible,
+                panel_show:option.yAxis.at(-1).show};
+        }""")
+        for asset in names:
+            assert [s['axis'] for s in state['visible'] if s['name']==asset] == (
+                [] if state['selected'].get(asset) is False else [0,1]), state
+        assert state['panel_show'] == bool(state['visible']), state
+        assert chart_state(chart)['zoom'] == before
+    assert_price_guides_follow_viewport(chart)
+    return {'shared_price_path_legend':True,'all_off_and_restore':True}
 
 
 def exercise_equity_drawdown(page):
@@ -215,9 +253,10 @@ def exercise_equity_drawdown(page):
     zoom = exercise_client_zoom(page, chart, minimum_axes=2)
     assert_price_guides_follow_viewport(chart)
     historical = exercise_price_historical_window(page, chart)
+    legend = exercise_price_path_legend(page, chart)
     chart.screenshot(path='browser_equity_drawdown.png')
     return {'range_controls': ranges, 'latest_prices_and_guides': baseline,
-            'visible_window_highs_verified': True, 'slider': zoom, 'historical_window':historical}
+            'visible_window_highs_verified': True, 'slider': zoom, 'historical_window':historical, 'path_legend':legend}
 
 
 def exercise_china_drawdown(page):
@@ -245,8 +284,9 @@ def exercise_china_drawdown(page):
     zoom = exercise_client_zoom(page, chart, minimum_axes=1)
     assert_price_guides_follow_viewport(chart)
     historical = exercise_price_historical_window(page, chart)
+    legend = exercise_price_path_legend(page, chart)
     chart.screenshot(path='browser_china_drawdown.png')
-    return {'latest_prices_and_guides':baseline, 'visible_window_highs_verified':True, 'slider':zoom, 'historical_window':historical}
+    return {'latest_prices_and_guides':baseline, 'visible_window_highs_verified':True, 'slider':zoom, 'historical_window':historical, 'path_legend':legend}
 
 
 def wait_for_page(page, url):
