@@ -638,6 +638,13 @@ def main():
                                       "processed_observations_fit_independent_axes": True})
             # Two separate browser contexts produce independent Streamlit
             # sessions. Session B must not overwrite session A's range.
+            # Fix A's choice before opening B. B's cold start can complete a
+            # shared background fetch and cause a full rerun in A; clicking
+            # A's old fragment during that rerun tests a stale event race,
+            # rather than whether B preserves A's already selected period.
+            groups.nth(4).get_by_text('1M', exact=True).click()
+            expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_default"][class*="_1M"]').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
+            expected_a.wait_for(timeout=30000)
             context_b = browser.new_context(viewport={"width": 1440, "height": 1000})
             page_b = context_b.new_page()
             page_b.on('pageerror', lambda error: errors.append(str(error)))
@@ -652,8 +659,7 @@ def main():
                     'explicit_missing': page_b.get_by_text('该图表目前没有可验证的有效观测数据', exact=False).count(),
                 }
                 raise
-            groups.nth(4).get_by_text('1M', exact=True).click()
-            expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_default"][class*="_1M"]').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
+            page_b.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'", timeout=30000)
             expected_a.wait_for(timeout=30000)
             page_b.get_by_test_id('stButtonGroup').nth(4).get_by_text('3M', exact=True).click()
             expected_b = page_b.locator('.st-key-hk_5_range_adaptive_default_3M').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
