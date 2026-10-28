@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-27-china-equity-layout-r71",
+  "release": "2026-10-28-equity-price-guides-r72",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -9,6 +9,6 @@
     "viewport_dynamic_y",
     "diagnostic_version_header",
     "spx_rsp_standalone_chart",
-    "csi_300_1000_2000_drawdown"
+    "equity_price_high_latest_guides"
   ]
 }

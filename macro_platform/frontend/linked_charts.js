@@ -55,6 +55,36 @@ export default function({data, parentElement}) {
   }
   element.style.height = `${data.height || 465}px`;
 
+  const isPriceGuide = line => / · (最高收盘|最新收盘)$/.test(line.name || '');
+  const hasPriceGuides = base.series.some(series => (series.markLine?.data || []).some(isPriceGuide));
+  const priceNumber = value => value.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  function refreshPriceGuides(zooms) {
+    if (!hasPriceGuides) return;
+    const zoom = (zooms || [])[0] || {};
+    const asTime = value => typeof value === 'number' ? value : Date.parse(value);
+    const start = asTime(zoom.startValue), end = asTime(zoom.endValue);
+    const lower = Number.isFinite(start) ? start : first + (last-first)*(zoom.start ?? 0)/100;
+    const upper = Number.isFinite(end) ? end : first + (last-first)*(zoom.end ?? 100)/100;
+    for (const series of base.series) {
+      const high = (series.markLine?.data || []).find(line => / · 最高收盘$/.test(line.name || ''));
+      if (!high) continue;
+      let best = null;
+      for (const [day, value] of series.data) {
+        const time = asTime(day);
+        if (Number.isFinite(time) && Number.isFinite(value) && time >= lower && time <= upper &&
+            (!best || value > best.value)) best = {day, time, value};
+      }
+      high.label.show = !!best;
+      high.lineStyle.opacity = best ? 1 : 0;
+      if (best) {
+        const short = high.label.formatter.split(' 高 ')[0];
+        const date = typeof best.day === 'string' ? best.day.slice(0,10) : new Date(best.time).toISOString().slice(0,10);
+        high.yAxis = best.value;
+        high.label.formatter = `${short} 高 ${priceNumber(best.value)}\n${date}`;
+      }
+    }
+  }
+
   function presentation() {
     const width = element.clientWidth;
     const result = copy(base);
@@ -78,6 +108,23 @@ export default function({data, parentElement}) {
     let visibleRight = 0, visibleLeft = 0;
     axes.forEach((axis, index) => {
       const show = used.has(index);
+      // Price guides are annotations, not observations. Include visible
+      // assets' high/latest levels in the viewport's native dynamic extent.
+      const guides = base.series.filter(series => (series.yAxisIndex || 0) === index &&
+        selected[series.name] !== false).flatMap(series =>
+          (series.markLine?.data || []).filter(line =>
+            isPriceGuide(line) && line.label?.show !== false).map(line => line.yAxis))
+        .filter(Number.isFinite);
+      if (guides.length) {
+        const limits = extent => {
+          const values = [extent.min, extent.max, ...guides].filter(Number.isFinite);
+          const low = Math.min(...values), high = Math.max(...values);
+          const padding = Math.max((high-low)*.07, Math.abs(high)*.002, .01);
+          return [low-padding, high+padding];
+        };
+        axis.min = extent => limits(extent)[0];
+        axis.max = extent => limits(extent)[1];
+      }
       axis.id = `macro-axis-${index}`;
       axis.show = show;
       axis.axisLine = {...axis.axisLine, show: show && axis.axisLine?.show !== false};
@@ -95,12 +142,16 @@ export default function({data, parentElement}) {
 
   function updateLayout() {
     if (!chart || disposed) return;
+    refreshPriceGuides(chart.getOption().dataZoom);
     const option = axisLayout(presentation());
     if (option.toolbox) option.toolbox.right = 54;
-    // Do not send series/dataZoom: legend clicks and rotation keep real data,
-    // original axis indices, and the user's current zoom window untouched.
-    chart.setOption({legend: {...option.legend, selected}, grid: option.grid,
-      yAxis: option.yAxis, xAxis: option.xAxis, toolbox: option.toolbox}, {silent:true});
+    // Never replace observations or dataZoom. Only price annotations change
+    // when the visible interval changes; other charts keep their series intact.
+    const patch = {legend: {...option.legend, selected}, grid: option.grid,
+      yAxis: option.yAxis, xAxis: option.xAxis, toolbox: option.toolbox};
+    if (hasPriceGuides) patch.series = base.series.map(series =>
+      ({name:series.name, markLine:copy(series.markLine)}));
+    chart.setOption(patch, {silent:true});
     parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom};
   }
 
@@ -116,6 +167,7 @@ export default function({data, parentElement}) {
     chart = echarts.init(element, null, {renderer:'canvas'});
     element.__macroChart = chart;
     chart.setOption(option);
+    if (hasPriceGuides) updateLayout();
     element.setAttribute('aria-busy', 'false');
     for (const event of ['legendselectchanged','legendselected','legendunselected',
                          'legendselectall','legendinverseselect']) {
@@ -130,7 +182,8 @@ export default function({data, parentElement}) {
       rememberSelection(); updateLayout();
     });
     chart.on('datazoom', () => {
-      parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom};
+      if (hasPriceGuides) updateLayout();
+      else parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom};
     });
     observer = new ResizeObserver(() => {
       cancelAnimationFrame(frame);
