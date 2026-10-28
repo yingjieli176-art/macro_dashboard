@@ -362,13 +362,7 @@ jobs:
             source_health.json
             all_source_freshness_before.json
             all_source_freshness.json
-            data_snapshots/fred_cache/
-            data_snapshots/usdhkd_daily.json
-            data_snapshots/jpy_market_daily.json
-            data_snapshots/japan_gov_yields.json
-            data_snapshots/cor1m_daily.json
-            data_snapshots/cor3m_daily.json
-            data_snapshots/copper_market_daily.json
+            data_snapshots/
           if-no-files-found: error
 
   raw-history:
