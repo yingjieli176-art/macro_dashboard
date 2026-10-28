@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-28-peak-anchored-drawdown-r75",
+  "release": "2026-10-28-same-grid-drawdown-r76",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -12,6 +12,7 @@
     "equity_price_high_latest_guides",
     "complete_date_source_audit",
     "viewport_price_ratio_footer",
-    "viewport_peak_anchored_drawdown_path"
+    "viewport_peak_anchored_drawdown_path",
+    "same_grid_price_drawdown_overlay"
   ]
 }

@@ -77,7 +77,6 @@ export default function({data, parentElement}) {
   const hasPriceGuides = base.series.some(series => (series.markLine?.data || []).some(isPriceGuide));
   if (hasPriceGuides) base.series.forEach((series, index) => { series.id = `macro-price-${index}`; });
   const footerSpace = hasPriceGuides ? data.price_footer_height || 0 : 0;
-  const drawdownSpace = hasPriceGuides ? data.price_drawdown_height || 0 : 0;
   let drawdowns = [];
   const priceNumber = value => value.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
   function refreshPriceGuides(zooms) {
@@ -114,37 +113,33 @@ export default function({data, parentElement}) {
     if (footerSpace) {
       // Keep the original price plot height; the extra canvas space holds
       // exportable ratios below the date slider, including on phones.
-      result.grid.bottom = (Number(result.grid.bottom) || 75) + footerSpace + drawdownSpace;
+      result.grid.bottom = (Number(result.grid.bottom) || 75) + footerSpace;
       result.dataZoom = result.dataZoom.map(zoom => zoom.type === 'slider' ?
-        {...zoom, bottom:(Number(zoom.bottom) || 16) + footerSpace + drawdownSpace} : zoom);
+        {...zoom, bottom:(Number(zoom.bottom) || 16) + footerSpace} : zoom);
     }
     return result;
   }
 
-  function withDrawdownPanel(option) {
-    if (!drawdownSpace) return option;
+  function withDrawdownOverlay(option) {
+    if (!hasPriceGuides) return option;
     const axisIndex = option.yAxis.length;
-    const active = drawdowns.filter((path, index) => selected[base.series[index].name] !== false && path.peak);
-    const start = active.length ? Math.min(...active.map(path => path.peak.time)) : first;
-    const current = active.flatMap(path => path.data).map(point => asTime(point[0])).filter(Number.isFinite);
-    const end = current.length ? Math.max(...current) : last;
-    const plot = option.grid;
-    option.grid = [plot, {left:plot.left, right:plot.right, bottom:footerSpace + 32,
-      height:drawdownSpace - 64, containLabel:false}];
-    option.xAxis = [option.xAxis, {type:'time', gridIndex:1, min:start,
-      max:end > start ? end : start + 86400000, axisLabel:{fontSize:10, hideOverlap:true},
-      axisLine:{lineStyle:{color:'#cbd5e1'}}, splitLine:{show:false}}];
-    option.yAxis.push({id:'macro-peak-drawdown-axis', gridIndex:1, type:'value',
-      name:'从区间最高收盘起的回撤 (%)', nameLocation:'end', nameGap:16,
-      nameTextStyle:{fontSize:11, align:'left'}, scale:true, show:active.length > 0,
+    const active = drawdowns.some((path, index) => selected[base.series[index].name] !== false && path.peak);
+    const mobile = element.clientWidth <= 700;
+    const spacing = mobile ? (element.clientWidth <= 360 ? 40 : element.clientWidth <= 480 ? 44 : 48) : 58;
+    const rightAxes = option.yAxis.filter(axis => axis.position === 'right' && axis.show !== false).length;
+    if (active) option.grid.right += mobile ? spacing : 70;
+    option.yAxis.push({id:'macro-peak-drawdown-axis', type:'value', gridIndex:0,
+      position:'right', offset:rightAxes * spacing, name:active ? '回撤 (%)' : '',
+      nameLocation:'end', nameGap:12, nameTextStyle:{fontSize:11, align:'right'},
+      scale:true, show:active,
       axisLabel:{formatter:value => `${Number(value.toFixed(2))}%`, fontSize:10,
-        showMinLabel:false, showMaxLabel:false}, splitLine:{lineStyle:{color:'#f1f5f9'}},
+        showMinLabel:false, showMaxLabel:false}, splitLine:{show:false},
       min:extent => Math.min(extent.min, 0), max:extent => Math.max(extent.max, 0)});
     option.series = [...base.series.map(series => copy(series)), ...drawdowns.map((path, index) => ({
       id:`macro-peak-drawdown-${index}`, name:base.series[index].name, type:'line',
-      xAxisIndex:1, yAxisIndex:axisIndex, data:path.data, encode:{x:0, y:1, tooltip:[1]},
-      showSymbol:path.data.length === 1, symbolSize:6, connectNulls:false, animation:false,
-      lineStyle:{color:base.series[index].lineStyle?.color, width:2},
+      xAxisIndex:0, yAxisIndex:axisIndex, data:path.data, encode:{x:0, y:1, tooltip:[1]},
+      showSymbol:path.data.length === 1, symbolSize:6, connectNulls:false, animation:false, z:4,
+      lineStyle:{color:base.series[index].lineStyle?.color, width:2, type:'dashed', opacity:.8},
       itemStyle:{color:base.series[index].lineStyle?.color},
       tooltip:{valueFormatter:value => `${Number(value).toFixed(2)}%`},
       markPoint:{symbol:'circle', symbolSize:6, label:{show:false},
@@ -152,8 +147,8 @@ export default function({data, parentElement}) {
       markLine:{silent:true, symbol:'none', label:{show:false},
         lineStyle:{color:'#94a3b8', type:'dashed', width:1}, data:[{yAxis:0}]}
     }))];
-    // Only the original price axes select the peak. The lower panel always
-    // spans the selected peak through the latest actual observation.
+    // Price and percentage paths share one grid and one calendar axis.
+    // Both slider handles clip both kinds of series to the same dates.
     option.dataZoom = option.dataZoom.map(zoom => ({...zoom, xAxisIndex:[0]}));
     return option;
   }
@@ -228,7 +223,7 @@ export default function({data, parentElement}) {
   function updateLayout() {
     if (!chart || disposed) return;
     refreshPriceGuides(chart.getOption().dataZoom);
-    const option = withDrawdownPanel(axisLayout(presentation()));
+    const option = withDrawdownOverlay(axisLayout(presentation()));
     if (option.toolbox) option.toolbox.right = 54;
     // Price observations stay intact. Only derived paths and annotations
     // change with the selection; the live dataZoom bounds are preserved.
@@ -246,7 +241,7 @@ export default function({data, parentElement}) {
   loadEngine().then(echarts => {
     if (disposed) return;
     if (hasPriceGuides) refreshPriceGuides(saved?.zoom || base.dataZoom);
-    const option = withDrawdownPanel(axisLayout(presentation()));
+    const option = withDrawdownOverlay(axisLayout(presentation()));
     option.legend.selected = selected;
     option.aria = {enabled:true};
     option.tooltip = {...option.tooltip, renderMode:'richText'};

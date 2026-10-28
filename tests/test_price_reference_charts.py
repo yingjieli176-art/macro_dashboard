@@ -25,8 +25,8 @@ class PriceReferenceTests(unittest.TestCase):
             render_echarts_chart(option, height=465)
         args = component.call_args.kwargs
         self.assertEqual(args['data']['price_footer_height'], 56)
-        self.assertEqual(args['data']['price_drawdown_height'], 240)
-        self.assertEqual(args['height'], 761)
+        self.assertNotIn('price_drawdown_height', args['data'])
+        self.assertEqual(args['height'], 521)
         self.assertIs(args['data']['option'], option)
         self.assertEqual([len(series['data']) for series in option['series']], [2, 2])
 
