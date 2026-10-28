@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-28-price-ratio-footer-r74",
+  "release": "2026-10-28-peak-anchored-drawdown-r75",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -11,6 +11,7 @@
     "spx_rsp_standalone_chart",
     "equity_price_high_latest_guides",
     "complete_date_source_audit",
-    "viewport_price_ratio_footer"
+    "viewport_price_ratio_footer",
+    "viewport_peak_anchored_drawdown_path"
   ]
 }

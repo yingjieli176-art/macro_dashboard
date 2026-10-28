@@ -40,7 +40,9 @@ def render_echarts_chart(option, *, height=465, width="stretch", key=None, theme
         str(line.get("name", "")).endswith(" · 最高收盘")
         for line in (series.get("markLine") or {}).get("data", []))]
     footer_height = 16 + 20 * len(price_series) if price_series else 0
-    component_height = height + footer_height
+    drawdown_height = 240 if price_series else 0
+    component_height = height + footer_height + drawdown_height
     return _component()(data={"option": option, "height": component_height,
-                              "price_footer_height": footer_height, "legend_state_key": legend_key},
+                              "price_footer_height": footer_height,
+                              "price_drawdown_height": drawdown_height, "legend_state_key": legend_key},
                         key=key, height=component_height, width=width)
