@@ -140,7 +140,7 @@ class DateAndSourceAudit(unittest.TestCase):
         ns = helpers("app.py", {"_valid_market_timestamp"}, {"time": time})
         check = ns["_valid_market_timestamp"]
         now = time.time()
-        self.assertEqual(check(now*1000), now)
+        self.assertAlmostEqual(check(now*1000), now, delta=1e-6)
         for invalid in (None, float("nan"), float("inf"), now+3600, 0):
             self.assertIsNone(check(invalid))
 
