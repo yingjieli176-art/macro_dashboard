@@ -3,13 +3,15 @@
 An outage remains unverified; a successful job is not proof of source freshness.
 No observations are changed by this audit.
 """
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
-from functools import lru_cache
+from functools import wraps
 import io
 import json
 from pathlib import Path
 import sys
+import threading
+import time
 from urllib.parse import quote
 
 import pandas as pd
@@ -20,6 +22,40 @@ sys.path.insert(0, str(ROOT))
 from macro_platform.market_history import completed_daily_closes
 
 
+_PROBE_LOCK = threading.Lock()
+_PROBE_CACHE = {}
+_PROBE_STATS = {"shared_http_requests": 0, "shared_http_reuses": 0}
+
+
+def shared_fetch(function):
+    """Coalesce identical in-flight reads, including their failures, per run."""
+    @wraps(function)
+    def read(*args, **kwargs):
+        key = (function.__name__, json.dumps([args, kwargs], sort_keys=True))
+        with _PROBE_LOCK:
+            future = _PROBE_CACHE.get(key)
+            owner = future is None
+            if owner:
+                future = Future()
+                _PROBE_CACHE[key] = future
+            if function.__name__ == "get":
+                _PROBE_STATS["shared_http_requests" if owner else "shared_http_reuses"] += 1
+        if owner:
+            try:
+                future.set_result(function(*args, **kwargs))
+            except Exception as error:
+                future.set_exception(error)
+        return future.result()
+    return read
+
+
+def reset_probe_cache():
+    with _PROBE_LOCK:
+        _PROBE_CACHE.clear()
+        _PROBE_STATS.update(shared_http_requests=0, shared_http_reuses=0)
+
+
+@shared_fetch
 def get(url, **kwargs):
     response = requests.get(url, headers={"User-Agent": "Mozilla/5.0 MacroDashboard/1.0"},
                             timeout=(12, 25), **kwargs)
@@ -66,12 +102,16 @@ def fred(symbol):
                 records.append({child.tag.rsplit("}",1)[-1]:child.text for child in node})
         return latest(pd.DataFrame(records),"NEW_DATE",TREASURY_FIELDS[symbol]),url
     if symbol in ("WALCL", "WRESBAL"):
-        from scripts.sync_fred_verified_cache import _fetch_h41_current
-        frame = _fetch_h41_current(requests.Session(), symbol)
+        from scripts.sync_fred_verified_cache import _h41_current_frame
+        frame = _h41_current_frame(get("https://www.federalreserve.gov/releases/h41/current/h41.htm").text, symbol)
         return latest(frame, "date", "value"), "https://www.federalreserve.gov/releases/h41/current/h41.htm"
     if symbol in ("RRPONTSYAWARD", "RRPONTSYD"):
-        from scripts.sync_fred_verified_cache import _fetch_reverse_repo
-        frame = _fetch_reverse_repo(requests.Session(), symbol)
+        from scripts.sync_fred_verified_cache import _reverse_repo_frame
+        end = pd.Timestamp.now(tz="UTC").normalize()
+        payload = get("https://markets.newyorkfed.org/api/rp/results/search.json", params={
+            "startDate": (end-pd.Timedelta(days=45)).strftime("%Y-%m-%d"),
+            "endDate": end.strftime("%Y-%m-%d")}).json()
+        frame = _reverse_repo_frame(payload, symbol)
         return latest(frame, "date", "value"), "https://markets.newyorkfed.org/api/rp/results/search.json"
     if symbol in ("IORB", "EFFR", "SOFR"):
         try:
@@ -115,7 +155,7 @@ def cboe(symbol):
     return latest(frame, "DATE", value), url
 
 
-@lru_cache(maxsize=12)
+@shared_fetch
 def hkma_table(endpoint, date):
     url = "https://api.hkma.gov.hk/public/market-data-and-statistics/" + endpoint
     from scripts.update_hkma_snapshot import _fetch_proxy_records
@@ -128,6 +168,12 @@ def hkma(endpoint, value, date):
     return latest(frame, date, value), url
 
 
+@shared_fetch
+def japan_frame():
+    from macro_platform.asia_rates import JAPAN_CURRENT_URL, _read_japan_csv
+    return _read_japan_csv(JAPAN_CURRENT_URL, offline=True)
+
+
 def asia(country, value):
     from macro_platform.asia_rates import load_china_gov_yields, load_japan_gov_yields, JAPAN_CURRENT_URL, CHINA_TREASURY_URL, _read_japan_csv
     if country == "china":
@@ -135,7 +181,7 @@ def asia(country, value):
                 "token":"894050c76af8597a853f5b408b759f5d","p":1,"ps":10,"pageNo":1,"pageNum":1}
         rows=get(CHINA_TREASURY_URL,params=params).json()["result"]["data"]
         return latest(pd.DataFrame(rows),"SOLAR_DATE",{"china_2y":"EMM00588704","china_10y":"EMM00166466"}[value]),CHINA_TREASURY_URL
-    frame = _read_japan_csv(JAPAN_CURRENT_URL, offline=True) if country == "japan" else load_china_gov_yields()
+    frame = japan_frame() if country == "japan" else load_china_gov_yields()
     return latest(frame, "observation_date", value), JAPAN_CURRENT_URL if country == "japan" else CHINA_TREASURY_URL
 
 
@@ -156,10 +202,26 @@ def cme():
     return _fetch_cme_stocks()["date"], CME_STOCKS_URL
 
 
+@shared_fetch
+def lme_frame():
+    from scripts.update_copper_snapshot import _fetch_westmetall_year
+    return _fetch_westmetall_year(datetime.now(timezone.utc).year)
+
+
 def lme(value):
-    from scripts.update_copper_snapshot import _fetch_westmetall_year, WESTMETALL_URL
-    frame = _fetch_westmetall_year(datetime.now().year)
+    from scripts.update_copper_snapshot import WESTMETALL_URL
+    frame = lme_frame()
     return latest(frame, "date", value), WESTMETALL_URL.format(year=datetime.now().year)
+
+
+def csindex(code):
+    from macro_platform.china_equity import SOURCE, completed_china_date, parse_csindex_history
+    end = completed_china_date()
+    payload = get(SOURCE, params={"indexCode": code,
+        "startDate": (end-pd.Timedelta(days=45)).strftime("%Y%m%d"),
+        "endDate": end.strftime("%Y%m%d")}).json()
+    frame = parse_csindex_history(payload, code)
+    return latest(frame, "observation_date", "close"), SOURCE
 
 
 def jobs():
@@ -168,18 +230,18 @@ def jobs():
         output.append((key, charts, cadence, stored, fetch))
     for symbol, charts in {
         "IORB": [1], "RRPONTSYAWARD": [1], "EFFR": [1], "SOFR": [1],
-        "DGS3MO": [3], "DGS2": [3], "DGS10": [2,3], "DFII5": [2,14], "DFII10": [2], "T10YIE": [2],
-        "WALCL": [4], "WRESBAL": [4], "RRPONTSYD": [4], "VIXCLS": [9,10], "VXVCLS": [10], "SP500": [9], "GVZCLS": [11],
+        "DGS3MO": [3], "DGS2": [3], "DGS10": [2,3], "DFII5": [2,13], "DFII10": [2], "T10YIE": [2],
+        "WALCL": [4], "WRESBAL": [4], "RRPONTSYD": [4], "VIXCLS": [9,10], "VXVCLS": [10], "SP500": [9], "GVZCLS": [15],
     }.items():
         add(symbol, charts, "weekly" if symbol in ("WALCL", "WRESBAL") else "daily",
             snapshot(f"fred_cache/{symbol}.json", "date", "value"), lambda symbol=symbol: fred(symbol))
     for symbol, charts, filename, field in (
-        ("HKD=X", [8], "usdhkd_daily.json", "value"), ("JPY=X", [15], "jpy_market_daily.json", "usd_jpy_close"),
+        ("HKD=X", [8], "usdhkd_daily.json", "value"), ("JPY=X", [14], "jpy_market_daily.json", "usd_jpy_close"),
         ("0700.HK", [5,8], "hk_market_daily.json", "close"), ("0388.HK", [5,8], "hk_market_daily.json", "close"),
         ("^HSI", [5,8], "hk_market_daily.json", "close"), ("HSTECH", [5,8], "hk_market_daily.json", "close"),
-        ("GC=F", [11], None, "close"), ("SI=F", [11], None, "close"),
-        ("BTC-USD", [12], None, "close"), ("ETH-USD", [12], None, "close"),
-        ("^N225", [15], None, "close"), ("HG=F", [13], "copper_market_daily.json", "comex_price_usd_lb"),
+        ("GC=F", [15], None, "close"), ("SI=F", [15], None, "close"),
+        ("BTC-USD", [17], None, "close"), ("ETH-USD", [17], None, "close"),
+        ("^N225", [14], None, "close"), ("HG=F", [16], "copper_market_daily.json", "comex_price_usd_lb"),
     ):
         key = "date" if filename in ("jpy_market_daily.json", "copper_market_daily.json") else "observation_date"
         stored = snapshot(filename, key, field, symbol if filename == "hk_market_daily.json" else None) if filename else None
@@ -197,17 +259,23 @@ def jobs():
         add(field, [7], "daily", snapshot("hkma_banking_liquidity_daily.json", "end_of_date", field),
             (lambda field=field: hibor(field)) if field.startswith("hibor_") else
             (lambda field=field: hkma("daily-monetary-statistics/daily-figures-interbank-liquidity", field, "end_of_date")))
-    for country, chart in (("china", 14), ("japan", 15)):
+    for country, chart in (("china", 13), ("japan", 14)):
         for tenor in ("2y", "10y"):
             key = f"{country}_{tenor}"
             add(key, [chart], "daily", snapshot("japan_gov_yields.json", "observation_date", key) if country == "japan" else None,
                 lambda country=country,key=key: asia(country,key))
+    for key, symbol in (("SPX", "^GSPC"), ("RSP", "RSP")):
+        add(key, [11], "daily", snapshot("us_equity_daily.json", "date", "close", key),
+            lambda symbol=symbol: yahoo(symbol))
+    for code in ("000300", "000852", "932000"):
+        add(code, [12], "daily", snapshot("china_equity_daily.json", "date", "close", code),
+            lambda code=code: csindex(code))
     from macro_platform.treasury_cash import read_verified_tga_snapshot
     saved_tga = read_verified_tga_snapshot(ROOT / "data_snapshots/treasury_tga_daily.json")
     add("TGA_DAILY", [4], "daily", latest(saved_tga, "observation_date", "TGA_DAILY"), tga)
-    add("comex_stock_t", [13], "daily", snapshot("copper_market_daily.json", "date", "comex_stock_t"), cme)
+    add("comex_stock_t", [16], "daily", snapshot("copper_market_daily.json", "date", "comex_stock_t"), cme)
     for field in ("lme_stock_t", "lme_3m_usd_t"):
-        add(field, [13], "daily", snapshot("copper_market_daily.json", "date", field), lambda field=field: lme(field))
+        add(field, [16], "daily", snapshot("copper_market_daily.json", "date", field), lambda field=field: lme(field))
     return output
 
 
@@ -217,6 +285,12 @@ def check(job):
            "checked_at": datetime.now(timezone.utc).isoformat()}
     try:
         source, url = fetch()
+        if source is not None:
+            when = pd.Timestamp(source)
+            today = pd.Timestamp.now(tz="Asia/Hong_Kong").tz_localize(None).normalize()
+            if pd.isna(when) or when.normalize() > today:
+                raise ValueError("Source returned an invalid or future observation date")
+            source = when.strftime("%Y-%m-%d")
         row.update({"source_latest": source, "source_url": url})
         row["status"] = ("unverified" if source is None else "live_only" if stored is None else
                          "pipeline_lag" if source > stored else "source_behind_repository" if source < stored else "at_source_latest")
@@ -234,15 +308,21 @@ def main():
     parser.add_argument("--retry-from")
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args()
+    started = time.monotonic()
+    reset_probe_cache()
     rows = json.loads(Path(args.retry_from).read_text())["sources"] if args.retry_from else []
-    retry = {row["id"] for row in rows if row["status"] in ("unverified", "source_behind_repository")}
+    config = jobs()
+    retry = {row["id"] for row in rows if row["status"] in ("unverified", "source_behind_repository", "pipeline_lag")}
+    retry.update(job[0] for job in config if job[0] not in {row["id"] for row in rows})
     rows = [row for row in rows if row["id"] not in retry]
     with ThreadPoolExecutor(max_workers=6) as pool:
-        tasks = [pool.submit(check, job) for job in jobs() if not args.retry_from or job[0] in retry]
+        tasks = [pool.submit(check, job) for job in config if not args.retry_from or job[0] in retry]
         for future in as_completed(tasks):
             row = future.result(); rows.append(row)
             print(row["id"], row["repository_latest"], "->", row["source_latest"], row["status"], flush=True)
-    payload = {"checked_at": datetime.now(timezone.utc).isoformat(), "sources": sorted(rows,key=lambda r:r["id"])}
+    payload = {"checked_at": datetime.now(timezone.utc).isoformat(), "chart_numbering": "display_17",
+               "sources": sorted(rows,key=lambda r:r["id"]),
+               "elapsed_seconds": round(time.monotonic()-started, 3), **_PROBE_STATS}
     Path(args.output).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
     from collections import Counter
     counts = dict(Counter(row["status"] for row in rows))

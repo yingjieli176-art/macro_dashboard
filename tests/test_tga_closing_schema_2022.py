@@ -112,7 +112,7 @@ class Treasury2022SchemaTests(unittest.TestCase):
         self.assertEqual(actual.observation_date.max(), snapshot.observation_date.max())
 
     def test_synced_official_rows_need_recent_observation(self):
-        now = pd.Timestamp.now().normalize()
+        now = pd.Timestamp.now(tz="America/New_York").tz_localize(None).normalize()
         data = [{
             "record_date": (now - pd.Timedelta(days=i)).strftime("%Y-%m-%d"),
             "account_type": "Treasury General Account (TGA) Closing Balance",

@@ -140,3 +140,12 @@ the dynamic Y range during time selection, slider zoom and resizing. They are
 annotations and never enter observation counts or source freshness dates.
 VIX is the official 30-calendar-day (~1M) index; the 1M/3M chart buttons change
 the historical display window rather than the volatility forecast horizon.
+
+### 全看板日期与取数核对（r73）
+
+“数据最新时间”同时列出每条曲线的实际观测日、日/周/月频率和频率窗口状态；另列源站逐项核对结果及核对时间。“在频率窗口内”不等于已追上源站，工作日窗口也不是各市场节假日日历。
+
+- `scripts/audit_source_freshness.py` 核对本地原始记录，包含日本国债、SPX/RSP及三只CSI指数；无效日期、未来日期、重复日期和非有限数值会使核对失败。
+- `scripts/probe_all_sources.py --strict` 按当前17张图号核对55个源指标。相同接口的并发读取合并，报告记录耗时与共享请求复用次数；网络失败保持“未核实”，本地落后源站保持“落后”。
+- 港股备用行情使用已完成的日线及交易所当地日期；不再用月线月初时间戳代替实际收盘日。临时传输失败保留原观测日的最后有效数据并短暂限制重试。
+- SPX/RSP任务包含UTC周六补抓，覆盖周五美股收盘后的延迟发布；快照仍只在校验通过后原子替换。

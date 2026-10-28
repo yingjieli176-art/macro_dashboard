@@ -59,6 +59,10 @@ def load_vixeq_snapshot() -> pd.DataFrame:
 
     frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
     frame["VIXEQ"] = pd.to_numeric(frame["close"], errors="coerce")
+    now = datetime.now(ZoneInfo("America/New_York"))
+    cutoff = now.date() if now.time() >= time(16, 15) else now.date() - timedelta(days=1)
+    frame = frame.loc[frame.observation_date.le(pd.Timestamp(cutoff))
+                      & frame.VIXEQ.gt(0) & frame.VIXEQ.lt(float("inf"))]
     return (
         frame.dropna(subset=["observation_date", "VIXEQ"])
         .sort_values("observation_date")

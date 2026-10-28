@@ -1,7 +1,8 @@
 name: Refresh completed SPX and RSP price history
 on:
   schedule:
-    - cron: '37 0,6,12,22 * * 1-5'
+    # Saturday UTC catches late Friday US closes, including winter time.
+    - cron: '37 0,6,12,22 * * 1-6'
   workflow_dispatch:
   push:
     branches: [main]

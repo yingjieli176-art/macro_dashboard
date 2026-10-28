@@ -57,7 +57,8 @@ def parse_dts_tga_rows(rows) -> pd.DataFrame:
         (frame["_priority"] < 9) &
         frame["observation_date"].notna() &
         (frame["_value"] > 0) &
-        (frame["observation_date"] <= pd.Timestamp.now().normalize() + pd.Timedelta(days=1))
+        (frame["_value"] < float("inf")) &
+        (frame["observation_date"] <= pd.Timestamp.now(tz="America/New_York").tz_localize(None).normalize())
     ].copy()
     if selected.empty:
         return pd.DataFrame(columns=columns)

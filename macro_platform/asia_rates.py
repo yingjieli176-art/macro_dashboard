@@ -105,8 +105,13 @@ def load_china_gov_yields() -> pd.DataFrame:
     # would label a calculated quantity as a primary market fixing.
     # The spread itself may be quoted by the upstream provider when a leg is
     # absent; otherwise recompute from the two observed yield legs.
+    today = pd.Timestamp.now(tz="Asia/Shanghai").tz_localize(None).normalize()
+    out = out.loc[out.observation_date.le(today)]
+    for field in ("china_2y", "china_10y"):
+        out[field] = out[field].where(out[field].between(-10, 30))
     computed_spread = out["china_10y"] - out["china_2y"]
-    out["china_10y_2y_pct"] = computed_spread.combine_first(source_spread)
+    out["china_10y_2y_pct"] = computed_spread.combine_first(source_spread.loc[out.index])
+    out["china_10y_2y_pct"] = out["china_10y_2y_pct"].where(out["china_10y_2y_pct"].between(-10, 30))
 
     out = (
         out.dropna(subset=["observation_date"])
@@ -173,7 +178,13 @@ def _read_japan_csv(url: str, *, offline=False) -> pd.DataFrame:
         }
     )
     out["japan_10y_2y_pct"] = out["japan_10y"] - out["japan_2y"]
-    return out.dropna(subset=["observation_date"])
+    today = pd.Timestamp.now(tz="Asia/Tokyo").tz_localize(None).normalize()
+    out = out.loc[out.observation_date.le(today)]
+    for field in ("japan_2y", "japan_10y"):
+        out[field] = out[field].where(out[field].between(-10, 30))
+    out["japan_10y_2y_pct"] = out["japan_10y"] - out["japan_2y"]
+    return (out.dropna(subset=["observation_date"]).sort_values("observation_date")
+            .drop_duplicates("observation_date", keep="last"))
 
 
 def _read_japan_snapshot() -> pd.DataFrame:

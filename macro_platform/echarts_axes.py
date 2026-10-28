@@ -542,7 +542,7 @@ def option_observation_health(option, *, chart_key="", now=None):
     This inspects already-serialized ECharts series. A monthly observation is
     allowed a longer lag than a daily market close; no data is extrapolated.
     """
-    now = pd.Timestamp.now(tz="UTC").tz_localize(None).normalize() if now is None else pd.Timestamp(now)
+    now = pd.Timestamp.now(tz="Asia/Hong_Kong").tz_localize(None).normalize() if now is None else pd.Timestamp(now)
     if now.tzinfo is not None:
         now = now.tz_localize(None)
     now = now.normalize()
@@ -597,7 +597,7 @@ def option_observation_health(option, *, chart_key="", now=None):
         if now > due:
             stale_names.append(name)
             stale_details.append(f"{name}（截至 {latest:%Y-%m-%d}，距今 {age} 天，{cadence}）")
-        if age < -1:
+        if age < 0:
             future_names.append(name)
     return {
         "latest_by_name": latest_by_name,
@@ -617,7 +617,7 @@ def summarize_series_dates(fig, *, now: pd.Timestamp | None = None,
 
     Never imply a last-good cached reading is fresh because it was loaded today.
     """
-    now = pd.Timestamp.now(tz="UTC").tz_localize(None) if now is None else pd.Timestamp(now)
+    now = pd.Timestamp.now(tz="Asia/Hong_Kong").tz_localize(None) if now is None else pd.Timestamp(now)
     if now.tzinfo is not None:
         now = now.tz_localize(None)
     now = now.normalize()
@@ -649,7 +649,7 @@ def summarize_series_dates(fig, *, now: pd.Timestamp | None = None,
         age = (now - latest.normalize()).days
         if age > maximum_age_days:
             stale_names.append(name)
-        if age < -1:
+        if age < 0:
             future_names.append(name)
     return {
         "latest_by_name": latest_by_name,

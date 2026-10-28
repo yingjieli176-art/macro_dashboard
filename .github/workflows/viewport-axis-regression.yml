@@ -324,6 +324,35 @@ jobs:
           path: runtime_benchmark.json
           if-no-files-found: error
 
+  all-source-dates:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt akshare xlrd curl_cffi==0.13.0
+      - name: Verify raw dates and compare all 17 charts with live sources
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          python scripts/audit_source_freshness.py --output source_health.json
+          python scripts/probe_all_sources.py --output all_source_freshness.json --strict
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: all-source-date-audit
+          path: |
+            source_health.json
+            all_source_freshness.json
+          if-no-files-found: error
+
   raw-history:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest

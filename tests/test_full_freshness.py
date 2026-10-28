@@ -118,7 +118,7 @@ class FullFreshness(unittest.TestCase):
 
     def test_inventory_covers_every_chart_and_previously_omitted_live_sources(self):
         config = jobs()
-        self.assertEqual({c for _, charts, _, _, _ in config for c in charts}, set(range(1,16)))
+        self.assertEqual({c for _, charts, _, _, _ in config for c in charts}, set(range(1,18)))
         self.assertTrue({"GC=F","SI=F","BTC-USD","ETH-USD","^N225","china_2y","japan_2y","GVZCLS"}
                         <= {row[0] for row in config})
 
