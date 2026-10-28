@@ -78,6 +78,23 @@ export default function({data, parentElement}) {
     let visibleRight = 0, visibleLeft = 0;
     axes.forEach((axis, index) => {
       const show = used.has(index);
+      // Price guides are annotations, not observations. Include visible
+      // assets' high/latest levels in the viewport's native dynamic extent.
+      const guides = base.series.filter(series => (series.yAxisIndex || 0) === index &&
+        selected[series.name] !== false).flatMap(series =>
+          (series.markLine?.data || []).filter(line =>
+            / · (最高收盘|最新收盘)$/.test(line.name || '')).map(line => line.yAxis))
+        .filter(Number.isFinite);
+      if (guides.length) {
+        const limits = extent => {
+          const values = [extent.min, extent.max, ...guides].filter(Number.isFinite);
+          const low = Math.min(...values), high = Math.max(...values);
+          const padding = Math.max((high-low)*.07, Math.abs(high)*.002, .01);
+          return [low-padding, high+padding];
+        };
+        axis.min = extent => limits(extent)[0];
+        axis.max = extent => limits(extent)[1];
+      }
       axis.id = `macro-axis-${index}`;
       axis.show = show;
       axis.axisLine = {...axis.axisLine, show: show && axis.axisLine?.show !== false};

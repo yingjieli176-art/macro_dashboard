@@ -94,7 +94,7 @@ RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 MACRO_DISPLAY_ORDER = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "us_drawdown", "cn_drawdown", 14, 15, 11, 13, 12)
 MACRO_DISPLAY_NUMBER = {key: index for index, key in enumerate(MACRO_DISPLAY_ORDER, 1)}
-CHART_BUILD = "2026-10-27-china-equity-layout-r71"
+CHART_BUILD = "2026-10-28-equity-price-guides-r72"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2118,7 +2118,7 @@ def show_hk_parameter_description(index):
 
 
 US_EQUITY_RISK_DESCRIPTION = (
-    '<div class="parameter-note"><b>VIX：</b>标普500指数约未来30天的年化隐含波动率指标，代表指数期权对未来波动幅度的定价，不代表涨跌方向。</div><div class="parameter-note"><b>VIXEQ：</b>标普500成分股篮子的市值加权30天隐含波动率指标，代表个股层面的预期波动水平。</div><div class="parameter-note"><b>S&amp;P 500 (R1)：</b>标普500指数，代表美国大盘股的综合价格表现；单位为指数点。</div><div class="parameter-note"><b>VIXEQ−VIX (R2)：</b>同日个股篮子与指数隐含波动率之差，代表两种波动定价的差距，可辅助观察个股分化；单位为波动率点。</div><div class="parameter-note"><b>VIXEQ/VIX (R3)：</b>同日个股篮子与指数隐含波动率之比，代表个股预期波动相对指数的倍数差异；不是资金杠杆倍数。</div><div class="parameter-note"><b>COR1M (R4)：</b>1个月期隐含相关性指数，代表期权市场定价的成分股未来共同波动程度；上升表示预期相关性增强、分散化收益减弱。</div><div class="parameter-note"><b>COR3M (R4)：</b>3个月期隐含相关性指数，代表较长观察期内成分股的预期共同波动程度；与COR1M对照可观察相关性期限结构。</div><div class="parameter-context">口径说明：差值和比值只使用同日有效观测；COR为指数刻度。VIXEQ和COR早期数据包含官方回溯序列。</div>'
+    '<div class="parameter-note"><b>VIX：</b>标普500指数未来30个日历天（约1M）的年化隐含波动率指标，代表指数期权对未来波动幅度的定价，不代表涨跌方向。</div><div class="parameter-note"><b>VIXEQ：</b>标普500成分股篮子的市值加权30天隐含波动率指标，代表个股层面的预期波动水平。</div><div class="parameter-note"><b>S&amp;P 500 (R1)：</b>标普500指数，代表美国大盘股的综合价格表现；单位为指数点。</div><div class="parameter-note"><b>VIXEQ−VIX (R2)：</b>同日个股篮子与指数隐含波动率之差，代表两种波动定价的差距，可辅助观察个股分化；单位为波动率点。</div><div class="parameter-note"><b>VIXEQ/VIX (R3)：</b>同日个股篮子与指数隐含波动率之比，代表个股预期波动相对指数的倍数差异；不是资金杠杆倍数。</div><div class="parameter-note"><b>COR1M (R4)：</b>1个月期隐含相关性指数，代表期权市场定价的成分股未来共同波动程度；上升表示预期相关性增强、分散化收益减弱。</div><div class="parameter-note"><b>COR3M (R4)：</b>3个月期隐含相关性指数，代表较长观察期内成分股的预期共同波动程度；与COR1M对照可观察相关性期限结构。</div><div class="parameter-context">口径说明：差值和比值只使用同日有效观测；COR为指数刻度。VIXEQ和COR早期数据包含官方回溯序列。</div>'
 )
 
 
@@ -2596,20 +2596,25 @@ def _build_equity_drawdown():
                 histories[symbol] = _equity_drawdown.load_equity_history(symbol)
             except Exception:
                 logging.exception("Equity drawdown history unavailable: %s", symbol)
-        fig = _equity_drawdown.build_drawdown_figure(histories)
+        price_builder = getattr(_equity_drawdown, "build_price_figure", None)
+        if price_builder is None:
+            fig = go.Figure()
+            _mark_missing_series(fig, "SPX / RSP")
+        else:
+            fig = price_builder(histories, split_axes=True)
     return apply_chart_style(fig, chart_height(310, 420), "5Y")
 
 
 @st.fragment(key="equity_drawdown_viewport")
 def _render_equity_drawdown():
-    st.markdown('<div class="section-title">11. SPX / RSP · 距前高回撤</div>', unsafe_allow_html=True)
-    st.caption("回撤＝（当日收盘÷截至当日的最高收盘－1）×100%；创新高为0%，下跌显示负值。切换时间范围不重置前高。")
+    st.markdown('<div class="section-title">11. SPX / RSP · 价格走势与前高</div>', unsafe_allow_html=True)
+    st.caption("实线为实际收盘走势；点线标记可用历史最高收盘，虚线标记最新收盘。SPX用左轴（点），RSP用右轴（美元），均为原始价格尺度。")
     figure = _build_equity_drawdown()
     _render_adaptive_macro_figure(figure, "us_equity_drawdown", standard=True)
-    summaries = (figure.layout.meta or {}).get("drawdown_summary", [])
+    summaries = (figure.layout.meta or {}).get("price_summary", [])
     for row in summaries:
         st.caption(f'{row["symbol"]}：前高 {row["peak"]:,.2f}（{row["peak_date"]}）→ 最新收盘 {row["close"]:,.2f}，下跌 {row["decline_pct"]:.2f}%（差额 {row["drop_amount"]:,.2f}）')
-    st.caption("SPX为自由流通市值加权价格指数，单位为点；RSP为跟踪标普500等权指数的ETF，单位为美元。RSP价格已处理拆股，不含股息再投资，并存在费用及跟踪误差；两者只比较回撤百分比。数据为已完成交易日收盘，非实时行情。")
+    st.caption("SPX为自由流通市值加权价格指数，单位为点；RSP为跟踪标普500等权指数的ETF，单位为美元。RSP价格已处理拆股，不含股息再投资，并存在费用及跟踪误差；两者使用独立坐标轴。数据为已完成交易日收盘，非实时行情。")
     add_sources([
         ("SPX 日线价格", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
         ("RSP 日线价格", "https://finance.yahoo.com/quote/RSP/history/"),
@@ -2624,7 +2629,7 @@ def _build_china_drawdown():
         _mark_missing_series(figure, "沪深300 / 中证1000 / 中证2000")
     else:
         try:
-            figure = _china_equity.build_china_drawdown_figure()
+            figure = _china_equity.build_china_price_figure()
         except Exception:
             logging.exception("China index drawdown history unavailable")
             figure = go.Figure()
@@ -2634,11 +2639,11 @@ def _build_china_drawdown():
 
 @st.fragment(key="china_equity_drawdown_viewport")
 def _render_china_drawdown():
-    st.markdown('<div class="section-title">12. A股宽基 · 沪深300 / 中证1000 / 中证2000 距前高回撤</div>', unsafe_allow_html=True)
-    st.caption("同一百分比坐标对比大盘、小盘与更小市值股票的回撤；0%为截至当日的最高收盘，负值为下跌。")
+    st.markdown('<div class="section-title">12. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势</div>', unsafe_allow_html=True)
+    st.caption("三只指数显示实际收盘点位，不做归一化。点线为各自可用历史最高收盘，虚线为最新收盘；切换时间范围不重置参考线。")
     figure = _build_china_drawdown()
     _render_adaptive_macro_figure(figure, "china_equity_drawdown", standard=True)
-    for row in (figure.layout.meta or {}).get("drawdown_summary", []):
+    for row in (figure.layout.meta or {}).get("price_summary", []):
         st.caption(f'{row["name"]}（{row["symbol"]}）：前高 {row["peak"]:,.2f}（{row["peak_date"]}）→ 最新收盘 {row["close"]:,.2f}，下跌 {row["decline_pct"]:.2f}%')
     st.caption("中证指数官网已完成交易日收盘，价格指数，不含股息再投资。发布前数据为中证官方回溯数据；前高按各指数基日以来可用完整历史计算，切换窗口不重置。最新日期以图中观测日为准。")
     add_sources([(name, f"https://www.csindex.com.cn/zh-CN/indices/index-detail/{code}")
@@ -2669,14 +2674,15 @@ def render_macro_chart_9(prebuilt_fig=None):
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">10. VIX & VIX3M Term Structure</div>'
-        '<div class="section-description">VIX · VIX3M · VIX3M−VIX (R1)</div>',
+        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX3M−VIX (R1)</div>',
         unsafe_allow_html=True,
     )
+    st.caption("VIX反映未来30个日历天（约1个月）的年化隐含波动率，正式代码仍是VIX；VIX3M约为3个月。上方1M、3M等按钮只控制历史显示范围，不改变指数期限。")
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 10", lambda: _cached_macro_figure(10, _macro_snapshot_revision(), CHART_BUILD),
     )
     _render_adaptive_macro_figure(base_fig, "vix_term_structure")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>VIX：</b>标普500指数约未来30天的年化隐含波动率指标，代表近期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M：</b>标普500指数约未来3个月的年化隐含波动率指标，代表较长期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M−VIX (R1)：</b>同日3个月减1个月隐含波动率之差，代表近远期波动风险的相对定价；收窄或转负表示近端波动更贵，单位为波动率点。</div><div class="parameter-context">口径说明：差值只使用同日有效观测；两条波动率在左轴，差值在右轴R1。</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-description"><div class="parameter-note"><b>VIX：</b>标普500指数未来30个日历天（约1M）的年化隐含波动率指标，代表近期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M：</b>标普500指数约未来3个月的年化隐含波动率指标，代表较长期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M−VIX (R1)：</b>同日3个月减1个月隐含波动率之差，代表近远期波动风险的相对定价；收窄或转负表示近端波动更贵，单位为波动率点。</div><div class="parameter-context">口径说明：差值只使用同日有效观测；两条波动率在左轴，差值在右轴R1。</div></div>', unsafe_allow_html=True)
     add_sources([
         ("FRED · VIX (VIXCLS)", "https://fred.stlouisfed.org/series/VIXCLS"),
         ("FRED · VIX3M (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),

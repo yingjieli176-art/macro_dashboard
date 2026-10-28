@@ -19,6 +19,7 @@ on:
       - .github/workflows/update-china-equity-snapshot.yml
       - scripts/update_us_equity_snapshot.py
       - tests/test_equity_drawdown.py
+      - tests/test_price_reference_charts.py
       - data_snapshots/us_equity_daily.json
       - .github/workflows/update-us-equity-snapshot.yml
       - scripts/update_correlation_snapshot.py
@@ -105,6 +106,7 @@ on:
       - .github/workflows/update-china-equity-snapshot.yml
       - scripts/update_us_equity_snapshot.py
       - tests/test_equity_drawdown.py
+      - tests/test_price_reference_charts.py
       - data_snapshots/us_equity_daily.json
       - .github/workflows/update-us-equity-snapshot.yml
       - scripts/update_correlation_snapshot.py

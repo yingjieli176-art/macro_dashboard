@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from macro_platform.equity_drawdown import calculate_drawdown, build_drawdown_figure
+from macro_platform.equity_drawdown import calculate_drawdown, build_drawdown_figure, build_price_figure
 from macro_platform.request_runtime import observed_cache
 
 SNAPSHOT = Path(__file__).resolve().parents[1] / "data_snapshots/china_equity_daily.json"
@@ -65,5 +65,13 @@ def build_china_drawdown_figure(histories=None):
     if histories is None:
         histories = {code: load_china_history(code) for code in SERIES}
     figure = build_drawdown_figure(histories, series=SERIES)
+    figure.layout.meta["price_basis"] = PRICE_BASIS
+    return figure
+
+
+def build_china_price_figure(histories=None):
+    if histories is None:
+        histories = {code: load_china_history(code) for code in SERIES}
+    figure = build_price_figure(histories, series=SERIES)
     figure.layout.meta["price_basis"] = PRICE_BASIS
     return figure

@@ -124,3 +124,58 @@ def build_drawdown_figure(histories, years=5, series=None):
               "price_basis": PRICE_BASIS},
     )
     return fig
+
+
+def build_price_figure(histories, years=5, series=None, split_axes=False):
+    """Original close prices with full-history high/latest reference annotations."""
+    import plotly.graph_objects as go
+
+    fig = go.Figure()
+    summaries, missing, references = [], [], []
+    for key, config in (SERIES if series is None else series).items():
+        frame = calculate_drawdown(histories.get(key, pd.DataFrame(columns=["observation_date", "close"])))
+        actual = frame.dropna(subset=["close"])
+        if actual.empty:
+            missing.append(config["name"])
+            continue
+        latest = actual.iloc[-1]
+        axis_index = len(summaries) if split_axes else 0
+        axis_ref = "y" if axis_index == 0 else f"y{axis_index + 1}"
+        row = {"symbol": key, "name": config["name"], "date": latest.observation_date.strftime("%Y-%m-%d"),
+               "history_start": actual.observation_date.min().strftime("%Y-%m-%d"),
+               "close": float(latest.close), "peak": float(latest.peak),
+               "peak_date": latest.peak_date.strftime("%Y-%m-%d"),
+               "drop_amount": float(latest.drop_amount),
+               "decline_pct": max(0., -float(latest.drawdown_pct))}
+        summaries.append(row)
+        visible = frame.loc[frame.observation_date.ge(latest.observation_date - pd.DateOffset(years=years))]
+        fig.add_trace(go.Scatter(
+            x=visible.observation_date.tolist(), y=visible.close.tolist(), name=config["name"],
+            yaxis=axis_ref, mode="lines", connectgaps=False,
+            line={"color": config["color"], "width": 2.5},
+            hovertemplate=config["name"] + ": %{y:,.2f}<extra></extra>"))
+        # Shapes support the Plotly recovery path. The native adapter uses
+        # equivalent markLine annotations, never artificial price observations.
+        short = key if key in ("SPX", "RSP") else config["name"]
+        side = "end" if split_axes and axis_index else "start"
+        for kind, value, date, dash in (("最高收盘", row["peak"], row["peak_date"], "dot"),
+                                         ("最新收盘", row["close"], row["date"], "dash")):
+            label = f'{short} {"前高" if kind == "最高收盘" else "最新"} {value:,.2f}'
+            references.append({"series": config["name"], "axis": axis_ref, "kind": kind,
+                               "value": value, "date": date, "label": label,
+                               "side": side if split_axes else ("start" if kind == "最高收盘" else "end"),
+                               "color": config["color"]})
+            fig.add_shape(type="line", xref="paper", x0=0, x1=1, yref=axis_ref, y0=value, y1=value,
+                          line={"color": config["color"], "width": 1.2, "dash": dash})
+            fig.add_annotation(xref="paper", x=0 if references[-1]["side"] == "start" else 1,
+                               yref=axis_ref, y=value, text=label, showarrow=False,
+                               xanchor="left" if references[-1]["side"] == "start" else "right",
+                               yanchor="bottom" if kind == "最高收盘" else "top",
+                               font={"color": config["color"], "size": 10})
+        title = "SPX · pts" if split_axes and key == "SPX" else "RSP · USD" if split_axes and key == "RSP" else "指数点位 · pts"
+        fig.update_layout(**{("yaxis" if axis_ref == "y" else "yaxis" + axis_ref[1:]): {
+            "title": title, "side": "left" if axis_index == 0 else "right",
+            **({"overlaying": "y"} if axis_index else {})}})
+    fig.update_layout(meta={"price_summary": summaries, "price_reference_lines": references,
+                            "missing_series": missing, "price_basis": PRICE_BASIS})
+    return fig

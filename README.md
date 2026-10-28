@@ -88,7 +88,7 @@ The Treasury DTS TGA closing account changed field placement in April 2022;
 `macro_platform/treasury_cash.py` records the correct account-label-based
 interpretation.
 
-## SPX / RSP drawdown chart (11)
+## SPX / RSP price chart (11)
 
 SPX uses the S&P 500 float-adjusted market-cap-weighted **price index**;
 RSP is the Invesco S&P 500 Equal Weight ETF. RSP is a fund, not an index:
@@ -97,23 +97,22 @@ Both histories use completed US daily `quote.close` prices, split-adjusted
 but **without dividend reinvestment**. Never mix Yahoo `adjclose` total-return
 adjustments with the SPX price index. `range=max` monthly responses are rejected.
 
-For every date, drawdown = `(close / cumulative_max(close) - 1) * 100`.
-Peaks are calculated on each security's full available daily history **before**
-limiting the rendered chart to five years or changing its viewport. This is
-close-to-close drawdown, not intraday-high drawdown. Chart 11 has its own fragment and time controls, without a data table.
-Equity and volatility charts are grouped together, followed by Asia rates,
-commodities and crypto assets. Captions show latest completed close, prior peak/date,
-absolute drop and percentage decline. Missing or stale observations remain labeled.
+Chart 11 displays original close prices: SPX in index points on the left axis
+and RSP in USD on the right axis. Full-history highest closes are calculated
+before limiting the displayed history to five years. Dotted horizontal lines
+mark these highs and dashed lines mark latest closes; captions retain the
+absolute gap and percentage decline. The chart has its own fragment and time
+controls, without a data table.
 
 The data-only `update-us-equity-snapshot.yml` job refreshes both histories and
 atomically publishes `data_snapshots/us_equity_daily.json`. Partial, stale,
 future, non-daily or truncated responses cannot replace last-good data.
 
 
-## China equity drawdowns (12)
+## China equity price chart (12)
 
 The CSI 300 (000300), CSI 1000 (000852), and CSI 2000 (932000) share one
-percentage drawdown axis. Prices come from the CSI official historical API,
+original index-points axis, with individual high/latest reference lines. Prices come from the CSI official historical API,
 using completed mainland trading-day closes and each index's full available
 history since its base date. Published pre-launch backcasts are retained;
 carry-in API rows before the base date are excluded. The five-year visible
@@ -124,6 +123,20 @@ Incomplete sessions, missing indices, shortened history and stale responses
 cannot replace the last-good snapshot. Actual observation dates remain visible.
 
 Display order: 1–4 US policy/rates/liquidity; 5–8 Hong Kong liquidity;
-9 US equity risk; 10 VIX term structure; 11 US equity drawdowns;
-12 China equity drawdowns; 13 China rates; 14 Japan rates/equity;
+9 US equity risk; 10 VIX term structure; 11 US equity prices;
+12 China equity prices; 13 China rates; 14 Japan rates/equity;
 15 precious metals; 16 copper; 17 crypto. Internal builder keys stay stable.
+
+
+## Equity price charts and reference lines (11–12)
+
+Charts 11 and 12 display original daily closing prices, not normalized prices
+or percentage drawdown curves. SPX uses the left points axis and RSP the right
+USD axis. CSI 300/1000/2000 share an index-points axis. Each asset has a dotted
+full-history highest-close line and a dashed latest-close line with numeric
+labels. The high is computed before restricting the displayed history.
+Native reference lines follow the asset's legend visibility and remain inside
+the dynamic Y range during time selection, slider zoom and resizing. They are
+annotations and never enter observation counts or source freshness dates.
+VIX is the official 30-calendar-day (~1M) index; the 1M/3M chart buttons change
+the historical display window rather than the volatility forecast horizon.

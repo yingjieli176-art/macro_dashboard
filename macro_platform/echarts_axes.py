@@ -66,6 +66,28 @@ def _axis_readable_title(source_axis, index, traces):
     return f"R{index} · {unit or 'value'}"
 
 
+def _price_reference_annotations(option, fig):
+    """Attach price guides to their real series so legend visibility follows it."""
+    references = (fig.layout.meta or {}).get("price_reference_lines", [])
+    for series in option["series"]:
+        items = []
+        for ref in references:
+            if ref["series"] != series["name"]:
+                continue
+            high = ref["kind"] == "最高收盘"
+            side = ref.get("side", "start")
+            items.append({"name": series["name"] + " · " + ref["kind"], "yAxis": ref["value"],
+                          "lineStyle": {"color": ref["color"], "width": 1.2,
+                                        "type": "dotted" if high else "dashed"},
+                          "label": {"show": True, "formatter": ref["label"],
+                                    "position": f'inside{side.title()}{"Top" if high else "Bottom"}',
+                                    "fontSize": 10, "color": ref["color"],
+                                    "backgroundColor": "rgba(255,255,255,0.85)", "padding": [2, 3]}})
+        if items:
+            series["markLine"] = {"silent": True, "symbol": ["none", "none"], "data": items}
+    return option
+
+
 def _responsive_chart_layout(option, fig, axis_map):
     """Keep every independent axis; compact only the narrow-container layout.
 
@@ -73,6 +95,7 @@ def _responsive_chart_layout(option, fig, axis_map):
     replace observations, or merge axes. The final default restores desktop
     geometry when a phone rotates or a browser window grows again.
     """
+    option = _price_reference_annotations(option, fig)
     desktop = {key: deepcopy(option[key]) for key in ("legend", "grid", "yAxis", "xAxis")}
     for axis in desktop["yAxis"]:
         axis["nameRotate"] = 90

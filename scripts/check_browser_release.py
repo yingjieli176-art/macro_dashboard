@@ -38,9 +38,12 @@ def chart_state(chart):
         const model = instance.getModel();
         const axes = [];
         model.eachComponent('yAxis', axis => {
-            const values = [];
+            const values = [], references = [];
             model.eachSeries(series => {
                 if ((series.get('yAxisIndex') || 0) !== axis.componentIndex) return;
+                for (const line of series.get('markLine')?.data || []) {
+                    if (/ · (最高收盘|最新收盘)$/.test(line.name || '') && Number.isFinite(line.yAxis)) references.push(line.yAxis);
+                }
                 const data = series.getData();
                 const dimension = data.mapDimension('y');
                 for (let index=0; index<data.count(); index++) {
@@ -50,7 +53,7 @@ def chart_state(chart):
             });
             axes.push({extent: axis.axis.scale.getExtent(),
                        observed: values.length ? [Math.min(...values), Math.max(...values)] : null,
-                       samples: values.length, scale: axis.get('scale')});
+                       samples: values.length, references, scale: axis.get('scale')});
         });
         const grid = model.getComponent('grid').coordinateSystem.getRect();
         const slider = instance.getViewOfComponentModel(model.getComponent('dataZoom', 1));
@@ -74,6 +77,9 @@ def assert_visible_axes(state, minimum_axes=2):
             continue
         populated += 1
         low, high = axis["observed"]
+        references = axis.get("references", [])
+        if references:
+            low, high = min(low, *references), max(high, *references)
         minimum, maximum = sorted(axis["extent"])
         tolerance = max(abs(low), abs(high), 1)*1e-8
         assert minimum <= low+tolerance and maximum >= high-tolerance, axis
@@ -109,7 +115,7 @@ def exercise_client_zoom(page, chart, minimum_axes=2):
 
 
 def exercise_equity_drawdown(page):
-    page.get_by_text('11. SPX / RSP · 距前高回撤', exact=True).wait_for(timeout=30000)
+    page.get_by_text('11. SPX / RSP · 价格走势与前高', exact=True).wait_for(timeout=30000)
     assert page.get_by_text('9B.', exact=False).count() == 0
     baseline = None
     ranges = []
@@ -124,9 +130,12 @@ def exercise_equity_drawdown(page):
         points = chart.evaluate("""element => {
             const chart = (""" + INSTANCE_JS + """)(element);
             return chart.getOption().series.map(series => ({name: series.name,
-                latest: series.data.filter(point => Number.isFinite(point[1])).at(-1)}));
+                latest: series.data.filter(point => Number.isFinite(point[1])).at(-1),
+                guides: series.markLine?.data.map(line => ({name:line.name,value:line.yAxis,label:line.label.formatter}))}));
         }""")
-        assert len(points) == 2 and all(p['latest'][1] <= 0 for p in points), points
+        assert len(points) == 2 and all(p['latest'][1] > 0 for p in points), points
+        assert all(len(p['guides']) == 2 and p['guides'][0]['value'] >= p['latest'][1] and
+                   abs(p['guides'][1]['value'] - p['latest'][1]) < .00001 for p in points), points
         if baseline is None:
             baseline = points
         assert points == baseline, 'Changing the viewport reset a historical peak'
@@ -135,14 +144,15 @@ def exercise_equity_drawdown(page):
     assert page.get_by_text('RSP：前高', exact=False).count() == 1
     chart = page.locator('.st-key-us_equity_drawdown_echarts_1Y').get_by_test_id(
         re.compile(r"^(macro|st)EChartsChart$"))
-    zoom = exercise_client_zoom(page, chart, minimum_axes=1)
+    assert len(chart_state(chart)['axes']) == 2
+    zoom = exercise_client_zoom(page, chart, minimum_axes=2)
     chart.screenshot(path='browser_equity_drawdown.png')
-    return {'range_controls': ranges, 'latest_drawdowns': baseline,
-            'historical_peaks_preserved': True, 'slider': zoom}
+    return {'range_controls': ranges, 'latest_prices_and_guides': baseline,
+            'price_guides_preserved': True, 'slider': zoom}
 
 
 def exercise_china_drawdown(page):
-    page.get_by_text('12. A股宽基 · 沪深300 / 中证1000 / 中证2000 距前高回撤', exact=True).wait_for(timeout=30000)
+    page.get_by_text('12. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势', exact=True).wait_for(timeout=30000)
     baseline = None
     for period in ('5Y', '1Y', '6M', '3M', '1M', '1Y'):
         page.get_by_test_id('stButtonGroup').nth(11).get_by_text(period, exact=True).click()
@@ -154,15 +164,18 @@ def exercise_china_drawdown(page):
         points = chart.evaluate("""element => {
             const instance = (""" + INSTANCE_JS + """)(element);
             return instance.getOption().series.map(s => ({name:s.name,
-                latest:s.data.filter(p=>Number.isFinite(p[1])).at(-1)}));
+                latest:s.data.filter(p=>Number.isFinite(p[1])).at(-1),
+                guides:s.markLine?.data.map(line=>({name:line.name,value:line.yAxis,label:line.label.formatter}))}));
         }""")
         assert [p['name'] for p in points] == ['沪深300', '中证1000', '中证2000'], points
-        assert all(p['latest'][1] <= 0 for p in points), points
+        assert all(p['latest'][1] > 0 for p in points), points
+        assert all(len(p['guides']) == 2 and p['guides'][0]['value'] >= p['latest'][1] and
+                   abs(p['guides'][1]['value'] - p['latest'][1]) < .00001 for p in points), points
         if baseline is None: baseline = points
         assert points == baseline, 'China viewport reset a historical peak'
     zoom = exercise_client_zoom(page, chart, minimum_axes=1)
     chart.screenshot(path='browser_china_drawdown.png')
-    return {'latest_drawdowns':baseline, 'historical_peaks_preserved':True, 'slider':zoom}
+    return {'latest_prices_and_guides':baseline, 'price_guides_preserved':True, 'slider':zoom}
 
 
 def wait_for_page(page, url):
