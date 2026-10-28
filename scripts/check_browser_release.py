@@ -120,7 +120,7 @@ def assert_price_guides_follow_viewport(chart):
         const option = instance.getOption();
         const graphics = (option.graphic || []).flatMap(group => group.elements || [group]);
         instance.getModel().eachSeries(series => {
-            if (series.get('xAxisIndex') === 1) return;
+            if (series.id.startsWith('macro-peak-drawdown-')) return;
             const data = series.getData(), y = data.mapDimension('y');
             const raw = instance.getOption().series.find(item => item.name === series.name).data;
             let best = null;
@@ -143,8 +143,9 @@ def assert_price_guides_follow_viewport(chart):
                 expected_path:raw.filter(point => Date.parse(point[0]) >= Date.parse(best.date))
                     .map(point => [point[0], Number.isFinite(point[1]) && point[1] > 0 ?
                         (point[1]/best.value-1)*100 : null, point[1]]),
-                panel_end:option.xAxis[1]?.max,
-                panel_start:option.xAxis[1]?.min,
+                grids:option.grid.length, x_axes:option.xAxis.length,
+                overlay:option.series.find(item => item.id === `macro-peak-drawdown-${index}`),
+                percent_axis:option.yAxis.at(-1),
                 zoom_axes:option.dataZoom.map(zoom=>zoom.xAxisIndex),
                 latest_time:Date.parse(raw.filter(point=>Number.isFinite(point[1])).at(-1)[0]),
                 latest:raw.filter(point=>Number.isFinite(point[1])).at(-1)[1]});
@@ -153,9 +154,12 @@ def assert_price_guides_follow_viewport(chart):
     }""")
     assert values
     assert all(value['zoom_axes'] == [[0], [0]] for value in values), values
-    assert values[0]['panel_end'] >= max(value['latest_time'] for value in values), values
+    assert all(value['grids'] == 1 and value['x_axes'] == 1 for value in values), values
     for value in values:
         assert value['expected'] is not None, value
+        assert value['overlay']['xAxisIndex'] == 0, value
+        assert value['overlay']['lineStyle']['type'] == 'dashed', value
+        assert value['percent_axis']['position'] == 'right', value
         assert abs(value['high'] - value['expected']['value']) < .00001, value
         assert value['expected']['date'] in value['label'], value
         assert abs(value['current'] - value['latest']) < .00001, value
@@ -206,13 +210,13 @@ def exercise_price_path_legend(page, chart):
         page.wait_for_timeout(100)
         state=chart.evaluate("""element => {
             const chart=element.__macroChart, option=chart.getOption(), visible=[];
-            chart.getModel().eachSeries(series=>visible.push({name:series.name,axis:series.get('xAxisIndex')||0}));
+            chart.getModel().eachSeries(series=>visible.push({name:series.name,kind:series.id.startsWith('macro-peak-drawdown-')?'drawdown':'price'}));
             return {selected:option.legend[0].selected, visible,
                 panel_show:option.yAxis.at(-1).show};
         }""")
         for asset in names:
-            assert [s['axis'] for s in state['visible'] if s['name']==asset] == (
-                [] if state['selected'].get(asset) is False else [0,1]), state
+            assert [s['kind'] for s in state['visible'] if s['name']==asset] == (
+                [] if state['selected'].get(asset) is False else ['price','drawdown']), state
         assert state['panel_show'] == bool(state['visible']), state
         assert chart_state(chart)['zoom'] == before
     assert_price_guides_follow_viewport(chart)
@@ -234,7 +238,7 @@ def exercise_equity_drawdown(page):
                                timeout=30000)
         points = chart.evaluate("""element => {
             const chart = (""" + INSTANCE_JS + """)(element);
-            return chart.getOption().series.filter(series => series.xAxisIndex !== 1).map(series => ({name: series.name,
+            return chart.getOption().series.filter(series => !series.id.startsWith('macro-peak-drawdown-')).map(series => ({name: series.name,
                 latest: series.data.filter(point => Number.isFinite(point[1])).at(-1),
                 guides: series.markLine?.data.map(line => ({name:line.name,value:line.yAxis,label:line.label.formatter}))}));
         }""")
@@ -271,7 +275,7 @@ def exercise_china_drawdown(page):
                                arg=selector+' [data-testid$="EChartsChart"]', timeout=30000)
         points = chart.evaluate("""element => {
             const instance = (""" + INSTANCE_JS + """)(element);
-            return instance.getOption().series.filter(s => s.xAxisIndex !== 1).map(s => ({name:s.name,
+            return instance.getOption().series.filter(s => !s.id.startsWith('macro-peak-drawdown-')).map(s => ({name:s.name,
                 latest:s.data.filter(p=>Number.isFinite(p[1])).at(-1),
                 guides:s.markLine?.data.map(line=>({name:line.name,value:line.yAxis,label:line.label.formatter}))}));
         }""")
