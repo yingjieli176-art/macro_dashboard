@@ -156,8 +156,8 @@ export default function({data, parentElement}) {
     option.series = [...base.series.map(series => copy(series)), ...drawdowns.map((path, index) => ({
       id:`macro-peak-drawdown-${index}`, name:ratioNames[index], type:'line',
       xAxisIndex:0, yAxisIndex:axisIndex, data:path.data, encode:{x:0, y:1, tooltip:[1]},
-      showSymbol:path.data.length === 1, symbolSize:6, connectNulls:false, animation:false, z:4,
-      lineStyle:{color:base.series[index].lineStyle?.color, width:2, type:'dashed', opacity:.8},
+      showSymbol:true, symbol:'circle', symbolSize:3, connectNulls:false, animation:false, z:4,
+      lineStyle:{color:base.series[index].lineStyle?.color, width:3, type:'dashed', opacity:1},
       itemStyle:{color:base.series[index].lineStyle?.color},
       tooltip:{valueFormatter:value => `${Number(value).toFixed(2)}%`},
       markPoint:{symbol:'circle', symbolSize:6, label:{show:false},
