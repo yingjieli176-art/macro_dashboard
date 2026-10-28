@@ -94,6 +94,7 @@ export default function({data, parentElement}) {
   const shortNames = hasPriceGuides ? base.series.map(series => series.markLine.data.find(line =>
     / · 最高收盘$/.test(line.name)).label.formatter.split(' 高 ')[0]) : [];
   const ratioNames = shortNames.map(name => `${name} 回撤比例`);
+  const ratioColors = ['#9333ea', '#db2777', '#0891b2'];
   const footerSpace = hasPriceGuides ? data.price_footer_height || 0 : 0;
   let drawdowns = [];
   const priceNumber = value => value.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -157,8 +158,8 @@ export default function({data, parentElement}) {
       id:`macro-peak-drawdown-${index}`, name:ratioNames[index], type:'line',
       xAxisIndex:0, yAxisIndex:axisIndex, data:path.data, encode:{x:0, y:1, tooltip:[1]},
       showSymbol:true, symbol:'circle', symbolSize:3, connectNulls:false, animation:false, z:4,
-      lineStyle:{color:base.series[index].lineStyle?.color, width:3, type:'dashed', opacity:1},
-      itemStyle:{color:base.series[index].lineStyle?.color},
+      lineStyle:{color:ratioColors[index % ratioColors.length], width:3, type:'dashed', opacity:1},
+      itemStyle:{color:ratioColors[index % ratioColors.length]},
       tooltip:{valueFormatter:value => `${Number(value).toFixed(2)}%`},
       markPoint:{symbol:'circle', symbolSize:6, label:{show:false},
         data:path.data.length ? [{coord:path.data[0].slice(0,2)}] : []},
@@ -202,7 +203,7 @@ export default function({data, parentElement}) {
       }
       return {id:`macro-price-ratio-${index}`, type:'text', left:12,
         bottom:8+(assets.length-index-1)*20, silent:true,
-        style:{text, fill:series.lineStyle?.color || '#475569', fontSize:12, lineHeight:20}};
+        style:{text, fill:ratioColors[index % ratioColors.length], fontSize:12, lineHeight:20}};
     });
     element.setAttribute('aria-description', lines.map(line=>line.style.text).filter(Boolean).join('；'));
     return lines;

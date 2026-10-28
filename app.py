@@ -94,7 +94,7 @@ RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 MACRO_DISPLAY_ORDER = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "us_drawdown", "cn_drawdown", 14, 15, 11, 13, 12)
 MACRO_DISPLAY_NUMBER = {key: index for index, key in enumerate(MACRO_DISPLAY_ORDER, 1)}
-CHART_BUILD = "2026-10-28-daily-drawdown-parameter-r77"
+CHART_BUILD = "2026-10-28-distinct-drawdown-colors-r78"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2608,7 +2608,7 @@ def _build_equity_drawdown():
 @st.fragment(key="equity_drawdown_viewport")
 def _render_equity_drawdown():
     st.markdown('<div class="section-title">11. SPX / RSP · 价格走势与区间高点</div>', unsafe_allow_html=True)
-    st.caption("实线为实际收盘走势；点线“高”标记当前坐标时间内的最高收盘价和日期，虚线“现”为最新收盘价。切换时间或拖动滑块会自动重算区间高点。SPX左轴（点），RSP右轴（美元）；同色虚线为独立的“回撤比例”日线参数，使用最右侧百分比轴；点击图例可单独开关。")
+    st.caption("实线为实际收盘走势；点线“高”标记当前坐标时间内的最高收盘价和日期，虚线“现”为最新收盘价。切换时间或拖动滑块会自动重算区间高点。SPX左轴（点），RSP右轴（美元）；异色虚线为独立的“回撤比例”日线参数，使用最右侧百分比轴；点击图例可单独开关。")
     figure = _build_equity_drawdown()
     _render_adaptive_macro_figure(figure, "us_equity_drawdown", standard=True)
     summaries = (figure.layout.meta or {}).get("price_summary", [])
@@ -2640,7 +2640,7 @@ def _build_china_drawdown():
 @st.fragment(key="china_equity_drawdown_viewport")
 def _render_china_drawdown():
     st.markdown('<div class="section-title">12. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势</div>', unsafe_allow_html=True)
-    st.caption("实线为三只指数的实际收盘点位（左轴），同色虚线为独立的“回撤比例”日线参数（右轴百分比），可在图例单独开关。点线“高”为当前坐标时间内的最高收盘价和日期，随时间切换、滑块缩放自动更新；虚线“现”保持最新收盘价。")
+    st.caption("实线为三只指数的实际收盘点位（左轴），异色虚线为独立的“回撤比例”日线参数（右轴百分比），可在图例单独开关。点线“高”为当前坐标时间内的最高收盘价和日期，随时间切换、滑块缩放自动更新；虚线“现”保持最新收盘价。")
     figure = _build_china_drawdown()
     _render_adaptive_macro_figure(figure, "china_equity_drawdown", standard=True)
     for row in (figure.layout.meta or {}).get("price_summary", []):
