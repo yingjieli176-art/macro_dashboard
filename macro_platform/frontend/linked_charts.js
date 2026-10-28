@@ -137,7 +137,8 @@ export default function({data, parentElement}) {
     option.yAxis.push({id:'macro-peak-drawdown-axis', gridIndex:1, type:'value',
       name:'从区间最高收盘起的回撤 (%)', nameLocation:'end', nameGap:16,
       nameTextStyle:{fontSize:11, align:'left'}, scale:true, show:active.length > 0,
-      axisLabel:{formatter:'{value}%', fontSize:10}, splitLine:{lineStyle:{color:'#f1f5f9'}},
+      axisLabel:{formatter:value => `${Number(value.toFixed(2))}%`, fontSize:10,
+        showMinLabel:false, showMaxLabel:false}, splitLine:{lineStyle:{color:'#f1f5f9'}},
       min:extent => Math.min(extent.min, 0), max:extent => Math.max(extent.max, 0)});
     option.series = [...base.series.map(series => copy(series)), ...drawdowns.map((path, index) => ({
       id:`macro-peak-drawdown-${index}`, name:base.series[index].name, type:'line',
