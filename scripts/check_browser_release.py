@@ -114,8 +114,55 @@ def exercise_client_zoom(page, chart, minimum_axes=2):
     return {"before": before, "slider": slider, "download_and_fullscreen_only": True}
 
 
+def assert_price_guides_follow_viewport(chart):
+    values = chart.evaluate("""element => {
+        const instance = (""" + INSTANCE_JS + """)(element), values = [];
+        instance.getModel().eachSeries(series => {
+            const data = series.getData(), y = data.mapDimension('y');
+            const raw = instance.getOption().series.find(item => item.name === series.name).data;
+            let best = null;
+            for (let index=0; index<data.count(); index++) {
+                const value = data.get(y, index);
+                if (Number.isFinite(value) && (!best || value > best.value)) {
+                    best = {value, date:raw[data.getRawIndex(index)][0].slice(0,10)};
+                }
+            }
+            const guides = series.get('markLine').data;
+            const high = guides.find(line => / · 最高收盘$/.test(line.name));
+            const current = guides.find(line => / · 最新收盘$/.test(line.name));
+            values.push({name:series.name, expected:best, high:high.yAxis,
+                label:high.label.formatter, current:current.yAxis,
+                latest:raw.filter(point=>Number.isFinite(point[1])).at(-1)[1]});
+        });
+        return values;
+    }""")
+    assert values
+    for value in values:
+        assert value['expected'] is not None, value
+        assert abs(value['high'] - value['expected']['value']) < .00001, value
+        assert value['expected']['date'] in value['label'], value
+        assert abs(value['current'] - value['latest']) < .00001, value
+    return values
+
+
+def exercise_price_historical_window(page, chart):
+    before = chart_state(chart)
+    box = chart.bounding_box()
+    handle = before['handles'][1]
+    distance = before['grid']['width'] * (before['zoom'][1]-before['zoom'][0])/100 * .55
+    page.mouse.move(box['x']+handle['x'], box['y']+handle['y'])
+    page.mouse.down()
+    page.mouse.move(box['x']+handle['x']-distance, box['y']+handle['y'], steps=12)
+    page.mouse.up()
+    page.wait_for_timeout(200)
+    after = chart_state(chart)
+    assert after['zoom'][1] < before['zoom'][1]-.1, (before, after)
+    assert_visible_axes(after, minimum_axes=1)
+    return {'zoom':after['zoom'], 'guides':assert_price_guides_follow_viewport(chart)}
+
+
 def exercise_equity_drawdown(page):
-    page.get_by_text('11. SPX / RSP · 价格走势与前高', exact=True).wait_for(timeout=30000)
+    page.get_by_text('11. SPX / RSP · 价格走势与区间高点', exact=True).wait_for(timeout=30000)
     assert page.get_by_text('9B.', exact=False).count() == 0
     baseline = None
     ranges = []
@@ -134,21 +181,23 @@ def exercise_equity_drawdown(page):
                 guides: series.markLine?.data.map(line => ({name:line.name,value:line.yAxis,label:line.label.formatter}))}));
         }""")
         assert len(points) == 2 and all(p['latest'][1] > 0 for p in points), points
-        assert all(len(p['guides']) == 2 and p['guides'][0]['value'] >= p['latest'][1] and
-                   abs(p['guides'][1]['value'] - p['latest'][1]) < .00001 for p in points), points
+        assert all(len(p['guides']) == 2 for p in points), points
+        assert_price_guides_follow_viewport(chart)
         if baseline is None:
-            baseline = points
-        assert points == baseline, 'Changing the viewport reset a historical peak'
+            baseline = [point['latest'] for point in points]
+        assert [point['latest'] for point in points] == baseline, 'Changing the viewport changed the current price'
         ranges.append(period)
-    assert page.get_by_text('SPX：前高', exact=False).count() == 1
-    assert page.get_by_text('RSP：前高', exact=False).count() == 1
+    assert page.get_by_text('SPX 最新收盘：', exact=False).count() == 1
+    assert page.get_by_text('RSP 最新收盘：', exact=False).count() == 1
     chart = page.locator('.st-key-us_equity_drawdown_echarts_1Y').get_by_test_id(
         re.compile(r"^(macro|st)EChartsChart$"))
     assert len(chart_state(chart)['axes']) == 2
     zoom = exercise_client_zoom(page, chart, minimum_axes=2)
+    assert_price_guides_follow_viewport(chart)
+    historical = exercise_price_historical_window(page, chart)
     chart.screenshot(path='browser_equity_drawdown.png')
     return {'range_controls': ranges, 'latest_prices_and_guides': baseline,
-            'price_guides_preserved': True, 'slider': zoom}
+            'visible_window_highs_verified': True, 'slider': zoom, 'historical_window':historical}
 
 
 def exercise_china_drawdown(page):
@@ -169,13 +218,15 @@ def exercise_china_drawdown(page):
         }""")
         assert [p['name'] for p in points] == ['沪深300', '中证1000', '中证2000'], points
         assert all(p['latest'][1] > 0 for p in points), points
-        assert all(len(p['guides']) == 2 and p['guides'][0]['value'] >= p['latest'][1] and
-                   abs(p['guides'][1]['value'] - p['latest'][1]) < .00001 for p in points), points
-        if baseline is None: baseline = points
-        assert points == baseline, 'China viewport reset a historical peak'
+        assert all(len(p['guides']) == 2 for p in points), points
+        assert_price_guides_follow_viewport(chart)
+        if baseline is None: baseline = [point['latest'] for point in points]
+        assert [point['latest'] for point in points] == baseline, 'Changing the viewport changed China current prices'
     zoom = exercise_client_zoom(page, chart, minimum_axes=1)
+    assert_price_guides_follow_viewport(chart)
+    historical = exercise_price_historical_window(page, chart)
     chart.screenshot(path='browser_china_drawdown.png')
-    return {'latest_prices_and_guides':baseline, 'price_guides_preserved':True, 'slider':zoom}
+    return {'latest_prices_and_guides':baseline, 'visible_window_highs_verified':True, 'slider':zoom, 'historical_window':historical}
 
 
 def wait_for_page(page, url):

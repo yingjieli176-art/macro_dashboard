@@ -2607,13 +2607,13 @@ def _build_equity_drawdown():
 
 @st.fragment(key="equity_drawdown_viewport")
 def _render_equity_drawdown():
-    st.markdown('<div class="section-title">11. SPX / RSP · 价格走势与前高</div>', unsafe_allow_html=True)
-    st.caption("实线为实际收盘走势；点线标记可用历史最高收盘，虚线标记最新收盘。SPX用左轴（点），RSP用右轴（美元），均为原始价格尺度。")
+    st.markdown('<div class="section-title">11. SPX / RSP · 价格走势与区间高点</div>', unsafe_allow_html=True)
+    st.caption("实线为实际收盘走势；点线“高”标记当前坐标时间内的最高收盘价和日期，虚线“现”为最新收盘价。切换时间或拖动滑块会自动重算区间高点。SPX左轴（点），RSP右轴（美元）。")
     figure = _build_equity_drawdown()
     _render_adaptive_macro_figure(figure, "us_equity_drawdown", standard=True)
     summaries = (figure.layout.meta or {}).get("price_summary", [])
     for row in summaries:
-        st.caption(f'{row["symbol"]}：前高 {row["peak"]:,.2f}（{row["peak_date"]}）→ 最新收盘 {row["close"]:,.2f}，下跌 {row["decline_pct"]:.2f}%（差额 {row["drop_amount"]:,.2f}）')
+        st.caption(f'{row["symbol"]} 最新收盘：{row["close"]:,.2f}（{row["date"]}）')
     st.caption("SPX为自由流通市值加权价格指数，单位为点；RSP为跟踪标普500等权指数的ETF，单位为美元。RSP价格已处理拆股，不含股息再投资，并存在费用及跟踪误差；两者使用独立坐标轴。数据为已完成交易日收盘，非实时行情。")
     add_sources([
         ("SPX 日线价格", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
@@ -2640,12 +2640,12 @@ def _build_china_drawdown():
 @st.fragment(key="china_equity_drawdown_viewport")
 def _render_china_drawdown():
     st.markdown('<div class="section-title">12. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势</div>', unsafe_allow_html=True)
-    st.caption("三只指数显示实际收盘点位，不做归一化。点线为各自可用历史最高收盘，虚线为最新收盘；切换时间范围不重置参考线。")
+    st.caption("三只指数显示实际收盘点位，不做归一化。点线“高”为当前坐标时间内的最高收盘价和日期，随时间切换、滑块缩放自动更新；虚线“现”保持最新收盘价。")
     figure = _build_china_drawdown()
     _render_adaptive_macro_figure(figure, "china_equity_drawdown", standard=True)
     for row in (figure.layout.meta or {}).get("price_summary", []):
-        st.caption(f'{row["name"]}（{row["symbol"]}）：前高 {row["peak"]:,.2f}（{row["peak_date"]}）→ 最新收盘 {row["close"]:,.2f}，下跌 {row["decline_pct"]:.2f}%')
-    st.caption("中证指数官网已完成交易日收盘，价格指数，不含股息再投资。发布前数据为中证官方回溯数据；前高按各指数基日以来可用完整历史计算，切换窗口不重置。最新日期以图中观测日为准。")
+        st.caption(f'{row["name"]}（{row["symbol"]}）最新收盘：{row["close"]:,.2f}（{row["date"]}）')
+    st.caption("中证指数官网已完成交易日收盘，价格指数，不含股息再投资。发布前数据为中证官方回溯数据；区间高点只按当前可见时间内的有效收盘价计算。最新日期以图中观测日为准。")
     add_sources([(name, f"https://www.csindex.com.cn/zh-CN/indices/index-detail/{code}")
                  for code, name in (("000300", "沪深300"), ("000852", "中证1000"), ("932000", "中证2000"))])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)

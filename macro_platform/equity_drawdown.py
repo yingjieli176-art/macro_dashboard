@@ -127,7 +127,7 @@ def build_drawdown_figure(histories, years=5, series=None):
 
 
 def build_price_figure(histories, years=5, series=None, split_axes=False):
-    """Original close prices with full-history high/latest reference annotations."""
+    """Original prices; high guides follow the viewport, latest guides stay current."""
     import plotly.graph_objects as go
 
     fig = go.Figure()
@@ -139,16 +139,16 @@ def build_price_figure(histories, years=5, series=None, split_axes=False):
             missing.append(config["name"])
             continue
         latest = actual.iloc[-1]
+        visible = frame.loc[frame.observation_date.ge(latest.observation_date - pd.DateOffset(years=years))]
+        visible_actual = visible.dropna(subset=["close"])
+        high = visible_actual.loc[visible_actual.close.idxmax()]
         axis_index = len(summaries) if split_axes else 0
         axis_ref = "y" if axis_index == 0 else f"y{axis_index + 1}"
         row = {"symbol": key, "name": config["name"], "date": latest.observation_date.strftime("%Y-%m-%d"),
                "history_start": actual.observation_date.min().strftime("%Y-%m-%d"),
-               "close": float(latest.close), "peak": float(latest.peak),
-               "peak_date": latest.peak_date.strftime("%Y-%m-%d"),
-               "drop_amount": float(latest.drop_amount),
-               "decline_pct": max(0., -float(latest.drawdown_pct))}
+               "close": float(latest.close), "peak": float(high.close),
+               "peak_date": high.observation_date.strftime("%Y-%m-%d")}
         summaries.append(row)
-        visible = frame.loc[frame.observation_date.ge(latest.observation_date - pd.DateOffset(years=years))]
         fig.add_trace(go.Scatter(
             x=visible.observation_date.tolist(), y=visible.close.tolist(), name=config["name"],
             yaxis=axis_ref, mode="lines", connectgaps=False,
@@ -160,9 +160,11 @@ def build_price_figure(histories, years=5, series=None, split_axes=False):
         side = "end" if split_axes and axis_index else "start"
         for kind, value, date, dash in (("最高收盘", row["peak"], row["peak_date"], "dot"),
                                          ("最新收盘", row["close"], row["date"], "dash")):
-            label = f'{short} {"前高" if kind == "最高收盘" else "最新"} {value:,.2f}'
+            label = f'{short} {"高" if kind == "最高收盘" else "现"} {value:,.2f}'
+            if kind == "最高收盘":
+                label += "\n" + date
             references.append({"series": config["name"], "axis": axis_ref, "kind": kind,
-                               "value": value, "date": date, "label": label,
+                               "value": value, "date": date, "label": label, "short": short,
                                "side": side if split_axes else ("start" if kind == "最高收盘" else "end"),
                                "color": config["color"]})
             fig.add_shape(type="line", xref="paper", x0=0, x1=1, yref=axis_ref, y0=value, y1=value,
@@ -177,5 +179,6 @@ def build_price_figure(histories, years=5, series=None, split_axes=False):
             "title": title, "side": "left" if axis_index == 0 else "right",
             **({"overlaying": "y"} if axis_index else {})}})
     fig.update_layout(meta={"price_summary": summaries, "price_reference_lines": references,
+                            "price_reference_scope": "visible_window",
                             "missing_series": missing, "price_basis": PRICE_BASIS})
     return fig

@@ -67,19 +67,32 @@ def _axis_readable_title(source_axis, index, traces):
 
 
 def _price_reference_annotations(option, fig):
-    """Attach price guides to their real series so legend visibility follows it."""
+    """Price guides attach to real series; initial highs match the selected period."""
     references = (fig.layout.meta or {}).get("price_reference_lines", [])
+    zoom = (option.get("dataZoom") or [{}])[0]
+    lower = pd.Timestamp(zoom["startValue"]) if zoom.get("startValue") is not None else None
+    upper = pd.Timestamp(zoom["endValue"]) if zoom.get("endValue") is not None else None
     for series in option["series"]:
         items = []
         for ref in references:
             if ref["series"] != series["name"]:
                 continue
             high = ref["kind"] == "最高收盘"
+            value, label = ref["value"], ref["label"]
+            if high:
+                visible = [(pd.Timestamp(day), price) for day, price in series["data"]
+                           if price is not None and math.isfinite(price)
+                           and (lower is None or pd.Timestamp(day) >= lower)
+                           and (upper is None or pd.Timestamp(day) <= upper)]
+                if not visible:
+                    continue
+                date, value = max(visible, key=lambda point: point[1])
+                label = f'{ref["short"]} 高 {value:,.2f}\n{date:%Y-%m-%d}'
             side = ref.get("side", "start")
-            items.append({"name": series["name"] + " · " + ref["kind"], "yAxis": ref["value"],
+            items.append({"name": series["name"] + " · " + ref["kind"], "yAxis": value,
                           "lineStyle": {"color": ref["color"], "width": 1.2,
                                         "type": "dotted" if high else "dashed"},
-                          "label": {"show": True, "formatter": ref["label"],
+                          "label": {"show": True, "formatter": label,
                                     "position": f'inside{side.title()}{"Top" if high else "Bottom"}',
                                     "fontSize": 10, "color": ref["color"],
                                     "backgroundColor": "rgba(255,255,255,0.85)", "padding": [2, 3]}})

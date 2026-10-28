@@ -15,24 +15,24 @@ def history(values):
 
 class PriceReferenceTests(unittest.TestCase):
     def test_prices_are_unchanged_and_distinct_units_have_separate_axes(self):
-        figure = build_price_figure({"SPX": history([8000, 7000, 7600]),
-                                    "RSP": history([230, 200, 220])}, split_axes=True)
-        self.assertEqual(list(figure.data[0].y), [7000, 7600])
-        self.assertEqual(list(figure.data[1].y), [200, 220])
+        figure = build_price_figure({"SPX": history([9999, 8000, 7600]),
+                                    "RSP": history([999, 230, 220])}, split_axes=True)
+        self.assertEqual(list(figure.data[0].y), [8000, 7600])
+        self.assertEqual(list(figure.data[1].y), [230, 220])
         self.assertEqual([trace.yaxis for trace in figure.data], ["y", "y2"])
         self.assertEqual(len(figure.layout.shapes), 4)
         self.assertEqual([row["peak"] for row in figure.layout.meta["price_summary"]], [8000, 230])
 
     def test_native_and_recovery_guides_survive_every_range_without_fake_points(self):
-        figure = build_price_figure({"SPX": history([8000, 7000, 7600]),
-                                    "RSP": history([230, 200, 220])}, split_axes=True)
+        figure = build_price_figure({"SPX": history([9999, 8000, 7600]),
+                                    "RSP": history([999, 230, 220])}, split_axes=True)
         for build in (build_adaptive_echarts_option, build_safe_echarts_option):
             for period in ("5Y", "1Y", "6M", "3M", "1M"):
                 option = build(figure, period)
                 self.assertEqual(len(option["series"]), 2)
                 self.assertEqual([series["yAxisIndex"] for series in option["series"]], [0, 1])
-                self.assertEqual([line["yAxis"] for line in option["series"][0]["markLine"]["data"]], [8000, 7600])
-                self.assertEqual([line["yAxis"] for line in option["series"][1]["markLine"]["data"]], [230, 220])
+                self.assertEqual([line["yAxis"] for line in option["series"][0]["markLine"]["data"]], [7600 if period == "1M" else 8000, 7600])
+                self.assertEqual([line["yAxis"] for line in option["series"][1]["markLine"]["data"]], [220 if period == "1M" else 230, 220])
                 self.assertEqual([len(series["data"]) for series in option["series"]], [2, 2])
                 self.assertTrue(all(line["label"]["show"] for series in option["series"]
                                     for line in series["markLine"]["data"]))
@@ -53,7 +53,7 @@ class PriceReferenceTests(unittest.TestCase):
         option = build_adaptive_echarts_option(figure)
         self.assertEqual(len(option["yAxis"]), 1)
         self.assertEqual(sum(len(series["markLine"]["data"]) for series in option["series"]), 6)
-        self.assertEqual([row["peak_date"] for row in figure.layout.meta["price_summary"]], ["2010-01-04"] * 3)
+        self.assertEqual([row["peak_date"] for row in figure.layout.meta["price_summary"]], ["2026-10-26"] * 3)
 
 
 if __name__ == "__main__":

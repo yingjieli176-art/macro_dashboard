@@ -98,10 +98,10 @@ but **without dividend reinvestment**. Never mix Yahoo `adjclose` total-return
 adjustments with the SPX price index. `range=max` monthly responses are rejected.
 
 Chart 11 displays original close prices: SPX in index points on the left axis
-and RSP in USD on the right axis. Full-history highest closes are calculated
-before limiting the displayed history to five years. Dotted horizontal lines
-mark these highs and dashed lines mark latest closes; captions retain the
-absolute gap and percentage decline. The chart has its own fragment and time
+and RSP in USD on the right axis. High guides are recomputed from the closing prices inside the current
+coordinate time window, including client-side slider zoom. Dotted horizontal lines
+mark interval highs and dashed lines mark latest closes. Captions retain the
+latest actual close and observation date. The chart has its own fragment and time
 controls, without a data table.
 
 The data-only `update-us-equity-snapshot.yml` job refreshes both histories and
@@ -115,8 +115,8 @@ The CSI 300 (000300), CSI 1000 (000852), and CSI 2000 (932000) share one
 original index-points axis, with individual high/latest reference lines. Prices come from the CSI official historical API,
 using completed mainland trading-day closes and each index's full available
 history since its base date. Published pre-launch backcasts are retained;
-carry-in API rows before the base date are excluded. The five-year visible
-window never resets earlier highs, including 2007 and 2015 peaks.
+carry-in API rows before the base date are excluded. The plotted high follows the visible coordinate window; historical dates
+outside that window do not affect its reference line.
 
 The data-only China equity workflow atomically updates all three histories.
 Incomplete sessions, missing indices, shortened history and stale responses
@@ -133,8 +133,8 @@ Display order: 1–4 US policy/rates/liquidity; 5–8 Hong Kong liquidity;
 Charts 11 and 12 display original daily closing prices, not normalized prices
 or percentage drawdown curves. SPX uses the left points axis and RSP the right
 USD axis. CSI 300/1000/2000 share an index-points axis. Each asset has a dotted
-full-history highest-close line and a dashed latest-close line with numeric
-labels. The high is computed before restricting the displayed history.
+visible-window highest-close line and a dashed latest-close line with numeric
+labels. The high and its original observation date update with every visible-window change.
 Native reference lines follow the asset's legend visibility and remain inside
 the dynamic Y range during time selection, slider zoom and resizing. They are
 annotations and never enter observation counts or source freshness dates.
