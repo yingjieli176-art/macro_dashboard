@@ -343,6 +343,16 @@ jobs:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: |
           python scripts/audit_source_freshness.py --output source_health.json
+          python scripts/probe_all_sources.py --output all_source_freshness_before.json
+      - name: Refresh confirmed lag with existing validated collectors
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/refresh_audited_sources.py all_source_freshness_before.json
+      - name: Verify dates again after source refreshes
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          python scripts/audit_source_freshness.py --output source_health.json
           python scripts/probe_all_sources.py --output all_source_freshness.json --strict
       - uses: actions/upload-artifact@v4
         if: always()
@@ -350,7 +360,15 @@ jobs:
           name: all-source-date-audit
           path: |
             source_health.json
+            all_source_freshness_before.json
             all_source_freshness.json
+            data_snapshots/fred_cache/
+            data_snapshots/usdhkd_daily.json
+            data_snapshots/jpy_market_daily.json
+            data_snapshots/japan_gov_yields.json
+            data_snapshots/cor1m_daily.json
+            data_snapshots/cor3m_daily.json
+            data_snapshots/copper_market_daily.json
           if-no-files-found: error
 
   raw-history:

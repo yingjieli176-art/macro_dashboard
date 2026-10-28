@@ -837,7 +837,7 @@ def _valid_market_timestamp(value):
     if ts > 10_000_000_000:
         ts /= 1000.0
     # Never render epoch-zero / corrupt timestamps as market time.
-    if ts < 946684800 or ts > time.time() + 6 * 3600:
+    if not 946684800 <= ts <= time.time() + 300:
         return None
     return ts
 

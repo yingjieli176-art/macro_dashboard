@@ -135,6 +135,36 @@ class DateAndSourceAudit(unittest.TestCase):
         self.assertTrue(pd.isna(frame.japan_2y.iloc[-1]))
         self.assertTrue(pd.isna(frame.japan_10y_2y_pct.iloc[-1]))
 
+    def test_quotes_reject_nonfinite_or_hours_ahead_timestamps(self):
+        from test_accuracy_performance import helpers
+        ns = helpers("app.py", {"_valid_market_timestamp"}, {"time": time})
+        check = ns["_valid_market_timestamp"]
+        now = time.time()
+        self.assertEqual(check(now*1000), now)
+        for invalid in (None, float("nan"), float("inf"), now+3600, 0):
+            self.assertIsNone(check(invalid))
+
+    def test_news_time_rejects_future_dates_and_preserves_prior_year(self):
+        from data import _extract_time
+        now = pd.Timestamp.now(tz="Asia/Hong_Kong")
+        future = now+pd.Timedelta(days=2)
+        self.assertEqual(_extract_time({"time": str(int(future.timestamp()))}), "")
+        self.assertEqual(_extract_time({"time": future.strftime("%Y-%m-%d %H:%M:%S")}), "")
+        self.assertEqual(_extract_time({"time": "2099-99-99 99:99:99"}), "")
+        past = now-pd.DateOffset(years=1)
+        self.assertTrue(_extract_time({"time": past.strftime("%Y-%m-%d %H:%M:%S")}).startswith(str(past.year)))
+
+    def test_csi_probe_omits_only_the_apis_synthetic_left_boundary(self):
+        from macro_platform.china_equity import completed_china_date
+        end = completed_china_date()
+        start = end-pd.Timedelta(days=45)
+        rows = [{"indexCode": "000300", "indexNameCn": "沪深300", "tradeDate": day.strftime("%Y%m%d"),
+                 "close": value} for day, value in ((start, 99999), (end, 4000))]
+        response = Mock(); response.json.return_value = {"success": True, "data": rows}
+        with patch.object(probe, "get", return_value=response):
+            actual, url = probe.csindex("000300")
+        self.assertEqual(actual, end.strftime("%Y-%m-%d"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -217,9 +217,14 @@ def lme(value):
 def csindex(code):
     from macro_platform.china_equity import SOURCE, completed_china_date, parse_csindex_history
     end = completed_china_date()
+    start = (end-pd.Timedelta(days=45)).strftime("%Y%m%d")
     payload = get(SOURCE, params={"indexCode": code,
-        "startDate": (end-pd.Timedelta(days=45)).strftime("%Y%m%d"),
+        "startDate": start,
         "endDate": end.strftime("%Y%m%d")}).json()
+    # CSI inserts a carry-in level stamped at the requested left boundary,
+    # even on weekends. Exclude that synthetic boundary, never other dates.
+    payload = dict(payload, data=[row for row in payload.get("data", [])
+                                 if str(row.get("tradeDate", "")) > start])
     frame = parse_csindex_history(payload, code)
     return latest(frame, "observation_date", "close"), SOURCE
 
@@ -312,6 +317,8 @@ def main():
     reset_probe_cache()
     rows = json.loads(Path(args.retry_from).read_text())["sources"] if args.retry_from else []
     config = jobs()
+    current = {key: (charts, cadence) for key, charts, cadence, *_ in config}
+    rows = [dict(row, charts=current[row["id"]][0]) for row in rows if row["id"] in current]
     retry = {row["id"] for row in rows if row["status"] in ("unverified", "source_behind_repository", "pipeline_lag")}
     retry.update(job[0] for job in config if job[0] not in {row["id"] for row in rows})
     rows = [row for row in rows if row["id"] not in retry]
