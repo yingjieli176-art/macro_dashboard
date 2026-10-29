@@ -8,21 +8,21 @@
     "lme_price_stock": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
     "cochilco_inventory": "https://boletin.cochilco.cl/productos/boletin.asp?tabla=tabla4_2"
   },
-  "updated_at": "2026-10-28T22:45:02.229885+00:00",
-  "coverage_start": "2021-10-28",
-  "coverage_end": "2026-10-27",
+  "updated_at": "2026-10-29T06:06:27.865311+00:00",
+  "coverage_start": "2021-10-29",
+  "coverage_end": "2026-10-28",
   "counts": {
     "comex_price": 1257,
-    "comex_stock": 1295,
+    "comex_stock": 1294,
     "lme_price": 1262,
     "lme_stock": 1295
   },
   "latest_by_field": {
-    "comex_price_usd_lb": "2026-10-27",
+    "comex_price_usd_lb": "2026-10-28",
     "comex_stock_t": "2026-10-27",
-    "lme_cash_usd_t": "2026-10-27",
-    "lme_3m_usd_t": "2026-10-27",
-    "lme_stock_t": "2026-10-27",
+    "lme_cash_usd_t": "2026-10-28",
+    "lme_3m_usd_t": "2026-10-28",
+    "lme_stock_t": "2026-10-28",
     "cochilco_lme_stock_t": "2026-10-27",
     "comex_stock_short_tons": "2026-10-27"
   },
@@ -34,17 +34,6 @@
     "lme_stock_t": "metric tonnes"
   },
   "records": [
-    {
-      "date": "2021-10-28",
-      "comex_price_usd_lb": 4.4375,
-      "comex_stock_t": 51641.0,
-      "lme_cash_usd_t": 9860.0,
-      "lme_3m_usd_t": 9661.0,
-      "lme_stock_t": 143650.0,
-      "cochilco_lme_stock_t": 143650.0,
-      "comex_stock_source": null,
-      "comex_stock_short_tons": null
-    },
     {
       "date": "2021-10-29",
       "comex_price_usd_lb": 4.375500202178955,
@@ -14300,6 +14289,17 @@
       "cochilco_lme_stock_t": 272725.0,
       "comex_stock_source": "https://www.cmegroup.com/delivery_reports/Copper_Stocks.xls",
       "comex_stock_short_tons": 800321.0
+    },
+    {
+      "date": "2026-10-28",
+      "comex_price_usd_lb": 6.641499996185303,
+      "comex_stock_t": null,
+      "lme_cash_usd_t": 14675.5,
+      "lme_3m_usd_t": 14484.0,
+      "lme_stock_t": 271450.0,
+      "cochilco_lme_stock_t": null,
+      "comex_stock_source": null,
+      "comex_stock_short_tons": null
     }
   ]
 }
