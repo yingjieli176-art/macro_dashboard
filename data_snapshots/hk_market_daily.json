@@ -1,20 +1,20 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-28T16:02:15.510724+00:00",
+  "updated_at": "2026-10-29T16:07:46.641883+00:00",
   "retention": "rolling 5 years plus one month buffer",
   "policy": "merge fresh observations into last-known-good history; never erase a usable series on fetch failure",
-  "coverage_start": "2021-09-28",
-  "coverage_end": "2026-10-28",
+  "coverage_start": "2021-09-29",
+  "coverage_end": "2026-10-29",
   "series": {
     "0700.HK": {
       "name": "Tencent Holdings",
       "unit": "HKD",
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
-      "record_count": 1239,
+      "record_count": 1240,
       "coverage_start": "2021-10-11",
-      "coverage_end": "2026-10-27",
-      "last_successful_fetch": "2026-10-28T16:02:15.510724+00:00",
+      "coverage_end": "2026-10-28",
+      "last_successful_fetch": "2026-10-29T16:07:46.641883+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -4973,6 +4973,10 @@
         {
           "observation_date": "2026-10-27",
           "close": 385.200012
+        },
+        {
+          "observation_date": "2026-10-28",
+          "close": 387.600006
         }
       ]
     },
@@ -4981,10 +4985,10 @@
       "unit": "HKD",
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
-      "record_count": 1239,
+      "record_count": 1240,
       "coverage_start": "2021-10-11",
-      "coverage_end": "2026-10-27",
-      "last_successful_fetch": "2026-10-28T16:02:15.510724+00:00",
+      "coverage_end": "2026-10-28",
+      "last_successful_fetch": "2026-10-29T16:07:46.641883+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -9943,6 +9947,10 @@
         {
           "observation_date": "2026-10-27",
           "close": 367.600006
+        },
+        {
+          "observation_date": "2026-10-28",
+          "close": 365.0
         }
       ]
     },
@@ -9951,10 +9959,10 @@
       "unit": "points",
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
-      "record_count": 1239,
+      "record_count": 1240,
       "coverage_start": "2021-10-11",
-      "coverage_end": "2026-10-27",
-      "last_successful_fetch": "2026-10-28T16:02:15.510724+00:00",
+      "coverage_end": "2026-10-28",
+      "last_successful_fetch": "2026-10-29T16:07:46.641883+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -14913,6 +14921,10 @@
         {
           "observation_date": "2026-10-27",
           "close": 23041.320312
+        },
+        {
+          "observation_date": "2026-10-28",
+          "close": 23094.830078
         }
       ]
     },
@@ -14922,16 +14934,12 @@
       "source": "Sina Finance via AKShare",
       "price_basis": "raw_close",
       "record_count": 1248,
-      "coverage_start": "2021-09-28",
-      "coverage_end": "2026-10-28",
-      "last_successful_fetch": "2026-10-28T16:02:15.510724+00:00",
+      "coverage_start": "2021-09-29",
+      "coverage_end": "2026-10-29",
+      "last_successful_fetch": "2026-10-29T16:07:46.641883+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
-        {
-          "observation_date": "2021-09-28",
-          "close": 6231.54981
-        },
         {
           "observation_date": "2021-09-29",
           "close": 6179.43018
@@ -19919,6 +19927,10 @@
         {
           "observation_date": "2026-10-28",
           "close": 3853.71997
+        },
+        {
+          "observation_date": "2026-10-29",
+          "close": 3744.13989
         }
       ]
     }
