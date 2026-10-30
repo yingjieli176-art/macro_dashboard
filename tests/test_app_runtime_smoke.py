@@ -66,10 +66,15 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertFalse(any("距前高跌幅" in element.value.columns for element in instance.dataframe))
         # Market assets retain their original unit and independent price axes.
         spec_text = " ".join(specs)
-        risk = next(json.loads(spec) for spec in specs if 'COR1M (R4)' in spec)
+        treasury = next(json.loads(spec) for spec in specs if '"30Y"' in spec)
+        thirty = next(series for series in treasury["series"] if series["name"] == "30Y")
+        self.assertEqual(thirty["yAxisIndex"], 0)
+        self.assertTrue(any(point[1] is not None for point in thirty["data"]))
+        risk = next(json.loads(spec) for spec in specs if 'COR3M (R3)' in spec)
         risk_series = {series["name"]: series for series in risk["series"]}
-        self.assertEqual(len(risk["yAxis"]), 5)
-        for name in ("COR1M (R4)", "COR3M (R4)", "VIXEQ−VIX (R2)"):
+        self.assertEqual(len(risk["yAxis"]), 4)
+        self.assertFalse(any("COR1M" in name or "VIXEQ−VIX" in name for name in risk_series))
+        for name in ("COR3M (R3)", "VIXEQ/VIX (R2)"):
             self.assertIn(name, risk_series)
             self.assertTrue(any(point[1] is not None for point in risk_series[name]["data"]))
         self.assertNotIn("Rebased", spec_text)

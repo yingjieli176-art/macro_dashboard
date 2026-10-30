@@ -45,7 +45,7 @@ automatic data jobs never run the obsolete HSTECH code-wiring patch.
 |---|---|
 | 1–4 | Federal Reserve rates, nominal/real Treasury yields, curve, US liquidity |
 | 5–8 | Hong Kong monetary pulse, bank liquidity, HIBOR funding, HKD / market overlays |
-| 9 | US equity risk (VIX/VIXEQ, VIX3M−VIX, VIXEQ−VIX, VIXEQ/VIX, COR1M/COR3M) |
+| 9 | US equity risk (VIX/VIXEQ, S&P 500, VIXEQ/VIX, COR3M) |
 | 10 | Precious metals |
 | 11 | Digital assets |
 | 12 | Copper price/inventory |
@@ -55,12 +55,17 @@ The 5Y / 1Y / 6M / 3M / 1M selectors must keep **both X and each Y axis
 adaptive**. A Plotly compatibility view is not proof that native ECharts
 X/Y autoscaling works.
 
-Chart 9 retains the VIXEQ/VIX ratio and adds the **VIXEQ−VIX difference**
-in volatility points on R2. Both use same-date observations with no forward
-fill. **COR1M / COR3M** use original Cboe index points on their own R4 axis;
-they are correlation indices, not volatility readings. Official Cboe histories
+Chart 9 displays VIX/VIXEQ on the left, S&P 500 on R1, the same-date
+VIXEQ/VIX ratio on R2, and COR3M in original Cboe index points on R3.
+The VIXEQ−VIX and COR1M series have been removed from this chart.
+COR3M is a correlation index, not a volatility reading. Official Cboe histories
 are bundled for cold start and refreshed each weekday by
 `update-correlation-snapshot.yml`. Early history includes Cboe back-calculations.
+
+Chart 3 includes original FRED DGS30 30-year nominal Treasury yields on the
+same left percentage axis as 3M, 2Y and 10Y. The existing two yield-curve
+spreads stay on R1. DGS30 uses the shared last-good cache, scheduled collector,
+Treasury BC_30YEAR fallback, and source-freshness checks; missing dates stay missing.
 
 ## Validation
 

@@ -243,7 +243,7 @@ def jobs():
         output.append((key, charts, cadence, stored, fetch))
     for symbol, charts in {
         "IORB": [1], "RRPONTSYAWARD": [1], "EFFR": [1], "SOFR": [1],
-        "DGS3MO": [3], "DGS2": [3], "DGS10": [2,3], "DFII5": [2,13], "DFII10": [2], "T10YIE": [2],
+        "DGS3MO": [3], "DGS2": [3], "DGS10": [2,3], "DGS30": [3], "DFII5": [2,13], "DFII10": [2], "T10YIE": [2],
         "WALCL": [4], "WRESBAL": [4], "RRPONTSYD": [4], "VIXCLS": [9,10], "VXVCLS": [10], "SP500": [9], "GVZCLS": [15],
     }.items():
         add(symbol, charts, "weekly" if symbol in ("WALCL", "WRESBAL") else "daily",
@@ -259,7 +259,7 @@ def jobs():
         key = "date" if filename in ("jpy_market_daily.json", "copper_market_daily.json") else "observation_date"
         stored = snapshot(filename, key, field, symbol if filename == "hk_market_daily.json" else None) if filename else None
         add(symbol, charts, "daily", stored, lambda symbol=symbol: yahoo(symbol))
-    for symbol in ("VIXEQ", "COR1M", "COR3M"):
+    for symbol in ("VIXEQ", "COR3M"):
         add(symbol, [9], "daily", snapshot(f"{symbol.lower()}_daily.json", "observation_date", "close"), lambda symbol=symbol: cboe(symbol))
     for field, charts in (("m2_hkd", [5]), ("m3_hkd", [5])):
         add(field, charts, "monthly", snapshot("censtat_hkd_money_supply.json", "end_of_month", field),

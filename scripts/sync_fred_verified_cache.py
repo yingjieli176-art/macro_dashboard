@@ -33,7 +33,7 @@ FETCH_TIMEOUT = (12, 30)
 # Every US policy/yield/liquidity series used directly or by the app's data
 # module. Snapshot failures are per-series; unknown source values stay absent.
 SERIES = (
-    "DGS3MO", "DGS2", "DGS10", "DFII5", "DFII10", "T10YIE",
+    "DGS3MO", "DGS2", "DGS10", "DGS30", "DFII5", "DFII10", "T10YIE",
     "SOFR", "IORB", "EFFR", "RRPONTSYAWARD", "WALCL",
     "WRESBAL", "WTREGEN", "RRPONTSYD", "VIXCLS", "VXVCLS",
     "SP500", "GVZCLS", "GFDEBTN", "FYGFDPUN",
@@ -84,6 +84,7 @@ def _fetch_api(session, series_id: str) -> pd.DataFrame:
 
 
 TREASURY_FIELDS = {"DGS3MO": "BC_3MONTH", "DGS2": "BC_2YEAR", "DGS10": "BC_10YEAR",
+                   "DGS30": "BC_30YEAR",
                    "DFII5": "TC_5YEAR", "DFII10": "TC_10YEAR"}
 CBOE_FILES = {"VIXCLS": "VIX_History.csv", "VXVCLS": "VIX3M_History.csv", "GVZCLS": "GVZ_History.csv"}
 

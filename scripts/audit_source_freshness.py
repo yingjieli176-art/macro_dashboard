@@ -135,7 +135,7 @@ def audit(root=ROOT, now=None):
     tga_health = option_observation_health(tga_option, now=now)
     reports.append({"file": "treasury_tga_daily.json", **tga_health,
                     "missing_names": [] if "TGA_DAILY" in tga_health["latest_by_name"] else ["TGA_DAILY"]})
-    for symbol in ("IORB", "EFFR", "SOFR", "RRPONTSYAWARD", "DGS3MO", "DGS2", "DGS10",
+    for symbol in ("IORB", "EFFR", "SOFR", "RRPONTSYAWARD", "DGS3MO", "DGS2", "DGS10", "DGS30",
                    "DFII5", "DFII10", "T10YIE", "WALCL", "WRESBAL", "RRPONTSYD", "VIXCLS", "VXVCLS", "SP500", "GVZCLS"):
         payload = read_payload(root / "data_snapshots" / "fred_cache" / f"{symbol}.json")
         rows = payload.get("records") or []

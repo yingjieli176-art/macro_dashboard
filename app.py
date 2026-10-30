@@ -80,6 +80,11 @@ if not callable(get_dfii5):
         return _fred_series("DFII5")
     logging.warning("Older data.py lacks get_dfii5; using direct FRED DFII5 loader.")
 
+get_dgs30 = getattr(_market_data_module, "get_dgs30", None)
+if not callable(get_dgs30):
+    def get_dgs30():
+        return _fred_series("DGS30")
+
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
 
@@ -94,7 +99,7 @@ RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 MACRO_DISPLAY_ORDER = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "us_drawdown", "cn_drawdown", 14, 15, 11, 13, 12)
 MACRO_DISPLAY_NUMBER = {key: index for index, key in enumerate(MACRO_DISPLAY_ORDER, 1)}
-CHART_BUILD = "2026-10-28-distinct-drawdown-colors-r78"
+CHART_BUILD = "2026-10-30-treasury-30y-equity-risk-r79"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1731,8 +1736,8 @@ def build_fig4(date_range):
 def build_fig3(date_range):
     dgs10 = get_dgs10()
     inferred_dates = list(dgs10.attrs.get("identity_derived_dates", []))
-    data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(dgs10, on="observation_date", how="outer").sort_values("observation_date")
-    for column in ("DGS3MO", "DGS2", "DGS10"):
+    data = get_dgs3mo().merge(get_dgs2(), on="observation_date", how="outer").merge(dgs10, on="observation_date", how="outer").merge(get_dgs30(), on="observation_date", how="outer").sort_values("observation_date")
+    for column in ("DGS3MO", "DGS2", "DGS10", "DGS30"):
         data[column] = pd.to_numeric(data.get(column), errors="coerce")
     # Derive curve spreads locally from the displayed yields. This removes two
     # redundant FRED requests and guarantees spread/yield internal consistency.
@@ -1743,8 +1748,10 @@ def build_fig3(date_range):
         fig.update_layout(meta={"data_quality_notes": [
             f"10Y 名义收益率有 {len(inferred_dates)} 个日期由 DFII10＋T10YIE 恒等式重建（非独立 DGS10 实测值）。"
         ]})
-    for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8)]: add_line(fig, data, column, name, width)
+    for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8), ("DGS30", "30Y", 2.6)]: add_line(fig, data, column, name, width)
     add_line(fig, data, "T10Y2Y", "10Y−2Y (R1)", 2.2, "dot", "y2", "%"); add_line(fig, data, "T10Y3M", "10Y−3M (R1)", 2.2, "dash", "y2", "%")
+    for name, color in {"30Y": "#dc2626", "10Y−2Y (R1)": "#ff994d", "10Y−3M (R1)": "#00b6ed"}.items():
+        fig.update_traces(line_color=color, selector=dict(name=name))
     fig.update_traces(selector=dict(name="10Y−2Y (R1)"), hovertemplate="10Y−2Y (R1): %{y:.3f}%<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M (R1)"), hovertemplate="10Y−3M (R1): %{y:.3f}%<extra></extra>")
     fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=False, tickfont=dict(size=9), ticks="outside", ticklen=3)); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
@@ -1773,7 +1780,7 @@ def build_fig9(date_range):
     except Exception:
         pass
 
-    for symbol in ("COR1M", "COR3M"):
+    for symbol in ("COR3M",):
         try:
             correlation = load_correlation_snapshot(symbol)
             if not correlation.empty:
@@ -1785,7 +1792,7 @@ def build_fig9(date_range):
     if not frames:
         fig = go.Figure()
         for name in ("VIX", "VIXEQ", "S&P 500 (R1)",
-                     "VIXEQ−VIX (R2)", "VIXEQ/VIX (R3)", "COR1M (R4)", "COR3M (R4)"):
+                     "VIXEQ/VIX (R2)", "COR3M (R3)"):
             _mark_missing_series(fig, name)
         return apply_chart_style(fig, chart_height(320, 440), date_range)
 
@@ -1799,7 +1806,6 @@ def build_fig9(date_range):
         vix = data["VIXCLS"].where(data["VIXCLS"].gt(0) & data["VIXCLS"].lt(float("inf")))
         vixeq = data["VIXEQ"].where(data["VIXEQ"].ge(0) & data["VIXEQ"].lt(float("inf")))
         data["VIXEQ/VIX"] = (vixeq / vix).replace([float("inf"), -float("inf")], float("nan"))
-        data["VIXEQ-VIX"] = vixeq - vix
     data = filter_range(data, date_range)
 
     fig = go.Figure()
@@ -1814,34 +1820,30 @@ def build_fig9(date_range):
     ratio_dates = [date for column in ("VIXEQ", "VIXCLS") if column in sources
                    for date in sources[column]["observation_date"]]
     add_line(fig, data.loc[data["observation_date"].isin(ratio_dates)],
-             "VIXEQ-VIX", "VIXEQ−VIX (R2)", 2.2, "dash", "y3", unit=" pts")
-    add_line(fig, data.loc[data["observation_date"].isin(ratio_dates)],
-             "VIXEQ/VIX", "VIXEQ/VIX (R3)", 2.2, "dot", "y4", unit="x")
-    for symbol, dash in (("COR1M", None), ("COR3M", "dot")):
+             "VIXEQ/VIX", "VIXEQ/VIX (R2)", 2.2, "dot", "y3", unit="x")
+    for symbol, dash in (("COR3M", "dot"),):
         source = sources.get(symbol, pd.DataFrame(columns=["observation_date"]))
         add_line(fig, data.loc[data["observation_date"].isin(source["observation_date"])],
-                 symbol, f"{symbol} (R4)", 2.0, dash, "y5", unit=" pts")
+                 symbol, f"{symbol} (R3)", 2.0, dash, "y4", unit=" pts")
 
     # Fixed contrasting colors remain readable where these two lines overlap.
     risk_colors = {
         "VIX": "#5070dd", "VIXEQ": "#15803d", "S&P 500 (R1)": "#505372",
-        "VIXEQ−VIX (R2)": "#0ca8df",
-        "VIXEQ/VIX (R3)": "#92400e", "COR1M (R4)": "#fb628b", "COR3M (R4)": "#785db0",
+        "VIXEQ/VIX (R2)": "#92400e", "COR3M (R3)": "#785db0",
     }
     for name, color in risk_colors.items():
         fig.update_traces(line_color=color, selector=dict(name=name))
 
     fig.update_layout(
-        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.78),
-        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.85),
-        yaxis4=dict(overlaying="y", side="right", anchor="free", position=0.92),
-        yaxis5=dict(overlaying="y", side="right", anchor="free", position=0.99),
+        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.85),
+        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.92),
+        yaxis4=dict(overlaying="y", side="right", anchor="free", position=0.99),
     )
     fig = apply_chart_style(fig, chart_height(320, 440), date_range)
     fig.update_layout(
-        margin=dict(l=62, r=180, t=100, b=36, pad=2),
+        margin=dict(l=62, r=140, t=100, b=36, pad=2),
         legend=dict(y=1.095),
-        xaxis=dict(domain=[0.0, 0.76]),
+        xaxis=dict(domain=[0.0, 0.83]),
         yaxis=dict(
             title="VIX / VIXEQ",
             showgrid=True, gridcolor="#e5e7eb", griddash="dot",
@@ -1849,23 +1851,17 @@ def build_fig9(date_range):
         ),
         yaxis2=dict(
             title="",
-            overlaying="y", side="right", anchor="free", position=0.78,
+            overlaying="y", side="right", anchor="free", position=0.85,
             showgrid=False, zeroline=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3,
         ),
         yaxis3=dict(
-            title="",
-            overlaying="y", side="right", anchor="free", position=0.85,
-            showgrid=False, zeroline=True, zerolinecolor="#94a3b8",
-            zerolinewidth=1, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3,
-        ),
-        yaxis4=dict(
-            title="R3 · VIXEQ/VIX (倍)",
+            title="R2 · VIXEQ/VIX (倍)",
             overlaying="y", side="right", anchor="free", position=0.92,
             showgrid=False, zeroline=False, fixedrange=True, tickformat=".2f",
             tickfont=dict(size=9), ticks="outside", ticklen=3,
         ),
-        yaxis5=dict(
-            title="R4 · COR (pts)",
+        yaxis4=dict(
+            title="R3 · COR3M (pts)",
             overlaying="y", side="right", anchor="free", position=0.99,
             showgrid=False, zeroline=False, fixedrange=True, tickformat=".1f",
             tickfont=dict(size=9), ticks="outside", ticklen=3,
@@ -2097,7 +2093,7 @@ CRYPTO_MARKET_DESCRIPTION = (
 PARAM_DESCRIPTIONS = [
     '<div class="parameter-note"><b>IORB：</b>准备金余额利率，代表美联储支付给合资格银行的准备金利息，是美元短期利率的重要政策锚；单位为年化%。</div><div class="parameter-note"><b>ON RRP Rate：</b>隔夜逆回购工具利率，代表合资格机构把资金隔夜放入美联储该工具可获得的年化利率，为货币市场利率提供支撑。</div><div class="parameter-note"><b>EFFR：</b>有效联邦基金利率，代表银行等机构之间无抵押隔夜美元交易的实际融资价格；单位为年化%。</div><div class="parameter-note"><b>SOFR：</b>有担保隔夜融资利率，代表以美国国债作抵押借入隔夜美元的市场成本；单位为年化%，相对政策锚上升可提示回购融资压力。</div>',
     '<div class="parameter-note"><b>10Y Nominal：</b>美国10年期名义国债收益率，代表美元长期无风险名义利率基准，综合反映实际利率、通胀补偿等定价；单位为年化%。</div><div class="parameter-note"><b>10Y Real (R1)：</b>美国10年期TIPS实际收益率，代表通胀保值国债的实际利率定价，上升表示实际贴现率抬高；单位为年化%。</div><div class="parameter-note"><b>5Y Real · TIPS (R1)：</b>美国5年期TIPS实际收益率，代表中期实际利率水平，可与10年期比较期限差异；单位为年化%。</div><div class="parameter-note"><b>10Y Breakeven (R1)：</b>10年期盈亏平衡通胀率，等于同期限名义收益率减实际收益率，代表未来十年的平均通胀补偿，含风险和流动性溢价；并非当期CPI。</div><div class="parameter-context">口径说明：R1为独立右轴；收益率及通胀补偿均以年化%显示。</div>',
-    '<div class="parameter-note"><b>3M：</b>美国3个月期国债收益率，代表短期美元国债的年化收益水平，对当前政策利率及近期政策预期较敏感。</div><div class="parameter-note"><b>2Y：</b>美国2年期国债收益率，代表未来两年利率路径的市场定价之一，同时包含期限溢价；不是两年期通胀率。</div><div class="parameter-note"><b>10Y：</b>美国10年期国债收益率，代表长期美元利率基准，反映长期实际利率、通胀补偿等因素；单位为年化%。</div><div class="parameter-note"><b>10Y−2Y (R1)：</b>10年减2年国债收益率之差，代表中长端收益率曲线斜率；负值为倒挂，上升为曲线变陡；单位为百分点。</div><div class="parameter-note"><b>10Y−3M (R1)：</b>10年减3个月国债收益率之差，代表长端与政策敏感短端之间的利差；负值为倒挂，不是衰退发生时间的直接预测。</div><div class="parameter-context">口径说明：国债收益率为年化%；两条期限利差为百分点。</div>',
+    '<div class="parameter-note"><b>3M：</b>美国3个月期国债收益率，代表短期美元国债的年化收益水平，对当前政策利率及近期政策预期较敏感。</div><div class="parameter-note"><b>2Y：</b>美国2年期国债收益率，代表未来两年利率路径的市场定价之一，同时包含期限溢价；不是两年期通胀率。</div><div class="parameter-note"><b>10Y：</b>美国10年期国债收益率，代表长期美元利率基准，反映长期实际利率、通胀补偿等因素；单位为年化%。</div><div class="parameter-note"><b>30Y：</b>美国30年期名义国债收益率，反映超长期美元利率定价；采用FRED DGS30原始日频观测，单位为年化%。</div><div class="parameter-note"><b>10Y−2Y (R1)：</b>10年减2年国债收益率之差，代表中长端收益率曲线斜率；负值为倒挂，上升为曲线变陡；单位为百分点。</div><div class="parameter-note"><b>10Y−3M (R1)：</b>10年减3个月国债收益率之差，代表长端与政策敏感短端之间的利差；负值为倒挂，不是衰退发生时间的直接预测。</div><div class="parameter-context">口径说明：国债收益率为年化%；两条期限利差为百分点。</div>',
     '<div class="parameter-note"><b>Net Liquidity：</b>美元净流动性代理＝美联储总资产−TGA−ON RRP余额，辅助观察央行资产负债表的流动性变化；单位为万亿美元，不等于流入股市的资金。</div><div class="parameter-note"><b>Reserve Balances (R1)：</b>银行准备金余额，代表存款机构在美联储持有的准备金存量；单位为万亿美元，使用周频观测。</div><div class="parameter-note"><b>TGA (R1)：</b>美国财政部在美联储的账户余额，代表财政现金存量；在其他因素不变时，余额增加通常会抽走银行准备金；单位为万亿美元。</div><div class="parameter-note"><b>ON RRP (R2)：</b>美联储隔夜逆回购余额，代表合资格机构使用该工具存放的隔夜资金规模；单位为十亿美元，与第1图的ON RRP利率不同。</div><div class="parameter-context">口径说明：该代理不包含所有美元资金流动。TGA优先使用日频，不可用时回退到周频；各系列保留实际观测日。</div>',
     '<div class="parameter-note"><b>M2 YoY：</b>港元广义货币M2同比增速，代表现金及相关存款规模相对上年同期的增长情况；单位为%，不等于股市资金净流入。</div><div class="parameter-note"><b>M2 MoM：</b>港元广义货币M2环比增速，代表货币存量相对上个月的边际变化；单位为%，会受到季节性等因素影响。</div><div class="parameter-note"><b>Monetary Base YoY：</b>香港货币基础同比增速，代表负债证明书、政府流通纸币硬币、总结余及外汇基金票据债券合计规模的变化。</div><div class="parameter-note"><b>Tencent Price (R1)：</b>腾讯控股股价，代表该股票的市场定价及表现；单位为港元，价格变化本身不等于资金净流入量。</div><div class="parameter-note"><b>HKEX Price (R1)：</b>香港交易所股价，代表交易所公司的股票市场表现；单位为港元，不是港股市场成交额。</div><div class="parameter-note"><b>HSTECH Index (R2)：</b>恒生科技指数，代表其科技主题成分股的综合表现；单位为指数点。</div><div class="parameter-note"><b>HSI Index (R2)：</b>恒生指数，代表香港主要上市公司构成的指数表现；单位为指数点。</div><div class="parameter-context">口径说明：月度货币数据有公布时滞；股票和指数使用各自实际观测日。</div>',
 ]
@@ -2118,7 +2114,7 @@ def show_hk_parameter_description(index):
 
 
 US_EQUITY_RISK_DESCRIPTION = (
-    '<div class="parameter-note"><b>VIX：</b>标普500指数未来30个日历天（约1M）的年化隐含波动率指标，代表指数期权对未来波动幅度的定价，不代表涨跌方向。</div><div class="parameter-note"><b>VIXEQ：</b>标普500成分股篮子的市值加权30天隐含波动率指标，代表个股层面的预期波动水平。</div><div class="parameter-note"><b>S&amp;P 500 (R1)：</b>标普500指数，代表美国大盘股的综合价格表现；单位为指数点。</div><div class="parameter-note"><b>VIXEQ−VIX (R2)：</b>同日个股篮子与指数隐含波动率之差，代表两种波动定价的差距，可辅助观察个股分化；单位为波动率点。</div><div class="parameter-note"><b>VIXEQ/VIX (R3)：</b>同日个股篮子与指数隐含波动率之比，代表个股预期波动相对指数的倍数差异；不是资金杠杆倍数。</div><div class="parameter-note"><b>COR1M (R4)：</b>1个月期隐含相关性指数，代表期权市场定价的成分股未来共同波动程度；上升表示预期相关性增强、分散化收益减弱。</div><div class="parameter-note"><b>COR3M (R4)：</b>3个月期隐含相关性指数，代表较长观察期内成分股的预期共同波动程度；与COR1M对照可观察相关性期限结构。</div><div class="parameter-context">口径说明：差值和比值只使用同日有效观测；COR为指数刻度。VIXEQ和COR早期数据包含官方回溯序列。</div>'
+    '<div class="parameter-note"><b>VIX：</b>标普500指数未来30个日历天（约1M）的年化隐含波动率指标，代表指数期权对未来波动幅度的定价，不代表涨跌方向。</div><div class="parameter-note"><b>VIXEQ：</b>标普500成分股篮子的市值加权30天隐含波动率指标，代表个股层面的预期波动水平。</div><div class="parameter-note"><b>S&amp;P 500 (R1)：</b>标普500指数，代表美国大盘股的综合价格表现；单位为指数点。</div><div class="parameter-note"><b>VIXEQ/VIX (R2)：</b>同日个股篮子与指数隐含波动率之比，代表个股预期波动相对指数的倍数差异；不是资金杠杆倍数。</div><div class="parameter-note"><b>COR3M (R3)：</b>3个月期隐含相关性指数，代表较长观察期内成分股的预期共同波动程度。</div><div class="parameter-context">口径说明：比值只使用同日有效观测；COR3M为指数刻度。VIXEQ和COR早期数据包含官方回溯序列。</div>'
 )
 
 
@@ -2475,13 +2471,14 @@ def render_macro_chart_2(prebuilt_fig=None):
 def render_macro_chart_3(prebuilt_fig=None):
     _render_standard_macro_chart(
         '<div class="section-title">3. Treasury Yield & Curve Spread</div>',
-        '<div class="section-description">3M / 2Y / 10Y / 10Y−2Y (R1) / 10Y−3M (R1)</div>',
+        '<div class="section-description">3M / 2Y / 10Y / 30Y / 10Y−2Y (R1) / 10Y−3M (R1)</div>',
         "normal_treasury_range",
         build_fig3,
         [
             ("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"),
             ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"),
             ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
+            ("30Y Treasury (DGS30)", "https://fred.stlouisfed.org/series/DGS30"),
             ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"),
             ("10Y−3M Spread (T10Y3M)", "https://fred.stlouisfed.org/series/T10Y3M"),
         ],
@@ -2655,7 +2652,7 @@ def _render_china_drawdown():
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">9. US Equity Risk & Volatility Structure</div>'
-        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ−VIX (R2) · VIXEQ/VIX (R3) · COR1M / COR3M (R4)</div>',
+        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig9("5Y")
@@ -2664,7 +2661,7 @@ def render_macro_chart_9(prebuilt_fig=None):
     add_sources([
         ("Cboe VIX", "https://www.cboe.com/tradable-products/vix/"),
         ("Cboe VIXEQ / Dispersion", "https://www.cboe.com/us/indices/dispersion/"),
-        ("Cboe COR1M / COR3M", "https://www.cboe.com/us/indices/implied/"),
+        ("Cboe COR3M", "https://www.cboe.com/us/indices/implied/"),
         ("FRED S&P 500 (SP500)", "https://fred.stlouisfed.org/series/SP500"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)

@@ -235,6 +235,7 @@ def _refresh_fred_series(series_id):
 
 def get_dgs3mo(): return _fred_series("DGS3MO")
 def get_dgs2(): return _fred_series("DGS2")
+def get_dgs30(): return _fred_series("DGS30")
 def get_dgs10():
     """Return 10Y nominal Treasury yield with an identity-based fallback.
 

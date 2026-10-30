@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-28-distinct-drawdown-colors-r78",
+  "release": "2026-10-30-treasury-30y-equity-risk-r79",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -15,6 +15,8 @@
     "viewport_peak_anchored_drawdown_path",
     "same_grid_price_drawdown_overlay",
     "named_daily_drawdown_parameter",
-    "distinct_price_drawdown_colors"
+    "distinct_price_drawdown_colors",
+    "observed_thirty_year_treasury_yield",
+    "simplified_equity_risk_series"
   ]
 }
