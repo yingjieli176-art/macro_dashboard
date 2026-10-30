@@ -58,6 +58,13 @@ on:
       - macro_platform/copper.py
       - macro_platform/asia_rates.py
       - macro_platform/yen_index.py
+      - macro_platform/yen_carry.py
+      - macro_platform/cftc_yen.py
+      - scripts/update_cftc_yen.py
+      - tests/test_cftc_yen.py
+      - data_snapshots/cftc_jpy_weekly.json
+      - .github/workflows/update-cftc-yen.yml
+      - tests/test_yen_carry.py
       - scripts/update_yen_index.py
       - tests/test_yen_index.py
       - data_snapshots/jpy_neer_daily.json
@@ -134,6 +141,13 @@ on:
       - macro_platform/copper.py
       - macro_platform/asia_rates.py
       - macro_platform/yen_index.py
+      - macro_platform/yen_carry.py
+      - macro_platform/cftc_yen.py
+      - scripts/update_cftc_yen.py
+      - tests/test_cftc_yen.py
+      - data_snapshots/cftc_jpy_weekly.json
+      - .github/workflows/update-cftc-yen.yml
+      - tests/test_yen_carry.py
       - scripts/update_yen_index.py
       - tests/test_yen_index.py
       - data_snapshots/jpy_neer_daily.json

@@ -22,11 +22,12 @@ class DateAndSourceAudit(unittest.TestCase):
     def tearDown(self):
         probe.reset_probe_cache()
 
-    def test_inventory_uses_all_17_display_numbers_and_new_equity_sources(self):
+    def test_inventory_uses_all_18_display_numbers_and_new_equity_sources(self):
         inventory = {key: charts for key, charts, *_ in probe.jobs()}
-        self.assertEqual({c for charts in inventory.values() for c in charts}, set(range(1, 18)))
+        self.assertEqual({c for charts in inventory.values() for c in charts}, set(range(1, 19)))
         for key, charts in {"SPX": [11], "RSP": [11], "000300": [12], "000852": [12],
-                            "932000": [12], "china_2y": [13], "japan_2y": [14],
+                            "932000": [12], "china_2y": [13], "japan_2y": [14,18],
+                            "DGS2": [3,18], "JPY=X": [14,18],
                             "GC=F": [15], "HG=F": [16], "BTC-USD": [17]}.items():
             self.assertEqual(inventory[key], charts)
 

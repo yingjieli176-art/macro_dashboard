@@ -15,6 +15,7 @@ from macro_platform.echarts_axes import option_observation_health
 
 
 SPECS = [
+    ("cftc_jpy_weekly.json", "observation_date", "", ["noncommercial_long", "noncommercial_short", "net_contracts"]),
     ("japan_gov_yields.json", "observation_date", "", ["japan_2y", "japan_10y"]),
     ("jpy_market_daily.json", "date", "", ["usd_jpy_close"]),
     ("jpy_neer_daily.json", "date", "", ["value"]),
@@ -91,7 +92,7 @@ def audit(root=ROOT, now=None):
                     date = (pd.Timestamp(date + "-01") + pd.offsets.MonthEnd(0)).strftime("%Y-%m-%d")
                 points.append([date, row.get(field)])
             series.append({"name": field, "data": points,
-                           "observation_cadence": "weekly" if filename == "jpy_neer_daily.json" else "daily"})
+                           "observation_cadence": "weekly" if filename in {"jpy_neer_daily.json", "cftc_jpy_weekly.json"} else "daily"})
         health = option_observation_health({"series": series}, chart_key=cadence, now=now)
         missing = [field for field in fields if field not in health["latest_by_name"]]
         reports.append({"file": filename, **health, "missing_names": missing})

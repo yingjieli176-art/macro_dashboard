@@ -1,6 +1,6 @@
 # Macro Dashboard
 
-Market and macroeconomic data dashboard with 13 interactive charts and
+Market and macroeconomic data dashboard with 18 interactive charts and
 watchlists. Production UI: <https://data-macromarket.streamlit.app/>.
 
 **Stable application baseline:** `2026-10-09-tga-close-recovery-r38`. A green
@@ -17,6 +17,35 @@ bundled observations.
 python -m pip install -r requirements.txt
 streamlit run app.py
 ```
+
+## Yen carry analysis (chart 18)
+
+`2026-10-30-yen-carry-analysis-r80` adds four independently scaled series:
+
+- US 2Y Treasury yield (FRED DGS2) minus Japan 2Y government yield (Japan MOF),
+  in percentage points, calculated only where both have the same observation date.
+- USD/JPY completed daily closes (Yahoo JPY=X), in yen per dollar. Falling values
+  indicate yen appreciation and higher dollar costs of repaying yen principal.
+- Yen appreciation over 20 valid FX observation intervals:
+  `(USDJPY[t−20] / USDJPY[t] − 1) × 100`, in percent. Positive values indicate
+  appreciation. Calculate before slicing the selected viewport; insufficient
+  history or a missing current quote stays missing.
+- CFTC Japanese Yen (097741), Legacy Futures Only: noncommercial outright long
+  minus short, displayed in ten thousand contracts. Positive means net long yen;
+  negative means net short yen. Weekly points use the actual position date,
+  generally Tuesday, with release generally Friday. No daily filling or mixing
+  with TFF leveraged funds or futures-and-options combined data. The snapshot
+  retains the original long, short and open-interest counts for verification.
+
+Narrowing spreads together with yen appreciation indicate deteriorating carry
+conditions. The government yield spread is a nominal incentive proxy, not an
+overnight funding spread or achievable return. Its annualized rate cannot be
+directly subtracted from the 20-session FX return. This chart does not estimate
+total carry positions, unwind volumes, leverage, or net P&L. The CFTC position
+sample covers reported yen futures, not all cross-border carry trades. Existing
+rates/FX refresh paths are reused; `update-cftc-yen.yml` checks the official CFTC
+public data daily to accommodate delayed releases, retaining the last good data
+if validation fails. The source audit handles positions as weekly observations.
 
 If an external feed is unavailable, the dashboard may use a *dated, verified*
 last-good snapshot, or display a missing-series warning. Do not read a cached

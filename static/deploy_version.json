@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-30-treasury-30y-equity-risk-r79",
+  "release": "2026-10-30-yen-carry-analysis-r80",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -17,6 +17,8 @@
     "named_daily_drawdown_parameter",
     "distinct_price_drawdown_colors",
     "observed_thirty_year_treasury_yield",
-    "simplified_equity_risk_series"
+    "simplified_equity_risk_series",
+    "yen_carry_spread_fx_appreciation",
+    "cftc_yen_noncommercial_positions"
   ]
 }

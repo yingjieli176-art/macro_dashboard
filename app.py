@@ -58,6 +58,10 @@ load_correlation_snapshot = getattr(
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
 from macro_platform.yen_index import load_yen_market_index
+try:
+    import macro_platform.yen_carry as _yen_carry
+except ImportError:
+    _yen_carry = None
 from macro_platform.security_search import search_securities
 from macro_platform.freshness_overview import render_freshness_overview
 from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
@@ -97,9 +101,9 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-MACRO_DISPLAY_ORDER = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "us_drawdown", "cn_drawdown", 14, 15, 11, 13, 12)
+MACRO_DISPLAY_ORDER = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "us_drawdown", "cn_drawdown", 14, 15, 11, 13, 12, 16)
 MACRO_DISPLAY_NUMBER = {key: index for index, key in enumerate(MACRO_DISPLAY_ORDER, 1)}
-CHART_BUILD = "2026-10-30-treasury-30y-equity-risk-r79"
+CHART_BUILD = "2026-10-30-yen-carry-analysis-r80"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2085,6 +2089,20 @@ def build_fig15(date_range):
     return build_japan_rates_figure(date_range, nikkei=nikkei, yen_index=yen)
 
 
+def build_fig16(date_range):
+    if _yen_carry is None:
+        raise RuntimeError("Yen carry chart module unavailable")
+    from macro_platform.asia_rates import load_japan_gov_yields
+    from macro_platform.cftc_yen import load_cftc_yen
+    frames = []
+    for loader in (get_dgs2, load_japan_gov_yields, load_yen_market_index, load_cftc_yen):
+        try:
+            frames.append(loader())
+        except Exception:
+            frames.append(pd.DataFrame())
+    return _yen_carry.build_yen_carry_figure(date_range, us=frames[0], japan=frames[1], fx=frames[2], positions=frames[3])
+
+
 CRYPTO_MARKET_DESCRIPTION = (
     '<div class="parameter-note"><b>BTC · USD：</b>比特币美元日线价格，代表比特币的市场价格表现；单位为美元。</div><div class="parameter-note"><b>ETH · USD · R1：</b>以太币美元日线价格，代表以太币的市场价格表现；单位为美元。</div><div class="parameter-note"><b>ETH/BTC 强弱 · R2：</b>同日以太币价格除以比特币价格，代表两者相对强弱；上升表示ETH相对BTC走强，不等于资金净流入。</div><div class="parameter-note"><b>BTC 30D 实际波动率 · R3：</b>比特币过去30日日收益率波动的年化估计，代表已经发生的价格波动程度；单位为%，与期权隐含的未来波动率不同。</div><div class="parameter-context">口径说明：30D实际波动率按日收益率估计并以365天年化；不足完整窗口时，至少使用20个有效样本。</div>'
 )
@@ -2786,6 +2804,43 @@ def render_macro_chart_15(prebuilt_fig=None):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
+@st.fragment(key="yen_carry_viewport")
+def render_macro_chart_16(prebuilt_fig=None):
+    st.markdown(
+        '<div class="section-title">18. 日元套息分析 · Yen Carry Trade</div>'
+        '<div class="section-description">美日2Y利差 · USD/JPY (R1) · 日元20交易日升值幅度 (R2) · CFTC日元投机净仓位 (R3)</div>',
+        unsafe_allow_html=True,
+    )
+    base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
+        "Chart 18", lambda: _cached_macro_figure(16, _macro_snapshot_revision(), CHART_BUILD))
+    _render_adaptive_macro_figure(base_fig, "yen_carry")
+    st.markdown(
+        '<div class="mini-description"><div class="parameter-note"><b>US−Japan 2Y spread：</b>'
+        '美国2年期国债收益率减日本2年期国债收益率，单位为百分点；同日均有观测才计算。'
+        '利差扩大通常增加借日元、持有美元资产的利率吸引力；它是参考指标，非实际隔夜融资利差或可实现收益。</div>'
+        '<div class="parameter-note"><b>USD/JPY (R1)：</b>1美元兑换的日元数；上升表示日元贬值，下降表示日元升值。</div>'
+        '<div class="parameter-note"><b>JPY 20-session appreciation (R2)：</b>'
+        '（20个有效交易日之前的USD/JPY ÷ 当前USD/JPY − 1）×100%；正值表示日元升值，'
+        '借日元者用美元偿还本金的成本上升。按已完成日线计算，先计算完整窗口再截取显示区间。</div>'
+        '<div class="parameter-note"><b>CFTC JPY speculative net (R3)：</b>'
+        'CFTC日元期货非商业多头减非商业空头，代码097741，采用Legacy Futures Only口径，单位为万张。'
+        '正值为净多日元，负值为净空日元；由负值向零收缩可辅助观察空头回补压力，也可能包含新增多头。'
+        '周度数据按持仓截至日标点，通常为周二、周五公布；不向日频填充。</div>'
+        '<div class="parameter-context">读图：利差收窄，同时USD/JPY下跌、日元升值幅度转正或扩大，'
+        '意味着套息条件转差。单看利差仍高可能漏掉汇兑损失；年度利差与20交易日汇率变动期限不同，不能直接相减。'
+        'CFTC只覆盖报告内日元期货投机仓位，不能等同全部跨境套息仓位或平仓规模。'
+        '本图不测量含杠杆净收益；不补齐不同市场假日缺值。</div></div>',
+        unsafe_allow_html=True,
+    )
+    add_sources([
+        ("FRED · US 2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"),
+        ("CFTC · Commitments of Traders", "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"),
+        ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
+        ("Yahoo · USD/JPY daily closes", "https://finance.yahoo.com/quote/JPY%3DX/history/"),
+    ])
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+
 def _macro_error_figure(label):
     fig = go.Figure()
     fig.add_annotation(
@@ -2864,7 +2919,7 @@ def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
     builders = {
         1: build_fig1, 2: build_fig2, 3: build_fig3, 4: build_fig4,
         9: build_fig9, 10: build_fig10, 11: build_fig11, 12: build_fig12,
-        13: build_fig13, 14: build_fig14, 15: build_fig15,
+        13: build_fig13, 14: build_fig14, 15: build_fig15, 16: build_fig16,
     }
     builder = builders[chart_number]
     figure = builder("5Y")
@@ -2930,6 +2985,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
         13: lambda: cached_chart(13),
         14: lambda: cached_chart(14),
         15: lambda: cached_chart(15),
+        16: lambda: cached_chart(16),
     }
     revision = (snapshot_revision, CHART_BUILD)
     futures = submit_jobs(jobs, name="macro-chart", workers=6, budget=budget, revision=revision)
@@ -2963,7 +3019,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
             results[key] = ([_macro_error_figure(f"Chart {n}") for n in range(5, 9)]
                             if isinstance(key, str) else _macro_error_figure(f"Chart {key}"))
     if on_complete is not None:
-        for number in range(1, 16):
+        for number in range(1, 17):
             if number not in published:
                 if number in (5, 6, 7, 8):
                     value = results["hk5"][number-5]
@@ -2988,6 +3044,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
         13: results[13],
         14: results[14],
         15: results[15],
+        16: results[16],
     }
 
 
@@ -3002,7 +3059,7 @@ st.markdown(
 # Only the main Streamlit thread creates containers, fragments and widgets.
 macro_slots = {}
 section_headers = {5: "HONG KONG LIQUIDITY", 9: "EQUITY RISK & DRAWDOWNS",
-                   14: "ASIA RATES", 11: "COMMODITIES", 12: "CRYPTO MARKET"}
+                   14: "ASIA RATES", 11: "COMMODITIES", 12: "CRYPTO MARKET", 16: "YEN CARRY"}
 for number in MACRO_DISPLAY_ORDER:
     if number == "us_drawdown":
         _render_equity_drawdown()
@@ -3020,7 +3077,7 @@ def _render_completed_macro_chart(number, figure):
         4: render_macro_chart_4, 5: render_macro_chart_5, 6: render_macro_chart_6,
         7: render_macro_chart_7, 8: render_macro_chart_8, 9: render_macro_chart_9,
         10: render_macro_chart_10, 11: render_macro_chart_11, 12: render_macro_chart_12,
-        13: render_macro_chart_13, 14: render_macro_chart_14, 15: render_macro_chart_15,
+        13: render_macro_chart_13, 14: render_macro_chart_14, 15: render_macro_chart_15, 16: render_macro_chart_16,
     }
     with macro_slots[number]:
         renderers[number](figure)

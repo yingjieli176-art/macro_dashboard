@@ -39,7 +39,7 @@ def figure_rows(figures, now=None):
                 continue
             last = max(dates)
             monthly = number == 6 or (number == 5 and any(s in trace.name for s in ("M2 ", "Monetary Base")))
-            weekly = "Reserve Balances" in trace.name or "Weekly fallback" in trace.name
+            weekly = any(name in trace.name for name in ("Reserve Balances", "Weekly fallback", "CFTC JPY"))
             cadence = "monthly" if monthly else "weekly" if weekly else "daily"
             item = {"name": trace.name, "data": [[last.isoformat(), 1]], "observation_cadence": cadence}
             health = option_observation_health({"series": [item]}, now=now) if option_observation_health else {}
@@ -71,7 +71,7 @@ def source_rows(path=SOURCE_REPORT):
               "source_behind_repository": "源站本次导出较旧，保留较新已验数据",
               "live_only": "页面实时构建，核对图表日期", "unverified": "源站尚未核实"}
     return _local_time(report.get("checked_at")), [{"源指标": row["id"], "图表": (",".join(map(str,row["charts"]))
-        if report.get("chart_numbering") == "display_17" else "待按新图号复核"),
+        if report.get("chart_numbering") in {"display_17", "display_18"} else "待按新图号复核"),
         "本地数据日期": row.get("repository_latest") or "实时构建",
         "源站数据日期": row.get("source_latest") or "未取得", "核对结果": labels.get(row["status"],row["status"]),
         "本次核对时间": _local_time(row.get("checked_at")), "说明": row.get("error", "")}

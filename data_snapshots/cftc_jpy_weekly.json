@@ -1,0 +1,2497 @@
+{
+  "source": "https://publicreporting.cftc.gov/resource/6dca-aqww.json",
+  "contract_code": "097741",
+  "report_type": "Legacy Futures Only",
+  "unit": "contracts",
+  "date_basis": "as-of position date, not release date",
+  "formula": "noncommercial_long - noncommercial_short",
+  "frequency": "weekly",
+  "fetched_at": "2026-10-30T06:13:21.585534+00:00",
+  "records": [
+    {
+      "observation_date": "2020-01-07",
+      "noncommercial_long": 47846,
+      "noncommercial_short": 60094,
+      "net_contracts": -12248,
+      "open_interest": 162094
+    },
+    {
+      "observation_date": "2020-01-14",
+      "noncommercial_long": 49720,
+      "noncommercial_short": 81150,
+      "net_contracts": -31430,
+      "open_interest": 183863
+    },
+    {
+      "observation_date": "2020-01-21",
+      "noncommercial_long": 50596,
+      "noncommercial_short": 95297,
+      "net_contracts": -44701,
+      "open_interest": 203579
+    },
+    {
+      "observation_date": "2020-01-28",
+      "noncommercial_long": 45676,
+      "noncommercial_short": 81701,
+      "net_contracts": -36025,
+      "open_interest": 184919
+    },
+    {
+      "observation_date": "2020-02-04",
+      "noncommercial_long": 57672,
+      "noncommercial_short": 79570,
+      "net_contracts": -21898,
+      "open_interest": 190079
+    },
+    {
+      "observation_date": "2020-02-11",
+      "noncommercial_long": 54805,
+      "noncommercial_short": 80993,
+      "net_contracts": -26188,
+      "open_interest": 193822
+    },
+    {
+      "observation_date": "2020-02-18",
+      "noncommercial_long": 58605,
+      "noncommercial_short": 85826,
+      "net_contracts": -27221,
+      "open_interest": 203631
+    },
+    {
+      "observation_date": "2020-02-25",
+      "noncommercial_long": 53855,
+      "noncommercial_short": 110244,
+      "net_contracts": -56389,
+      "open_interest": 223904
+    },
+    {
+      "observation_date": "2020-03-03",
+      "noncommercial_long": 50598,
+      "noncommercial_short": 92922,
+      "net_contracts": -42324,
+      "open_interest": 198404
+    },
+    {
+      "observation_date": "2020-03-10",
+      "noncommercial_long": 61732,
+      "noncommercial_short": 53575,
+      "net_contracts": 8157,
+      "open_interest": 159128
+    },
+    {
+      "observation_date": "2020-03-17",
+      "noncommercial_long": 57286,
+      "noncommercial_short": 24351,
+      "net_contracts": 32935,
+      "open_interest": 125769
+    },
+    {
+      "observation_date": "2020-03-24",
+      "noncommercial_long": 56528,
+      "noncommercial_short": 32665,
+      "net_contracts": 23863,
+      "open_interest": 125594
+    },
+    {
+      "observation_date": "2020-03-31",
+      "noncommercial_long": 48444,
+      "noncommercial_short": 30162,
+      "net_contracts": 18282,
+      "open_interest": 120270
+    },
+    {
+      "observation_date": "2020-04-07",
+      "noncommercial_long": 49249,
+      "noncommercial_short": 26839,
+      "net_contracts": 22410,
+      "open_interest": 118595
+    },
+    {
+      "observation_date": "2020-04-14",
+      "noncommercial_long": 49863,
+      "noncommercial_short": 27220,
+      "net_contracts": 22643,
+      "open_interest": 122929
+    },
+    {
+      "observation_date": "2020-04-21",
+      "noncommercial_long": 53730,
+      "noncommercial_short": 27704,
+      "net_contracts": 26026,
+      "open_interest": 128272
+    },
+    {
+      "observation_date": "2020-04-28",
+      "noncommercial_long": 59962,
+      "noncommercial_short": 27636,
+      "net_contracts": 32326,
+      "open_interest": 143835
+    },
+    {
+      "observation_date": "2020-05-05",
+      "noncommercial_long": 56634,
+      "noncommercial_short": 29420,
+      "net_contracts": 27214,
+      "open_interest": 152042
+    },
+    {
+      "observation_date": "2020-05-12",
+      "noncommercial_long": 56307,
+      "noncommercial_short": 28370,
+      "net_contracts": 27937,
+      "open_interest": 153370
+    },
+    {
+      "observation_date": "2020-05-19",
+      "noncommercial_long": 52038,
+      "noncommercial_short": 24568,
+      "net_contracts": 27470,
+      "open_interest": 147975
+    },
+    {
+      "observation_date": "2020-05-26",
+      "noncommercial_long": 57873,
+      "noncommercial_short": 23266,
+      "net_contracts": 34607,
+      "open_interest": 156827
+    },
+    {
+      "observation_date": "2020-06-02",
+      "noncommercial_long": 61958,
+      "noncommercial_short": 29379,
+      "net_contracts": 32579,
+      "open_interest": 158743
+    },
+    {
+      "observation_date": "2020-06-09",
+      "noncommercial_long": 48862,
+      "noncommercial_short": 31400,
+      "net_contracts": 17462,
+      "open_interest": 155159
+    },
+    {
+      "observation_date": "2020-06-16",
+      "noncommercial_long": 43126,
+      "noncommercial_short": 21016,
+      "net_contracts": 22110,
+      "open_interest": 127287
+    },
+    {
+      "observation_date": "2020-06-23",
+      "noncommercial_long": 50490,
+      "noncommercial_short": 23032,
+      "net_contracts": 27458,
+      "open_interest": 144549
+    },
+    {
+      "observation_date": "2020-06-30",
+      "noncommercial_long": 42755,
+      "noncommercial_short": 18894,
+      "net_contracts": 23861,
+      "open_interest": 137362
+    },
+    {
+      "observation_date": "2020-07-07",
+      "noncommercial_long": 44043,
+      "noncommercial_short": 27231,
+      "net_contracts": 16812,
+      "open_interest": 138313
+    },
+    {
+      "observation_date": "2020-07-14",
+      "noncommercial_long": 45111,
+      "noncommercial_short": 26785,
+      "net_contracts": 18326,
+      "open_interest": 135263
+    },
+    {
+      "observation_date": "2020-07-21",
+      "noncommercial_long": 50854,
+      "noncommercial_short": 31547,
+      "net_contracts": 19307,
+      "open_interest": 142686
+    },
+    {
+      "observation_date": "2020-07-28",
+      "noncommercial_long": 62924,
+      "noncommercial_short": 34417,
+      "net_contracts": 28507,
+      "open_interest": 170269
+    },
+    {
+      "observation_date": "2020-08-04",
+      "noncommercial_long": 52073,
+      "noncommercial_short": 20644,
+      "net_contracts": 31429,
+      "open_interest": 157968
+    },
+    {
+      "observation_date": "2020-08-11",
+      "noncommercial_long": 48158,
+      "noncommercial_short": 21142,
+      "net_contracts": 27016,
+      "open_interest": 150149
+    },
+    {
+      "observation_date": "2020-08-18",
+      "noncommercial_long": 41717,
+      "noncommercial_short": 21133,
+      "net_contracts": 20584,
+      "open_interest": 147076
+    },
+    {
+      "observation_date": "2020-08-25",
+      "noncommercial_long": 44978,
+      "noncommercial_short": 21362,
+      "net_contracts": 23616,
+      "open_interest": 147553
+    },
+    {
+      "observation_date": "2020-09-01",
+      "noncommercial_long": 46654,
+      "noncommercial_short": 17050,
+      "net_contracts": 29604,
+      "open_interest": 145922
+    },
+    {
+      "observation_date": "2020-09-08",
+      "noncommercial_long": 44850,
+      "noncommercial_short": 23108,
+      "net_contracts": 21742,
+      "open_interest": 151546
+    },
+    {
+      "observation_date": "2020-09-15",
+      "noncommercial_long": 50360,
+      "noncommercial_short": 27471,
+      "net_contracts": 22889,
+      "open_interest": 148912
+    },
+    {
+      "observation_date": "2020-09-22",
+      "noncommercial_long": 59033,
+      "noncommercial_short": 29452,
+      "net_contracts": 29581,
+      "open_interest": 169251
+    },
+    {
+      "observation_date": "2020-09-29",
+      "noncommercial_long": 47535,
+      "noncommercial_short": 22746,
+      "net_contracts": 24789,
+      "open_interest": 158298
+    },
+    {
+      "observation_date": "2020-10-06",
+      "noncommercial_long": 45779,
+      "noncommercial_short": 24677,
+      "net_contracts": 21102,
+      "open_interest": 163024
+    },
+    {
+      "observation_date": "2020-10-13",
+      "noncommercial_long": 47245,
+      "noncommercial_short": 27269,
+      "net_contracts": 19976,
+      "open_interest": 165616
+    },
+    {
+      "observation_date": "2020-10-20",
+      "noncommercial_long": 46524,
+      "noncommercial_short": 32341,
+      "net_contracts": 14183,
+      "open_interest": 166091
+    },
+    {
+      "observation_date": "2020-10-27",
+      "noncommercial_long": 46131,
+      "noncommercial_short": 28238,
+      "net_contracts": 17893,
+      "open_interest": 177622
+    },
+    {
+      "observation_date": "2020-11-03",
+      "noncommercial_long": 51012,
+      "noncommercial_short": 22914,
+      "net_contracts": 28098,
+      "open_interest": 184751
+    },
+    {
+      "observation_date": "2020-11-10",
+      "noncommercial_long": 55644,
+      "noncommercial_short": 13750,
+      "net_contracts": 41894,
+      "open_interest": 183518
+    },
+    {
+      "observation_date": "2020-11-17",
+      "noncommercial_long": 40313,
+      "noncommercial_short": 10646,
+      "net_contracts": 29667,
+      "open_interest": 165073
+    },
+    {
+      "observation_date": "2020-11-24",
+      "noncommercial_long": 54472,
+      "noncommercial_short": 14230,
+      "net_contracts": 40242,
+      "open_interest": 179503
+    },
+    {
+      "observation_date": "2020-12-01",
+      "noncommercial_long": 62449,
+      "noncommercial_short": 14946,
+      "net_contracts": 47503,
+      "open_interest": 185873
+    },
+    {
+      "observation_date": "2020-12-08",
+      "noncommercial_long": 63585,
+      "noncommercial_short": 15419,
+      "net_contracts": 48166,
+      "open_interest": 193326
+    },
+    {
+      "observation_date": "2020-12-15",
+      "noncommercial_long": 65376,
+      "noncommercial_short": 21413,
+      "net_contracts": 43963,
+      "open_interest": 193317
+    },
+    {
+      "observation_date": "2020-12-21",
+      "noncommercial_long": 66970,
+      "noncommercial_short": 20877,
+      "net_contracts": 46093,
+      "open_interest": 196845
+    },
+    {
+      "observation_date": "2020-12-29",
+      "noncommercial_long": 63577,
+      "noncommercial_short": 16227,
+      "net_contracts": 47350,
+      "open_interest": 194454
+    },
+    {
+      "observation_date": "2021-01-05",
+      "noncommercial_long": 69163,
+      "noncommercial_short": 18973,
+      "net_contracts": 50190,
+      "open_interest": 206963
+    },
+    {
+      "observation_date": "2021-01-12",
+      "noncommercial_long": 63857,
+      "noncommercial_short": 13337,
+      "net_contracts": 50520,
+      "open_interest": 190811
+    },
+    {
+      "observation_date": "2021-01-19",
+      "noncommercial_long": 64143,
+      "noncommercial_short": 14129,
+      "net_contracts": 50014,
+      "open_interest": 191540
+    },
+    {
+      "observation_date": "2021-01-26",
+      "noncommercial_long": 63463,
+      "noncommercial_short": 18471,
+      "net_contracts": 44992,
+      "open_interest": 193822
+    },
+    {
+      "observation_date": "2021-02-02",
+      "noncommercial_long": 69602,
+      "noncommercial_short": 24973,
+      "net_contracts": 44629,
+      "open_interest": 190948
+    },
+    {
+      "observation_date": "2021-02-09",
+      "noncommercial_long": 60719,
+      "noncommercial_short": 26101,
+      "net_contracts": 34618,
+      "open_interest": 183901
+    },
+    {
+      "observation_date": "2021-02-16",
+      "noncommercial_long": 66732,
+      "noncommercial_short": 29550,
+      "net_contracts": 37182,
+      "open_interest": 188119
+    },
+    {
+      "observation_date": "2021-02-23",
+      "noncommercial_long": 66670,
+      "noncommercial_short": 38048,
+      "net_contracts": 28622,
+      "open_interest": 183247
+    },
+    {
+      "observation_date": "2021-03-02",
+      "noncommercial_long": 61259,
+      "noncommercial_short": 41989,
+      "net_contracts": 19270,
+      "open_interest": 189270
+    },
+    {
+      "observation_date": "2021-03-09",
+      "noncommercial_long": 64027,
+      "noncommercial_short": 57513,
+      "net_contracts": 6514,
+      "open_interest": 211347
+    },
+    {
+      "observation_date": "2021-03-16",
+      "noncommercial_long": 26003,
+      "noncommercial_short": 65371,
+      "net_contracts": -39368,
+      "open_interest": 145951
+    },
+    {
+      "observation_date": "2021-03-23",
+      "noncommercial_long": 27524,
+      "noncommercial_short": 81049,
+      "net_contracts": -53525,
+      "open_interest": 160581
+    },
+    {
+      "observation_date": "2021-03-30",
+      "noncommercial_long": 24724,
+      "noncommercial_short": 84205,
+      "net_contracts": -59481,
+      "open_interest": 166091
+    },
+    {
+      "observation_date": "2021-04-06",
+      "noncommercial_long": 26794,
+      "noncommercial_short": 84783,
+      "net_contracts": -57989,
+      "open_interest": 164310
+    },
+    {
+      "observation_date": "2021-04-13",
+      "noncommercial_long": 27682,
+      "noncommercial_short": 85994,
+      "net_contracts": -58312,
+      "open_interest": 165431
+    },
+    {
+      "observation_date": "2021-04-20",
+      "noncommercial_long": 26617,
+      "noncommercial_short": 86436,
+      "net_contracts": -59819,
+      "open_interest": 162649
+    },
+    {
+      "observation_date": "2021-04-27",
+      "noncommercial_long": 29673,
+      "noncommercial_short": 78182,
+      "net_contracts": -48509,
+      "open_interest": 154894
+    },
+    {
+      "observation_date": "2021-05-04",
+      "noncommercial_long": 31208,
+      "noncommercial_short": 72700,
+      "net_contracts": -41492,
+      "open_interest": 152676
+    },
+    {
+      "observation_date": "2021-05-11",
+      "noncommercial_long": 30491,
+      "noncommercial_short": 72219,
+      "net_contracts": -41728,
+      "open_interest": 152404
+    },
+    {
+      "observation_date": "2021-05-18",
+      "noncommercial_long": 24965,
+      "noncommercial_short": 75913,
+      "net_contracts": -50948,
+      "open_interest": 154727
+    },
+    {
+      "observation_date": "2021-05-25",
+      "noncommercial_long": 24163,
+      "noncommercial_short": 74319,
+      "net_contracts": -50156,
+      "open_interest": 153196
+    },
+    {
+      "observation_date": "2021-06-01",
+      "noncommercial_long": 29462,
+      "noncommercial_short": 76577,
+      "net_contracts": -47115,
+      "open_interest": 162091
+    },
+    {
+      "observation_date": "2021-06-08",
+      "noncommercial_long": 27248,
+      "noncommercial_short": 64562,
+      "net_contracts": -37314,
+      "open_interest": 161592
+    },
+    {
+      "observation_date": "2021-06-15",
+      "noncommercial_long": 22974,
+      "noncommercial_short": 69824,
+      "net_contracts": -46850,
+      "open_interest": 155359
+    },
+    {
+      "observation_date": "2021-06-22",
+      "noncommercial_long": 34118,
+      "noncommercial_short": 87980,
+      "net_contracts": -53862,
+      "open_interest": 190545
+    },
+    {
+      "observation_date": "2021-06-29",
+      "noncommercial_long": 27380,
+      "noncommercial_short": 97275,
+      "net_contracts": -69895,
+      "open_interest": 195698
+    },
+    {
+      "observation_date": "2021-07-06",
+      "noncommercial_long": 31625,
+      "noncommercial_short": 100761,
+      "net_contracts": -69136,
+      "open_interest": 205341
+    },
+    {
+      "observation_date": "2021-07-13",
+      "noncommercial_long": 40440,
+      "noncommercial_short": 96690,
+      "net_contracts": -56250,
+      "open_interest": 203727
+    },
+    {
+      "observation_date": "2021-07-20",
+      "noncommercial_long": 35474,
+      "noncommercial_short": 91205,
+      "net_contracts": -55731,
+      "open_interest": 192301
+    },
+    {
+      "observation_date": "2021-07-27",
+      "noncommercial_long": 32975,
+      "noncommercial_short": 92909,
+      "net_contracts": -59934,
+      "open_interest": 196102
+    },
+    {
+      "observation_date": "2021-08-03",
+      "noncommercial_long": 30409,
+      "noncommercial_short": 85599,
+      "net_contracts": -55190,
+      "open_interest": 189242
+    },
+    {
+      "observation_date": "2021-08-10",
+      "noncommercial_long": 36684,
+      "noncommercial_short": 97341,
+      "net_contracts": -60657,
+      "open_interest": 206131
+    },
+    {
+      "observation_date": "2021-08-17",
+      "noncommercial_long": 27532,
+      "noncommercial_short": 90740,
+      "net_contracts": -63208,
+      "open_interest": 196495
+    },
+    {
+      "observation_date": "2021-08-24",
+      "noncommercial_long": 26763,
+      "noncommercial_short": 93434,
+      "net_contracts": -66671,
+      "open_interest": 194477
+    },
+    {
+      "observation_date": "2021-08-31",
+      "noncommercial_long": 29030,
+      "noncommercial_short": 92160,
+      "net_contracts": -63130,
+      "open_interest": 193999
+    },
+    {
+      "observation_date": "2021-09-07",
+      "noncommercial_long": 29704,
+      "noncommercial_short": 92029,
+      "net_contracts": -62325,
+      "open_interest": 204435
+    },
+    {
+      "observation_date": "2021-09-14",
+      "noncommercial_long": 21728,
+      "noncommercial_short": 82023,
+      "net_contracts": -60295,
+      "open_interest": 192088
+    },
+    {
+      "observation_date": "2021-09-21",
+      "noncommercial_long": 22844,
+      "noncommercial_short": 78915,
+      "net_contracts": -56071,
+      "open_interest": 191213
+    },
+    {
+      "observation_date": "2021-09-28",
+      "noncommercial_long": 35328,
+      "noncommercial_short": 100088,
+      "net_contracts": -64760,
+      "open_interest": 219638
+    },
+    {
+      "observation_date": "2021-10-05",
+      "noncommercial_long": 31569,
+      "noncommercial_short": 95263,
+      "net_contracts": -63694,
+      "open_interest": 226379
+    },
+    {
+      "observation_date": "2021-10-12",
+      "noncommercial_long": 35810,
+      "noncommercial_short": 112444,
+      "net_contracts": -76634,
+      "open_interest": 243617
+    },
+    {
+      "observation_date": "2021-10-19",
+      "noncommercial_long": 35713,
+      "noncommercial_short": 138447,
+      "net_contracts": -102734,
+      "open_interest": 266750
+    },
+    {
+      "observation_date": "2021-10-26",
+      "noncommercial_long": 31487,
+      "noncommercial_short": 138523,
+      "net_contracts": -107036,
+      "open_interest": 265254
+    },
+    {
+      "observation_date": "2021-11-02",
+      "noncommercial_long": 20337,
+      "noncommercial_short": 127961,
+      "net_contracts": -107624,
+      "open_interest": 251058
+    },
+    {
+      "observation_date": "2021-11-09",
+      "noncommercial_long": 16440,
+      "noncommercial_short": 121791,
+      "net_contracts": -105351,
+      "open_interest": 243087
+    },
+    {
+      "observation_date": "2021-11-16",
+      "noncommercial_long": 24635,
+      "noncommercial_short": 117761,
+      "net_contracts": -93126,
+      "open_interest": 252897
+    },
+    {
+      "observation_date": "2021-11-23",
+      "noncommercial_long": 20285,
+      "noncommercial_short": 117538,
+      "net_contracts": -97253,
+      "open_interest": 251801
+    },
+    {
+      "observation_date": "2021-11-30",
+      "noncommercial_long": 14585,
+      "noncommercial_short": 93451,
+      "net_contracts": -78866,
+      "open_interest": 216692
+    },
+    {
+      "observation_date": "2021-12-07",
+      "noncommercial_long": 13148,
+      "noncommercial_short": 76229,
+      "net_contracts": -63081,
+      "open_interest": 205970
+    },
+    {
+      "observation_date": "2021-12-14",
+      "noncommercial_long": 20231,
+      "noncommercial_short": 73754,
+      "net_contracts": -53523,
+      "open_interest": 176584
+    },
+    {
+      "observation_date": "2021-12-21",
+      "noncommercial_long": 22191,
+      "noncommercial_short": 74477,
+      "net_contracts": -52286,
+      "open_interest": 183743
+    },
+    {
+      "observation_date": "2021-12-28",
+      "noncommercial_long": 32475,
+      "noncommercial_short": 85577,
+      "net_contracts": -53102,
+      "open_interest": 203814
+    },
+    {
+      "observation_date": "2022-01-04",
+      "noncommercial_long": 40816,
+      "noncommercial_short": 103078,
+      "net_contracts": -62262,
+      "open_interest": 234068
+    },
+    {
+      "observation_date": "2022-01-11",
+      "noncommercial_long": 22364,
+      "noncommercial_short": 109889,
+      "net_contracts": -87525,
+      "open_interest": 234005
+    },
+    {
+      "observation_date": "2022-01-18",
+      "noncommercial_long": 8002,
+      "noncommercial_short": 88881,
+      "net_contracts": -80879,
+      "open_interest": 201820
+    },
+    {
+      "observation_date": "2022-01-25",
+      "noncommercial_long": 15866,
+      "noncommercial_short": 84139,
+      "net_contracts": -68273,
+      "open_interest": 197830
+    },
+    {
+      "observation_date": "2022-02-01",
+      "noncommercial_long": 14510,
+      "noncommercial_short": 75150,
+      "net_contracts": -60640,
+      "open_interest": 194435
+    },
+    {
+      "observation_date": "2022-02-08",
+      "noncommercial_long": 15692,
+      "noncommercial_short": 74840,
+      "net_contracts": -59148,
+      "open_interest": 196478
+    },
+    {
+      "observation_date": "2022-02-15",
+      "noncommercial_long": 10425,
+      "noncommercial_short": 76587,
+      "net_contracts": -66162,
+      "open_interest": 199425
+    },
+    {
+      "observation_date": "2022-02-22",
+      "noncommercial_long": 10976,
+      "noncommercial_short": 74163,
+      "net_contracts": -63187,
+      "open_interest": 194169
+    },
+    {
+      "observation_date": "2022-03-01",
+      "noncommercial_long": 14665,
+      "noncommercial_short": 83397,
+      "net_contracts": -68732,
+      "open_interest": 208629
+    },
+    {
+      "observation_date": "2022-03-08",
+      "noncommercial_long": 15548,
+      "noncommercial_short": 71404,
+      "net_contracts": -55856,
+      "open_interest": 208683
+    },
+    {
+      "observation_date": "2022-03-15",
+      "noncommercial_long": 34016,
+      "noncommercial_short": 96356,
+      "net_contracts": -62340,
+      "open_interest": 215484
+    },
+    {
+      "observation_date": "2022-03-22",
+      "noncommercial_long": 36676,
+      "noncommercial_short": 115158,
+      "net_contracts": -78482,
+      "open_interest": 248221
+    },
+    {
+      "observation_date": "2022-03-29",
+      "noncommercial_long": 15274,
+      "noncommercial_short": 117405,
+      "net_contracts": -102131,
+      "open_interest": 239698
+    },
+    {
+      "observation_date": "2022-04-05",
+      "noncommercial_long": 14583,
+      "noncommercial_short": 118412,
+      "net_contracts": -103829,
+      "open_interest": 242217
+    },
+    {
+      "observation_date": "2022-04-12",
+      "noncommercial_long": 9925,
+      "noncommercial_short": 121752,
+      "net_contracts": -111827,
+      "open_interest": 245403
+    },
+    {
+      "observation_date": "2022-04-19",
+      "noncommercial_long": 12723,
+      "noncommercial_short": 119910,
+      "net_contracts": -107187,
+      "open_interest": 251291
+    },
+    {
+      "observation_date": "2022-04-26",
+      "noncommercial_long": 14269,
+      "noncommercial_short": 109804,
+      "net_contracts": -95535,
+      "open_interest": 237995
+    },
+    {
+      "observation_date": "2022-05-03",
+      "noncommercial_long": 18585,
+      "noncommercial_short": 119379,
+      "net_contracts": -100794,
+      "open_interest": 254813
+    },
+    {
+      "observation_date": "2022-05-10",
+      "noncommercial_long": 11196,
+      "noncommercial_short": 121650,
+      "net_contracts": -110454,
+      "open_interest": 247278
+    },
+    {
+      "observation_date": "2022-05-17",
+      "noncommercial_long": 12113,
+      "noncommercial_short": 114422,
+      "net_contracts": -102309,
+      "open_interest": 241308
+    },
+    {
+      "observation_date": "2022-05-24",
+      "noncommercial_long": 16567,
+      "noncommercial_short": 116011,
+      "net_contracts": -99444,
+      "open_interest": 237256
+    },
+    {
+      "observation_date": "2022-05-31",
+      "noncommercial_long": 15201,
+      "noncommercial_short": 109640,
+      "net_contracts": -94439,
+      "open_interest": 239080
+    },
+    {
+      "observation_date": "2022-06-07",
+      "noncommercial_long": 18466,
+      "noncommercial_short": 110112,
+      "net_contracts": -91646,
+      "open_interest": 266054
+    },
+    {
+      "observation_date": "2022-06-14",
+      "noncommercial_long": 32441,
+      "noncommercial_short": 102196,
+      "net_contracts": -69755,
+      "open_interest": 232513
+    },
+    {
+      "observation_date": "2022-06-21",
+      "noncommercial_long": 35864,
+      "noncommercial_short": 94318,
+      "net_contracts": -58454,
+      "open_interest": 218076
+    },
+    {
+      "observation_date": "2022-06-28",
+      "noncommercial_long": 36462,
+      "noncommercial_short": 89032,
+      "net_contracts": -52570,
+      "open_interest": 213767
+    },
+    {
+      "observation_date": "2022-07-05",
+      "noncommercial_long": 38660,
+      "noncommercial_short": 93105,
+      "net_contracts": -54445,
+      "open_interest": 217672
+    },
+    {
+      "observation_date": "2022-07-12",
+      "noncommercial_long": 35533,
+      "noncommercial_short": 95531,
+      "net_contracts": -59998,
+      "open_interest": 223539
+    },
+    {
+      "observation_date": "2022-07-19",
+      "noncommercial_long": 42880,
+      "noncommercial_short": 102105,
+      "net_contracts": -59225,
+      "open_interest": 229449
+    },
+    {
+      "observation_date": "2022-07-26",
+      "noncommercial_long": 43812,
+      "noncommercial_short": 105293,
+      "net_contracts": -61481,
+      "open_interest": 229219
+    },
+    {
+      "observation_date": "2022-08-02",
+      "noncommercial_long": 50433,
+      "noncommercial_short": 93186,
+      "net_contracts": -42753,
+      "open_interest": 236737
+    },
+    {
+      "observation_date": "2022-08-09",
+      "noncommercial_long": 52333,
+      "noncommercial_short": 77365,
+      "net_contracts": -25032,
+      "open_interest": 225834
+    },
+    {
+      "observation_date": "2022-08-16",
+      "noncommercial_long": 51308,
+      "noncommercial_short": 80199,
+      "net_contracts": -28891,
+      "open_interest": 228697
+    },
+    {
+      "observation_date": "2022-08-23",
+      "noncommercial_long": 56734,
+      "noncommercial_short": 95541,
+      "net_contracts": -38807,
+      "open_interest": 242132
+    },
+    {
+      "observation_date": "2022-08-30",
+      "noncommercial_long": 54513,
+      "noncommercial_short": 96044,
+      "net_contracts": -41531,
+      "open_interest": 247030
+    },
+    {
+      "observation_date": "2022-09-06",
+      "noncommercial_long": 56002,
+      "noncommercial_short": 114191,
+      "net_contracts": -58189,
+      "open_interest": 281266
+    },
+    {
+      "observation_date": "2022-09-13",
+      "noncommercial_long": 39323,
+      "noncommercial_short": 120015,
+      "net_contracts": -80692,
+      "open_interest": 281716
+    },
+    {
+      "observation_date": "2022-09-20",
+      "noncommercial_long": 34767,
+      "noncommercial_short": 116047,
+      "net_contracts": -81280,
+      "open_interest": 250892
+    },
+    {
+      "observation_date": "2022-09-27",
+      "noncommercial_long": 22706,
+      "noncommercial_short": 105262,
+      "net_contracts": -82556,
+      "open_interest": 244655
+    },
+    {
+      "observation_date": "2022-10-04",
+      "noncommercial_long": 26962,
+      "noncommercial_short": 108585,
+      "net_contracts": -81623,
+      "open_interest": 243289
+    },
+    {
+      "observation_date": "2022-10-11",
+      "noncommercial_long": 30149,
+      "noncommercial_short": 107542,
+      "net_contracts": -77393,
+      "open_interest": 245007
+    },
+    {
+      "observation_date": "2022-10-18",
+      "noncommercial_long": 30583,
+      "noncommercial_short": 124919,
+      "net_contracts": -94336,
+      "open_interest": 264265
+    },
+    {
+      "observation_date": "2022-10-25",
+      "noncommercial_long": 37579,
+      "noncommercial_short": 140197,
+      "net_contracts": -102618,
+      "open_interest": 272597
+    },
+    {
+      "observation_date": "2022-11-01",
+      "noncommercial_long": 40460,
+      "noncommercial_short": 118080,
+      "net_contracts": -77620,
+      "open_interest": 258906
+    },
+    {
+      "observation_date": "2022-11-08",
+      "noncommercial_long": 37201,
+      "noncommercial_short": 112459,
+      "net_contracts": -75258,
+      "open_interest": 251378
+    },
+    {
+      "observation_date": "2022-11-15",
+      "noncommercial_long": 33797,
+      "noncommercial_short": 99639,
+      "net_contracts": -65842,
+      "open_interest": 233346
+    },
+    {
+      "observation_date": "2022-11-22",
+      "noncommercial_long": 30800,
+      "noncommercial_short": 95650,
+      "net_contracts": -64850,
+      "open_interest": 227435
+    },
+    {
+      "observation_date": "2022-11-29",
+      "noncommercial_long": 28125,
+      "noncommercial_short": 95519,
+      "net_contracts": -67394,
+      "open_interest": 228328
+    },
+    {
+      "observation_date": "2022-12-06",
+      "noncommercial_long": 23589,
+      "noncommercial_short": 89585,
+      "net_contracts": -65996,
+      "open_interest": 223424
+    },
+    {
+      "observation_date": "2022-12-13",
+      "noncommercial_long": 22290,
+      "noncommercial_short": 75478,
+      "net_contracts": -53188,
+      "open_interest": 226964
+    },
+    {
+      "observation_date": "2022-12-20",
+      "noncommercial_long": 33686,
+      "noncommercial_short": 74567,
+      "net_contracts": -40881,
+      "open_interest": 182034
+    },
+    {
+      "observation_date": "2022-12-27",
+      "noncommercial_long": 29685,
+      "noncommercial_short": 67415,
+      "net_contracts": -37730,
+      "open_interest": 173136
+    },
+    {
+      "observation_date": "2023-01-03",
+      "noncommercial_long": 25377,
+      "noncommercial_short": 72241,
+      "net_contracts": -46864,
+      "open_interest": 172590
+    },
+    {
+      "observation_date": "2023-01-10",
+      "noncommercial_long": 26395,
+      "noncommercial_short": 61772,
+      "net_contracts": -35377,
+      "open_interest": 175745
+    },
+    {
+      "observation_date": "2023-01-17",
+      "noncommercial_long": 29458,
+      "noncommercial_short": 52419,
+      "net_contracts": -22961,
+      "open_interest": 176862
+    },
+    {
+      "observation_date": "2023-01-24",
+      "noncommercial_long": 27620,
+      "noncommercial_short": 49255,
+      "net_contracts": -21635,
+      "open_interest": 173321
+    },
+    {
+      "observation_date": "2023-01-31",
+      "noncommercial_long": 22550,
+      "noncommercial_short": 42610,
+      "net_contracts": -20060,
+      "open_interest": 168540
+    },
+    {
+      "observation_date": "2023-02-07",
+      "noncommercial_long": 16556,
+      "noncommercial_short": 45645,
+      "net_contracts": -29089,
+      "open_interest": 164069
+    },
+    {
+      "observation_date": "2023-02-14",
+      "noncommercial_long": 23079,
+      "noncommercial_short": 50922,
+      "net_contracts": -27843,
+      "open_interest": 174955
+    },
+    {
+      "observation_date": "2023-02-21",
+      "noncommercial_long": 32486,
+      "noncommercial_short": 66515,
+      "net_contracts": -34029,
+      "open_interest": 186100
+    },
+    {
+      "observation_date": "2023-02-28",
+      "noncommercial_long": 27703,
+      "noncommercial_short": 86381,
+      "net_contracts": -58678,
+      "open_interest": 200047
+    },
+    {
+      "observation_date": "2023-03-07",
+      "noncommercial_long": 17141,
+      "noncommercial_short": 92444,
+      "net_contracts": -75303,
+      "open_interest": 211297
+    },
+    {
+      "observation_date": "2023-03-14",
+      "noncommercial_long": 11048,
+      "noncommercial_short": 85842,
+      "net_contracts": -74794,
+      "open_interest": 179782
+    },
+    {
+      "observation_date": "2023-03-21",
+      "noncommercial_long": 7255,
+      "noncommercial_short": 73600,
+      "net_contracts": -66345,
+      "open_interest": 169188
+    },
+    {
+      "observation_date": "2023-03-28",
+      "noncommercial_long": 9717,
+      "noncommercial_short": 63692,
+      "net_contracts": -53975,
+      "open_interest": 169473
+    },
+    {
+      "observation_date": "2023-04-04",
+      "noncommercial_long": 11523,
+      "noncommercial_short": 68559,
+      "net_contracts": -57036,
+      "open_interest": 178828
+    },
+    {
+      "observation_date": "2023-04-11",
+      "noncommercial_long": 11933,
+      "noncommercial_short": 69140,
+      "net_contracts": -57207,
+      "open_interest": 176822
+    },
+    {
+      "observation_date": "2023-04-18",
+      "noncommercial_long": 15661,
+      "noncommercial_short": 72530,
+      "net_contracts": -56869,
+      "open_interest": 177507
+    },
+    {
+      "observation_date": "2023-04-25",
+      "noncommercial_long": 13680,
+      "noncommercial_short": 82424,
+      "net_contracts": -68744,
+      "open_interest": 184041
+    },
+    {
+      "observation_date": "2023-05-02",
+      "noncommercial_long": 28088,
+      "noncommercial_short": 96412,
+      "net_contracts": -68324,
+      "open_interest": 202996
+    },
+    {
+      "observation_date": "2023-05-09",
+      "noncommercial_long": 22229,
+      "noncommercial_short": 83244,
+      "net_contracts": -61015,
+      "open_interest": 192574
+    },
+    {
+      "observation_date": "2023-05-16",
+      "noncommercial_long": 29494,
+      "noncommercial_short": 94285,
+      "net_contracts": -64791,
+      "open_interest": 200515
+    },
+    {
+      "observation_date": "2023-05-23",
+      "noncommercial_long": 36760,
+      "noncommercial_short": 117420,
+      "net_contracts": -80660,
+      "open_interest": 226400
+    },
+    {
+      "observation_date": "2023-05-30",
+      "noncommercial_long": 40736,
+      "noncommercial_short": 136929,
+      "net_contracts": -96193,
+      "open_interest": 243237
+    },
+    {
+      "observation_date": "2023-06-06",
+      "noncommercial_long": 34151,
+      "noncommercial_short": 138968,
+      "net_contracts": -104817,
+      "open_interest": 245332
+    },
+    {
+      "observation_date": "2023-06-13",
+      "noncommercial_long": 37088,
+      "noncommercial_short": 141064,
+      "net_contracts": -103976,
+      "open_interest": 252566
+    },
+    {
+      "observation_date": "2023-06-20",
+      "noncommercial_long": 32244,
+      "noncommercial_short": 139900,
+      "net_contracts": -107656,
+      "open_interest": 238556
+    },
+    {
+      "observation_date": "2023-06-27",
+      "noncommercial_long": 38018,
+      "noncommercial_short": 150888,
+      "net_contracts": -112870,
+      "open_interest": 251524
+    },
+    {
+      "observation_date": "2023-07-03",
+      "noncommercial_long": 41713,
+      "noncommercial_short": 159633,
+      "net_contracts": -117920,
+      "open_interest": 265066
+    },
+    {
+      "observation_date": "2023-07-11",
+      "noncommercial_long": 29838,
+      "noncommercial_short": 147020,
+      "net_contracts": -117182,
+      "open_interest": 252349
+    },
+    {
+      "observation_date": "2023-07-18",
+      "noncommercial_long": 29776,
+      "noncommercial_short": 120015,
+      "net_contracts": -90239,
+      "open_interest": 230932
+    },
+    {
+      "observation_date": "2023-07-25",
+      "noncommercial_long": 30358,
+      "noncommercial_short": 108110,
+      "net_contracts": -77752,
+      "open_interest": 223760
+    },
+    {
+      "observation_date": "2023-08-01",
+      "noncommercial_long": 26849,
+      "noncommercial_short": 106065,
+      "net_contracts": -79216,
+      "open_interest": 229015
+    },
+    {
+      "observation_date": "2023-08-08",
+      "noncommercial_long": 23135,
+      "noncommercial_short": 106315,
+      "net_contracts": -83180,
+      "open_interest": 229849
+    },
+    {
+      "observation_date": "2023-08-15",
+      "noncommercial_long": 34789,
+      "noncommercial_short": 115750,
+      "net_contracts": -80961,
+      "open_interest": 247954
+    },
+    {
+      "observation_date": "2023-08-22",
+      "noncommercial_long": 28680,
+      "noncommercial_short": 124003,
+      "net_contracts": -95323,
+      "open_interest": 246923
+    },
+    {
+      "observation_date": "2023-08-29",
+      "noncommercial_long": 24790,
+      "noncommercial_short": 123263,
+      "net_contracts": -98473,
+      "open_interest": 245452
+    },
+    {
+      "observation_date": "2023-09-05",
+      "noncommercial_long": 37014,
+      "noncommercial_short": 134150,
+      "net_contracts": -97136,
+      "open_interest": 268344
+    },
+    {
+      "observation_date": "2023-09-12",
+      "noncommercial_long": 38247,
+      "noncommercial_short": 136960,
+      "net_contracts": -98713,
+      "open_interest": 270854
+    },
+    {
+      "observation_date": "2023-09-19",
+      "noncommercial_long": 45737,
+      "noncommercial_short": 147356,
+      "net_contracts": -101619,
+      "open_interest": 265860
+    },
+    {
+      "observation_date": "2023-09-26",
+      "noncommercial_long": 46169,
+      "noncommercial_short": 155681,
+      "net_contracts": -109512,
+      "open_interest": 285974
+    },
+    {
+      "observation_date": "2023-10-03",
+      "noncommercial_long": 47544,
+      "noncommercial_short": 161532,
+      "net_contracts": -113988,
+      "open_interest": 282682
+    },
+    {
+      "observation_date": "2023-10-10",
+      "noncommercial_long": 36780,
+      "noncommercial_short": 136256,
+      "net_contracts": -99476,
+      "open_interest": 259937
+    },
+    {
+      "observation_date": "2023-10-17",
+      "noncommercial_long": 33139,
+      "noncommercial_short": 135797,
+      "net_contracts": -102658,
+      "open_interest": 267521
+    },
+    {
+      "observation_date": "2023-10-24",
+      "noncommercial_long": 30964,
+      "noncommercial_short": 130593,
+      "net_contracts": -99629,
+      "open_interest": 260909
+    },
+    {
+      "observation_date": "2023-10-31",
+      "noncommercial_long": 37641,
+      "noncommercial_short": 141489,
+      "net_contracts": -103848,
+      "open_interest": 277272
+    },
+    {
+      "observation_date": "2023-11-07",
+      "noncommercial_long": 27238,
+      "noncommercial_short": 131278,
+      "net_contracts": -104040,
+      "open_interest": 259698
+    },
+    {
+      "observation_date": "2023-11-14",
+      "noncommercial_long": 27772,
+      "noncommercial_short": 158021,
+      "net_contracts": -130249,
+      "open_interest": 273763
+    },
+    {
+      "observation_date": "2023-11-21",
+      "noncommercial_long": 39236,
+      "noncommercial_short": 144690,
+      "net_contracts": -105454,
+      "open_interest": 264903
+    },
+    {
+      "observation_date": "2023-11-28",
+      "noncommercial_long": 30461,
+      "noncommercial_short": 139698,
+      "net_contracts": -109237,
+      "open_interest": 260781
+    },
+    {
+      "observation_date": "2023-12-05",
+      "noncommercial_long": 28266,
+      "noncommercial_short": 133222,
+      "net_contracts": -104956,
+      "open_interest": 267482
+    },
+    {
+      "observation_date": "2023-12-12",
+      "noncommercial_long": 28226,
+      "noncommercial_short": 109357,
+      "net_contracts": -81131,
+      "open_interest": 257581
+    },
+    {
+      "observation_date": "2023-12-19",
+      "noncommercial_long": 31734,
+      "noncommercial_short": 96636,
+      "net_contracts": -64902,
+      "open_interest": 185940
+    },
+    {
+      "observation_date": "2023-12-26",
+      "noncommercial_long": 37321,
+      "noncommercial_short": 92889,
+      "net_contracts": -55568,
+      "open_interest": 188540
+    },
+    {
+      "observation_date": "2024-01-02",
+      "noncommercial_long": 33585,
+      "noncommercial_short": 90780,
+      "net_contracts": -57195,
+      "open_interest": 184042
+    },
+    {
+      "observation_date": "2024-01-09",
+      "noncommercial_long": 41364,
+      "noncommercial_short": 97313,
+      "net_contracts": -55949,
+      "open_interest": 200299
+    },
+    {
+      "observation_date": "2024-01-16",
+      "noncommercial_long": 44180,
+      "noncommercial_short": 100740,
+      "net_contracts": -56560,
+      "open_interest": 213309
+    },
+    {
+      "observation_date": "2024-01-23",
+      "noncommercial_long": 52585,
+      "noncommercial_short": 123230,
+      "net_contracts": -70645,
+      "open_interest": 243032
+    },
+    {
+      "observation_date": "2024-01-30",
+      "noncommercial_long": 44918,
+      "noncommercial_short": 125373,
+      "net_contracts": -80455,
+      "open_interest": 242029
+    },
+    {
+      "observation_date": "2024-02-06",
+      "noncommercial_long": 55646,
+      "noncommercial_short": 139876,
+      "net_contracts": -84230,
+      "open_interest": 259542
+    },
+    {
+      "observation_date": "2024-02-13",
+      "noncommercial_long": 58554,
+      "noncommercial_short": 170090,
+      "net_contracts": -111536,
+      "open_interest": 304592
+    },
+    {
+      "observation_date": "2024-02-20",
+      "noncommercial_long": 53862,
+      "noncommercial_short": 174640,
+      "net_contracts": -120778,
+      "open_interest": 305438
+    },
+    {
+      "observation_date": "2024-02-27",
+      "noncommercial_long": 51261,
+      "noncommercial_short": 183966,
+      "net_contracts": -132705,
+      "open_interest": 309633
+    },
+    {
+      "observation_date": "2024-03-05",
+      "noncommercial_long": 54671,
+      "noncommercial_short": 173514,
+      "net_contracts": -118843,
+      "open_interest": 314586
+    },
+    {
+      "observation_date": "2024-03-12",
+      "noncommercial_long": 54923,
+      "noncommercial_short": 157245,
+      "net_contracts": -102322,
+      "open_interest": 325675
+    },
+    {
+      "observation_date": "2024-03-19",
+      "noncommercial_long": 66274,
+      "noncommercial_short": 182286,
+      "net_contracts": -116012,
+      "open_interest": 302500
+    },
+    {
+      "observation_date": "2024-03-26",
+      "noncommercial_long": 59969,
+      "noncommercial_short": 189075,
+      "net_contracts": -129106,
+      "open_interest": 305701
+    },
+    {
+      "observation_date": "2024-04-02",
+      "noncommercial_long": 55190,
+      "noncommercial_short": 198420,
+      "net_contracts": -143230,
+      "open_interest": 316809
+    },
+    {
+      "observation_date": "2024-04-09",
+      "noncommercial_long": 47275,
+      "noncommercial_short": 209426,
+      "net_contracts": -162151,
+      "open_interest": 324479
+    },
+    {
+      "observation_date": "2024-04-16",
+      "noncommercial_long": 49463,
+      "noncommercial_short": 215082,
+      "net_contracts": -165619,
+      "open_interest": 331110
+    },
+    {
+      "observation_date": "2024-04-23",
+      "noncommercial_long": 42426,
+      "noncommercial_short": 222345,
+      "net_contracts": -179919,
+      "open_interest": 336167
+    },
+    {
+      "observation_date": "2024-04-30",
+      "noncommercial_long": 40435,
+      "noncommercial_short": 208823,
+      "net_contracts": -168388,
+      "open_interest": 334848
+    },
+    {
+      "observation_date": "2024-05-07",
+      "noncommercial_long": 34990,
+      "noncommercial_short": 169912,
+      "net_contracts": -134922,
+      "open_interest": 299859
+    },
+    {
+      "observation_date": "2024-05-14",
+      "noncommercial_long": 35303,
+      "noncommercial_short": 161485,
+      "net_contracts": -126182,
+      "open_interest": 297606
+    },
+    {
+      "observation_date": "2024-05-21",
+      "noncommercial_long": 29614,
+      "noncommercial_short": 173981,
+      "net_contracts": -144367,
+      "open_interest": 301315
+    },
+    {
+      "observation_date": "2024-05-28",
+      "noncommercial_long": 28565,
+      "noncommercial_short": 184604,
+      "net_contracts": -156039,
+      "open_interest": 325231
+    },
+    {
+      "observation_date": "2024-06-04",
+      "noncommercial_long": 40427,
+      "noncommercial_short": 172528,
+      "net_contracts": -132101,
+      "open_interest": 303009
+    },
+    {
+      "observation_date": "2024-06-11",
+      "noncommercial_long": 30763,
+      "noncommercial_short": 169342,
+      "net_contracts": -138579,
+      "open_interest": 319274
+    },
+    {
+      "observation_date": "2024-06-18",
+      "noncommercial_long": 29429,
+      "noncommercial_short": 177182,
+      "net_contracts": -147753,
+      "open_interest": 297117
+    },
+    {
+      "observation_date": "2024-06-25",
+      "noncommercial_long": 34576,
+      "noncommercial_short": 208476,
+      "net_contracts": -173900,
+      "open_interest": 340237
+    },
+    {
+      "observation_date": "2024-07-02",
+      "noncommercial_long": 36714,
+      "noncommercial_short": 220937,
+      "net_contracts": -184223,
+      "open_interest": 349817
+    },
+    {
+      "observation_date": "2024-07-09",
+      "noncommercial_long": 41521,
+      "noncommercial_short": 223554,
+      "net_contracts": -182033,
+      "open_interest": 348954
+    },
+    {
+      "observation_date": "2024-07-16",
+      "noncommercial_long": 47356,
+      "noncommercial_short": 198428,
+      "net_contracts": -151072,
+      "open_interest": 307205
+    },
+    {
+      "observation_date": "2024-07-23",
+      "noncommercial_long": 64390,
+      "noncommercial_short": 171498,
+      "net_contracts": -107108,
+      "open_interest": 307183
+    },
+    {
+      "observation_date": "2024-07-30",
+      "noncommercial_long": 65016,
+      "noncommercial_short": 138476,
+      "net_contracts": -73460,
+      "open_interest": 303151
+    },
+    {
+      "observation_date": "2024-08-06",
+      "noncommercial_long": 66169,
+      "noncommercial_short": 77523,
+      "net_contracts": -11354,
+      "open_interest": 298937
+    },
+    {
+      "observation_date": "2024-08-13",
+      "noncommercial_long": 87101,
+      "noncommercial_short": 63997,
+      "net_contracts": 23104,
+      "open_interest": 315338
+    },
+    {
+      "observation_date": "2024-08-20",
+      "noncommercial_long": 88761,
+      "noncommercial_short": 65176,
+      "net_contracts": 23585,
+      "open_interest": 316197
+    },
+    {
+      "observation_date": "2024-08-27",
+      "noncommercial_long": 84305,
+      "noncommercial_short": 58437,
+      "net_contracts": 25868,
+      "open_interest": 318259
+    },
+    {
+      "observation_date": "2024-09-03",
+      "noncommercial_long": 91791,
+      "noncommercial_short": 50675,
+      "net_contracts": 41116,
+      "open_interest": 326795
+    },
+    {
+      "observation_date": "2024-09-10",
+      "noncommercial_long": 98894,
+      "noncommercial_short": 43124,
+      "net_contracts": 55770,
+      "open_interest": 376514
+    },
+    {
+      "observation_date": "2024-09-17",
+      "noncommercial_long": 97332,
+      "noncommercial_short": 40492,
+      "net_contracts": 56840,
+      "open_interest": 199463
+    },
+    {
+      "observation_date": "2024-09-24",
+      "noncommercial_long": 104690,
+      "noncommercial_short": 38679,
+      "net_contracts": 66011,
+      "open_interest": 207702
+    },
+    {
+      "observation_date": "2024-10-01",
+      "noncommercial_long": 95513,
+      "noncommercial_short": 38741,
+      "net_contracts": 56772,
+      "open_interest": 196200
+    },
+    {
+      "observation_date": "2024-10-08",
+      "noncommercial_long": 83679,
+      "noncommercial_short": 47151,
+      "net_contracts": 36528,
+      "open_interest": 196685
+    },
+    {
+      "observation_date": "2024-10-15",
+      "noncommercial_long": 86685,
+      "noncommercial_short": 52575,
+      "net_contracts": 34110,
+      "open_interest": 197871
+    },
+    {
+      "observation_date": "2024-10-22",
+      "noncommercial_long": 79364,
+      "noncommercial_short": 66593,
+      "net_contracts": 12771,
+      "open_interest": 207338
+    },
+    {
+      "observation_date": "2024-10-29",
+      "noncommercial_long": 64925,
+      "noncommercial_short": 89742,
+      "net_contracts": -24817,
+      "open_interest": 225894
+    },
+    {
+      "observation_date": "2024-11-05",
+      "noncommercial_long": 60334,
+      "noncommercial_short": 104501,
+      "net_contracts": -44167,
+      "open_interest": 235762
+    },
+    {
+      "observation_date": "2024-11-12",
+      "noncommercial_long": 64038,
+      "noncommercial_short": 128940,
+      "net_contracts": -64902,
+      "open_interest": 257688
+    },
+    {
+      "observation_date": "2024-11-19",
+      "noncommercial_long": 78973,
+      "noncommercial_short": 125841,
+      "net_contracts": -46868,
+      "open_interest": 254087
+    },
+    {
+      "observation_date": "2024-11-26",
+      "noncommercial_long": 87597,
+      "noncommercial_short": 110230,
+      "net_contracts": -22633,
+      "open_interest": 253566
+    },
+    {
+      "observation_date": "2024-12-03",
+      "noncommercial_long": 93622,
+      "noncommercial_short": 91288,
+      "net_contracts": 2334,
+      "open_interest": 256849
+    },
+    {
+      "observation_date": "2024-12-10",
+      "noncommercial_long": 97938,
+      "noncommercial_short": 72186,
+      "net_contracts": 25752,
+      "open_interest": 274834
+    },
+    {
+      "observation_date": "2024-12-17",
+      "noncommercial_long": 87208,
+      "noncommercial_short": 81247,
+      "net_contracts": 5961,
+      "open_interest": 181673
+    },
+    {
+      "observation_date": "2024-12-24",
+      "noncommercial_long": 95958,
+      "noncommercial_short": 93647,
+      "net_contracts": 2311,
+      "open_interest": 200720
+    },
+    {
+      "observation_date": "2024-12-31",
+      "noncommercial_long": 96119,
+      "noncommercial_short": 104562,
+      "net_contracts": -8443,
+      "open_interest": 206971
+    },
+    {
+      "observation_date": "2025-01-07",
+      "noncommercial_long": 91206,
+      "noncommercial_short": 111395,
+      "net_contracts": -20189,
+      "open_interest": 212456
+    },
+    {
+      "observation_date": "2025-01-14",
+      "noncommercial_long": 91434,
+      "noncommercial_short": 120845,
+      "net_contracts": -29411,
+      "open_interest": 223952
+    },
+    {
+      "observation_date": "2025-01-21",
+      "noncommercial_long": 94157,
+      "noncommercial_short": 108830,
+      "net_contracts": -14673,
+      "open_interest": 211620
+    },
+    {
+      "observation_date": "2025-01-28",
+      "noncommercial_long": 96809,
+      "noncommercial_short": 97768,
+      "net_contracts": -959,
+      "open_interest": 216788
+    },
+    {
+      "observation_date": "2025-02-04",
+      "noncommercial_long": 104684,
+      "noncommercial_short": 85916,
+      "net_contracts": 18768,
+      "open_interest": 231911
+    },
+    {
+      "observation_date": "2025-02-11",
+      "noncommercial_long": 144158,
+      "noncommercial_short": 89543,
+      "net_contracts": 54615,
+      "open_interest": 273314
+    },
+    {
+      "observation_date": "2025-02-18",
+      "noncommercial_long": 147566,
+      "noncommercial_short": 86997,
+      "net_contracts": 60569,
+      "open_interest": 281163
+    },
+    {
+      "observation_date": "2025-02-25",
+      "noncommercial_long": 171751,
+      "noncommercial_short": 75771,
+      "net_contracts": 95980,
+      "open_interest": 329186
+    },
+    {
+      "observation_date": "2025-03-04",
+      "noncommercial_long": 183955,
+      "noncommercial_short": 50304,
+      "net_contracts": 133651,
+      "open_interest": 354415
+    },
+    {
+      "observation_date": "2025-03-11",
+      "noncommercial_long": 176790,
+      "noncommercial_short": 42888,
+      "net_contracts": 133902,
+      "open_interest": 446178
+    },
+    {
+      "observation_date": "2025-03-18",
+      "noncommercial_long": 164752,
+      "noncommercial_short": 41788,
+      "net_contracts": 122964,
+      "open_interest": 296567
+    },
+    {
+      "observation_date": "2025-03-25",
+      "noncommercial_long": 160474,
+      "noncommercial_short": 35098,
+      "net_contracts": 125376,
+      "open_interest": 303778
+    },
+    {
+      "observation_date": "2025-04-01",
+      "noncommercial_long": 161566,
+      "noncommercial_short": 39792,
+      "net_contracts": 121774,
+      "open_interest": 311162
+    },
+    {
+      "observation_date": "2025-04-08",
+      "noncommercial_long": 176555,
+      "noncommercial_short": 29488,
+      "net_contracts": 147067,
+      "open_interest": 320758
+    },
+    {
+      "observation_date": "2025-04-15",
+      "noncommercial_long": 198560,
+      "noncommercial_short": 26705,
+      "net_contracts": 171855,
+      "open_interest": 338849
+    },
+    {
+      "observation_date": "2025-04-22",
+      "noncommercial_long": 202373,
+      "noncommercial_short": 24559,
+      "net_contracts": 177814,
+      "open_interest": 351226
+    },
+    {
+      "observation_date": "2025-04-29",
+      "noncommercial_long": 202797,
+      "noncommercial_short": 23585,
+      "net_contracts": 179212,
+      "open_interest": 366246
+    },
+    {
+      "observation_date": "2025-05-06",
+      "noncommercial_long": 204008,
+      "noncommercial_short": 27149,
+      "net_contracts": 176859,
+      "open_interest": 375546
+    },
+    {
+      "observation_date": "2025-05-13",
+      "noncommercial_long": 194226,
+      "noncommercial_short": 21958,
+      "net_contracts": 172268,
+      "open_interest": 359521
+    },
+    {
+      "observation_date": "2025-05-20",
+      "noncommercial_long": 194510,
+      "noncommercial_short": 27180,
+      "net_contracts": 167330,
+      "open_interest": 366865
+    },
+    {
+      "observation_date": "2025-05-27",
+      "noncommercial_long": 191802,
+      "noncommercial_short": 27790,
+      "net_contracts": 164012,
+      "open_interest": 377011
+    },
+    {
+      "observation_date": "2025-06-03",
+      "noncommercial_long": 189514,
+      "noncommercial_short": 38365,
+      "net_contracts": 151149,
+      "open_interest": 366008
+    },
+    {
+      "observation_date": "2025-06-10",
+      "noncommercial_long": 184195,
+      "noncommercial_short": 39600,
+      "net_contracts": 144595,
+      "open_interest": 388263
+    },
+    {
+      "observation_date": "2025-06-17",
+      "noncommercial_long": 175601,
+      "noncommercial_short": 44724,
+      "net_contracts": 130877,
+      "open_interest": 317523
+    },
+    {
+      "observation_date": "2025-06-24",
+      "noncommercial_long": 178403,
+      "noncommercial_short": 46126,
+      "net_contracts": 132277,
+      "open_interest": 314767
+    },
+    {
+      "observation_date": "2025-07-01",
+      "noncommercial_long": 170624,
+      "noncommercial_short": 43286,
+      "net_contracts": 127338,
+      "open_interest": 314251
+    },
+    {
+      "observation_date": "2025-07-08",
+      "noncommercial_long": 166192,
+      "noncommercial_short": 50037,
+      "net_contracts": 116155,
+      "open_interest": 308621
+    },
+    {
+      "observation_date": "2025-07-15",
+      "noncommercial_long": 165444,
+      "noncommercial_short": 61862,
+      "net_contracts": 103582,
+      "open_interest": 321350
+    },
+    {
+      "observation_date": "2025-07-22",
+      "noncommercial_long": 164411,
+      "noncommercial_short": 57766,
+      "net_contracts": 106645,
+      "open_interest": 313040
+    },
+    {
+      "observation_date": "2025-07-29",
+      "noncommercial_long": 162122,
+      "noncommercial_short": 72879,
+      "net_contracts": 89243,
+      "open_interest": 329115
+    },
+    {
+      "observation_date": "2025-08-05",
+      "noncommercial_long": 160258,
+      "noncommercial_short": 78252,
+      "net_contracts": 82006,
+      "open_interest": 337378
+    },
+    {
+      "observation_date": "2025-08-12",
+      "noncommercial_long": 164693,
+      "noncommercial_short": 90459,
+      "net_contracts": 74234,
+      "open_interest": 351163
+    },
+    {
+      "observation_date": "2025-08-19",
+      "noncommercial_long": 168363,
+      "noncommercial_short": 90782,
+      "net_contracts": 77581,
+      "open_interest": 348982
+    },
+    {
+      "observation_date": "2025-08-26",
+      "noncommercial_long": 170765,
+      "noncommercial_short": 86281,
+      "net_contracts": 84484,
+      "open_interest": 357366
+    },
+    {
+      "observation_date": "2025-09-02",
+      "noncommercial_long": 174774,
+      "noncommercial_short": 101516,
+      "net_contracts": 73258,
+      "open_interest": 414249
+    },
+    {
+      "observation_date": "2025-09-09",
+      "noncommercial_long": 180724,
+      "noncommercial_short": 89081,
+      "net_contracts": 91643,
+      "open_interest": 410799
+    },
+    {
+      "observation_date": "2025-09-16",
+      "noncommercial_long": 161673,
+      "noncommercial_short": 100262,
+      "net_contracts": 61411,
+      "open_interest": 299620
+    },
+    {
+      "observation_date": "2025-09-23",
+      "noncommercial_long": 176400,
+      "noncommercial_short": 96900,
+      "net_contracts": 79500,
+      "open_interest": 309893
+    },
+    {
+      "observation_date": "2025-09-30",
+      "noncommercial_long": 167811,
+      "noncommercial_short": 106346,
+      "net_contracts": 61465,
+      "open_interest": 305711
+    },
+    {
+      "observation_date": "2025-10-07",
+      "noncommercial_long": 159197,
+      "noncommercial_short": 112890,
+      "net_contracts": 46307,
+      "open_interest": 305134
+    },
+    {
+      "observation_date": "2025-10-14",
+      "noncommercial_long": 160639,
+      "noncommercial_short": 123473,
+      "net_contracts": 37166,
+      "open_interest": 305003
+    },
+    {
+      "observation_date": "2025-10-21",
+      "noncommercial_long": 175724,
+      "noncommercial_short": 105310,
+      "net_contracts": 70414,
+      "open_interest": 307569
+    },
+    {
+      "observation_date": "2025-10-28",
+      "noncommercial_long": 178745,
+      "noncommercial_short": 110630,
+      "net_contracts": 68115,
+      "open_interest": 321889
+    },
+    {
+      "observation_date": "2025-11-04",
+      "noncommercial_long": 170180,
+      "noncommercial_short": 118915,
+      "net_contracts": 51265,
+      "open_interest": 314190
+    },
+    {
+      "observation_date": "2025-11-10",
+      "noncommercial_long": 172349,
+      "noncommercial_short": 123873,
+      "net_contracts": 48476,
+      "open_interest": 312845
+    },
+    {
+      "observation_date": "2025-11-18",
+      "noncommercial_long": 169890,
+      "noncommercial_short": 138733,
+      "net_contracts": 31157,
+      "open_interest": 329456
+    },
+    {
+      "observation_date": "2025-11-25",
+      "noncommercial_long": 169218,
+      "noncommercial_short": 142701,
+      "net_contracts": 26517,
+      "open_interest": 344420
+    },
+    {
+      "observation_date": "2025-12-02",
+      "noncommercial_long": 184958,
+      "noncommercial_short": 148540,
+      "net_contracts": 36418,
+      "open_interest": 394859
+    },
+    {
+      "observation_date": "2025-12-09",
+      "noncommercial_long": 184488,
+      "noncommercial_short": 167040,
+      "net_contracts": 17448,
+      "open_interest": 465416
+    },
+    {
+      "observation_date": "2025-12-16",
+      "noncommercial_long": 146275,
+      "noncommercial_short": 149217,
+      "net_contracts": -2942,
+      "open_interest": 379679
+    },
+    {
+      "observation_date": "2025-12-23",
+      "noncommercial_long": 141133,
+      "noncommercial_short": 139910,
+      "net_contracts": 1223,
+      "open_interest": 285084
+    },
+    {
+      "observation_date": "2025-12-30",
+      "noncommercial_long": 144596,
+      "noncommercial_short": 130528,
+      "net_contracts": 14068,
+      "open_interest": 286132
+    },
+    {
+      "observation_date": "2026-01-06",
+      "noncommercial_long": 140441,
+      "noncommercial_short": 131626,
+      "net_contracts": 8815,
+      "open_interest": 287715
+    },
+    {
+      "observation_date": "2026-01-13",
+      "noncommercial_long": 111743,
+      "noncommercial_short": 156907,
+      "net_contracts": -45164,
+      "open_interest": 294242
+    },
+    {
+      "observation_date": "2026-01-20",
+      "noncommercial_long": 107139,
+      "noncommercial_short": 151968,
+      "net_contracts": -44829,
+      "open_interest": 292607
+    },
+    {
+      "observation_date": "2026-01-27",
+      "noncommercial_long": 104460,
+      "noncommercial_short": 138393,
+      "net_contracts": -33933,
+      "open_interest": 300726
+    },
+    {
+      "observation_date": "2026-02-03",
+      "noncommercial_long": 114428,
+      "noncommercial_short": 133650,
+      "net_contracts": -19222,
+      "open_interest": 303673
+    },
+    {
+      "observation_date": "2026-02-10",
+      "noncommercial_long": 128090,
+      "noncommercial_short": 147196,
+      "net_contracts": -19106,
+      "open_interest": 334948
+    },
+    {
+      "observation_date": "2026-02-17",
+      "noncommercial_long": 143172,
+      "noncommercial_short": 130217,
+      "net_contracts": 12955,
+      "open_interest": 354328
+    },
+    {
+      "observation_date": "2026-02-24",
+      "noncommercial_long": 149364,
+      "noncommercial_short": 137825,
+      "net_contracts": 11539,
+      "open_interest": 369721
+    },
+    {
+      "observation_date": "2026-03-03",
+      "noncommercial_long": 134945,
+      "noncommercial_short": 151520,
+      "net_contracts": -16575,
+      "open_interest": 416977
+    },
+    {
+      "observation_date": "2026-03-10",
+      "noncommercial_long": 119411,
+      "noncommercial_short": 160798,
+      "net_contracts": -41387,
+      "open_interest": 427718
+    },
+    {
+      "observation_date": "2026-03-17",
+      "noncommercial_long": 106819,
+      "noncommercial_short": 174599,
+      "net_contracts": -67780,
+      "open_interest": 326688
+    },
+    {
+      "observation_date": "2026-03-24",
+      "noncommercial_long": 98271,
+      "noncommercial_short": 161077,
+      "net_contracts": -62806,
+      "open_interest": 328210
+    },
+    {
+      "observation_date": "2026-03-31",
+      "noncommercial_long": 95356,
+      "noncommercial_short": 168228,
+      "net_contracts": -72872,
+      "open_interest": 345276
+    },
+    {
+      "observation_date": "2026-04-07",
+      "noncommercial_long": 91560,
+      "noncommercial_short": 185302,
+      "net_contracts": -93742,
+      "open_interest": 349373
+    },
+    {
+      "observation_date": "2026-04-14",
+      "noncommercial_long": 102114,
+      "noncommercial_short": 185322,
+      "net_contracts": -83208,
+      "open_interest": 354344
+    },
+    {
+      "observation_date": "2026-04-21",
+      "noncommercial_long": 101386,
+      "noncommercial_short": 195846,
+      "net_contracts": -94460,
+      "open_interest": 351782
+    },
+    {
+      "observation_date": "2026-04-28",
+      "noncommercial_long": 106530,
+      "noncommercial_short": 208589,
+      "net_contracts": -102059,
+      "open_interest": 372780
+    },
+    {
+      "observation_date": "2026-05-05",
+      "noncommercial_long": 109035,
+      "noncommercial_short": 170773,
+      "net_contracts": -61738,
+      "open_interest": 354005
+    },
+    {
+      "observation_date": "2026-05-12",
+      "noncommercial_long": 100155,
+      "noncommercial_short": 175257,
+      "net_contracts": -75102,
+      "open_interest": 362042
+    },
+    {
+      "observation_date": "2026-05-19",
+      "noncommercial_long": 106603,
+      "noncommercial_short": 200508,
+      "net_contracts": -93905,
+      "open_interest": 396573
+    },
+    {
+      "observation_date": "2026-05-26",
+      "noncommercial_long": 112993,
+      "noncommercial_short": 227660,
+      "net_contracts": -114667,
+      "open_interest": 427294
+    },
+    {
+      "observation_date": "2026-06-02",
+      "noncommercial_long": 114849,
+      "noncommercial_short": 244416,
+      "net_contracts": -129567,
+      "open_interest": 505555
+    },
+    {
+      "observation_date": "2026-06-09",
+      "noncommercial_long": 121520,
+      "noncommercial_short": 267338,
+      "net_contracts": -145818,
+      "open_interest": 505075
+    },
+    {
+      "observation_date": "2026-06-16",
+      "noncommercial_long": 117375,
+      "noncommercial_short": 267507,
+      "net_contracts": -150132,
+      "open_interest": 520825
+    },
+    {
+      "observation_date": "2026-06-23",
+      "noncommercial_long": 113698,
+      "noncommercial_short": 259802,
+      "net_contracts": -146104,
+      "open_interest": 431030
+    },
+    {
+      "observation_date": "2026-06-30",
+      "noncommercial_long": 111872,
+      "noncommercial_short": 266964,
+      "net_contracts": -155092,
+      "open_interest": 438825
+    },
+    {
+      "observation_date": "2026-07-07",
+      "noncommercial_long": 112247,
+      "noncommercial_short": 236025,
+      "net_contracts": -123778,
+      "open_interest": 398103
+    },
+    {
+      "observation_date": "2026-07-14",
+      "noncommercial_long": 115965,
+      "noncommercial_short": 238628,
+      "net_contracts": -122663,
+      "open_interest": 396514
+    },
+    {
+      "observation_date": "2026-07-21",
+      "noncommercial_long": 107590,
+      "noncommercial_short": 259715,
+      "net_contracts": -152125,
+      "open_interest": 423796
+    },
+    {
+      "observation_date": "2026-07-28",
+      "noncommercial_long": 101271,
+      "noncommercial_short": 264683,
+      "net_contracts": -163412,
+      "open_interest": 432366
+    },
+    {
+      "observation_date": "2026-08-04",
+      "noncommercial_long": 147228,
+      "noncommercial_short": 192701,
+      "net_contracts": -45473,
+      "open_interest": 419393
+    },
+    {
+      "observation_date": "2026-08-11",
+      "noncommercial_long": 134188,
+      "noncommercial_short": 176273,
+      "net_contracts": -42085,
+      "open_interest": 391874
+    },
+    {
+      "observation_date": "2026-08-18",
+      "noncommercial_long": 128932,
+      "noncommercial_short": 181825,
+      "net_contracts": -52893,
+      "open_interest": 380811
+    },
+    {
+      "observation_date": "2026-08-25",
+      "noncommercial_long": 128340,
+      "noncommercial_short": 191638,
+      "net_contracts": -63298,
+      "open_interest": 384216
+    },
+    {
+      "observation_date": "2026-09-01",
+      "noncommercial_long": 117169,
+      "noncommercial_short": 209396,
+      "net_contracts": -92227,
+      "open_interest": 411882
+    },
+    {
+      "observation_date": "2026-09-08",
+      "noncommercial_long": 178791,
+      "noncommercial_short": 167995,
+      "net_contracts": 10796,
+      "open_interest": 499635
+    },
+    {
+      "observation_date": "2026-09-15",
+      "noncommercial_long": 237951,
+      "noncommercial_short": 117592,
+      "net_contracts": 120359,
+      "open_interest": 542802
+    },
+    {
+      "observation_date": "2026-09-22",
+      "noncommercial_long": 192274,
+      "noncommercial_short": 120292,
+      "net_contracts": 71982,
+      "open_interest": 378701
+    },
+    {
+      "observation_date": "2026-09-29",
+      "noncommercial_long": 176266,
+      "noncommercial_short": 120826,
+      "net_contracts": 55440,
+      "open_interest": 360720
+    },
+    {
+      "observation_date": "2026-10-06",
+      "noncommercial_long": 190368,
+      "noncommercial_short": 128043,
+      "net_contracts": 62325,
+      "open_interest": 368138
+    },
+    {
+      "observation_date": "2026-10-13",
+      "noncommercial_long": 191256,
+      "noncommercial_short": 141049,
+      "net_contracts": 50207,
+      "open_interest": 373502
+    },
+    {
+      "observation_date": "2026-10-20",
+      "noncommercial_long": 200186,
+      "noncommercial_short": 130308,
+      "net_contracts": 69878,
+      "open_interest": 379141
+    }
+  ]
+}

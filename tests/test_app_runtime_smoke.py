@@ -28,7 +28,7 @@ class DashboardBootSmoke(unittest.TestCase):
             second = AppTest.from_file(str(app), default_timeout=90).run()
         self.assertFalse(first.exception)
         self.assertFalse(second.exception)
-        self.assertEqual(len(second.get('button_group')), 17)
+        self.assertEqual(len(second.get('button_group')), 18)
         self.assertGreaterEqual(len(chart_specs(second)), 8)
         self.assertEqual(chart_specs(first), chart_specs(second))
 
@@ -42,7 +42,7 @@ class DashboardBootSmoke(unittest.TestCase):
             msg="Streamlit app crashed during full script execution: "
                 + "; ".join(str(error.message) for error in instance.exception),
         )
-        self.assertEqual(len(instance.get("button_group")), 17)
+        self.assertEqual(len(instance.get("button_group")), 18)
         specs = chart_specs(instance)
         # AppTest does not execute browser JavaScript. This assertion proves
         # the real Streamlit renderer emitted native chart messages, rather
@@ -78,6 +78,12 @@ class DashboardBootSmoke(unittest.TestCase):
             self.assertIn(name, risk_series)
             self.assertTrue(any(point[1] is not None for point in risk_series[name]["data"]))
         self.assertNotIn("Rebased", spec_text)
+        carry = next(json.loads(spec) for spec in specs if 'JPY 20-session appreciation (R2)' in spec)
+        self.assertEqual(len(carry["yAxis"]), 4)
+        self.assertEqual([series["name"] for series in carry["series"]],
+                         ["US−Japan 2Y spread", "USD/JPY (R1)", "JPY 20-session appreciation (R2)", "CFTC JPY speculative net (R3)"])
+        self.assertEqual([series["yAxisIndex"] for series in carry["series"]], [0, 1, 2, 3])
+        self.assertTrue(all(any(point[1] is not None for point in series["data"]) for series in carry["series"]))
         self.assertNotIn("起点100", spec_text)
 
 

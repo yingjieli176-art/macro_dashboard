@@ -44,6 +44,7 @@ class ReleaseAcceptance(unittest.TestCase):
             ns[f'build_fig{number}'] = builder
         ns['build_fig14'] = builder
         ns['build_fig15'] = builder
+        ns['build_fig16'] = builder
         ns['_cached_macro_figure'].clear()
         self.addCleanup(ns['_cached_macro_figure'].clear)
         first = ns['_cached_macro_figure'](1, (), 'cache-sample-regression')

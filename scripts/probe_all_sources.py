@@ -243,13 +243,13 @@ def jobs():
         output.append((key, charts, cadence, stored, fetch))
     for symbol, charts in {
         "IORB": [1], "RRPONTSYAWARD": [1], "EFFR": [1], "SOFR": [1],
-        "DGS3MO": [3], "DGS2": [3], "DGS10": [2,3], "DGS30": [3], "DFII5": [2,13], "DFII10": [2], "T10YIE": [2],
+        "DGS3MO": [3], "DGS2": [3,18], "DGS10": [2,3], "DGS30": [3], "DFII5": [2,13], "DFII10": [2], "T10YIE": [2],
         "WALCL": [4], "WRESBAL": [4], "RRPONTSYD": [4], "VIXCLS": [9,10], "VXVCLS": [10], "SP500": [9], "GVZCLS": [15],
     }.items():
         add(symbol, charts, "weekly" if symbol in ("WALCL", "WRESBAL") else "daily",
             snapshot(f"fred_cache/{symbol}.json", "date", "value"), lambda symbol=symbol: fred(symbol))
     for symbol, charts, filename, field in (
-        ("HKD=X", [8], "usdhkd_daily.json", "value"), ("JPY=X", [14], "jpy_market_daily.json", "usd_jpy_close"),
+        ("HKD=X", [8], "usdhkd_daily.json", "value"), ("JPY=X", [14,18], "jpy_market_daily.json", "usd_jpy_close"),
         ("0700.HK", [5,8], "hk_market_daily.json", "close"), ("0388.HK", [5,8], "hk_market_daily.json", "close"),
         ("^HSI", [5,8], "hk_market_daily.json", "close"), ("HSTECH", [5,8], "hk_market_daily.json", "close"),
         ("GC=F", [15], None, "close"), ("SI=F", [15], None, "close"),
@@ -275,8 +275,15 @@ def jobs():
     for country, chart in (("china", 13), ("japan", 14)):
         for tenor in ("2y", "10y"):
             key = f"{country}_{tenor}"
-            add(key, [chart], "daily", snapshot("japan_gov_yields.json", "observation_date", key) if country == "japan" else None,
+            add(key, [chart,18] if key == "japan_2y" else [chart], "daily", snapshot("japan_gov_yields.json", "observation_date", key) if country == "japan" else None,
                 lambda country=country,key=key: asia(country,key))
+    def cftc_yen():
+        from scripts.update_cftc_yen import fetch_cftc_yen
+        from macro_platform.cftc_yen import API_URL
+        frame = fetch_cftc_yen(get=lambda url, **kwargs: get(url, params=kwargs["params"]))
+        return latest(frame, "observation_date", "net_contracts"), API_URL
+    add("CFTC_JPY_NONCOMM_NET", [18], "weekly",
+        snapshot("cftc_jpy_weekly.json", "observation_date", "net_contracts"), cftc_yen)
     for key, symbol in (("SPX", "^GSPC"), ("RSP", "RSP")):
         add(key, [11], "daily", snapshot("us_equity_daily.json", "date", "close", key),
             lambda key=key: us_equity(key))
@@ -335,7 +342,7 @@ def main():
         for future in as_completed(tasks):
             row = future.result(); rows.append(row)
             print(row["id"], row["repository_latest"], "->", row["source_latest"], row["status"], flush=True)
-    payload = {"checked_at": datetime.now(timezone.utc).isoformat(), "chart_numbering": "display_17",
+    payload = {"checked_at": datetime.now(timezone.utc).isoformat(), "chart_numbering": "display_18",
                "sources": sorted(rows,key=lambda r:r["id"]),
                "elapsed_seconds": round(time.monotonic()-started, 3), **_PROBE_STATS}
     Path(args.output).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")

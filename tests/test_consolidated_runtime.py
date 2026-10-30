@@ -145,6 +145,7 @@ class ConsolidatedRuntime(unittest.TestCase):
         builder = Mock(side_effect=[go.Figure(), figure])
         ns["build_fig14"] = builder
         ns["build_fig15"] = builder
+        ns["build_fig16"] = builder
         ns["_cached_macro_figure"].clear()
         with self.assertRaises(ValueError):
             ns["_cached_macro_figure"](14, (), "recovery")
@@ -295,6 +296,7 @@ class ConsolidatedRuntime(unittest.TestCase):
             ns[f"build_fig{number}"] = Mock(return_value=figure)
         ns["build_fig14"] = Mock(return_value=figure)
         ns["build_fig15"] = Mock(return_value=figure)
+        ns["build_fig16"] = Mock(return_value=figure)
         ns["build_fig5"] = Mock(return_value=[figure]*4)
         for name in ("_cached_macro_figure", "_cached_hk_bundle"):
             ns[name].clear()
@@ -311,7 +313,7 @@ class ConsolidatedRuntime(unittest.TestCase):
                                                lambda key, _: published.append(key))
         self.assertLess(published.index(1) if 1 in published else 99, len(published))
         self.assertIsInstance(published[0], int)
-        self.assertEqual({value for value in published if isinstance(value, int)}, set(range(1, 16)))
+        self.assertEqual({value for value in published if isinstance(value, int)}, set(range(1, 17)))
         self.assertIn("market", published); self.assertIn("watchlist", published)
 
     def test_hk_equity_overlays_preserve_actual_closes_and_separate_index_units(self):

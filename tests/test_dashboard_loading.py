@@ -60,6 +60,7 @@ class DashboardLoadingTests(unittest.TestCase):
             self.ns[f"build_fig{number}"] = Mock(side_effect=lambda *args: go.Figure(self.figure))
         self.ns["build_fig14"] = Mock(side_effect=lambda *args: go.Figure(self.figure))
         self.ns["build_fig15"] = Mock(side_effect=lambda *args: go.Figure(self.figure))
+        self.ns["build_fig16"] = Mock(side_effect=lambda *args: go.Figure(self.figure))
         self.ns["build_fig5"] = Mock(side_effect=lambda *args, **kwargs: [go.Figure(self.figure) for _ in range(4)])
         self.ns["build_hk_core_snapshot_figures"] = Mock(
             side_effect=lambda *args: (go.Figure(self.figure), go.Figure(self.figure))
@@ -90,7 +91,7 @@ class DashboardLoadingTests(unittest.TestCase):
 
     def test_unchanged_charts_are_reused_and_cached_figures_are_isolated(self):
         first = self.ns["_build_macro_figures_parallel"]()
-        self.assertEqual(set(first), set(range(1, 16)))
+        self.assertEqual(set(first), set(range(1, 17)))
         first[1].data[0].name = "modified by renderer"
         second = self.ns["_build_macro_figures_parallel"]()
         self.assertEqual(second[1].data[0].name, "full history")
@@ -98,6 +99,7 @@ class DashboardLoadingTests(unittest.TestCase):
             self.ns[f"build_fig{number}"].assert_called_once()
         self.ns["build_fig14"].assert_called_once()
         self.ns["build_fig15"].assert_called_once()
+        self.ns["build_fig16"].assert_called_once()
         self.ns["build_fig5"].assert_called_once_with("5Y")
 
     def test_legacy_market_mode_state_cannot_change_raw_charts_or_duplicate_cache(self):
@@ -105,7 +107,7 @@ class DashboardLoadingTests(unittest.TestCase):
         for key in ("precious_metals_mode", "crypto_market_mode", "hk_5_range_market_mode", "hk_8_range_market_mode"):
             st.session_state[key] = "Rebased 100"
         result = self.ns["_build_macro_figures_parallel"]()
-        self.assertEqual(set(result), set(range(1, 16)))
+        self.assertEqual(set(result), set(range(1, 17)))
         for number in (1, 10, 11):
             self.ns[f"build_fig{number}"].assert_called_once_with("5Y")
         self.ns["build_fig5"].assert_called_once_with("5Y")

@@ -583,7 +583,7 @@ def option_observation_health(option, *, chart_key="", now=None):
         # series have their own cadence; monthly data is due after the next
         # month's publication cycle, with one day of processing allowance.
         weekly = series.get("observation_cadence") == "weekly" or any(
-            key in name for key in ("WALCL", "WRESBAL", "WTREGEN", "Reserve Balances", "Weekly fallback")
+            key in name for key in ("WALCL", "WRESBAL", "WTREGEN", "Reserve Balances", "Weekly fallback", "CFTC JPY")
         )
         monthly = monthly or series.get("observation_cadence") == "monthly"
         due = (latest.normalize() + pd.offsets.MonthEnd(2) + pd.Timedelta(days=1)
