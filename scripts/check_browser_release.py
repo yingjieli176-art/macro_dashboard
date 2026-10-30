@@ -39,8 +39,10 @@ def chart_state(chart):
         const axes = [];
         model.eachComponent('yAxis', axis => {
             const values = [], references = [];
+            let bars = false;
             model.eachSeries(series => {
                 if ((series.get('yAxisIndex') || 0) !== axis.componentIndex) return;
+                bars ||= series.subType === 'bar';
                 for (const line of series.get('markLine')?.data || []) {
                     if (/ · (最高收盘|最新收盘)$/.test(line.name || '') && Number.isFinite(line.yAxis)) references.push(line.yAxis);
                 }
@@ -53,7 +55,7 @@ def chart_state(chart):
             });
             axes.push({extent: axis.axis.scale.getExtent(),
                        observed: values.length ? [Math.min(...values), Math.max(...values)] : null,
-                       samples: values.length, references, scale: axis.get('scale')});
+                       samples: values.length, references, bars, scale: axis.get('scale')});
         });
         const grid = model.getComponent('grid').coordinateSystem.getRect();
         const slider = instance.getViewOfComponentModel(model.getComponent('dataZoom', 1));
@@ -72,11 +74,13 @@ def chart_state(chart):
 def assert_visible_axes(state, minimum_axes=2):
     populated = 0
     for axis in state["axes"]:
-        assert axis["scale"], axis
+        assert axis["scale"] == (not axis["bars"]), axis
         if axis["observed"] is None:
             continue
         populated += 1
         low, high = axis["observed"]
+        if axis["bars"]:
+            low, high = min(low, 0), max(high, 0)
         references = axis.get("references", [])
         if references:
             low, high = min(low, *references), max(high, *references)
@@ -87,6 +91,26 @@ def assert_visible_axes(state, minimum_axes=2):
         # filtered samples. Allow ECharts' own nice-tick rounding and flat data.
         assert maximum-minimum <= max((high-low)*2, max(abs(low), abs(high), 1)*.05), axis
     assert populated >= minimum_axes, state
+
+
+def assert_bar_baseline(chart, name):
+    state = chart.evaluate("""(element,name) => {
+        const chart=element.__macroChart, model=chart.getModel();
+        const series=model.getSeries().find(series=>series.name===name);
+        const axis=model.getComponent('yAxis',series.get('yAxisIndex')||0);
+        const zero=chart.convertToPixel({yAxisIndex:axis.componentIndex},0), data=series.getData();
+        const bars=[];
+        for(let index=0;index<data.count();index++) {
+            const value=data.get(data.mapDimension('y'),index), rect=data.getItemLayout(index);
+            if(Number.isFinite(value)&&rect&&Number.isFinite(rect.y)&&Number.isFinite(rect.height))
+                bars.push({zeroError:Math.min(Math.abs(rect.y-zero),Math.abs(rect.y+rect.height-zero)),width:rect.width});
+        }
+        return {type:series.subType,scale:axis.get('scale'),extent:axis.axis.scale.getExtent(),bars};
+    }""", name)
+    assert state['type'] == 'bar' and state['scale'] is False, state
+    assert state['extent'][0] <= 0 <= state['extent'][1], state
+    assert state['bars'] and all(bar['zeroError'] < 1 and 0 < bar['width'] <= 17 for bar in state['bars']), state
+    return {'zero_baseline':True,'visible_bars':len(state['bars'])}
 
 
 def exercise_client_zoom(page, chart, minimum_axes=2):
@@ -328,7 +352,7 @@ def check_mobile_layout(page):
         return {width:chart.getWidth(), grid:{x:grid.x,y:grid.y,width:grid.width},
             legend_type:legend.get('type'), legend_data:legend.get('data').filter(x => x !== '\\n'),
             legend_bounds:{x:rect.x,y:rect.y,width:rect.width,height:rect.height}, axes,
-            series:chart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,data:s.data})),
+            series:chart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,type:s.type,data:s.data})),
             zoom:model.getComponent('dataZoom').getPercentRange()};
     }"""
     charts = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
@@ -342,7 +366,9 @@ def check_mobile_layout(page):
             assert state['series'] == original['series'], (width, 'observations changed')
             assert state['zoom'] == original['zoom'], (width, 'zoom changed')
             assert len(state['axes']) == len(original['axes'])
-            assert all(axis['show'] and axis['scale'] and axis['name'] for axis in state['axes']), state
+            for index, axis in enumerate(state['axes']):
+                bars = any(s['type'] == 'bar' and s['axis'] == index for s in state['series'])
+                assert axis['show'] and axis['name'] and axis['scale'] == (not bars), state
             assert state['grid']['width'] > 80, (width, state)
             if state['width'] <= 700:
                 assert state['legend_type'] == 'plain', state
@@ -467,8 +493,8 @@ def exercise_range_legend_persistence(page, prefix, group_index):
     inspect = """element => {
         const chart=element.__macroChart, option=chart.getOption();
         return {selected:option.legend[0].selected,
-            axes:option.yAxis.map(a=>({show:a.show,offset:a.offset})),
-            series:option.series.map(s=>({name:s.name,axis:s.yAxisIndex||0,data:s.data})),
+            axes:option.yAxis.map(a=>({show:a.show,offset:a.offset,scale:a.scale})),
+            series:option.series.map(s=>({name:s.name,axis:s.yAxisIndex||0,type:s.type,data:s.data})),
             zoom:chart.getModel().getComponent('dataZoom').getPercentRange()};
     }"""
     def chart_for(period):
@@ -495,6 +521,10 @@ def exercise_range_legend_persistence(page, prefix, group_index):
     original=chart.evaluate(inspect)
     last_axis=max(s['axis'] for s in original['series'])
     hidden=[s['name'] for s in original['series'] if s['axis']==last_axis]
+    # A shared line/bar axis should regain a tight line scale when its bar
+    # series is hidden, then restore zero when that bar is selected again.
+    shared_bars=[s['name'] for s in original['series'] if s['type']=='bar' and s['axis']==0]
+    hidden.extend(shared_bars)
     shared=[s['name'] for s in original['series'] if s['axis']==1]
     if last_axis != 1 and len(shared)>1:
         hidden.append(shared[0])
@@ -502,6 +532,8 @@ def exercise_range_legend_persistence(page, prefix, group_index):
     expected=chart.evaluate(inspect)
     assert expected['axes'][last_axis]['show'] is False
     assert all(expected['selected'][name] is False for name in hidden)
+    if shared_bars:
+        assert original['axes'][0]['scale'] is False and expected['axes'][0]['scale'] is True
     if len(shared)>1:assert expected['axes'][1]['show'] is True
     windows={}
     for period in ('1M','6M','1Y'):
@@ -620,10 +652,12 @@ def main():
             carry = page.locator('.st-key-yen_carry_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             report["yen_carry_zoom"] = exercise_client_zoom(page, carry, minimum_axes=4)
+            report["cftc_columns"] = assert_bar_baseline(carry, 'CFTC JPY speculative net (R3)')
             report["yen_carry_ranges"] = exercise_range_legend_persistence(
                 page, 'yen_carry_adaptive_default', 17)
             chart = page.locator('.st-key-hk_5_range_adaptive_default_1Y').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             report["client_zoom"] = exercise_client_zoom(page, chart)
+            report["monthly_growth_columns"] = assert_bar_baseline(chart, 'M2 MoM')
             report["mobile_layout"] = check_mobile_layout(page)
             liquidity = page.locator('.st-key-normal_liquidity_range_echarts_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))

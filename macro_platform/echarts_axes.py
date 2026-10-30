@@ -4,6 +4,7 @@ ECharts dataZoom(filterMode='filter') removes observations outside the viewport
 from axis extent calculations. yAxis.scale=True disables the zero baseline.
 Together this gives native, fully client-side X/Y autoscaling even after an
 arbitrary zoom-box selection, without a Streamlit rerun.
+Bar axes include zero so column heights retain their magnitude meaning.
 """
 from __future__ import annotations
 
@@ -196,6 +197,19 @@ def _responsive_chart_layout(option, fig, axis_map):
 
 
 
+def _bar_style(series, trace):
+    if getattr(trace, "type", "") != "bar":
+        return
+    marker = getattr(trace, "marker", None)
+    series.update(type="bar", barMinWidth=1, barMaxWidth=16, z=1,
+                  itemStyle={"color": getattr(marker, "color", None) or "#8a61c4",
+                             "opacity": getattr(marker, "opacity", None) or 0.6},
+                  markLine={"silent": True, "symbol": ["none", "none"],
+                            "label": {"show": False},
+                            "lineStyle": {"color": "#94a3b8", "width": 1, "type": "solid"},
+                            "data": [{"yAxis": 0}]})
+
+
 def build_safe_echarts_option(fig, date_range="1Y"):
     """Minimal native ECharts rescue path, independent of the rich adapter.
 
@@ -258,6 +272,7 @@ def build_safe_echarts_option(fig, date_range="1Y"):
         if isinstance(color, str) and color:
             series[-1]["lineStyle"] = {"color": color}
             series[-1]["itemStyle"] = {"color": color}
+        _bar_style(series[-1], trace)
     if latest is None or not series:
         return None
     axes = []
@@ -271,7 +286,7 @@ def build_safe_echarts_option(fig, date_range="1Y"):
             except (ValueError, TypeError):
                 pass
         axes.append({
-            "type": "value", "scale": True, "inverse": inverse,
+            "type": "value", "scale": not any(s["type"] == "bar" and s["yAxisIndex"] == index for s in series), "inverse": inverse,
             "position": "left" if index == 0 else "right",
             "offset": max(index - 1, 0) * 55,
             "name": _axis_readable_title(source, index, [
@@ -398,6 +413,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             # ECharts uses itemStyle for legend symbols and tooltip markers.
             # Match them to the explicit line color instead of its palette.
             series[-1]["itemStyle"] = {"color": color}
+        _bar_style(series[-1], trace)
 
     if latest is None or not series:
         return None
@@ -461,7 +477,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             "nameLocation": "middle",
             "nameGap": 52 if index == 0 else 45,
             "nameTextStyle": {"fontSize": 10, "color": "#475569"},
-            "scale": True,
+            "scale": not any(s["type"] == "bar" and s["yAxisIndex"] == index for s in series),
             "splitNumber": 5,
             "boundaryGap": ["7%", "7%"],
             "inverse": reversed_range,

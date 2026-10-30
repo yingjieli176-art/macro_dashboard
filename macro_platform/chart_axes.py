@@ -415,7 +415,8 @@ def apply_dashboard_chart_standard(fig: go.Figure) -> go.Figure:
         tickfont=dict(size=10, color="#64748b"),
         automargin=False,
         fixedrange=True,
-        zeroline=False,
+        zeroline=any(getattr(t, "type", "") == "bar" and (getattr(t, "yaxis", None) or "y") == "y" for t in fig.data),
+        zerolinecolor="#94a3b8",
     )
     if primary.title is not None:
         primary.title.font = dict(size=11, color="#64748b")
@@ -463,6 +464,8 @@ def _visible_y_ranges(fig: go.Figure, start: pd.Timestamp, end: pd.Timestamp) ->
                 value = float(y)
                 if start <= stamp <= end and math.isfinite(value):
                     grouped.setdefault(axis_name, []).append(value)
+                    if getattr(trace, "type", "") == "bar":
+                        grouped[axis_name].append(0.0)
             except (TypeError, ValueError, OverflowError):
                 continue
 

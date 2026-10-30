@@ -57,10 +57,13 @@ def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None):
         if not view[column].notna().any():
             missing.append(name)
             continue
-        fig.add_trace(go.Scatter(
-            x=view.observation_date, y=view[column], name=name, mode="lines", yaxis=axis,
-            connectgaps=False, line=dict(color=color, width=2.3, dash=dash),
-            hovertemplate=f"{name}: %{{y:.2f}}{suffix}<extra></extra>"))
+        common = dict(x=view.observation_date, y=view[column], name=name, yaxis=axis,
+                      hovertemplate=f"{name}: %{{y:.2f}}{suffix}<extra></extra>")
+        if name == POSITION_NAME:
+            fig.add_trace(go.Bar(**common, marker=dict(color=color, opacity=0.6), width=4*86400000))
+        else:
+            fig.add_trace(go.Scatter(**common, mode="lines", connectgaps=False,
+                                     line=dict(color=color, width=2.3, dash=dash)))
     fig.update_layout(
         template="plotly_white", height=470, hovermode="x unified", dragmode=False,
         margin=dict(l=64, r=160, t=74, b=36),

@@ -2,6 +2,16 @@
 const copy = value => JSON.parse(JSON.stringify(value));
 const asTime = value => typeof value === 'number' ? value : Date.parse(value);
 
+// Weekly/monthly columns need widths based on their own observation cadence,
+// even when daily price lines share the time axis. Never add calendar samples.
+export function barPixelWidth(points, lower, upper, plotWidth) {
+  const times = points.filter(point => Number.isFinite(point[1])).map(point => asTime(point[0]))
+    .filter(Number.isFinite).sort((a,b) => a-b);
+  const gaps = times.slice(1).map((time,index) => time-times[index]).filter(gap => gap > 0).sort((a,b) => a-b);
+  if (!gaps.length || !(upper > lower)) return 8;
+  return Math.max(1, Math.min(16, plotWidth*gaps[Math.floor(gaps.length/2)]/(upper-lower)*0.65));
+}
+
 // One fixed peak inside the selection; only observations on/after it belong
 // to this path. The right selection handle never truncates the path to now.
 export function peakDrawdown(points, lower, upper) {
@@ -90,6 +100,7 @@ export default function({data, parentElement}) {
 
   const isPriceGuide = line => / · (最高收盘|最新收盘)$/.test(line.name || '');
   const hasPriceGuides = base.series.some(series => (series.markLine?.data || []).some(isPriceGuide));
+  const hasBars = base.series.some(series => series.type === 'bar');
   if (hasPriceGuides) base.series.forEach((series, index) => { series.id = `macro-price-${index}`; });
   const shortNames = hasPriceGuides ? base.series.map(series => series.markLine.data.find(line =>
     / · 最高收盘$/.test(line.name)).label.formatter.split(' 高 ')[0]) : [];
@@ -220,6 +231,8 @@ export default function({data, parentElement}) {
     let visibleRight = 0, visibleLeft = 0;
     axes.forEach((axis, index) => {
       const show = used.has(index);
+      axis.scale = !base.series.some(series => series.type === 'bar' &&
+        (series.yAxisIndex || 0) === index && selected[series.name] !== false);
       // Price guides are annotations, not observations. Include visible
       // assets' high/latest levels in the viewport's native dynamic extent.
       const guides = base.series.filter(series => (series.yAxisIndex || 0) === index &&
@@ -252,10 +265,23 @@ export default function({data, parentElement}) {
     return option;
   }
 
+  function sizeBars(option, zooms) {
+    if (!hasBars) return option;
+    const zoom = (zooms || [])[0] || {};
+    const start = asTime(zoom.startValue), end = asTime(zoom.endValue);
+    const lower = Number.isFinite(start) ? start : first+(last-first)*(zoom.start ?? 0)/100;
+    const upper = Number.isFinite(end) ? end : first+(last-first)*(zoom.end ?? 100)/100;
+    const width = Math.max(80, element.clientWidth-option.grid.left-option.grid.right);
+    for (const series of option.series) if (series.type === 'bar') {
+      series.barWidth = barPixelWidth(series.data, lower, upper, width);
+    }
+    return option;
+  }
+
   function updateLayout() {
     if (!chart || disposed) return;
     refreshPriceGuides(chart.getOption().dataZoom);
-    const option = withDrawdownOverlay(axisLayout(presentation()));
+    const option = sizeBars(withDrawdownOverlay(axisLayout(presentation())), chart.getOption().dataZoom);
     if (option.toolbox) option.toolbox.right = 54;
     // Price observations stay intact. Only derived paths and annotations
     // change with the selection; the live dataZoom bounds are preserved.
@@ -265,6 +291,9 @@ export default function({data, parentElement}) {
       patch.series = option.series.map((series, index) => index < base.series.length ?
         {id:series.id, name:series.name, markLine:copy(series.markLine)} : series);
       patch.graphic = priceRatioFooter();
+    } else if (hasBars) {
+      patch.series = option.series.map(series => ({name:series.name,
+        ...(series.type === 'bar' ? {barWidth:series.barWidth} : {})}));
     }
     chart.setOption(patch, {silent:true});
     parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom};
@@ -278,6 +307,7 @@ export default function({data, parentElement}) {
     option.aria = {enabled:true};
     option.tooltip = {...option.tooltip, renderMode:'richText'};
     if (saved?.zoom) option.dataZoom = saved.zoom;
+    sizeBars(option, option.dataZoom);
     // Keep toolbox clear of the download/fullscreen buttons.
     if (option.toolbox) option.toolbox.right = 54;
     chart = echarts.init(element, null, {renderer:'canvas'});
@@ -299,7 +329,7 @@ export default function({data, parentElement}) {
       rememberSelection(); updateLayout();
     });
     chart.on('datazoom', () => {
-      if (hasPriceGuides) updateLayout();
+      if (hasPriceGuides || hasBars) updateLayout();
       else parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom};
     });
     observer = new ResizeObserver(() => {

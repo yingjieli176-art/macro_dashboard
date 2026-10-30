@@ -511,8 +511,12 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
         line: dict[str, Any] = {"width": width, "color": color}
         if dash:
             line["dash"] = dash
-        fig.add_trace(
-            go.Scatter(
+        trace = (go.Bar(
+            x=data["observation_date"], y=data[column], name=name,
+            marker=dict(color=color, opacity=0.6), width=14*86400000,
+            showlegend=True, legend=legend_map[row], legendrank=100+row,
+            hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>",
+        ) if column == "M2 MoM" else go.Scatter(
                 x=data["observation_date"],
                 y=data[column],
                 name=name,
@@ -523,7 +527,9 @@ def build_hk_liquidity_figure(date_range: str, compact_mode: bool = False) -> go
                 legend=legend_map[row],
                 legendrank=100 + row,
                 hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>",
-            ),
+            ))
+        fig.add_trace(
+            trace,
             row=row,
             col=1,
             secondary_y=secondary_y,
@@ -893,11 +899,15 @@ def build_hk_liquidity_figures(
         line: dict[str, Any] = {"width": width, "color": color}
         if dash:
             line["dash"] = dash
-        trace = go.Scatter(
-            x=frame["observation_date"], y=frame[column], name=name, mode="lines",
-            line=line, connectgaps=False,
+        common = dict(
+            x=frame["observation_date"], y=frame[column], name=name,
             hovertemplate=f"{name}: %{{y:.3f}}{unit}<extra></extra>",
         )
+        trace = (go.Bar(**common, marker=dict(color=color, opacity=0.6), width=14*86400000)
+                 if column == "M2 MoM" else go.Scatter(
+            **common, mode="lines",
+            line=line, connectgaps=False,
+        ))
         if axis is not None:
             trace.update(yaxis=axis)
             fig.add_trace(trace)

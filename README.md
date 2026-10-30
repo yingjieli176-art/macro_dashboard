@@ -20,6 +20,12 @@ streamlit run app.py
 
 ## Yen carry analysis (chart 18)
 
+`2026-10-30-position-growth-columns-r81` displays CFTC yen speculative net
+positions and chart 5's monthly M2 MoM growth as columns from zero. Prices,
+rates and YoY trends remain lines. Column width follows the series' own weekly
+or monthly spacing and the visible date window, including on mobile. Legend
+filtering and native recovery retain the chart type and original observations.
+
 `2026-10-30-yen-carry-analysis-r80` adds four independently scaled series:
 
 - US 2Y Treasury yield (FRED DGS2) minus Japan 2Y government yield (Japan MOF),

@@ -54,7 +54,9 @@ class DashboardBootSmoke(unittest.TestCase):
             self.assertTrue(option["series"])
             self.assertTrue(any(point[1] is not None for series in option["series"]
                                 for point in series["data"]))
-            self.assertTrue(all(axis["scale"] for axis in option["yAxis"]))
+            for index, axis in enumerate(option["yAxis"]):
+                bars = any(s["type"] == "bar" and s["yAxisIndex"] == index for s in option["series"])
+                self.assertEqual(axis["scale"], not bars)
             self.assertTrue(all(zoom["filterMode"] == "filter" for zoom in option["dataZoom"]))
         self.assertEqual(len(instance.radio), 0)
         drawdown = next(json.loads(spec) for spec in specs if 'SPX' in spec)
@@ -83,6 +85,9 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertEqual([series["name"] for series in carry["series"]],
                          ["US−Japan 2Y spread", "USD/JPY (R1)", "JPY 20-session appreciation (R2)", "CFTC JPY speculative net (R3)"])
         self.assertEqual([series["yAxisIndex"] for series in carry["series"]], [0, 1, 2, 3])
+        self.assertEqual(carry["series"][-1]["type"], "bar")
+        money = next(json.loads(spec) for spec in specs if '"M2 MoM"' in spec)
+        self.assertEqual(next(s for s in money["series"] if s["name"] == "M2 MoM")["type"], "bar")
         self.assertTrue(all(any(point[1] is not None for point in series["data"]) for series in carry["series"]))
         self.assertNotIn("起点100", spec_text)
 

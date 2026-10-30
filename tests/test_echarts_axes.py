@@ -11,6 +11,27 @@ from macro_platform.echarts_axes import build_adaptive_echarts_option, summarize
 
 
 class EchartsNativeAxes(unittest.TestCase):
+    def test_bars_keep_zero_and_original_samples_in_both_native_adapters(self):
+        dates = pd.date_range("2026-08-04", periods=8, freq="7D")
+        for values in ([5.0]*8, [-5.0]*8, [-5.0, 3.0]*4):
+            fig = go.Figure([
+                go.Scatter(x=dates, y=[150.0]*8, name="USD/JPY"),
+                go.Bar(x=dates, y=values, name="CFTC JPY", yaxis="y2", marker=dict(color="#8a61c4", opacity=0.6)),
+            ])
+            for builder in (build_adaptive_echarts_option, build_safe_echarts_option):
+                option = builder(fig, "1M")
+                self.assertEqual([s["type"] for s in option["series"]], ["line", "bar"])
+                self.assertTrue(option["yAxis"][0]["scale"])
+                self.assertFalse(option["yAxis"][1]["scale"])
+                self.assertEqual(option["series"][1]["data"], [[day.isoformat(), value] for day,value in zip(dates,values)])
+                self.assertEqual(option["series"][1]["itemStyle"]["color"], "#8a61c4")
+                for media in option["media"]:
+                    self.assertFalse(media["option"]["yAxis"][1]["scale"])
+                bounds = expected_viewport_y_bounds(fig, "1M")
+                self.assertLessEqual(bounds["yaxis2"][0], 0)
+                self.assertGreaterEqual(bounds["yaxis2"][1], 0)
+                self.assertGreater(bounds["yaxis"][0], 100)
+
     def test_mobile_axis_title_retains_copper_inventory_unit(self):
         fig = go.Figure(go.Scatter(x=pd.date_range("2026-09-01", periods=3),
                                   y=[300, 310, 305], name="COMEX 库存"))
