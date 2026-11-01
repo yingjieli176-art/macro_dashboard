@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-01T00:26:21.049263+00:00",
+  "checked_at": "2026-11-01T06:47:22.784519+00:00",
   "chart_numbering": "display_18",
   "sources": [
     {
@@ -9,7 +9,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:25:32.369779+00:00",
+      "checked_at": "2026-11-01T06:47:03.171045+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://www.csindex.com.cn/csindex-home/perf/index-perf",
       "status": "at_source_latest"
@@ -21,7 +21,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:25:32.440031+00:00",
+      "checked_at": "2026-11-01T06:47:03.188899+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://www.csindex.com.cn/csindex-home/perf/index-perf",
       "status": "at_source_latest"
@@ -34,7 +34,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:38.266601+00:00",
+      "checked_at": "2026-11-01T06:46:58.315883+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/0388.HK",
       "status": "at_source_latest"
@@ -47,7 +47,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:38.238768+00:00",
+      "checked_at": "2026-11-01T06:46:58.307650+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/0700.HK",
       "status": "at_source_latest"
@@ -59,7 +59,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:25:32.441941+00:00",
+      "checked_at": "2026-11-01T06:47:03.194075+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://www.csindex.com.cn/csindex-home/perf/index-perf",
       "status": "at_source_latest"
@@ -71,7 +71,7 @@
       ],
       "cadence": "daily",
       "repository_latest": null,
-      "checked_at": "2026-11-01T00:24:38.463002+00:00",
+      "checked_at": "2026-11-01T06:46:58.534495+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/BTC-USD",
       "status": "live_only"
@@ -83,7 +83,7 @@
       ],
       "cadence": "weekly",
       "repository_latest": "2026-10-27",
-      "checked_at": "2026-11-01T00:25:31.958957+00:00",
+      "checked_at": "2026-11-01T06:47:02.690495+00:00",
       "source_latest": "2026-10-27",
       "source_url": "https://publicreporting.cftc.gov/resource/6dca-aqww.json",
       "status": "at_source_latest"
@@ -95,7 +95,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:38.712004+00:00",
+      "checked_at": "2026-11-01T06:46:58.830054+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/COR3M_History.csv",
       "status": "at_source_latest"
@@ -107,7 +107,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:37.532198+00:00",
+      "checked_at": "2026-11-01T06:46:57.475358+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml",
       "status": "at_source_latest"
@@ -120,7 +120,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:37.527157+00:00",
+      "checked_at": "2026-11-01T06:46:57.472856+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml",
       "status": "at_source_latest"
@@ -133,7 +133,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:37.499965+00:00",
+      "checked_at": "2026-11-01T06:46:57.444597+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml",
       "status": "at_source_latest"
@@ -146,7 +146,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:37.165704+00:00",
+      "checked_at": "2026-11-01T06:46:57.032449+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml",
       "status": "at_source_latest"
@@ -158,7 +158,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:37.513612+00:00",
+      "checked_at": "2026-11-01T06:46:57.452456+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml",
       "status": "at_source_latest"
@@ -170,7 +170,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:37.165470+00:00",
+      "checked_at": "2026-11-01T06:46:57.032096+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml",
       "status": "at_source_latest"
@@ -182,7 +182,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-29",
-      "checked_at": "2026-11-01T00:24:37.164891+00:00",
+      "checked_at": "2026-11-01T06:46:57.031421+00:00",
       "source_latest": "2026-10-29",
       "source_url": "https://www.newyorkfed.org/markets/reference-rates/effr",
       "status": "at_source_latest"
@@ -194,7 +194,7 @@
       ],
       "cadence": "daily",
       "repository_latest": null,
-      "checked_at": "2026-11-01T00:24:38.477362+00:00",
+      "checked_at": "2026-11-01T06:46:58.590158+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/ETH-USD",
       "status": "live_only"
@@ -206,7 +206,7 @@
       ],
       "cadence": "daily",
       "repository_latest": null,
-      "checked_at": "2026-11-01T00:24:38.369341+00:00",
+      "checked_at": "2026-11-01T06:46:58.431850+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF",
       "status": "live_only"
@@ -218,7 +218,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:38.078127+00:00",
+      "checked_at": "2026-11-01T06:46:58.128172+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/GVZ_History.csv",
       "status": "at_source_latest"
@@ -230,7 +230,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:38.580176+00:00",
+      "checked_at": "2026-11-01T06:46:58.699151+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF",
       "status": "at_source_latest"
@@ -241,11 +241,11 @@
         8
       ],
       "cadence": "daily",
-      "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:38.118160+00:00",
-      "source_latest": "2026-10-31",
+      "repository_latest": "2026-10-31",
+      "checked_at": "2026-11-01T06:46:58.172636+00:00",
+      "source_latest": "2026-10-30",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/HKD%3DX",
-      "status": "pipeline_lag"
+      "status": "source_behind_repository"
     },
     {
       "id": "HSTECH",
@@ -255,7 +255,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:38.362816+00:00",
+      "checked_at": "2026-11-01T06:46:58.429414+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://finance.sina.com.cn/stock/hkstock/HSTECH/klc2_kl.js",
       "status": "at_source_latest"
@@ -267,7 +267,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:37.164289+00:00",
+      "checked_at": "2026-11-01T06:46:57.030840+00:00",
       "source_latest": null,
       "status": "unverified",
       "error": "RuntimeError: FRED export and authenticated API could not be verified"
@@ -280,7 +280,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:38.150992+00:00",
+      "checked_at": "2026-11-01T06:46:58.207538+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/JPY%3DX",
       "status": "at_source_latest"
@@ -292,7 +292,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:37.164630+00:00",
+      "checked_at": "2026-11-01T06:46:57.031137+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://markets.newyorkfed.org/api/rp/results/search.json",
       "status": "at_source_latest"
@@ -304,7 +304,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:37.797582+00:00",
+      "checked_at": "2026-11-01T06:46:57.930199+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://markets.newyorkfed.org/api/rp/results/search.json",
       "status": "at_source_latest"
@@ -316,9 +316,9 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:25:31.960324+00:00",
+      "checked_at": "2026-11-01T06:47:02.691506+00:00",
       "source_latest": "2026-10-30",
-      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/RSP?period1=0&period2=1793492731&interval=1d&includePrePost=false",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/RSP?period1=0&period2=1793515622&interval=1d&includePrePost=false",
       "status": "at_source_latest"
     },
     {
@@ -328,7 +328,7 @@
       ],
       "cadence": "daily",
       "repository_latest": null,
-      "checked_at": "2026-11-01T00:24:38.380392+00:00",
+      "checked_at": "2026-11-01T06:46:58.437923+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/SI%3DF",
       "status": "live_only"
@@ -340,7 +340,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-29",
-      "checked_at": "2026-11-01T00:24:37.165116+00:00",
+      "checked_at": "2026-11-01T06:46:57.031826+00:00",
       "source_latest": "2026-10-29",
       "source_url": "https://www.newyorkfed.org/markets/reference-rates/sofr",
       "status": "at_source_latest"
@@ -352,9 +352,9 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:38.056185+00:00",
+      "checked_at": "2026-11-01T06:46:58.124872+00:00",
       "source_latest": "2026-10-30",
-      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?period1=0&period2=1793492679&interval=1d&includePrePost=false",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?period1=0&period2=1793515619&interval=1d&includePrePost=false",
       "status": "at_source_latest"
     },
     {
@@ -364,9 +364,9 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:25:31.960232+00:00",
+      "checked_at": "2026-11-01T06:47:02.691408+00:00",
       "source_latest": "2026-10-30",
-      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?period1=0&period2=1793492679&interval=1d&includePrePost=false",
+      "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?period1=0&period2=1793515619&interval=1d&includePrePost=false",
       "status": "at_source_latest"
     },
     {
@@ -376,7 +376,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:37.535908+00:00",
+      "checked_at": "2026-11-01T06:46:57.524652+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://fred.stlouisfed.org/series/T10YIE",
       "status": "at_source_latest"
@@ -388,7 +388,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-29",
-      "checked_at": "2026-11-01T00:25:32.493947+00:00",
+      "checked_at": "2026-11-01T06:47:03.278736+00:00",
       "source_latest": "2026-10-29",
       "source_url": "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/dts/operating_cash_balance",
       "status": "at_source_latest"
@@ -401,7 +401,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:37.804586+00:00",
+      "checked_at": "2026-11-01T06:46:57.940766+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv",
       "status": "at_source_latest"
@@ -413,7 +413,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:38.636957+00:00",
+      "checked_at": "2026-11-01T06:46:58.717868+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIXEQ_History.csv",
       "status": "at_source_latest"
@@ -425,7 +425,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:37.812796+00:00",
+      "checked_at": "2026-11-01T06:46:57.955225+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX3M_History.csv",
       "status": "at_source_latest"
@@ -437,7 +437,7 @@
       ],
       "cadence": "weekly",
       "repository_latest": "2026-10-28",
-      "checked_at": "2026-11-01T00:24:37.567848+00:00",
+      "checked_at": "2026-11-01T06:46:57.546246+00:00",
       "source_latest": "2026-10-28",
       "source_url": "https://www.federalreserve.gov/releases/h41/current/h41.htm",
       "status": "at_source_latest"
@@ -449,7 +449,7 @@
       ],
       "cadence": "weekly",
       "repository_latest": "2026-10-28",
-      "checked_at": "2026-11-01T00:24:37.619699+00:00",
+      "checked_at": "2026-11-01T06:46:57.652588+00:00",
       "source_latest": "2026-10-28",
       "source_url": "https://www.federalreserve.gov/releases/h41/current/h41.htm",
       "status": "at_source_latest"
@@ -462,7 +462,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:24:38.270218+00:00",
+      "checked_at": "2026-11-01T06:46:58.342178+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EHSI",
       "status": "at_source_latest"
@@ -474,7 +474,7 @@
       ],
       "cadence": "daily",
       "repository_latest": null,
-      "checked_at": "2026-11-01T00:24:38.576523+00:00",
+      "checked_at": "2026-11-01T06:46:58.620831+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/%5EN225",
       "status": "live_only"
@@ -487,10 +487,10 @@
       ],
       "cadence": "monthly",
       "repository_latest": "2026-09-30",
-      "checked_at": "2026-11-01T00:24:39.761433+00:00",
-      "source_latest": null,
-      "status": "unverified",
-      "error": "RuntimeError: HKMA proxy fetch failed: HTTPSConnectionPool(host='r.jina.ai', port=443): Read timed out. (read timeout=25)"
+      "checked_at": "2026-11-01T06:46:59.687948+00:00",
+      "source_latest": "2026-09-30",
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod",
+      "status": "at_source_latest"
     },
     {
       "id": "china_10y",
@@ -499,7 +499,7 @@
       ],
       "cadence": "daily",
       "repository_latest": null,
-      "checked_at": "2026-11-01T00:25:30.370373+00:00",
+      "checked_at": "2026-11-01T06:47:01.721429+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://datacenter.eastmoney.com/api/data/get",
       "status": "live_only"
@@ -511,7 +511,7 @@
       ],
       "cadence": "daily",
       "repository_latest": null,
-      "checked_at": "2026-11-01T00:25:30.362748+00:00",
+      "checked_at": "2026-11-01T06:47:01.719832+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://datacenter.eastmoney.com/api/data/get",
       "status": "live_only"
@@ -523,10 +523,10 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:25:30.362647+00:00",
-      "source_latest": null,
-      "status": "unverified",
-      "error": "RuntimeError: HKMA proxy fetch failed: HTTPSConnectionPool(host='r.jina.ai', port=443): Read timed out. (read timeout=25)"
+      "checked_at": "2026-11-01T06:47:00.403167+00:00",
+      "source_latest": "2026-10-30",
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity",
+      "status": "at_source_latest"
     },
     {
       "id": "comex_stock_t",
@@ -535,7 +535,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-29",
-      "checked_at": "2026-11-01T00:25:33.282704+00:00",
+      "checked_at": "2026-11-01T06:47:03.994947+00:00",
       "source_latest": "2026-10-29",
       "source_url": "https://www.cmegroup.com/delivery_reports/Copper_Stocks.xls",
       "status": "at_source_latest"
@@ -547,10 +547,10 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:25:30.361360+00:00",
-      "source_latest": null,
-      "status": "unverified",
-      "error": "RuntimeError: HKMA proxy fetch failed: HTTPSConnectionPool(host='r.jina.ai', port=443): Read timed out. (read timeout=25)"
+      "checked_at": "2026-11-01T06:47:00.401172+00:00",
+      "source_latest": "2026-10-30",
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity",
+      "status": "at_source_latest"
     },
     {
       "id": "hibor_3m",
@@ -559,7 +559,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:25:29.728698+00:00",
+      "checked_at": "2026-11-01T06:47:00.399873+00:00",
       "source_latest": null,
       "status": "unverified",
       "error": "ValueError: HKAB publication date missing"
@@ -571,7 +571,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:25:29.728535+00:00",
+      "checked_at": "2026-11-01T06:47:00.398017+00:00",
       "source_latest": null,
       "status": "unverified",
       "error": "ValueError: HKAB publication date missing"
@@ -583,7 +583,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-29",
-      "checked_at": "2026-11-01T00:25:31.653922+00:00",
+      "checked_at": "2026-11-01T06:47:02.144751+00:00",
       "source_latest": "2026-10-29",
       "source_url": "https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.csv",
       "status": "at_source_latest"
@@ -596,7 +596,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-29",
-      "checked_at": "2026-11-01T00:25:31.649794+00:00",
+      "checked_at": "2026-11-01T06:47:02.142847+00:00",
       "source_latest": "2026-10-29",
       "source_url": "https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.csv",
       "status": "at_source_latest"
@@ -608,7 +608,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:25:33.369121+00:00",
+      "checked_at": "2026-11-01T06:47:04.276006+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash&year=2026",
       "status": "at_source_latest"
@@ -620,7 +620,7 @@
       ],
       "cadence": "daily",
       "repository_latest": "2026-10-30",
-      "checked_at": "2026-11-01T00:25:33.318683+00:00",
+      "checked_at": "2026-11-01T06:47:04.086930+00:00",
       "source_latest": "2026-10-30",
       "source_url": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash&year=2026",
       "status": "at_source_latest"
@@ -632,10 +632,10 @@
       ],
       "cadence": "monthly",
       "repository_latest": "2026-08-31",
-      "checked_at": "2026-11-01T00:24:38.875671+00:00",
-      "source_latest": null,
-      "status": "unverified",
-      "error": "RuntimeError: HKMA proxy fetch failed: HTTPSConnectionPool(host='r.jina.ai', port=443): Read timed out. (read timeout=25)"
+      "checked_at": "2026-11-01T06:46:58.913342+00:00",
+      "source_latest": "2026-08-31",
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics",
+      "status": "at_source_latest"
     },
     {
       "id": "m3_hkd",
@@ -644,10 +644,10 @@
       ],
       "cadence": "monthly",
       "repository_latest": "2026-08-31",
-      "checked_at": "2026-11-01T00:24:38.930478+00:00",
-      "source_latest": null,
-      "status": "unverified",
-      "error": "RuntimeError: HKMA proxy fetch failed: HTTPSConnectionPool(host='r.jina.ai', port=443): Read timed out. (read timeout=25)"
+      "checked_at": "2026-11-01T06:46:59.002352+00:00",
+      "source_latest": "2026-08-31",
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics",
+      "status": "at_source_latest"
     },
     {
       "id": "mb_bf_disc_win_total",
@@ -657,10 +657,10 @@
       ],
       "cadence": "monthly",
       "repository_latest": "2026-09-30",
-      "checked_at": "2026-11-01T00:25:03.135783+00:00",
-      "source_latest": null,
-      "status": "unverified",
-      "error": "RuntimeError: HKMA proxy fetch failed: HTTPSConnectionPool(host='r.jina.ai', port=443): Read timed out. (read timeout=25)"
+      "checked_at": "2026-11-01T06:47:00.184936+00:00",
+      "source_latest": "2026-09-30",
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod",
+      "status": "at_source_latest"
     },
     {
       "id": "outstanding_efbn",
@@ -670,10 +670,10 @@
       ],
       "cadence": "monthly",
       "repository_latest": "2026-09-30",
-      "checked_at": "2026-11-01T00:24:40.056136+00:00",
-      "source_latest": null,
-      "status": "unverified",
-      "error": "RuntimeError: HKMA proxy fetch failed: HTTPSConnectionPool(host='r.jina.ai', port=443): Read timed out. (read timeout=25)"
+      "checked_at": "2026-11-01T06:46:59.691293+00:00",
+      "source_latest": "2026-09-30",
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod",
+      "status": "at_source_latest"
     },
     {
       "id": "ow_lb_bf_disc_win",
@@ -683,13 +683,13 @@
       ],
       "cadence": "monthly",
       "repository_latest": "2026-09-30",
-      "checked_at": "2026-11-01T00:25:02.936083+00:00",
-      "source_latest": null,
-      "status": "unverified",
-      "error": "RuntimeError: HKMA proxy fetch failed: HTTPSConnectionPool(host='r.jina.ai', port=443): Read timed out. (read timeout=25)"
+      "checked_at": "2026-11-01T06:46:59.822113+00:00",
+      "source_latest": "2026-09-30",
+      "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod",
+      "status": "at_source_latest"
     }
   ],
-  "elapsed_seconds": 104.204,
+  "elapsed_seconds": 26.045,
   "shared_http_requests": 28,
   "shared_http_reuses": 8
 }
