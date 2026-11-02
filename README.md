@@ -162,10 +162,16 @@ The data-only China equity workflow atomically updates all three histories.
 Incomplete sessions, missing indices, shortened history and stale responses
 cannot replace the last-good snapshot. Actual observation dates remain visible.
 
-Display order: 1–4 US policy/rates/liquidity; 5–8 Hong Kong liquidity;
+Display order: 1–3 US monetary policy and Treasury yields; 4 S&P 500 / Nikkei 225 relative strength; 5–8 Hong Kong liquidity;
 9 US equity risk; 10 VIX term structure; 11 US equity prices;
 12 China equity prices; 13 China rates; 14 Japan rates/equity;
-15 precious metals; 16 copper; 17 crypto. Internal builder keys stay stable.
+15 precious metals; 16 copper; 17 crypto; 18 yen carry.
+Chart 4 replaces the former US Liquidity chart. It shows the same-date
+S&P 500 / Nikkei 225 index-point ratio plus both component index trends,
+rebased independently to 100 at the first common completed close. The ratio
+uses integer index closes; dates without a close in either market are omitted.
+The component rebasing is for relative-performance comparison, not FX-adjusted
+total return.
 
 
 ## Equity price charts and reference lines (11–12)
