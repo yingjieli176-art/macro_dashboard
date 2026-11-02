@@ -133,6 +133,21 @@ class FullFreshness(unittest.TestCase):
         self.assertTrue({"GC=F","SI=F","BTC-USD","ETH-USD","^N225","china_2y","japan_2y","GVZCLS"}
                         <= {row[0] for row in config})
 
+    def test_hibor_audit_uses_hkma_fixing_mirror_on_hkab_non_working_days(self):
+        from scripts import probe_all_sources as probe
+        frame = pd.DataFrame({
+            "end_of_day": ["2026-10-29", "2026-10-30"],
+            "ir_overnight": [2.36, 2.65],
+            "ir_3m": [3.21399, 3.21256],
+        })
+        with patch.object(probe, "hkma_table", return_value=(
+            frame, "https://api.hkma.gov.hk/public/market-data-and-statistics/"
+                  "monthly-statistical-bulletin/er-ir/hk-interbank-ir-daily"
+        )) as source:
+            self.assertEqual(probe.hibor("hibor_overnight")[0], "2026-10-30")
+            self.assertEqual(probe.hibor("hibor_3m")[0], "2026-10-30")
+            self.assertEqual(source.call_args.kwargs["extra"], {"segment": "hibor.fixing"})
+
     def test_transport_failure_is_unverified_and_newer_source_is_not_green(self):
         def fail(): raise TimeoutError("source unavailable")
         row = check(("X", [1], "daily", "2026-10-19", fail))
