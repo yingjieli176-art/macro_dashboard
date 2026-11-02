@@ -103,7 +103,7 @@ RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 MACRO_DISPLAY_ORDER = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "us_drawdown", "cn_drawdown", 14, 15, 11, 13, 12, 16)
 MACRO_DISPLAY_NUMBER = {key: index for index, key in enumerate(MACRO_DISPLAY_ORDER, 1)}
-CHART_BUILD = "2026-10-30-position-growth-columns-r81"
+CHART_BUILD = "2026-11-02-chart8-bank-balance-r82"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2123,7 +2123,7 @@ HK_PARAMETER_DESCRIPTIONS = [
     '<div class="parameter-note"><b>M2 YoY：</b>港元广义货币M2同比增速，代表现金及相关存款规模相对上年同期的增长情况；单位为%，不等于股市资金净流入。</div><div class="parameter-note"><b>M2 MoM：</b>港元广义货币M2环比增速，以柱状图显示逐月增减，代表货币存量相对上个月的边际变化；单位为%，会受到季节性等因素影响。</div><div class="parameter-note"><b>Monetary Base YoY：</b>香港货币基础同比增速，代表负债证明书、政府流通纸币硬币、总结余及外汇基金票据债券合计规模的变化。</div><div class="parameter-note"><b>Tencent Price (R1)：</b>腾讯控股股价，代表该股票的市场定价及表现；单位为港元，价格变化本身不等于资金净流入量。</div><div class="parameter-note"><b>HKEX Price (R1)：</b>香港交易所股价，代表交易所公司的股票市场表现；单位为港元，不是港股市场成交额。</div><div class="parameter-note"><b>HSTECH Index (R2)：</b>恒生科技指数，代表其科技主题成分股的综合表现；单位为指数点。</div><div class="parameter-note"><b>HSI Index (R2)：</b>恒生指数，代表香港主要上市公司构成的指数表现；单位为指数点。</div><div class="parameter-context">口径说明：月度货币数据有公布时滞；股票和指数使用各自实际观测日。</div>',
     '<div class="parameter-note"><b>Closing Aggregate Balance：</b>银行体系收市总结余，代表银行在金管局结算账户里的港元余额合计，观察银行间结算资金供应；单位为十亿港元，54.125即541.25亿港元。</div><div class="parameter-note"><b>Outstanding EFBN (R1)：</b>未偿还外汇基金票据及债券，代表该类港元证券的存量；本图按官方市值口径、以十亿港元显示，不是现金余额。</div><div class="parameter-note"><b>EFBN Held by Licensed Banks (R1)：</b>持牌银行持有的外汇基金票据及债券，代表银行持有的这一类证券资产规模，可配合总结余观察流动资产构成；单位为十亿港元。</div><div class="parameter-context">口径说明：总结余是结算资金存量，不等于客户存款或股市资金流量；变化需结合外汇交收、票据及贴现窗记录判断。各点以实际观测日为准。</div>',
     '<div class="parameter-note"><b>O/N HIBOR：</b>隔夜香港银行同业拆息，代表银行借用一天港元的年化融资成本；上升可反映短端资金需求增加或供给收紧，不直接等于资金外流。</div><div class="parameter-note"><b>3M HIBOR：</b>3个月期香港银行同业拆息，代表锁定三个月港元融资的年化成本，可观察较持续的融资压力；单位为%。</div><div class="parameter-note"><b>HKMA Base Rate：</b>金管局基本利率，代表贴现窗融资的基准利率，反映政策及流动性工具的定价；不是商业银行客户实际贷款利率。</div><div class="parameter-note"><b>O/N−3M Spread (R1)：</b>隔夜减3个月HIBOR之差，代表即时融资与较长期融资的价格差；转正可提示短端需求集中，不能单独确认资金危机；单位为百分点。</div><div class="parameter-context">口径说明：HIBOR为银行公会定盘；长期历史以官方月末值补充，单位均为年化%。缺失日期留空。</div>',
-    '<div class="parameter-note"><b>USD/HKD：</b>美元兑港元汇率，代表1美元可兑换多少港元；数值上升为港元走弱，下降为港元走强。本图左轴反向，曲线向上表示港元走强。</div><div class="parameter-note"><b>Tencent Price (R1)：</b>腾讯控股股价，代表该股票的港元价格表现，用于对照汇率与股票走势。</div><div class="parameter-note"><b>HKEX Price (R1)：</b>香港交易所股价，代表交易所公司的港元价格表现，不能直接推算资金流向。</div><div class="parameter-note"><b>HSTECH Index (R2)：</b>恒生科技指数，代表科技主题成分股的综合表现；单位为指数点。</div><div class="parameter-note"><b>HSI Index (R2)：</b>恒生指数，代表香港主要上市公司的综合表现；单位为指数点。</div><div class="parameter-context">口径说明：7.75为强方兑换保证、7.80为区间中点、7.85为弱方兑换保证；红区7.84–7.85提示接近弱方，不代表已发生金管局兑换保证交易。</div>',
+    '<div class="parameter-note"><b>USD/HKD：</b>美元兑港元汇率，代表1美元可兑换多少港元；数值上升为港元走弱，下降为港元走强。本图左轴反向，曲线向上表示港元走强。</div><div class="parameter-note"><b>Tencent Price (R1)：</b>腾讯控股股价，代表该股票的港元价格表现，用于对照汇率与股票走势。</div><div class="parameter-note"><b>HKEX Price (R1)：</b>香港交易所股价，代表交易所公司的港元价格表现，不能直接推算资金流向。</div><div class="parameter-note"><b>HSTECH Index (R2)：</b>恒生科技指数，代表科技主题成分股的综合表现；单位为指数点。</div><div class="parameter-note"><b>HSI Index (R2)：</b>恒生指数，代表香港主要上市公司的综合表现；单位为指数点。</div><div class="parameter-note"><b>Closing Aggregate Balance (R3)：</b>银行体系收市总结余，代表银行在金管局结算账户的港元余额合计；使用独立R3轴，单位为十亿港元，53.999即539.99亿港元。近期使用日度观测，较早区间补充官方月末历史；缺失日期不补值。</div><div class="parameter-context">口径说明：7.75为强方兑换保证、7.80为区间中点、7.85为弱方兑换保证；红区7.84–7.85提示接近弱方，不代表已发生金管局兑换保证交易。</div>',
 ]
 
 
@@ -2556,11 +2556,13 @@ HK_CHART_CONFIGS = [
         ],
     ),
     (
-        '<div class="section-title">8. USD/HKD Convertibility Band & Market</div>',
-        '<div class="section-description">USD/HKD · Strong-side 7.75 · Center 7.80 · Weak-side 7.85 · Tencent / HKEX (R1) · HSTECH / HSI (R2)</div>',
+        '<div class="section-title">8. USD/HKD, Bank Balance & Market</div>',
+        '<div class="section-description">USD/HKD · Strong-side 7.75 · Center 7.80 · Weak-side 7.85 · Tencent / HKEX (R1) · HSTECH / HSI (R2) · Closing Aggregate Balance (R3)</div>',
         "hk_8_range",
         [
             ("HKMA Linked Exchange Rate System", "https://www.hkma.gov.hk/eng/key-functions/money/linked-exchange-rate-system/"),
+            ("HKMA Daily Interbank Liquidity", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity/"),
+            ("HKMA Monetary Base", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod/"),
             ("Yahoo Finance Market History", "https://finance.yahoo.com/"),
             ("Hang Seng Indexes · HSTECH", "https://www.hsi.com.hk/eng/indexes/all-indexes/hstech"),
             ("Hang Seng Indexes · HSI", "https://www.hsi.com.hk/eng/indexes/all-indexes/hsi"),

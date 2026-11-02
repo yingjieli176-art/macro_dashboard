@@ -266,10 +266,10 @@ def jobs():
             lambda field=field: hkma("monthly-statistical-bulletin/financial/monetary-statistics", field, "end_of_month"))
     for field in ("aggr_balance_bf_disc_win", "outstanding_efbn", "ow_lb_bf_disc_win", "mb_bf_disc_win_total"):
         saved = {"aggr_balance_bf_disc_win": "aggr_balance", "mb_bf_disc_win_total": "monetary_base_total"}.get(field, field)
-        add(field, [5,6], "monthly", snapshot("hkma_monetary_statistics.json", "end_of_month", saved),
+        add(field, [5,6,8] if field == "aggr_balance_bf_disc_win" else [5,6], "monthly", snapshot("hkma_monetary_statistics.json", "end_of_month", saved),
             lambda field=field: hkma("monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod", field, "end_of_month"))
     for field in ("hibor_overnight", "hibor_3m", "disc_win_base_rate", "closing_balance"):
-        add(field, [7], "daily", snapshot("hkma_banking_liquidity_daily.json", "end_of_date", field),
+        add(field, [8] if field == "closing_balance" else [7], "daily", snapshot("hkma_banking_liquidity_daily.json", "end_of_date", field),
             (lambda field=field: hibor(field)) if field.startswith("hibor_") else
             (lambda field=field: hkma("daily-monetary-statistics/daily-figures-interbank-liquidity", field, "end_of_date")))
     for country, chart in (("china", 13), ("japan", 14)):

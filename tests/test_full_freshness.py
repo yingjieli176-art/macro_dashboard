@@ -123,6 +123,8 @@ class FullFreshness(unittest.TestCase):
         config = jobs()
         self.assertEqual({c for _, charts, _, _, _ in config for c in charts}, set(range(1,19)))
         mapped = {row[0]: row[1] for row in config}
+        self.assertIn(8, mapped["closing_balance"])
+        self.assertIn(8, mapped["aggr_balance_bf_disc_win"])
         for source in ("DGS2", "japan_2y", "JPY=X"):
             self.assertIn(18, mapped[source])
         self.assertTrue({"GC=F","SI=F","BTC-USD","ETH-USD","^N225","china_2y","japan_2y","GVZCLS"}

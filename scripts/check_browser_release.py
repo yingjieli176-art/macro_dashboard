@@ -336,6 +336,43 @@ def wait_for_page(page, url):
     assert not failures, failures
 
 
+def check_hk_bank_balance(page):
+    """Chart 8 must paint the actual latest bank balance on its own axis."""
+    records = json.loads(Path("data_snapshots/hkma_banking_liquidity_daily.json").read_text())["records"]
+    latest = max((row["end_of_date"], row["closing_balance"] / 1000.0)
+                 for row in records if row.get("closing_balance") is not None)
+    report = []
+    for width in (1440, 390):
+        page.set_viewport_size({"width": width, "height": 1000 if width == 1440 else 844})
+        for period in ("5Y", "1Y", "6M", "3M", "1M"):
+            page.get_by_test_id("stButtonGroup").nth(7).get_by_text(period, exact=True).click()
+            selector = f".st-key-hk_8_range_adaptive_default_{period}"
+            chart = page.locator(selector).get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
+            chart.wait_for(timeout=30000)
+            page.wait_for_function("selector => document.querySelector(selector)?.getAttribute('aria-busy') === 'false'",
+                                   arg=selector+' [data-testid$="EChartsChart"]', timeout=30000)
+            chart.scroll_into_view_if_needed()
+            state = chart.evaluate("""element => {
+                const chart = (""" + INSTANCE_JS + """)(element), model = chart.getModel();
+                const series = model.getSeries().find(s => s.name === 'Closing Aggregate Balance (R3)');
+                if (!series) throw new Error('Chart 8 bank balance is missing');
+                const index = series.get('yAxisIndex'), axis = model.getComponent('yAxis', index);
+                const raw = chart.getOption().series.find(s => s.name === series.name).data;
+                return {axis:index, axis_name:axis.get('name'), axis_visible:axis.get('show'),
+                    selected:model.getComponent('legend').isSelected(series.name),
+                    visible_samples:series.getData().count(), latest:raw.filter(p => Number.isFinite(p[1])).at(-1)};
+            }""")
+            assert state["axis"] == 3 and state["axis_visible"] and state["selected"], state
+            assert "HK$ bn" in state["axis_name"] and state["visible_samples"] > 0, state
+            assert state["latest"][0][:10] == latest[0], state
+            assert abs(state["latest"][1] - latest[1]) < 1e-7, state
+            assert_visible_axes(chart_state(chart), minimum_axes=4)
+            report.append({"width":width, "period":period, **state})
+    page.set_viewport_size({"width":1440, "height":1000})
+    page.wait_for_timeout(600)
+    return report
+
+
 def check_mobile_layout(page):
     """Rotate the actual painted charts; no alternate renderer or test data."""
     probe = """element => {
@@ -658,6 +695,7 @@ def main():
             chart = page.locator('.st-key-hk_5_range_adaptive_default_1Y').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             report["client_zoom"] = exercise_client_zoom(page, chart)
             report["monthly_growth_columns"] = assert_bar_baseline(chart, 'M2 MoM')
+            report["hk_bank_balance"] = check_hk_bank_balance(page)
             report["mobile_layout"] = check_mobile_layout(page)
             liquidity = page.locator('.st-key-normal_liquidity_range_echarts_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
