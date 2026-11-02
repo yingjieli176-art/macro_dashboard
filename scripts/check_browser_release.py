@@ -350,7 +350,7 @@ def check_treasury_spread(page):
     for width in (1440, 390):
         page.set_viewport_size({"width": width, "height": 1000 if width == 1440 else 844})
         page.get_by_test_id("stButtonGroup").nth(chart_index(3)).get_by_text("1Y", exact=True).click()
-        selector = '.st-key-normal_treasury_range_adaptive_default_1Y'
+        selector = '.st-key-normal_treasury_range_echarts_1Y'
         chart = page.locator(selector).get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
         chart.wait_for(timeout=30000)
         page.wait_for_function("selector => document.querySelector(selector)?.getAttribute('aria-busy') === 'false'",
