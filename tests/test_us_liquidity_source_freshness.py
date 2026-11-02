@@ -32,11 +32,11 @@ class Sp500NikkeiRatioTests(unittest.TestCase):
     def test_history_joins_only_common_dates_and_rounds_index_points(self):
         sp500 = pd.DataFrame({
             "observation_date": pd.to_datetime(["2026-10-28", "2026-10-29", "2026-10-30"]),
-            "close": [6800.4, 6810.6, 6820.2],
+            "SP500": [6800.4, 6810.6, 6820.2],
         })
         nikkei = pd.DataFrame({
             "observation_date": pd.to_datetime(["2026-10-28", "2026-10-30"]),
-            "close": [51000.4, 51400.6],
+            "NIKKEI": [51000.4, 51400.6],
         })
         ratio.load_sp500_nikkei_ratio.clear()
         with patch.object(ratio, "_load_index", side_effect=[sp500, nikkei]):
