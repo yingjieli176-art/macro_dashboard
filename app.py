@@ -17,6 +17,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
 from macro_platform.hk_liquidity import build_hk_liquidity_figures, build_hk_core_snapshot_figures
+from macro_platform.chart_inventory import DISPLAY_ORDER, DISPLAY_NUMBER, REGION_HEADERS
 # The renderer is an optional module during rolling Streamlit Cloud deployments.
 # Never import individual newly added helpers at startup: mixed revisions of
 # app.py and macro_platform/echarts_axes.py must not crash the entire app.
@@ -101,9 +102,9 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-MACRO_DISPLAY_ORDER = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "us_drawdown", "cn_drawdown", 14, 15, 11, 13, 12, 16)
-MACRO_DISPLAY_NUMBER = {key: index for index, key in enumerate(MACRO_DISPLAY_ORDER, 1)}
-CHART_BUILD = "2026-11-02-chart8-bank-balance-r82"
+MACRO_DISPLAY_ORDER = DISPLAY_ORDER
+MACRO_DISPLAY_NUMBER = DISPLAY_NUMBER
+CHART_BUILD = "2026-11-02-regional-order-30y10y-r84"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1745,19 +1746,23 @@ def build_fig3(date_range):
         data[column] = pd.to_numeric(data.get(column), errors="coerce")
     # Derive curve spreads locally from the displayed yields. This removes two
     # redundant FRED requests and guarantees spread/yield internal consistency.
+    # Outer-joined missing observations remain missing; never fill across dates.
     data["T10Y2Y"] = data["DGS10"] - data["DGS2"]
     data["T10Y3M"] = data["DGS10"] - data["DGS3MO"]
+    data["T30Y10Y"] = data["DGS30"] - data["DGS10"]
     data = filter_range(data, date_range); fig = go.Figure()
     if inferred_dates:
         fig.update_layout(meta={"data_quality_notes": [
             f"10Y 名义收益率有 {len(inferred_dates)} 个日期由 DFII10＋T10YIE 恒等式重建（非独立 DGS10 实测值）。"
         ]})
     for column, name, width in [("DGS3MO", "3M", 2.2), ("DGS2", "2Y", 2.4), ("DGS10", "10Y", 2.8), ("DGS30", "30Y", 2.6)]: add_line(fig, data, column, name, width)
-    add_line(fig, data, "T10Y2Y", "10Y−2Y (R1)", 2.2, "dot", "y2", "%"); add_line(fig, data, "T10Y3M", "10Y−3M (R1)", 2.2, "dash", "y2", "%")
-    for name, color in {"30Y": "#dc2626", "10Y−2Y (R1)": "#ff994d", "10Y−3M (R1)": "#00b6ed"}.items():
+    for column, name, dash in [("T10Y2Y", "10Y−2Y (R1)", "dot"),
+                               ("T10Y3M", "10Y−3M (R1)", "dash"),
+                               ("T30Y10Y", "30Y−10Y (R1)", "dashdot")]:
+        add_line(fig, data, column, name, 2.2, dash, "y2", " pp")
+    for name, color in {"30Y": "#dc2626", "10Y−2Y (R1)": "#ff994d", "10Y−3M (R1)": "#00b6ed", "30Y−10Y (R1)": "#8b5cf6"}.items():
         fig.update_traces(line_color=color, selector=dict(name=name))
-    fig.update_traces(selector=dict(name="10Y−2Y (R1)"), hovertemplate="10Y−2Y (R1): %{y:.3f}%<extra></extra>"); fig.update_traces(selector=dict(name="10Y−3M (R1)"), hovertemplate="10Y−3M (R1): %{y:.3f}%<extra></extra>")
-    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=False, tickfont=dict(size=9), ticks="outside", ticklen=3)); return apply_chart_style(fig, chart_height(310, 420), date_range)
+    fig.update_layout(yaxis=dict(title="Yield (%)", fixedrange=True), yaxis2=dict(title="Spread (pp)", overlaying="y", side="right", anchor="free", position=0.99, showgrid=False, zeroline=True, zerolinecolor="#9ca3af", fixedrange=True, automargin=False, tickfont=dict(size=9), ticks="outside", ticklen=3)); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 
 def build_fig9(date_range):
@@ -2111,7 +2116,7 @@ CRYPTO_MARKET_DESCRIPTION = (
 PARAM_DESCRIPTIONS = [
     '<div class="parameter-note"><b>IORB：</b>准备金余额利率，代表美联储支付给合资格银行的准备金利息，是美元短期利率的重要政策锚；单位为年化%。</div><div class="parameter-note"><b>ON RRP Rate：</b>隔夜逆回购工具利率，代表合资格机构把资金隔夜放入美联储该工具可获得的年化利率，为货币市场利率提供支撑。</div><div class="parameter-note"><b>EFFR：</b>有效联邦基金利率，代表银行等机构之间无抵押隔夜美元交易的实际融资价格；单位为年化%。</div><div class="parameter-note"><b>SOFR：</b>有担保隔夜融资利率，代表以美国国债作抵押借入隔夜美元的市场成本；单位为年化%，相对政策锚上升可提示回购融资压力。</div>',
     '<div class="parameter-note"><b>10Y Nominal：</b>美国10年期名义国债收益率，代表美元长期无风险名义利率基准，综合反映实际利率、通胀补偿等定价；单位为年化%。</div><div class="parameter-note"><b>10Y Real (R1)：</b>美国10年期TIPS实际收益率，代表通胀保值国债的实际利率定价，上升表示实际贴现率抬高；单位为年化%。</div><div class="parameter-note"><b>5Y Real · TIPS (R1)：</b>美国5年期TIPS实际收益率，代表中期实际利率水平，可与10年期比较期限差异；单位为年化%。</div><div class="parameter-note"><b>10Y Breakeven (R1)：</b>10年期盈亏平衡通胀率，等于同期限名义收益率减实际收益率，代表未来十年的平均通胀补偿，含风险和流动性溢价；并非当期CPI。</div><div class="parameter-context">口径说明：R1为独立右轴；收益率及通胀补偿均以年化%显示。</div>',
-    '<div class="parameter-note"><b>3M：</b>美国3个月期国债收益率，代表短期美元国债的年化收益水平，对当前政策利率及近期政策预期较敏感。</div><div class="parameter-note"><b>2Y：</b>美国2年期国债收益率，代表未来两年利率路径的市场定价之一，同时包含期限溢价；不是两年期通胀率。</div><div class="parameter-note"><b>10Y：</b>美国10年期国债收益率，代表长期美元利率基准，反映长期实际利率、通胀补偿等因素；单位为年化%。</div><div class="parameter-note"><b>30Y：</b>美国30年期名义国债收益率，反映超长期美元利率定价；采用FRED DGS30原始日频观测，单位为年化%。</div><div class="parameter-note"><b>10Y−2Y (R1)：</b>10年减2年国债收益率之差，代表中长端收益率曲线斜率；负值为倒挂，上升为曲线变陡；单位为百分点。</div><div class="parameter-note"><b>10Y−3M (R1)：</b>10年减3个月国债收益率之差，代表长端与政策敏感短端之间的利差；负值为倒挂，不是衰退发生时间的直接预测。</div><div class="parameter-context">口径说明：国债收益率为年化%；两条期限利差为百分点。</div>',
+    '<div class="parameter-note"><b>3M：</b>美国3个月期国债收益率，代表短期美元国债的年化收益水平，对当前政策利率及近期政策预期较敏感。</div><div class="parameter-note"><b>2Y：</b>美国2年期国债收益率，代表未来两年利率路径的市场定价之一，同时包含期限溢价；不是两年期通胀率。</div><div class="parameter-note"><b>10Y：</b>美国10年期国债收益率，代表长期美元利率基准，反映长期实际利率、通胀补偿等因素；单位为年化%。</div><div class="parameter-note"><b>30Y：</b>美国30年期名义国债收益率，反映超长期美元利率定价；采用FRED DGS30原始日频观测，单位为年化%。</div><div class="parameter-note"><b>10Y−2Y (R1)：</b>10年减2年国债收益率之差，代表中长端收益率曲线斜率；负值为倒挂，上升为曲线变陡；单位为百分点。</div><div class="parameter-note"><b>10Y−3M (R1)：</b>10年减3个月国债收益率之差，代表长端与政策敏感短端之间的利差；负值为倒挂，不是衰退发生时间的直接预测。</div><div class="parameter-note"><b>30Y−10Y (R1)：</b>同日30年减10年国债收益率之差，代表超长端相对长端的曲线斜率；单位为百分点，任一期当日缺数则留空。</div><div class="parameter-context">口径说明：国债收益率为年化%；三条期限利差为百分点（pp），均由图中同日收益率相减。</div>',
     '<div class="parameter-note"><b>Net Liquidity：</b>美元净流动性代理＝美联储总资产−TGA−ON RRP余额，辅助观察央行资产负债表的流动性变化；单位为万亿美元，不等于流入股市的资金。</div><div class="parameter-note"><b>Reserve Balances (R1)：</b>银行准备金余额，代表存款机构在美联储持有的准备金存量；单位为万亿美元，使用周频观测。</div><div class="parameter-note"><b>TGA (R1)：</b>美国财政部在美联储的账户余额，代表财政现金存量；在其他因素不变时，余额增加通常会抽走银行准备金；单位为万亿美元。</div><div class="parameter-note"><b>ON RRP (R2)：</b>美联储隔夜逆回购余额，代表合资格机构使用该工具存放的隔夜资金规模；单位为十亿美元，与第1图的ON RRP利率不同。</div><div class="parameter-context">口径说明：该代理不包含所有美元资金流动。TGA优先使用日频，不可用时回退到周频；各系列保留实际观测日。</div>',
     '<div class="parameter-note"><b>M2 YoY：</b>港元广义货币M2同比增速，代表现金及相关存款规模相对上年同期的增长情况；单位为%，不等于股市资金净流入。</div><div class="parameter-note"><b>M2 MoM：</b>港元广义货币M2环比增速，以柱状图显示逐月增减，代表货币存量相对上个月的边际变化；单位为%，会受到季节性等因素影响。</div><div class="parameter-note"><b>Monetary Base YoY：</b>香港货币基础同比增速，代表负债证明书、政府流通纸币硬币、总结余及外汇基金票据债券合计规模的变化。</div><div class="parameter-note"><b>Tencent Price (R1)：</b>腾讯控股股价，代表该股票的市场定价及表现；单位为港元，价格变化本身不等于资金净流入量。</div><div class="parameter-note"><b>HKEX Price (R1)：</b>香港交易所股价，代表交易所公司的股票市场表现；单位为港元，不是港股市场成交额。</div><div class="parameter-note"><b>HSTECH Index (R2)：</b>恒生科技指数，代表其科技主题成分股的综合表现；单位为指数点。</div><div class="parameter-note"><b>HSI Index (R2)：</b>恒生指数，代表香港主要上市公司构成的指数表现；单位为指数点。</div><div class="parameter-context">口径说明：月度货币数据有公布时滞；股票和指数使用各自实际观测日。</div>',
 ]
@@ -2489,7 +2494,7 @@ def render_macro_chart_2(prebuilt_fig=None):
 def render_macro_chart_3(prebuilt_fig=None):
     _render_standard_macro_chart(
         '<div class="section-title">3. Treasury Yield & Curve Spread</div>',
-        '<div class="section-description">3M / 2Y / 10Y / 30Y / 10Y−2Y (R1) / 10Y−3M (R1)</div>',
+        '<div class="section-description">3M / 2Y / 10Y / 30Y / 10Y−2Y (R1) / 10Y−3M (R1) / 30Y−10Y (R1) · 利差单位：百分点</div>',
         "normal_treasury_range",
         build_fig3,
         [
@@ -2526,7 +2531,7 @@ def render_macro_chart_4(prebuilt_fig=None):
 
 HK_CHART_CONFIGS = [
     (
-        '<div class="section-title">5. HK Money Supply & Market Pulse</div>',
+        '<div class="section-title">13. HK Money Supply & Market Pulse</div>',
         '<div class="section-description">M2 YoY / M2 MoM / Monetary Base YoY · Tencent / HKEX (R1) · HSTECH / HSI (R2)</div>',
         "hk_5_range",
         [
@@ -2537,7 +2542,7 @@ HK_CHART_CONFIGS = [
         ],
     ),
     (
-        '<div class="section-title">6. Banking-system Liquidity</div>',
+        '<div class="section-title">14. Banking-system Liquidity</div>',
         '<div class="section-description">Aggregate Balance · Outstanding EFBN (R1) · EFBN Held by Licensed Banks (R1)</div>',
         "hk_6_range",
         [
@@ -2546,7 +2551,7 @@ HK_CHART_CONFIGS = [
         ],
     ),
     (
-        '<div class="section-title">7. HKD Funding</div>',
+        '<div class="section-title">15. HKD Funding</div>',
         '<div class="section-description">O/N HIBOR · 3M HIBOR · HKMA Base Rate · O/N−3M Spread (R1)</div>',
         "hk_7_range",
         [
@@ -2556,7 +2561,7 @@ HK_CHART_CONFIGS = [
         ],
     ),
     (
-        '<div class="section-title">8. USD/HKD, Bank Balance & Market</div>',
+        '<div class="section-title">16. USD/HKD, Bank Balance & Market</div>',
         '<div class="section-description">USD/HKD · Strong-side 7.75 · Center 7.80 · Weak-side 7.85 · Tencent / HKEX (R1) · HSTECH / HSI (R2) · Closing Aggregate Balance (R3)</div>',
         "hk_8_range",
         [
@@ -2624,7 +2629,7 @@ def _build_equity_drawdown():
 
 @st.fragment(key="equity_drawdown_viewport")
 def _render_equity_drawdown():
-    st.markdown('<div class="section-title">11. SPX / RSP · 价格走势与区间高点</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">5. SPX / RSP · 价格走势与区间高点</div>', unsafe_allow_html=True)
     st.caption("实线为实际收盘走势；点线“高”标记当前坐标时间内的最高收盘价和日期，虚线“现”为最新收盘价。切换时间或拖动滑块会自动重算区间高点。SPX左轴（点），RSP右轴（美元）；异色虚线为独立的“回撤比例”日线参数，使用最右侧百分比轴；点击图例可单独开关。")
     figure = _build_equity_drawdown()
     _render_adaptive_macro_figure(figure, "us_equity_drawdown", standard=True)
@@ -2656,7 +2661,7 @@ def _build_china_drawdown():
 
 @st.fragment(key="china_equity_drawdown_viewport")
 def _render_china_drawdown():
-    st.markdown('<div class="section-title">12. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">18. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势</div>', unsafe_allow_html=True)
     st.caption("实线为三只指数的实际收盘点位（左轴），异色虚线为独立的“回撤比例”日线参数（右轴百分比），可在图例单独开关。点线“高”为当前坐标时间内的最高收盘价和日期，随时间切换、滑块缩放自动更新；虚线“现”保持最新收盘价。")
     figure = _build_china_drawdown()
     _render_adaptive_macro_figure(figure, "china_equity_drawdown", standard=True)
@@ -2671,7 +2676,7 @@ def _render_china_drawdown():
 @st.fragment(key="macro_chart_9_viewport")
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">9. US Equity Risk & Volatility Structure</div>'
+        '<div class="section-title">6. US Equity Risk & Volatility Structure</div>'
         '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3)</div>',
         unsafe_allow_html=True,
     )
@@ -2690,7 +2695,7 @@ def render_macro_chart_9(prebuilt_fig=None):
 @st.fragment(key="vix_term_structure_chart")
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">10. VIX & VIX3M Term Structure</div>'
+        '<div class="section-title">7. VIX & VIX3M Term Structure</div>'
         '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX3M−VIX (R1)</div>',
         unsafe_allow_html=True,
     )
@@ -2710,7 +2715,7 @@ def render_macro_chart_10(prebuilt_fig=None):
 @st.fragment(key="precious_metals_chart")
 def render_macro_chart_11(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">15. Precious Metals</div>'
+        '<div class="section-title">8. Precious Metals</div>'
         '<div class="section-description">Gold · Silver · Gold/Silver Ratio · Gold Volatility GVZ</div>',
         unsafe_allow_html=True,
     )
@@ -2731,7 +2736,7 @@ def render_macro_chart_11(prebuilt_fig=None):
 @st.fragment(key="crypto_chart")
 def render_macro_chart_12(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">17. Crypto Market</div>'
+        '<div class="section-title">10. Crypto Market</div>'
         '<div class="section-description">BTC · ETH · ETH/BTC · BTC 30D 实际波动率</div>',
         unsafe_allow_html=True,
     )
@@ -2750,7 +2755,7 @@ def render_macro_chart_12(prebuilt_fig=None):
 @st.fragment(key="macro_chart_13_viewport")
 def render_macro_chart_13(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">16. Copper Flow & COMEX–LME Spread</div>'
+        '<div class="section-title">9. Copper Flow & COMEX–LME Spread</div>'
         '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2)</div>',
         unsafe_allow_html=True,
     )
@@ -2772,7 +2777,7 @@ def render_macro_chart_13(prebuilt_fig=None):
 @st.fragment(key="macro_chart_14_viewport")
 def render_macro_chart_14(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">13. China Government Yields & US 5Y Real Yield</div>'
+        '<div class="section-title">17. China Government Yields & US 5Y Real Yield</div>'
         '<div class="section-description">China 2Y / 10Y · US 5Y Real · TIPS · China 10Y−2Y (R1)</div>',
         unsafe_allow_html=True,
     )
@@ -2790,7 +2795,7 @@ def render_macro_chart_14(prebuilt_fig=None):
 @st.fragment(key="macro_chart_15_viewport")
 def render_macro_chart_15(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">14. Japan Government Yields & Nikkei 225 & USD/JPY</div>'
+        '<div class="section-title">11. Japan Government Yields & Nikkei 225 & USD/JPY</div>'
         '<div class="section-description">Japan 2Y / 10Y · Japan 10Y−2Y (R1) · Nikkei 225 (R2) · USD/JPY (R3)</div>',
         unsafe_allow_html=True,
     )
@@ -2809,7 +2814,7 @@ def render_macro_chart_15(prebuilt_fig=None):
 @st.fragment(key="yen_carry_viewport")
 def render_macro_chart_16(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">18. 日元套息分析 · Yen Carry Trade</div>'
+        '<div class="section-title">12. 日元套息分析 · Yen Carry Trade</div>'
         '<div class="section-description">美日2Y利差 · USD/JPY (R1) · 日元20交易日升值幅度 (R2) · CFTC日元投机净仓位 (R3)</div>',
         unsafe_allow_html=True,
     )
@@ -3053,15 +3058,14 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
 st.markdown(
     '<div id="macro-charts" class="section-anchor"></div>'
     '<div class="section-kicker">MACRO CHARTS</div>'
-    '<div class="section-title">US monetary policy, Treasury yields and inflation expectations</div>',
+    '<div class="section-title">美国 / 全球参考 → 日本 → 香港 → 中国</div>',
     unsafe_allow_html=True,
 )
 
 # Reserve the existing document order, then fill sections as workers finish.
 # Only the main Streamlit thread creates containers, fragments and widgets.
 macro_slots = {}
-section_headers = {5: "HONG KONG LIQUIDITY", 9: "EQUITY RISK & DRAWDOWNS",
-                   14: "ASIA RATES", 11: "COMMODITIES", 12: "CRYPTO MARKET", 16: "YEN CARRY"}
+section_headers = REGION_HEADERS
 for number in MACRO_DISPLAY_ORDER:
     if number == "us_drawdown":
         _render_equity_drawdown()
@@ -3206,8 +3210,8 @@ def _render_all_source_freshness(figures):
         add("自选", symbol, row)
     display_figures = {MACRO_DISPLAY_NUMBER[number]: figure
                        for number, figure in figures.items()}
-    display_figures[11] = _build_equity_drawdown()
-    display_figures[12] = _build_china_drawdown()
+    display_figures[MACRO_DISPLAY_NUMBER["us_drawdown"]] = _build_equity_drawdown()
+    display_figures[MACRO_DISPLAY_NUMBER["cn_drawdown"]] = _build_china_drawdown()
     render_freshness_overview(display_figures, quote_rows=rows, news=_read_existing_news_snapshot())
 
 _render_all_source_freshness(macro_figures)

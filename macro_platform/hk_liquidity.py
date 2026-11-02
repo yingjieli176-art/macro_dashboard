@@ -987,7 +987,7 @@ def build_hk_liquidity_figures(
         title_text="", secondary_y=True,
         showgrid=False, zeroline=False, fixedrange=True,
     )
-    style(money, "5. HK Money Supply & Market Pulse", right_axis=True)
+    style(money, "13. HK Money Supply & Market Pulse", right_axis=True)
     money.update_layout(
         margin=dict(l=62, r=92, t=96, b=40, pad=2),
         xaxis=dict(domain=[0.0, 0.91]),
@@ -1010,7 +1010,7 @@ def build_hk_liquidity_figures(
         title_text="", secondary_y=True,
         showgrid=False, zeroline=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3,
     )
-    style(balance, "6. Banking-system Liquidity · Monthly", height=400, right_axis=True)
+    style(balance, "14. Banking-system Liquidity · Monthly", height=400, right_axis=True)
 
     # 5-3 · HKD funding.
     funding = make_subplots(specs=[[{"secondary_y": True}]])
@@ -1034,7 +1034,7 @@ def build_hk_liquidity_figures(
     funding_frequency_label = (
         "Monthly history + recent daily" if funding_is_daily else "Monthly fallback"
     )
-    style(funding, f"7. HKD Funding · {funding_frequency_label}", right_axis=True)
+    style(funding, f"15. HKD Funding · {funding_frequency_label}", right_axis=True)
     if date_range != "5Y" and not funding_is_daily:
         funding.add_annotation(
             text="⚠ 日频 HIBOR 暂缺，显示月末数据",
@@ -1081,7 +1081,7 @@ def build_hk_liquidity_figures(
         title_text="", secondary_y=True,
         showgrid=False, zeroline=False, fixedrange=True,
     )
-    style(fx, "8. USD/HKD, Bank Balance & Market", height=410, right_axis=True)
+    style(fx, "16. USD/HKD, Bank Balance & Market", height=410, right_axis=True)
     fx.update_layout(
         margin=dict(l=62, r=144, t=96, b=40, pad=2),
         xaxis=dict(domain=[0.0, 0.84]),

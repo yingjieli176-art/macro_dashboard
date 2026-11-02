@@ -20,6 +20,7 @@ import requests
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from macro_platform.market_history import completed_daily_closes
+from macro_platform.chart_inventory import NUMBERING, current_chart_numbers
 
 
 _PROBE_LOCK = threading.Lock()
@@ -253,7 +254,7 @@ def us_equity(key):
 def jobs():
     output = []
     def add(key, charts, cadence, stored, fetch):
-        output.append((key, charts, cadence, stored, fetch))
+        output.append((key, current_chart_numbers(charts), cadence, stored, fetch))
     for symbol, charts in {
         "IORB": [1], "RRPONTSYAWARD": [1], "EFFR": [1], "SOFR": [1],
         "DGS3MO": [3], "DGS2": [3,18], "DGS10": [2,3], "DGS30": [3], "DFII5": [2,13], "DFII10": [2], "T10YIE": [2],
@@ -355,7 +356,7 @@ def main():
         for future in as_completed(tasks):
             row = future.result(); rows.append(row)
             print(row["id"], row["repository_latest"], "->", row["source_latest"], row["status"], flush=True)
-    payload = {"checked_at": datetime.now(timezone.utc).isoformat(), "chart_numbering": "display_18",
+    payload = {"checked_at": datetime.now(timezone.utc).isoformat(), "chart_numbering": NUMBERING,
                "sources": sorted(rows,key=lambda r:r["id"]),
                "elapsed_seconds": round(time.monotonic()-started, 3), **_PROBE_STATS}
     Path(args.output).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")

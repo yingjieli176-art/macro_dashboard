@@ -123,10 +123,10 @@ class FullFreshness(unittest.TestCase):
         config = jobs()
         self.assertEqual({c for _, charts, _, _, _ in config for c in charts}, set(range(1,19)))
         mapped = {row[0]: row[1] for row in config}
-        self.assertIn(8, mapped["closing_balance"])
-        self.assertIn(8, mapped["aggr_balance_bf_disc_win"])
+        self.assertIn(16, mapped["closing_balance"])
+        self.assertIn(16, mapped["aggr_balance_bf_disc_win"])
         for source in ("DGS2", "japan_2y", "JPY=X"):
-            self.assertIn(18, mapped[source])
+            self.assertIn(12, mapped[source])
         self.assertTrue({"GC=F","SI=F","BTC-USD","ETH-USD","^N225","china_2y","japan_2y","GVZCLS"}
                         <= {row[0] for row in config})
 
@@ -141,17 +141,17 @@ class FullFreshness(unittest.TestCase):
         fig = go.Figure(go.Scatter(x=pd.to_datetime(["2026-10-19","2026-10-20"]),
                                  y=[4.,None], name="10Y−2Y (R1)"))
         monthly = go.Figure(go.Scatter(x=pd.to_datetime(["2026-09-30"]), y=[1.], name="Balance"))
-        rows = figure_rows({3:fig,6:monthly}, now="2026-10-21")
-        self.assertEqual(len(rows),15)
+        rows = figure_rows({3:fig,14:monthly}, now="2026-10-21")
+        self.assertEqual(len(rows),18)
         self.assertEqual(next(r for r in rows if r["图表"]==3)["实际观测日"],"2026-10-19")
-        self.assertEqual(next(r for r in rows if r["图表"]==6)["频率"],"月频")
-        self.assertEqual(next(r for r in rows if r["图表"]==14)["状态"],"待恢复")
+        self.assertEqual(next(r for r in rows if r["图表"]==14)["频率"],"月频")
+        self.assertEqual(next(r for r in rows if r["图表"]==18)["状态"],"待恢复")
 
     def test_reference_guide_levels_are_not_dated_observations(self):
         fig=go.Figure(go.Scatter(x=["2026-10-20"],y=[7.8],name="USD/HKD"))
         for name in ("Strong-side CU 7.75","Linked Rate Center 7.80","Weak-side CU 7.85"):
             fig.add_trace(go.Scatter(x=["2026-10-21"],y=[7.8],name=name))
-        rows=[r for r in figure_rows({8:fig}) if r["图表"]==8]
+        rows=[r for r in figure_rows({16:fig}) if r["图表"]==16]
         self.assertEqual([r["指标"] for r in rows],["USD/HKD"])
 
     def test_gvz_original_export_uses_named_value_column(self):

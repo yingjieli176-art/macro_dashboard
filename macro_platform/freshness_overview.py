@@ -5,6 +5,7 @@ import math
 from pathlib import Path
 
 import pandas as pd
+from macro_platform.chart_inventory import DISPLAY_ORDER, current_chart_numbers
 
 SOURCE_REPORT = Path(__file__).resolve().parents[1] / "data_snapshots/all_source_freshness.json"
 
@@ -15,7 +16,7 @@ def figure_rows(figures, now=None):
     except ImportError:
         option_observation_health = None
     rows = []
-    for number in range(1, max(15, max(figures, default=0)) + 1):
+    for number in range(1, max(len(DISPLAY_ORDER), max(figures, default=0)) + 1):
         figure = figures.get(number)
         if figure is None or not getattr(figure, "data", None):
             rows.append({"图表": number, "指标": "整图", "实际观测日": "缺失", "频率": "—", "状态": "待恢复"})
@@ -38,7 +39,8 @@ def figure_rows(figures, now=None):
                 rows.append({"图表": number, "指标": trace.name, "实际观测日": "缺失", "频率": "—", "状态": "待恢复"})
                 continue
             last = max(dates)
-            monthly = number == 6 or (number == 5 and any(s in trace.name for s in ("M2 ", "Monetary Base")))
+            logical = DISPLAY_ORDER[number - 1] if number <= len(DISPLAY_ORDER) else None
+            monthly = logical == 6 or (logical == 5 and any(s in trace.name for s in ("M2 ", "Monetary Base")))
             weekly = any(name in trace.name for name in ("Reserve Balances", "Weekly fallback", "CFTC JPY"))
             cadence = "monthly" if monthly else "weekly" if weekly else "daily"
             item = {"name": trace.name, "data": [[last.isoformat(), 1]], "observation_cadence": cadence}
@@ -70,8 +72,8 @@ def source_rows(path=SOURCE_REPORT):
     labels = {"at_source_latest": "与本次源站返回一致", "pipeline_lag": "本地落后源站",
               "source_behind_repository": "源站本次导出较旧，保留较新已验数据",
               "live_only": "页面实时构建，核对图表日期", "unverified": "源站尚未核实"}
-    return _local_time(report.get("checked_at")), [{"源指标": row["id"], "图表": (",".join(map(str,row["charts"]))
-        if report.get("chart_numbering") in {"display_17", "display_18"} else "待按新图号复核"),
+    return _local_time(report.get("checked_at")), [{"源指标": row["id"], "图表": (",".join(map(str, current_chart_numbers(row["charts"], report.get("chart_numbering"))))
+        if current_chart_numbers(row["charts"], report.get("chart_numbering")) is not None else "待按新图号复核"),
         "本地数据日期": row.get("repository_latest") or "实时构建",
         "源站数据日期": row.get("source_latest") or "未取得", "核对结果": labels.get(row["status"],row["status"]),
         "本次核对时间": _local_time(row.get("checked_at")), "说明": row.get("error", "")}
@@ -81,7 +83,7 @@ def source_rows(path=SOURCE_REPORT):
 def render_freshness_overview(figures, *, quote_rows=None, news=None):
     import streamlit as st
     plotted = figure_rows(figures)
-    with st.expander(f"数据最新时间 · {max(15, max(figures, default=0))} 张图 / {len(plotted)} 条曲线", expanded=False):
+    with st.expander(f"数据最新时间 · {max(len(DISPLAY_ORDER), max(figures, default=0))} 张图 / {len(plotted)} 条曲线", expanded=False):
         st.dataframe(pd.DataFrame(plotted)[["图表", "指标", "实际观测日", "频率", "状态"]],
                      hide_index=True, height=380, width="stretch")
         checked_at, verified = source_rows()

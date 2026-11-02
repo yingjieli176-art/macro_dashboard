@@ -7,6 +7,14 @@ import time
 
 from playwright.sync_api import sync_playwright
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from macro_platform.chart_inventory import DISPLAY_NUMBER, REGION_HEADERS
+
+
+def chart_index(key):
+    return DISPLAY_NUMBER[key] - 1
+
 
 # CI-only bridge for the pinned native Streamlit component. The production
 # bundle has no global ECharts registry. Find its existing instance in React's
@@ -264,7 +272,7 @@ def exercise_equity_drawdown(page):
     baseline = None
     ranges = []
     for period in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
-        page.get_by_test_id("stButtonGroup").nth(10).get_by_text(period, exact=True).click()
+        page.get_by_test_id("stButtonGroup").nth(chart_index("us_drawdown")).get_by_text(period, exact=True).click()
         chart = page.locator(f'.st-key-us_equity_drawdown_echarts_{period}').get_by_test_id(
             re.compile(r"^(macro|st)EChartsChart$"))
         chart.wait_for(timeout=30000)
@@ -302,7 +310,7 @@ def exercise_china_drawdown(page):
     page.get_by_text('12. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势', exact=True).wait_for(timeout=30000)
     baseline = None
     for period in ('5Y', '1Y', '6M', '3M', '1M', '1Y'):
-        page.get_by_test_id('stButtonGroup').nth(11).get_by_text(period, exact=True).click()
+        page.get_by_test_id('stButtonGroup').nth(chart_index("cn_drawdown")).get_by_text(period, exact=True).click()
         selector = f'.st-key-china_equity_drawdown_echarts_{period}'
         chart = page.locator(selector).get_by_test_id(re.compile(r'^(macro|st)EChartsChart$'))
         chart.wait_for(timeout=30000)
@@ -336,8 +344,45 @@ def wait_for_page(page, url):
     assert not failures, failures
 
 
+def check_treasury_spread(page):
+    """Inspect the actual browser series, dates and right-axis units."""
+    report = []
+    for width in (1440, 390):
+        page.set_viewport_size({"width": width, "height": 1000 if width == 1440 else 844})
+        page.get_by_test_id("stButtonGroup").nth(chart_index(3)).get_by_text("1Y", exact=True).click()
+        selector = '.st-key-normal_treasury_range_adaptive_default_1Y'
+        chart = page.locator(selector).get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
+        chart.wait_for(timeout=30000)
+        page.wait_for_function("selector => document.querySelector(selector)?.getAttribute('aria-busy') === 'false'",
+                               arg=selector+' [data-testid$="EChartsChart"]', timeout=30000)
+        chart.scroll_into_view_if_needed()
+        state = chart.evaluate("""element => {
+            const chart = (""" + INSTANCE_JS + """)(element), option = chart.getOption();
+            const ten = new Map(option.series.find(s => s.name === '10Y').data);
+            const thirty = new Map(option.series.find(s => s.name === '30Y').data);
+            const spread = option.series.find(s => s.name === '30Y−10Y (R1)');
+            let checked = 0;
+            for (const [date, value] of spread.data) {
+                const a = thirty.get(date), b = ten.get(date);
+                if (Number.isFinite(a) && Number.isFinite(b)) {
+                    if (!Number.isFinite(value) || Math.abs(value-(a-b))>1e-9)
+                        throw new Error('30Y−10Y same-date subtraction mismatch');
+                    checked++;
+                } else if (Number.isFinite(value)) throw new Error('30Y−10Y filled a missing observation');
+            }
+            const model = chart.getModel(), axis = model.getComponent('yAxis', spread.yAxisIndex);
+            return {checked, axis:spread.yAxisIndex, axis_name:axis.get('name'),
+                axis_visible:axis.get('show'), selected:model.getComponent('legend').isSelected(spread.name)};
+        }""")
+        assert state["checked"] > 0 and state["axis"] == 1, state
+        assert "pp" in state["axis_name"] and state["axis_visible"] and state["selected"], state
+        report.append({"width": width, **state})
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    return report
+
+
 def check_hk_bank_balance(page):
-    """Chart 8 must paint the actual latest bank balance on its own axis."""
+    """The HK FX chart must paint the actual bank balance on its own axis."""
     records = json.loads(Path("data_snapshots/hkma_banking_liquidity_daily.json").read_text())["records"]
     latest = max((row["end_of_date"], row["closing_balance"] / 1000.0)
                  for row in records if row.get("closing_balance") is not None)
@@ -345,7 +390,7 @@ def check_hk_bank_balance(page):
     for width in (1440, 390):
         page.set_viewport_size({"width": width, "height": 1000 if width == 1440 else 844})
         for period in ("5Y", "1Y", "6M", "3M", "1M"):
-            page.get_by_test_id("stButtonGroup").nth(7).get_by_text(period, exact=True).click()
+            page.get_by_test_id("stButtonGroup").nth(chart_index(8)).get_by_text(period, exact=True).click()
             selector = f".st-key-hk_8_range_adaptive_default_{period}"
             chart = page.locator(selector).get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             chart.wait_for(timeout=30000)
@@ -633,12 +678,19 @@ def main():
             wait_for_page(page, args.url)
             groups = page.get_by_test_id("stButtonGroup")
             page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 18", timeout=60000)
-            page.get_by_text("14. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
+            page.get_by_text(f"{DISPLAY_NUMBER[15]}. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
             charts = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
-            page.get_by_text("10. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
-            page.get_by_text("15. Precious Metals", exact=True).wait_for(timeout=30000)
+            page.get_by_text(f"{DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
+            page.get_by_text(f"{DISPLAY_NUMBER[11]}. Precious Metals", exact=True).wait_for(timeout=30000)
             assert groups.count() == 18
+            headings = page.locator(".section-title").all_text_contents()
+            numbered = [title.strip() for title in headings if re.match(r"^\d+\. ", title.strip())]
+            assert [int(title.split(".", 1)[0]) for title in numbered] == list(range(1, 19)), numbered
+            sections = [title for title in page.locator(".section-kicker").all_text_contents()
+                        if title in REGION_HEADERS.values()]
+            assert sections == [REGION_HEADERS[key] for key in (1, 15, 5, 14)], sections
+            report["regional_order"] = {"sections":sections, "charts":numbered}
             assert charts.count() >= 8
             assert page.get_by_test_id("stException").count() == 0
             assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
@@ -668,33 +720,34 @@ def main():
                     assert groups.nth(index).get_by_text(label, exact=True).count() == 1, (index, label, report["controls"][index])
             # Use a real HK chart to exercise every server range with raw prices.
             for label in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
-                groups.nth(4).get_by_text(label, exact=True).click()
+                groups.nth(chart_index(5)).get_by_text(label, exact=True).click()
                 page.locator(f".st-key-hk_5_range_adaptive_default_{label}").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$")).wait_for(timeout=30000)
                 page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'",
                                        timeout=30000)
                 assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
             assert page.get_by_test_id("stRadio").count() == 0
             assert page.get_by_text("Rebased 100", exact=True).count() == 0
-            page.get_by_text("13. China Government Yields & US 5Y Real Yield", exact=False).wait_for()
+            page.get_by_text(f"{DISPLAY_NUMBER[14]}. China Government Yields & US 5Y Real Yield", exact=False).wait_for()
             assert page.get_by_text("China & Japan Government Yield Curves", exact=False).count() == 0
-            groups.nth(12).get_by_text("3M", exact=True).click()
+            groups.nth(chart_index(14)).get_by_text("3M", exact=True).click()
             china_selected = page.locator(".st-key-china_rates_adaptive_default_3M").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             china_selected.wait_for(timeout=30000)
-            groups.nth(13).get_by_text("1M", exact=True).click()
+            groups.nth(chart_index(15)).get_by_text("1M", exact=True).click()
             china_selected.wait_for(timeout=30000)
-            groups.nth(12).get_by_text("1Y", exact=True).click()
-            groups.nth(13).get_by_text("1Y", exact=True).click()
+            groups.nth(chart_index(14)).get_by_text("1Y", exact=True).click()
+            groups.nth(chart_index(15)).get_by_text("1Y", exact=True).click()
             report["checks"].append({"china_japan_separate": True, "country_ranges_independent": True})
-            page.get_by_text("18. 日元套息分析", exact=False).wait_for()
+            page.get_by_text(f"{DISPLAY_NUMBER[16]}. 日元套息分析", exact=False).wait_for()
             carry = page.locator('.st-key-yen_carry_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             report["yen_carry_zoom"] = exercise_client_zoom(page, carry, minimum_axes=4)
             report["cftc_columns"] = assert_bar_baseline(carry, 'CFTC JPY speculative net (R3)')
             report["yen_carry_ranges"] = exercise_range_legend_persistence(
-                page, 'yen_carry_adaptive_default', 17)
+                page, 'yen_carry_adaptive_default', chart_index(16))
             chart = page.locator('.st-key-hk_5_range_adaptive_default_1Y').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             report["client_zoom"] = exercise_client_zoom(page, chart)
             report["monthly_growth_columns"] = assert_bar_baseline(chart, 'M2 MoM')
+            report["treasury_30y_10y"] = check_treasury_spread(page)
             report["hk_bank_balance"] = check_hk_bank_balance(page)
             report["mobile_layout"] = check_mobile_layout(page)
             liquidity = page.locator('.st-key-normal_liquidity_range_echarts_1Y').get_by_test_id(
@@ -707,16 +760,16 @@ def main():
             page.set_viewport_size({'width':1440, 'height':1000})
             report['yen_legend_desktop'] = exercise_yen_legend(page)
             report['range_legend_desktop'] = {
-                'liquidity':exercise_range_legend_persistence(page,'normal_liquidity_range_echarts',3),
-                'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',4),
-                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',9),
+                'liquidity':exercise_range_legend_persistence(page,'normal_liquidity_range_echarts',chart_index(4)),
+                'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',chart_index(5)),
+                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',chart_index(10)),
             }
             page.set_viewport_size({'width':390,'height':844})
             page.wait_for_timeout(300)
             report['range_legend_mobile'] = {
-                'liquidity':exercise_range_legend_persistence(page,'normal_liquidity_range_echarts',3),
-                'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',4),
-                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',9),
+                'liquidity':exercise_range_legend_persistence(page,'normal_liquidity_range_echarts',chart_index(4)),
+                'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',chart_index(5)),
+                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',chart_index(10)),
             }
             page.set_viewport_size({'width':1440,'height':1000})
             freshness = page.get_by_text(re.compile(r'^数据最新时间 · 18 张图'))
@@ -735,7 +788,7 @@ def main():
             # shared background fetch and cause a full rerun in A; clicking
             # A's old fragment during that rerun tests a stale event race,
             # rather than whether B preserves A's already selected period.
-            groups.nth(4).get_by_text('1M', exact=True).click()
+            groups.nth(chart_index(5)).get_by_text('1M', exact=True).click()
             expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_default"][class*="_1M"]').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             expected_a.wait_for(timeout=30000)
             context_b = browser.new_context(viewport={"width": 1440, "height": 1000})
@@ -754,7 +807,7 @@ def main():
                 raise
             page_b.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'", timeout=30000)
             expected_a.wait_for(timeout=30000)
-            page_b.get_by_test_id('stButtonGroup').nth(4).get_by_text('3M', exact=True).click()
+            page_b.get_by_test_id('stButtonGroup').nth(chart_index(5)).get_by_text('3M', exact=True).click()
             expected_b = page_b.locator('.st-key-hk_5_range_adaptive_default_3M').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             expected_b.wait_for(timeout=30000)
             assert expected_a.count() == 1 and expected_b.count() == 1
