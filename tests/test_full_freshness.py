@@ -133,6 +133,17 @@ class FullFreshness(unittest.TestCase):
         self.assertTrue({"GC=F","SI=F","BTC-USD","ETH-USD","^N225","china_2y","japan_2y","GVZCLS"}
                         <= {row[0] for row in config})
 
+    def test_hibor_audit_uses_text_relay_when_direct_hkab_page_has_no_fixing(self):
+        from scripts import probe_all_sources as probe
+        direct = type("Response", (), {"text": "<html>Loading...</html>"})()
+        relay = type("Response", (), {"text": """Rates as at 11:15a.m.
+            Hong Kong Time on 2026-10-30.
+            Overnight 2.77464
+            3 Months 3.21256
+            Historical Rates 2026"""})()
+        with patch.object(probe, "get", side_effect=[direct, relay]):
+            self.assertEqual(probe.hibor("hibor_3m")[0], "2026-10-30")
+
     def test_hkma_daily_page_parser_extracts_dated_rate_and_balance(self):
         from scripts.probe_all_sources import parse_hkma_daily_page
         page = """<div>Discount Window</div><div>Base Rate : 4.25%</div>
