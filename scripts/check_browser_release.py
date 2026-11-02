@@ -692,8 +692,16 @@ def main():
             report["client_zoom"] = exercise_client_zoom(page, chart)
             report["monthly_growth_columns"] = assert_bar_baseline(chart, 'M2 MoM')
             report["mobile_layout"] = check_mobile_layout(page)
+            # The mobile-layout sweep resizes every chart and can trigger a
+            # Streamlit fragment rerun. Wait for the app to settle, then resolve
+            # the replacement DOM node rather than scrolling a detached chart.
+            page.wait_for_function(
+                "document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'",
+                timeout=30000,
+            )
             liquidity = page.locator('.st-key-sp500_nikkei_ratio_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
+            liquidity.wait_for(state="visible", timeout=30000)
             report['legend_axes_desktop'] = exercise_legend_axes(page, liquidity)
             page.set_viewport_size({'width':390, 'height':844})
             page.wait_for_timeout(300)
