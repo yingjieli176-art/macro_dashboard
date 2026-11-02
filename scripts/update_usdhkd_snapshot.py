@@ -22,6 +22,13 @@ HOSTS = (
 )
 
 
+def _weekdays_only(frame: pd.DataFrame) -> pd.DataFrame:
+    frame = frame.copy()
+    frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
+    frame = frame.dropna(subset=["observation_date"])
+    return frame.loc[frame["observation_date"].dt.dayofweek < 5].copy()
+
+
 def _fetch_yahoo() -> tuple[pd.DataFrame, str]:
     last_error = None
     for host in HOSTS:
@@ -45,7 +52,7 @@ def _fetch_yahoo() -> tuple[pd.DataFrame, str]:
                     raise RuntimeError("Yahoo chart result missing")
                 node = result[0] or {}
                 timestamps = node.get("timestamp") or []
-                frame = completed_daily_closes(node).rename(columns={"close": "value"})
+                frame = _weekdays_only(completed_daily_closes(node).rename(columns={"close": "value"}))
                 frame = frame.sort_values("observation_date").drop_duplicates(
                     "observation_date", keep="last"
                 )
@@ -65,7 +72,7 @@ def main() -> None:
         previous = json.loads(OUT.read_text(encoding="utf-8"))
         old = pd.DataFrame(previous.get("records") or [])
         if not old.empty:
-            old["observation_date"] = pd.to_datetime(old["observation_date"], errors="coerce")
+            old = _weekdays_only(old)
             if frame.observation_date.max() < old.observation_date.max():
                 raise RuntimeError("USDHKD source would roll back the saved latest close")
             frame = pd.concat([old, frame], ignore_index=True).dropna()
