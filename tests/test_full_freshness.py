@@ -154,14 +154,19 @@ class FullFreshness(unittest.TestCase):
         self.assertEqual(parse_hkma_daily_page(page, "closing_balance"),
                          ("2026-10-30", 53999.0))
 
-    def test_hkma_daily_audit_uses_text_relay_when_page_html_is_dynamic(self):
+    def test_hkma_daily_audit_walks_back_to_latest_published_business_day(self):
         from scripts import probe_all_sources as probe
-        direct = type("Response", (), {"text": "<html>Loading...</html>"})()
-        relay = type("Response", (), {"text": """Discount Window Base Rate : 4.25%
+        empty = type("Response", (), {"text": "<html>Loading...</html>"})()
+        published = type("Response", (), {"text": """Discount Window Base Rate : 4.25%
             Closing Aggregate Balance | 53,999 mn
             Date and Time : 18:30, 30/10/2026"""})()
-        with patch.object(probe, "get", side_effect=[direct, relay]):
-            self.assertEqual(probe.hkma_daily_value("closing_balance")[0], "2026-10-30")
+        fixed_now = pd.Timestamp("2026-11-02 12:00", tz="Asia/Hong_Kong")
+        with patch("pandas.Timestamp.now", return_value=fixed_now), \
+             patch.object(probe, "get", side_effect=[empty, empty, published]) as source:
+            observed, url = probe.hkma_daily_value("closing_balance")
+        self.assertEqual(observed, "2026-10-30")
+        self.assertIn("/2026/10/ms-20261030/", url)
+        self.assertEqual(source.call_count, 3)
 
     def test_hkab_home_summary_parser_reads_latest_fixing(self):
         from scripts.update_hkma_daily_snapshot import parse_hkab_latest
