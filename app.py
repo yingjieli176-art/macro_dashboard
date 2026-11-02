@@ -2968,30 +2968,6 @@ def _safe_hk_bundle(snapshot_revision):
     return figures
 
 
-@st.fragment(key="sp500_nikkei_ratio_chart")
-def render_macro_chart_17(prebuilt_fig=None):
-    st.markdown(
-        '<div class="section-title">19. S&P 500（市值加权）/ 日经225 相对强弱</div>'
-        '<div class="section-description">S&P 500 ÷ Nikkei 225 · 同日已完成收盘 · 指数点按整数显示</div>',
-        unsafe_allow_html=True,
-    )
-    base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
-        "Chart 17", build_sp500_nikkei_ratio_figure,
-    )
-    _render_adaptive_macro_figure(base_fig, "sp500_nikkei_ratio")
-    st.markdown(
-        '<div class="mini-description"><div class="parameter-note"><b>S&P 500：</b>美国标普500市值加权价格指数；日线收盘值四舍五入为整数点。</div>'
-        '<div class="parameter-note"><b>Nikkei 225：</b>日本日经225价格指数；日线收盘值四舍五入为整数点。</div>'
-        '<div class="parameter-note"><b>S&P 500 / Nikkei 225：</b>同一自然日两项整数收盘点位相除；比值上升表示标普500相对日经225走强，下降表示相对走弱。只采用两地均有有效收盘的日期，不以前值填补休市日；不做汇率换算，因此这是指数点位比，不是美元总回报或投资组合收益率。</div></div>',
-        unsafe_allow_html=True,
-    )
-    add_sources([
-        ("Yahoo Finance · S&P 500 (^GSPC)", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
-        ("Yahoo Finance · Nikkei 225 (^N225)", "https://finance.yahoo.com/quote/%5EN225/history/"),
-    ])
-    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
-
-
 def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_complete=None, budget=8.0):
     """Build concurrently and optionally publish completed charts immediately.
 
