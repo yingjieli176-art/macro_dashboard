@@ -115,7 +115,9 @@ def fred(symbol):
         return latest(frame, "date", "value"), "https://markets.newyorkfed.org/api/rp/results/search.json"
     if symbol in ("IORB", "EFFR", "SOFR"):
         try:
-            frame = _fetch_primary(requests.Session(), symbol)
+            session = requests.Session()
+            session.headers.update({"User-Agent": "Mozilla/5.0 MacroDashboard/1.0"})
+            frame = _fetch_primary(session, symbol)
             url = ("https://www.federalreserve.gov/datadownload/Choose.aspx?rel=PRATES" if symbol == "IORB"
                    else "https://www.newyorkfed.org/markets/reference-rates/" + symbol.lower())
             return latest(frame, "date", "value"), url
