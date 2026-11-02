@@ -248,7 +248,15 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
             }, timeout=FETCH_TIMEOUT,
         )
         response.raise_for_status()
-        table = pd.read_csv(StringIO(response.text), header=5)
+        # Federal Reserve DDP metadata/header rows have changed over time.
+        # Locate the actual CSV header rather than assuming a fixed sixth row.
+        header_row = next((
+            index for index, line in enumerate(response.text.splitlines()[:30])
+            if "Time Period" in line and "RESBM_N.D" in line
+        ), None)
+        if header_row is None:
+            raise ValueError("Federal Reserve PRATES CSV header not found")
+        table = pd.read_csv(StringIO(response.text), header=header_row)
         if "Time Period" not in table.columns or "RESBM_N.D" not in table.columns:
             raise ValueError("Federal Reserve PRATES response has no IORB series")
         frame = pd.DataFrame({
