@@ -53,6 +53,30 @@ class RegionalChartInventory(unittest.TestCase):
             path.write_text(json.dumps(report))
             self.assertEqual(source_rows(path),(stamp,rows))
 
+    def test_browser_numbered_title_selectors_match_actual_headings(self):
+        root = Path(__file__).resolve().parents[1]
+        titles = set(re.findall(r'section-title">([^<]+)</div>', (root / "app.py").read_text()))
+        browser = ast.parse((root / "scripts/check_browser_release.py").read_text())
+        checked = []
+        for node in ast.walk(browser):
+            if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "get_by_text" and node.args):
+                continue
+            argument = node.args[0]
+            if not isinstance(argument, (ast.Constant, ast.JoinedStr)):
+                continue
+            title = eval(compile(ast.Expression(argument), "browser-title", "eval"),
+                         {"__builtins__": {}, "DISPLAY_NUMBER": DISPLAY_NUMBER})
+            if isinstance(title, str) and re.match(r"^\d+\. ", title):
+                exact = any(keyword.arg == "exact" and isinstance(keyword.value, ast.Constant)
+                            and keyword.value.value is True for keyword in node.keywords)
+                if exact:
+                    self.assertIn(title, titles)
+                else:
+                    self.assertTrue(any(title in heading for heading in titles), title)
+                checked.append(title)
+        self.assertGreaterEqual(len(checked), 5)
+
     def test_banking_keeps_monthly_cadence_at_its_new_position(self):
         monthly=go.Figure(go.Scatter(x=["2026-09-30"],y=[54.108],name="Closing Aggregate Balance"))
         daily=go.Figure(go.Scatter(x=["2026-10-30"],y=[53.999],name="Closing Aggregate Balance (R3)"))

@@ -267,7 +267,7 @@ def exercise_price_path_legend(page, chart):
 
 
 def exercise_equity_drawdown(page):
-    page.get_by_text('11. SPX / RSP · 价格走势与区间高点', exact=True).wait_for(timeout=30000)
+    page.get_by_text(f'{DISPLAY_NUMBER["us_drawdown"]}. SPX / RSP · 价格走势与区间高点', exact=True).wait_for(timeout=30000)
     assert page.get_by_text('9B.', exact=False).count() == 0
     baseline = None
     ranges = []
@@ -307,7 +307,7 @@ def exercise_equity_drawdown(page):
 
 
 def exercise_china_drawdown(page):
-    page.get_by_text('12. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势', exact=True).wait_for(timeout=30000)
+    page.get_by_text(f'{DISPLAY_NUMBER["cn_drawdown"]}. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势', exact=True).wait_for(timeout=30000)
     baseline = None
     for period in ('5Y', '1Y', '6M', '3M', '1M', '1Y'):
         page.get_by_test_id('stButtonGroup').nth(chart_index("cn_drawdown")).get_by_text(period, exact=True).click()
