@@ -69,7 +69,7 @@ class ChinaEquityTests(unittest.TestCase):
             self.assertEqual(path.read_bytes(), original)
             with self.assertRaises(ValueError): save_snapshot(histories, path, now="2026-11-10 08:00Z")
             self.assertEqual(path.read_bytes(), original)
-            with self.assertRaises(KeyError): save_snapshot({"000300": histories["000300"]}, path)
+            with self.assertRaises(KeyError): save_snapshot({"000300": histories["000300"]}, path, now="2026-10-27 08:00Z")
             self.assertEqual(path.read_bytes(), original)
 
     def test_committed_snapshot_is_official_daily_history_including_old_highs(self):
