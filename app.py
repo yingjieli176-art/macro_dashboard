@@ -102,9 +102,9 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-MACRO_DISPLAY_ORDER = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "us_drawdown", "cn_drawdown", 14, 15, 11, 13, 12, 16, 17)
+MACRO_DISPLAY_ORDER = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "us_drawdown", "cn_drawdown", 14, 15, 11, 13, 12, 16)
 MACRO_DISPLAY_NUMBER = {key: index for index, key in enumerate(MACRO_DISPLAY_ORDER, 1)}
-CHART_BUILD = "2026-10-30-position-growth-columns-r81"
+CHART_BUILD = "2026-11-02-sp500-nikkei-chart4-r82"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2508,21 +2508,27 @@ def render_macro_chart_3(prebuilt_fig=None):
 
 @st.fragment(key="us_macro_chart_4")
 def render_macro_chart_4(prebuilt_fig=None):
-    _render_standard_macro_chart(
-        '<div class="section-title">4. US Liquidity</div>',
-        '<div class="section-description">Net Liquidity (L) · Reserve Balances / TGA (R1) · ON RRP (R2)</div>',
-        "normal_liquidity_range",
-        build_fig4,
-        [
-            ("Fed Total Assets (WALCL)", "https://fred.stlouisfed.org/series/WALCL"),
-            ("Reserve Balances (WRESBAL)", "https://fred.stlouisfed.org/series/WRESBAL"),
-            ("TGA · Daily Treasury Statement", "https://fiscaldata.treasury.gov/datasets/daily-treasury-statement/operating-cash-balance"),
-            ("TGA fallback (WTREGEN)", "https://fred.stlouisfed.org/series/WTREGEN"),
-            ("ON RRP Balance (RRPONTSYD)", "https://fred.stlouisfed.org/series/RRPONTSYD"),
-        ],
-        3,
-        prebuilt_fig=prebuilt_fig,
+    st.markdown(
+        '<div class="section-title">4. S&P 500 / Nikkei 225 相对强弱</div>'
+        '<div class="section-description">S&P 500 ÷ Nikkei 225 · 分子 / 分母指数走势（各自起点=100）· 同日已完成收盘</div>',
+        unsafe_allow_html=True,
     )
+    base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
+        "Chart 4", build_sp500_nikkei_ratio_figure,
+    )
+    _render_adaptive_macro_figure(base_fig, "sp500_nikkei_ratio")
+    st.markdown(
+        '<div class="mini-description"><div class="parameter-note"><b>比值（左轴）：</b>标普500指数点位 ÷ 日经225指数点位。上升表示标普500相对走强，下降表示日经225相对走强。</div>'
+        '<div class="parameter-note"><b>分子走势（右轴）：</b>标普500收盘点位，以图表可用区间首个共同观测日归一化为100，展示相对起点的涨跌路径。</div>'
+        '<div class="parameter-note"><b>分母走势（右轴）：</b>日经225收盘点位，同样以首个共同观测日归一化为100。两条归一化曲线可直接比较相对表现；比值仍使用两指数原始整数点位计算。</div>'
+        '<div class="parameter-context">口径：仅使用两地均有有效收盘的共同日期；不对休市日以前值填充。指数收盘值四舍五入为整数；归一化走势=当日指数点位÷共同起点指数点位×100。此比值不是汇率调整后的总回报。</div></div>',
+        unsafe_allow_html=True,
+    )
+    add_sources([
+        ("Yahoo Finance · S&P 500 (^GSPC)", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
+        ("Yahoo Finance · Nikkei 225 (^N225)", "https://finance.yahoo.com/quote/%5EN225/history/"),
+    ])
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
 HK_CHART_CONFIGS = [
@@ -3001,7 +3007,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
         1: lambda: cached_chart(1),
         2: lambda: cached_chart(2),
         3: lambda: cached_chart(3),
-        4: lambda: cached_chart(4),
+        4: lambda: _safe_macro_build("Chart 4", build_sp500_nikkei_ratio_figure),
         "hk5": lambda: _safe_hk_bundle(snapshot_revision),
         9: lambda: cached_chart(9),
         10: lambda: cached_chart(10),
@@ -3011,7 +3017,6 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
         14: lambda: cached_chart(14),
         15: lambda: cached_chart(15),
         16: lambda: cached_chart(16),
-        17: lambda: _safe_macro_build("Chart 17", build_sp500_nikkei_ratio_figure),
     }
     revision = (snapshot_revision, CHART_BUILD)
     futures = submit_jobs(jobs, name="macro-chart", workers=6, budget=budget, revision=revision)
@@ -3045,7 +3050,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
             results[key] = ([_macro_error_figure(f"Chart {n}") for n in range(5, 9)]
                             if isinstance(key, str) else _macro_error_figure(f"Chart {key}"))
     if on_complete is not None:
-        for number in range(1, 18):
+        for number in range(1, 17):
             if number not in published:
                 if number in (5, 6, 7, 8):
                     value = results["hk5"][number-5]
@@ -3071,7 +3076,6 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
         14: results[14],
         15: results[15],
         16: results[16],
-        17: results[17],
     }
 
 
@@ -3086,7 +3090,7 @@ st.markdown(
 # Only the main Streamlit thread creates containers, fragments and widgets.
 macro_slots = {}
 section_headers = {5: "HONG KONG LIQUIDITY", 9: "EQUITY RISK & DRAWDOWNS",
-                   14: "ASIA RATES", 17: "RELATIVE EQUITY STRENGTH",
+                   14: "ASIA RATES",
                    11: "COMMODITIES", 12: "CRYPTO MARKET", 16: "YEN CARRY"}
 for number in MACRO_DISPLAY_ORDER:
     if number == "us_drawdown":
@@ -3106,7 +3110,6 @@ def _render_completed_macro_chart(number, figure):
         7: render_macro_chart_7, 8: render_macro_chart_8, 9: render_macro_chart_9,
         10: render_macro_chart_10, 11: render_macro_chart_11, 12: render_macro_chart_12,
         13: render_macro_chart_13, 14: render_macro_chart_14, 15: render_macro_chart_15, 16: render_macro_chart_16,
-        17: render_macro_chart_17,
     }
     with macro_slots[number]:
         renderers[number](figure)
