@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-02-sp500-nikkei-snapshot-fallback-r84",
+  "release": "2026-11-02-monthly-freshness-grace-r85",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
