@@ -133,6 +133,16 @@ class FullFreshness(unittest.TestCase):
         self.assertTrue({"GC=F","SI=F","BTC-USD","ETH-USD","^N225","china_2y","japan_2y","GVZCLS"}
                         <= {row[0] for row in config})
 
+    def test_hkma_daily_page_parser_extracts_dated_rate_and_balance(self):
+        from scripts.probe_all_sources import parse_hkma_daily_page
+        page = """<div>Discount Window</div><div>Base Rate : 4.25%</div>
+        <div>Closing Aggregate Balance (HK$) | 53,999 mn</div>
+        <div>Date and Time : 18:30, 30/10/2026</div>"""
+        self.assertEqual(parse_hkma_daily_page(page, "disc_win_base_rate"),
+                         ("2026-10-30", 4.25))
+        self.assertEqual(parse_hkma_daily_page(page, "closing_balance"),
+                         ("2026-10-30", 53999.0))
+
     def test_hibor_audit_uses_last_published_fixing_on_explicit_hkab_holiday(self):
         from scripts import probe_all_sources as probe
         with tempfile.TemporaryDirectory() as folder:
