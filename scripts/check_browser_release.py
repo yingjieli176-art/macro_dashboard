@@ -16,6 +16,13 @@ def chart_index(key):
     return DISPLAY_NUMBER[key] - 1
 
 
+def wait_for_script_idle(page):
+    # A full rerun rebuilds the fragment registry. Seeing an old painted chart
+    # is insufficient: a click before re-registration can be dropped by Streamlit.
+    page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'",
+                           timeout=30000)
+
+
 # CI-only bridge for the pinned native Streamlit component. The production
 # bundle has no global ECharts registry. Find its existing instance in React's
 # hook chain, then inspect ECharts' actual processed data and scale extents.
@@ -349,12 +356,17 @@ def check_treasury_spread(page):
     report = []
     for width in (1440, 390):
         page.set_viewport_size({"width": width, "height": 1000 if width == 1440 else 844})
-        page.get_by_test_id("stButtonGroup").nth(chart_index(3)).get_by_text("1Y", exact=True).click()
-        selector = '.st-key-normal_treasury_range_echarts_1Y'
-        chart = page.locator(selector).get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
-        chart.wait_for(timeout=30000)
-        page.wait_for_function("selector => document.querySelector(selector)?.getAttribute('aria-busy') === 'false'",
-                               arg=selector+' [data-testid$="EChartsChart"]', timeout=30000)
+        # Change the key before returning to 1Y so readiness cannot match the
+        # previously painted 1Y instance while its fragment is still rerunning.
+        for period in ("3M", "1Y"):
+            wait_for_script_idle(page)
+            page.get_by_test_id("stButtonGroup").nth(chart_index(3)).get_by_text(period, exact=True).click()
+            selector = f'.st-key-normal_treasury_range_echarts_{period}'
+            chart = page.locator(selector).get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
+            chart.wait_for(timeout=30000)
+            page.wait_for_function("selector => document.querySelector(selector)?.getAttribute('aria-busy') === 'false'",
+                                   arg=selector+' [data-testid$="EChartsChart"]', timeout=30000)
+            wait_for_script_idle(page)
         chart.scroll_into_view_if_needed()
         state = chart.evaluate("""element => {
             const chart = (""" + INSTANCE_JS + """)(element), option = chart.getOption();
@@ -378,6 +390,7 @@ def check_treasury_spread(page):
         assert "pp" in state["axis_name"] and state["axis_visible"] and state["selected"], state
         report.append({"width": width, **state})
     page.set_viewport_size({"width": 1440, "height": 1000})
+    wait_for_script_idle(page)
     return report
 
 
@@ -390,12 +403,14 @@ def check_hk_bank_balance(page):
     for width in (1440, 390):
         page.set_viewport_size({"width": width, "height": 1000 if width == 1440 else 844})
         for period in ("5Y", "1Y", "6M", "3M", "1M"):
+            wait_for_script_idle(page)
             page.get_by_test_id("stButtonGroup").nth(chart_index(8)).get_by_text(period, exact=True).click()
             selector = f".st-key-hk_8_range_adaptive_default_{period}"
             chart = page.locator(selector).get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             chart.wait_for(timeout=30000)
             page.wait_for_function("selector => document.querySelector(selector)?.getAttribute('aria-busy') === 'false'",
                                    arg=selector+' [data-testid$="EChartsChart"]', timeout=30000)
+            wait_for_script_idle(page)
             chart.scroll_into_view_if_needed()
             state = chart.evaluate("""element => {
                 const chart = (""" + INSTANCE_JS + """)(element), model = chart.getModel();
