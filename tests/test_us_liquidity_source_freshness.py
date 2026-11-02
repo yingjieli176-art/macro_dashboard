@@ -46,9 +46,7 @@ class Sp500NikkeiRatioTests(unittest.TestCase):
                 {"date": "2026-10-30", "close": 51400},
             ]}))
             ratio.load_sp500_nikkei_ratio.clear()
-            with patch.object(ratio, "US_EQUITY_SNAPSHOT", spx), \\
-                 patch.object(ratio, "NIKKEI_SNAPSHOT", nikkei), \\
-                 patch.object(ratio, "_load_index", side_effect=TimeoutError("Yahoo offline")):
+            with patch.object(ratio, "US_EQUITY_SNAPSHOT", spx), patch.object(ratio, "NIKKEI_SNAPSHOT", nikkei), patch.object(ratio, "_load_index", side_effect=TimeoutError("Yahoo offline")):
                 frame = ratio.load_sp500_nikkei_ratio()
             self.assertEqual(frame.observation_date.dt.strftime("%Y-%m-%d").tolist(),
                              ["2026-10-28"])
