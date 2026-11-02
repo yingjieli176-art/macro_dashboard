@@ -22,7 +22,13 @@ def completed_china_date(now=None):
     clock = clock.tz_localize("UTC") if clock.tzinfo is None else clock
     clock = clock.tz_convert("Asia/Shanghai")
     day = clock.normalize().tz_localize(None)
-    return day if (clock.hour, clock.minute) >= (15, 15) else day - pd.Timedelta(days=1)
+    candidate = day if (clock.hour, clock.minute) >= (15, 15) else day - pd.Timedelta(days=1)
+    # The CSI API may return a synthetic carry-in point on a weekend when
+    # its requested endDate is a non-trading calendar day. The latest
+    # completed equity session before Monday morning is Friday, not Sunday.
+    while candidate.dayofweek >= 5:
+        candidate -= pd.Timedelta(days=1)
+    return candidate
 
 
 def parse_csindex_history(payload, code, now=None):
