@@ -67,14 +67,16 @@ def source_rows(path=SOURCE_REPORT):
         report = json.loads(path.read_text())
     except (OSError, ValueError, TypeError):
         return None, []
-    labels = {"at_source_latest": "与本次源站返回一致", "pipeline_lag": "本地落后源站",
+    labels = {"at_source_latest": "与本次源站返回一致",
+              "snapshot_verified": "使用最近一次已验快照（实时接口限流）",
+              "pipeline_lag": "本地落后源站",
               "source_behind_repository": "源站本次导出较旧，保留较新已验数据",
               "live_only": "页面实时构建，核对图表日期", "unverified": "源站尚未核实"}
     return _local_time(report.get("checked_at")), [{"源指标": row["id"], "图表": (",".join(map(str,row["charts"]))
         if report.get("chart_numbering") in {"display_17", "display_18"} else "待按新图号复核"),
         "本地数据日期": row.get("repository_latest") or "实时构建",
         "源站数据日期": row.get("source_latest") or "未取得", "核对结果": labels.get(row["status"],row["status"]),
-        "本次核对时间": _local_time(row.get("checked_at")), "说明": row.get("error", "")}
+        "本次核对时间": _local_time(row.get("checked_at")), "说明": row.get("error") or row.get("live_probe_note", "")}
         for row in report.get("sources", [])]
 
 
