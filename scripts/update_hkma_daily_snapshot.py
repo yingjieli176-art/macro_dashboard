@@ -24,7 +24,7 @@ HIBOR_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-s
 # daily backbone above.
 INTERBANK_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity"
 CURRENT_BASE_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-monetary-base"
-HKAB_URL = "https://www.hkab.org.hk/en/rates/hibor?promoCode=SRPS7JDQW"
+HKAB_URL = "https://www.hkab.org.hk/en/home"
 
 
 def parse_hkab_latest(html: str, today: date | None = None) -> dict:
@@ -39,12 +39,19 @@ def parse_hkab_latest(html: str, today: date | None = None) -> dict:
     parser.feed(html)
     text = " ".join(parser.parts)
     match = re.search(r"Rates as at.*?Hong Kong Time on\s+(\d{4}-\d{2}-\d{2})", text)
-    if not match:
-        raise ValueError("HKAB publication date missing")
-    day = date.fromisoformat(match[1])
+    if match:
+        day = date.fromisoformat(match[1])
+        section = text[match.end():].split("Historical Rates", 1)[0]
+    else:
+        # The HKAB home page publishes a compact, server-rendered summary with
+        # the same official fixing date and tenors.
+        match = re.search(r"Last update\s+(\d{4}-\d{2}-\d{2})", text, re.I)
+        if not match:
+            raise ValueError("HKAB publication date missing")
+        day = date.fromisoformat(match[1])
+        section = text.split("Exchange Rates Highlights", 1)[0]
     if day > (today or datetime.now(timezone.utc).date()):
         raise ValueError("HKAB future publication date")
-    section = text[match.end():].split("Historical Rates", 1)[0]
     row = {"end_of_date": day.isoformat(), "hibor_source": HKAB_URL}
     for label, field in (("Overnight", "hibor_overnight"), ("3 Months", "hibor_3m")):
         rate = re.search(re.escape(label) + r"\s+(-?\d+(?:\.\d+)?)", section)
