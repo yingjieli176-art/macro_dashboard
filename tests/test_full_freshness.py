@@ -125,6 +125,11 @@ class FullFreshness(unittest.TestCase):
         mapped = {row[0]: row[1] for row in config}
         for source in ("DGS2", "japan_2y", "JPY=X"):
             self.assertIn(18, mapped[source])
+        self.assertIn(4, mapped["SP500"])
+        self.assertIn(4, mapped["^N225"])
+        self.assertEqual(mapped["WALCL"], [])
+        self.assertEqual(mapped["WRESBAL"], [])
+        self.assertEqual(mapped["RRPONTSYD"], [])
         self.assertTrue({"GC=F","SI=F","BTC-USD","ETH-USD","^N225","china_2y","japan_2y","GVZCLS"}
                         <= {row[0] for row in config})
 
