@@ -1,7 +1,9 @@
 """S&P 500 market-cap-weighted index / Nikkei 225 relative-price ratio."""
 from __future__ import annotations
 
+import json
 import logging
+from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -10,6 +12,9 @@ from macro_platform.market_history import completed_daily_closes
 from macro_platform.request_runtime import http_get, observed_cache
 
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
+ROOT = Path(__file__).resolve().parents[1]
+US_EQUITY_SNAPSHOT = ROOT / "data_snapshots/us_equity_daily.json"
+NIKKEI_SNAPSHOT = ROOT / "data_snapshots/nikkei225_daily.json"
 SERIES = {
     "SP500": {"symbol": "^GSPC", "currency": "USD", "label": "S&P 500（市值加权）"},
     "NIKKEI": {"symbol": "^N225", "currency": "JPY", "label": "日经225"},
@@ -47,12 +52,51 @@ def _load_index(key: str) -> pd.DataFrame:
     return frame.rename(columns={"close": key})
 
 
-@observed_cache(ttl=900)
+def _load_snapshot_index(key: str) -> pd.DataFrame:
+    """Read a last-good raw-close history when the live quote endpoint is down."""
+    try:
+        if key == "SP500":
+            payload = json.loads(US_EQUITY_SNAPSHOT.read_text())
+            records = payload["series"]["SPX"]["records"]
+            frame = pd.DataFrame(records).rename(columns={"date": "observation_date", "close": key})
+        else:
+            payload = json.loads(NIKKEI_SNAPSHOT.read_text())
+            records = payload["records"]
+            frame = pd.DataFrame(records).rename(columns={"date": "observation_date", "close": key})
+        frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
+        frame[key] = pd.to_numeric(frame[key], errors="coerce")
+        frame = frame.dropna(subset=["observation_date", key])
+        frame = frame.loc[frame[key].gt(0), ["observation_date", key]]
+        return frame.sort_values("observation_date").drop_duplicates(
+            "observation_date", keep="last"
+        ).reset_index(drop=True)
+    except (OSError, ValueError, KeyError, TypeError):
+        return pd.DataFrame(columns=["observation_date", key])
+
+
+def _load_index_with_snapshot(key: str) -> pd.DataFrame:
+    snapshot = _load_snapshot_index(key)
+    try:
+        live = _load_index(key)
+    except Exception:
+        if snapshot.empty:
+            raise
+        logging.exception("%s live history unavailable; using last-good daily snapshot", key)
+        return snapshot
+    if snapshot.empty:
+        return live
+    combined = pd.concat([snapshot, live], ignore_index=True)
+    return combined.sort_values("observation_date").drop_duplicates(
+        "observation_date", keep="last"
+    ).reset_index(drop=True)
+
+
+@observed_cache(paths=lambda: (US_EQUITY_SNAPSHOT, NIKKEI_SNAPSHOT), ttl=900)
 def load_sp500_nikkei_ratio() -> pd.DataFrame:
     """Join same-date completed closes; never forward-fill a closed market."""
     try:
-        sp500 = _load_index("SP500")
-        nikkei = _load_index("NIKKEI")
+        sp500 = _load_index_with_snapshot("SP500")
+        nikkei = _load_index_with_snapshot("NIKKEI")
     except Exception:
         logging.exception("S&P 500 / Nikkei 225 history unavailable")
         return _empty()
