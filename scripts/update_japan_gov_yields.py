@@ -1,4 +1,8 @@
-"""Persist original Ministry of Finance JGB observations for cold starts."""
+"""Persist original Ministry of Finance JGB observations for cold starts.
+
+The current-release fetch is also the recovery path when the source audit sees
+an observation newer than the committed snapshot.
+"""
 from datetime import datetime, timezone
 import json
 from pathlib import Path
