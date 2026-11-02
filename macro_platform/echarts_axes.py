@@ -602,7 +602,7 @@ def option_observation_health(option, *, chart_key="", now=None):
             key in name for key in ("WALCL", "WRESBAL", "WTREGEN", "Reserve Balances", "Weekly fallback", "CFTC JPY")
         )
         monthly = monthly or series.get("observation_cadence") == "monthly"
-        due = (latest.normalize() + pd.offsets.MonthEnd(2) + pd.Timedelta(days=1)
+        due = (latest.normalize() + pd.offsets.MonthEnd(2) + pd.Timedelta(days=7)
                if monthly else latest.normalize() + pd.Timedelta(days=10)
                if weekly else latest.normalize() + pd.offsets.BDay(2))
         cadence = "月频" if monthly else "周频" if weekly else "日频"
