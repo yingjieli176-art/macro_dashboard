@@ -133,17 +133,25 @@ class FullFreshness(unittest.TestCase):
         self.assertTrue({"GC=F","SI=F","BTC-USD","ETH-USD","^N225","china_2y","japan_2y","GVZCLS"}
                         <= {row[0] for row in config})
 
-    def test_hibor_audit_uses_last_published_hkab_fixing_on_non_working_days(self):
+    def test_hibor_audit_uses_last_published_fixing_on_explicit_hkab_holiday(self):
         from scripts import probe_all_sources as probe
-        html = """<h2>Rates as at 11:15a.m.</h2>
-        <p>Hong Kong Time on 2026-10-30.</p>
-        <div>Overnight <b>2.77464</b></div>
-        <div>3 Months <b>3.21256</b></div><div>Historical Rates 2026</div>"""
-        response = type("Response", (), {"text": html})()
-        with patch.object(probe, "get", return_value=response) as source:
-            self.assertEqual(probe.hibor("hibor_overnight")[0], "2026-10-30")
-            self.assertEqual(probe.hibor("hibor_3m")[0], "2026-10-30")
-            self.assertEqual(source.call_args.args[0], "https://www.hkab.org.hk/en/rates/hibor")
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            snapshots = root / "data_snapshots"
+            snapshots.mkdir()
+            (snapshots / "hkma_banking_liquidity_daily.json").write_text(json.dumps({
+                "records": [{
+                    "end_of_date": "2026-10-30",
+                    "hibor_overnight": 2.65,
+                    "hibor_3m": 3.21256,
+                }]
+            }))
+            response = type("Response", (), {
+                "text": "This is a non-working day. Please select another day."
+            })()
+            with patch.object(probe, "ROOT", root), patch.object(probe, "get", return_value=response):
+                self.assertEqual(probe.hibor("hibor_overnight")[0], "2026-10-30")
+                self.assertEqual(probe.hibor("hibor_3m")[0], "2026-10-30")
 
     def test_transport_failure_is_unverified_and_newer_source_is_not_green(self):
         def fail(): raise TimeoutError("source unavailable")
