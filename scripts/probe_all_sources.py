@@ -244,7 +244,7 @@ def jobs():
     for symbol, charts in {
         "IORB": [1], "RRPONTSYAWARD": [1], "EFFR": [1], "SOFR": [1],
         "DGS3MO": [3], "DGS2": [3,18], "DGS10": [2,3], "DGS30": [3], "DFII5": [2,13], "DFII10": [2], "T10YIE": [2],
-        "WALCL": [4], "WRESBAL": [4], "RRPONTSYD": [4], "VIXCLS": [9,10], "VXVCLS": [10], "SP500": [9], "GVZCLS": [15],
+        "WALCL": [], "WRESBAL": [], "RRPONTSYD": [], "VIXCLS": [9,10], "VXVCLS": [10], "SP500": [4,9], "GVZCLS": [15],
     }.items():
         add(symbol, charts, "weekly" if symbol in ("WALCL", "WRESBAL") else "daily",
             snapshot(f"fred_cache/{symbol}.json", "date", "value"), lambda symbol=symbol: fred(symbol))
@@ -254,7 +254,7 @@ def jobs():
         ("^HSI", [5,8], "hk_market_daily.json", "close"), ("HSTECH", [5,8], "hk_market_daily.json", "close"),
         ("GC=F", [15], None, "close"), ("SI=F", [15], None, "close"),
         ("BTC-USD", [17], None, "close"), ("ETH-USD", [17], None, "close"),
-        ("^N225", [14], None, "close"), ("HG=F", [16], "copper_market_daily.json", "comex_price_usd_lb"),
+        ("^N225", [4,14], None, "close"), ("HG=F", [16], "copper_market_daily.json", "comex_price_usd_lb"),
     ):
         key = "date" if filename in ("jpy_market_daily.json", "copper_market_daily.json") else "observation_date"
         stored = snapshot(filename, key, field, symbol if filename == "hk_market_daily.json" else None) if filename else None
@@ -292,7 +292,7 @@ def jobs():
             lambda code=code: csindex(code))
     from macro_platform.treasury_cash import read_verified_tga_snapshot
     saved_tga = read_verified_tga_snapshot(ROOT / "data_snapshots/treasury_tga_daily.json")
-    add("TGA_DAILY", [4], "daily", latest(saved_tga, "observation_date", "TGA_DAILY"), tga)
+    add("TGA_DAILY", [], "daily", latest(saved_tga, "observation_date", "TGA_DAILY"), tga)
     add("comex_stock_t", [16], "daily", snapshot("copper_market_daily.json", "date", "comex_stock_t"), cme)
     for field in ("lme_stock_t", "lme_3m_usd_t"):
         add(field, [16], "daily", snapshot("copper_market_daily.json", "date", field), lambda field=field: lme(field))
