@@ -7,7 +7,7 @@ import unittest
 import pandas as pd
 
 from macro_platform.china_equity import (
-    SERIES, SNAPSHOT, parse_csindex_history, build_china_drawdown_figure,
+    SERIES, SNAPSHOT, completed_china_date, parse_csindex_history, build_china_drawdown_figure,
 )
 from macro_platform.echarts_axes import build_adaptive_echarts_option
 from scripts.update_china_equity_snapshot import save_snapshot
@@ -21,6 +21,12 @@ def payload(code="932000"):
 
 
 class ChinaEquityTests(unittest.TestCase):
+    def test_completed_china_date_never_returns_weekend(self):
+        self.assertEqual(completed_china_date("2026-11-02 03:00Z"), pd.Timestamp("2026-10-30"))
+        self.assertEqual(completed_china_date("2026-11-01 08:00Z"), pd.Timestamp("2026-10-30"))
+        self.assertEqual(completed_china_date("2026-10-31 08:00Z"), pd.Timestamp("2026-10-30"))
+        self.assertEqual(completed_china_date("2026-11-02 08:00Z"), pd.Timestamp("2026-11-02"))
+
     def test_official_identity_base_date_and_completed_session(self):
         frame = parse_csindex_history(payload(), "932000", now="2026-10-27 06:00Z")
         self.assertEqual(frame.observation_date.min(), pd.Timestamp("2013-12-31"))
