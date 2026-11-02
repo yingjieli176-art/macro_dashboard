@@ -429,6 +429,39 @@ def exercise_legend_axes(page, chart):
 
     original = snapshot()
     names = [s['name'] for s in original['series']]
+    axis_ids = [s['axis'] for s in original['series']]
+    if len(original['axes']) == len(original['series']) == len(set(axis_ids)):
+        # Chart 4 uses three independent Y axes: toggling one legend item must
+        # hide only that index's own axis, not a shared axis.
+        for series in original['series']:
+            state = click(series['name'])
+            hidden_axis = series['axis']
+            assert state['axes'][hidden_axis]['show'] is False
+            assert all(axis['show'] is True for index, axis in enumerate(state['axes'])
+                       if index != hidden_axis)
+            state = click(series['name'])
+            assert state['axes'] == original['axes']
+        state = click(names[-1])
+        viewport = page.viewport_size
+        page.set_viewport_size({'width':844 if viewport['width'] < 700 else 390, 'height':844})
+        page.wait_for_timeout(300)
+        rotated = snapshot()
+        assert rotated['axes'][axis_ids[-1]]['show'] is False
+        assert rotated['selected'] == state['selected']
+        assert rotated['series'] == original['series'] and rotated['zoom'] == original['zoom']
+        page.set_viewport_size(viewport)
+        page.wait_for_timeout(300)
+        state = click(names[-1])
+        assert state['axes'] == original['axes']
+        for name in names:
+            state = click(name)
+        assert all(axis['show'] is False for axis in state['axes'])
+        for name in names:
+            state = click(name)
+        assert state['axes'] == original['axes']
+        return {'independent_axes':True, 'per_series_axis_toggle':True,
+                'rotation_preserved':True, 'all_off_and_restore':True,
+                'data_and_zoom_preserved':True}
     shared = [s['name'] for s in original['series'] if s['axis']==1]
     last = next(s['name'] for s in original['series'] if s['axis']==2)
     state = click(last)
