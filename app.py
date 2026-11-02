@@ -2810,7 +2810,7 @@ def _cache_safe_figure(figure):
 def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
     """Reuse successful construction; callers receive isolated figure copies."""
     builders = {
-        1: build_fig1, 2: build_fig2, 3: build_fig3,
+        1: build_fig1, 2: build_fig2, 3: build_fig3, 4: build_sp500_nikkei_ratio_figure,
         9: build_fig9, 10: build_fig10, 11: build_fig11, 12: build_fig12,
         13: build_fig13, 14: build_fig14, 15: build_fig15, 16: build_fig16,
     }
@@ -2869,7 +2869,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
         1: lambda: cached_chart(1),
         2: lambda: cached_chart(2),
         3: lambda: cached_chart(3),
-        4: lambda: _safe_macro_build("Chart 4", build_sp500_nikkei_ratio_figure),
+        4: lambda: cached_chart(4),
         "hk5": lambda: _safe_hk_bundle(snapshot_revision),
         9: lambda: cached_chart(9),
         10: lambda: cached_chart(10),
