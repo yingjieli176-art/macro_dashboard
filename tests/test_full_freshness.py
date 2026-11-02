@@ -144,6 +144,19 @@ class FullFreshness(unittest.TestCase):
         with patch.object(probe, "get", side_effect=[direct, relay]):
             self.assertEqual(probe.hibor("hibor_3m")[0], "2026-10-30")
 
+    def test_yahoo_rate_limit_uses_fresh_verified_snapshot_status(self):
+        from scripts import probe_all_sources as probe
+        with patch.object(probe, "yahoo", side_effect=RuntimeError("HTTP 429")), \
+             patch.object(probe, "snapshot", return_value="2026-10-30"):
+            result = probe.yahoo_with_snapshot("^N225", "nikkei225_daily.json", "close")
+        self.assertEqual(result[0], "2026-10-30")
+        self.assertEqual(result[2], "snapshot")
+        job = ("^N225", [4, 14], "daily", "2026-10-30", lambda: result)
+        row = probe.check(job)
+        self.assertEqual(row["status"], "snapshot_verified")
+        self.assertEqual(row["verification_method"], "snapshot")
+        self.assertIn("429", row["live_probe_note"])
+
     def test_hkma_daily_page_parser_extracts_dated_rate_and_balance(self):
         from scripts.probe_all_sources import parse_hkma_daily_page
         page = """<div>Discount Window</div><div>Base Rate : 4.25%</div>
