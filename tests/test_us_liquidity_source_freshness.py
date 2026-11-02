@@ -64,7 +64,10 @@ class Sp500NikkeiRatioTests(unittest.TestCase):
             "NIKKEI": [51000.4, 51400.6],
         })
         ratio.load_sp500_nikkei_ratio.clear()
-        with patch.object(ratio, "_load_index", side_effect=[sp500, nikkei]):
+        empty_sp = pd.DataFrame(columns=["observation_date", "SP500"])
+        empty_nk = pd.DataFrame(columns=["observation_date", "NIKKEI"])
+        with patch.object(ratio, "_load_snapshot_index", side_effect=[empty_sp, empty_nk]), \
+             patch.object(ratio, "_load_index", side_effect=[sp500, nikkei]):
             frame = ratio.load_sp500_nikkei_ratio()
         self.assertEqual(frame.observation_date.dt.strftime("%Y-%m-%d").tolist(),
                          ["2026-10-28", "2026-10-30"])
