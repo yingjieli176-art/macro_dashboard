@@ -253,8 +253,15 @@ def parse_hkma_daily_page(page_html, field):
 
 def hkma_daily_value(field):
     url = "https://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics/"
-    observed, _ = parse_hkma_daily_page(get(url).text, field)
-    return observed, url
+    proxy_url = "https://r.jina.ai/http://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics/"
+    errors = []
+    for candidate_url in (url, proxy_url):
+        try:
+            observed, _ = parse_hkma_daily_page(get(candidate_url).text, field)
+            return observed, url
+        except Exception as error:
+            errors.append(f"{candidate_url}: {type(error).__name__}: {error}")
+    raise ValueError("HKMA daily page publication unavailable: " + "; ".join(errors))
 
 
 def hibor(field):
