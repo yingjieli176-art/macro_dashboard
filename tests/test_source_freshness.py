@@ -67,11 +67,17 @@ class SourceFreshnessTests(unittest.TestCase):
     def test_monthly_publication_lag_and_market_overlay_have_separate_rules(self):
         option = {"series": [
             {"name": "M2 YoY", "data": [["2026-08-31", 5.2]]},
+            {"name": "M3 YoY", "data": [["2026-08-31", 4.8]]},
             {"name": "Tencent Price (R1)", "data": [["2026-09-30", 500]]},
         ]}
         report = option_observation_health(option, chart_key="hk_5_range", now="2026-10-20")
         self.assertEqual(report["stale_names"], ["Tencent Price (R1)"])
-        self.assertEqual(report["monthly_names"], ["M2 YoY"])
+        self.assertEqual(report["monthly_names"], ["M2 YoY", "M3 YoY"])
+        # Source audit confirmed 2026-08-31 was still the latest HKMA M2/M3
+        # observation on 2026-11-02. Allow the full one-week publication buffer.
+        report = option_observation_health(option, chart_key="hk_5_range", now="2026-11-02")
+        self.assertEqual(report["stale_names"], ["Tencent Price (R1)"])
+        self.assertEqual(report["due_by_name"]["M2 YoY"], "2026-11-07")
         report = option_observation_health(option, chart_key="hk_5_range", now="2026-11-10")
         self.assertIn("M2 YoY", report["stale_names"])
         self.assertIn("2026-08-31", report["stale_details"][0])
