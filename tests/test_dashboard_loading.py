@@ -56,8 +56,11 @@ class DashboardLoadingTests(unittest.TestCase):
         st.session_state.clear()
         dates = pd.to_datetime(["2021-09-29", "2025-09-29", "2026-09-29"])
         self.figure = go.Figure(go.Scatter(x=dates, y=[100, 110, 120], name="full history"))
-        for number in (1, 2, 3, 4, 9, 10, 11, 12, 13):
+        for number in (1, 2, 3, 9, 10, 11, 12, 13):
             self.ns[f"build_fig{number}"] = Mock(side_effect=lambda *args: go.Figure(self.figure))
+        self.ns["build_sp500_nikkei_ratio_figure"] = Mock(
+            side_effect=lambda *args: go.Figure(self.figure)
+        )
         self.ns["build_fig14"] = Mock(side_effect=lambda *args: go.Figure(self.figure))
         self.ns["build_fig15"] = Mock(side_effect=lambda *args: go.Figure(self.figure))
         self.ns["build_fig16"] = Mock(side_effect=lambda *args: go.Figure(self.figure))
@@ -95,8 +98,9 @@ class DashboardLoadingTests(unittest.TestCase):
         first[1].data[0].name = "modified by renderer"
         second = self.ns["_build_macro_figures_parallel"]()
         self.assertEqual(second[1].data[0].name, "full history")
-        for number in (1, 2, 3, 4, 9, 10, 11, 12, 13):
+        for number in (1, 2, 3, 9, 10, 11, 12, 13):
             self.ns[f"build_fig{number}"].assert_called_once()
+        self.ns["build_sp500_nikkei_ratio_figure"].assert_called_once_with("5Y")
         self.ns["build_fig14"].assert_called_once()
         self.ns["build_fig15"].assert_called_once()
         self.ns["build_fig16"].assert_called_once()
