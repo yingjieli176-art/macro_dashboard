@@ -268,8 +268,8 @@ def hibor(field):
     # HKAB publishes the last business-day fixing on its official rates page.
     # Use the text relay only as a transport fallback when direct HTML is incomplete.
     from scripts.update_hkma_daily_snapshot import parse_hkab_latest
-    url = "https://www.hkab.org.hk/en/rates/hibor?promoCode=SRPS7JDQW"
-    proxy_url = "https://r.jina.ai/http://www.hkab.org.hk/en/rates/hibor?promoCode=SRPS7JDQW"
+    url = "https://www.hkab.org.hk/en/home"
+    proxy_url = "https://r.jina.ai/http://www.hkab.org.hk/en/home"
     pages = []
     errors = []
     for candidate_url in (url, proxy_url):
