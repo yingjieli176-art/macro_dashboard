@@ -191,17 +191,15 @@ def asia(country, value):
 
 
 def hibor(field):
-    # HKAB does not publish fixings on Hong Kong non-working days. The HKMA
-    # daily HIBOR-fixing series republishes the same HKAB benchmark and retains
-    # the latest valid fixing date instead of treating a holiday page as an
-    # unverified source outage.
-    source_field = {"hibor_overnight": "ir_overnight", "hibor_3m": "ir_3m"}[field]
-    frame, url = hkma_table(
-        "monthly-statistical-bulletin/er-ir/hk-interbank-ir-daily",
-        "end_of_day",
-        {"segment": "hibor.fixing"},
-    )
-    return latest(frame, "end_of_day", source_field), url
+    # The newer .hk landing page may show only a non-working-day notice.
+    # HKAB's legacy official rates endpoint continues to expose the last
+    # published business-day fixing, which is the correct freshness date.
+    from scripts.update_hkma_daily_snapshot import parse_hkab_latest
+    url = "https://www.hkab.org.hk/en/rates/hibor"
+    row = parse_hkab_latest(get(url).text)
+    if row.get(field) is None:
+        raise ValueError(f"HKAB fixing missing: {field}")
+    return row["end_of_date"], url
 
 
 def tga():
