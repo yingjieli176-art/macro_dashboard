@@ -146,7 +146,7 @@ class FullFreshness(unittest.TestCase):
         )) as source:
             self.assertEqual(probe.hibor("hibor_overnight")[0], "2026-10-30")
             self.assertEqual(probe.hibor("hibor_3m")[0], "2026-10-30")
-            self.assertEqual(source.call_args.kwargs["extra"], {"segment": "hibor.fixing"})
+            self.assertEqual(source.call_args.args[2], {"segment": "hibor.fixing"})
 
     def test_transport_failure_is_unverified_and_newer_source_is_not_green(self):
         def fail(): raise TimeoutError("source unavailable")
