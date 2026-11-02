@@ -188,7 +188,7 @@ class EchartsNativeAxes(unittest.TestCase):
         self.assertIn('plotly_chart', engine)
         self.assertIn('_recoverable_echarts_option', engine)
         self.assertNotIn('range_key == "normal_corridor_range"', engine)
-        for chart_no in range(1, 5):
+        for chart_no in range(1, 4):
             chart_name = f"render_macro_chart_{chart_no}"
             render_method = next(
                 node for node in tree.body
@@ -200,6 +200,19 @@ class EchartsNativeAxes(unittest.TestCase):
                 and call.func.id == "_render_standard_macro_chart"
                 for call in ast.walk(render_method)
             ))
+        # Chart 4 has a custom three-axis layout and explanatory notes, so it
+        # calls the shared adaptive renderer directly rather than the standard
+        # one-parameter description wrapper.
+        chart4 = next(
+            node for node in tree.body
+            if isinstance(node, ast.FunctionDef) and node.name == "render_macro_chart_4"
+        )
+        chart4_calls = [
+            call.func.id for call in ast.walk(chart4)
+            if isinstance(call, ast.Call) and isinstance(call.func, ast.Name)
+        ]
+        self.assertIn("_render_adaptive_macro_figure", chart4_calls)
+        self.assertNotIn("_render_standard_macro_chart", chart4_calls)
 
     def test_exact_month_viewport_y_bounds_exclude_five_year_extremes(self):
         dates = pd.date_range("2021-10-01", "2026-10-01", freq="7D")
