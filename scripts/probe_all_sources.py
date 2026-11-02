@@ -179,7 +179,18 @@ def yahoo(symbol):
     for host in ("query1.finance.yahoo.com", "query2.finance.yahoo.com"):
         url = "https://" + host + "/v8/finance/chart/" + quote(symbol, safe="")
         try:
-            payload = get(url, params={"range": "1mo", "interval": "1d"}).json() or {}
+            try:
+                from curl_cffi import requests as curl_requests
+                response = curl_requests.get(
+                    url,
+                    params={"range": "1mo", "interval": "1d"},
+                    impersonate="chrome",
+                    timeout=(12, 25),
+                )
+                response.raise_for_status()
+                payload = response.json() or {}
+            except ImportError:
+                payload = get(url, params={"range": "1mo", "interval": "1d"}).json() or {}
             nodes = ((payload.get("chart") or {}).get("result") or [])
             if len(nodes) != 1:
                 raise ValueError("Yahoo Finance returned no unique history")
