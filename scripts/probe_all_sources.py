@@ -245,30 +245,24 @@ def hkma_daily_value(field):
 
 
 def hibor(field):
-    # HKAB does not publish a new fixing on a non-working day. Prefer its
-    # official page; use r.jina.ai only as a transport relay if the page's
-    # direct HTML omits the published fixing block.
+    # HKAB publishes the last business-day fixing on its official rates page.
+    # Use the text relay only as a transport fallback when direct HTML is incomplete.
     from scripts.update_hkma_daily_snapshot import parse_hkab_latest
     url = "https://www.hkab.org.hk/en/rates/hibor?promoCode=SRPS7JDQW"
-    html = get(url).text
+    proxy_url = "https://r.jina.ai/http://www.hkab.org.hk/en/rates/hibor?promoCode=SRPS7JDQW"
+    pages = []
     errors = []
-    for candidate_url, page in (
-        (url, html),
-        ("https://r.jina.ai/http://" + url.removeprefix("https://"), None),
-    ):
+    for candidate_url in (url, proxy_url):
         try:
-            candidate_page = get(candidate_url).text if page is None else page
-            row = parse_hkab_latest(candidate_page)
-            if row.get(field) is None:
-                raise ValueError(f"HKAB fixing missing: {field}")
-            return row["end_of_date"], url
-        except ValueError as error:
-            errors.append(str(error))
-            if page is not None:
-                html = page
-            else:
-                proxy_page = candidate_page
-    if re.search(r"non-working day|not a working day", html + " " + locals().get("proxy_page", ""), re.I):
+            page = get(candidate_url).text
+            pages.append(page)
+            row = parse_hkab_latest(page)
+            if row.get(field) is not None:
+                return row["end_of_date"], url
+            errors.append(f"{candidate_url}: {field} missing")
+        except Exception as error:
+            errors.append(f"{candidate_url}: {type(error).__name__}: {error}")
+    if any(re.search(r"non-working day|not a working day", page, re.I) for page in pages):
         payload = json.loads((ROOT / "data_snapshots/hkma_banking_liquidity_daily.json").read_text())
         records = payload.get("records") or []
         latest_row = max(records, key=lambda item: str(item.get("end_of_date") or ""))
