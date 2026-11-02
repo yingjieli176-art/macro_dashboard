@@ -251,9 +251,9 @@ def parse_hkma_daily_page(page_html, field):
     value = float(match.group(1).replace(",", ""))
     return observed, value
 
-def hkma_daily_value(field):
+def hkma_daily_value(field, today=None):
     base = "https://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics"
-    today = pd.Timestamp.now(tz="Asia/Hong_Kong").date()
+    today = today or pd.Timestamp.now(tz="Asia/Hong_Kong").date()
     errors = []
     # HKMA publishes a dated static page after the close of each Hong Kong
     # business day. Walk back over weekends/holidays until the latest page exists.
