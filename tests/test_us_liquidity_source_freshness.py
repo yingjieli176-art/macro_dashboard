@@ -1,5 +1,8 @@
 """Chart 4 keeps raw integer index closes and its three independent axes."""
+import json
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import pandas as pd
@@ -28,6 +31,30 @@ class Sp500NikkeiRatioTests(unittest.TestCase):
         self.assertEqual(figure.layout.yaxis3.title.text, "日经225（点）")
         self.assertNotIn("rebased", str(figure.to_plotly_json()).lower())
         self.assertNotIn("起点=100", str(figure.to_plotly_json()))
+
+    def test_last_good_snapshots_keep_chart_available_when_live_yahoo_is_offline(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            spx = root / "us_equity_daily.json"
+            nikkei = root / "nikkei225_daily.json"
+            spx.write_text(json.dumps({"series": {"SPX": {"records": [
+                {"date": "2026-10-28", "close": 6800.4},
+                {"date": "2026-10-29", "close": 6810.6},
+            ]}}}))
+            nikkei.write_text(json.dumps({"records": [
+                {"date": "2026-10-28", "close": 51000},
+                {"date": "2026-10-30", "close": 51400},
+            ]}))
+            ratio.load_sp500_nikkei_ratio.clear()
+            with patch.object(ratio, "US_EQUITY_SNAPSHOT", spx), \\
+                 patch.object(ratio, "NIKKEI_SNAPSHOT", nikkei), \\
+                 patch.object(ratio, "_load_index", side_effect=TimeoutError("Yahoo offline")):
+                frame = ratio.load_sp500_nikkei_ratio()
+            self.assertEqual(frame.observation_date.dt.strftime("%Y-%m-%d").tolist(),
+                             ["2026-10-28"])
+            self.assertEqual(frame.SP500.tolist(), [6800])
+            self.assertEqual(frame.NIKKEI.tolist(), [51000])
+            ratio.load_sp500_nikkei_ratio.clear()
 
     def test_history_joins_only_common_dates_and_rounds_index_points(self):
         sp500 = pd.DataFrame({
