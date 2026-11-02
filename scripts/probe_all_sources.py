@@ -191,12 +191,23 @@ def asia(country, value):
 
 
 def hibor(field):
-    # The newer .hk landing page may show only a non-working-day notice.
-    # HKAB's legacy official rates endpoint continues to expose the last
-    # published business-day fixing, which is the correct freshness date.
+    # HKAB does not publish a new fixing on a non-working day. If its official
+    # page explicitly says so, the last-good daily snapshot is the latest
+    # published fixing; a generic page/transport failure remains unverified.
     from scripts.update_hkma_daily_snapshot import parse_hkab_latest
     url = "https://www.hkab.org.hk/en/rates/hibor"
-    row = parse_hkab_latest(get(url).text)
+    html = get(url).text
+    try:
+        row = parse_hkab_latest(html)
+    except ValueError:
+        if not re.search(r"non-working day|not a working day", html, re.I):
+            raise
+        payload = json.loads((ROOT / "data_snapshots/hkma_banking_liquidity_daily.json").read_text())
+        records = payload.get("records") or []
+        latest_row = max(records, key=lambda item: str(item.get("end_of_date") or ""))
+        if not latest_row.get(field):
+            raise ValueError(f"HKAB non-working day but no last-good fixing for {field}")
+        return latest_row["end_of_date"], url
     if row.get(field) is None:
         raise ValueError(f"HKAB fixing missing: {field}")
     return row["end_of_date"], url
