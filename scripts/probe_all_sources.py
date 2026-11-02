@@ -196,7 +196,7 @@ def hibor(field):
     # page explicitly says so, the last-good daily snapshot is the latest
     # published fixing; a generic page/transport failure remains unverified.
     from scripts.update_hkma_daily_snapshot import parse_hkab_latest
-    url = "https://www.hkab.org.hk/en/rates/hibor"
+    url = "https://www.hkab.org.hk/en/rates/hibor?promoCode=SRPS7JDQW"
     html = get(url).text
     try:
         row = parse_hkab_latest(html)
