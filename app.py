@@ -104,7 +104,7 @@ RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 MACRO_DISPLAY_ORDER = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "us_drawdown", "cn_drawdown", 14, 15, 11, 13, 12, 16)
 MACRO_DISPLAY_NUMBER = {key: index for index, key in enumerate(MACRO_DISPLAY_ORDER, 1)}
-CHART_BUILD = "2026-11-02-sp500-nikkei-chart4-r82"
+CHART_BUILD = "2026-11-02-sp500-nikkei-raw-axes-r83"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2396,7 +2396,7 @@ def render_macro_chart_3(prebuilt_fig=None):
 def render_macro_chart_4(prebuilt_fig=None):
     st.markdown(
         '<div class="section-title">4. S&P 500 / Nikkei 225 相对强弱</div>'
-        '<div class="section-description">S&P 500 ÷ Nikkei 225 · 分子 / 分母指数走势（各自起点=100）· 同日已完成收盘</div>',
+        '<div class="section-description">S&P 500 ÷ Nikkei 225 · 原始指数点位 + 点位比值 · 三个独立Y轴 · 同日已完成收盘</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2405,9 +2405,9 @@ def render_macro_chart_4(prebuilt_fig=None):
     _render_adaptive_macro_figure(base_fig, "sp500_nikkei_ratio")
     st.markdown(
         '<div class="mini-description"><div class="parameter-note"><b>比值（左轴）：</b>标普500指数点位 ÷ 日经225指数点位。上升表示标普500相对走强，下降表示日经225相对走强。</div>'
-        '<div class="parameter-note"><b>分子走势（右轴）：</b>标普500收盘点位，以图表可用区间首个共同观测日归一化为100，展示相对起点的涨跌路径。</div>'
-        '<div class="parameter-note"><b>分母走势（右轴）：</b>日经225收盘点位，同样以首个共同观测日归一化为100。两条归一化曲线可直接比较相对表现；比值仍使用两指数原始整数点位计算。</div>'
-        '<div class="parameter-context">口径：仅使用两地均有有效收盘的共同日期；不对休市日以前值填充。指数收盘值四舍五入为整数；归一化走势=当日指数点位÷共同起点指数点位×100。此比值不是汇率调整后的总回报。</div></div>',
+        '<div class="parameter-note"><b>分子（右侧Y轴一）：</b>标普500每日真实收盘指数点位，单位为点，不做归一化。</div>'
+        '<div class="parameter-note"><b>分母（右侧Y轴二）：</b>日经225每日真实收盘指数点位，单位为点，不做归一化。</div>'
+        '<div class="parameter-context">口径：仅使用两地均有有效收盘的共同日期；不对休市日以前值填充。指数收盘值四舍五入为整数；标普500与日经225分别使用独立Y轴显示真实点位，比值使用第三个Y轴显示。此比值不是汇率调整后的总回报。</div></div>',
         unsafe_allow_html=True,
     )
     add_sources([
