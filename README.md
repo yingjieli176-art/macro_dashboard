@@ -167,11 +167,10 @@ Display order: 1–3 US monetary policy and Treasury yields; 4 S&P 500 / Nikkei 
 12 China equity prices; 13 China rates; 14 Japan rates/equity;
 15 precious metals; 16 copper; 17 crypto; 18 yen carry.
 Chart 4 replaces the former US Liquidity chart. It shows the same-date
-S&P 500 / Nikkei 225 index-point ratio plus both component index trends,
-rebased independently to 100 at the first common completed close. The ratio
-uses integer index closes; dates without a close in either market are omitted.
-The component rebasing is for relative-performance comparison, not FX-adjusted
-total return.
+S&P 500 / Nikkei 225 index-point ratio plus both component indices at their
+actual integer closing levels. The ratio, S&P 500 and Nikkei 225 each use an
+independent Y axis; no rebasing or normalization is applied. Dates without a
+close in either market are omitted. The ratio is not an FX-adjusted total return.
 
 
 ## Equity price charts and reference lines (11–12)
