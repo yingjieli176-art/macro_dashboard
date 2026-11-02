@@ -48,7 +48,7 @@ def save_snapshot(histories, path=SNAPSHOT, now=None):
     return True
 
 
-def collect_history(key):
+def collect_history(key, *, recent=False):
     errors = []
     best = None
     cutoff = completed_us_date()
@@ -56,12 +56,14 @@ def collect_history(key):
         try:
             # range=max can silently downgrade interval=1d to MONTHLY.
             # Explicit epoch bounds request the complete daily history.
+            params = ({"range": "1mo", "interval": "1d", "includePrePost": "false"}
+                      if recent else {"period1": 0, "period2": int(datetime.now(timezone.utc).timestamp()),
+                                      "interval": "1d", "includePrePost": "false"})
             response = requests.get(
                 f"https://{host}/v8/finance/chart/{quote(SERIES[key]['symbol'], safe='')}",
-                params={"period1": 0, "period2": int(datetime.now(timezone.utc).timestamp()),
-                        "interval": "1d", "includePrePost": "false"},
+                params=params,
                 headers={"User-Agent": "Mozilla/5.0 (compatible; MacroDashboard/1.0)"},
-                timeout=(5, 25),
+                timeout=(12, 25),
             )
             response.raise_for_status()
             frame = parse_yahoo_history(response.json(), key)

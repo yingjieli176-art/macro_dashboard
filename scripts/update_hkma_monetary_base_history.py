@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import time
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -9,6 +10,7 @@ from typing import Any
 import requests
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 SNAPSHOT = ROOT / "data_snapshots" / "hkma_monetary_statistics.json"
 OFFICIAL_BASE = (
     "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/"
@@ -36,10 +38,8 @@ def _extract_records(payload: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _parse_transport_text(text: str) -> list[dict[str, Any]]:
-    start = text.find('{"header"')
-    if start < 0:
-        raise RuntimeError("HKMA JSON body not found in transport response")
-    return _extract_records(json.loads(text[start:]))
+    from scripts.update_hkma_snapshot import _parse_proxy_json
+    return _extract_records(_parse_proxy_json(text))
 
 
 def fetch_official_records() -> list[dict[str, Any]]:

@@ -2,15 +2,30 @@
   "source": "HKMA original monthly money supply; retained verified monthly history (C&SD table currently quarterly/yearly)",
   "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics",
   "cross_check_url": "https://www.censtatd.gov.hk/api/get.php?id=340-45012&lang=en&full_series=1",
-  "updated_at": "2026-11-02T01:52:22.162977+00:00",
+  "updated_at": "2026-11-02T01:29:58.473446+00:00",
   "fresh_fetch_ok": true,
   "fetch_error": null,
+  "release_evidence": {
+    "end_of_month": "2026-09",
+    "m2_hkd": 9491899.0,
+    "m3_hkd": 9505133.0,
+    "money_source_url": "https://www.hkma.gov.hk/media/eng/doc/key-information/press-release/2026/20261030e7a1.pdf",
+    "money_release_url": "https://www.hkma.gov.hk/eng/news-and-media/press-releases/2026/10/20261030-7/",
+    "money_source_sha256": "97e95e207c94a8d33325a7c1ff0b65751e63fab2805526b9d7ffc5ba5c66c6e7",
+    "money_precision": "HK$ million, rounded as published"
+  },
   "record_count": 100,
   "coverage_start": "2018-06",
-  "coverage_end": "2026-08",
+  "coverage_end": "2026-09",
   "records": [
     {
-      "end_of_month": "2026-09"
+      "end_of_month": "2026-09",
+      "m2_hkd": 9491899.0,
+      "m3_hkd": 9505133.0,
+      "money_source_url": "https://www.hkma.gov.hk/media/eng/doc/key-information/press-release/2026/20261030e7a1.pdf",
+      "money_release_url": "https://www.hkma.gov.hk/eng/news-and-media/press-releases/2026/10/20261030-7/",
+      "money_source_sha256": "97e95e207c94a8d33325a7c1ff0b65751e63fab2805526b9d7ffc5ba5c66c6e7",
+      "money_precision": "HK$ million, rounded as published"
     },
     {
       "end_of_month": "2026-08",

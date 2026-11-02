@@ -845,6 +845,14 @@ def build_hk_liquidity_figures(
     funding_source = daily_funding.combine_first(monthly_funding).sort_index().reset_index()
     funding_is_daily = _frame_is_daily(funding_source)
     banking_data = _slice_range(banking_source, date_range)
+    # The FX comparison needs current bank settlement liquidity in short
+    # windows, while retaining the official month-end history for long ones.
+    # Prefer real daily closes on overlapping dates; never fill calendar gaps.
+    balance_column = "Closing Aggregate Balance"
+    daily_balance = load_hk_banking_liquidity_daily().set_index("observation_date")[[balance_column]]
+    monthly_balance = banking_source.set_index("observation_date")[[balance_column]]
+    fx_balance_source = daily_balance.combine_first(monthly_balance).sort_index().reset_index()
+    fx_balance_data = _slice_range(fx_balance_source, date_range)
     funding_data = _slice_range(funding_source, date_range)
     meta = snapshot_metadata()
     latest_text = meta.get("latest_observation") or "--"
@@ -979,7 +987,7 @@ def build_hk_liquidity_figures(
         title_text="", secondary_y=True,
         showgrid=False, zeroline=False, fixedrange=True,
     )
-    style(money, "5. HK Money Supply & Market Pulse", right_axis=True)
+    style(money, "13. HK Money Supply & Market Pulse", right_axis=True)
     money.update_layout(
         margin=dict(l=62, r=92, t=96, b=40, pad=2),
         xaxis=dict(domain=[0.0, 0.91]),
@@ -1002,7 +1010,7 @@ def build_hk_liquidity_figures(
         title_text="", secondary_y=True,
         showgrid=False, zeroline=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3,
     )
-    style(balance, "6. Banking-system Liquidity · Monthly", height=400, right_axis=True)
+    style(balance, "14. Banking-system Liquidity · Monthly", height=400, right_axis=True)
 
     # 5-3 · HKD funding.
     funding = make_subplots(specs=[[{"secondary_y": True}]])
@@ -1026,7 +1034,7 @@ def build_hk_liquidity_figures(
     funding_frequency_label = (
         "Monthly history + recent daily" if funding_is_daily else "Monthly fallback"
     )
-    style(funding, f"7. HKD Funding · {funding_frequency_label}", right_axis=True)
+    style(funding, f"15. HKD Funding · {funding_frequency_label}", right_axis=True)
     if date_range != "5Y" and not funding_is_daily:
         funding.add_annotation(
             text="⚠ 日频 HIBOR 暂缺，显示月末数据",
@@ -1048,6 +1056,8 @@ def build_hk_liquidity_figures(
     add_line(fx, market_data, "HKEX Price", "HKEX Price (R1)", "#0891b2", 2.0, "dash", unit=" HKD", secondary_y=True)
     add_line(fx, market_data, "HSTECH Index", "HSTECH Index (R2)", "#db2777", 2.1, "dash", unit=" pts", axis="y3")
     add_line(fx, market_data, "HSI Index", "HSI Index (R2)", "#d97706", 2.0, "dot", unit=" pts", axis="y3")
+    add_line(fx, fx_balance_data, balance_column, "Closing Aggregate Balance (R3)",
+             COLORS["balance"], 2.5, unit=" HK$ bn", axis="y4")
     fx.add_hrect(
         y0=7.75, y1=7.85,
         fillcolor="rgba(148,163,184,0.08)",
@@ -1071,12 +1081,13 @@ def build_hk_liquidity_figures(
         title_text="", secondary_y=True,
         showgrid=False, zeroline=False, fixedrange=True,
     )
-    style(fx, "8. USD/HKD Convertibility Band & Market", height=410, right_axis=True)
+    style(fx, "16. USD/HKD, Bank Balance & Market", height=410, right_axis=True)
     fx.update_layout(
-        margin=dict(l=62, r=92, t=96, b=40, pad=2),
-        xaxis=dict(domain=[0.0, 0.91]),
-        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.925, title="", showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
-        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.99, title="", showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
+        margin=dict(l=62, r=144, t=96, b=40, pad=2),
+        xaxis=dict(domain=[0.0, 0.84]),
+        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.85, title="", showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
+        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.92, title="", showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
+        yaxis4=dict(overlaying="y", side="right", anchor="free", position=0.99, title="Aggregate Balance (HK$ bn)", showgrid=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3),
     )
     if not fx_source.empty:
         fx_latest = fx_source["observation_date"].max().strftime("%Y-%m-%d")

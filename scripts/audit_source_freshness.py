@@ -155,6 +155,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", default="source_health.json")
     parser.add_argument("--only", action="append", help="Audit only these snapshot files (repeatable)")
+    parser.add_argument("--report-only", action="store_true", help="Record initial problems before repair; final audit remains strict")
     args = parser.parse_args()
     reports = audit()
     if args.only:
@@ -183,7 +184,7 @@ def main():
     if os.getenv("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
             handle.write(text)
-    if failed:
+    if failed and not args.report_only:
         raise SystemExit("One or more individual source series are overdue or missing; see source_health.json")
 
 

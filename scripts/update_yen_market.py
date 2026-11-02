@@ -56,6 +56,7 @@ def main():
             print(f"JPY/USD Index: {len(frame)} completed closes, latest {frame.observation_date.max().date()}, changed={changed}")
             return
         except (requests.RequestException, ValueError, KeyError, TypeError) as error:
+            print(f"USD/JPY source rejected ({host}): {type(error).__name__}: {error}", flush=True)
             last_error = error
     raise RuntimeError("No valid current USD/JPY source; retaining last good snapshot") from last_error
 

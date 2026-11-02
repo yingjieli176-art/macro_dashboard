@@ -7,7 +7,7 @@ import unittest
 import pandas as pd
 
 from macro_platform.china_equity import (
-    SERIES, SNAPSHOT, parse_csindex_history, build_china_drawdown_figure,
+    SERIES, SNAPSHOT, parse_csindex_history, build_china_drawdown_figure, completed_china_date,
 )
 from macro_platform.echarts_axes import build_adaptive_echarts_option
 from scripts.update_china_equity_snapshot import save_snapshot
@@ -21,6 +21,14 @@ def payload(code="932000"):
 
 
 class ChinaEquityTests(unittest.TestCase):
+    def test_request_cutoff_skips_weekends_and_waits_for_completed_close(self):
+        for clock, expected in (("2026-10-31 08:00Z", "2026-10-30"),
+                                ("2026-11-01 08:00Z", "2026-10-30"),
+                                ("2026-11-02 06:00Z", "2026-10-30"),
+                                ("2026-11-02 07:15Z", "2026-11-02")):
+            with self.subTest(clock=clock):
+                self.assertEqual(completed_china_date(clock), pd.Timestamp(expected))
+
     def test_official_identity_base_date_and_completed_session(self):
         frame = parse_csindex_history(payload(), "932000", now="2026-10-27 06:00Z")
         self.assertEqual(frame.observation_date.min(), pd.Timestamp("2013-12-31"))
@@ -63,7 +71,7 @@ class ChinaEquityTests(unittest.TestCase):
             self.assertEqual(path.read_bytes(), original)
             with self.assertRaises(ValueError): save_snapshot(histories, path, now="2026-11-10 08:00Z")
             self.assertEqual(path.read_bytes(), original)
-            with self.assertRaises(KeyError): save_snapshot({"000300": histories["000300"]}, path)
+            with self.assertRaises(KeyError): save_snapshot({"000300": histories["000300"]}, path, now="2026-10-27 08:00Z")
             self.assertEqual(path.read_bytes(), original)
 
     def test_committed_snapshot_is_official_daily_history_including_old_highs(self):

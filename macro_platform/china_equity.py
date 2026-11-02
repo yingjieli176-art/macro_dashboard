@@ -22,7 +22,10 @@ def completed_china_date(now=None):
     clock = clock.tz_localize("UTC") if clock.tzinfo is None else clock
     clock = clock.tz_convert("Asia/Shanghai")
     day = clock.normalize().tz_localize(None)
-    return day if (clock.hour, clock.minute) >= (15, 15) else day - pd.Timedelta(days=1)
+    candidate = day if (clock.hour, clock.minute) >= (15, 15) else day - pd.Timedelta(days=1)
+    # This is a request upper bound, not a holiday calendar. Never ask a
+    # pre-close Monday probe to treat Sunday as a completed trading session.
+    return pd.offsets.BDay().rollback(candidate)
 
 
 def parse_csindex_history(payload, code, now=None):

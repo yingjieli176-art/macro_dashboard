@@ -1,5 +1,5 @@
 {
-  "release": "2026-10-30-position-growth-columns-r81",
+  "release": "2026-11-02-regional-order-30y10y-r84",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -20,6 +20,9 @@
     "simplified_equity_risk_series",
     "yen_carry_spread_fx_appreciation",
     "cftc_yen_noncommercial_positions",
-    "zero_based_position_and_monthly_growth_bars"
+    "zero_based_position_and_monthly_growth_bars",
+    "chart8_bank_balance_independent_axis",
+    "regional_chart_order_us_jp_hk_cn",
+    "same_day_thirty_minus_ten_year_spread"
   ]
 }

@@ -72,6 +72,18 @@ class DashboardBootSmoke(unittest.TestCase):
         thirty = next(series for series in treasury["series"] if series["name"] == "30Y")
         self.assertEqual(thirty["yAxisIndex"], 0)
         self.assertTrue(any(point[1] is not None for point in thirty["data"]))
+        ten = next(series for series in treasury["series"] if series["name"] == "10Y")
+        spread = next(series for series in treasury["series"] if series["name"] == "30Y−10Y (R1)")
+        self.assertEqual(spread["yAxisIndex"], 1)
+        ten_by_date = dict(ten["data"])
+        thirty_by_date = dict(thirty["data"])
+        checked = 0
+        for date, value in spread["data"]:
+            if value is not None:
+                self.assertAlmostEqual(value, thirty_by_date[date] - ten_by_date[date])
+                checked += 1
+        self.assertGreater(checked, 0)
+        self.assertIn("pp", treasury["yAxis"][1]["name"])
         risk = next(json.loads(spec) for spec in specs if 'COR3M (R3)' in spec)
         risk_series = {series["name"]: series for series in risk["series"]}
         self.assertEqual(len(risk["yAxis"]), 4)

@@ -20,6 +20,7 @@ import requests
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from macro_platform.market_history import completed_daily_closes
+from macro_platform.chart_inventory import NUMBERING, current_chart_numbers
 
 
 _PROBE_LOCK = threading.Lock()
@@ -169,6 +170,17 @@ def hkma(endpoint, value, date):
 
 
 @shared_fetch
+def hkma_money_release():
+    from scripts.hkma_money_release import fetch_latest_money_release
+    return fetch_latest_money_release()
+
+
+def hkma_money(field):
+    row = hkma_money_release()
+    return latest(pd.DataFrame([row]), "end_of_month", field), row["money_source_url"]
+
+
+@shared_fetch
 def japan_frame():
     from macro_platform.asia_rates import JAPAN_CURRENT_URL, _read_japan_csv
     return _read_japan_csv(JAPAN_CURRENT_URL, offline=True)
@@ -233,14 +245,16 @@ def csindex(code):
 def us_equity(key):
     from scripts.update_us_equity_snapshot import collect_history
     from macro_platform.equity_drawdown import SERIES
-    frame = collect_history(key)
+    # Date verification needs recent genuine daily closes, not decades of
+    # price history. The publishing collector still requests the full range.
+    frame = collect_history(key, recent=True)
     return latest(frame, "observation_date", "close"), frame.attrs.get("source_url", SERIES[key]["source"])
 
 
 def jobs():
     output = []
     def add(key, charts, cadence, stored, fetch):
-        output.append((key, charts, cadence, stored, fetch))
+        output.append((key, current_chart_numbers(charts), cadence, stored, fetch))
     for symbol, charts in {
         "IORB": [1], "RRPONTSYAWARD": [1], "EFFR": [1], "SOFR": [1],
         "DGS3MO": [3], "DGS2": [3,18], "DGS10": [2,3], "DGS30": [3], "DFII5": [2,13], "DFII10": [2], "T10YIE": [2],
@@ -263,13 +277,13 @@ def jobs():
         add(symbol, [9], "daily", snapshot(f"{symbol.lower()}_daily.json", "observation_date", "close"), lambda symbol=symbol: cboe(symbol))
     for field, charts in (("m2_hkd", [5]), ("m3_hkd", [5])):
         add(field, charts, "monthly", snapshot("censtat_hkd_money_supply.json", "end_of_month", field),
-            lambda field=field: hkma("monthly-statistical-bulletin/financial/monetary-statistics", field, "end_of_month"))
+            lambda field=field: hkma_money(field))
     for field in ("aggr_balance_bf_disc_win", "outstanding_efbn", "ow_lb_bf_disc_win", "mb_bf_disc_win_total"):
         saved = {"aggr_balance_bf_disc_win": "aggr_balance", "mb_bf_disc_win_total": "monetary_base_total"}.get(field, field)
-        add(field, [5,6], "monthly", snapshot("hkma_monetary_statistics.json", "end_of_month", saved),
+        add(field, [5,6,8] if field == "aggr_balance_bf_disc_win" else [5,6], "monthly", snapshot("hkma_monetary_statistics.json", "end_of_month", saved),
             lambda field=field: hkma("monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod", field, "end_of_month"))
     for field in ("hibor_overnight", "hibor_3m", "disc_win_base_rate", "closing_balance"):
-        add(field, [7], "daily", snapshot("hkma_banking_liquidity_daily.json", "end_of_date", field),
+        add(field, [8] if field == "closing_balance" else [7], "daily", snapshot("hkma_banking_liquidity_daily.json", "end_of_date", field),
             (lambda field=field: hibor(field)) if field.startswith("hibor_") else
             (lambda field=field: hkma("daily-monetary-statistics/daily-figures-interbank-liquidity", field, "end_of_date")))
     for country, chart in (("china", 13), ("japan", 14)):
@@ -342,7 +356,7 @@ def main():
         for future in as_completed(tasks):
             row = future.result(); rows.append(row)
             print(row["id"], row["repository_latest"], "->", row["source_latest"], row["status"], flush=True)
-    payload = {"checked_at": datetime.now(timezone.utc).isoformat(), "chart_numbering": "display_18",
+    payload = {"checked_at": datetime.now(timezone.utc).isoformat(), "chart_numbering": NUMBERING,
                "sources": sorted(rows,key=lambda r:r["id"]),
                "elapsed_seconds": round(time.monotonic()-started, 3), **_PROBE_STATS}
     Path(args.output).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")

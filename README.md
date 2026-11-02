@@ -18,10 +18,10 @@ python -m pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Yen carry analysis (chart 18)
+## Yen carry analysis (chart 12)
 
 `2026-10-30-position-growth-columns-r81` displays CFTC yen speculative net
-positions and chart 5's monthly M2 MoM growth as columns from zero. Prices,
+positions and the Hong Kong money chart's monthly M2 MoM growth as columns from zero. Prices,
 rates and YoY trends remain lines. Column width follows the series' own weekly
 or monthly spacing and the visible date window, including on mobile. Legend
 filtering and native recovery retain the chart type and original observations.
@@ -78,19 +78,23 @@ automatic data jobs never run the obsolete HSTECH code-wiring patch.
 
 | # | Section |
 |---|---|
-| 1–4 | Federal Reserve rates, nominal/real Treasury yields, curve, US liquidity |
-| 5–8 | Hong Kong monetary pulse, bank liquidity, HIBOR funding, HKD / market overlays |
-| 9 | US equity risk (VIX/VIXEQ, S&P 500, VIXEQ/VIX, COR3M) |
-| 10 | Precious metals |
-| 11 | Digital assets |
-| 12 | Copper price/inventory |
-| 13 | Asian rates and yield curves |
+| 1–4 | US policy rates, Treasury yields, curve spreads and liquidity |
+| 5–7 | SPX/RSP prices, US equity risk and VIX term structure |
+| 8–10 | Global references: precious metals, copper and digital assets |
+| 11–12 | Japan government yields/Nikkei/FX and yen carry analysis |
+| 13–16 | Hong Kong money, bank liquidity, funding and HKD/market overlays |
+| 17–18 | China government yields and CSI equity indices |
+
+The reading order is US/global references, Japan, Hong Kong, then China.
+Stable chart identities keep each chart's range and legend controls independent
+when its visible number changes. Source inventories remap archived numbering
+without changing the recorded observation dates or verification timestamps.
 
 The 5Y / 1Y / 6M / 3M / 1M selectors must keep **both X and each Y axis
 adaptive**. A Plotly compatibility view is not proof that native ECharts
 X/Y autoscaling works.
 
-Chart 9 displays VIX/VIXEQ on the left, S&P 500 on R1, the same-date
+Chart 6 displays VIX/VIXEQ on the left, S&P 500 on R1, the same-date
 VIXEQ/VIX ratio on R2, and COR3M in original Cboe index points on R3.
 The VIXEQ−VIX and COR1M series have been removed from this chart.
 COR3M is a correlation index, not a volatility reading. Official Cboe histories
@@ -98,8 +102,10 @@ are bundled for cold start and refreshed each weekday by
 `update-correlation-snapshot.yml`. Early history includes Cboe back-calculations.
 
 Chart 3 includes original FRED DGS30 30-year nominal Treasury yields on the
-same left percentage axis as 3M, 2Y and 10Y. The existing two yield-curve
-spreads stay on R1. DGS30 uses the shared last-good cache, scheduled collector,
+same left percentage axis as 3M, 2Y and 10Y. Three yield-curve spreads
+(10Y−2Y, 10Y−3M and 30Y−10Y) share R1 in percentage points (pp). Each uses
+same-date displayed yields, with no gap filling. DGS30 uses the shared
+last-good cache, scheduled collector,
 Treasury BC_30YEAR fallback, and source-freshness checks; missing dates stay missing.
 
 ## Validation
@@ -137,7 +143,7 @@ Both histories use completed US daily `quote.close` prices, split-adjusted
 but **without dividend reinvestment**. Never mix Yahoo `adjclose` total-return
 adjustments with the SPX price index. `range=max` monthly responses are rejected.
 
-Chart 11 displays original close prices: SPX in index points on the left axis
+Chart 5 displays original close prices: SPX in index points on the left axis
 and RSP in USD on the right axis. High guides are recomputed from the closing prices inside the current
 coordinate time window, including client-side slider zoom. Dotted horizontal lines
 mark interval highs and dashed lines mark latest closes. Captions retain the

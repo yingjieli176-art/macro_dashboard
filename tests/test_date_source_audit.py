@@ -25,10 +25,10 @@ class DateAndSourceAudit(unittest.TestCase):
     def test_inventory_uses_all_18_display_numbers_and_new_equity_sources(self):
         inventory = {key: charts for key, charts, *_ in probe.jobs()}
         self.assertEqual({c for charts in inventory.values() for c in charts}, set(range(1, 19)))
-        for key, charts in {"SPX": [11], "RSP": [11], "000300": [12], "000852": [12],
-                            "932000": [12], "china_2y": [13], "japan_2y": [14,18],
-                            "DGS2": [3,18], "JPY=X": [14,18],
-                            "GC=F": [15], "HG=F": [16], "BTC-USD": [17]}.items():
+        for key, charts in {"SPX": [5], "RSP": [5], "000300": [18], "000852": [18],
+                            "932000": [18], "china_2y": [17], "japan_2y": [11,12],
+                            "DGS2": [3,12], "JPY=X": [11,12],
+                            "GC=F": [8], "HG=F": [9], "BTC-USD": [10]}.items():
             self.assertEqual(inventory[key], charts)
 
     def test_tomorrows_observation_is_invalid_even_with_a_fresh_fetch(self):
@@ -156,13 +156,14 @@ class DateAndSourceAudit(unittest.TestCase):
         self.assertTrue(_extract_time({"time": past.strftime("%Y-%m-%d %H:%M:%S")}).startswith(str(past.year)))
 
     def test_csi_probe_omits_only_the_apis_synthetic_left_boundary(self):
-        from macro_platform.china_equity import completed_china_date
-        end = completed_china_date()
+        from macro_platform import china_equity
+        end = china_equity.completed_china_date("2026-10-27 08:00Z")
         start = end-pd.Timedelta(days=45)
         rows = [{"indexCode": "000300", "indexNameCn": "沪深300", "tradeDate": day.strftime("%Y%m%d"),
                  "close": value} for day, value in ((start, 99999), (end, 4000))]
         response = Mock(); response.json.return_value = {"success": True, "data": rows}
-        with patch.object(probe, "get", return_value=response):
+        with patch.object(probe, "get", return_value=response), \
+             patch.object(china_equity, "completed_china_date", return_value=end):
             actual, url = probe.csindex("000300")
         self.assertEqual(actual, end.strftime("%Y-%m-%d"))
 
