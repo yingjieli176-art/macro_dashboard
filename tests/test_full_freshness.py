@@ -163,6 +163,20 @@ class FullFreshness(unittest.TestCase):
         with patch.object(probe, "get", side_effect=[direct, relay]):
             self.assertEqual(probe.hkma_daily_value("closing_balance")[0], "2026-10-30")
 
+    def test_hkab_home_summary_parser_reads_latest_fixing(self):
+        from scripts.update_hkma_daily_snapshot import parse_hkab_latest
+        page = """Last update 2026-10-30
+            HKAB HKD Interest Settlement Rates Highlights
+            Overnight 2.77464
+            1 Week 2.66923
+            1 Month 2.70923
+            3 Months 3.21256
+            Exchange Rates Highlights"""
+        row = parse_hkab_latest(page)
+        self.assertEqual(row["end_of_date"], "2026-10-30")
+        self.assertEqual(row["hibor_overnight"], 2.77464)
+        self.assertEqual(row["hibor_3m"], 3.21256)
+
     def test_hibor_audit_uses_last_published_fixing_on_explicit_hkab_holiday(self):
         from scripts import probe_all_sources as probe
         with tempfile.TemporaryDirectory() as folder:
