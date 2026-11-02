@@ -6,14 +6,14 @@
     "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/er-ir/hk-interbank-ir-daily",
     "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-monetary-base",
     "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity",
-    "https://www.hkab.org.hk/en/rates/hibor?promoCode=SRPS7JDQW"
+    "https://www.hkab.org.hk/en/home"
   ],
   "transport_fallback": "r.jina.ai relay when direct api.hkma.gov.hk access is unavailable from CI",
-  "updated_at": "2026-11-02T04:12:25.640451+00:00",
+  "updated_at": "2026-11-02T04:26:01.251474+00:00",
   "source_errors": [],
   "coverage_start": "2025-05-02",
-  "coverage_end": "2026-10-30",
-  "record_count": 371,
+  "coverage_end": "2026-11-02",
+  "record_count": 372,
   "fetch_strategy": "30-day incremental overlap over retained history; parallel independent endpoints; direct/relay fallback; HKAB current fixing",
   "records": [
     {
@@ -5218,6 +5218,21 @@
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
       "hibor_source": "https://www.hkab.org.hk/en/rates/hibor"
+    },
+    {
+      "end_of_date": "2026-11-02",
+      "opening_balance": null,
+      "closing_balance": null,
+      "forecast_aggregate_bal_t1": null,
+      "outstanding_efbn": null,
+      "ow_lb_bf_disc_win": null,
+      "aggr_balance_bf_disc_win": null,
+      "hibor_overnight": 2.45048,
+      "hibor_3m": 3.20548,
+      "disc_win_base_rate": null,
+      "cu_weakside": null,
+      "cu_strongside": null,
+      "hibor_source": "https://www.hkab.org.hk/en/home"
     }
   ]
 }
