@@ -80,33 +80,79 @@ def build_sp500_nikkei_ratio_figure(date_range="5Y") -> go.Figure:
             showarrow=False, font={"color": "#64748b", "size": 14},
         )
     else:
+        # Rebase both index legs to 100 at the first common observation so
+        # their relative performance can be compared on one secondary axis.
+        sp500_base = float(data["SP500"].iloc[0])
+        nikkei_base = float(data["NIKKEI"].iloc[0])
+        data = data.copy()
+        data["SP500_rebased"] = data["SP500"] / sp500_base * 100.0
+        data["NIKKEI_rebased"] = data["NIKKEI"] / nikkei_base * 100.0
+        custom = data[["SP500", "NIKKEI", "SP500_rebased", "NIKKEI_rebased"]].to_numpy()
+
         fig.add_trace(go.Scatter(
             x=data["observation_date"],
             y=data["ratio"],
-            customdata=data[["SP500", "NIKKEI"]].to_numpy(),
-            name="S&P 500 / Nikkei 225",
+            customdata=custom,
+            name="比值：S&P 500 ÷ Nikkei 225",
             mode="lines",
             connectgaps=False,
-            line={"color": "#7c3aed", "width": 2.5},
+            yaxis="y",
+            line={"color": "#7c3aed", "width": 2.6},
             hovertemplate=(
                 "%{x|%Y-%m-%d}<br>比值：%{y:.4f}"
-                "<br>S&P 500（整数点）：%{customdata[0]:,.0f}"
-                "<br>日经225（整数点）：%{customdata[1]:,.0f}<extra></extra>"
+                "<br>S&P 500：%{customdata[0]:,.0f} 点"
+                "<br>日经225：%{customdata[1]:,.0f} 点<extra></extra>"
+            ),
+        ))
+        fig.add_trace(go.Scatter(
+            x=data["observation_date"],
+            y=data["SP500_rebased"],
+            customdata=custom,
+            name="分子：S&P 500（起点=100）",
+            mode="lines",
+            connectgaps=False,
+            yaxis="y2",
+            line={"color": "#2563eb", "width": 2},
+            hovertemplate=(
+                "%{x|%Y-%m-%d}<br>S&P 500走势：%{y:.2f}"
+                "<br>原始点位：%{customdata[0]:,.0f}<extra></extra>"
+            ),
+        ))
+        fig.add_trace(go.Scatter(
+            x=data["observation_date"],
+            y=data["NIKKEI_rebased"],
+            customdata=custom,
+            name="分母：日经225（起点=100）",
+            mode="lines",
+            connectgaps=False,
+            yaxis="y2",
+            line={"color": "#ea580c", "width": 2},
+            hovertemplate=(
+                "%{x|%Y-%m-%d}<br>日经225走势：%{y:.2f}"
+                "<br>原始点位：%{customdata[1]:,.0f}<extra></extra>"
             ),
         ))
     fig.update_layout(
-        height=360,
-        margin={"l": 64, "r": 30, "t": 48, "b": 42},
+        height=410,
+        margin={"l": 68, "r": 76, "t": 56, "b": 42},
         hovermode="x unified",
-        legend={"orientation": "h", "y": 1.12, "x": 0},
+        legend={"orientation": "h", "y": 1.16, "x": 0},
         xaxis={"title": None, "showgrid": False, "rangeslider": {"visible": False}},
         yaxis={
-            "title": "S&P 500 ÷ Nikkei 225",
+            "title": "指数点位比值",
             "showgrid": True,
             "gridcolor": "#e5e7eb",
             "griddash": "dot",
             "zeroline": False,
             "tickformat": ".3f",
+        },
+        yaxis2={
+            "title": "指数走势（首个共同收盘日=100）",
+            "overlaying": "y",
+            "side": "right",
+            "showgrid": False,
+            "zeroline": False,
+            "tickformat": ".0f",
         },
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
