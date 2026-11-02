@@ -2810,11 +2810,20 @@ def _cache_safe_figure(figure):
 def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
     """Reuse successful construction; callers receive isolated figure copies."""
     builders = {
-        1: build_fig1, 2: build_fig2, 3: build_fig3, 4: build_sp500_nikkei_ratio_figure,
+        1: build_fig1, 2: build_fig2, 3: build_fig3,
         9: build_fig9, 10: build_fig10, 11: build_fig11, 12: build_fig12,
         13: build_fig13, 14: build_fig14, 15: build_fig15, 16: build_fig16,
     }
-    builder = builders[chart_number]
+    if chart_number == 4:
+        try:
+            builder = build_sp500_nikkei_ratio_figure
+        except NameError:
+            # Keep isolated helper tests and older import-compatible callers
+            # able to resolve the new chart without eagerly evaluating it for
+            # unrelated chart numbers.
+            from macro_platform.sp500_nikkei_ratio import build_sp500_nikkei_ratio_figure as builder
+    else:
+        builder = builders[chart_number]
     figure = builder("5Y")
     if not _figure_has_real_observations(figure):
         raise ValueError("Source has no observed chart samples")
