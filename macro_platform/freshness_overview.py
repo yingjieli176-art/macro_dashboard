@@ -38,7 +38,7 @@ def figure_rows(figures, now=None):
                 rows.append({"图表": number, "指标": trace.name, "实际观测日": "缺失", "频率": "—", "状态": "待恢复"})
                 continue
             last = max(dates)
-            monthly = number == 6 or (number == 5 and any(s in trace.name for s in ("M2 ", "Monetary Base")))
+            monthly = number == 6 or (number == 5 and any(s in trace.name for s in ("M2 ", "M3 ", "Monetary Base")))
             weekly = any(name in trace.name for name in ("Reserve Balances", "Weekly fallback", "CFTC JPY"))
             cadence = "monthly" if monthly else "weekly" if weekly else "daily"
             item = {"name": trace.name, "data": [[last.isoformat(), 1]], "observation_cadence": cadence}
