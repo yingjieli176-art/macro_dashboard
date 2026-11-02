@@ -252,17 +252,24 @@ def parse_hkma_daily_page(page_html, field):
     return observed, value
 
 def hkma_daily_value(field):
-    url = "https://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics/"
-    proxy_url = "https://r.jina.ai/http://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics/"
+    base = "https://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics"
+    today = pd.Timestamp.now(tz="Asia/Hong_Kong").date()
     errors = []
-    for candidate_url in (url, proxy_url):
-        try:
-            observed, _ = parse_hkma_daily_page(get(candidate_url).text, field)
-            return observed, url
-        except Exception as error:
-            errors.append(f"{candidate_url}: {type(error).__name__}: {error}")
-    raise ValueError("HKMA daily page publication unavailable: " + "; ".join(errors))
-
+    # HKMA publishes a dated static page after the close of each Hong Kong
+    # business day. Walk back over weekends/holidays until the latest page exists.
+    for offset in range(8):
+        day = today - pd.Timedelta(days=offset)
+        if day.weekday() >= 5:
+            continue
+        url = f"{base}/{day:%Y}/{day:%m}/ms-{day:%Y%m%d}/"
+        proxy_url = "https://r.jina.ai/http://" + url.removeprefix("https://")
+        for candidate_url in (url, proxy_url):
+            try:
+                observed, _ = parse_hkma_daily_page(get(candidate_url).text, field)
+                return observed, url
+            except Exception as error:
+                errors.append(f"{candidate_url}: {type(error).__name__}: {error}")
+    raise ValueError("HKMA daily page publication unavailable: " + "; ".join(errors[-6:]))
 
 def hibor(field):
     # HKAB publishes the last business-day fixing on its official rates page.
