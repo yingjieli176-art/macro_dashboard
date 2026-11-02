@@ -86,7 +86,10 @@ def _parse_proxy_json(text: str) -> dict[str, Any]:
 
 def _fetch_proxy_records(official_url: str, params: dict[str, Any]) -> list[dict[str, Any]]:
     direct = requests.Request("GET", official_url, params=params).prepare().url
-    urls = (direct, _proxy_url(official_url, params))
+    proxy = _proxy_url(official_url, params)
+    # Both Jina transports target the same official API. The HTTP-origin
+    # form is also used by the daily collector when HTTPS-origin reads stall.
+    urls = (direct, proxy, proxy.replace("r.jina.ai/https://", "r.jina.ai/http://", 1))
     last_error: Exception | None = None
     for url in urls:
         try:

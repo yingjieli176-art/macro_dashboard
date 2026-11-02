@@ -37,7 +37,8 @@ def parse_yahoo_yen(payload, now=None):
     node = nodes[0]
     meta = node.get("meta") or {}
     if meta.get("symbol") != "JPY=X" or meta.get("currency") != "JPY" or meta.get("instrumentType") != "CURRENCY":
-        raise ValueError("Wrong currency series; expected JPY=X (JPY per USD)")
+        observed = {key: meta.get(key) for key in ("symbol", "currency", "instrumentType")}
+        raise ValueError(f"Wrong currency series; expected JPY=X (JPY per USD), received {observed!r}")
     # Include completed sessions only. A running intraday quote is not a close.
     frame = completed_daily_closes(node, now=now).rename(columns={"close": "usd_jpy_close"})
     return yen_index_from_fx(frame)
