@@ -245,27 +245,36 @@ def hkma_daily_value(field):
 
 
 def hibor(field):
-    # HKAB does not publish a new fixing on a non-working day. If its official
-    # page explicitly says so, the last-good daily snapshot is the latest
-    # published fixing; a generic page/transport failure remains unverified.
+    # HKAB does not publish a new fixing on a non-working day. Prefer its
+    # official page; use r.jina.ai only as a transport relay if the page's
+    # direct HTML omits the published fixing block.
     from scripts.update_hkma_daily_snapshot import parse_hkab_latest
     url = "https://www.hkab.org.hk/en/rates/hibor?promoCode=SRPS7JDQW"
     html = get(url).text
-    try:
-        row = parse_hkab_latest(html)
-    except ValueError:
-        if not re.search(r"non-working day|not a working day", html, re.I):
-            raise
+    errors = []
+    for candidate_url, page in (
+        (url, html),
+        ("https://r.jina.ai/http://" + url.removeprefix("https://"), None),
+    ):
+        try:
+            candidate_page = get(candidate_url).text if page is None else page
+            row = parse_hkab_latest(candidate_page)
+            if row.get(field) is None:
+                raise ValueError(f"HKAB fixing missing: {field}")
+            return row["end_of_date"], url
+        except ValueError as error:
+            errors.append(str(error))
+            if page is not None:
+                html = page
+            else:
+                proxy_page = candidate_page
+    if re.search(r"non-working day|not a working day", html + " " + locals().get("proxy_page", ""), re.I):
         payload = json.loads((ROOT / "data_snapshots/hkma_banking_liquidity_daily.json").read_text())
         records = payload.get("records") or []
         latest_row = max(records, key=lambda item: str(item.get("end_of_date") or ""))
-        if not latest_row.get(field):
-            raise ValueError(f"HKAB non-working day but no last-good fixing for {field}")
-        return latest_row["end_of_date"], url
-    if row.get(field) is None:
-        raise ValueError(f"HKAB fixing missing: {field}")
-    return row["end_of_date"], url
-
+        if latest_row.get(field) is not None:
+            return latest_row["end_of_date"], url
+    raise ValueError("HKAB publication date missing: " + "; ".join(errors))
 
 def tga():
     from scripts.sync_tga_daily_snapshot import fetch_latest_official, ENDPOINT
