@@ -1624,120 +1624,6 @@ def build_fig2(date_range):
     )
     return apply_chart_style(fig, chart_height(310, 420), date_range)
 
-def build_fig4(date_range):
-    """US liquidity chart with separate scales for unlike balance magnitudes.
-
-    L: Net Liquidity = WALCL - TGA - ON RRP, USD trillions.
-    R1: Reserve Balances and TGA, USD trillions.
-    R2: ON RRP, USD billions.
-    """
-    specs = [
-        (get_walcl, "WALCL", 1_000_000.0),
-        (get_wresbal, "WRESBAL", 1_000_000.0),
-        (get_tga_daily, "TGA_DAILY", 1.0),
-        (get_rrp_daily, "RRPONTSYD", 1.0),
-    ]
-    raw_series = {}
-    tga_is_fallback = False
-    for getter, column, divisor in specs:
-        try:
-            frame = getter().copy()
-            if column == "TGA_DAILY":
-                tga_is_fallback = bool(frame.attrs.get("is_fallback", False))
-            frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
-            frame[column] = pd.to_numeric(frame[column], errors="coerce") / divisor
-            frame = frame.dropna(subset=["observation_date", column]).sort_values("observation_date")[["observation_date", column]]
-            if not frame.empty:
-                raw_series[column] = frame
-        except Exception:
-            continue
-
-    fig = go.Figure()
-    if not raw_series:
-        for name in ("Net Liquidity", "Reserve Balances", "TGA", "ON RRP"):
-            _mark_missing_series(fig, name)
-        return apply_chart_style(fig, chart_height(320, 430), date_range)
-
-    # Mixed-frequency proxy: only use RECENT observations, never carry
-    # an obsolete TGA fixing (e.g. 2022-04-15) into 2026 calculations.
-    # Observed source traces remain at their original dates. The proxy
-    # is unavailable whenever any constituent is older than its tolerance.
-    calc = None
-    for column in ("WALCL", "TGA_DAILY", "RRPONTSYD"):
-        frame = raw_series.get(column)
-        if frame is None:
-            continue
-        calc = frame.copy() if calc is None else calc.merge(frame, on="observation_date", how="outer")
-    calc = pd.DataFrame(columns=["observation_date"]) if calc is None else calc.sort_values("observation_date")
-    component_cols = [c for c in ("WALCL", "TGA_DAILY", "RRPONTSYD") if c in calc.columns]
-    if component_cols:
-        freshness_days = {"WALCL": 10, "TGA_DAILY": 8, "RRPONTSYD": 7}
-        for column in component_cols:
-            last_observed = calc["observation_date"].where(calc[column].notna()).ffill()
-            age = calc["observation_date"] - last_observed
-            calc[column] = calc[column].ffill().where(
-                age <= pd.Timedelta(days=freshness_days[column])
-            )
-    if all(c in calc.columns for c in ("WALCL", "TGA_DAILY", "RRPONTSYD")):
-        calc["NetLiquidity"] = calc["WALCL"] - calc["TGA_DAILY"] - calc["RRPONTSYD"] / 1000.0
-    calc = filter_range(calc, date_range)
-    if ("NetLiquidity" not in calc or
-            pd.to_numeric(calc["NetLiquidity"], errors="coerce").notna().sum() == 0):
-        _mark_missing_series(fig, "Net Liquidity (components too old or unavailable)")
-    else:
-        add_line(fig, calc, "NetLiquidity", "Net Liquidity", 3.0, unit=" T")
-
-    reserve = raw_series.get("WRESBAL")
-    if reserve is not None:
-        add_line(fig, filter_range(reserve, date_range), "WRESBAL", "Reserve Balances (R1)", 2.4, yaxis="y2", unit=" T")
-    else:
-        _mark_missing_series(fig, "Reserve Balances")
-
-    tga = raw_series.get("TGA_DAILY")
-    if tga is not None:
-        tga_name = "TGA · Weekly fallback (R1)" if tga_is_fallback else "TGA (R1)"
-        add_line(fig, filter_range(tga, date_range), "TGA_DAILY", tga_name, 2.2, "dash", "y2", " T")
-    else:
-        _mark_missing_series(fig, "TGA")
-
-    rrp = raw_series.get("RRPONTSYD")
-    if rrp is not None:
-        add_line(fig, filter_range(rrp, date_range), "RRPONTSYD", "ON RRP (R2)", 2.2, "dot", "y3", " B")
-    else:
-        _mark_missing_series(fig, "ON RRP")
-
-    # Predeclare secondary axes so apply_chart_style reserves enough space.
-    fig.update_layout(
-        yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.925),
-        yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.99),
-    )
-    fig = apply_chart_style(fig, chart_height(320, 430), date_range)
-    fig.update_layout(
-        margin=dict(l=64, r=92, t=72, b=34, pad=2),
-        legend=dict(y=1.09, x=0.01),
-        xaxis=dict(domain=[0.0, 0.91]),
-        yaxis=dict(
-            title="Net Liquidity · USD T",
-            showgrid=True, gridcolor="#e5e7eb", griddash="dot",
-            zeroline=False, fixedrange=True, tickformat=".1f",
-        ),
-        yaxis2=dict(
-            title="",
-            overlaying="y", side="right", anchor="free", position=0.925,
-            showgrid=False, zeroline=False, fixedrange=True,
-            tickformat=".1f", tickfont=dict(size=9), ticks="outside", ticklen=3,
-        ),
-        yaxis3=dict(
-            title="",
-            overlaying="y", side="right", anchor="free", position=0.99,
-            showgrid=False, zeroline=True, zerolinecolor="#94a3b8",
-            zerolinewidth=1, fixedrange=True, tickformat=".0f",
-            tickfont=dict(size=9), ticks="outside", ticklen=3,
-        ),
-    )
-    return fig
-
-
 def build_fig3(date_range):
     dgs10 = get_dgs10()
     inferred_dates = list(dgs10.attrs.get("identity_derived_dates", []))
@@ -2924,7 +2810,7 @@ def _cache_safe_figure(figure):
 def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
     """Reuse successful construction; callers receive isolated figure copies."""
     builders = {
-        1: build_fig1, 2: build_fig2, 3: build_fig3, 4: build_fig4,
+        1: build_fig1, 2: build_fig2, 3: build_fig3,
         9: build_fig9, 10: build_fig10, 11: build_fig11, 12: build_fig12,
         13: build_fig13, 14: build_fig14, 15: build_fig15, 16: build_fig16,
     }
