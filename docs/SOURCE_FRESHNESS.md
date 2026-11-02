@@ -6,6 +6,18 @@ Monthly HK monetary statistics use the end of the following publication cycle pl
 These rules detect delay; they do not claim a successful HTTP response contains the newest published value.
 Charts always show actual observation dates and never synthesize a more recent date.
 
+HKD M2/M3 are also checked against the original HKMA monetary-statistics release
+annex. The summary and dedicated APIs can still return null/older observations
+after the new month has been published. The collector discovers the latest
+release, validates Table 1A's reference month, HK$ million unit and FX-swap-adjusted
+definition, then fills only missing amounts. It records the original PDF URL,
+SHA-256 and published rounding precision; it never derives stocks from rounded
+percentage changes or replaces more precise API values with rounded amounts.
+
+Review CI records its initial freshness failures before attempting repair.
+The final raw-record audit and source comparison remain strict, so a failed
+collector or unresolved stale observation still fails the job.
+
 GitHub scheduled runs were observed starting over four hours after their configured time on 2026-10-20.
 Source jobs now have several non-round-minute catch-up opportunities after publication, including next-morning US retries.
 GitHub schedules remain best-effort, not a guaranteed service-level deadline.

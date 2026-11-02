@@ -202,6 +202,7 @@ class SourceFreshnessTests(unittest.TestCase):
             out = root / "data_snapshots/backup.json"
             with patch.object(backup, "ROOT", root), patch.object(backup, "OUT", out), \
                  patch.object(backup.urllib.request, "urlopen", return_value=BytesIO(b'{"dataSet": []}')), \
+                 patch.object(backup, "fetch_latest_money_release", side_effect=RuntimeError("timeout")), \
                  patch.object(update_hkma_snapshot, "_fetch_proxy_records", side_effect=RuntimeError("timeout")):
                 backup.main()
             data = json.loads(out.read_text())

@@ -2,14 +2,14 @@
   "source": "HKMA Monetary Statistics + Monetary Base end-of-period",
   "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics",
   "monetary_base_source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod",
-  "updated_at": "2026-11-01T01:12:35.706922+00:00",
+  "updated_at": "2026-11-02T01:28:37.126095+00:00",
   "record_count": 78,
   "coverage_start": "2020-04",
   "coverage_end": "2026-09",
   "fetch_strategy": "HKMA official APIs via repository-only text transport; 12-month windows + field-level merge",
   "coverage_counts": {
-    "m2_hkd": 77,
-    "m3_hkd": 77,
+    "m2_hkd": 78,
+    "m3_hkd": 78,
     "monetary_base_total": 78,
     "aggr_balance": 78,
     "outstanding_efbn": 78,
@@ -36,7 +36,13 @@
       "cert_of_indebt": 663475,
       "gov_notes_coins_circulation": 13244,
       "outstanding_efbn": 1359377,
-      "ow_lb_bf_disc_win": 1175850
+      "ow_lb_bf_disc_win": 1175850,
+      "m2_hkd": 9491899.0,
+      "m3_hkd": 9505133.0,
+      "money_source_url": "https://www.hkma.gov.hk/media/eng/doc/key-information/press-release/2026/20261030e7a1.pdf",
+      "money_release_url": "https://www.hkma.gov.hk/eng/news-and-media/press-releases/2026/10/20261030-7/",
+      "money_source_sha256": "97e95e207c94a8d33325a7c1ff0b65751e63fab2805526b9d7ffc5ba5c66c6e7",
+      "money_precision": "HK$ million, rounded as published"
     },
     {
       "end_of_month": "2026-08",

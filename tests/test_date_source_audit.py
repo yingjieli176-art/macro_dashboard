@@ -156,13 +156,14 @@ class DateAndSourceAudit(unittest.TestCase):
         self.assertTrue(_extract_time({"time": past.strftime("%Y-%m-%d %H:%M:%S")}).startswith(str(past.year)))
 
     def test_csi_probe_omits_only_the_apis_synthetic_left_boundary(self):
-        from macro_platform.china_equity import completed_china_date
-        end = completed_china_date()
+        from macro_platform import china_equity
+        end = china_equity.completed_china_date("2026-10-27 08:00Z")
         start = end-pd.Timedelta(days=45)
         rows = [{"indexCode": "000300", "indexNameCn": "沪深300", "tradeDate": day.strftime("%Y%m%d"),
                  "close": value} for day, value in ((start, 99999), (end, 4000))]
         response = Mock(); response.json.return_value = {"success": True, "data": rows}
-        with patch.object(probe, "get", return_value=response):
+        with patch.object(probe, "get", return_value=response), \
+             patch.object(china_equity, "completed_china_date", return_value=end):
             actual, url = probe.csindex("000300")
         self.assertEqual(actual, end.strftime("%Y-%m-%d"))
 

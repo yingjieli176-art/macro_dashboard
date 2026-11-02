@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - scripts/update_hkma_snapshot.py
+      - scripts/hkma_money_release.py
       - .github/workflows/update-hkma-snapshot.yml
 
 permissions:
@@ -31,7 +32,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install snapshot dependencies
-        run: python -m pip install --disable-pip-version-check requests
+        run: python -m pip install --disable-pip-version-check requests pypdf==6.10.0
 
       - name: Refresh HKMA snapshot
         id: refresh

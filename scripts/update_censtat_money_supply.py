@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from scripts.hkma_money_release import fetch_latest_money_release, merge_release_pair, PROVENANCE_FIELDS
 OUT = ROOT / "data_snapshots" / "censtat_hkd_money_supply.json"
 URL = "https://www.censtatd.gov.hk/api/get.php?id=340-45012&lang=en&full_series=1"
 MONTHLY_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics"
@@ -29,14 +31,14 @@ def main() -> None:
     # Never relabel quarter dates as months. Retain verified monthly history
     # and enrich it from the underlying HKMA original monthly source.
     monthly: dict[str, dict] = {}
-    for path in (ROOT / "data_snapshots" / "hkma_monetary_statistics.json", OUT):
+    for path in (OUT, ROOT / "data_snapshots" / "hkma_monetary_statistics.json"):
         if path.exists():
             saved = json.loads(path.read_text(encoding="utf-8"))
             for row in saved.get("records") or []:
                 month = str(row.get("end_of_month") or "")
                 if len(month) == 7 and month[5:] in {f"{m:02d}" for m in range(1, 13)}:
                     target = monthly.setdefault(month, {"end_of_month": month})
-                    for key in ("m2_hkd", "m3_hkd"):
+                    for key in ("m2_hkd", "m3_hkd", *PROVENANCE_FIELDS):
                         if row.get(key) is not None:
                             target[key] = row[key]
     for row in rows:
@@ -77,6 +79,14 @@ def main() -> None:
                 target[key] = row[key]
                 target["source_url"] = MONTHLY_URL
 
+    release = None
+    try:
+        release = fetch_latest_money_release()
+        merge_release_pair(monthly, release)
+    except Exception as exc:
+        print("::warning::HKMA release annex unavailable; retaining dated money observations:", str(exc))
+        if not original:
+            fetch_error = fetch_error or str(exc)
     records = [monthly[key] for key in sorted(monthly, reverse=True)]
     complete = [r for r in records if r.get("m2_hkd") is not None and r.get("m3_hkd") is not None]
     if len(complete) < 60:
@@ -87,8 +97,9 @@ def main() -> None:
         "source_url": MONTHLY_URL,
         "cross_check_url": URL,
         "updated_at": datetime.now(timezone.utc).isoformat(),
-        "fresh_fetch_ok": bool(original),
-        "fetch_error": fetch_error,
+        "fresh_fetch_ok": bool(original or release),
+        "fetch_error": None if release else fetch_error,
+        "release_evidence": release,
         "record_count": len(records),
         "coverage_start": records[-1]["end_of_month"],
         "coverage_end": complete[0]["end_of_month"],

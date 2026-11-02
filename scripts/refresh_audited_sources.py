@@ -23,6 +23,7 @@ FAMILIES = {
     "update_hkma_daily_snapshot.py": {"hibor_overnight", "hibor_3m", "disc_win_base_rate", "closing_balance"},
     "update_hkma_snapshot.py": {"m2_hkd", "m3_hkd", "aggr_balance_bf_disc_win", "outstanding_efbn",
         "ow_lb_bf_disc_win", "mb_bf_disc_win_total"},
+    "update_censtat_money_supply.py": {"m2_hkd", "m3_hkd"},
     "sync_tga_daily_snapshot.py": {"TGA_DAILY"},
     "update_vixeq_snapshot.py": {"VIXEQ"},
 }

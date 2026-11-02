@@ -35,6 +35,24 @@ def yahoo_payload():
 
 
 class EquityDrawdownTests(unittest.TestCase):
+    def test_freshness_probe_uses_recent_daily_bars_without_truncating_publisher_history(self):
+        from scripts import update_us_equity_snapshot as collector
+        for recent in (False, True):
+            with self.subTest(recent=recent), \
+                 patch.object(collector, "completed_us_date", return_value=pd.Timestamp("2026-10-26")), \
+                 patch.object(collector.requests, "get", return_value=Mock(
+                     url="https://query1.finance.yahoo.com", json=lambda: yahoo_payload())) as get:
+                frame = collector.collect_history("RSP", recent=recent)
+            params = get.call_args.kwargs["params"]
+            self.assertEqual(params["interval"], "1d")
+            if recent:
+                self.assertEqual(params["range"], "1mo")
+                self.assertNotIn("period1", params)
+            else:
+                self.assertEqual(params["period1"], 0)
+                self.assertNotIn("range", params)
+            self.assertEqual(frame.close.tolist(), [100.,90.])
+
     def test_stale_but_valid_first_host_does_not_hide_a_newer_completed_close(self):
         from scripts import update_us_equity_snapshot as collector
         older = prices([217.29], ["2026-10-26"])

@@ -169,6 +169,17 @@ def hkma(endpoint, value, date):
 
 
 @shared_fetch
+def hkma_money_release():
+    from scripts.hkma_money_release import fetch_latest_money_release
+    return fetch_latest_money_release()
+
+
+def hkma_money(field):
+    row = hkma_money_release()
+    return latest(pd.DataFrame([row]), "end_of_month", field), row["money_source_url"]
+
+
+@shared_fetch
 def japan_frame():
     from macro_platform.asia_rates import JAPAN_CURRENT_URL, _read_japan_csv
     return _read_japan_csv(JAPAN_CURRENT_URL, offline=True)
@@ -233,7 +244,9 @@ def csindex(code):
 def us_equity(key):
     from scripts.update_us_equity_snapshot import collect_history
     from macro_platform.equity_drawdown import SERIES
-    frame = collect_history(key)
+    # Date verification needs recent genuine daily closes, not decades of
+    # price history. The publishing collector still requests the full range.
+    frame = collect_history(key, recent=True)
     return latest(frame, "observation_date", "close"), frame.attrs.get("source_url", SERIES[key]["source"])
 
 
@@ -263,7 +276,7 @@ def jobs():
         add(symbol, [9], "daily", snapshot(f"{symbol.lower()}_daily.json", "observation_date", "close"), lambda symbol=symbol: cboe(symbol))
     for field, charts in (("m2_hkd", [5]), ("m3_hkd", [5])):
         add(field, charts, "monthly", snapshot("censtat_hkd_money_supply.json", "end_of_month", field),
-            lambda field=field: hkma("monthly-statistical-bulletin/financial/monetary-statistics", field, "end_of_month"))
+            lambda field=field: hkma_money(field))
     for field in ("aggr_balance_bf_disc_win", "outstanding_efbn", "ow_lb_bf_disc_win", "mb_bf_disc_win_total"):
         saved = {"aggr_balance_bf_disc_win": "aggr_balance", "mb_bf_disc_win_total": "monetary_base_total"}.get(field, field)
         add(field, [5,6,8] if field == "aggr_balance_bf_disc_win" else [5,6], "monthly", snapshot("hkma_monetary_statistics.json", "end_of_month", saved),

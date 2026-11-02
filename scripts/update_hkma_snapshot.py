@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import time
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,7 @@ from typing import Any
 import requests
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 OUT = ROOT / "data_snapshots" / "hkma_monetary_statistics.json"
 MONETARY_URL = (
     "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/"
@@ -63,12 +65,21 @@ def _proxy_url(official_url: str, params: dict[str, Any]) -> str:
 
 
 def _parse_proxy_json(text: str) -> dict[str, Any]:
-    start = text.find('{"header"')
-    if start < 0:
-        raise RuntimeError("HKMA JSON body not found in transport response")
-    payload = json.loads(text[start:])
+    try:
+        payload = json.loads(text)
+    except ValueError:
+        start = text.find('{"header"')
+        if start < 0:
+            raise RuntimeError("HKMA JSON body not found in transport response")
+        payload = json.loads(text[start:])
+    if isinstance(payload, dict) and isinstance(payload.get("data"), dict):
+        content = payload["data"].get("content")
+        if isinstance(content, str):
+            payload = json.loads(content)
+    if not isinstance(payload, dict):
+        raise RuntimeError("HKMA transport did not contain a JSON object")
     header = payload.get("header") or {}
-    if header.get("success") is False:
+    if header.get("success") is not True:
         raise RuntimeError(header.get("err_msg") or "HKMA API reported failure")
     return payload
 
@@ -106,24 +117,34 @@ def fetch_monetary_history() -> list[dict[str, Any]]:
     now = datetime.now(timezone.utc)
     latest_month = f"{now.year:04d}-{now.month:02d}"
     start_month = _month_add(latest_month, -(KEEP_MONTHS + 2))
+    existing = load_existing()
+    if len(existing) >= 60 and all(_valid_count(list(existing.values()), field) >= 58
+                                   for field in ("m2_hkd", "m3_hkd")):
+        # Retained verified history does not need seven full re-downloads on
+        # every refresh. Recheck a full year for revisions plus all new months.
+        start_month = max(start_month, _month_add(max(existing), -12))
     merged: dict[str, dict[str, Any]] = {}
     cursor = start_month
     fields = ",".join(["end_of_month", *MONETARY_FIELDS])
 
     while cursor <= latest_month:
         end = _month_min(_month_add(cursor, 11), latest_month)
-        rows = _fetch_proxy_records(
-            MONETARY_URL,
-            {
-                "choose": "end_of_month",
-                "from": cursor,
-                "to": end,
-                "fields": fields,
-                "sortby": "end_of_month",
-                "sortorder": "asc",
-                "pagesize": 100,
-            },
-        )
+        try:
+            rows = _fetch_proxy_records(
+                MONETARY_URL,
+                {
+                    "choose": "end_of_month",
+                    "from": cursor,
+                    "to": end,
+                    "fields": fields,
+                    "sortby": "end_of_month",
+                    "sortorder": "asc",
+                    "pagesize": 100,
+                },
+            )
+        except (requests.RequestException, RuntimeError, ValueError) as exc:
+            print("::warning::HKMA summary history unavailable; preserving old months and checking the release:", str(exc))
+            break
         monthly_rows = 0
         for row in rows:
             period = str(row.get("end_of_month") or "")
@@ -134,6 +155,12 @@ def fetch_monetary_history() -> list[dict[str, Any]]:
         cursor = _month_add(end, 1)
         time.sleep(0.35)
 
+    from scripts.hkma_money_release import fetch_latest_money_release, merge_release_pair
+    try:
+        release = fetch_latest_money_release()
+        merge_release_pair(merged, release)
+    except (requests.RequestException, ValueError, RuntimeError) as exc:
+        print("::warning::HKMA monetary release check failed; preserving dated API history:", str(exc))
     return [merged[key] for key in sorted(merged, reverse=True)]
 
 
@@ -181,9 +208,14 @@ def _valid_count(records: list[dict[str, Any]], field: str) -> int:
 
 
 def main() -> None:
+    from scripts.hkma_money_release import PROVENANCE_FIELDS
     existing = load_existing()
     monetary = fetch_monetary_history()
-    base = fetch_monetary_base_history()
+    try:
+        base = fetch_monetary_base_history()
+    except (requests.RequestException, RuntimeError, ValueError) as exc:
+        print("::warning::HKMA base history unavailable; preserving verified structural observations:", str(exc))
+        base = []
 
     merged = {period: dict(row) for period, row in existing.items()}
 
@@ -192,7 +224,10 @@ def main() -> None:
     for row in monetary:
         period = str(row.get("end_of_month") or "")
         target = merged.setdefault(period, {"end_of_month": period})
-        _merge_non_null(target, row, MONETARY_FIELDS)
+        if row.get("m2_hkd") is not None and row.get("m3_hkd") is not None and not row.get("money_source_url"):
+            for field in PROVENANCE_FIELDS:
+                target.pop(field, None)
+        _merge_non_null(target, row, [*MONETARY_FIELDS, *PROVENANCE_FIELDS])
 
     for row in base:
         period = str(row.get("end_of_month") or "")
