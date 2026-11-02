@@ -158,10 +158,13 @@ def cboe(symbol):
 
 
 @shared_fetch
-def hkma_table(endpoint, date):
+def hkma_table(endpoint, date, extra=None):
     url = "https://api.hkma.gov.hk/public/market-data-and-statistics/" + endpoint
     from scripts.update_hkma_snapshot import _fetch_proxy_records
-    rows = _fetch_proxy_records(url, {"pagesize": 15, "sortby": date, "sortorder": "desc"})
+    params = {"pagesize": 15, "sortby": date, "sortorder": "desc"}
+    if extra:
+        params.update(extra)
+    rows = _fetch_proxy_records(url, params)
     return pd.DataFrame(rows), url
 
 
@@ -188,9 +191,17 @@ def asia(country, value):
 
 
 def hibor(field):
-    from scripts.update_hkma_daily_snapshot import HKAB_URL, parse_hkab_latest
-    row = parse_hkab_latest(get(HKAB_URL).text)
-    return row["end_of_date"] if row.get(field) is not None else None, HKAB_URL
+    # HKAB does not publish fixings on Hong Kong non-working days. The HKMA
+    # daily HIBOR-fixing series republishes the same HKAB benchmark and retains
+    # the latest valid fixing date instead of treating a holiday page as an
+    # unverified source outage.
+    source_field = {"hibor_overnight": "ir_overnight", "hibor_3m": "ir_3m"}[field]
+    frame, url = hkma_table(
+        "monthly-statistical-bulletin/er-ir/hk-interbank-ir-daily",
+        "end_of_day",
+        {"segment": "hibor.fixing"},
+    )
+    return latest(frame, "end_of_day", source_field), url
 
 
 def tga():
