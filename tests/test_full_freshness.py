@@ -154,6 +154,15 @@ class FullFreshness(unittest.TestCase):
         self.assertEqual(parse_hkma_daily_page(page, "closing_balance"),
                          ("2026-10-30", 53999.0))
 
+    def test_hkma_daily_audit_uses_text_relay_when_page_html_is_dynamic(self):
+        from scripts import probe_all_sources as probe
+        direct = type("Response", (), {"text": "<html>Loading...</html>"})()
+        relay = type("Response", (), {"text": """Discount Window Base Rate : 4.25%
+            Closing Aggregate Balance | 53,999 mn
+            Date and Time : 18:30, 30/10/2026"""})()
+        with patch.object(probe, "get", side_effect=[direct, relay]):
+            self.assertEqual(probe.hkma_daily_value("closing_balance")[0], "2026-10-30")
+
     def test_hibor_audit_uses_last_published_fixing_on_explicit_hkab_holiday(self):
         from scripts import probe_all_sources as probe
         with tempfile.TemporaryDirectory() as folder:
