@@ -154,11 +154,24 @@ def yahoo(symbol):
         from scripts.update_hk_market_daily import _fetch_hstech
         frame = _fetch_hstech()
         return latest(frame, "observation_date", "close"), "https://finance.sina.com.cn/stock/hkstock/HSTECH/klc2_kl.js"
-    url = "https://query1.finance.yahoo.com/v8/finance/chart/" + quote(symbol, safe="")
-    node = get(url, params={"range": "1mo", "interval": "1d"}).json()["chart"]["result"][0]
-    frame = completed_daily_closes(node)
-    return latest(frame, "observation_date", "close"), url
-
+    errors = []
+    for host in ("query1.finance.yahoo.com", "query2.finance.yahoo.com"):
+        url = "https://" + host + "/v8/finance/chart/" + quote(symbol, safe="")
+        try:
+            payload = get(url, params={"range": "1mo", "interval": "1d"}).json() or {}
+            nodes = ((payload.get("chart") or {}).get("result") or [])
+            if len(nodes) != 1:
+                raise ValueError("Yahoo Finance returned no unique history")
+            frame = completed_daily_closes(nodes[0])
+            observed = latest(frame, "observation_date", "close")
+            if observed is None:
+                raise ValueError("Yahoo Finance returned no completed daily close")
+            return observed, url
+        except Exception as error:
+            errors.append(f"{host}: {type(error).__name__}: {error}")
+            if "429" in str(error):
+                time.sleep(1.0)
+    raise RuntimeError("Yahoo Finance history unavailable: " + "; ".join(errors))
 
 def cboe(symbol):
     url = f"https://cdn.cboe.com/api/global/us_indices/daily_prices/{symbol}_History.csv"
@@ -416,7 +429,7 @@ def main():
     retry = {row["id"] for row in rows if row["status"] in ("unverified", "source_behind_repository", "pipeline_lag")}
     retry.update(job[0] for job in config if job[0] not in {row["id"] for row in rows})
     rows = [row for row in rows if row["id"] not in retry]
-    with ThreadPoolExecutor(max_workers=6) as pool:
+    with ThreadPoolExecutor(max_workers=3) as pool:
         tasks = [pool.submit(check, job) for job in config if not args.retry_from or job[0] in retry]
         for future in as_completed(tasks):
             row = future.result(); rows.append(row)
