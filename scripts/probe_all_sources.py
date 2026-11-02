@@ -196,11 +196,11 @@ def parse_hkma_daily_page(page_html, field):
     """Extract a dated fixing from the HKMA's official daily statistics page."""
     text = html.unescape(re.sub(r"<[^>]+>", " ", page_html))
     date_match = re.search(
-        r"Date and Time.*?(\\d{2})/(\\d{2})/(\\d{4})", text, re.I | re.S
+        r"Date and Time.*?(\d{2})/(\d{2})/(\d{4})", text, re.I | re.S
     )
     if not date_match:
         date_match = re.search(
-            r"Last revision date\\s*:\\s*(\\d{1,2})\\s+([A-Za-z]+)\\s+(\\d{4})",
+            r"Last revision date\s*:\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})",
             text, re.I,
         )
         if not date_match:
@@ -215,12 +215,12 @@ def parse_hkma_daily_page(page_html, field):
 
     if field == "disc_win_base_rate":
         match = re.search(
-            r"Discount Window.*?Base Rate.*?([0-9]+(?:\\.[0-9]+)?)\\s*%",
+            r"Discount Window.*?Base Rate.*?([0-9]+(?:\.[0-9]+)?)\s*%",
             text, re.I | re.S,
         )
     elif field == "closing_balance":
         match = re.search(
-            r"Closing Aggregate Balance.{0,180}?([0-9][0-9,]*)\\s*mn",
+            r"Closing Aggregate Balance.{0,180}?([0-9][0-9,]*)\s*mn",
             text, re.I | re.S,
         )
     else:
@@ -229,7 +229,6 @@ def parse_hkma_daily_page(page_html, field):
         raise ValueError(f"HKMA daily page missing {field}")
     value = float(match.group(1).replace(",", ""))
     return observed, value
-
 
 def hkma_daily_value(field):
     url = "https://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics/"
