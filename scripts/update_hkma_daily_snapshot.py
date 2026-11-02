@@ -24,7 +24,7 @@ HIBOR_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-s
 # daily backbone above.
 INTERBANK_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-interbank-liquidity"
 CURRENT_BASE_URL = "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-monetary-base"
-HKAB_URL = "https://www.hkab.org.hk/en/rates/hibor"
+HKAB_URL = "https://www.hkab.org.hk/en/rates/hibor?promoCode=SRPS7JDQW"
 
 
 def parse_hkab_latest(html: str, today: date | None = None) -> dict:
