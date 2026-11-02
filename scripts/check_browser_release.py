@@ -659,7 +659,7 @@ def main():
             report["client_zoom"] = exercise_client_zoom(page, chart)
             report["monthly_growth_columns"] = assert_bar_baseline(chart, 'M2 MoM')
             report["mobile_layout"] = check_mobile_layout(page)
-            liquidity = page.locator('.st-key-normal_liquidity_range_echarts_1Y').get_by_test_id(
+            liquidity = page.locator('.st-key-sp500_nikkei_ratio_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             report['legend_axes_desktop'] = exercise_legend_axes(page, liquidity)
             page.set_viewport_size({'width':390, 'height':844})
@@ -669,14 +669,14 @@ def main():
             page.set_viewport_size({'width':1440, 'height':1000})
             report['yen_legend_desktop'] = exercise_yen_legend(page)
             report['range_legend_desktop'] = {
-                'liquidity':exercise_range_legend_persistence(page,'normal_liquidity_range_echarts',3),
+                'relative_strength':exercise_range_legend_persistence(page,'sp500_nikkei_ratio_adaptive_default',3),
                 'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',4),
                 'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',9),
             }
             page.set_viewport_size({'width':390,'height':844})
             page.wait_for_timeout(300)
             report['range_legend_mobile'] = {
-                'liquidity':exercise_range_legend_persistence(page,'normal_liquidity_range_echarts',3),
+                'relative_strength':exercise_range_legend_persistence(page,'sp500_nikkei_ratio_adaptive_default',3),
                 'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',4),
                 'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',9),
             }
