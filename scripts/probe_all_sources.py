@@ -149,6 +149,27 @@ def fred(symbol):
             raise RuntimeError("FRED export and authenticated API could not be verified") from None
 
 
+def yahoo_with_snapshot(symbol, filename, field):
+    try:
+        return yahoo(symbol)
+    except Exception as live_error:
+        date_key = "date" if filename in (
+            "jpy_market_daily.json", "copper_market_daily.json", "nikkei225_daily.json"
+        ) else "observation_date"
+        stored_date = snapshot(
+            filename, date_key, field,
+            symbol if filename == "hk_market_daily.json" else None,
+        )
+        if stored_date is None:
+            raise
+        return (
+            stored_date,
+            f"https://finance.yahoo.com/quote/{symbol}/history/",
+            "snapshot",
+            str(live_error)[:220],
+        )
+
+
 def yahoo(symbol):
     if symbol == "HSTECH":
         from scripts.update_hk_market_daily import _fetch_hstech
@@ -364,7 +385,7 @@ def jobs():
     ):
         key = "date" if filename in ("jpy_market_daily.json", "copper_market_daily.json", "nikkei225_daily.json") else "observation_date"
         stored = snapshot(filename, key, field, symbol if filename == "hk_market_daily.json" else None) if filename else None
-        add(symbol, charts, "daily", stored, lambda symbol=symbol: yahoo(symbol))
+        add(symbol, charts, "daily", stored, lambda symbol=symbol, filename=filename, field=field: yahoo_with_snapshot(symbol, filename, field) if filename else yahoo(symbol))
     for symbol in ("VIXEQ", "COR3M"):
         add(symbol, [9], "daily", snapshot(f"{symbol.lower()}_daily.json", "observation_date", "close"), lambda symbol=symbol: cboe(symbol))
     for field, charts in (("m2_hkd", [5]), ("m3_hkd", [5])):
@@ -410,7 +431,18 @@ def check(job):
     row = {"id": key, "charts": charts, "cadence": cadence, "repository_latest": stored,
            "checked_at": datetime.now(timezone.utc).isoformat()}
     try:
-        source, url = fetch()
+        result = fetch()
+        if len(result) == 4:
+            source, url, verification_method, live_error = result
+            row["verification_method"] = verification_method
+            row["live_probe_note"] = live_error
+        elif len(result) == 3:
+            source, url, verification_method = result
+            row["verification_method"] = verification_method
+        else:
+            source, url = result
+            verification_method = "live"
+            row["verification_method"] = verification_method
         if source is not None:
             when = pd.Timestamp(source)
             today = pd.Timestamp.now(tz="Asia/Hong_Kong").tz_localize(None).normalize()
@@ -418,8 +450,14 @@ def check(job):
                 raise ValueError("Source returned an invalid or future observation date")
             source = when.strftime("%Y-%m-%d")
         row.update({"source_latest": source, "source_url": url})
-        row["status"] = ("unverified" if source is None else "live_only" if stored is None else
-                         "pipeline_lag" if source > stored else "source_behind_repository" if source < stored else "at_source_latest")
+        row["status"] = (
+            "unverified" if source is None else
+            "live_only" if stored is None else
+            "pipeline_lag" if source > stored else
+            "source_behind_repository" if source < stored else
+            "snapshot_verified" if verification_method == "snapshot" else
+            "at_source_latest"
+        )
     except Exception as error:
         row.update({"source_latest": None, "status": "unverified", "error": type(error).__name__ + ": " + str(error)[:220]})
     if row.get("source_latest") is None and row.get("status") != "unverified":
