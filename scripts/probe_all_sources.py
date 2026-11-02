@@ -6,6 +6,7 @@ No observations are changed by this audit.
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from functools import wraps
+import html
 import io
 import json
 import re
@@ -191,6 +192,51 @@ def asia(country, value):
     return latest(frame, "observation_date", value), JAPAN_CURRENT_URL if country == "japan" else CHINA_TREASURY_URL
 
 
+def parse_hkma_daily_page(page_html, field):
+    """Extract a dated fixing from the HKMA's official daily statistics page."""
+    text = html.unescape(re.sub(r"<[^>]+>", " ", page_html))
+    date_match = re.search(
+        r"Date and Time.*?(\\d{2})/(\\d{2})/(\\d{4})", text, re.I | re.S
+    )
+    if not date_match:
+        date_match = re.search(
+            r"Last revision date\\s*:\\s*(\\d{1,2})\\s+([A-Za-z]+)\\s+(\\d{4})",
+            text, re.I,
+        )
+        if not date_match:
+            raise ValueError("HKMA daily page has no publication date")
+        from datetime import datetime
+        observed = datetime.strptime(
+            f"{date_match.group(1)} {date_match.group(2)} {date_match.group(3)}",
+            "%d %B %Y",
+        ).date().isoformat()
+    else:
+        observed = f"{date_match.group(3)}-{date_match.group(2)}-{date_match.group(1)}"
+
+    if field == "disc_win_base_rate":
+        match = re.search(
+            r"Discount Window.*?Base Rate.*?([0-9]+(?:\\.[0-9]+)?)\\s*%",
+            text, re.I | re.S,
+        )
+    elif field == "closing_balance":
+        match = re.search(
+            r"Closing Aggregate Balance.{0,180}?([0-9][0-9,]*)\\s*mn",
+            text, re.I | re.S,
+        )
+    else:
+        raise KeyError(field)
+    if not match:
+        raise ValueError(f"HKMA daily page missing {field}")
+    value = float(match.group(1).replace(",", ""))
+    return observed, value
+
+
+def hkma_daily_value(field):
+    url = "https://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics/"
+    observed, _ = parse_hkma_daily_page(get(url).text, field)
+    return observed, url
+
+
 def hibor(field):
     # HKAB does not publish a new fixing on a non-working day. If its official
     # page explicitly says so, the last-good daily snapshot is the latest
@@ -294,7 +340,7 @@ def jobs():
     for field in ("hibor_overnight", "hibor_3m", "disc_win_base_rate", "closing_balance"):
         add(field, [7], "daily", snapshot("hkma_banking_liquidity_daily.json", "end_of_date", field),
             (lambda field=field: hibor(field)) if field.startswith("hibor_") else
-            (lambda field=field: hkma("daily-monetary-statistics/daily-figures-interbank-liquidity", field, "end_of_date")))
+            (lambda field=field: hkma_daily_value(field)))
     for country, chart in (("china", 13), ("japan", 14)):
         for tenor in ("2y", "10y"):
             key = f"{country}_{tenor}"
