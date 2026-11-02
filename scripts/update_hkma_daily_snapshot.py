@@ -38,7 +38,7 @@ def parse_hkab_latest(html: str, today: date | None = None) -> dict:
     parser = Text()
     parser.feed(html)
     text = " ".join(parser.parts)
-    match = re.search(r"Rates as at.*?Hong Kong Time on\s+(\d{4}-\d{2}-\d{2})", text)
+    match = re.search(r"Rates as at.*?Hong Kong Time on\s+(\d{4}-\d{2}-\d{2})", text, re.S)
     if match:
         day = date.fromisoformat(match[1])
         section = text[match.end():].split("Historical Rates", 1)[0]
