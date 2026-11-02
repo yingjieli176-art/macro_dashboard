@@ -160,10 +160,10 @@ class FullFreshness(unittest.TestCase):
         published = type("Response", (), {"text": """Discount Window Base Rate : 4.25%
             Closing Aggregate Balance | 53,999 mn
             Date and Time : 18:30, 30/10/2026"""})()
-        fixed_now = pd.Timestamp("2026-11-02 12:00", tz="Asia/Hong_Kong")
-        with patch("pandas.Timestamp.now", return_value=fixed_now), \
-             patch.object(probe, "get", side_effect=[empty, empty, published]) as source:
-            observed, url = probe.hkma_daily_value("closing_balance")
+        with patch.object(probe, "get", side_effect=[empty, empty, published]) as source:
+            observed, url = probe.hkma_daily_value(
+                "closing_balance", today=pd.Timestamp("2026-11-02").date()
+            )
         self.assertEqual(observed, "2026-10-30")
         self.assertIn("/2026/10/ms-20261030/", url)
         self.assertEqual(source.call_count, 3)
