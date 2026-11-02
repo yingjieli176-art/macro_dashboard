@@ -265,9 +265,9 @@ def jobs():
         ("^HSI", [5,8], "hk_market_daily.json", "close"), ("HSTECH", [5,8], "hk_market_daily.json", "close"),
         ("GC=F", [15], None, "close"), ("SI=F", [15], None, "close"),
         ("BTC-USD", [17], None, "close"), ("ETH-USD", [17], None, "close"),
-        ("^N225", [4,14], None, "close"), ("HG=F", [16], "copper_market_daily.json", "comex_price_usd_lb"),
+        ("^N225", [4,14], "nikkei225_daily.json", "close"), ("HG=F", [16], "copper_market_daily.json", "comex_price_usd_lb"),
     ):
-        key = "date" if filename in ("jpy_market_daily.json", "copper_market_daily.json") else "observation_date"
+        key = "date" if filename in ("jpy_market_daily.json", "copper_market_daily.json", "nikkei225_daily.json") else "observation_date"
         stored = snapshot(filename, key, field, symbol if filename == "hk_market_daily.json" else None) if filename else None
         add(symbol, charts, "daily", stored, lambda symbol=symbol: yahoo(symbol))
     for symbol in ("VIXEQ", "COR3M"):
