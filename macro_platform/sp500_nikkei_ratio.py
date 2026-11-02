@@ -80,66 +80,57 @@ def build_sp500_nikkei_ratio_figure(date_range="5Y") -> go.Figure:
             showarrow=False, font={"color": "#64748b", "size": 14},
         )
     else:
-        # Rebase both index legs to 100 at the first common observation so
-        # their relative performance can be compared on one secondary axis.
-        sp500_base = float(data["SP500"].iloc[0])
-        nikkei_base = float(data["NIKKEI"].iloc[0])
-        data = data.copy()
-        data["SP500_rebased"] = data["SP500"] / sp500_base * 100.0
-        data["NIKKEI_rebased"] = data["NIKKEI"] / nikkei_base * 100.0
-        custom = data[["SP500", "NIKKEI", "SP500_rebased", "NIKKEI_rebased"]].to_numpy()
-
+        # Keep every series in its original unit and scale. Each gets its own
+        # axis so the index levels remain directly readable without rebasing.
         fig.add_trace(go.Scatter(
             x=data["observation_date"],
             y=data["ratio"],
-            customdata=custom,
             name="比值：S&P 500 ÷ Nikkei 225",
             mode="lines",
             connectgaps=False,
             yaxis="y",
             line={"color": "#7c3aed", "width": 2.6},
             hovertemplate=(
-                "%{x|%Y-%m-%d}<br>比值：%{y:.4f}"
-                "<br>S&P 500：%{customdata[0]:,.0f} 点"
-                "<br>日经225：%{customdata[1]:,.0f} 点<extra></extra>"
+                "%{x|%Y-%m-%d}<br>比值：%{y:.4f}<extra></extra>"
             ),
         ))
         fig.add_trace(go.Scatter(
             x=data["observation_date"],
-            y=data["SP500_rebased"],
-            customdata=custom,
-            name="分子：S&P 500（起点=100）",
+            y=data["SP500"],
+            name="分子：S&P 500（指数点位）",
             mode="lines",
             connectgaps=False,
             yaxis="y2",
             line={"color": "#2563eb", "width": 2},
             hovertemplate=(
-                "%{x|%Y-%m-%d}<br>S&P 500走势：%{y:.2f}"
-                "<br>原始点位：%{customdata[0]:,.0f}<extra></extra>"
+                "%{x|%Y-%m-%d}<br>S&P 500：%{y:,.0f} 点<extra></extra>"
             ),
         ))
         fig.add_trace(go.Scatter(
             x=data["observation_date"],
-            y=data["NIKKEI_rebased"],
-            customdata=custom,
-            name="分母：日经225（起点=100）",
+            y=data["NIKKEI"],
+            name="分母：日经225（指数点位）",
             mode="lines",
             connectgaps=False,
-            yaxis="y2",
+            yaxis="y3",
             line={"color": "#ea580c", "width": 2},
             hovertemplate=(
-                "%{x|%Y-%m-%d}<br>日经225走势：%{y:.2f}"
-                "<br>原始点位：%{customdata[1]:,.0f}<extra></extra>"
+                "%{x|%Y-%m-%d}<br>日经225：%{y:,.0f} 点<extra></extra>"
             ),
         ))
     fig.update_layout(
-        height=410,
-        margin={"l": 68, "r": 76, "t": 56, "b": 42},
+        height=430,
+        margin={"l": 72, "r": 142, "t": 62, "b": 42},
         hovermode="x unified",
-        legend={"orientation": "h", "y": 1.16, "x": 0},
-        xaxis={"title": None, "showgrid": False, "rangeslider": {"visible": False}},
+        legend={"orientation": "h", "y": 1.17, "x": 0},
+        xaxis={
+            "title": None,
+            "showgrid": False,
+            "rangeslider": {"visible": False},
+            "domain": [0.0, 0.82],
+        },
         yaxis={
-            "title": "指数点位比值",
+            "title": "指数点位比值（倍）",
             "showgrid": True,
             "gridcolor": "#e5e7eb",
             "griddash": "dot",
@@ -147,12 +138,24 @@ def build_sp500_nikkei_ratio_figure(date_range="5Y") -> go.Figure:
             "tickformat": ".3f",
         },
         yaxis2={
-            "title": "指数走势（首个共同收盘日=100）",
+            "title": "S&P 500（点）",
             "overlaying": "y",
             "side": "right",
+            "anchor": "free",
+            "position": 0.88,
             "showgrid": False,
             "zeroline": False,
-            "tickformat": ".0f",
+            "tickformat": ",.0f",
+        },
+        yaxis3={
+            "title": "日经225（点）",
+            "overlaying": "y",
+            "side": "right",
+            "anchor": "free",
+            "position": 0.99,
+            "showgrid": False,
+            "zeroline": False,
+            "tickformat": ",.0f",
         },
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
