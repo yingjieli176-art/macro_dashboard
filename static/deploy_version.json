@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-02-sp500-nikkei-raw-axes-r83",
+  "release": "2026-11-02-sp500-nikkei-snapshot-fallback-r84",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -21,6 +21,7 @@
     "yen_carry_spread_fx_appreciation",
     "cftc_yen_noncommercial_positions",
     "zero_based_position_and_monthly_growth_bars",
-    "sp500_nikkei_ratio_raw_integer_closes_three_independent_y_axes"
+    "sp500_nikkei_ratio_raw_integer_closes_three_independent_y_axes",
+    "sp500_nikkei_last_good_snapshot_fallback"
   ]
 }
