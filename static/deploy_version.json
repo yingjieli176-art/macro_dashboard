@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-02-monthly-freshness-grace-r85",
+  "release": "2026-11-03-yen-carry-10y-spread-r86",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -19,6 +19,7 @@
     "observed_thirty_year_treasury_yield",
     "simplified_equity_risk_series",
     "yen_carry_spread_fx_appreciation",
+    "yen_carry_us_japan_10y_long_term_yield_spread",
     "cftc_yen_noncommercial_positions",
     "zero_based_position_and_monthly_growth_bars",
     "sp500_nikkei_ratio_raw_integer_closes_three_independent_y_axes",
