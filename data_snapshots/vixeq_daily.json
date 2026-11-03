@@ -3,10 +3,10 @@
   "name": "Cboe S&P 500 Constituent Volatility Index",
   "source": "Cboe Global Indices",
   "source_url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIXEQ_History.csv",
-  "updated_at": "2026-10-31T01:46:45.370445+00:00",
-  "record_count": 3111,
+  "updated_at": "2026-11-03T03:40:46.895625+00:00",
+  "record_count": 3112,
   "coverage_start": "2014-06-19",
-  "coverage_end": "2026-10-30",
+  "coverage_end": "2026-11-02",
   "records": [
     {
       "observation_date": "2014-06-19",
@@ -12451,6 +12451,10 @@
     {
       "observation_date": "2026-10-30",
       "close": 42.3
+    },
+    {
+      "observation_date": "2026-11-02",
+      "close": 44.67
     }
   ]
 }
