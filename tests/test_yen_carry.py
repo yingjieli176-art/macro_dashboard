@@ -12,17 +12,27 @@ class YenCarryTests(unittest.TestCase):
     def setUp(self):
         self.days = pd.bdate_range("2026-06-01", periods=90)
         self.fx = pd.DataFrame({"observation_date": self.days, "usd_jpy_close": np.linspace(160, 140, 90)})
-        self.us = pd.DataFrame({"observation_date": self.days, "DGS2": 4.0})
-        self.jp = pd.DataFrame({"observation_date": self.days, "japan_2y": 0.75})
+        self.us = pd.DataFrame({"observation_date": self.days, "DGS10": 4.3})
+        self.jp = pd.DataFrame({"observation_date": self.days, "japan_10y": 1.15})
 
     def test_same_date_spread_does_not_fill_cross_market_holidays(self):
         us = self.us.drop(index=10)
         japan = self.jp.drop(index=11)
         rates, _ = carry_observations(us, japan, self.fx)
-        self.assertAlmostEqual(rates.spread_pp.iloc[0], 3.25)
+        self.assertAlmostEqual(rates.spread_pp.iloc[0], 3.15)
         self.assertTrue(rates.spread_pp.iloc[10:12].isna().all())
         fig = build_yen_carry_figure("1Y", us=us, japan=japan, fx=self.fx)
         self.assertFalse(fig.data[0].connectgaps)
+
+    def test_10y_spread_uses_long_yields_not_two_year_proxy(self):
+        us = self.us.assign(DGS2=8.0)
+        japan = self.jp.assign(japan_2y=0.1)
+        rates, _ = carry_observations(us, japan, self.fx)
+        self.assertAlmostEqual(rates.spread_pp.iloc[0], 4.3 - 1.15)
+        fig = build_yen_carry_figure("1Y", us=us, japan=japan, fx=self.fx)
+        self.assertEqual(fig.data[0].name, "US−Japan 10Y spread")
+        self.assertIn("10Y", fig.layout.yaxis.title.text)
+        self.assertAlmostEqual(fig.data[0].y[-1], 3.15)
 
     def test_exact_yen_repayment_cost_formula_and_lookback(self):
         _, fx = carry_observations(self.us, self.jp, self.fx)
