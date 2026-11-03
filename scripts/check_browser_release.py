@@ -628,7 +628,7 @@ def main():
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch()
             page = browser.new_page(viewport={"width": 1440, "height": 1000})
-            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.on("pageerror", lambda error: errors.append({"message": str(error), "stack": error.stack}))
             wait_for_page(page, args.url)
             groups = page.get_by_test_id("stButtonGroup")
             page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 18", timeout=60000)
@@ -758,7 +758,7 @@ def main():
             expected_a.wait_for(timeout=30000)
             context_b = browser.new_context(viewport={"width": 1440, "height": 1000})
             page_b = context_b.new_page()
-            page_b.on('pageerror', lambda error: errors.append(str(error)))
+            page_b.on('pageerror', lambda error: errors.append({"message": str(error), "stack": error.stack}))
             try:
                 wait_for_page(page_b, args.url)
             except Exception:
