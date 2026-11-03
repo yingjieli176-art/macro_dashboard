@@ -687,6 +687,18 @@ def main():
             page.get_by_text("9. 日元套息分析", exact=False).wait_for()
             carry = page.locator('.st-key-yen_carry_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
+            japan_chart = page.locator('.st-key-japan_rates_adaptive_default_1Y').get_by_test_id(
+                re.compile(r"^(macro|st)EChartsChart$"))
+            japan_series = japan_chart.evaluate("""element => {
+                const chart = (""" + INSTANCE_JS + """)(element);
+                return chart.getOption().series.map(s => ({name:s.name, axis:s.yAxisIndex,
+                    valid:s.data.filter(p=>Number.isFinite(p[1])).length}));
+            }""")
+            assert len(japan_series) == 7, japan_series
+            for name, axis in (("Japan 30Y",0), ("Japan 30Y−10Y (R1)",1)):
+                found = next(s for s in japan_series if s["name"] == name)
+                assert found["axis"] == axis and found["valid"] > 200, found
+            report["japan_thirty_year"] = japan_series
             report["yen_carry_zoom"] = exercise_client_zoom(page, carry, minimum_axes=4)
             report["cftc_columns"] = assert_bar_baseline(carry, 'CFTC JPY speculative net (R3)')
             report["yen_carry_ranges"] = exercise_range_legend_persistence(
@@ -713,16 +725,16 @@ def main():
             page.set_viewport_size({'width':1440, 'height':1000})
             report['yen_legend_desktop'] = exercise_yen_legend(page)
             report['range_legend_desktop'] = {
-                'relative_strength':exercise_range_legend_persistence(page,'sp500_nikkei_ratio_adaptive_default',3),
-                'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',4),
-                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',9),
+                'relative_strength':exercise_range_legend_persistence(page,'sp500_nikkei_ratio_adaptive_default',MACRO_DISPLAY_NUMBER[4]-1),
+                'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',MACRO_DISPLAY_NUMBER[5]-1),
+                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',MACRO_DISPLAY_NUMBER[10]-1),
             }
             page.set_viewport_size({'width':390,'height':844})
             page.wait_for_timeout(300)
             report['range_legend_mobile'] = {
-                'relative_strength':exercise_range_legend_persistence(page,'sp500_nikkei_ratio_adaptive_default',3),
-                'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',4),
-                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',9),
+                'relative_strength':exercise_range_legend_persistence(page,'sp500_nikkei_ratio_adaptive_default',MACRO_DISPLAY_NUMBER[4]-1),
+                'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',MACRO_DISPLAY_NUMBER[5]-1),
+                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',MACRO_DISPLAY_NUMBER[10]-1),
             }
             page.set_viewport_size({'width':1440,'height':1000})
             freshness = page.get_by_text(re.compile(r'^数据最新时间 · 18 张图'))
