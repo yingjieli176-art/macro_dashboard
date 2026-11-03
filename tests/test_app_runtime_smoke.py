@@ -93,6 +93,9 @@ class DashboardBootSmoke(unittest.TestCase):
                      if any(series["name"] == "Japan 30Y−10Y (R1)"
                             for series in json.loads(spec)["series"]))
         japan_series = {series["name"]: series for series in japan["series"]}
+        self.assertEqual(len(japan_series), 7)
+        self.assertEqual(japan_series["Nikkei 225 (R2)"]["yAxisIndex"], 2)
+        self.assertEqual(japan_series["USD/JPY (R3)"]["yAxisIndex"], 3)
         self.assertEqual(japan_series["Japan 30Y"]["yAxisIndex"], 0)
         self.assertEqual(japan_series["Japan 30Y−10Y (R1)"]["yAxisIndex"], 1)
         self.assertTrue(any(point[1] is not None for point in japan_series["Japan 30Y"]["data"]))

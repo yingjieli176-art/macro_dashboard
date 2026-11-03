@@ -1968,6 +1968,11 @@ def build_fig15(date_range):
         nikkei = _load_yahoo_histories(("^N225",))["^N225"]
     except Exception:
         nikkei = pd.DataFrame(columns=["observation_date", "close"])
+    if nikkei.empty:
+        # Reuse the same original last-good closes as the relative-strength
+        # chart; a Yahoo outage must not erase an already verified Nikkei leg.
+        from macro_platform.sp500_nikkei_ratio import _load_snapshot_index
+        nikkei = _load_snapshot_index("NIKKEI").rename(columns={"NIKKEI": "close"})
     try:
         yen = load_yen_market_index()
     except Exception:
