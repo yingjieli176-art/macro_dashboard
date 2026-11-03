@@ -25,11 +25,11 @@ class DateAndSourceAudit(unittest.TestCase):
     def test_inventory_uses_all_18_display_numbers_and_new_equity_sources(self):
         inventory = {key: charts for key, charts, *_ in probe.jobs()}
         self.assertEqual({c for charts in inventory.values() for c in charts}, set(range(1, 19)))
-        for key, charts in {"SP500": [4,9], "^N225": [4,14], "SPX": [11], "RSP": [11],
-                            "000300": [12], "000852": [12], "932000": [12],
-                            "china_2y": [13], "japan_2y": [14,18],
-                            "DGS2": [3,18], "JPY=X": [14,18],
-                            "GC=F": [15], "HG=F": [16], "BTC-USD": [17]}.items():
+        for key, charts in {"SP500": [4,7], "^N225": [7,8], "SPX": [6], "RSP": [6],
+                            "000300": [11], "000852": [11], "932000": [11],
+                            "china_2y": [10], "japan_2y": [8], "japan_10y": [8,9], "japan_30y": [8],
+                            "DGS2": [3], "DGS10": [2,3,9], "JPY=X": [8,9],
+                            "GC=F": [16], "HG=F": [17], "BTC-USD": [18]}.items():
             self.assertEqual(inventory[key], charts)
 
     def test_tomorrows_observation_is_invalid_even_with_a_fresh_fetch(self):

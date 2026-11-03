@@ -30,7 +30,7 @@ class FullFreshness(unittest.TestCase):
                 self.assertEqual(frame.observation_date.max(),pd.Timestamp("2026-10-21"))
                 self.assertEqual(frame.japan_10y.iloc[-1],2.5)
                 self.assertAlmostEqual(frame.japan_10y_2y_pct.iloc[-1],1.4)
-                get.assert_called_once_with(asia.JAPAN_CURRENT_URL)
+                self.assertEqual([call.args[0] for call in get.call_args_list], [asia.JAPAN_CURRENT_URL, asia.JAPAN_HISTORY_URL])
                 # A scheduled replacement invalidates the same process cache.
                 payload=json.loads(path.read_text());payload["records"][-1]["japan_10y"]=2.6
                 path.write_text(json.dumps(payload)+" ")
@@ -123,10 +123,12 @@ class FullFreshness(unittest.TestCase):
         config = jobs()
         self.assertEqual({c for _, charts, _, _, _ in config for c in charts}, set(range(1,19)))
         mapped = {row[0]: row[1] for row in config}
-        for source in ("DGS2", "japan_2y", "JPY=X"):
-            self.assertIn(18, mapped[source])
-        self.assertIn(4, mapped["SP500"])
-        self.assertIn(4, mapped["^N225"])
+        for source in ("DGS10", "japan_10y", "JPY=X"):
+            self.assertIn(9, mapped[source])
+        self.assertNotIn(9, mapped["DGS2"])
+        self.assertNotIn(9, mapped["japan_2y"])
+        self.assertIn(7, mapped["SP500"])
+        self.assertIn(7, mapped["^N225"])
         self.assertEqual(mapped["WALCL"], [])
         self.assertEqual(mapped["WRESBAL"], [])
         self.assertEqual(mapped["RRPONTSYD"], [])
@@ -226,10 +228,10 @@ class FullFreshness(unittest.TestCase):
         fig = go.Figure(go.Scatter(x=pd.to_datetime(["2026-10-19","2026-10-20"]),
                                  y=[4.,None], name="10Y−2Y (R1)"))
         monthly = go.Figure(go.Scatter(x=pd.to_datetime(["2026-09-30"]), y=[1.], name="Balance"))
-        rows = figure_rows({3:fig,6:monthly}, now="2026-10-21")
+        rows = figure_rows({3:fig,13:monthly}, now="2026-10-21")
         self.assertEqual(len(rows),15)
         self.assertEqual(next(r for r in rows if r["图表"]==3)["实际观测日"],"2026-10-19")
-        self.assertEqual(next(r for r in rows if r["图表"]==6)["频率"],"月频")
+        self.assertEqual(next(r for r in rows if r["图表"]==13)["频率"],"月频")
         self.assertEqual(next(r for r in rows if r["图表"]==14)["状态"],"待恢复")
 
     def test_reference_guide_levels_are_not_dated_observations(self):

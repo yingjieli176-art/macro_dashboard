@@ -5,6 +5,7 @@ import math
 from pathlib import Path
 
 import pandas as pd
+from macro_platform.dashboard_layout import CHART_NUMBERING, MACRO_DISPLAY_NUMBER, legacy_chart_numbers
 
 SOURCE_REPORT = Path(__file__).resolve().parents[1] / "data_snapshots/all_source_freshness.json"
 
@@ -38,7 +39,7 @@ def figure_rows(figures, now=None):
                 rows.append({"图表": number, "指标": trace.name, "实际观测日": "缺失", "频率": "—", "状态": "待恢复"})
                 continue
             last = max(dates)
-            monthly = number == 6 or (number == 5 and any(s in trace.name for s in ("M2 ", "M3 ", "Monetary Base")))
+            monthly = number == MACRO_DISPLAY_NUMBER[6] or (number == MACRO_DISPLAY_NUMBER[5] and any(s in trace.name for s in ("M2 ", "M3 ", "Monetary Base")))
             weekly = any(name in trace.name for name in ("Reserve Balances", "Weekly fallback", "CFTC JPY"))
             cadence = "monthly" if monthly else "weekly" if weekly else "daily"
             item = {"name": trace.name, "data": [[last.isoformat(), 1]], "observation_cadence": cadence}
@@ -67,13 +68,16 @@ def source_rows(path=SOURCE_REPORT):
         report = json.loads(path.read_text())
     except (OSError, ValueError, TypeError):
         return None, []
+    if report.get("chart_numbering") in {"display_17", "display_18"}:
+        report["sources"] = [dict(row, charts=legacy_chart_numbers(row["charts"])) for row in report.get("sources", [])]
+        report["chart_numbering"] = CHART_NUMBERING
     labels = {"at_source_latest": "与本次源站返回一致",
               "snapshot_verified": "使用最近一次已验快照（实时接口限流）",
               "pipeline_lag": "本地落后源站",
               "source_behind_repository": "源站本次导出较旧，保留较新已验数据",
               "live_only": "页面实时构建，核对图表日期", "unverified": "源站尚未核实"}
     return _local_time(report.get("checked_at")), [{"源指标": row["id"], "图表": (",".join(map(str,row["charts"]))
-        if report.get("chart_numbering") in {"display_17", "display_18"} else "待按新图号复核"),
+        if report.get("chart_numbering") == CHART_NUMBERING else "待按新图号复核"),
         "本地数据日期": row.get("repository_latest") or "实时构建",
         "源站数据日期": row.get("source_latest") or "未取得", "核对结果": labels.get(row["status"],row["status"]),
         "本次核对时间": _local_time(row.get("checked_at")), "说明": row.get("error") or row.get("live_probe_note", "")}

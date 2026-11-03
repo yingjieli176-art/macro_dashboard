@@ -22,6 +22,7 @@ import requests
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from macro_platform.market_history import completed_daily_closes
+from macro_platform.dashboard_layout import CHART_NUMBERING, legacy_chart_numbers
 
 
 _PROBE_LOCK = threading.Lock()
@@ -378,10 +379,10 @@ def us_equity(key):
 def jobs():
     output = []
     def add(key, charts, cadence, stored, fetch):
-        output.append((key, charts, cadence, stored, fetch))
+        output.append((key, legacy_chart_numbers(charts), cadence, stored, fetch))
     for symbol, charts in {
         "IORB": [1], "RRPONTSYAWARD": [1], "EFFR": [1], "SOFR": [1],
-        "DGS3MO": [3], "DGS2": [3,18], "DGS10": [2,3], "DGS30": [3], "DFII5": [2,13], "DFII10": [2], "T10YIE": [2],
+        "DGS3MO": [3], "DGS2": [3], "DGS10": [2,3,18], "DGS30": [3], "DFII5": [2,13], "DFII10": [2], "T10YIE": [2],
         "WALCL": [], "WRESBAL": [], "RRPONTSYD": [], "VIXCLS": [9,10], "VXVCLS": [10], "SP500": [4,9], "GVZCLS": [15],
     }.items():
         add(symbol, charts, "weekly" if symbol in ("WALCL", "WRESBAL") else "daily",
@@ -411,9 +412,9 @@ def jobs():
             (lambda field=field: hibor(field)) if field.startswith("hibor_") else
             (lambda field=field: hkma_daily_value(field)))
     for country, chart in (("china", 13), ("japan", 14)):
-        for tenor in ("2y", "10y"):
+        for tenor in (("2y", "10y", "30y") if country == "japan" else ("2y", "10y")):
             key = f"{country}_{tenor}"
-            add(key, [chart,18] if key == "japan_2y" else [chart], "daily", snapshot("japan_gov_yields.json", "observation_date", key) if country == "japan" else None,
+            add(key, [chart,18] if key == "japan_10y" else [chart], "daily", snapshot("japan_gov_yields.json", "observation_date", key) if country == "japan" else None,
                 lambda country=country,key=key: asia(country,key))
     def cftc_yen():
         from scripts.update_cftc_yen import fetch_cftc_yen
@@ -497,7 +498,7 @@ def main():
         for future in as_completed(tasks):
             row = future.result(); rows.append(row)
             print(row["id"], row["repository_latest"], "->", row["source_latest"], row["status"], flush=True)
-    payload = {"checked_at": datetime.now(timezone.utc).isoformat(), "chart_numbering": "display_18",
+    payload = {"checked_at": datetime.now(timezone.utc).isoformat(), "chart_numbering": CHART_NUMBERING,
                "sources": sorted(rows,key=lambda r:r["id"]),
                "elapsed_seconds": round(time.monotonic()-started, 3), **_PROBE_STATS}
     Path(args.output).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")

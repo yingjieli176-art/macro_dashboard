@@ -4,6 +4,9 @@ import json
 import re
 from pathlib import Path
 import time
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from macro_platform.dashboard_layout import MACRO_DISPLAY_NUMBER
 
 from playwright.sync_api import sync_playwright
 
@@ -259,12 +262,12 @@ def exercise_price_path_legend(page, chart):
 
 
 def exercise_equity_drawdown(page):
-    page.get_by_text('11. SPX / RSP · 价格走势与区间高点', exact=True).wait_for(timeout=30000)
+    page.get_by_text(f'{MACRO_DISPLAY_NUMBER["us_drawdown"]}. SPX / RSP · 价格走势与区间高点', exact=True).wait_for(timeout=30000)
     assert page.get_by_text('9B.', exact=False).count() == 0
     baseline = None
     ranges = []
     for period in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
-        page.get_by_test_id("stButtonGroup").nth(10).get_by_text(period, exact=True).click()
+        page.get_by_test_id("stButtonGroup").nth(MACRO_DISPLAY_NUMBER["us_drawdown"]-1).get_by_text(period, exact=True).click()
         chart = page.locator(f'.st-key-us_equity_drawdown_echarts_{period}').get_by_test_id(
             re.compile(r"^(macro|st)EChartsChart$"))
         chart.wait_for(timeout=30000)
@@ -299,10 +302,10 @@ def exercise_equity_drawdown(page):
 
 
 def exercise_china_drawdown(page):
-    page.get_by_text('12. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势', exact=True).wait_for(timeout=30000)
+    page.get_by_text(f'{MACRO_DISPLAY_NUMBER["cn_drawdown"]}. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势', exact=True).wait_for(timeout=30000)
     baseline = None
     for period in ('5Y', '1Y', '6M', '3M', '1M', '1Y'):
-        page.get_by_test_id('stButtonGroup').nth(11).get_by_text(period, exact=True).click()
+        page.get_by_test_id('stButtonGroup').nth(MACRO_DISPLAY_NUMBER["cn_drawdown"]-1).get_by_text(period, exact=True).click()
         selector = f'.st-key-china_equity_drawdown_echarts_{period}'
         chart = page.locator(selector).get_by_test_id(re.compile(r'^(macro|st)EChartsChart$'))
         chart.wait_for(timeout=30000)
@@ -625,15 +628,15 @@ def main():
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch()
             page = browser.new_page(viewport={"width": 1440, "height": 1000})
-            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.on("pageerror", lambda error: errors.append({"message": str(error), "stack": error.stack}))
             wait_for_page(page, args.url)
             groups = page.get_by_test_id("stButtonGroup")
             page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 18", timeout=60000)
-            page.get_by_text("14. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
+            page.get_by_text("8. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
             charts = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
-            page.get_by_text("10. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
-            page.get_by_text("15. Precious Metals", exact=True).wait_for(timeout=30000)
+            page.get_by_text("5. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
+            page.get_by_text("16. Precious Metals", exact=True).wait_for(timeout=30000)
             assert groups.count() == 18
             assert charts.count() >= 8
             assert page.get_by_test_id("stException").count() == 0
@@ -664,30 +667,42 @@ def main():
                     assert groups.nth(index).get_by_text(label, exact=True).count() == 1, (index, label, report["controls"][index])
             # Use a real HK chart to exercise every server range with raw prices.
             for label in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
-                groups.nth(4).get_by_text(label, exact=True).click()
+                groups.nth(MACRO_DISPLAY_NUMBER[5]-1).get_by_text(label, exact=True).click()
                 page.locator(f".st-key-hk_5_range_adaptive_default_{label}").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$")).wait_for(timeout=30000)
                 page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'",
                                        timeout=30000)
                 assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
             assert page.get_by_test_id("stRadio").count() == 0
             assert page.get_by_text("Rebased 100", exact=True).count() == 0
-            page.get_by_text("13. China Government Yields & US 5Y Real Yield", exact=False).wait_for()
+            page.get_by_text("10. China Government Yields & US 5Y Real Yield", exact=False).wait_for()
             assert page.get_by_text("China & Japan Government Yield Curves", exact=False).count() == 0
-            groups.nth(12).get_by_text("3M", exact=True).click()
+            groups.nth(MACRO_DISPLAY_NUMBER[14]-1).get_by_text("3M", exact=True).click()
             china_selected = page.locator(".st-key-china_rates_adaptive_default_3M").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             china_selected.wait_for(timeout=30000)
-            groups.nth(13).get_by_text("1M", exact=True).click()
+            groups.nth(MACRO_DISPLAY_NUMBER[15]-1).get_by_text("1M", exact=True).click()
             china_selected.wait_for(timeout=30000)
-            groups.nth(12).get_by_text("1Y", exact=True).click()
-            groups.nth(13).get_by_text("1Y", exact=True).click()
+            groups.nth(MACRO_DISPLAY_NUMBER[14]-1).get_by_text("1Y", exact=True).click()
+            groups.nth(MACRO_DISPLAY_NUMBER[15]-1).get_by_text("1Y", exact=True).click()
             report["checks"].append({"china_japan_separate": True, "country_ranges_independent": True})
-            page.get_by_text("18. 日元套息分析", exact=False).wait_for()
+            page.get_by_text("9. 日元套息分析", exact=False).wait_for()
             carry = page.locator('.st-key-yen_carry_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
+            japan_chart = page.locator('.st-key-japan_rates_adaptive_default_1Y').get_by_test_id(
+                re.compile(r"^(macro|st)EChartsChart$"))
+            japan_series = japan_chart.evaluate("""element => {
+                const chart = (""" + INSTANCE_JS + """)(element);
+                return chart.getOption().series.map(s => ({name:s.name, axis:s.yAxisIndex,
+                    valid:s.data.filter(p=>Number.isFinite(p[1])).length}));
+            }""")
+            assert len(japan_series) == 7, japan_series
+            for name, axis in (("Japan 30Y",0), ("Japan 30Y−10Y (R1)",1)):
+                found = next(s for s in japan_series if s["name"] == name)
+                assert found["axis"] == axis and found["valid"] > 200, found
+            report["japan_thirty_year"] = japan_series
             report["yen_carry_zoom"] = exercise_client_zoom(page, carry, minimum_axes=4)
             report["cftc_columns"] = assert_bar_baseline(carry, 'CFTC JPY speculative net (R3)')
             report["yen_carry_ranges"] = exercise_range_legend_persistence(
-                page, 'yen_carry_adaptive_default', 17)
+                page, 'yen_carry_adaptive_default', MACRO_DISPLAY_NUMBER[16]-1)
             chart = page.locator('.st-key-hk_5_range_adaptive_default_1Y').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             report["client_zoom"] = exercise_client_zoom(page, chart)
             report["monthly_growth_columns"] = assert_bar_baseline(chart, 'M2 MoM')
@@ -710,16 +725,16 @@ def main():
             page.set_viewport_size({'width':1440, 'height':1000})
             report['yen_legend_desktop'] = exercise_yen_legend(page)
             report['range_legend_desktop'] = {
-                'relative_strength':exercise_range_legend_persistence(page,'sp500_nikkei_ratio_adaptive_default',3),
-                'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',4),
-                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',9),
+                'relative_strength':exercise_range_legend_persistence(page,'sp500_nikkei_ratio_adaptive_default',MACRO_DISPLAY_NUMBER[4]-1),
+                'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',MACRO_DISPLAY_NUMBER[5]-1),
+                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',MACRO_DISPLAY_NUMBER[10]-1),
             }
             page.set_viewport_size({'width':390,'height':844})
             page.wait_for_timeout(300)
             report['range_legend_mobile'] = {
-                'relative_strength':exercise_range_legend_persistence(page,'sp500_nikkei_ratio_adaptive_default',3),
-                'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',4),
-                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',9),
+                'relative_strength':exercise_range_legend_persistence(page,'sp500_nikkei_ratio_adaptive_default',MACRO_DISPLAY_NUMBER[4]-1),
+                'hong_kong':exercise_range_legend_persistence(page,'hk_5_range_adaptive_default',MACRO_DISPLAY_NUMBER[5]-1),
+                'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',MACRO_DISPLAY_NUMBER[10]-1),
             }
             page.set_viewport_size({'width':1440,'height':1000})
             freshness = page.get_by_text(re.compile(r'^数据最新时间 · 18 张图'))
@@ -738,12 +753,12 @@ def main():
             # shared background fetch and cause a full rerun in A; clicking
             # A's old fragment during that rerun tests a stale event race,
             # rather than whether B preserves A's already selected period.
-            groups.nth(4).get_by_text('1M', exact=True).click()
+            groups.nth(MACRO_DISPLAY_NUMBER[5]-1).get_by_text('1M', exact=True).click()
             expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_default"][class*="_1M"]').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             expected_a.wait_for(timeout=30000)
             context_b = browser.new_context(viewport={"width": 1440, "height": 1000})
             page_b = context_b.new_page()
-            page_b.on('pageerror', lambda error: errors.append(str(error)))
+            page_b.on('pageerror', lambda error: errors.append({"message": str(error), "stack": error.stack}))
             try:
                 wait_for_page(page_b, args.url)
             except Exception:
@@ -757,7 +772,7 @@ def main():
                 raise
             page_b.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'", timeout=30000)
             expected_a.wait_for(timeout=30000)
-            page_b.get_by_test_id('stButtonGroup').nth(4).get_by_text('3M', exact=True).click()
+            page_b.get_by_test_id('stButtonGroup').nth(MACRO_DISPLAY_NUMBER[5]-1).get_by_text('3M', exact=True).click()
             expected_b = page_b.locator('.st-key-hk_5_range_adaptive_default_3M').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             expected_b.wait_for(timeout=30000)
             assert expected_a.count() == 1 and expected_b.count() == 1
