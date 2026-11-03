@@ -18,7 +18,19 @@ python -m pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Yen carry analysis (chart 18)
+## Japan 30Y and country order (r87)
+
+`2026-11-03-japan-30y-country-order-r87` adds MOF 30-year observations to
+Japan yields (chart 8), with 30Y−10Y on the spread axis in percentage points.
+The collector backfills official five-year history, persists all three tenors,
+and retains the last good snapshot on validation failure. Spreads require
+both legs on the same observation date; missing values are never forward filled.
+
+Chart 1 retains its policy corridor. US rates, VIX and US equities lead; Japan
+rates and yen carry follow; China and Hong Kong follow Japan. Titles, source
+inventory and browser checks share the stable chart identity mapping.
+
+## Yen carry analysis (chart 9)
 
 `2026-10-30-position-growth-columns-r81` displays CFTC yen speculative net
 positions and chart 5's monthly M2 MoM growth as columns from zero. Prices,
@@ -28,7 +40,7 @@ filtering and native recovery retain the chart type and original observations.
 
 `2026-10-30-yen-carry-analysis-r80` adds four independently scaled series:
 
-- US 2Y Treasury yield (FRED DGS2) minus Japan 2Y government yield (Japan MOF),
+- US 10Y Treasury yield (FRED DGS10) minus Japan 10Y government yield (Japan MOF),
   in percentage points, calculated only where both have the same observation date.
 - USD/JPY completed daily closes (Yahoo JPY=X), in yen per dollar. Falling values
   indicate yen appreciation and higher dollar costs of repaying yen principal.
@@ -78,19 +90,19 @@ automatic data jobs never run the obsolete HSTECH code-wiring patch.
 
 | # | Section |
 |---|---|
-| 1–4 | Federal Reserve rates, nominal/real Treasury yields, curve, US liquidity |
-| 5–8 | Hong Kong monetary pulse, bank liquidity, HIBOR funding, HKD / market overlays |
-| 9 | US equity risk (VIX/VIXEQ, S&P 500, VIXEQ/VIX, COR3M) |
-| 10 | Precious metals |
-| 11 | Digital assets |
-| 12 | Copper price/inventory |
-| 13 | Asian rates and yield curves |
+| 1–3 | Fed policy corridor, US nominal/real yields and Treasury curve |
+| 4–6 | US VIX/VIXEQ, VIX term structure, SPX/RSP prices and drawdowns |
+| 7 | S&P 500 / Nikkei 225 relative strength |
+| 8–9 | Japan 2Y/10Y/30Y, curve spreads, Nikkei/USDJPY and yen carry |
+| 10–11 | China yields and A-share broad indices |
+| 12–15 | Hong Kong monetary pulse, bank liquidity, funding and HKD overlays |
+| 16–18 | Precious metals, copper and crypto |
 
 The 5Y / 1Y / 6M / 3M / 1M selectors must keep **both X and each Y axis
 adaptive**. A Plotly compatibility view is not proof that native ECharts
 X/Y autoscaling works.
 
-Chart 9 displays VIX/VIXEQ on the left, S&P 500 on R1, the same-date
+Chart 4 displays VIX/VIXEQ on the left, S&P 500 on R1, the same-date
 VIXEQ/VIX ratio on R2, and COR3M in original Cboe index points on R3.
 The VIXEQ−VIX and COR1M series have been removed from this chart.
 COR3M is a correlation index, not a volatility reading. Official Cboe histories

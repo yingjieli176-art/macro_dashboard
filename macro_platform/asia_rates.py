@@ -32,6 +32,7 @@ def _empty_frame(prefix: str) -> pd.DataFrame:
             f"{prefix}_2y",
             f"{prefix}_10y",
             f"{prefix}_10y_2y_pct",
+            *(["japan_30y", "japan_30y_10y_pct"] if prefix == "japan" else []),
         ]
     )
 
@@ -167,6 +168,7 @@ def _read_japan_csv(url: str, *, offline=False) -> pd.DataFrame:
 
     two_col = "2年" if "2年" in raw.columns else None
     ten_col = "10年" if "10年" in raw.columns else None
+    thirty = raw.get("30年", pd.Series(float("nan"), index=raw.index))
     if two_col is None or ten_col is None:
         return _empty_frame("japan")
 
@@ -175,14 +177,16 @@ def _read_japan_csv(url: str, *, offline=False) -> pd.DataFrame:
             "observation_date": raw["基準日"].map(_parse_japanese_date),
             "japan_2y": pd.to_numeric(raw[two_col], errors="coerce"),
             "japan_10y": pd.to_numeric(raw[ten_col], errors="coerce"),
+            "japan_30y": pd.to_numeric(thirty, errors="coerce"),
         }
     )
     out["japan_10y_2y_pct"] = out["japan_10y"] - out["japan_2y"]
     today = pd.Timestamp.now(tz="Asia/Tokyo").tz_localize(None).normalize()
     out = out.loc[out.observation_date.le(today)]
-    for field in ("japan_2y", "japan_10y"):
+    for field in ("japan_2y", "japan_10y", "japan_30y"):
         out[field] = out[field].where(out[field].between(-10, 30))
     out["japan_10y_2y_pct"] = out["japan_10y"] - out["japan_2y"]
+    out["japan_30y_10y_pct"] = out["japan_30y"] - out["japan_10y"]
     return (out.dropna(subset=["observation_date"]).sort_values("observation_date")
             .drop_duplicates("observation_date", keep="last"))
 
@@ -191,12 +195,13 @@ def _read_japan_snapshot() -> pd.DataFrame:
     try:
         frame = pd.DataFrame(json.loads(JAPAN_SNAPSHOT.read_text())["records"])
         frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
-        for field in ("japan_2y", "japan_10y"):
-            frame[field] = pd.to_numeric(frame[field], errors="coerce")
+        for field in ("japan_2y", "japan_10y", "japan_30y"):
+            frame[field] = pd.to_numeric(frame.get(field, pd.Series(float("nan"), index=frame.index)), errors="coerce")
             frame[field] = frame[field].where(frame[field].between(-10, 30))
         frame["japan_10y_2y_pct"] = frame["japan_10y"] - frame["japan_2y"]
+        frame["japan_30y_10y_pct"] = frame["japan_30y"] - frame["japan_10y"]
         today = pd.Timestamp.now(tz="Asia/Tokyo").tz_localize(None).normalize()
-        return frame.loc[frame.observation_date.le(today)].dropna(subset=["japan_2y", "japan_10y"], how="all")
+        return frame.loc[frame.observation_date.le(today)].dropna(subset=["japan_2y", "japan_10y", "japan_30y"], how="all")
     except (OSError, ValueError, TypeError, KeyError):
         return _empty_frame("japan")
 
@@ -214,7 +219,9 @@ def load_japan_gov_yields() -> pd.DataFrame:
     except Exception:
         pass
     cutoff = _cutoff_date()
-    if snapshot.empty or snapshot.observation_date.min() > cutoff + pd.Timedelta(days=7):
+    if (snapshot.empty or snapshot.observation_date.min() > cutoff + pd.Timedelta(days=7)
+            or snapshot.loc[snapshot.japan_30y.notna(), "observation_date"].min() > cutoff + pd.Timedelta(days=7)
+            or not snapshot.japan_30y.notna().any()):
         try:
             history = _read_japan_csv(JAPAN_HISTORY_URL)
             if not history.empty:
@@ -225,9 +232,20 @@ def load_japan_gov_yields() -> pd.DataFrame:
         frames.append(current)
     if not frames:
         return _empty_frame("japan")
-    combined = (pd.concat(frames, ignore_index=True).sort_values("observation_date", kind="stable")
-                .drop_duplicates("observation_date", keep="last"))
+    combined = _merge_japan_yields(frames)
     return combined.loc[combined.observation_date.ge(cutoff)].reset_index(drop=True)
+
+
+def _merge_japan_yields(frames):
+    """Last valid fixing per field/date; never fill across publication dates."""
+    combined = (pd.concat(frames, ignore_index=True)
+                .groupby("observation_date", as_index=False, sort=True).last())
+    for tenor in ("2y", "10y", "30y"):
+        field = f"japan_{tenor}"
+        combined[field] = pd.to_numeric(combined.get(field, pd.Series(float("nan"), index=combined.index)), errors="coerce")
+    combined["japan_10y_2y_pct"] = combined.japan_10y - combined.japan_2y
+    combined["japan_30y_10y_pct"] = combined.japan_30y - combined.japan_10y
+    return combined
 
 
 def _latest_date(frames: Iterable[pd.DataFrame]) -> pd.Timestamp | None:
@@ -331,18 +349,27 @@ def build_japan_rates_figure(date_range: str, nikkei: pd.DataFrame | None = None
             japan = japan.copy()
             japan["japan_10y_2y_pct"] = (pd.to_numeric(japan["japan_10y"], errors="coerce")
                                          - pd.to_numeric(japan["japan_2y"], errors="coerce"))
+            japan["japan_30y_10y_pct"] = (
+                pd.to_numeric(japan.get("japan_30y", pd.Series(float("nan"), index=japan.index)), errors="coerce")
+                - pd.to_numeric(japan["japan_10y"], errors="coerce"))
         _add_trace(fig, japan, "japan_2y", "Japan 2Y", width=2.1)
         _add_trace(fig, japan, "japan_10y", "Japan 10Y", width=2.8)
+        _add_trace(fig, japan, "japan_30y", "Japan 30Y", width=2.5)
         _add_trace(fig, japan, "japan_10y_2y_pct", "Japan 10Y−2Y (R1)",
                    width=2.0, dash="dot", yaxis="y2", suffix=" pp")
+        _add_trace(fig, japan, "japan_30y_10y_pct", "Japan 30Y−10Y (R1)",
+                   width=2.0, dash="dash", yaxis="y2", suffix=" pp")
         _add_trace(fig, index, "close", "Nikkei 225 (R2)", width=2.5, yaxis="y3", suffix=" pts")
         _add_trace(fig, yen, "usd_jpy_close", "USD/JPY (R3)", width=2.5,
                    dash="dash", yaxis="y4", suffix=" JPY per USD")
-    expected = ("Japan 2Y", "Japan 10Y", "Japan 10Y−2Y (R1)", "Nikkei 225 (R2)")
+    expected = ("Japan 2Y", "Japan 10Y", "Japan 30Y", "Japan 10Y−2Y (R1)",
+                "Japan 30Y−10Y (R1)", "Nikkei 225 (R2)")
     if yen_index is not None:
         expected += ("USD/JPY (R3)",)
-    return _finish_rates_figure(fig, date_range, latest,
-                               expected, nikkei_axis=True, yen_axis=yen_index is not None)
+    fig = _finish_rates_figure(fig, date_range, latest,
+                              expected, nikkei_axis=True, yen_axis=yen_index is not None)
+    fig.update_layout(yaxis2_title="10Y−2Y / 30Y−10Y spread (pp)")
+    return fig
 
 
 def _finish_rates_figure(fig, date_range, latest, expected, nikkei_axis=False, yen_axis=False):

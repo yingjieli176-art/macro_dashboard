@@ -102,9 +102,8 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-MACRO_DISPLAY_ORDER = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "us_drawdown", "cn_drawdown", 14, 15, 11, 13, 12, 16)
-MACRO_DISPLAY_NUMBER = {key: index for index, key in enumerate(MACRO_DISPLAY_ORDER, 1)}
-CHART_BUILD = "2026-11-03-yen-carry-10y-spread-r86"
+from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
+CHART_BUILD = "2026-11-03-japan-30y-country-order-r87"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2357,7 +2356,7 @@ def render_macro_chart_1(prebuilt_fig=None):
 @st.fragment(key="us_macro_chart_2")
 def render_macro_chart_2(prebuilt_fig=None):
     _render_standard_macro_chart(
-        '<div class="section-title">2. US Treasury Yield Structure · 5Y / 10Y</div>',
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[2]}. US Treasury Yield Structure · 5Y / 10Y</div>',
         '<div class="section-description">10Y Nominal / 10Y Real (R1) / 5Y Real TIPS (R1) / 10Y Breakeven (R1)</div>',
         "normal_yield10_range",
         build_fig2,
@@ -2375,7 +2374,7 @@ def render_macro_chart_2(prebuilt_fig=None):
 @st.fragment(key="us_macro_chart_3")
 def render_macro_chart_3(prebuilt_fig=None):
     _render_standard_macro_chart(
-        '<div class="section-title">3. Treasury Yield & Curve Spread</div>',
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[3]}. Treasury Yield & Curve Spread</div>',
         '<div class="section-description">3M / 2Y / 10Y / 30Y / 10Y−2Y (R1) / 10Y−3M (R1)</div>',
         "normal_treasury_range",
         build_fig3,
@@ -2395,7 +2394,7 @@ def render_macro_chart_3(prebuilt_fig=None):
 @st.fragment(key="us_macro_chart_4")
 def render_macro_chart_4(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">4. S&P 500 / Nikkei 225 相对强弱</div>'
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[4]}. S&P 500 / Nikkei 225 相对强弱</div>'
         '<div class="section-description">S&P 500 ÷ Nikkei 225 · 原始指数点位 + 点位比值 · 三个独立Y轴 · 同日已完成收盘</div>',
         unsafe_allow_html=True,
     )
@@ -2419,7 +2418,7 @@ def render_macro_chart_4(prebuilt_fig=None):
 
 HK_CHART_CONFIGS = [
     (
-        '<div class="section-title">5. HK Money Supply & Market Pulse</div>',
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[5]}. HK Money Supply & Market Pulse</div>',
         '<div class="section-description">M2 YoY / M2 MoM / Monetary Base YoY · Tencent / HKEX (R1) · HSTECH / HSI (R2)</div>',
         "hk_5_range",
         [
@@ -2430,7 +2429,7 @@ HK_CHART_CONFIGS = [
         ],
     ),
     (
-        '<div class="section-title">6. Banking-system Liquidity</div>',
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[6]}. Banking-system Liquidity</div>',
         '<div class="section-description">Aggregate Balance · Outstanding EFBN (R1) · EFBN Held by Licensed Banks (R1)</div>',
         "hk_6_range",
         [
@@ -2439,7 +2438,7 @@ HK_CHART_CONFIGS = [
         ],
     ),
     (
-        '<div class="section-title">7. HKD Funding</div>',
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[7]}. HKD Funding</div>',
         '<div class="section-description">O/N HIBOR · 3M HIBOR · HKMA Base Rate · O/N−3M Spread (R1)</div>',
         "hk_7_range",
         [
@@ -2449,7 +2448,7 @@ HK_CHART_CONFIGS = [
         ],
     ),
     (
-        '<div class="section-title">8. USD/HKD Convertibility Band & Market</div>',
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[8]}. USD/HKD Convertibility Band & Market</div>',
         '<div class="section-description">USD/HKD · Strong-side 7.75 · Center 7.80 · Weak-side 7.85 · Tencent / HKEX (R1) · HSTECH / HSI (R2)</div>',
         "hk_8_range",
         [
@@ -2515,7 +2514,7 @@ def _build_equity_drawdown():
 
 @st.fragment(key="equity_drawdown_viewport")
 def _render_equity_drawdown():
-    st.markdown('<div class="section-title">11. SPX / RSP · 价格走势与区间高点</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["us_drawdown"]}. SPX / RSP · 价格走势与区间高点</div>', unsafe_allow_html=True)
     st.caption("实线为实际收盘走势；点线“高”标记当前坐标时间内的最高收盘价和日期，虚线“现”为最新收盘价。切换时间或拖动滑块会自动重算区间高点。SPX左轴（点），RSP右轴（美元）；异色虚线为独立的“回撤比例”日线参数，使用最右侧百分比轴；点击图例可单独开关。")
     figure = _build_equity_drawdown()
     _render_adaptive_macro_figure(figure, "us_equity_drawdown", standard=True)
@@ -2547,7 +2546,7 @@ def _build_china_drawdown():
 
 @st.fragment(key="china_equity_drawdown_viewport")
 def _render_china_drawdown():
-    st.markdown('<div class="section-title">12. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["cn_drawdown"]}. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势</div>', unsafe_allow_html=True)
     st.caption("实线为三只指数的实际收盘点位（左轴），异色虚线为独立的“回撤比例”日线参数（右轴百分比），可在图例单独开关。点线“高”为当前坐标时间内的最高收盘价和日期，随时间切换、滑块缩放自动更新；虚线“现”保持最新收盘价。")
     figure = _build_china_drawdown()
     _render_adaptive_macro_figure(figure, "china_equity_drawdown", standard=True)
@@ -2562,7 +2561,7 @@ def _render_china_drawdown():
 @st.fragment(key="macro_chart_9_viewport")
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">9. US Equity Risk & Volatility Structure</div>'
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[9]}. US Equity Risk & Volatility Structure</div>'
         '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3)</div>',
         unsafe_allow_html=True,
     )
@@ -2581,7 +2580,7 @@ def render_macro_chart_9(prebuilt_fig=None):
 @st.fragment(key="vix_term_structure_chart")
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">10. VIX & VIX3M Term Structure</div>'
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure</div>'
         '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX3M−VIX (R1)</div>',
         unsafe_allow_html=True,
     )
@@ -2601,7 +2600,7 @@ def render_macro_chart_10(prebuilt_fig=None):
 @st.fragment(key="precious_metals_chart")
 def render_macro_chart_11(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">15. Precious Metals</div>'
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[11]}. Precious Metals</div>'
         '<div class="section-description">Gold · Silver · Gold/Silver Ratio · Gold Volatility GVZ</div>',
         unsafe_allow_html=True,
     )
@@ -2622,7 +2621,7 @@ def render_macro_chart_11(prebuilt_fig=None):
 @st.fragment(key="crypto_chart")
 def render_macro_chart_12(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">17. Crypto Market</div>'
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[12]}. Crypto Market</div>'
         '<div class="section-description">BTC · ETH · ETH/BTC · BTC 30D 实际波动率</div>',
         unsafe_allow_html=True,
     )
@@ -2641,7 +2640,7 @@ def render_macro_chart_12(prebuilt_fig=None):
 @st.fragment(key="macro_chart_13_viewport")
 def render_macro_chart_13(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">16. Copper Flow & COMEX–LME Spread</div>'
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[13]}. Copper Flow & COMEX–LME Spread</div>'
         '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2)</div>',
         unsafe_allow_html=True,
     )
@@ -2663,7 +2662,7 @@ def render_macro_chart_13(prebuilt_fig=None):
 @st.fragment(key="macro_chart_14_viewport")
 def render_macro_chart_14(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">13. China Government Yields & US 5Y Real Yield</div>'
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[14]}. China Government Yields & US 5Y Real Yield</div>'
         '<div class="section-description">China 2Y / 10Y · US 5Y Real · TIPS · China 10Y−2Y (R1)</div>',
         unsafe_allow_html=True,
     )
@@ -2681,14 +2680,14 @@ def render_macro_chart_14(prebuilt_fig=None):
 @st.fragment(key="macro_chart_15_viewport")
 def render_macro_chart_15(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">14. Japan Government Yields & Nikkei 225 & USD/JPY</div>'
-        '<div class="section-description">Japan 2Y / 10Y · Japan 10Y−2Y (R1) · Nikkei 225 (R2) · USD/JPY (R3)</div>',
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[15]}. Japan Government Yields & Nikkei 225 & USD/JPY</div>'
+        '<div class="section-description">Japan 2Y / 10Y / 30Y · Japan 10Y−2Y / 30Y−10Y (R1) · Nikkei 225 (R2) · USD/JPY (R3)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 15", lambda: _cached_macro_figure(15, _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(base_fig, "japan_rates")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>Japan 2Y：</b>日本2年期国债收益率，代表日元较短期限国债的市场利率水平；单位为年化%。</div><div class="parameter-note"><b>Japan 10Y：</b>日本10年期国债收益率，代表日元长期国债利率基准；单位为年化%。</div><div class="parameter-note"><b>Japan 10Y−2Y (R1)：</b>日本10年减2年国债收益率之差，代表日本国债曲线斜率；上升为变陡，负值为倒挂；单位为百分点。</div><div class="parameter-note"><b>Nikkei 225 (R2)：</b>日经225指数，代表其日本上市公司成分股的综合表现；单位为指数点，使用已完成交易日的收盘值。</div><div class="parameter-note"><b>USD/JPY (R3)：</b>美元兑日元汇率，代表1美元可兑换多少日元；数值上升为日元走弱，下降为日元走强，不是日元综合指数。</div><div class="parameter-context">口径说明：USD/JPY使用已完成交易日的日线价格；盘中报价不作为完成日线。R1为百分点，R2为指数点，R3为日元/美元。</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-description"><div class="parameter-note"><b>Japan 2Y：</b>日本2年期国债收益率，代表日元较短期限国债的市场利率水平；单位为年化%。</div><div class="parameter-note"><b>Japan 10Y：</b>日本10年期国债收益率，代表日元长期国债利率基准；单位为年化%。</div><div class="parameter-note"><b>Japan 30Y：</b>日本30年期国债收益率，代表日元超长期国债利率；单位为年化%。</div><div class="parameter-note"><b>Japan 30Y−10Y (R1)：</b>同一观测日30年减10年国债收益率之差，代表日本长端曲线斜率；单位为百分点，任一腿缺失则不计算。</div><div class="parameter-note"><b>Japan 10Y−2Y (R1)：</b>日本10年减2年国债收益率之差，代表日本国债曲线斜率；上升为变陡，负值为倒挂；单位为百分点。</div><div class="parameter-note"><b>Nikkei 225 (R2)：</b>日经225指数，代表其日本上市公司成分股的综合表现；单位为指数点，使用已完成交易日的收盘值。</div><div class="parameter-note"><b>USD/JPY (R3)：</b>美元兑日元汇率，代表1美元可兑换多少日元；数值上升为日元走弱，下降为日元走强，不是日元综合指数。</div><div class="parameter-context">口径说明：USD/JPY使用已完成交易日的日线价格；盘中报价不作为完成日线。R1为百分点，R2为指数点，R3为日元/美元。</div></div>', unsafe_allow_html=True)
     add_sources([
         ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
         ("Yahoo Finance · Nikkei 225", "https://finance.yahoo.com/quote/%5EN225/history/"),
@@ -2700,7 +2699,7 @@ def render_macro_chart_15(prebuilt_fig=None):
 @st.fragment(key="yen_carry_viewport")
 def render_macro_chart_16(prebuilt_fig=None):
     st.markdown(
-        '<div class="section-title">18. 日元套息分析 · Yen Carry Trade</div>'
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[16]}. 日元套息分析 · Yen Carry Trade</div>'
         '<div class="section-description">美日10Y利差 · USD/JPY (R1) · 日元20交易日升值幅度 (R2) · CFTC日元投机净仓位 (R3)</div>',
         unsafe_allow_html=True,
     )
@@ -2960,9 +2959,9 @@ st.markdown(
 # Reserve the existing document order, then fill sections as workers finish.
 # Only the main Streamlit thread creates containers, fragments and widgets.
 macro_slots = {}
-section_headers = {5: "HONG KONG LIQUIDITY", 9: "EQUITY RISK & DRAWDOWNS",
-                   14: "ASIA RATES",
-                   11: "COMMODITIES", 12: "CRYPTO MARKET", 16: "YEN CARRY"}
+section_headers = {9: "US EQUITY RISK", 4: "US / JAPAN RELATIVE STRENGTH",
+                   15: "JAPAN RATES & YEN", 14: "CHINA RATES & EQUITIES",
+                   5: "HONG KONG LIQUIDITY", 11: "COMMODITIES", 12: "CRYPTO MARKET"}
 for number in MACRO_DISPLAY_ORDER:
     if number == "us_drawdown":
         _render_equity_drawdown()
@@ -3107,8 +3106,8 @@ def _render_all_source_freshness(figures):
         add("自选", symbol, row)
     display_figures = {MACRO_DISPLAY_NUMBER[number]: figure
                        for number, figure in figures.items()}
-    display_figures[11] = _build_equity_drawdown()
-    display_figures[12] = _build_china_drawdown()
+    display_figures[MACRO_DISPLAY_NUMBER["us_drawdown"]] = _build_equity_drawdown()
+    display_figures[MACRO_DISPLAY_NUMBER["cn_drawdown"]] = _build_china_drawdown()
     render_freshness_overview(display_figures, quote_rows=rows, news=_read_existing_news_snapshot())
 
 _render_all_source_freshness(macro_figures)
