@@ -9,10 +9,8 @@
     "https://www.hkab.org.hk/en/home"
   ],
   "transport_fallback": "r.jina.ai relay when direct api.hkma.gov.hk access is unavailable from CI",
-  "updated_at": "2026-11-03T12:05:51.821172+00:00",
-  "source_errors": [
-    "monetary-base-daily: HKMA request failed: https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-daily attempt 1: TimeoutError: The read operation timed out | https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-daily attempt 2: HTTPError: HTTP Error 405: Not Allowed | https://r.jina.ai/http://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-daily attempt 1: TimeoutError: The read operation timed out | https://r.jina.ai/http://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-daily attempt 2: TimeoutError: The read operation timed out"
-  ],
+  "updated_at": "2026-11-03T19:39:18.890502+00:00",
+  "source_errors": [],
   "coverage_start": "2025-05-02",
   "coverage_end": "2026-11-03",
   "record_count": 373,
