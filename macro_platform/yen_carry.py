@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 
 from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis
 
-SPREAD_NAME = "US−Japan 2Y spread"
+SPREAD_NAME = "US−Japan 10Y spread"
 FX_NAME = "USD/JPY (R1)"
 PRESSURE_NAME = "JPY 20-session appreciation (R2)"
 POSITION_NAME = "CFTC JPY speculative net (R3)"
@@ -28,9 +28,9 @@ def carry_observations(us, japan, fx):
     Twenty sessions means twenty intervals between valid observed FX closes.
     Null current quotes remain null. No forward fill across holiday calendars.
     """
-    rates = _observations(us, "DGS2").merge(
-        _observations(japan, "japan_2y"), on="observation_date", how="outer").sort_values("observation_date")
-    rates["spread_pp"] = rates.DGS2 - rates.japan_2y
+    rates = _observations(us, "DGS10").merge(
+        _observations(japan, "japan_10y"), on="observation_date", how="outer").sort_values("observation_date")
+    rates["spread_pp"] = rates.DGS10 - rates.japan_10y
     exchange = _observations(fx, "usd_jpy_close")
     exchange.loc[exchange.usd_jpy_close.le(0), "usd_jpy_close"] = np.nan
     valid = exchange.usd_jpy_close.dropna()
@@ -69,7 +69,7 @@ def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None):
         margin=dict(l=64, r=160, t=74, b=36),
         legend=dict(orientation="h", yanchor="bottom", y=1.09, font=dict(size=10)),
         xaxis=dict(domain=[0, 0.81]),
-        yaxis=dict(title="US−Japan 2Y · pp", fixedrange=True, tickformat=".2f", zeroline=True),
+        yaxis=dict(title="US−Japan 10Y · pp", fixedrange=True, tickformat=".2f", zeroline=True),
         yaxis2=dict(title="R1 · JPY/USD", overlaying="y", side="right", anchor="free",
                     position=0.83, showgrid=False, fixedrange=True, tickformat=".1f"),
         yaxis3=dict(title="R2 · %", overlaying="y", side="right", anchor="free",
