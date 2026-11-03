@@ -9,11 +9,13 @@
     "https://www.hkab.org.hk/en/home"
   ],
   "transport_fallback": "r.jina.ai relay when direct api.hkma.gov.hk access is unavailable from CI",
-  "updated_at": "2026-11-02T12:39:12.525529+00:00",
-  "source_errors": [],
+  "updated_at": "2026-11-03T12:05:51.821172+00:00",
+  "source_errors": [
+    "monetary-base-daily: HKMA request failed: https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-daily attempt 1: TimeoutError: The read operation timed out | https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-daily attempt 2: HTTPError: HTTP Error 405: Not Allowed | https://r.jina.ai/http://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-daily attempt 1: TimeoutError: The read operation timed out | https://r.jina.ai/http://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-daily attempt 2: TimeoutError: The read operation timed out"
+  ],
   "coverage_start": "2025-05-02",
-  "coverage_end": "2026-11-02",
-  "record_count": 372,
+  "coverage_end": "2026-11-03",
+  "record_count": 373,
   "fetch_strategy": "30-day incremental overlap over retained history; parallel independent endpoints; direct/relay fallback; HKAB current fixing",
   "records": [
     {
@@ -5227,11 +5229,26 @@
       "outstanding_efbn": 1363264,
       "ow_lb_bf_disc_win": 1180147,
       "aggr_balance_bf_disc_win": 53999,
-      "hibor_overnight": 2.45048,
+      "hibor_overnight": 2.32,
       "hibor_3m": 3.20548,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
+      "hibor_source": "https://www.hkab.org.hk/en/home"
+    },
+    {
+      "end_of_date": "2026-11-03",
+      "opening_balance": null,
+      "closing_balance": null,
+      "forecast_aggregate_bal_t1": null,
+      "outstanding_efbn": null,
+      "ow_lb_bf_disc_win": null,
+      "aggr_balance_bf_disc_win": null,
+      "hibor_overnight": 2.34333,
+      "hibor_3m": 3.21399,
+      "disc_win_base_rate": null,
+      "cu_weakside": null,
+      "cu_strongside": null,
       "hibor_source": "https://www.hkab.org.hk/en/home"
     }
   ]
