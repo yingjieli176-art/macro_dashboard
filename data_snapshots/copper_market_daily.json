@@ -8,21 +8,21 @@
     "lme_price_stock": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
     "cochilco_inventory": "https://boletin.cochilco.cl/productos/boletin.asp?tabla=tabla4_2"
   },
-  "updated_at": "2026-11-03T19:41:41.533452+00:00",
-  "coverage_start": "2021-11-03",
-  "coverage_end": "2026-11-02",
+  "updated_at": "2026-11-04T02:30:46.557728+00:00",
+  "coverage_start": "2021-11-04",
+  "coverage_end": "2026-11-03",
   "counts": {
-    "comex_price": 1257,
-    "comex_stock": 1294,
+    "comex_price": 1256,
+    "comex_stock": 1293,
     "lme_price": 1262,
     "lme_stock": 1295
   },
   "latest_by_field": {
     "comex_price_usd_lb": "2026-11-02",
     "comex_stock_t": "2026-10-30",
-    "lme_cash_usd_t": "2026-11-02",
-    "lme_3m_usd_t": "2026-11-02",
-    "lme_stock_t": "2026-11-02",
+    "lme_cash_usd_t": "2026-11-03",
+    "lme_3m_usd_t": "2026-11-03",
+    "lme_stock_t": "2026-11-03",
     "cochilco_lme_stock_t": "2026-10-30",
     "comex_stock_short_tons": "2026-10-30"
   },
@@ -34,17 +34,6 @@
     "lme_stock_t": "metric tonnes"
   },
   "records": [
-    {
-      "date": "2021-11-03",
-      "comex_price_usd_lb": 4.326000213623047,
-      "comex_stock_t": 53187.0,
-      "lme_cash_usd_t": 9825.0,
-      "lme_3m_usd_t": 9590.0,
-      "lme_stock_t": 126475.0,
-      "cochilco_lme_stock_t": 126475.0,
-      "comex_stock_source": null,
-      "comex_stock_short_tons": null
-    },
     {
       "date": "2021-11-04",
       "comex_price_usd_lb": 4.326000213623047,
@@ -14297,6 +14286,17 @@
       "lme_cash_usd_t": 14380.0,
       "lme_3m_usd_t": 14242.0,
       "lme_stock_t": 293775.0,
+      "cochilco_lme_stock_t": null,
+      "comex_stock_source": null,
+      "comex_stock_short_tons": null
+    },
+    {
+      "date": "2026-11-03",
+      "comex_price_usd_lb": null,
+      "comex_stock_t": null,
+      "lme_cash_usd_t": 14110.5,
+      "lme_3m_usd_t": 14001.0,
+      "lme_stock_t": 309650.0,
       "cochilco_lme_stock_t": null,
       "comex_stock_source": null,
       "comex_stock_short_tons": null
