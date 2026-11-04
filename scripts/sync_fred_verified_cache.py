@@ -34,12 +34,12 @@ FETCH_TIMEOUT = (12, 30)
 # module. Snapshot failures are per-series; unknown source values stay absent.
 SERIES = (
     "DGS3MO", "DGS2", "DGS10", "DGS30", "DFII5", "DFII10", "T10YIE",
-    "SOFR", "IORB", "EFFR", "RRPONTSYAWARD", "WALCL",
+    "SOFR", "IORB", "EFFR", "RRPONTSYAWARD", "SRFTSYD", "WALCL",
     "WRESBAL", "WTREGEN", "RRPONTSYD", "VIXCLS", "VXVCLS",
     "SP500", "GVZCLS", "GFDEBTN", "FYGFDPUN",
     "FDHBFRBN", "FDHBFIN", "FDHBPIN",
 )
-CRITICAL = ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR")
+CRITICAL = ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR", "SRFTSYD")
 START = "2020-01-01"
 
 
@@ -444,7 +444,7 @@ def main():
         print(f"ERROR: less than two official Fed rate feeds available: {missing_core}")
         return 1
     if missing_core:
-        print(f"WARN partial Fed chart: {core_present}/4 observed feeds; "
+        print(f"WARN partial Fed chart: {core_present}/{len(CRITICAL)} observed feeds; "
               f"missing series will remain absent: {missing_core}")
     print(f"Snapshot sync: updated={len(updated)}, unchanged={len(retained)}, failed={len(errors)}")
     return 0

@@ -18,6 +18,17 @@ python -m pip install -r requirements.txt
 streamlit run app.py
 ```
 
+## Fed policy corridor (r88)
+
+`2026-11-04-fed-corridor-srf-r88` adds the observed Standing Repo Facility
+operation rate (FRED `SRFTSYD`) as a dashed line in chart 1. ON RRP
+(`RRPONTSYAWARD`) remains alongside IORB, EFFR and SOFR. All five series
+use annualized percent, never facility usage amounts. The SRF offering rate
+is an upper backstop for eligible counterparties, not a hard market-wide ceiling.
+Verified observations are bundled for cold starts and included in the existing
+FRED refresh job, rate validation and source audits. Actual source calendars
+and missing observations are preserved without filling or estimates.
+
 ## Japan 30Y and country order (r87)
 
 `2026-11-03-japan-30y-country-order-r87` adds MOF 30-year observations to

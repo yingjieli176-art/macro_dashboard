@@ -103,7 +103,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-03-japan-30y-country-order-r87"
+CHART_BUILD = "2026-11-04-fed-corridor-srf-r88"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1564,7 +1564,8 @@ def build_fig5(date_range):
 def build_fig1(date_range):
     sources = {}
     for getter, column in ((get_iorb, "IORB"), (get_rrp_rate, "RRPONTSYAWARD"),
-                           (get_effr, "EFFR"), (get_sofr, "SOFR")):
+                           (get_effr, "EFFR"), (get_sofr, "SOFR"),
+                           (lambda: get_fred_series("SRFTSYD"), "SRFTSYD")):
         try:
             sources[column] = getter()
         except Exception:
@@ -1573,9 +1574,10 @@ def build_fig1(date_range):
     fig = go.Figure()
     # IORB includes weekends; the other rates use business-day calendars.
     # Keep each source's actual rows, including any explicit missing reading.
-    for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2)]:
+    for column, name, width in [("IORB", "IORB", 2.6), ("RRPONTSYAWARD", "ON RRP", 2.6), ("EFFR", "EFFR", 2.6), ("SOFR", "SOFR", 2.2), ("SRFTSYD", "SRF", 2.6)]:
         frame = sources[column]
-        add_line(fig, frame.loc[frame["observation_date"].isin(dates)], column, name, width)
+        add_line(fig, frame.loc[frame["observation_date"].isin(dates)], column, name, width,
+                 dash="dash" if column == "SRFTSYD" else None)
     fig.update_layout(yaxis_title="Rate (%)"); return apply_chart_style(fig, chart_height(310, 420), date_range)
 
 def build_fig2(date_range):
@@ -2000,7 +2002,7 @@ CRYPTO_MARKET_DESCRIPTION = (
 
 
 PARAM_DESCRIPTIONS = [
-    '<div class="parameter-note"><b>IORB：</b>准备金余额利率，代表美联储支付给合资格银行的准备金利息，是美元短期利率的重要政策锚；单位为年化%。</div><div class="parameter-note"><b>ON RRP Rate：</b>隔夜逆回购工具利率，代表合资格机构把资金隔夜放入美联储该工具可获得的年化利率，为货币市场利率提供支撑。</div><div class="parameter-note"><b>EFFR：</b>有效联邦基金利率，代表银行等机构之间无抵押隔夜美元交易的实际融资价格；单位为年化%。</div><div class="parameter-note"><b>SOFR：</b>有担保隔夜融资利率，代表以美国国债作抵押借入隔夜美元的市场成本；单位为年化%，相对政策锚上升可提示回购融资压力。</div>',
+    '<div class="parameter-note"><b>IORB：</b>准备金余额利率，代表美联储支付给合资格银行的准备金利息，是美元短期利率的重要政策锚；单位为年化%。</div><div class="parameter-note"><b>ON RRP Rate：</b>隔夜逆回购工具利率，代表合资格机构把资金隔夜放入美联储该工具可获得的年化利率，为货币市场利率提供支撑。</div><div class="parameter-note"><b>EFFR：</b>有效联邦基金利率，代表银行等机构之间无抵押隔夜美元交易的实际融资价格；单位为年化%。</div><div class="parameter-note"><b>SOFR：</b>有担保隔夜融资利率，代表以美国国债作抵押借入隔夜美元的市场成本；单位为年化%，相对政策锚上升可提示回购融资压力。</div><div class="parameter-note"><b>SRF Rate：</b>美联储常备回购工具利率，采用FRED SRFTSYD公布的政策操作利率，以虚线显示；合资格对手方可抵押合格证券获取隔夜资金，为回购融资利率提供上方缓冲，并非所有市场参与者都能使用的硬上限；单位为年化%。</div><div class="parameter-context">口径说明：ON RRP和SRF均为利率，不是工具使用金额。各序列保留实际观测日；缺失值不补齐。</div>',
     '<div class="parameter-note"><b>10Y Nominal：</b>美国10年期名义国债收益率，代表美元长期无风险名义利率基准，综合反映实际利率、通胀补偿等定价；单位为年化%。</div><div class="parameter-note"><b>10Y Real (R1)：</b>美国10年期TIPS实际收益率，代表通胀保值国债的实际利率定价，上升表示实际贴现率抬高；单位为年化%。</div><div class="parameter-note"><b>5Y Real · TIPS (R1)：</b>美国5年期TIPS实际收益率，代表中期实际利率水平，可与10年期比较期限差异；单位为年化%。</div><div class="parameter-note"><b>10Y Breakeven (R1)：</b>10年期盈亏平衡通胀率，等于同期限名义收益率减实际收益率，代表未来十年的平均通胀补偿，含风险和流动性溢价；并非当期CPI。</div><div class="parameter-context">口径说明：R1为独立右轴；收益率及通胀补偿均以年化%显示。</div>',
     '<div class="parameter-note"><b>3M：</b>美国3个月期国债收益率，代表短期美元国债的年化收益水平，对当前政策利率及近期政策预期较敏感。</div><div class="parameter-note"><b>2Y：</b>美国2年期国债收益率，代表未来两年利率路径的市场定价之一，同时包含期限溢价；不是两年期通胀率。</div><div class="parameter-note"><b>10Y：</b>美国10年期国债收益率，代表长期美元利率基准，反映长期实际利率、通胀补偿等因素；单位为年化%。</div><div class="parameter-note"><b>30Y：</b>美国30年期名义国债收益率，反映超长期美元利率定价；采用FRED DGS30原始日频观测，单位为年化%。</div><div class="parameter-note"><b>10Y−2Y (R1)：</b>10年减2年国债收益率之差，代表中长端收益率曲线斜率；负值为倒挂，上升为曲线变陡；单位为百分点。</div><div class="parameter-note"><b>10Y−3M (R1)：</b>10年减3个月国债收益率之差，代表长端与政策敏感短端之间的利差；负值为倒挂，不是衰退发生时间的直接预测。</div><div class="parameter-context">口径说明：国债收益率为年化%；两条期限利差为百分点。</div>',
     '<div class="parameter-note"><b>Net Liquidity：</b>美元净流动性代理＝美联储总资产−TGA−ON RRP余额，辅助观察央行资产负债表的流动性变化；单位为万亿美元，不等于流入股市的资金。</div><div class="parameter-note"><b>Reserve Balances (R1)：</b>银行准备金余额，代表存款机构在美联储持有的准备金存量；单位为万亿美元，使用周频观测。</div><div class="parameter-note"><b>TGA (R1)：</b>美国财政部在美联储的账户余额，代表财政现金存量；在其他因素不变时，余额增加通常会抽走银行准备金；单位为万亿美元。</div><div class="parameter-note"><b>ON RRP (R2)：</b>美联储隔夜逆回购余额，代表合资格机构使用该工具存放的隔夜资金规模；单位为十亿美元，与第1图的ON RRP利率不同。</div><div class="parameter-context">口径说明：该代理不包含所有美元资金流动。TGA优先使用日频，不可用时回退到周频；各系列保留实际观测日。</div>',
@@ -2344,7 +2346,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
 def render_macro_chart_1(prebuilt_fig=None):
     _render_standard_macro_chart(
         '<div class="section-title">1. Fed Policy Rate & Money Market</div>',
-        '<div class="section-description">IORB / ON RRP Rate / EFFR / SOFR</div>',
+        '<div class="section-description">IORB / ON RRP Rate / EFFR / SOFR / SRF Rate · 年化%</div>',
         "normal_corridor_range",
         build_fig1,
         [
@@ -2352,6 +2354,7 @@ def render_macro_chart_1(prebuilt_fig=None):
             ("ON RRP Rate (RRPONTSYAWARD)", "https://fred.stlouisfed.org/series/RRPONTSYAWARD"),
             ("EFFR (EFFR)", "https://fred.stlouisfed.org/series/EFFR"),
             ("SOFR (SOFR)", "https://fred.stlouisfed.org/series/SOFR"),
+            ("SRF Rate (SRFTSYD)", "https://fred.stlouisfed.org/series/SRFTSYD"),
         ],
         0,
         prebuilt_fig=prebuilt_fig,

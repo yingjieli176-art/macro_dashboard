@@ -28,7 +28,7 @@ class DateAndSourceAudit(unittest.TestCase):
         for key, charts in {"SP500": [4,7], "^N225": [7,8], "SPX": [6], "RSP": [6],
                             "000300": [11], "000852": [11], "932000": [11],
                             "china_2y": [10], "japan_2y": [8], "japan_10y": [8,9], "japan_30y": [8],
-                            "DGS2": [3], "DGS10": [2,3,9], "JPY=X": [8,9],
+                            "DGS2": [3], "DGS10": [2,3,9], "JPY=X": [8,9], "SRFTSYD": [1],
                             "GC=F": [16], "HG=F": [17], "BTC-USD": [18]}.items():
             self.assertEqual(inventory[key], charts)
 
