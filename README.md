@@ -248,3 +248,5 @@ r91：第5张VIX/VIX3M期限结构图增加SKEW（R2）和VVIX（R3），各用�
 r92：第5图将VIX3M−VIX替换为VIX/VIX3M，加入同日VIX9D/VIX（9D/30D）及SPX+SPXW成交量Put/Call，三项按倍数共用R1；SKEW、VVIX保留独立坐标。铜图移除VVIX显示。新增第19图NVIDIA USD senior unsecured CDS 1Y/5Y利差，单位bp；当前未取得授权原始利差，图中明确显示待接入，记录保持为空，不以ICE结算价格、票息或模型值代替。
 
 NVIDIA CDS授权CSV导入：`python scripts/import_nvidia_cds.py --csv export.csv`。必需列：`issuer,observation_date,tenor,spread_bps,currency,seniority,quote_type,source,source_url`；期限为1Y/5Y，currency=USD，seniority=SENIOR_UNSECURED，quote_type=par_spread。只导入已有数据授权且允许在该看板展示的实际报价。
+
+r93：第5图新增同日VVIX÷VIX的VVIX/VIX比值，以倍数在R1显示；复用原始VVIX与VIX观测，不跨日填充，任一腿缺失或VIX为0时留空。新增图例、悬停和参数说明，保留原VVIX独立指数点曲线及其R3坐标。
