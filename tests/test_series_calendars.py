@@ -21,6 +21,7 @@ def builders():
     ns = {"pd": pd, "go": go, "RANGE_OFFSETS": RANGE_OFFSETS,
           "load_correlation_snapshot": lambda symbol: frame([], symbol, []),
           "load_tail_risk_snapshot": lambda symbol: frame([], symbol, []),
+          "load_spx_put_call_snapshot": lambda: frame([], "SPX_PCR", []),
           "apply_chart_style": lambda fig, *args: fig,
           "chart_height": lambda *args: 420}
     nodes = [n for n in ast.parse(source.read_text()).body
@@ -58,12 +59,12 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         self.assertNotIn("VIX3M−VIX (R2)", {t.name for t in risk.data})
         for window in RANGE_OFFSETS:
             term = ns["build_fig10"](window)
-            self.assertEqual([t.name for t in term.data], ["VIX", "VIX3M", "VIX3M−VIX (R1)"])
+            self.assertEqual([t.name for t in term.data], ["VIX", "VIX3M", "VIX/VIX3M (R1)"])
             for column, name in (("VIXCLS", "VIX"), ("VXVCLS", "VIX3M")):
                 trace = next(t for t in term.data if t.name == name)
                 self.assertEqual(list(pd.to_datetime(trace.x)), list(sources[column].observation_date))
             spread = term.data[2]
-            self.assertEqual(list(pd.Series(spread.y).dropna()), [2., -3.])
+            self.assertEqual(list(pd.Series(spread.y).dropna()), [20./22., 24./21.])
             self.assertEqual(list(pd.Series(spread.y).isna()), [False, True, True, False, True])
             option = build_adaptive_echarts_option(term, window)
             self.assertEqual([s["yAxisIndex"] for s in option["series"]], [0, 0, 1])
@@ -78,7 +79,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         ns["get_fred_series"] = load
         figure = ns["build_fig10"]("1M")
         self.assertEqual([t.name for t in figure.data], ["VIX"])
-        self.assertEqual(set(figure.layout.meta["missing_series"]), {"VIX3M", "VIX3M−VIX (R1)", "SKEW (R2)", "VVIX (R3)"})
+        self.assertEqual(set(figure.layout.meta["missing_series"]), {"VIX3M", "VIX/VIX3M (R1)", "SKEW (R2)", "VVIX (R3)", "9D/30D (R1)", "SPX P/C (R1)"})
 
     def test_equity_correlation_calendar_and_removed_series(self):
         ns = builders()
@@ -209,7 +210,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         self.assertEqual(list(pd.to_datetime(trace.x)), list(pd.to_datetime(dates)))
         self.assertTrue(pd.isna(trace.y[1]))
         term = ns["build_fig10"]("1M")
-        spread = next(t for t in term.data if t.name == "VIX3M−VIX (R1)")
+        spread = next(t for t in term.data if t.name == "VIX/VIX3M (R1)")
         self.assertEqual(list(pd.Series(spread.y).isna()), [False, True, True, False])
         rendered = next(s for s in build_adaptive_echarts_option(fig, "1M")["series"] if s["name"] == "VIX")
         self.assertIsNone(rendered["data"][1][1])

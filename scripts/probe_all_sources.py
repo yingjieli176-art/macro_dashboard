@@ -403,10 +403,21 @@ def jobs():
         add(symbol, [9], "daily", snapshot(f"{symbol.lower()}_daily.json", "observation_date", "close"), lambda symbol=symbol: cboe(symbol))
     add("SKEW", [10], "daily", snapshot("skew_daily.json", "observation_date", "close"), lambda: cboe("SKEW"))
     add("VVIX_TERM", [10], "daily", snapshot("vvix_daily.json", "observation_date", "close"), lambda: cboe("VVIX"))
+    add("VIX9D", [10], "daily", snapshot("vix9d_daily.json", "observation_date", "close"), lambda: cboe("VIX9D"))
+    def spx_pc():
+        from scripts.update_spx_put_call_snapshot import fetch_daily
+        from macro_platform.spx_options import SOURCE_TEMPLATE
+        end = pd.Timestamp.now(tz="America/New_York").normalize() - pd.Timedelta(days=1)
+        for day in pd.bdate_range(end-pd.Timedelta(days=10), end)[::-1]:
+            row = fetch_daily(day.strftime("%Y-%m-%d"))
+            if row is not None:
+                return row["observation_date"], SOURCE_TEMPLATE.format(row["observation_date"])
+        raise ValueError("No completed SPX put/call volume report")
+    add("SPX_PCR", [10], "daily", snapshot("spx_put_call_daily.json", "observation_date", "ratio"), spx_pc)
     def vvix():
         from scripts.update_copper_snapshot import _parse_vvix, VVIX_URL
         return latest(_parse_vvix(get(VVIX_URL).text), "date", "vvix"), VVIX_URL
-    add("VVIX", [16], "daily", snapshot("copper_market_daily.json", "date", "vvix"), vvix)
+    add("VVIX", [], "daily", snapshot("copper_market_daily.json", "date", "vvix"), vvix)
     for field, charts in (("m2_hkd", [5]), ("m3_hkd", [5])):
         add(field, charts, "monthly", snapshot("censtat_hkd_money_supply.json", "end_of_month", field),
             lambda field=field: hkma("monthly-statistical-bulletin/financial/monetary-statistics", field, "end_of_month"))
@@ -442,6 +453,16 @@ def jobs():
     add("comex_stock_t", [16], "daily", snapshot("copper_market_daily.json", "date", "comex_stock_t"), cme)
     for field in ("lme_stock_t", "lme_3m_usd_t"):
         add(field, [16], "daily", snapshot("copper_market_daily.json", "date", field), lambda field=field: lme(field))
+    def nvidia_cds(tenor):
+        from macro_platform.nvidia_cds import load_nvidia_cds
+        data = load_nvidia_cds()
+        part = data.loc[data.tenor.eq(tenor)]
+        if part.empty:
+            raise ValueError("Authorized NVIDIA " + tenor + " CDS spread source is not connected")
+        # A local export is not proof of source-latest status.
+        raise ValueError("NVIDIA CDS export loaded; source-latest quote requires provider connection")
+    for tenor in ("1Y", "5Y"):
+        output.append(("NVIDIA_CDS_" + tenor, [19], "daily", None, lambda tenor=tenor: nvidia_cds(tenor)))
     return output
 
 

@@ -265,7 +265,6 @@ def build_copper_flow_spread_figure(date_range: str) -> go.Figure:
 
     for field, name, axis, template, color in (
         ("wti_usd_bbl", "WTI 原油 (R3)", "y4", "WTI: $%{y:.2f}/bbl<extra></extra>", "#b45309"),
-        ("vvix", "VVIX (R5)", "y6", "VVIX: %{y:.2f} pts<extra></extra>", "#7c3aed"),
     ):
         observed = data.dropna(subset=[field])
         if observed.empty:
@@ -290,15 +289,14 @@ def build_copper_flow_spread_figure(date_range: str) -> go.Figure:
     fig.data = tuple(sorted(fig.data, key=lambda trace: int((trace.yaxis or "y")[1:] or "1")))
     fig = _finish_combined(fig, date_range)
     # Original inventory, copper price and venue spread retain separate units.
-    for index, title, position in ((4, "WTI · USD/bbl", 0.80),
-                                   (5, "Copper / WTI · bbl/t", 0.89),
-                                   (6, "VVIX · pts", 0.98)):
+    for index, title, position in ((4, "WTI · USD/bbl", 0.86),
+                                   (5, "Copper / WTI · bbl/t", 0.98)):
         fig.update_layout(**{f"yaxis{index}": dict(
             title=title, overlaying="y", side="right", anchor="free",
             position=position, showgrid=False, zeroline=False, fixedrange=True,
             tickformat=",.2f", tickfont=dict(size=9))})
-    fig.update_layout(xaxis_domain=[0, 0.53], margin_r=180,
-                      yaxis2_position=0.55, yaxis3_position=0.69)
+    fig.update_layout(xaxis_domain=[0, 0.60], margin_r=180,
+                      yaxis2_position=0.62, yaxis3_position=0.74)
     return fig
 
 

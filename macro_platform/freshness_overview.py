@@ -68,6 +68,8 @@ def source_rows(path=SOURCE_REPORT):
         report = json.loads(path.read_text())
     except (OSError, ValueError, TypeError):
         return None, []
+    if report.get("chart_numbering") == "display_us_jp_cn_18":
+        report["chart_numbering"] = CHART_NUMBERING
     if report.get("chart_numbering") in {"display_17", "display_18"}:
         report["sources"] = [dict(row, charts=legacy_chart_numbers(row["charts"])) for row in report.get("sources", [])]
         report["chart_numbering"] = CHART_NUMBERING
@@ -101,3 +103,4 @@ def render_freshness_overview(figures, *, quote_rows=None, news=None):
         times = [str(item["time"]) for item in items if item.get("time")]
         if times:
             st.caption("最新快讯时间：" + times[0])
+

@@ -60,6 +60,12 @@ try:
 except ImportError:
     def load_tail_risk_snapshot(symbol):
         return pd.DataFrame(columns=["observation_date", symbol])
+try:
+    from macro_platform.spx_options import load_spx_put_call_snapshot
+except ImportError:
+    def load_spx_put_call_snapshot():
+        return pd.DataFrame(columns=["observation_date", "SPX_PCR"])
+from macro_platform.nvidia_cds import build_nvidia_cds_figure
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
 from macro_platform.yen_index import load_yen_market_index
@@ -108,7 +114,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-04-vix-skew-vvix-r91"
+CHART_BUILD = "2026-11-04-vix-ratios-nvidia-cds-r92"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1768,7 +1774,7 @@ def build_fig9(date_range):
 
 
 def build_fig10(date_range):
-    """One/three-month index volatility and their observed same-date spread."""
+    """SPX implied-volatility ratios and dated SPX option volume sentiment."""
     sources = {}
     for column in ("VIXCLS", "VXVCLS"):
         try:
@@ -1781,14 +1787,14 @@ def build_fig10(date_range):
             sources[column] = pd.DataFrame(columns=["observation_date", column])
     data = sources["VIXCLS"].merge(sources["VXVCLS"], on="observation_date", how="outer").sort_values("observation_date")
     # A missing or unpublished leg must leave a gap, including explicit nulls.
-    data["VIX3M-VIX"] = data["VXVCLS"] - data["VIXCLS"]
+    data["VIX/VIX3M"] = data["VIXCLS"] / data["VXVCLS"].where(data["VXVCLS"].gt(0))
     data = filter_range(data, date_range)
     fig = go.Figure()
     for column, name in (("VIXCLS", "VIX"), ("VXVCLS", "VIX3M")):
         add_line(fig, data.loc[data["observation_date"].isin(sources[column]["observation_date"])],
                  column, name, 2.6, unit=" pts")
-    add_line(fig, data, "VIX3M-VIX", "VIX3M−VIX (R1)", 2.3, "dash", "y2", " pts")
-    for name, color in (("VIX", "#5070dd"), ("VIX3M", "#785db0"), ("VIX3M−VIX (R1)", "#ff994d")):
+    add_line(fig, data, "VIX/VIX3M", "VIX/VIX3M (R1)", 2.3, "dash", "y2", " x")
+    for name, color in (("VIX", "#5070dd"), ("VIX3M", "#785db0"), ("VIX/VIX3M (R1)", "#ff994d")):
         fig.update_traces(line_color=color, selector=dict(name=name))
     for symbol, name, axis, color in (("SKEW", "SKEW (R2)", "y3", "#b45309"),
                                        ("VVIX", "VVIX (R3)", "y4", "#dc2626")):
@@ -1798,10 +1804,24 @@ def build_fig10(date_range):
             observed = pd.DataFrame(columns=["observation_date", symbol])
         add_line(fig, observed, symbol, name, 2.2, yaxis=axis, unit=" pts")
         fig.update_traces(line_color=color, selector=dict(name=name))
+    try:
+        short = load_tail_risk_snapshot("VIX9D")
+    except Exception:
+        short = pd.DataFrame(columns=["observation_date", "VIX9D"])
+    short = sources["VIXCLS"].merge(short, on="observation_date", how="outer").sort_values("observation_date")
+    short["9D/30D"] = short["VIX9D"] / short["VIXCLS"].where(short["VIXCLS"].gt(0))
+    add_line(fig, filter_range(short, date_range), "9D/30D", "9D/30D (R1)", 2.2, "dot", "y2", " x")
+    fig.update_traces(line_color="#0891b2", selector=dict(name="9D/30D (R1)"))
+    try:
+        pc = filter_range(load_spx_put_call_snapshot(), date_range)
+    except Exception:
+        pc = pd.DataFrame(columns=["observation_date", "SPX_PCR"])
+    add_line(fig, pc, "SPX_PCR", "SPX P/C (R1)", 2.1, yaxis="y2", unit=" x")
+    fig.update_traces(line_color="#15803d", selector=dict(name="SPX P/C (R1)"))
     fig.update_layout(
         yaxis_title="VIX / VIX3M · pts",
-        yaxis2=dict(title="R1 · VIX3M−VIX · pts", overlaying="y", side="right",
-                    anchor="free", position=0.78, showgrid=False, zeroline=True,
+        yaxis2=dict(title="R1 · Ratios · x", overlaying="y", side="right",
+                    anchor="free", position=0.78, showgrid=False, zeroline=False,
                     zerolinecolor="#94a3b8", fixedrange=True),
     )
     fig.update_layout(
@@ -2610,7 +2630,7 @@ def render_macro_chart_9(prebuilt_fig=None):
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure</div>'
-        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX3M−VIX (R1) · SKEW (R2) · VVIX (R3)</div>',
+        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX/VIX3M (R1) · 9D/30D (R1) · SPX P/C (R1) · SKEW (R2) · VVIX (R3)</div>',
         unsafe_allow_html=True,
     )
     st.caption("VIX反映未来30个日历天（约1个月）的年化隐含波动率，正式代码仍是VIX；VIX3M约为3个月。上方1M、3M等按钮只控制历史显示范围，不改变指数期限。")
@@ -2618,12 +2638,14 @@ def render_macro_chart_10(prebuilt_fig=None):
         "Chart 10", lambda: _cached_macro_figure(10, _macro_snapshot_revision(), CHART_BUILD),
     )
     _render_adaptive_macro_figure(base_fig, "vix_term_structure")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>VIX：</b>标普500指数未来30个日历天（约1M）的年化隐含波动率指标，代表近期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M：</b>标普500指数约未来3个月的年化隐含波动率指标，代表较长期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M−VIX (R1)：</b>同日3个月减1个月隐含波动率之差，代表近远期波动风险的相对定价；收窄或转负表示近端波动更贵，单位为波动率点。</div><div class="parameter-note"><b>SKEW (R2)：</b>Cboe SKEW指数，反映标普500期权对尾部风险的定价；指数点不是暴跌概率，不能直接解释为未来跌幅。</div><div class="parameter-note"><b>VVIX (R3)：</b>Cboe VIX预期波动率指数，即“恐慌指数的恐慌指数”，反映VIX自身的预期波动。</div><div class="parameter-context">口径说明：差值只使用同日有效观测；VIX/VIX3M在左轴，期限差在R1，SKEW和VVIX各用独立坐标R2/R3；保留原始日收盘指数点及观测日。</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-description"><div class="parameter-note"><b>VIX：</b>标普500指数未来30个日历天（约1M）的年化隐含波动率指标，代表近期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M：</b>标普500指数约未来3个月的年化隐含波动率指标，代表较长期波动风险的期权定价。</div><div class="parameter-note"><b>VIX/VIX3M (R1)：</b>同日30天隐含波动率÷约3个月隐含波动率；大于1表示近端隐含波动率更高，单位为倍。</div><div class="parameter-note"><b>9D/30D (R1)：</b>同日Cboe VIX9D÷VIX，即SPX约9天与30天年化隐含波动率的比值；大于1表示超短期隐含波动率更高，单位为倍。</div><div class="parameter-note"><b>SPX P/C (R1)：</b>Cboe SPX+SPXW当日Put成交量÷Call成交量，含周度期权；保留官方公布的比值精度。成交量包含买卖双方，不直接等于净看空仓位，也不是持仓量比。</div><div class="parameter-note"><b>SKEW (R2)：</b>Cboe SKEW指数，反映标普500期权对尾部风险的定价；指数点不是暴跌概率，不能直接解释为未来跌幅。</div><div class="parameter-note"><b>VVIX (R3)：</b>Cboe VIX预期波动率指数，即“恐慌指数的恐慌指数”，反映VIX自身的预期波动。</div><div class="parameter-context">口径说明：两项隐含波动率比值只使用同日有效观测，分母缺失或为0时不计算；VIX和VIX3M原始指数在左轴，三项倍数在R1，SKEW和VVIX在R2/R3；不跨日补值。</div></div>', unsafe_allow_html=True)
     add_sources([
         ("FRED · VIX (VIXCLS)", "https://fred.stlouisfed.org/series/VIXCLS"),
         ("FRED · VIX3M (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),
         ("Cboe · SKEW Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/SKEW_History.csv"),
         ("Cboe · VVIX Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv"),
+        ("Cboe · VIX9D Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VIX9D_History.csv"),
+        ("Cboe · SPX + SPXW Volume Put/Call", "https://www.cboe.com/markets/us/options/market-statistics/daily"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -2671,19 +2693,18 @@ def render_macro_chart_12(prebuilt_fig=None):
 @st.fragment(key="macro_chart_13_viewport")
 def render_macro_chart_13(prebuilt_fig=None):
     st.markdown(
-        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[13]}. Copper Flow, WTI & VVIX</div>'
-        '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2) · WTI (R3) · 铜油比 (R4) · VVIX (R5)</div>',
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[13]}. Copper Flow & WTI</div>'
+        '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2) · WTI (R3) · 铜油比 (R4)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig13("5Y")
     _render_adaptive_macro_figure(base_fig, "copper_flow")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>COMEX 库存：</b>COMEX仓库铜库存，代表美国该交割体系内报告的铜存量；单位为千公吨，不是全球铜总库存。</div><div class="parameter-note"><b>LME 库存：</b>LME仓库铜库存，代表该交易所仓库体系内报告的铜存量；单位为千公吨，可与COMEX对照观察库存地域分布。</div><div class="parameter-note"><b>LME 3M 铜价 (R1)：</b>LME三个月期铜价，代表该市场三个月期限的铜定价；单位为美元/公吨。</div><div class="parameter-note"><b>COMEX HG 换算价 (R1)：</b>COMEX铜期货价格换算为美元/公吨，代表统一重量单位后的美国期货价格，便于与LME对照。</div><div class="parameter-note"><b>COMEX−LME 3M 价差 (R2)：</b>同日COMEX换算价减LME三个月铜价，代表两地铜价差；为正表示COMEX较贵。期限、交割及费用不同，不能直接视为无风险套利利润。</div><div class="parameter-note"><b>WTI 原油 (R3)：</b>NYMEX WTI近月期货代理（CL=F）的已完成日线收盘价，单位为美元/桶；换月会影响价格。</div><div class="parameter-note"><b>铜油比 (R4)：</b>同日COMEX铜价（美元/磅）×2204.62262185÷WTI（美元/桶），单位为桶/公吨；表示一公吨铜相当于多少桶原油，仅在两者均有有效收盘价时计算，不跨日补值。</div><div class="parameter-note"><b>VVIX (R5)：</b>Cboe公布的VIX预期波动率指数，即“恐慌指数的恐慌指数”；独立指数点坐标，反映VIX自身未来约30天的预期波动。</div><div class="parameter-context">口径说明：各序列保留原始单位和实际观测日；库存一增一减需结合交割、运输及需求判断。</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-description"><div class="parameter-note"><b>COMEX 库存：</b>COMEX仓库铜库存，代表美国该交割体系内报告的铜存量；单位为千公吨，不是全球铜总库存。</div><div class="parameter-note"><b>LME 库存：</b>LME仓库铜库存，代表该交易所仓库体系内报告的铜存量；单位为千公吨，可与COMEX对照观察库存地域分布。</div><div class="parameter-note"><b>LME 3M 铜价 (R1)：</b>LME三个月期铜价，代表该市场三个月期限的铜定价；单位为美元/公吨。</div><div class="parameter-note"><b>COMEX HG 换算价 (R1)：</b>COMEX铜期货价格换算为美元/公吨，代表统一重量单位后的美国期货价格，便于与LME对照。</div><div class="parameter-note"><b>COMEX−LME 3M 价差 (R2)：</b>同日COMEX换算价减LME三个月铜价，代表两地铜价差；为正表示COMEX较贵。期限、交割及费用不同，不能直接视为无风险套利利润。</div><div class="parameter-note"><b>WTI 原油 (R3)：</b>NYMEX WTI近月期货代理（CL=F）的已完成日线收盘价，单位为美元/桶；换月会影响价格。</div><div class="parameter-note"><b>铜油比 (R4)：</b>同日COMEX铜价（美元/磅）×2204.62262185÷WTI（美元/桶），单位为桶/公吨；表示一公吨铜相当于多少桶原油，仅在两者均有有效收盘价时计算，不跨日补值。</div><div class="parameter-context">口径说明：各序列保留原始单位和实际观测日；库存一增一减需结合交割、运输及需求判断。</div></div>', unsafe_allow_html=True)
     add_sources([
         ("CME · COMEX Warehouse & Depository Stocks", "https://www.cmegroup.com/solutions/clearing/operations-and-deliveries/nymex-delivery-notices.html"),
         ("CME · Copper Stocks 原始日报", "https://www.cmegroup.com/delivery_reports/Copper_Stocks.xls"),
         ("Yahoo Finance · COMEX Copper HG=F", "https://finance.yahoo.com/quote/HG=F/history/"),
         ("Yahoo Finance · WTI Crude Oil CL=F", "https://finance.yahoo.com/quote/CL=F/history/"),
-        ("Cboe · VVIX Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv"),
         ("LME Copper", "https://www.lme.com/copper"),
         ("LME Warehouse & Stocks Reports", "https://www.lme.com/Market-data/Reports-and-data/Warehouse-and-stocks-reports"),
         ("Westmetall · LME Copper Daily Table", "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"),
@@ -2982,6 +3003,20 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
     }
 
 
+@st.fragment(key="nvidia_cds_viewport")
+def render_nvidia_cds():
+    st.markdown('<div class="section-title">19. NVIDIA CDS · 英伟达信用违约互换</div>'
+                '<div class="section-description">USD · Senior unsecured · 1Y / 5Y · bp</div>', unsafe_allow_html=True)
+    figure = build_nvidia_cds_figure("5Y")
+    _render_adaptive_macro_figure(figure, "nvidia_cds")
+    if not figure.data:
+        st.info("1年期、5年期CDS利差：待接入可核实的授权行情。当前没有可绘制的实际观测。")
+    st.caption("CDS利差单位为基点（100 bp = 1%/年）。只展示同一参考实体、币种和偿债顺位的原始1Y/5Y报价；结算价格、标准票息及预付款不替代利差，缺少的期限保持缺失。")
+    add_sources([("S&P Global · CDS Pricing", "https://www.marketplace.spglobal.com/en/datasets/cds-pricing-(251)"),
+                 ("ICE · CDS Settlement Prices", "https://www.ice.com/cds-settlement-prices")])
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+
 st.markdown(
     '<div id="macro-charts" class="section-anchor"></div>'
     '<div class="section-kicker">MACRO CHARTS</div>'
@@ -3000,6 +3035,8 @@ for number in MACRO_DISPLAY_ORDER:
         _render_equity_drawdown()
     elif number == "cn_drawdown":
         _render_china_drawdown()
+    elif number == "nvidia_cds":
+        render_nvidia_cds()
     else:
         if number in section_headers:
             st.markdown(f'<div class="section-kicker">{section_headers[number]}</div>', unsafe_allow_html=True)
@@ -3141,6 +3178,7 @@ def _render_all_source_freshness(figures):
                        for number, figure in figures.items()}
     display_figures[MACRO_DISPLAY_NUMBER["us_drawdown"]] = _build_equity_drawdown()
     display_figures[MACRO_DISPLAY_NUMBER["cn_drawdown"]] = _build_china_drawdown()
+    display_figures[19] = build_nvidia_cds_figure("5Y")
     render_freshness_overview(display_figures, quote_rows=rows, news=_read_existing_news_snapshot())
 
 _render_all_source_freshness(macro_figures)

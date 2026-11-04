@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
-SYMBOLS = ("SKEW", "VVIX")
+SYMBOLS = ("SKEW", "VVIX", "VIX9D")
 SOURCE_TEMPLATE = "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/{}_History.csv"
 
 
