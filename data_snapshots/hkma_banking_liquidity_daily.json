@@ -9,27 +9,13 @@
     "https://www.hkab.org.hk/en/home"
   ],
   "transport_fallback": "r.jina.ai relay when direct api.hkma.gov.hk access is unavailable from CI",
-  "updated_at": "2026-11-03T19:39:18.890502+00:00",
+  "updated_at": "2026-11-04T12:18:23.331209+00:00",
   "source_errors": [],
-  "coverage_start": "2025-05-02",
-  "coverage_end": "2026-11-03",
+  "coverage_start": "2025-05-06",
+  "coverage_end": "2026-11-04",
   "record_count": 373,
   "fetch_strategy": "30-day incremental overlap over retained history; parallel independent endpoints; direct/relay fallback; HKAB current fixing",
   "records": [
-    {
-      "end_of_date": "2025-05-02",
-      "opening_balance": null,
-      "closing_balance": 44611,
-      "forecast_aggregate_bal_t1": null,
-      "outstanding_efbn": 1314072,
-      "ow_lb_bf_disc_win": 1194827,
-      "aggr_balance_bf_disc_win": 44611,
-      "hibor_overnight": 4.3,
-      "hibor_3m": 4.01399,
-      "disc_win_base_rate": null,
-      "cu_weakside": null,
-      "cu_strongside": null
-    },
     {
       "end_of_date": "2025-05-06",
       "opening_balance": null,
@@ -4952,8 +4938,8 @@
       "outstanding_efbn": 1360035,
       "ow_lb_bf_disc_win": 1176893,
       "aggr_balance_bf_disc_win": 54108,
-      "hibor_overnight": 2.55,
-      "hibor_3m": null,
+      "hibor_overnight": 2.72393,
+      "hibor_3m": 3.26875,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75
@@ -4966,8 +4952,8 @@
       "outstanding_efbn": 1360080,
       "ow_lb_bf_disc_win": 1176409,
       "aggr_balance_bf_disc_win": 54108,
-      "hibor_overnight": 2.17,
-      "hibor_3m": null,
+      "hibor_overnight": 2.35226,
+      "hibor_3m": 3.29143,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75
@@ -4981,7 +4967,7 @@
       "ow_lb_bf_disc_win": 1176790,
       "aggr_balance_bf_disc_win": 54111,
       "hibor_overnight": 1.86,
-      "hibor_3m": null,
+      "hibor_3m": 3.27018,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75
@@ -4995,7 +4981,7 @@
       "ow_lb_bf_disc_win": 1175365,
       "aggr_balance_bf_disc_win": 54111,
       "hibor_overnight": 2,
-      "hibor_3m": null,
+      "hibor_3m": 3.29816,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75
@@ -5009,7 +4995,7 @@
       "ow_lb_bf_disc_win": 1174277,
       "aggr_balance_bf_disc_win": 54111,
       "hibor_overnight": 1.75,
-      "hibor_3m": null,
+      "hibor_3m": 3.28571,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75
@@ -5023,7 +5009,7 @@
       "ow_lb_bf_disc_win": 1175497,
       "aggr_balance_bf_disc_win": 54111,
       "hibor_overnight": 2.78,
-      "hibor_3m": null,
+      "hibor_3m": 3.28857,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75
@@ -5037,7 +5023,7 @@
       "ow_lb_bf_disc_win": 1174100,
       "aggr_balance_bf_disc_win": 54111,
       "hibor_overnight": 2.38,
-      "hibor_3m": null,
+      "hibor_3m": 3.30929,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75
@@ -5051,7 +5037,7 @@
       "ow_lb_bf_disc_win": 1179873,
       "aggr_balance_bf_disc_win": 54103,
       "hibor_overnight": 2.25,
-      "hibor_3m": null,
+      "hibor_3m": 3.30786,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75
@@ -5065,7 +5051,7 @@
       "ow_lb_bf_disc_win": 1153848,
       "aggr_balance_bf_disc_win": 54103,
       "hibor_overnight": 2.14,
-      "hibor_3m": null,
+      "hibor_3m": 3.30857,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75
@@ -5079,7 +5065,7 @@
       "ow_lb_bf_disc_win": 1153434,
       "aggr_balance_bf_disc_win": 54103,
       "hibor_overnight": 2.13,
-      "hibor_3m": null,
+      "hibor_3m": 3.28571,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75
@@ -5236,17 +5222,32 @@
     },
     {
       "end_of_date": "2026-11-03",
-      "opening_balance": null,
-      "closing_balance": null,
-      "forecast_aggregate_bal_t1": null,
-      "outstanding_efbn": null,
-      "ow_lb_bf_disc_win": null,
-      "aggr_balance_bf_disc_win": null,
-      "hibor_overnight": 2.34333,
+      "opening_balance": 53999,
+      "closing_balance": 53999,
+      "forecast_aggregate_bal_t1": 54021,
+      "outstanding_efbn": 1363394,
+      "ow_lb_bf_disc_win": 1180121,
+      "aggr_balance_bf_disc_win": 53999,
+      "hibor_overnight": 2.12,
       "hibor_3m": 3.21399,
-      "disc_win_base_rate": null,
-      "cu_weakside": null,
-      "cu_strongside": null,
+      "disc_win_base_rate": 4.25,
+      "cu_weakside": 7.85,
+      "cu_strongside": 7.75,
+      "hibor_source": "https://www.hkab.org.hk/en/home"
+    },
+    {
+      "end_of_date": "2026-11-04",
+      "opening_balance": 53999,
+      "closing_balance": 54021,
+      "forecast_aggregate_bal_t1": 54021,
+      "outstanding_efbn": 1363623,
+      "ow_lb_bf_disc_win": 1182349,
+      "aggr_balance_bf_disc_win": 54021,
+      "hibor_overnight": 2.22655,
+      "hibor_3m": 3.18601,
+      "disc_win_base_rate": 4.25,
+      "cu_weakside": 7.85,
+      "cu_strongside": 7.75,
       "hibor_source": "https://www.hkab.org.hk/en/home"
     }
   ]
