@@ -2705,7 +2705,6 @@ def render_macro_chart_13(prebuilt_fig=None):
         ("CME · Copper Stocks 原始日报", "https://www.cmegroup.com/delivery_reports/Copper_Stocks.xls"),
         ("Yahoo Finance · COMEX Copper HG=F", "https://finance.yahoo.com/quote/HG=F/history/"),
         ("Yahoo Finance · WTI Crude Oil CL=F", "https://finance.yahoo.com/quote/CL=F/history/"),
-        ("Cboe · VVIX Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv"),
         ("LME Copper", "https://www.lme.com/copper"),
         ("LME Warehouse & Stocks Reports", "https://www.lme.com/Market-data/Reports-and-data/Warehouse-and-stocks-reports"),
         ("Westmetall · LME Copper Daily Table", "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"),
