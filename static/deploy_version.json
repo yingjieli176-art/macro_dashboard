@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-04-vix-ratios-nvidia-cds-r92",
+  "release": "2026-11-04-vvix-vix-ratio-r93",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -33,6 +33,7 @@
     "same_date_vix_vix3m_and_vix9d_vix_ratios",
     "official_spx_spxw_put_call_volume_ratio",
     "nvidia_cds_1y_5y_authorized_source_slot",
-    "copper_chart_without_vvix"
+    "copper_chart_without_vvix",
+    "same_date_vvix_divided_by_vix_ratio_in_term_chart"
   ]
 }

@@ -722,7 +722,7 @@ def main():
                 re.compile(r"^(macro|st)EChartsChart$"))
             report["tail_risk_zoom"] = exercise_client_zoom(page, tail, minimum_axes=4)
             sentiment = tail.evaluate("element => element.__macroChart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,valid:s.data.filter(p=>Number.isFinite(p[1])).length}))")
-            for name in ("VIX/VIX3M (R1)", "9D/30D (R1)", "SPX P/C (R1)"):
+            for name in ("VIX/VIX3M (R1)", "VVIX/VIX (R1)", "9D/30D (R1)", "SPX P/C (R1)"):
                 series = next(s for s in sentiment if s['name'] == name)
                 assert series['axis'] == 1 and series['valid'] > 150, series
             assert any('VVIX' in s['name'] for s in sentiment), sentiment

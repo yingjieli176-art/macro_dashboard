@@ -50,13 +50,33 @@ class SpxSentimentTests(unittest.TestCase):
         traces = {t.name: t for t in fig.data}
         self.assertEqual(list(pd.Series(traces["VIX/VIX3M (R1)"].y).dropna()), [.8, 0.])
         self.assertEqual(list(pd.Series(traces["9D/30D (R1)"].y).dropna()), [.9])
+        self.assertEqual(list(pd.Series(traces["VVIX/VIX (R1)"].y).dropna()), [5.])
         self.assertEqual(list(traces["SPX P/C (R1)"].x), [pd.Timestamp("2026-10-02")])
         option = build_adaptive_echarts_option(fig, "1M")
         self.assertEqual(len(option["yAxis"]), 4)
         for series in option["series"]:
-            if series["name"] in {"VIX/VIX3M (R1)", "9D/30D (R1)", "SPX P/C (R1)"}:
+            if series["name"] in {"VIX/VIX3M (R1)", "VVIX/VIX (R1)", "9D/30D (R1)", "SPX P/C (R1)"}:
                 self.assertEqual(series["yAxisIndex"], 1)
             self.assertNotIn("VIX3M−VIX", series["name"])
+
+    def test_vvix_ratio_keeps_gaps_and_never_reuses_another_days_vix(self):
+        ns = builders()
+        dates = ["2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07"]
+        ns["get_fred_series"] = lambda key: frame(dates, key, [20., 0., None, 25., 30.])
+        def load(symbol):
+            if symbol == "VVIX":
+                return frame(dates[:4] + ["2026-10-08"], symbol, [100., 110., 120., None, 130.])
+            return frame([], symbol, [])
+        ns["load_tail_risk_snapshot"] = load
+        for period in ("5Y", "1Y", "6M", "3M", "1M"):
+            fig = ns["build_fig10"](period)
+            trace = next(t for t in fig.data if t.name == "VVIX/VIX (R1)")
+            self.assertEqual(list(pd.Series(trace.y).dropna()), [5.])
+            self.assertEqual(list(pd.Series(trace.y).isna()), [False, True, True, True, True, True])
+            self.assertEqual(trace.yaxis, "y2")
+            option = build_adaptive_echarts_option(fig, period)
+            series = next(s for s in option["series"] if s["name"] == trace.name)
+            self.assertFalse(series["connectNulls"])
 
 
 if __name__ == "__main__": unittest.main()
