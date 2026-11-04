@@ -37,7 +37,7 @@ class ThirtyYearTreasuryTests(unittest.TestCase):
     def test_thirty_year_preserves_original_values_and_missing_observations(self):
         fig = self.ns["build_fig3"]("5Y")
         self.assertEqual([trace.name for trace in fig.data],
-                         ["3M", "2Y", "10Y", "30Y", "10Y−2Y (R1)", "10Y−3M (R1)"])
+                         ["3M", "2Y", "10Y", "30Y", "10Y−2Y (R1)", "30Y−10Y (R1)"])
         thirty = next(trace for trace in fig.data if trace.name == "30Y")
         self.assertEqual(list(pd.to_datetime(thirty.x)), list(self.dates))
         self.assertEqual([thirty.y[i] for i in (0, 2, 3)], [4.9, 5.1, 5.37])
@@ -50,16 +50,38 @@ class ThirtyYearTreasuryTests(unittest.TestCase):
             self.assertIsNone(observed["data"][1][1])
             self.assertFalse(observed["connectNulls"])
             self.assertTrue(option["yAxis"][0]["scale"])
-            for name in ("10Y−2Y (R1)", "10Y−3M (R1)"):
+            for name in ("10Y−2Y (R1)", "30Y−10Y (R1)"):
                 spread = next(series for series in option["series"] if series["name"] == name)
                 self.assertEqual(spread["yAxisIndex"], 1)
 
     def test_missing_thirty_year_does_not_synthesize_a_curve_or_hide_other_tenors(self):
         self.frames["DGS30"] = pd.DataFrame(columns=["observation_date", "DGS30"])
         fig = self.ns["build_fig3"]("5Y")
-        self.assertEqual(fig.layout.meta["missing_series"], ["30Y"])
+        self.assertEqual(fig.layout.meta["missing_series"], ["30Y", "30Y−10Y (R1)"])
         self.assertEqual([trace.name for trace in fig.data],
-                         ["3M", "2Y", "10Y", "10Y−2Y (R1)", "10Y−3M (R1)"])
+                         ["3M", "2Y", "10Y", "10Y−2Y (R1)"])
+
+    def test_long_end_spread_uses_same_day_yields_and_preserves_gaps(self):
+        fig = self.ns["build_fig3"]("5Y")
+        spread = next(trace for trace in fig.data if trace.name == "30Y−10Y (R1)")
+        self.assertEqual(list(pd.to_datetime(spread.x)), list(self.dates))
+        for index, expected in ((0, .4), (2, .4), (3, .57)):
+            self.assertAlmostEqual(spread.y[index], expected)
+        self.assertTrue(pd.isna(spread.y[1]))
+        self.assertEqual(spread.yaxis, "y2")
+        self.assertNotIn("10Y−3M (R1)", [trace.name for trace in fig.data])
+        for period in RANGE_OFFSETS:
+            option = build_adaptive_echarts_option(fig, period)
+            item = next(series for series in option["series"] if series["name"] == spread.name)
+            self.assertIsNone(item["data"][1][1])
+            self.assertFalse(item["connectNulls"])
+            self.assertEqual(item["yAxisIndex"], 1)
+
+    def test_missing_ten_year_keeps_spread_missing_on_that_date(self):
+        self.frames["DGS10"].loc[2, "DGS10"] = float("nan")
+        fig = self.ns["build_fig3"]("5Y")
+        spread = next(trace for trace in fig.data if trace.name == "30Y−10Y (R1)")
+        self.assertTrue(pd.isna(spread.y[2]))
 
     def test_original_source_is_collected_and_included_in_chart_freshness_audit(self):
         from scripts.sync_fred_verified_cache import SERIES, TREASURY_FIELDS

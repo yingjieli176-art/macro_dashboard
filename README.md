@@ -121,8 +121,8 @@ are bundled for cold start and refreshed each weekday by
 `update-correlation-snapshot.yml`. Early history includes Cboe back-calculations.
 
 Chart 3 includes original FRED DGS30 30-year nominal Treasury yields on the
-same left percentage axis as 3M, 2Y and 10Y. The existing two yield-curve
-spreads stay on R1. DGS30 uses the shared last-good cache, scheduled collector,
+same left percentage axis as 3M, 2Y and 10Y. The 10Y−2Y and same-date 30Y−10Y yield-curve
+spreads stay on R1; 10Y−3M has been removed. DGS30 uses the shared last-good cache, scheduled collector,
 Treasury BC_30YEAR fallback, and source-freshness checks; missing dates stay missing.
 
 ## Validation
@@ -236,3 +236,6 @@ r77：逐日回撤以独立命名参数展示：SPX/RSP及中证三指数各自�
 
 
 r89：第17图增加 WTI 原油（CL=F 已完成日线，美元/桶）、铜油比及 Cboe 官方 VVIX 日收盘。铜油比 = 同日 COMEX HG（美元/磅）×2204.62262185÷WTI（美元/桶），单位桶/公吨；缺少任一同日收盘价时不计算，不跨日填充。三项各用独立坐标，图例、周期和滑块沿用原图控制。采集任务保留各字段最后有效历史，源站失败、未来日期、非有限数值或明显截短的响应不能覆盖已有数据；新增字段包含在日期审计和源站核对中。`python scripts/update_copper_snapshot.py --context-only` 可只更新这两个原始字段并保留已有铜数据。
+
+
+r90：第3图以同日 DGS30−DGS10 的 30Y−10Y 利差替换 10Y−3M，保留10Y−2Y和四条原始收益率曲线。利差在R1按百分点显示，缺少任一同日观测时保持缺失；图例、悬停、说明及来源同步更新。
