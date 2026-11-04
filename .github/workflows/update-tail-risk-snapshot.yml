@@ -1,0 +1,45 @@
+name: Refresh official Cboe SKEW and VVIX
+on:
+  schedule:
+    - cron: '47 0-6,12,22 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/update_tail_risk_snapshot.py
+      - macro_platform/tail_risk.py
+      - .github/workflows/update-tail-risk-snapshot.yml
+permissions:
+  contents: write
+concurrency:
+  group: official-cboe-tail-risk-data
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pandas requests
+      - name: Refresh verified daily observations
+        run: python scripts/update_tail_risk_snapshot.py
+      - name: Commit observation snapshots only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data_snapshots/skew_daily.json data_snapshots/vvix_daily.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'data: refresh official SKEW and VVIX daily closes'
+          bash scripts/push_snapshot.sh
+      - name: Audit original observation dates
+        run: |
+          python -m pip install plotly
+          python scripts/audit_source_freshness.py --only skew_daily.json --only vvix_daily.json

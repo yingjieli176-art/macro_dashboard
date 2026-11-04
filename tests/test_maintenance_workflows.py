@@ -30,6 +30,7 @@ OFFICIAL_REFRESHES = (
     "sync-tga-official-snapshot.yml",
     "update-vixeq-snapshot.yml",
     "update-correlation-snapshot.yml",
+    "update-tail-risk-snapshot.yml",
     "update-hstech-snapshot.yml",
     "update-usdhkd-snapshot.yml",
     "update-censtat-money-supply.yml",
@@ -110,3 +111,4 @@ class WorkflowSafetyTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

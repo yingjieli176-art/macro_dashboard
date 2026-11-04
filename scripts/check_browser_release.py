@@ -712,6 +712,9 @@ def main():
             copper = page.locator('.st-key-copper_flow_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             report["copper_context_zoom"] = exercise_client_zoom(page, copper, minimum_axes=6)
+            tail = page.locator('.st-key-vix_term_structure_adaptive_default_1Y').get_by_test_id(
+                re.compile(r"^(macro|st)EChartsChart$"))
+            report["tail_risk_zoom"] = exercise_client_zoom(page, tail, minimum_axes=4)
             report["mobile_layout"] = check_mobile_layout(page)
             # The mobile-layout sweep resizes every chart and can trigger a
             # Streamlit fragment rerun. Wait for the app to settle, then resolve

@@ -23,6 +23,8 @@ SPECS = [
     ("copper_market_daily.json", "date", "", ["comex_stock_t", "lme_stock_t", "comex_price_usd_lb", "lme_3m_usd_t", "wti_usd_bbl", "vvix"]),
     ("usdhkd_daily.json", "observation_date", "", ["value"]),
     ("vixeq_daily.json", "observation_date", "", ["close"]),
+    ("skew_daily.json", "observation_date", "", ["close"]),
+    ("vvix_daily.json", "observation_date", "", ["close"]),
     ("cor1m_daily.json", "observation_date", "", ["close"]),
     ("cor3m_daily.json", "observation_date", "", ["close"]),
     ("hkma_monetary_statistics.json", "end_of_month", "hk_6_range",
@@ -189,4 +191,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
