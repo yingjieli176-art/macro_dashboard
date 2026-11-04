@@ -48,7 +48,7 @@ jobs:
           import json
           from pathlib import Path
           present = 0
-          for sid in ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR"):
+          for sid in ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR", "SRFTSYD"):
               file = Path("data_snapshots/fred_cache") / (sid + ".json")
               if not file.exists():
                   print("MISSING official source:", sid)
@@ -79,7 +79,7 @@ jobs:
         run: |
           python - <<'PY'
           from scripts.sync_fred_verified_cache import snapshot_health
-          active = ("IORB", "EFFR", "SOFR", "RRPONTSYAWARD", "DGS3MO", "DGS2", "DGS10", "DGS30",
+          active = ("IORB", "EFFR", "SOFR", "RRPONTSYAWARD", "SRFTSYD", "DGS3MO", "DGS2", "DGS10", "DGS30",
                     "DFII5", "DFII10", "T10YIE", "WALCL", "WRESBAL", "RRPONTSYD", "VIXCLS", "VXVCLS", "SP500")
           reports = [snapshot_health(s) for s in active]
           for report in reports:

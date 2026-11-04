@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-03-japan-30y-country-order-r87",
+  "release": "2026-11-04-fed-corridor-srf-r88",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -25,6 +25,7 @@
     "sp500_nikkei_ratio_raw_integer_closes_three_independent_y_axes",
     "sp500_nikkei_last_good_snapshot_fallback",
     "observed_japan_thirty_year_yield_and_same_date_spread",
-    "us_japan_china_display_order"
+    "us_japan_china_display_order",
+    "observed_srf_rate_in_fed_policy_corridor"
   ]
 }

@@ -4,7 +4,7 @@ import math
 import pandas as pd
 
 
-RATE_LIMITS = {sid: (-10, 30) for sid in ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR")}
+RATE_LIMITS = {sid: (-10, 30) for sid in ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR", "SRFTSYD")}
 
 
 def validate_observations(frame, series_id, *, date_column="observation_date",

@@ -77,6 +77,12 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertFalse(any("距前高跌幅" in element.value.columns for element in instance.dataframe))
         # Market assets retain their original unit and independent price axes.
         spec_text = " ".join(specs)
+        corridor = next(json.loads(spec) for spec in specs if '"SRF"' in spec)
+        self.assertEqual({series["name"] for series in corridor["series"]},
+                         {"IORB", "ON RRP", "EFFR", "SOFR", "SRF"})
+        srf = next(series for series in corridor["series"] if series["name"] == "SRF")
+        self.assertEqual(srf["lineStyle"]["type"], "dashed")
+        self.assertTrue(any(point[1] is not None for point in srf["data"]))
         treasury = next(json.loads(spec) for spec in specs if '"30Y"' in spec)
         thirty = next(series for series in treasury["series"] if series["name"] == "30Y")
         self.assertEqual(thirty["yAxisIndex"], 0)

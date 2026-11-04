@@ -161,17 +161,18 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         with patch.object(requests.sessions.Session, "request", side_effect=requests.Timeout("offline")):
             policy = {c: getter() for c, getter in (
                 ("IORB", data.get_iorb), ("RRPONTSYAWARD", data.get_rrp_rate),
-                ("EFFR", data.get_effr), ("SOFR", data.get_sofr))}
+                ("EFFR", data.get_effr), ("SOFR", data.get_sofr),
+                ("SRFTSYD", lambda: data._fred_series("SRFTSYD")))}
             risk = {c: data._fred_series(c) for c in ("VIXCLS", "VXVCLS", "SP500")}
         risk["VIXEQ"] = load_vixeq_snapshot()
         for c, getter in (("IORB", "get_iorb"), ("RRPONTSYAWARD", "get_rrp_rate"),
                           ("EFFR", "get_effr"), ("SOFR", "get_sofr")):
             ns[getter] = lambda c=c: policy[c].copy()
-        ns["get_fred_series"] = lambda c: risk[c].copy()
+        ns["get_fred_series"] = lambda c: (policy if c == "SRFTSYD" else risk)[c].copy()
         ns["load_vixeq_snapshot"] = lambda: risk["VIXEQ"].copy()
         for window in RANGE_OFFSETS:
             for number, sources, names in (
-                (1, policy, {"IORB": "IORB", "RRPONTSYAWARD": "ON RRP", "EFFR": "EFFR", "SOFR": "SOFR"}),
+                (1, policy, {"IORB": "IORB", "RRPONTSYAWARD": "ON RRP", "EFFR": "EFFR", "SOFR": "SOFR", "SRFTSYD": "SRF"}),
                 (9, risk, {"VIXCLS": "VIX", "VIXEQ": "VIXEQ", "SP500": "S&P 500 (R1)"}),
             ):
                 fig = ns[f"build_fig{number}"](window)
@@ -194,6 +195,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         fig = ns["build_fig1"]("1M")
         self.assertEqual(len(fig.data), 3)
         self.assertIn("IORB", fig.layout.meta["missing_series"])
+        self.assertIn("SRF", fig.layout.meta["missing_series"])
         self.assertTrue(pd.isna(fig.data[0].y[1]))
         risk = {"VIXCLS": frame(dates, "VIXCLS", [20., None, 21.]),
                 "VXVCLS": frame(["2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04"],
