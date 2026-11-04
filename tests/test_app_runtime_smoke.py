@@ -68,7 +68,8 @@ class DashboardBootSmoke(unittest.TestCase):
                 self.assertEqual(axis["scale"], not bars)
             self.assertTrue(all(zoom["filterMode"] == "filter" for zoom in option["dataZoom"]))
         self.assertEqual(len(instance.radio), 0)
-        drawdown = next(json.loads(spec) for spec in specs if 'SPX' in spec)
+        drawdown = next(json.loads(spec) for spec in specs
+                        if any(s['name'] == 'SPX（标普500市值加权）' for s in json.loads(spec)['series']))
         self.assertEqual([series["name"] for series in drawdown["series"]],
                          ["SPX（标普500市值加权）", "RSP（标普500等权ETF）"])
         china = next(json.loads(spec) for spec in specs

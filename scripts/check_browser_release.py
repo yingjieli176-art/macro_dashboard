@@ -267,6 +267,7 @@ def exercise_equity_drawdown(page):
     baseline = None
     ranges = []
     for period in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
+        page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'", timeout=30000)
         page.get_by_test_id("stButtonGroup").nth(MACRO_DISPLAY_NUMBER["us_drawdown"]-1).get_by_text(period, exact=True).click()
         chart = page.locator(f'.st-key-us_equity_drawdown_echarts_{period}').get_by_test_id(
             re.compile(r"^(macro|st)EChartsChart$"))
@@ -305,6 +306,7 @@ def exercise_china_drawdown(page):
     page.get_by_text(f'{MACRO_DISPLAY_NUMBER["cn_drawdown"]}. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势', exact=True).wait_for(timeout=30000)
     baseline = None
     for period in ('5Y', '1Y', '6M', '3M', '1M', '1Y'):
+        page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'", timeout=30000)
         page.get_by_test_id('stButtonGroup').nth(MACRO_DISPLAY_NUMBER["cn_drawdown"]-1).get_by_text(period, exact=True).click()
         selector = f'.st-key-china_equity_drawdown_echarts_{period}'
         chart = page.locator(selector).get_by_test_id(re.compile(r'^(macro|st)EChartsChart$'))
