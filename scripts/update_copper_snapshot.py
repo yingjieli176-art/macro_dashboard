@@ -19,6 +19,9 @@ from macro_platform.market_history import completed_daily_closes
 OUT = ROOT / "data_snapshots" / "copper_market_daily.json"
 
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF"
+WTI_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/CL%3DF"
+VVIX_URL = "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv"
+CONTEXT_FIELDS = ("wti_usd_bbl", "vvix")
 WESTMETALL_URL = "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash&year={year}"
 COCHILCO_URL = "https://boletin.cochilco.cl/productos/boletin.asp?anio={year}&mes={month:02d}&tabla=tabla4_2"
 CME_STOCKS_URL = "https://www.cmegroup.com/delivery_reports/Copper_Stocks.xls"
@@ -103,6 +106,70 @@ def _fetch_comex_price() -> pd.DataFrame:
     frame = completed_daily_closes(node).rename(
         columns={"observation_date": "date", "close": "comex_price_usd_lb"})
     return frame.dropna().drop_duplicates("date", keep="last").sort_values("date")
+
+
+def _fetch_wti() -> pd.DataFrame:
+    node = _request(WTI_CHART_URL + "?range=5y&interval=1d&includePrePost=false",
+                    timeout=20).json()["chart"]["result"][0]
+    if (node.get("meta") or {}).get("symbol") != "CL=F":
+        raise ValueError("WTI response symbol mismatch")
+    if (node.get("meta") or {}).get("dataGranularity") != "1d":
+        raise ValueError("WTI response is not daily history")
+    return completed_daily_closes(node).rename(
+        columns={"observation_date": "date", "close": "wti_usd_bbl"})
+
+
+def _parse_vvix(text: str, today: date | None = None) -> pd.DataFrame:
+    raw = pd.read_csv(io.StringIO(text))
+    if not {"DATE", "VVIX"}.issubset(raw.columns):
+        raise ValueError("Unexpected Cboe VVIX CSV schema")
+    frame = pd.DataFrame({"date": pd.to_datetime(raw["DATE"], format="%m/%d/%Y", errors="coerce"),
+                          "vvix": pd.to_numeric(raw["VVIX"], errors="coerce")})
+    # The official daily file contains published closes. Future dates and
+    # nonfinite/nonpositive values never replace last-good observations.
+    return frame.loc[frame.date.notna() & frame.date.dt.date.le(today or date.today())
+                     & frame.vvix.gt(0) & frame.vvix.lt(float("inf"))].sort_values(
+                         "date").drop_duplicates("date", keep="last")
+
+
+def _fetch_vvix() -> pd.DataFrame:
+    return _parse_vvix(_request(VVIX_URL, timeout=20).text)
+
+
+def _merge_context(data: pd.DataFrame) -> pd.DataFrame:
+    """Preserve per-field history on outages, stale or truncated downloads."""
+    data = data.drop(columns=list(CONTEXT_FIELDS), errors="ignore")
+    try:
+        old = pd.DataFrame(json.loads(OUT.read_text(encoding="utf-8")).get("records") or [])
+        old["date"] = pd.to_datetime(old["date"], errors="coerce")
+    except (OSError, ValueError, KeyError):
+        old = pd.DataFrame(columns=["date"])
+    for field, fetch in (("wti_usd_bbl", _fetch_wti), ("vvix", _fetch_vvix)):
+        prior = old.reindex(columns=["date", field]).copy()
+        prior["date"] = pd.to_datetime(prior["date"], errors="coerce")
+        prior[field] = pd.to_numeric(prior[field], errors="coerce")
+        prior = prior.loc[prior.date.notna() & prior[field].gt(0) & prior[field].lt(float("inf"))]
+        prior = prior.loc[prior.date.dt.date.between(_five_year_start(), date.today())]
+        prior = prior.drop_duplicates("date", keep="last").set_index("date")[field]
+        values = prior
+        try:
+            fresh = fetch()
+            fresh[field] = pd.to_numeric(fresh[field], errors="coerce")
+            fresh = fresh.loc[fresh.date.notna() & fresh[field].gt(0) & fresh[field].lt(float("inf"))
+                              & fresh.date.dt.date.between(_five_year_start(), date.today())]
+            fresh = fresh.drop_duplicates("date", keep="last").set_index("date")[field]
+            if len(fresh) < 700 or (not prior.empty and fresh.index.max() < prior.index.max()):
+                raise ValueError(f"{field}: short or stale daily history ({len(fresh)})")
+            # Keep genuine old observations omitted by a partial source response.
+            values = fresh.combine_first(prior)
+            print(field, "observations", len(values), "latest", values.index.max(), flush=True)
+        except Exception as exc:
+            print(field, "unavailable; retaining last-good observations:", repr(exc), flush=True)
+        if values.empty:
+            data[field] = float("nan")
+        else:
+            data = data.merge(values.rename(field).reset_index(), on="date", how="outer")
+    return data
 
 
 def _fetch_westmetall_year(year: int) -> pd.DataFrame:
@@ -303,14 +370,17 @@ def _fetch_comex_inventory() -> pd.DataFrame:
 
 
 def main() -> None:
-    comex_price = _fetch_comex_price()
-    lme = _fetch_lme_history()
-    inventory = _fetch_comex_inventory()
-
-    data = comex_price.merge(lme, on="date", how="outer")
-    if not inventory.empty:
-        data = data.merge(inventory, on="date", how="outer")
-    data = data.sort_values("date")
+    if "--context-only" in sys.argv:
+        data = pd.DataFrame(json.loads(OUT.read_text(encoding="utf-8"))["records"])
+        data["date"] = pd.to_datetime(data["date"])
+    else:
+        comex_price = _fetch_comex_price()
+        lme = _fetch_lme_history()
+        inventory = _fetch_comex_inventory()
+        data = comex_price.merge(lme, on="date", how="outer")
+        if not inventory.empty:
+            data = data.merge(inventory, on="date", how="outer")
+    data = _merge_context(data).sort_values("date")
     data = data[data["date"].dt.date >= _five_year_start()]
 
     # Westmetall's LME stock series is the primary LME inventory. COCHILCO is
@@ -327,6 +397,8 @@ def main() -> None:
         "comex_stock": int(data.get("comex_stock_t", pd.Series(dtype=float)).notna().sum()),
         "lme_price": int(data.get("lme_cash_usd_t", pd.Series(dtype=float)).notna().sum()),
         "lme_stock": int(data.get("lme_stock_t", pd.Series(dtype=float)).notna().sum()),
+        "wti": int(data.get("wti_usd_bbl", pd.Series(dtype=float)).notna().sum()),
+        "vvix": int(data.get("vvix", pd.Series(dtype=float)).notna().sum()),
     }
     if counts["comex_price"] < 700 or counts["lme_price"] < 700 or counts["lme_stock"] < 700:
         raise RuntimeError(f"copper snapshot core series too short: {counts}")
@@ -343,6 +415,7 @@ def main() -> None:
         "cochilco_lme_stock_t",
         "comex_stock_source",
         "comex_stock_short_tons",
+        *CONTEXT_FIELDS,
     ]
     for col in columns:
         if col not in data.columns:
@@ -356,9 +429,11 @@ def main() -> None:
         records.append(item)
 
     payload = {
-        "source": "CME official copper warehouse stocks (short tons converted to metric tonnes); COMEX HG via Yahoo; LME via Westmetall; historical inventory via COCHILCO Table 4.2",
+        "source": "CME official copper warehouse stocks (short tons converted to metric tonnes); COMEX HG and WTI CL via Yahoo completed daily closes; VVIX official Cboe daily history; LME via Westmetall; historical inventory via COCHILCO Table 4.2",
         "source_urls": {
             "comex_price": "https://finance.yahoo.com/quote/HG=F/history/",
+            "wti": "https://finance.yahoo.com/quote/CL=F/history/",
+            "vvix": VVIX_URL,
             "cme_inventory_reference": "https://www.cmegroup.com/solutions/clearing/operations-and-deliveries/nymex-delivery-notices.html",
             "cme_inventory": CME_STOCKS_URL,
             "lme_reference": "https://www.lme.com/copper",
@@ -377,13 +452,18 @@ def main() -> None:
             "lme_cash_usd_t": "USD/metric tonne",
             "lme_3m_usd_t": "USD/metric tonne",
             "lme_stock_t": "metric tonnes",
+            "wti_usd_bbl": "USD/bbl",
+            "vvix": "index points",
         },
         "records": records,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporary = OUT.with_suffix(".tmp")
+    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+    temporary.replace(OUT)
     print("wrote copper snapshot", counts, payload["coverage_start"], payload["coverage_end"], flush=True)
 
 
 if __name__ == "__main__":
     main()
+

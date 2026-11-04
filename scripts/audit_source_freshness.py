@@ -20,7 +20,7 @@ SPECS = [
     ("jpy_market_daily.json", "date", "", ["usd_jpy_close"]),
     ("jpy_neer_daily.json", "date", "", ["value"]),
     ("censtat_hkd_money_supply.json", "end_of_month", "hk_6_range", ["m2_hkd", "m3_hkd"]),
-    ("copper_market_daily.json", "date", "", ["comex_stock_t", "lme_stock_t", "comex_price_usd_lb", "lme_3m_usd_t"]),
+    ("copper_market_daily.json", "date", "", ["comex_stock_t", "lme_stock_t", "comex_price_usd_lb", "lme_3m_usd_t", "wti_usd_bbl", "vvix"]),
     ("usdhkd_daily.json", "observation_date", "", ["value"]),
     ("vixeq_daily.json", "observation_date", "", ["close"]),
     ("cor1m_daily.json", "observation_date", "", ["close"]),
@@ -189,3 +189,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -47,6 +47,8 @@ jobs:
           assert counts.get('comex_stock', 0) >= 250, counts
           assert counts.get('lme_price', 0) >= 700, counts
           assert counts.get('lme_stock', 0) >= 700, counts
+          assert counts.get('wti', 0) >= 700, counts
+          assert counts.get('vvix', 0) >= 700, counts
           print('copper snapshot OK', len(rows), counts, data.get('coverage_start'), data.get('coverage_end'))
           PY
       - name: Commit refreshed snapshot
@@ -65,3 +67,4 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check pandas plotly
           python scripts/audit_source_freshness.py --only copper_market_daily.json
+
