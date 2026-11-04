@@ -103,7 +103,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-04-fed-corridor-srf-r88"
+CHART_BUILD = "2026-11-04-copper-wti-vvix-r89"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2648,17 +2648,19 @@ def render_macro_chart_12(prebuilt_fig=None):
 @st.fragment(key="macro_chart_13_viewport")
 def render_macro_chart_13(prebuilt_fig=None):
     st.markdown(
-        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[13]}. Copper Flow & COMEX–LME Spread</div>'
-        '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2)</div>',
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[13]}. Copper Flow, WTI & VVIX</div>'
+        '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2) · WTI (R3) · 铜油比 (R4) · VVIX (R5)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig13("5Y")
     _render_adaptive_macro_figure(base_fig, "copper_flow")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>COMEX 库存：</b>COMEX仓库铜库存，代表美国该交割体系内报告的铜存量；单位为千公吨，不是全球铜总库存。</div><div class="parameter-note"><b>LME 库存：</b>LME仓库铜库存，代表该交易所仓库体系内报告的铜存量；单位为千公吨，可与COMEX对照观察库存地域分布。</div><div class="parameter-note"><b>LME 3M 铜价 (R1)：</b>LME三个月期铜价，代表该市场三个月期限的铜定价；单位为美元/公吨。</div><div class="parameter-note"><b>COMEX HG 换算价 (R1)：</b>COMEX铜期货价格换算为美元/公吨，代表统一重量单位后的美国期货价格，便于与LME对照。</div><div class="parameter-note"><b>COMEX−LME 3M 价差 (R2)：</b>同日COMEX换算价减LME三个月铜价，代表两地铜价差；为正表示COMEX较贵。期限、交割及费用不同，不能直接视为无风险套利利润。</div><div class="parameter-context">口径说明：库存单位为千公吨，价格与价差为美元/公吨；库存一增一减需结合交割、运输及需求判断。</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-description"><div class="parameter-note"><b>COMEX 库存：</b>COMEX仓库铜库存，代表美国该交割体系内报告的铜存量；单位为千公吨，不是全球铜总库存。</div><div class="parameter-note"><b>LME 库存：</b>LME仓库铜库存，代表该交易所仓库体系内报告的铜存量；单位为千公吨，可与COMEX对照观察库存地域分布。</div><div class="parameter-note"><b>LME 3M 铜价 (R1)：</b>LME三个月期铜价，代表该市场三个月期限的铜定价；单位为美元/公吨。</div><div class="parameter-note"><b>COMEX HG 换算价 (R1)：</b>COMEX铜期货价格换算为美元/公吨，代表统一重量单位后的美国期货价格，便于与LME对照。</div><div class="parameter-note"><b>COMEX−LME 3M 价差 (R2)：</b>同日COMEX换算价减LME三个月铜价，代表两地铜价差；为正表示COMEX较贵。期限、交割及费用不同，不能直接视为无风险套利利润。</div><div class="parameter-note"><b>WTI 原油 (R3)：</b>NYMEX WTI近月期货代理（CL=F）的已完成日线收盘价，单位为美元/桶；换月会影响价格。</div><div class="parameter-note"><b>铜油比 (R4)：</b>同日COMEX铜价（美元/磅）×2204.62262185÷WTI（美元/桶），单位为桶/公吨；表示一公吨铜相当于多少桶原油，仅在两者均有有效收盘价时计算，不跨日补值。</div><div class="parameter-note"><b>VVIX (R5)：</b>Cboe公布的VIX预期波动率指数，即“恐慌指数的恐慌指数”；独立指数点坐标，反映VIX自身未来约30天的预期波动。</div><div class="parameter-context">口径说明：各序列保留原始单位和实际观测日；库存一增一减需结合交割、运输及需求判断。</div></div>', unsafe_allow_html=True)
     add_sources([
         ("CME · COMEX Warehouse & Depository Stocks", "https://www.cmegroup.com/solutions/clearing/operations-and-deliveries/nymex-delivery-notices.html"),
         ("CME · Copper Stocks 原始日报", "https://www.cmegroup.com/delivery_reports/Copper_Stocks.xls"),
         ("Yahoo Finance · COMEX Copper HG=F", "https://finance.yahoo.com/quote/HG=F/history/"),
+        ("Yahoo Finance · WTI Crude Oil CL=F", "https://finance.yahoo.com/quote/CL=F/history/"),
+        ("Cboe · VVIX Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv"),
         ("LME Copper", "https://www.lme.com/copper"),
         ("LME Warehouse & Stocks Reports", "https://www.lme.com/Market-data/Reports-and-data/Warehouse-and-stocks-reports"),
         ("Westmetall · LME Copper Daily Table", "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"),
@@ -3267,4 +3269,5 @@ def render_news_panel():
 
 
 render_news_panel()
+
 

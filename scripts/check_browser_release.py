@@ -366,7 +366,10 @@ def check_mobile_layout(page):
         page.wait_for_timeout(600)
         states = charts.evaluate_all("elements => elements.map(element => (" + probe + ")(element))")
         for original, state in zip(before, states):
-            assert state['series'] == original['series'], (width, 'observations changed')
+            assert state['series'] == original['series'], (
+                width, 'observations changed',
+                [(s['name'], s['axis'], len(s['data']), s['data'][:1]) for s in original['series']],
+                [(s['name'], s['axis'], len(s['data']), s['data'][:1]) for s in state['series']])
             assert state['zoom'] == original['zoom'], (width, 'zoom changed')
             assert len(state['axes']) == len(original['axes'])
             for index, axis in enumerate(state['axes']):
@@ -706,6 +709,9 @@ def main():
             chart = page.locator('.st-key-hk_5_range_adaptive_default_1Y').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             report["client_zoom"] = exercise_client_zoom(page, chart)
             report["monthly_growth_columns"] = assert_bar_baseline(chart, 'M2 MoM')
+            copper = page.locator('.st-key-copper_flow_adaptive_default_1Y').get_by_test_id(
+                re.compile(r"^(macro|st)EChartsChart$"))
+            report["copper_context_zoom"] = exercise_client_zoom(page, copper, minimum_axes=6)
             report["mobile_layout"] = check_mobile_layout(page)
             # The mobile-layout sweep resizes every chart and can trigger a
             # Streamlit fragment rerun. Wait for the app to settle, then resolve
@@ -803,3 +809,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

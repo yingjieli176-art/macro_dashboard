@@ -36,6 +36,10 @@ def _axis_unit(axis, traces):
         return "HK$ bn"
     if "usd/oz" in text:
         return "USD/oz"
+    if "usd/bbl" in text or "$/bbl" in text:
+        return "USD/bbl"
+    if "bbl/t" in text:
+        return "bbl/t"
     if "usd/t" in text or "$/t" in text:
         return "USD/t"
     if "usd t" in text or text.endswith(" t"):
@@ -686,3 +690,4 @@ def expected_viewport_y_bounds(fig, date_range="1Y") -> dict[str, list[float]]:
     window = date_range if date_range in RANGE_OFFSETS else "1Y"
     start = latest - RANGE_OFFSETS[window]
     return _visible_y_ranges(fig, start, latest)
+

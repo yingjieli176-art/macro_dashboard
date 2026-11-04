@@ -19,6 +19,8 @@ COLUMNS = [
     "lme_cash_usd_t",
     "lme_3m_usd_t",
     "lme_stock_t",
+    "wti_usd_bbl",
+    "vvix",
 ]
 
 
@@ -261,7 +263,43 @@ def build_copper_flow_spread_figure(date_range: str) -> go.Figure:
     else:
         _add_missing(fig, "COMEX−LME 3M 价差")
 
-    return _finish_combined(fig, date_range)
+    for field, name, axis, template, color in (
+        ("wti_usd_bbl", "WTI 原油 (R3)", "y4", "WTI: $%{y:.2f}/bbl<extra></extra>", "#b45309"),
+        ("vvix", "VVIX (R5)", "y6", "VVIX: %{y:.2f} pts<extra></extra>", "#7c3aed"),
+    ):
+        observed = data.dropna(subset=[field])
+        if observed.empty:
+            _add_missing(fig, name)
+        else:
+            fig.add_trace(go.Scatter(x=observed["observation_date"], y=observed[field],
+                                     mode="lines", name=name, yaxis=axis,
+                                     line=dict(width=2, color=color), hovertemplate=template))
+
+    # Use only matching observed dates. No carry-forward across market holidays.
+    ratio = data[["observation_date", "comex_price_usd_lb", "wti_usd_bbl"]].dropna()
+    if ratio.empty:
+        _add_missing(fig, "铜油比")
+    else:
+        fig.add_trace(go.Scatter(
+            x=ratio["observation_date"],
+            y=ratio["comex_price_usd_lb"] * LB_PER_METRIC_TONNE / ratio["wti_usd_bbl"],
+            mode="lines", name="铜油比 (R4)", yaxis="y5",
+            line=dict(width=2, color="#0891b2"),
+            hovertemplate="铜油比: %{y:.2f} bbl/t<extra></extra>"))
+
+    fig.data = tuple(sorted(fig.data, key=lambda trace: int((trace.yaxis or "y")[1:] or "1")))
+    fig = _finish_combined(fig, date_range)
+    # Original inventory, copper price and venue spread retain separate units.
+    for index, title, position in ((4, "WTI · USD/bbl", 0.80),
+                                   (5, "Copper / WTI · bbl/t", 0.89),
+                                   (6, "VVIX · pts", 0.98)):
+        fig.update_layout(**{f"yaxis{index}": dict(
+            title=title, overlaying="y", side="right", anchor="free",
+            position=position, showgrid=False, zeroline=False, fixedrange=True,
+            tickformat=",.2f", tickfont=dict(size=9))})
+    fig.update_layout(xaxis_domain=[0, 0.53], margin_r=180,
+                      yaxis2_position=0.55, yaxis3_position=0.69)
+    return fig
 
 
 # Backward-compatible aliases for callers/tests that still import the old names.
@@ -271,3 +309,4 @@ def build_comex_copper_figure(date_range: str) -> go.Figure:
 
 def build_lme_copper_figure(date_range: str) -> go.Figure:
     return build_copper_flow_spread_figure(date_range)
+
