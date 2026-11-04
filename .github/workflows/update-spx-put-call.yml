@@ -8,6 +8,7 @@ on:
     paths:
       - scripts/update_spx_put_call_snapshot.py
       - macro_platform/spx_options.py
+      - scripts/audit_source_freshness.py
       - .github/workflows/update-spx-put-call.yml
 permissions:
   contents: write

@@ -29,7 +29,7 @@ class DashboardBootSmoke(unittest.TestCase):
             second = AppTest.from_file(str(app), default_timeout=90).run()
         self.assertFalse(first.exception)
         self.assertFalse(second.exception)
-        self.assertEqual(len(second.get('button_group')), 18)
+        self.assertEqual(len(second.get('button_group')), 19)
         self.assertGreaterEqual(len(chart_specs(second)), 8)
         self.assertEqual(chart_specs(first), chart_specs(second))
 
@@ -43,10 +43,10 @@ class DashboardBootSmoke(unittest.TestCase):
             msg="Streamlit app crashed during full script execution: "
                 + "; ".join(str(error.message) for error in instance.exception),
         )
-        self.assertEqual(len(instance.get("button_group")), 18)
+        self.assertEqual(len(instance.get("button_group")), 19)
         titles = [match.group(1) for element in instance.markdown
                   if (match := re.search(r'class="section-title">(\d+)\.', element.value))]
-        self.assertEqual(titles, [str(number) for number in range(1, 19)])
+        self.assertEqual(titles, [str(number) for number in range(1, 20)])
         title_text = " ".join(element.value for element in instance.markdown)
         self.assertIn('4. US Equity Risk', title_text)
         self.assertIn('8. Japan Government Yields', title_text)
@@ -121,4 +121,5 @@ class DashboardBootSmoke(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
 

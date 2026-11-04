@@ -31,6 +31,7 @@ OFFICIAL_REFRESHES = (
     "update-vixeq-snapshot.yml",
     "update-correlation-snapshot.yml",
     "update-tail-risk-snapshot.yml",
+    "update-spx-put-call.yml",
     "update-hstech-snapshot.yml",
     "update-usdhkd-snapshot.yml",
     "update-censtat-money-supply.yml",

@@ -18,10 +18,11 @@ def prepare_snapshot(text, symbol, previous, now):
         raise ValueError(f"Unsupported index: {symbol}")
     frame = pd.read_csv(io.StringIO(text))
     frame.columns = [str(c).strip().upper() for c in frame.columns]
-    if not {"DATE", symbol}.issubset(frame.columns):
+    value_column = "CLOSE" if symbol == "VIX9D" else symbol
+    if not {"DATE", value_column}.issubset(frame.columns):
         raise ValueError(f"Unexpected {symbol} CSV schema")
     dates = pd.to_datetime(frame.DATE, format="%m/%d/%Y", errors="coerce")
-    values = pd.to_numeric(frame[symbol], errors="coerce")
+    values = pd.to_numeric(frame[value_column], errors="coerce")
     if dates.isna().any():
         raise ValueError(f"Invalid {symbol} observation date")
     cutoff = pd.Timestamp(completed_date(now))

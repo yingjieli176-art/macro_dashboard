@@ -10,6 +10,17 @@ on:
       - scripts/update_hkma_daily_snapshot.py
       - scripts/update_usdhkd_snapshot.py
       - scripts/update_censtat_money_supply.py
+      - macro_platform/spx_options.py
+      - macro_platform/nvidia_cds.py
+      - macro_platform/dashboard_layout.py
+      - scripts/update_spx_put_call_snapshot.py
+      - scripts/import_nvidia_cds.py
+      - tests/test_spx_sentiment.py
+      - tests/test_nvidia_cds.py
+      - data_snapshots/vix9d_daily.json
+      - data_snapshots/spx_put_call_daily.json
+      - data_snapshots/nvidia_cds_daily.json
+      - .github/workflows/update-spx-put-call.yml
       - macro_platform/tail_risk.py
       - scripts/update_tail_risk_snapshot.py
       - tests/test_tail_risk.py
@@ -110,6 +121,17 @@ on:
       - scripts/update_hkma_daily_snapshot.py
       - scripts/update_usdhkd_snapshot.py
       - scripts/update_censtat_money_supply.py
+      - macro_platform/spx_options.py
+      - macro_platform/nvidia_cds.py
+      - macro_platform/dashboard_layout.py
+      - scripts/update_spx_put_call_snapshot.py
+      - scripts/import_nvidia_cds.py
+      - tests/test_spx_sentiment.py
+      - tests/test_nvidia_cds.py
+      - data_snapshots/vix9d_daily.json
+      - data_snapshots/spx_put_call_daily.json
+      - data_snapshots/nvidia_cds_daily.json
+      - .github/workflows/update-spx-put-call.yml
       - macro_platform/tail_risk.py
       - scripts/update_tail_risk_snapshot.py
       - tests/test_tail_risk.py

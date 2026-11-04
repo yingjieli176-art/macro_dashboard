@@ -1,4 +1,4 @@
-name: Refresh official Cboe SKEW and VVIX
+name: Refresh official Cboe SKEW, VVIX and VIX9D
 on:
   schedule:
     - cron: '47 0-6,12,22 * * *'
@@ -33,13 +33,13 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data_snapshots/skew_daily.json data_snapshots/vvix_daily.json
+          git add data_snapshots/skew_daily.json data_snapshots/vvix_daily.json data_snapshots/vix9d_daily.json
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m 'data: refresh official SKEW and VVIX daily closes'
+          git commit -m 'data: refresh official SKEW, VVIX and VIX9D daily closes'
           bash scripts/push_snapshot.sh
       - name: Audit original observation dates
         run: |
           python -m pip install plotly
-          python scripts/audit_source_freshness.py --only skew_daily.json --only vvix_daily.json
+          python scripts/audit_source_freshness.py --only skew_daily.json --only vvix_daily.json --only vix9d_daily.json

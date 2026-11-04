@@ -14,7 +14,7 @@ from scripts import update_copper_snapshot as collector
 
 
 class CopperContextTests(unittest.TestCase):
-    def test_ratio_uses_only_same_date_closes_and_preserves_six_units(self):
+    def test_ratio_uses_only_same_date_closes_and_preserves_five_units(self):
         rows = []
         for day, cu, oil, vvix in (("2026-11-01", 4, 80, 100),
                                   ("2026-11-02", None, 90, 110),
@@ -33,14 +33,14 @@ class CopperContextTests(unittest.TestCase):
                     self.assertAlmostEqual(ratio.y[0], 4 * copper.LB_PER_METRIC_TONNE / 80)
                     for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
                         option = adapter(fig, period)
-                        self.assertEqual(len(option["yAxis"]), 6)
+                        self.assertEqual(len(option["yAxis"]), 5)
                         mapped = {s["name"]: s["yAxisIndex"] for s in option["series"]}
                         self.assertEqual(mapped["WTI 原油 (R3)"], 3)
                         self.assertEqual(mapped["铜油比 (R4)"], 4)
-                        self.assertEqual(mapped["VVIX (R5)"], 5)
+                        self.assertNotIn("VVIX (R5)", mapped)
                         self.assertIn("USD/bbl", option["yAxis"][3]["name"])
                         self.assertIn("bbl/t", option["yAxis"][4]["name"])
-                        self.assertIn("pts", option["yAxis"][5]["name"])
+
                         json.dumps(option, allow_nan=False)
 
     def test_vvix_rejects_invalid_future_and_nonfinite_observations(self):

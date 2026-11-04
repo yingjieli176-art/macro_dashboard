@@ -333,7 +333,7 @@ def exercise_china_drawdown(page):
 
 def wait_for_page(page, url):
     page.goto(url, wait_until="domcontentloaded", timeout=60000)
-    page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 18", timeout=60000)
+    page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 19", timeout=60000)
     page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8 || document.querySelector('[data-testid=macroEChartsChartError]')", timeout=60000)
     failures = page.locator('.macro-chart-error:not([hidden])').all_text_contents()
     assert not failures, failures
@@ -634,13 +634,13 @@ def main():
             page.on("pageerror", lambda error: errors.append({"message": str(error), "stack": error.stack}))
             wait_for_page(page, args.url)
             groups = page.get_by_test_id("stButtonGroup")
-            page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 18", timeout=60000)
+            page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 19", timeout=60000)
             page.get_by_text("8. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
             charts = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
             page.get_by_text("5. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
             page.get_by_text("16. Precious Metals", exact=True).wait_for(timeout=30000)
-            assert groups.count() == 18
+            assert groups.count() == 19
             assert charts.count() >= 8
             assert page.get_by_test_id("stException").count() == 0
             assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
@@ -656,14 +656,14 @@ def main():
             })""")
             assert all(paints), paints
             assert page.get_by_text("该图表目前没有可验证的有效观测数据", exact=False).count() > 0
-            report["checks"].append({"chart_positions": 18, "painted_native_charts": len(paints),
+            report["checks"].append({"chart_positions": 19, "painted_native_charts": len(paints),
                                       "missing_positions_are_explicit": True})
             report["equity_drawdown"] = exercise_equity_drawdown(page)
             report["china_drawdown"] = exercise_china_drawdown(page)
             report["security_search"] = exercise_security_search(page)
             # All five controls exist for every position, including unavailable charts.
             report["controls"] = groups.all_text_contents()
-            for index in range(18):
+            for index in range(19):
                 for label in ("5Y", "1Y", "6M", "3M", "1M"):
                     # React Aria's selected toggle changes its accessible
                     # name; the visible range label stays stable.
@@ -711,10 +711,23 @@ def main():
             report["monthly_growth_columns"] = assert_bar_baseline(chart, 'M2 MoM')
             copper = page.locator('.st-key-copper_flow_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
-            report["copper_context_zoom"] = exercise_client_zoom(page, copper, minimum_axes=6)
+            report["copper_context_zoom"] = exercise_client_zoom(page, copper, minimum_axes=5)
+            copper_names = copper.evaluate("element => element.__macroChart.getOption().series.map(s => s.name)")
+            assert not any("VVIX" in name for name in copper_names), copper_names
+            assert any("WTI" in name for name in copper_names), copper_names
+            report["copper_without_vvix"] = copper_names
             tail = page.locator('.st-key-vix_term_structure_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             report["tail_risk_zoom"] = exercise_client_zoom(page, tail, minimum_axes=4)
+            sentiment = tail.evaluate("element => element.__macroChart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,valid:s.data.filter(p=>Number.isFinite(p[1])).length}))")
+            for name in ("VIX/VIX3M (R1)", "9D/30D (R1)", "SPX P/C (R1)"):
+                series = next(s for s in sentiment if s['name'] == name)
+                assert series['axis'] == 1 and series['valid'] > 150, series
+            assert any('VVIX' in s['name'] for s in sentiment), sentiment
+            assert not any('VIX3M−VIX' in s['name'] for s in sentiment), sentiment
+            report['spx_sentiment'] = sentiment
+            page.get_by_text("19. NVIDIA CDS · 英伟达信用违约互换", exact=True).wait_for()
+            page.get_by_text("1年期、5年期CDS利差：待接入可核实的授权行情。当前没有可绘制的实际观测。", exact=True).wait_for()
             report["mobile_layout"] = check_mobile_layout(page)
             # The mobile-layout sweep resizes every chart and can trigger a
             # Streamlit fragment rerun. Wait for the app to settle, then resolve
@@ -746,14 +759,14 @@ def main():
                 'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',MACRO_DISPLAY_NUMBER[10]-1),
             }
             page.set_viewport_size({'width':1440,'height':1000})
-            freshness = page.get_by_text(re.compile(r'^数据最新时间 · 18 张图'))
+            freshness = page.get_by_text(re.compile(r'^数据最新时间 · 19 张图'))
             freshness.click()
             page.get_by_test_id('stDataFrame').first.wait_for()
             assert page.get_by_test_id('stDataFrame').count() >= 2
             assert page.get_by_text('独立数据源核对', exact=True).count() == 0
             page.screenshot(path='browser_freshness.png')
             freshness.click()
-            report['all_source_freshness_overview'] = {'chart_positions':18,'observation_dates_visible':True}
+            report['all_source_freshness_overview'] = {'chart_positions':19,'observation_dates_visible':True}
             report["checks"].append({"slider": True, "download_and_fullscreen_only": True,
                                       "processed_observations_fit_independent_axes": True})
             # Two separate browser contexts produce independent Streamlit

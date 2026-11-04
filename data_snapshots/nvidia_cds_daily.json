@@ -1,0 +1,11 @@
+{
+  "issuer": "NVIDIA Corporation",
+  "currency": "USD",
+  "seniority": "SENIOR_UNSECURED",
+  "unit": "bp",
+  "quote_type": "par_spread",
+  "status": "awaiting_authorized_source",
+  "requested_tenors": ["1Y", "5Y"],
+  "source_reference": "https://www.ice.com/cds-settlement-prices",
+  "records": []
+}

@@ -28,10 +28,10 @@ class TailRiskTests(unittest.TestCase):
         for period in ("5Y", "1Y", "6M", "3M", "1M"):
             fig = ns["build_fig10"](period)
             self.assertEqual([t.name for t in fig.data],
-                             ["VIX", "VIX3M", "VIX3M−VIX (R1)", "SKEW (R2)", "VVIX (R3)"])
+                             ["VIX", "VIX3M", "VIX/VIX3M (R1)", "SKEW (R2)", "VVIX (R3)"])
             for i, s in ((0, "VIXCLS"), (1, "VXVCLS"), (3, "SKEW"), (4, "VVIX")):
                 self.assertEqual(list(pd.to_datetime(fig.data[i].x)), list(sources[s].observation_date))
-            self.assertEqual(list(pd.Series(fig.data[2].y).dropna()), [2., -3.])
+            self.assertEqual(list(pd.Series(fig.data[2].y).dropna()), [20./22., 24./21.])
             for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
                 option = adapter(fig, period)
                 self.assertEqual([s["yAxisIndex"] for s in option["series"]], [0, 0, 1, 2, 3])
@@ -45,8 +45,8 @@ class TailRiskTests(unittest.TestCase):
         ns["get_fred_series"] = lambda s: frame(["2026-10-01"], s, [20.])
         ns["load_tail_risk_snapshot"] = lambda s: (_ for _ in ()).throw(OSError("outage"))
         fig = ns["build_fig10"]("1M")
-        self.assertEqual([t.name for t in fig.data], ["VIX", "VIX3M", "VIX3M−VIX (R1)"])
-        self.assertEqual(set(fig.layout.meta["missing_series"]), {"SKEW (R2)", "VVIX (R3)"})
+        self.assertEqual([t.name for t in fig.data], ["VIX", "VIX3M", "VIX/VIX3M (R1)"])
+        self.assertEqual(set(fig.layout.meta["missing_series"]), {"SKEW (R2)", "VVIX (R3)", "9D/30D (R1)", "SPX P/C (R1)"})
 
     def history(self, symbol="SKEW", stop="2026-11-03", value=150):
         dates = pd.bdate_range("2022-01-03", stop)
@@ -71,6 +71,13 @@ class TailRiskTests(unittest.TestCase):
         after_close = datetime(2026, 11, 4, 23, tzinfo=timezone.utc)
         out = prepare_snapshot(text, "SKEW", {}, after_close)
         self.assertEqual(out["coverage_end"], "2026-11-04")
+
+    def test_vix9d_uses_official_ohlc_close_column(self):
+        raw = self.history(symbol="CLOSE", value=18).replace("DATE,CLOSE", "DATE,OPEN,HIGH,LOW,CLOSE")
+        raw = "\n".join(line if i == 0 else line.replace(",18", ",15,20,14,18") for i, line in enumerate(raw.splitlines()))
+        out = prepare_snapshot(raw, "VIX9D", {}, datetime(2026, 11, 4, 12, tzinfo=timezone.utc))
+        self.assertEqual(out["symbol"], "VIX9D")
+        self.assertEqual(out["records"][-1]["close"], 18)
 
     def test_loader_checks_identity_and_filters_invalid_observations(self):
         with tempfile.TemporaryDirectory() as d:

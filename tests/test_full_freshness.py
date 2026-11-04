@@ -121,7 +121,7 @@ class FullFreshness(unittest.TestCase):
 
     def test_inventory_covers_every_chart_and_previously_omitted_live_sources(self):
         config = jobs()
-        self.assertEqual({c for _, charts, _, _, _ in config for c in charts}, set(range(1,19)))
+        self.assertEqual({c for _, charts, _, _, _ in config for c in charts}, set(range(1,20)))
         mapped = {row[0]: row[1] for row in config}
         for source in ("DGS10", "japan_10y", "JPY=X"):
             self.assertIn(9, mapped[source])
@@ -263,3 +263,4 @@ class FullFreshness(unittest.TestCase):
                     # Outer calendar rows must not create an observation.
                     actual=[pd.Timestamp(d) for d,v in zip(trace.x,trace.y) if pd.notna(v)]
                     self.assertEqual(max(actual),pd.Timestamp("2026-10-20"))
+

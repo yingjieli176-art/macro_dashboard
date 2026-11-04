@@ -24,7 +24,7 @@ class DateAndSourceAudit(unittest.TestCase):
 
     def test_inventory_uses_all_18_display_numbers_and_new_equity_sources(self):
         inventory = {key: charts for key, charts, *_ in probe.jobs()}
-        self.assertEqual({c for charts in inventory.values() for c in charts}, set(range(1, 19)))
+        self.assertEqual({c for charts in inventory.values() for c in charts}, set(range(1, 20)))
         for key, charts in {"SP500": [4,7], "^N225": [7,8], "SPX": [6], "RSP": [6],
                             "000300": [11], "000852": [11], "932000": [11],
                             "china_2y": [10], "japan_2y": [8], "japan_10y": [8,9], "japan_30y": [8],
@@ -170,3 +170,4 @@ class DateAndSourceAudit(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
