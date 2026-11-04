@@ -1,0 +1,21 @@
+{
+  "product": "SPX + SPXW",
+  "ratio_basis": "put_volume/call_volume",
+  "source": "Cboe Daily Market Statistics",
+  "source_template": "https://cdn.cboe.com/data/us/options/market_statistics/daily/{}_daily_options",
+  "unit": "ratio",
+  "records": [
+    {
+      "observation_date": "2026-11-03",
+      "ratio": 1.13,
+      "call_volume": 2296438,
+      "put_volume": 2597825,
+      "total_volume": 4894263,
+      "source_url": "https://cdn.cboe.com/data/us/options/market_statistics/daily/2026-11-03_daily_options"
+    }
+  ],
+  "record_count": 1,
+  "coverage_start": "2026-11-03",
+  "coverage_end": "2026-11-03",
+  "history_status": "backfill_pending"
+}
