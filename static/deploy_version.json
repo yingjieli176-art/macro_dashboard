@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-04-treasury-30y10y-r90",
+  "release": "2026-11-04-vix-skew-vvix-r91",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -28,6 +28,7 @@
     "us_japan_china_display_order",
     "observed_srf_rate_in_fed_policy_corridor",
     "copper_wti_same_date_copper_oil_ratio_and_official_vvix",
-    "same_date_30y_minus_10y_replaces_10y_minus_3m"
+    "same_date_30y_minus_10y_replaces_10y_minus_3m",
+    "official_skew_vvix_independent_axes_in_vix_term_chart"
   ]
 }

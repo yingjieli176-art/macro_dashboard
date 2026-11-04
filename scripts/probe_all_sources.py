@@ -401,6 +401,8 @@ def jobs():
         add(symbol, charts, "daily", stored, lambda symbol=symbol, filename=filename, field=field: yahoo_with_snapshot(symbol, filename, field) if filename else yahoo(symbol))
     for symbol in ("VIXEQ", "COR3M"):
         add(symbol, [9], "daily", snapshot(f"{symbol.lower()}_daily.json", "observation_date", "close"), lambda symbol=symbol: cboe(symbol))
+    add("SKEW", [10], "daily", snapshot("skew_daily.json", "observation_date", "close"), lambda: cboe("SKEW"))
+    add("VVIX_TERM", [10], "daily", snapshot("vvix_daily.json", "observation_date", "close"), lambda: cboe("VVIX"))
     def vvix():
         from scripts.update_copper_snapshot import _parse_vvix, VVIX_URL
         return latest(_parse_vvix(get(VVIX_URL).text), "date", "vvix"), VVIX_URL
@@ -516,4 +518,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

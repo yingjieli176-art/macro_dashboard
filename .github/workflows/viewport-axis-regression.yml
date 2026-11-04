@@ -10,6 +10,12 @@ on:
       - scripts/update_hkma_daily_snapshot.py
       - scripts/update_usdhkd_snapshot.py
       - scripts/update_censtat_money_supply.py
+      - macro_platform/tail_risk.py
+      - scripts/update_tail_risk_snapshot.py
+      - tests/test_tail_risk.py
+      - data_snapshots/skew_daily.json
+      - data_snapshots/vvix_daily.json
+      - .github/workflows/update-tail-risk-snapshot.yml
       - macro_platform/us_equity_risk.py
       - macro_platform/equity_drawdown.py
       - macro_platform/china_equity.py
@@ -104,6 +110,12 @@ on:
       - scripts/update_hkma_daily_snapshot.py
       - scripts/update_usdhkd_snapshot.py
       - scripts/update_censtat_money_supply.py
+      - macro_platform/tail_risk.py
+      - scripts/update_tail_risk_snapshot.py
+      - tests/test_tail_risk.py
+      - data_snapshots/skew_daily.json
+      - data_snapshots/vvix_daily.json
+      - .github/workflows/update-tail-risk-snapshot.yml
       - macro_platform/us_equity_risk.py
       - macro_platform/equity_drawdown.py
       - macro_platform/china_equity.py

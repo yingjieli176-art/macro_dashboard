@@ -20,6 +20,7 @@ def builders():
              "build_fig1", "build_fig9", "build_fig10", "build_fig11", "build_fig12"}
     ns = {"pd": pd, "go": go, "RANGE_OFFSETS": RANGE_OFFSETS,
           "load_correlation_snapshot": lambda symbol: frame([], symbol, []),
+          "load_tail_risk_snapshot": lambda symbol: frame([], symbol, []),
           "apply_chart_style": lambda fig, *args: fig,
           "chart_height": lambda *args: 420}
     nodes = [n for n in ast.parse(source.read_text()).body
@@ -77,7 +78,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         ns["get_fred_series"] = load
         figure = ns["build_fig10"]("1M")
         self.assertEqual([t.name for t in figure.data], ["VIX"])
-        self.assertEqual(set(figure.layout.meta["missing_series"]), {"VIX3M", "VIX3M−VIX (R1)"})
+        self.assertEqual(set(figure.layout.meta["missing_series"]), {"VIX3M", "VIX3M−VIX (R1)", "SKEW (R2)", "VVIX (R3)"})
 
     def test_equity_correlation_calendar_and_removed_series(self):
         ns = builders()
@@ -252,3 +253,4 @@ class SeriesCalendarIntegrity(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

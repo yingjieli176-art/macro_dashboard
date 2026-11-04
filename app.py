@@ -55,6 +55,11 @@ load_correlation_snapshot = getattr(
     _us_equity_risk, "load_correlation_snapshot",
     lambda symbol: pd.DataFrame(columns=["observation_date", symbol]),
 )
+try:
+    from macro_platform.tail_risk import load_tail_risk_snapshot
+except ImportError:
+    def load_tail_risk_snapshot(symbol):
+        return pd.DataFrame(columns=["observation_date", symbol])
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
 from macro_platform.yen_index import load_yen_market_index
@@ -103,7 +108,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-04-treasury-30y10y-r90"
+CHART_BUILD = "2026-11-04-vix-skew-vvix-r91"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1785,13 +1790,29 @@ def build_fig10(date_range):
     add_line(fig, data, "VIX3M-VIX", "VIX3M−VIX (R1)", 2.3, "dash", "y2", " pts")
     for name, color in (("VIX", "#5070dd"), ("VIX3M", "#785db0"), ("VIX3M−VIX (R1)", "#ff994d")):
         fig.update_traces(line_color=color, selector=dict(name=name))
+    for symbol, name, axis, color in (("SKEW", "SKEW (R2)", "y3", "#b45309"),
+                                       ("VVIX", "VVIX (R3)", "y4", "#dc2626")):
+        try:
+            observed = filter_range(load_tail_risk_snapshot(symbol), date_range)
+        except Exception:
+            observed = pd.DataFrame(columns=["observation_date", symbol])
+        add_line(fig, observed, symbol, name, 2.2, yaxis=axis, unit=" pts")
+        fig.update_traces(line_color=color, selector=dict(name=name))
     fig.update_layout(
         yaxis_title="VIX / VIX3M · pts",
         yaxis2=dict(title="R1 · VIX3M−VIX · pts", overlaying="y", side="right",
-                    anchor="free", position=0.99, showgrid=False, zeroline=True,
+                    anchor="free", position=0.78, showgrid=False, zeroline=True,
                     zerolinecolor="#94a3b8", fixedrange=True),
     )
-    return apply_chart_style(fig, chart_height(310, 420), date_range)
+    fig.update_layout(
+        yaxis3=dict(title="R2 · SKEW · pts", overlaying="y", side="right", anchor="free",
+                    position=0.88, showgrid=False, zeroline=False, fixedrange=True),
+        yaxis4=dict(title="R3 · VVIX · pts", overlaying="y", side="right", anchor="free",
+                    position=0.99, showgrid=False, zeroline=False, fixedrange=True),
+    )
+    fig = apply_chart_style(fig, chart_height(310, 420), date_range)
+    fig.update_layout(xaxis_domain=[0, 0.75], margin_r=180)
+    return fig
 
 
 @observed_cache()
@@ -2589,7 +2610,7 @@ def render_macro_chart_9(prebuilt_fig=None):
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure</div>'
-        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX3M−VIX (R1)</div>',
+        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX3M−VIX (R1) · SKEW (R2) · VVIX (R3)</div>',
         unsafe_allow_html=True,
     )
     st.caption("VIX反映未来30个日历天（约1个月）的年化隐含波动率，正式代码仍是VIX；VIX3M约为3个月。上方1M、3M等按钮只控制历史显示范围，不改变指数期限。")
@@ -2597,10 +2618,12 @@ def render_macro_chart_10(prebuilt_fig=None):
         "Chart 10", lambda: _cached_macro_figure(10, _macro_snapshot_revision(), CHART_BUILD),
     )
     _render_adaptive_macro_figure(base_fig, "vix_term_structure")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>VIX：</b>标普500指数未来30个日历天（约1M）的年化隐含波动率指标，代表近期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M：</b>标普500指数约未来3个月的年化隐含波动率指标，代表较长期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M−VIX (R1)：</b>同日3个月减1个月隐含波动率之差，代表近远期波动风险的相对定价；收窄或转负表示近端波动更贵，单位为波动率点。</div><div class="parameter-context">口径说明：差值只使用同日有效观测；两条波动率在左轴，差值在右轴R1。</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-description"><div class="parameter-note"><b>VIX：</b>标普500指数未来30个日历天（约1M）的年化隐含波动率指标，代表近期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M：</b>标普500指数约未来3个月的年化隐含波动率指标，代表较长期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M−VIX (R1)：</b>同日3个月减1个月隐含波动率之差，代表近远期波动风险的相对定价；收窄或转负表示近端波动更贵，单位为波动率点。</div><div class="parameter-note"><b>SKEW (R2)：</b>Cboe SKEW指数，反映标普500期权对尾部风险的定价；指数点不是暴跌概率，不能直接解释为未来跌幅。</div><div class="parameter-note"><b>VVIX (R3)：</b>Cboe VIX预期波动率指数，即“恐慌指数的恐慌指数”，反映VIX自身的预期波动。</div><div class="parameter-context">口径说明：差值只使用同日有效观测；VIX/VIX3M在左轴，期限差在R1，SKEW和VVIX各用独立坐标R2/R3；保留原始日收盘指数点及观测日。</div></div>', unsafe_allow_html=True)
     add_sources([
         ("FRED · VIX (VIXCLS)", "https://fred.stlouisfed.org/series/VIXCLS"),
         ("FRED · VIX3M (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),
+        ("Cboe · SKEW Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/SKEW_History.csv"),
+        ("Cboe · VVIX Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -3269,5 +3292,3 @@ def render_news_panel():
 
 
 render_news_panel()
-
-
