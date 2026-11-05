@@ -159,7 +159,119 @@ def _start_news_background_updater():
 
 _start_news_background_updater()
 
-pass
+st.markdown("""
+<style>
+.block-container { padding-top: 0.70rem; padding-bottom: 2rem; max-width: 1760px; }
+html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "PingFang TC", "Segoe UI", sans-serif; }
+.dashboard-title { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.1rem; }
+.section-title { font-size: 1.18rem; font-weight: 680; letter-spacing: -0.012em; margin-top: 0.52rem; margin-bottom: 0.04rem; min-height: 26px; display: flex; align-items: center; color:#1f2937; }
+.section-description { color: #7b8493; font-size: 0.80rem; margin-bottom: 0.16rem; min-height: 17px; display: flex; align-items: center; }
+.mini-description { color: #4b5563; font-size: 0.78rem; line-height: 1.6; margin: 4px 0 8px; overflow-wrap: anywhere; }
+.parameter-note { margin: 3px 0; }
+.parameter-note b { color: #374151; font-weight: 600; }
+.parameter-context { color: #6b7280; font-size: 0.74rem; margin-top: 5px; }
+.source-text { color: #6b7280; font-size: 0.72rem; margin: 2px 0 6px; line-height: 1.35; }
+.source-text a { color: #6b7280; text-decoration: none !important; white-space: nowrap; }
+.source-text a:hover { color: #374151; text-decoration: underline !important; }
+.data-health-warning { color:#991b1b; background:rgba(254,242,242,.94); border:1px solid #fecaca; border-radius:6px; padding:3px 6px; font-size:.68rem; line-height:1.25; }
+.source-sep { color: #d1d5db; margin: 0 5px; }
+.chart-divider { margin: 0.18rem 0 0.38rem; border-top: 1px solid #e5e7eb; }
+.compact-title { font-size: 0.98rem; font-weight: 650; margin-bottom: 0.15rem; min-height: 25px; display: flex; align-items: center; }
+.compact-description { color: #6b7280; font-size: 0.73rem; line-height: 1.35; margin-bottom: 0.35rem; min-height: 20px; display: flex; align-items: center; }
+.news-status { color: #6b7280; font-size: 0.75rem; margin-bottom: 0.5rem; }
+.news-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; background: #ffffff; max-height: 650px; overflow-y: auto; overflow-x: hidden; }
+.news-item { display: flex; align-items: flex-start; padding: 8px 3px; border-bottom: 1px solid #eeeeee; line-height: 1.5; font-size: 0.84rem; overflow: visible; }
+.news-item:last-child { border-bottom: none; }
+.news-index { flex: 0 0 32px; width: 32px; color: #9ca3af; font-size: 0.72rem; font-family: "Segoe UI", sans-serif; padding-top: 2px; }
+.news-time { flex: 0 0 72px; width: 72px; color: #6b7280; font-size: 0.72rem; white-space: nowrap; padding-top: 2px; margin-right: 6px; }
+.news-content { flex: 1; min-width: 0; overflow: visible; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.news-content a { color: #374151; text-decoration: none !important; display: block; white-space: normal; overflow: visible; overflow-wrap: anywhere; word-break: break-word; }
+.market-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 0.45rem; }
+.market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; min-height: 96px; box-sizing: border-box; }
+.market-group-title { color: #374151; font-size: 0.88rem; font-weight: 650; margin-bottom: 5px; }
+.market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; min-height: 66px; align-items: start; }
+.market-group-row.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.market-item { min-width: 0; height: 66px; min-height: 66px; max-height: 66px; padding-right: 4px; border-right: 1px solid #f0f0f0; box-sizing: border-box; overflow: hidden; }
+.market-item:last-child { border-right: none; }
+.market-name { color: #6b7280; font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.market-price { color: #111827; font-size: 0.98rem; font-weight: 650; margin-top: 1px; white-space: nowrap; }
+.market-change { font-size: 0.76rem; white-space: nowrap; }
+.market-meta { color: #9ca3af; font-size: 0.66rem; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search-title { color: #374151; font-size: 1.05rem; font-weight: 650; margin: 0.55rem 0 0.3rem; }
+.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; height: 76px; min-height: 76px; max-height: 76px; box-sizing: border-box; overflow: hidden; }
+.search-result-label { color: #374151; font-size: 0.80rem; line-height: 1.3; }
+.search-result-symbol { color: #6b7280; font-size: 0.70rem; }
+.search-price { color: #111827; font-size: 0.94rem; font-weight: 650; margin-top: 1px; width: 118px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search-after { color: #6b7280; font-size: 0.72rem; margin-top: 1px; }
+.search-hint { color: #9ca3af; font-size: 0.68rem; margin-top: 1px; }
+.module-delete { display: flex; justify-content: flex-end; align-items: flex-start; margin-top: -7px; margin-right: -4px; transform: none; position: relative; z-index: 5; }
+.module-delete button { min-width: 24px !important; width: 24px !important; max-width: 24px !important; height: 24px !important; padding: 0 !important; margin: 0 !important; font-size: 14px !important; line-height: 24px !important; border: 0 !important; }
+.search-result .search-after, .search-result .search-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Watchlist workstation */
+.watch-toolbar { display:flex; align-items:center; min-height:34px; color:#6b7280; font-size:.74rem; }
+.watch-market-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 7px; }
+.watch-market-head-main { min-width:0; }
+.watch-market-title { color:#111827; font-size:.90rem; font-weight:700; line-height:1.25; }
+.watch-market-subtitle { color:#9ca3af; font-size:.64rem; letter-spacing:.08em; margin-top:2px; }
+.watch-count { display:inline-flex; min-width:24px; height:22px; padding:0 7px; align-items:center; justify-content:center; border:1px solid #e5e7eb; border-radius:999px; color:#6b7280; background:#f9fafb; font-size:.68rem; font-weight:650; }
+.watch-card-body { min-width:0; padding:2px 1px 1px; }
+.watch-card-top { display:flex; align-items:baseline; gap:7px; min-width:0; padding-right:2px; }
+.watch-card-name { color:#111827; font-size:.86rem; font-weight:680; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.watch-card-symbol { color:#9ca3af; font-size:.66rem; font-family:"Segoe UI",sans-serif; white-space:nowrap; }
+.watch-price-row { display:flex; align-items:baseline; gap:9px; margin-top:4px; min-width:0; }
+.watch-price { color:#111827; font-size:1.08rem; line-height:1.15; font-weight:720; letter-spacing:-.01em; white-space:nowrap; }
+.watch-change { font-size:.78rem; font-weight:650; white-space:nowrap; }
+.watch-up { color:#15803d; }
+.watch-down { color:#b91c1c; }
+.watch-flat { color:#6b7280; }
+.watch-session { color:#6b7280; font-size:.69rem; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.watch-meta { color:#9ca3af; font-size:.64rem; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.watch-search-note { color:#9ca3af; font-size:.67rem; margin:4px 0 5px; }
+.watch-empty { color:#9ca3af; font-size:.72rem; padding:9px 2px 7px; }
+.module-delete { margin-top:-4px; margin-right:-3px; }
+.module-delete button { color:#9ca3af !important; border-radius:999px !important; }
+.module-delete button:hover { color:#b91c1c !important; background:#fef2f2 !important; }
+@media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
+
+html { scroll-behavior: smooth; }
+.dashboard-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 3px 0 10px; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; }
+.dashboard-heading { min-width: 0; }
+.dashboard-eyebrow { color: #9ca3af; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; margin-bottom: 2px; }
+.dashboard-subtitle { color: #6b7280; font-size: 0.82rem; line-height: 1.5; margin-top: 2px; }
+.dashboard-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 620px; padding-top: 4px; }
+.dashboard-links a { color: #374151 !important; text-decoration: none !important; font-size: 0.76rem; line-height: 1; padding: 7px 10px; border: 1px solid #e5e7eb; border-radius: 999px; background: #fff; white-space: nowrap; }
+.dashboard-links a:hover { border-color: #9ca3af; background: #f9fafb; color: #111827 !important; }
+.dashboard-links a.external { font-weight: 650; }
+.section-anchor { height: 0; visibility: hidden; scroll-margin-top: 18px; }
+.section-kicker { color: #9ca3af; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; margin-top: 0.12rem; margin-bottom: 0.04rem; line-height: 1.1; }
+.section-toolbar-note { color: #9ca3af; font-size: 0.72rem; margin-top: -0.15rem; margin-bottom: 0.5rem; }
+div[data-testid="stVerticalBlockBorderWrapper"] { border-color: #e5e7eb !important; border-radius: 12px !important; }
+div[data-testid="stPlotlyChart"] { border: 1px solid #e5eaf0; border-radius: 12px; padding: 0; background: #fff; overflow: hidden; box-shadow: 0 1px 2px rgba(15,23,42,.03); }
+.stButton > button { border-radius: 8px; }
+.source-text a { display: inline-block; padding: 1px 0; }
+.news-box { border-radius: 12px; padding: 8px 12px; }
+@media (max-width: 1100px) {
+  .dashboard-header { display: block; }
+  .dashboard-links { justify-content: flex-start; max-width: none; margin-top: 10px; }
+}
+@media (max-width: 700px) {
+  .block-container { padding-left: 0.75rem; padding-right: 0.75rem; }
+  .dashboard-links a { font-size: 0.72rem; padding: 6px 8px; }
+  .dashboard-title { font-size: 1.55rem; }
+  .section-title { font-size: 1.12rem; }
+}
+
+
+.hk-liquidity-strip { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; margin:5px 0 10px; }
+.hk-liquidity-strip > div { border:1px solid #e5e7eb; border-radius:9px; background:#fff; padding:7px 9px; min-width:0; }
+.hk-liquidity-strip span { display:block; color:#9ca3af; font-size:.66rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hk-liquidity-strip strong { display:block; color:#111827; font-size:.82rem; font-weight:650; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+@media (max-width:1100px) { .hk-liquidity-strip { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+@media (max-width:700px) { .hk-liquidity-strip { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+</style>
+""", unsafe_allow_html=True)
 
 st.markdown(
     f"""
