@@ -116,7 +116,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-05-remove-watchlist-r98"
+CHART_BUILD = "2026-11-05-parameter-guide-srf-contrast-r99"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1491,7 +1491,7 @@ def build_fig1(date_range):
         _mark_missing_series(fig, "SRF 实际用量 (R1)")
     else:
         fig.add_trace(go.Bar(x=usage["observation_date"], y=usage["SRF_USAGE_BN"],
-            name="SRF 实际用量 (R1)", yaxis="y2", marker_color="#a78bfa", opacity=.55,
+            name="SRF 实际用量 (R1)", yaxis="y2", marker=dict(color="#007f73", opacity=1.0, line=dict(color="#004c46", width=1)),
             hovertemplate="SRF实际用量: %{y:.3f} 十亿美元<extra></extra>"))
     fig.update_layout(yaxis_title="Rate (%)", barmode="overlay", yaxis2=dict(
         title="SRF usage · USD bn", overlaying="y", side="right", showgrid=False,
@@ -2188,6 +2188,8 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=Fal
     # whether ECharts or Plotly is currently the available renderer.
     # Their parent fragments prevent an X/Y viewport change from rerunning
     # the entire dashboard and refetching unrelated market data.
+    from macro_platform.parameter_guide import render_parameter_guide
+    render_parameter_guide(base_fig, element_key)
     selected_range = st.segmented_control(
         "时间范围", options=RANGES, default=DEFAULT_CHART_RANGE,
         key=f"{element_key}_time_window", label_visibility="collapsed",
@@ -2289,6 +2291,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     _render_adaptive_macro_figure(base_fig, range_key, standard=True)
     _show_data_quality_notes(base_fig)
     if range_key == "normal_corridor_range":
+        st.caption("深青色实心柱＝SRF实际用量（右轴，十亿美元）；其余线条＝年化利率（左轴，%）。零成交不会人为画成正值。")
         st.caption(usage_caption())
     show_parameter_description(desc_index)
     add_sources(sources)
@@ -2355,8 +2358,8 @@ def render_macro_chart_3(prebuilt_fig=None):
 @st.fragment(key="us_macro_chart_4")
 def render_macro_chart_4(prebuilt_fig=None):
     st.markdown(
-        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[4]}. S&P 500 / Nikkei 225 相对强弱</div>'
-        '<div class="section-description">S&P 500 ÷ Nikkei 225 · 原始指数点位 + 点位比值 · 三个独立Y轴 · 同日已完成收盘</div>',
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[4]}. 标普500 / 日经225（Nikkei 225）相对强弱</div>'
+        '<div class="section-description">标普500（美国）÷ 日经225（日本）· 左轴：比值 · 右轴R1：标普点位 · 右轴R2：日经点位</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2365,14 +2368,15 @@ def render_macro_chart_4(prebuilt_fig=None):
     _render_adaptive_macro_figure(base_fig, "sp500_nikkei_ratio")
     st.markdown(
         '<div class="mini-description"><div class="parameter-note"><b>比值（左轴）：</b>标普500指数点位 ÷ 日经225指数点位。上升表示标普500相对走强，下降表示日经225相对走强。</div>'
-        '<div class="parameter-note"><b>分子（右侧Y轴一）：</b>标普500每日真实收盘指数点位，单位为点，不做归一化。</div>'
-        '<div class="parameter-note"><b>分母（右侧Y轴二）：</b>日经225每日真实收盘指数点位，单位为点，不做归一化。</div>'
-        '<div class="parameter-context">口径：仅使用两地均有有效收盘的共同日期；不对休市日以前值填充。指数收盘值四舍五入为整数；标普500与日经225分别使用独立Y轴显示真实点位，比值使用第三个Y轴显示。此比值不是汇率调整后的总回报。</div></div>',
+        '<div class="parameter-note"><b>分子（右侧Y轴一）：</b>美国标普500（S&amp;P 500）市值加权价格指数；每日收盘点位，单位为点，不做归一化。</div>'
+        '<div class="parameter-note"><b>分母（右侧Y轴二）：</b>日本日经225（Nikkei 225）价格加权指数，包含东京证券交易所Prime市场225只股票；每日收盘点位，单位为点，不是日元金额。</div>'
+        '<div class="parameter-context">口径：仅使用两地均有有效收盘的共同日期；不对休市日以前值填充。指数收盘值四舍五入为整数；标普500与日经225分别使用独立Y轴显示真实点位，比值使用第三个Y轴显示。两地同日收盘发生在不同时刻；比值没有换算汇率，也不含股息再投资，不能直接解释为美元投资回报或领先关系。</div></div>',
         unsafe_allow_html=True,
     )
     add_sources([
         ("Yahoo Finance · S&P 500 (^GSPC)", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
         ("Yahoo Finance · Nikkei 225 (^N225)", "https://finance.yahoo.com/quote/%5EN225/history/"),
+        ("日经指数官方 · 日经225定义", "https://indexes.nikkei.co.jp/en/nkave/index/profile?idx=nk225"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -3245,4 +3249,3 @@ def render_news_panel():
 
 
 render_news_panel()
-

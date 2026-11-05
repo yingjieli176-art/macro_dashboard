@@ -218,9 +218,15 @@ def _bar_style(series, trace):
     if getattr(trace, "type", "") != "bar":
         return
     marker = getattr(trace, "marker", None)
-    series.update(type="bar", barMinWidth=1, barMaxWidth=16, z=1,
+    opacity = getattr(marker, "opacity", None)
+    if opacity is None:
+        opacity = getattr(trace, "opacity", None)
+    border = getattr(marker, "line", None)
+    series.update(type="bar", barMinWidth=2 if str(trace.name).startswith("SRF 实际用量") else 1, barMaxWidth=16, z=1,
                   itemStyle={"color": getattr(marker, "color", None) or "#8a61c4",
-                             "opacity": getattr(marker, "opacity", None) or 0.6},
+                             "opacity": 0.6 if opacity is None else opacity,
+                             "borderColor": getattr(border, "color", None) or "transparent",
+                             "borderWidth": getattr(border, "width", None) or 0},
                   markLine={"silent": True, "symbol": ["none", "none"],
                             "label": {"show": False},
                             "lineStyle": {"color": "#94a3b8", "width": 1, "type": "solid"},

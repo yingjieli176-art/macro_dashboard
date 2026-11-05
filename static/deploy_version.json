@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-05-remove-watchlist-r98",
+  "release": "2026-11-05-parameter-guide-srf-contrast-r99",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -40,6 +40,9 @@
     "official_srf_complete_daily_all_collateral_accepted_amounts",
     "ten_year_tips_dfii10_single_observed_series_in_chart_two",
     "chart_two_chinese_series_names_with_fred_codes_and_bei_identity",
-    "watchlist_section_navigation_and_quote_jobs_removed"
+    "watchlist_section_navigation_and_quote_jobs_removed",
+    "chinese_parameter_glossary_for_all_chart_series",
+    "nikkei_225_chinese_names_ratio_formula_axes_and_session_basis",
+    "srf_usage_opaque_teal_bars_with_visible_border"
   ]
 }

@@ -129,7 +129,7 @@ def build_sp500_nikkei_ratio_figure(date_range="5Y") -> go.Figure:
         fig.add_trace(go.Scatter(
             x=data["observation_date"],
             y=data["ratio"],
-            name="比值：S&P 500 ÷ Nikkei 225",
+            name="比值：标普500 ÷ 日经225",
             mode="lines",
             connectgaps=False,
             yaxis="y",
@@ -141,7 +141,7 @@ def build_sp500_nikkei_ratio_figure(date_range="5Y") -> go.Figure:
         fig.add_trace(go.Scatter(
             x=data["observation_date"],
             y=data["SP500"],
-            name="分子：S&P 500（指数点位）",
+            name="分子：标普500（S&P 500）",
             mode="lines",
             connectgaps=False,
             yaxis="y2",
@@ -153,7 +153,7 @@ def build_sp500_nikkei_ratio_figure(date_range="5Y") -> go.Figure:
         fig.add_trace(go.Scatter(
             x=data["observation_date"],
             y=data["NIKKEI"],
-            name="分母：日经225（指数点位）",
+            name="分母：日经225（Nikkei 225）",
             mode="lines",
             connectgaps=False,
             yaxis="y3",
@@ -182,7 +182,7 @@ def build_sp500_nikkei_ratio_figure(date_range="5Y") -> go.Figure:
             "tickformat": ".3f",
         },
         yaxis2={
-            "title": "S&P 500（点）",
+            "title": "标普500（点）",
             "overlaying": "y",
             "side": "right",
             "anchor": "free",
@@ -205,3 +205,4 @@ def build_sp500_nikkei_ratio_figure(date_range="5Y") -> go.Figure:
         plot_bgcolor="rgba(0,0,0,0)",
     )
     return fig
+
