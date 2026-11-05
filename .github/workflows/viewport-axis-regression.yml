@@ -301,6 +301,7 @@ jobs:
           path: |
             browser_acceptance.json
             browser_acceptance.png
+            browser_ai_cds.png
             browser_mobile.png
             browser_equity_drawdown.png
             browser_china_drawdown.png

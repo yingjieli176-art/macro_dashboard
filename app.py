@@ -3021,9 +3021,16 @@ def render_nvidia_cds():
     st.dataframe(cds_summary(payload), hide_index=True, width="stretch")
     st.caption(f"来源：Open-Sourced Rates Observatory, irates.today。数据日历截至 {payload.get('source_asof', '未取得')}；各公司的实际最新观测日见表。日度成交汇总，不是实时买卖报价；无成交的日期留空，圆点表示实际观测，可点击图例比较公司。")
     st.caption("5Y为剩余期限4.4–5.6年的成交分组，单位bp（100 bp = 1%/年）。CoreWeave*为源站基于预付款、固定违约强度及40%回收率推算的利差，使用虚线标注；CDX IG为信用指数。英伟达1Y继续保留独立数据入口，缺少报价时不推算。")
+    st.markdown('<div class="mini-description">'
+        '<div class="parameter-note"><b>CDS与资本开支：</b>CDS走阔可作为融资压力的早期观察信号，需与资本开支指引、经营现金流和债务到期安排交叉核对；不能仅凭利差上升判断公司已削减开支。</div>'
+        '<div class="parameter-note"><b>美债期限溢价与美联储：</b>长期美债收益率可分解为预期短期利率的平均值与期限溢价。期限溢价变化还可能反映通胀不确定性、债券供给和久期风险；判断政策动作，应同时看联邦基金期货或OIS中的利率路径预期。</div>'
+        '<div class="parameter-note"><b>日经、韩国股市与美硬件：</b>可观察亚洲时段的硬件情绪，但大盘指数包含其他行业，也可能在消化前一日美股行情。应结合半导体指数、相关个股及美国盘前或期货，统一时区与币种后检验领先关系。</div>'
+        '<div class="parameter-context">以上为联动观察假设，尚未完成针对这些曲线的领先滞后检验，不代表已确认的预测规律或固定领先天数。</div></div>', unsafe_allow_html=True)
     add_sources([("Open-Sourced Rates Observatory · AI capex", "https://irates.today/capex.html"),
                  ("CDS历史聚合数据", "https://irates.today/chart_data.json"),
-                 ("数据方法与使用说明", "https://irates.today/about.html")])
+                 ("数据方法与使用说明", "https://irates.today/about.html"),
+                 ("纽约联储 · 美债期限溢价", "https://www.newyorkfed.org/research/data_indicators/term-premia-tabs"),
+                 ("OFR · CDS价格发现研究", "https://www.financialresearch.gov/working-papers/2024/07/17/do-credit-default-swaps-still-lead/")])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 

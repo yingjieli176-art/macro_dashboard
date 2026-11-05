@@ -670,6 +670,24 @@ def main():
                     # React Aria's selected toggle changes its accessible
                     # name; the visible range label stays stable.
                     assert groups.nth(index).get_by_text(label, exact=True).count() == 1, (index, label, report["controls"][index])
+            page.get_by_text("19. AI Credit · 公司CDS信用风险", exact=True).wait_for()
+            cds_chart = page.locator('.st-key-nvidia_cds_adaptive_default_1Y').get_by_test_id(
+                re.compile(r"^(macro|st)EChartsChart$"))
+            cds_chart.wait_for(timeout=30000)
+            cds_state = cds_chart.evaluate("""element => {
+                const chart = (""" + INSTANCE_JS + """)(element);
+                return chart.getOption().series.map(s => ({name:s.name, axis:s.yAxisIndex,
+                    markers:s.showSymbol, connect:s.connectNulls,
+                    valid:s.data.filter(p=>Number.isFinite(p[1])).length,
+                    gaps:s.data.filter(p=>p[1]===null).length}));
+            }""")
+            for name in ('Oracle 5Y', 'Intel 5Y', 'AMD 5Y', 'NVIDIA 5Y', 'CoreWeave 5Y*', 'CDX IG 5Y · 指数'):
+                found = next(s for s in cds_state if s['name'] == name)
+                assert found['valid'] > 10 and found['markers'] and not found['connect'], found
+                assert found['axis'] == 0, found
+            report['ai_cds'] = cds_state
+            report['ai_cds_zoom'] = exercise_client_zoom(page, cds_chart, minimum_axes=1)
+            page.screenshot(path='browser_ai_cds.png')
             # Use a real HK chart to exercise every server range with raw prices.
             for label in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
                 groups.nth(MACRO_DISPLAY_NUMBER[5]-1).get_by_text(label, exact=True).click()
@@ -728,23 +746,6 @@ def main():
             assert any('VVIX' in s['name'] for s in sentiment), sentiment
             assert not any('VIX3M−VIX' in s['name'] for s in sentiment), sentiment
             report['spx_sentiment'] = sentiment
-            page.get_by_text("19. AI Credit · 公司CDS信用风险", exact=True).wait_for()
-            cds_chart = page.locator('.st-key-nvidia_cds_adaptive_default_1Y').get_by_test_id(
-                re.compile(r"^(macro|st)EChartsChart$"))
-            cds_chart.wait_for(timeout=30000)
-            cds_state = cds_chart.evaluate("""element => {
-                const chart = (""" + INSTANCE_JS + """)(element);
-                return chart.getOption().series.map(s => ({name:s.name, axis:s.yAxisIndex,
-                    markers:s.showSymbol, connect:s.connectNulls,
-                    valid:s.data.filter(p=>Number.isFinite(p[1])).length,
-                    gaps:s.data.filter(p=>p[1]===null).length}));
-            }""")
-            for name in ('Oracle 5Y', 'Intel 5Y', 'AMD 5Y', 'NVIDIA 5Y', 'CoreWeave 5Y*', 'CDX IG 5Y · 指数'):
-                found = next(s for s in cds_state if s['name'] == name)
-                assert found['valid'] > 10 and found['markers'] and not found['connect'], found
-                assert found['axis'] == 0, found
-            report['ai_cds'] = cds_state
-            report['ai_cds_zoom'] = exercise_client_zoom(page, cds_chart, minimum_axes=1)
             report["mobile_layout"] = check_mobile_layout(page)
             # The mobile-layout sweep resizes every chart and can trigger a
             # Streamlit fragment rerun. Wait for the app to settle, then resolve
