@@ -116,7 +116,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-05-srf-usage-ten-year-tips-r96"
+CHART_BUILD = "2026-11-05-remove-watchlist-r98"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -284,7 +284,6 @@ st.markdown(
       </div>
       <div class="dashboard-links">
         <a href="#market-overview">市场概览</a>
-        <a href="#watchlist">自选观察</a>
         <a href="#macro-charts">宏观图表</a>
         <a href="#news">财经快讯</a>
         <a class="external" href="{REPO_URL}" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
@@ -333,7 +332,6 @@ def _save_watchlists():
     # v3 is compressed + URL-safe and remains backward-compatible on load.
     st.query_params[WATCHLIST_PARAM] = encode_watchlists(payload)
 
-_load_watchlists()
 
 def _empty_quote():
     return {"price": None, "change_pct": None, "market_state": "", "currency": "", "post_price": None, "post_change_pct": None, "pre_price": None, "pre_change_pct": None, "overnight_price": None, "overnight_change_pct": None, "overnight_market_time": None, "regular_market_time": None, "post_market_time": None, "pre_market_time": None, "quote_source": "", "delayed_by": None, "data_source": ""}
@@ -1324,114 +1322,6 @@ def _confirm_selected(key):
 
 def _cancel_search(key):
     st.session_state[f"{key}_open"] = False; st.session_state.pop(f"{key}_results", None)
-
-st.markdown('<div id="watchlist" class="section-anchor"></div><div class="section-kicker">WATCHLIST</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">自选观察</div>', unsafe_allow_html=True)
-
-@st.fragment(run_every=60, key="watchlists")
-def render_watchlists(defer_initial=False):
-    pending = st.session_state.get("_watchlist_refresh_pending", False)
-    info_col, refresh_col = st.columns([8.6, 1.4], vertical_alignment="center")
-    with info_col:
-        st.markdown('<div class="watch-toolbar">自选股票与指数 · 可添加或删除 · 每 60 秒检查报价</div>', unsafe_allow_html=True)
-    with refresh_col:
-        refresh_slot = st.empty()
-        if pending:
-            refresh_slot.button("刷新中…", key="refresh_watchlist_quotes_busy", disabled=True)
-        else:
-            refresh_slot.button("↻ 刷新", key="refresh_watchlist_quotes", on_click=_request_watchlist_refresh, help="只刷新下方自选模块报价，不刷新市场概览")
-
-    status_slot = st.empty()
-    symbols = _watchlist_symbols()
-    snapshot = st.session_state.get("_watchlist_quotes_snapshot", {})
-    now = time.time()
-    last_poll = st.session_state.setdefault("_watchlist_last_poll", now)
-    if not pending and now - last_poll >= 60:
-        # Refresh only this fragment's symbols; preserve user controls and
-        # manual refresh results, even when a quote provider is unavailable.
-        _apply_watchlist_quote_rows(symbols, _fetch_quote_rows(symbols), symbols)
-        snapshot = st.session_state.get("_watchlist_quotes_snapshot", {})
-    if pending or ((not defer_initial or st.session_state.pop("_watchlist_added_pending", False)) and any(symbol not in snapshot for symbol in symbols)):
-        try:
-            with st.spinner("正在获取自选行情…"):
-                _load_watchlist_quotes(symbols, manual=pending, progress=status_slot)
-        finally:
-            if pending:
-                st.session_state["_watchlist_refresh_pending"] = False
-                refresh_slot.empty()
-                refresh_slot.button("↻ 刷新", key="refresh_watchlist_quotes", on_click=_request_watchlist_refresh, help="只刷新下方自选模块报价，不刷新市场概览")
-    status = _watchlist_refresh_status()
-    if status:
-        status_slot.caption(status)
-    else:
-        status_slot.empty()
-
-    search_cols = st.columns(3, gap="small", vertical_alignment="top")
-    search_config = [
-        (search_cols[0], "US", "🇺🇸 美股", "US EQUITY / INDEX", "NVDA / NBIS / Nasdaq 100", "market_search_us"),
-        (search_cols[1], "HK", "🇭🇰 港股", "HK EQUITY", "0700 / 腾讯 / 东岳", "market_search_hk"),
-        (search_cols[2], "CN", "🇨🇳 A股", "A-SHARE", "600160 / 巨化 / 上海电力", "market_search_cn"),
-    ]
-    for col, market, title, subtitle, placeholder, key in search_config:
-        with col:
-            confirmed_list = st.session_state.get(f"{key}_confirmed", [])
-            confirmed_list = [confirmed_list] if isinstance(confirmed_list, dict) else (confirmed_list if isinstance(confirmed_list, list) else [])
-            st.markdown(
-                f'<div class="watch-market-head"><div class="watch-market-head-main"><div class="watch-market-title">{title}</div><div class="watch-market-subtitle">{subtitle}</div></div><span class="watch-count">{len(confirmed_list)}</span></div>',
-                unsafe_allow_html=True,
-            )
-            if confirmed_list:
-                for idx, confirmed in enumerate(confirmed_list):
-                    if not isinstance(confirmed, dict):
-                        continue
-                    with st.container(border=True):
-                        quote_col, delete_col = st.columns([1, 0.075], gap="small", vertical_alignment="top")
-                        with quote_col:
-                            st.markdown(_render_quote_block({**confirmed, "market": market}), unsafe_allow_html=True)
-                        with delete_col:
-                            st.markdown('<div class="module-delete">', unsafe_allow_html=True)
-                            st.button(
-                                "×",
-                                key=f"{key}_delete_{idx}",
-                                on_click=_delete_confirmed,
-                                args=(key, confirmed.get("symbol")),
-                                help=f"删除 {confirmed.get('name') or confirmed.get('symbol')}",
-                                type="tertiary",
-                                use_container_width=True,
-                            )
-                            st.markdown('</div>', unsafe_allow_html=True)
-            else:
-                st.markdown('<div class="watch-empty">暂无标的，可从下方添加。</div>', unsafe_allow_html=True)
-
-            is_open = st.session_state.get(f"{key}_open", False)
-            if not is_open:
-                st.button("＋ 添加标的", key=f"{key}_open_button", use_container_width=True, on_click=_open_search, args=(key,), help="搜索并添加股票或指数")
-            else:
-                st.markdown('<div class="watch-search-note">输入名称或代码，搜索后确认添加。</div>', unsafe_allow_html=True)
-                input_col, search_col, cancel_col = st.columns([5.0, 1.25, 1.25], gap="small")
-                with input_col:
-                    st.text_input("搜索", placeholder=placeholder, key=key, label_visibility="collapsed", on_change=_run_search, args=(key, market))
-                with search_col:
-                    st.button("搜索", key=f"{key}_search_button", use_container_width=True, on_click=_run_search, args=(key, market))
-                with cancel_col:
-                    st.button("取消", key=f"{key}_cancel_button", use_container_width=True, on_click=_cancel_search, args=(key,))
-                results = st.session_state.get(f"{key}_results", [])
-                if results:
-                    options = [f'{item.get("name", "")} · {item.get("symbol", "")} · {item.get("exchange", "")}' for item in results]
-                    st.selectbox(
-                        "搜索结果",
-                        range(len(options)),
-                        format_func=lambda i: options[i],
-                        key=f"{key}_result_select",
-                        label_visibility="collapsed",
-                    )
-                    st.button("确认添加", key=f"{key}_confirm_selected", use_container_width=True, on_click=_confirm_selected, args=(key,), type="primary")
-                elif st.session_state.get(f"{key}_search_unavailable"):
-                    st.caption("搜索服务暂时不可用，请稍后重试，或直接输入完整代码。")
-                elif st.session_state.get(key, "").strip() and f"{key}_results" in st.session_state:
-                    st.caption("没有找到匹配标的，请检查名称或代码。")
-
-watchlists_slot = st.container()
 
 def add_sources(sources):
     links = [f'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">{html.escape(text)}</a>' for text, url in sources]
@@ -3097,15 +2987,10 @@ def _render_completed_macro_chart(number, figure):
         renderers[number](figure)
 
 
-_initial_symbols = _watchlist_symbols()
-_initial_watch_missing = [symbol for symbol in _initial_symbols
-                          if symbol not in st.session_state.get("_watchlist_quotes_snapshot", {})]
 _auxiliary = {}
 if not st.session_state.get("_market_quotes_snapshot") or time.time()-st.session_state.get("_market_quotes_snapshot_time", 0) >= 60:
     _market_key = (_quote_refresh_key(), st.session_state.get("_market_refresh_key", 0))
     _auxiliary["market"] = lambda: _fetch_quote_rows(MARKET_SYMBOLS.values(), _market_key)
-if _initial_watch_missing:
-    _auxiliary["watchlist"] = lambda: _fetch_quote_rows(_initial_watch_missing)
 _rendered_quote_sections = set()
 
 
@@ -3121,21 +3006,16 @@ def _publish_quote_section(key, rows=None):
             st.session_state["_market_quotes_snapshot_time"] = time.time()
         with market_overview_slot:
             render_market_overview(defer_initial=True)
-    else:
-        if rows is not None:
-            _apply_watchlist_quote_rows(_initial_symbols, rows, _initial_watch_missing)
-        with watchlists_slot:
-            render_watchlists(defer_initial=True)
 
 
-for _section in ("market", "watchlist"):
+for _section in ("market",):
     if _section not in _auxiliary:
         _publish_quote_section(_section)
 with st.spinner("正在加载图表…"):
     macro_figures = _build_macro_figures_parallel(
         on_complete=_render_completed_macro_chart, auxiliary_jobs=_auxiliary,
         on_aux_complete=_publish_quote_section)
-for _section in ("market", "watchlist"):
+for _section in ("market",):
     _publish_quote_section(_section)
 
 
@@ -3147,7 +3027,9 @@ st.session_state["_source_watch_until"] = time.monotonic() + 120
 
 def _publish_late_dashboard_result(key, value):
     """Commit delayed observations on the UI thread, retaining newer quotes."""
-    if key not in ("market", "watchlist"):
+    if key == "watchlist":
+        return False
+    if key != "market":
         figures = value if isinstance(value, (list, tuple)) else (value,)
         return any(_figure_has_real_observations(figure) for figure in figures)
     if not isinstance(value, dict) or not any(
@@ -3163,13 +3045,6 @@ def _publish_late_dashboard_result(key, value):
             snapshot[name] = _remember_quote(symbol, _newest_quote([old, late]))
         st.session_state["_market_quotes_snapshot"] = snapshot
         st.session_state["_market_quotes_snapshot_time"] = time.time()
-    else:
-        symbols = _watchlist_symbols()
-        previous = st.session_state.get("_watchlist_quotes_snapshot", {})
-        requested = [symbol for symbol in symbols if symbol in value]
-        rows = {symbol: _newest_quote([previous.get(symbol, _empty_quote()), value[symbol]])
-                for symbol in requested}
-        _apply_watchlist_quote_rows(symbols, rows, requested)
     return True
 
 
@@ -3214,8 +3089,6 @@ def _render_all_source_freshness(figures):
         rows.append({"模块": module, "代码": symbol, "最新报价时间": when})
     for label, symbol in MARKET_SYMBOLS.items():
         add("市场概览", symbol, st.session_state.get("_market_quotes_snapshot", {}).get(label, {}))
-    for symbol, row in st.session_state.get("_watchlist_quotes_snapshot", {}).items():
-        add("自选", symbol, row)
     display_figures = {MACRO_DISPLAY_NUMBER[number]: figure
                        for number, figure in figures.items()}
     display_figures[MACRO_DISPLAY_NUMBER["us_drawdown"]] = _build_equity_drawdown()

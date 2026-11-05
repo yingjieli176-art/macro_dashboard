@@ -865,13 +865,14 @@ def main():
             assert expected_a.count() == 1 and expected_b.count() == 1
             for current, expected in ((page, expected_a), (page_b, expected_b)):
                 current.locator('.st-key-refresh_market_overview').get_by_role('button').click()
-                current.locator('.st-key-refresh_watchlist_quotes').get_by_role('button').click()
+                assert current.locator('.st-key-refresh_watchlist_quotes').count() == 0
+                assert current.get_by_text('自选观察', exact=True).count() == 0
                 expected.wait_for(timeout=30000)
                 assert current.get_by_test_id('stException').count() == 0
                 assert current.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
             assert expected_a.count() == 1 and expected_b.count() == 1
             report['checks'].append({'isolated_browser_sessions': 2,
-                                     'manual_market_refresh': True, 'manual_watchlist_refresh': True,
+                                     'manual_market_refresh': True, 'watchlist_removed': True,
                                      'range_preserved': True})
             context_b.close()
             assert not errors, errors

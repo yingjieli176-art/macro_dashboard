@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-05-chart-two-chinese-labels-r97",
+  "release": "2026-11-05-remove-watchlist-r98",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -39,6 +39,7 @@
     "copper_spot_tcrc_weekly_signed_independent_units_actual_dates",
     "official_srf_complete_daily_all_collateral_accepted_amounts",
     "ten_year_tips_dfii10_single_observed_series_in_chart_two",
-    "chart_two_chinese_series_names_with_fred_codes_and_bei_identity"
+    "chart_two_chinese_series_names_with_fred_codes_and_bei_identity",
+    "watchlist_section_navigation_and_quote_jobs_removed"
   ]
 }
