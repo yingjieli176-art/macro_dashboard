@@ -80,7 +80,17 @@ class DashboardBootSmoke(unittest.TestCase):
         spec_text = " ".join(specs)
         corridor = next(json.loads(spec) for spec in specs if '"SRF"' in spec)
         self.assertEqual({series["name"] for series in corridor["series"]},
-                         {"IORB", "ON RRP", "EFFR", "SOFR", "SRF"})
+                         {"IORB", "ON RRP", "EFFR", "SOFR", "SRF", "SRF 实际用量 (R1)"})
+        usage = next(series for series in corridor["series"] if series["name"] == "SRF 实际用量 (R1)")
+        self.assertEqual(usage["type"], "bar")
+        self.assertEqual(usage["yAxisIndex"], 1)
+        self.assertIn("USD bn", corridor["yAxis"][1]["name"])
+        self.assertFalse(corridor["yAxis"][1]["scale"])
+        self.assertTrue(any(point[1] == 0 for point in usage["data"]))
+        ten_year = next(json.loads(spec) for spec in specs
+                        if any(s['name'] == '10Y Real · TIPS (R1)' for s in json.loads(spec)['series']))
+        self.assertEqual([s["name"] for s in ten_year["series"]],
+                         ["10Y Nominal", "10Y Real · TIPS (R1)", "10Y Breakeven (R1)"])
         srf = next(series for series in corridor["series"] if series["name"] == "SRF")
         self.assertEqual(srf["lineStyle"]["type"], "dashed")
         self.assertTrue(any(point[1] is not None for point in srf["data"]))
@@ -122,5 +132,6 @@ class DashboardBootSmoke(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
 
 

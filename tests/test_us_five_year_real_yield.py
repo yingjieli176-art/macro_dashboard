@@ -1,4 +1,4 @@
-"""Regression: show genuine US 5Y TIPS yield without inventing observations."""
+"""Regression: show a single observed US 10Y TIPS yield without inventing observations."""
 import ast
 from pathlib import Path
 from types import SimpleNamespace
@@ -34,13 +34,13 @@ def sample(column, values, dates):
     })
 
 
-class FiveYearTIPSChartTests(unittest.TestCase):
+class TenYearTIPSChartTests(unittest.TestCase):
     def setUp(self):
         self.ns = load_figure_builder()
         self.dates = ["2024-10-07", "2026-09-30", "2026-10-01", "2026-10-06"]
         self.data = {
             "DGS10": sample("DGS10", [4.0, 4.1, 4.2, 4.3], self.dates),
-            "DFII10": sample("DFII10", [1.5, 1.6, 1.7, 1.8], self.dates),
+            "DFII10": sample("DFII10", [1.5, 1.6, None, 1.8], self.dates),
             "DFII5": sample("DFII5", [1.9, 2.73, None, 2.66], self.dates),
             "T10YIE": sample("T10YIE", [2.5, 2.5, 2.5, 2.5], self.dates),
         }
@@ -51,46 +51,47 @@ class FiveYearTIPSChartTests(unittest.TestCase):
             "get_fred_series": Mock(return_value=self.data["T10YIE"]),
         })
 
-    def test_real_five_year_tips_is_a_separate_dashed_right_axis(self):
-        fig = self.ns["build_fig2"]("5Y")
-        self.assertEqual(len(fig.data), 4)
-        five = next(x for x in fig.data if x.name == "5Y Real · TIPS (R1)")
-        self.assertEqual(five.yaxis, "y2")
-        self.assertEqual(five.line.dash, "dash")
-        self.assertEqual(list(five.y[:2]), [1.9, 2.73])
-        self.assertTrue(pd.isna(five.y[2]))
-        self.assertEqual(float(five.y[3]), 2.66)
-        self.assertIn("Real yield", fig.layout.yaxis2.title.text)
-        self.ns["get_dfii5"].assert_called_once_with()
-        self.ns["get_fred_series"].assert_called_once_with("T10YIE")
-
-    def test_both_short_and_long_windows_keep_five_year_real_yield(self):
-        fig = self.ns["build_fig2"]("5Y")
-        for period in ("5Y", "1Y", "3M", "1M"):
-            with self.subTest(period=period):
-                option = build_adaptive_echarts_option(fig, period)
-                five = next(x for x in option["series"] if x["name"] == "5Y Real · TIPS (R1)")
-                self.assertEqual(five["yAxisIndex"], 1)
-                self.assertTrue(option["yAxis"][1]["scale"])
-                self.assertTrue(all(zoom["filterMode"] == "filter" for zoom in option["dataZoom"]))
-                self.assertEqual(len(five["data"]), 4)
-
-    def test_missing_fred_dfii5_does_not_fabricate_data_or_break_other_lines(self):
-        self.ns["get_dfii5"].return_value = sample("DFII5", [], [])
+    def test_ten_year_tips_is_observed_once_on_the_right_axis(self):
         fig = self.ns["build_fig2"]("5Y")
         self.assertEqual(len(fig.data), 3)
-        self.assertIn("5Y Real · TIPS (R1)", fig.layout.meta["missing_series"])
-        self.assertIn("10Y Real (R1)", [x.name for x in fig.data])
-        self.assertIn("10Y Nominal", [x.name for x in fig.data])
-        self.assertIn("10Y Breakeven (R1)", [x.name for x in fig.data])
+        tips = next(x for x in fig.data if x.name == "10Y Real · TIPS (R1)")
+        self.assertEqual(tips.yaxis, "y2")
+        self.assertEqual(list(tips.y[:2]), [1.5, 1.6])
+        self.assertTrue(pd.isna(tips.y[2]))
+        self.assertEqual(float(tips.y[3]), 1.8)
+        self.ns["get_dfii5"].assert_not_called()
+        self.ns["get_dfii10"].assert_called_once_with()
+        self.ns["get_fred_series"].assert_called_once_with("T10YIE")
 
-    def test_chart_sources_and_label_point_to_dfii5(self):
-        app = (Path(__file__).resolve().parents[1] / "app.py").read_text(encoding="utf-8")
-        data = (Path(__file__).resolve().parents[1] / "data.py").read_text(encoding="utf-8")
-        self.assertIn("https://fred.stlouisfed.org/series/DFII5", app)
-        self.assertIn('return _fred_series("DFII5")', data)
-        self.assertIn("5Y Real TIPS (R1)", app)
+    def test_all_windows_keep_single_ten_year_observation_calendar(self):
+        fig = self.ns["build_fig2"]("5Y")
+        for period in ("5Y", "1Y", "6M", "3M", "1M"):
+            option = build_adaptive_echarts_option(fig, period)
+            tips = next(x for x in option["series"] if x["name"] == "10Y Real · TIPS (R1)")
+            self.assertEqual(tips["yAxisIndex"], 1)
+            self.assertEqual(len(tips["data"]), 4)
+            self.assertIsNone(tips["data"][2][1])
+            self.assertFalse(any("5Y" in x["name"] for x in option["series"]))
+
+    def test_missing_dfii10_does_not_manufacture_real_yields(self):
+        self.ns["get_dfii10"].return_value = sample("DFII10", [], [])
+        fig = self.ns["build_fig2"]("5Y")
+        self.assertEqual(len(fig.data), 2)
+        self.assertIn("10Y Real · TIPS (R1)", fig.layout.meta["missing_series"])
+        self.assertEqual([x.name for x in fig.data], ["10Y Nominal", "10Y Breakeven (R1)"])
+        self.ns["get_dfii5"].assert_not_called()
+
+    def test_chart_two_title_description_and_sources_use_ten_year_tips(self):
+        source = (Path(__file__).resolve().parents[1] / "app.py").read_text()
+        tree = ast.parse(source)
+        render = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "render_macro_chart_2")
+        text = ast.get_source_segment(source, render)
+        self.assertIn("https://fred.stlouisfed.org/series/DFII10", text)
+        self.assertNotIn("DFII5", text)
+        self.assertNotIn("5Y", text)
+        self.assertIn("US Treasury Yield Structure · 10Y", text)
 
 
 if __name__ == "__main__":
     unittest.main()
+

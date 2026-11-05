@@ -386,6 +386,15 @@ def us_equity(key):
     return latest(frame, "observation_date", "close"), frame.attrs.get("source_url", SERIES[key]["source"])
 
 
+
+@shared_fetch
+def srf_usage_source():
+    from scripts.update_srf_usage import collect
+    from macro_platform.srf_usage import parse_operations, SOURCE_URL
+    data = parse_operations(collect())
+    return data["records"][-1]["observation_date"], SOURCE_URL
+
+
 def jobs():
     output = []
     def add(key, charts, cadence, stored, fetch):
@@ -485,6 +494,7 @@ def jobs():
         stored = max((r["observation_date"] for r in points if r["spread_bps"] is not None), default=None)
         identifier = "NVIDIA_CDS_5Y" if key == "sn_nvidia" else key.upper() + "_CDS_5Y"
         output.append((identifier, [19], "daily", stored, lambda key=key: public_cds(key)))
+    output.append(("SRF_USAGE", [1], "daily", snapshot("srf_usage_daily.json", "observation_date", "accepted_usd"), srf_usage_source))
     return output
 
 
@@ -561,3 +571,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

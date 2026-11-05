@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-05-copper-tcrc-r95",
+  "release": "2026-11-05-srf-usage-ten-year-tips-r96",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -36,6 +36,8 @@
     "copper_chart_without_vvix",
     "same_date_vvix_divided_by_vix_ratio_in_term_chart",
     "public_ai_company_5y_cds_curves_with_actual_dates_and_implied_labels",
-    "copper_spot_tcrc_weekly_signed_independent_units_actual_dates"
+    "copper_spot_tcrc_weekly_signed_independent_units_actual_dates",
+    "official_srf_complete_daily_all_collateral_accepted_amounts",
+    "ten_year_tips_dfii10_single_observed_series_in_chart_two"
   ]
 }
