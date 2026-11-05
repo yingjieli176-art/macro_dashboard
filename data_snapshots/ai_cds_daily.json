@@ -7,7 +7,6 @@
   "source_url": "https://irates.today/chart_data.json",
   "methodology_url": "https://irates.today/capex.html#method",
   "methodology": "Daily SEC SBS traded-spread medians; five-year bucket 4.4–5.6 years. Five selected corporate reference entities only. No bid/ask or real-time closing quotes.",
-  "retrieved_at": "2026-11-05T07:40:38.850445+00:00",
   "series": {
     "sn_nvidia": {
       "label": "NVIDIA 5Y",
@@ -2090,7 +2089,7 @@
         },
         {
           "observation_date": "2026-06-25",
-          "spread_bps": 44
+          "spread_bps": 44.0
         },
         {
           "observation_date": "2026-06-26",
@@ -2102,7 +2101,7 @@
         },
         {
           "observation_date": "2026-06-29",
-          "spread_bps": 48
+          "spread_bps": 48.0
         },
         {
           "observation_date": "2026-06-30",
@@ -2154,7 +2153,7 @@
         },
         {
           "observation_date": "2026-07-13",
-          "spread_bps": 57
+          "spread_bps": 57.0
         },
         {
           "observation_date": "2026-07-14",
@@ -2162,7 +2161,7 @@
         },
         {
           "observation_date": "2026-07-15",
-          "spread_bps": 58
+          "spread_bps": 58.0
         },
         {
           "observation_date": "2026-07-16",
@@ -2190,7 +2189,7 @@
         },
         {
           "observation_date": "2026-07-23",
-          "spread_bps": 66
+          "spread_bps": 66.0
         },
         {
           "observation_date": "2026-07-24",
@@ -2206,11 +2205,11 @@
         },
         {
           "observation_date": "2026-07-27",
-          "spread_bps": 80
+          "spread_bps": 80.0
         },
         {
           "observation_date": "2026-07-28",
-          "spread_bps": 79
+          "spread_bps": 79.0
         },
         {
           "observation_date": "2026-07-29",
@@ -2242,7 +2241,7 @@
         },
         {
           "observation_date": "2026-08-06",
-          "spread_bps": 74
+          "spread_bps": 74.0
         },
         {
           "observation_date": "2026-08-07",
@@ -2254,11 +2253,11 @@
         },
         {
           "observation_date": "2026-08-10",
-          "spread_bps": 80
+          "spread_bps": 80.0
         },
         {
           "observation_date": "2026-08-11",
-          "spread_bps": 72
+          "spread_bps": 72.0
         },
         {
           "observation_date": "2026-08-12",
@@ -2266,7 +2265,7 @@
         },
         {
           "observation_date": "2026-08-13",
-          "spread_bps": 73
+          "spread_bps": 73.0
         },
         {
           "observation_date": "2026-08-14",
@@ -2282,15 +2281,15 @@
         },
         {
           "observation_date": "2026-08-18",
-          "spread_bps": 81
+          "spread_bps": 81.0
         },
         {
           "observation_date": "2026-08-19",
-          "spread_bps": 82
+          "spread_bps": 82.0
         },
         {
           "observation_date": "2026-08-20",
-          "spread_bps": 86
+          "spread_bps": 86.0
         },
         {
           "observation_date": "2026-08-21",
@@ -2334,7 +2333,7 @@
         },
         {
           "observation_date": "2026-09-01",
-          "spread_bps": 83
+          "spread_bps": 83.0
         },
         {
           "observation_date": "2026-09-02",
@@ -2342,7 +2341,7 @@
         },
         {
           "observation_date": "2026-09-03",
-          "spread_bps": 86
+          "spread_bps": 86.0
         },
         {
           "observation_date": "2026-09-04",
@@ -2394,7 +2393,7 @@
         },
         {
           "observation_date": "2026-09-18",
-          "spread_bps": 77
+          "spread_bps": 77.0
         },
         {
           "observation_date": "2026-09-20",
@@ -2410,19 +2409,19 @@
         },
         {
           "observation_date": "2026-09-23",
-          "spread_bps": 85
+          "spread_bps": 85.0
         },
         {
           "observation_date": "2026-09-24",
-          "spread_bps": 87
+          "spread_bps": 87.0
         },
         {
           "observation_date": "2026-09-25",
-          "spread_bps": 87
+          "spread_bps": 87.0
         },
         {
           "observation_date": "2026-09-28",
-          "spread_bps": 89
+          "spread_bps": 89.0
         },
         {
           "observation_date": "2026-09-29",
@@ -2434,7 +2433,7 @@
         },
         {
           "observation_date": "2026-10-01",
-          "spread_bps": 86
+          "spread_bps": 86.0
         },
         {
           "observation_date": "2026-10-02",
@@ -2458,7 +2457,7 @@
         },
         {
           "observation_date": "2026-10-08",
-          "spread_bps": 79
+          "spread_bps": 79.0
         },
         {
           "observation_date": "2026-10-09",
@@ -2482,7 +2481,7 @@
         },
         {
           "observation_date": "2026-10-14",
-          "spread_bps": 92
+          "spread_bps": 92.0
         },
         {
           "observation_date": "2026-10-15",
@@ -2490,7 +2489,7 @@
         },
         {
           "observation_date": "2026-10-16",
-          "spread_bps": 93
+          "spread_bps": 93.0
         },
         {
           "observation_date": "2026-10-17",
@@ -2514,11 +2513,11 @@
         },
         {
           "observation_date": "2026-10-22",
-          "spread_bps": 116
+          "spread_bps": 116.0
         },
         {
           "observation_date": "2026-10-23",
-          "spread_bps": 128
+          "spread_bps": 128.0
         },
         {
           "observation_date": "2026-10-25",
@@ -2534,11 +2533,11 @@
         },
         {
           "observation_date": "2026-10-28",
-          "spread_bps": 125
+          "spread_bps": 125.0
         },
         {
           "observation_date": "2026-10-29",
-          "spread_bps": 126
+          "spread_bps": 126.0
         },
         {
           "observation_date": "2026-10-30",
@@ -3275,7 +3274,7 @@
         },
         {
           "observation_date": "2025-03-04",
-          "spread_bps": 38
+          "spread_bps": 38.0
         },
         {
           "observation_date": "2025-03-05",
@@ -3339,7 +3338,7 @@
         },
         {
           "observation_date": "2025-03-26",
-          "spread_bps": 44
+          "spread_bps": 44.0
         },
         {
           "observation_date": "2025-03-27",
@@ -3519,7 +3518,7 @@
         },
         {
           "observation_date": "2025-05-28",
-          "spread_bps": 41
+          "spread_bps": 41.0
         },
         {
           "observation_date": "2025-05-29",
@@ -3715,7 +3714,7 @@
         },
         {
           "observation_date": "2025-08-05",
-          "spread_bps": 35
+          "spread_bps": 35.0
         },
         {
           "observation_date": "2025-08-06",
@@ -3899,7 +3898,7 @@
         },
         {
           "observation_date": "2025-10-08",
-          "spread_bps": 32
+          "spread_bps": 32.0
         },
         {
           "observation_date": "2025-10-09",
@@ -3955,7 +3954,7 @@
         },
         {
           "observation_date": "2025-10-28",
-          "spread_bps": 34
+          "spread_bps": 34.0
         },
         {
           "observation_date": "2025-10-29",
@@ -3963,7 +3962,7 @@
         },
         {
           "observation_date": "2025-10-30",
-          "spread_bps": 36
+          "spread_bps": 36.0
         },
         {
           "observation_date": "2025-10-31",
@@ -3999,7 +3998,7 @@
         },
         {
           "observation_date": "2025-11-12",
-          "spread_bps": 36
+          "spread_bps": 36.0
         },
         {
           "observation_date": "2025-11-13",
@@ -4035,7 +4034,7 @@
         },
         {
           "observation_date": "2025-11-25",
-          "spread_bps": 40
+          "spread_bps": 40.0
         },
         {
           "observation_date": "2025-11-26",
@@ -4171,7 +4170,7 @@
         },
         {
           "observation_date": "2026-01-12",
-          "spread_bps": 40
+          "spread_bps": 40.0
         },
         {
           "observation_date": "2026-01-13",
@@ -4183,7 +4182,7 @@
         },
         {
           "observation_date": "2026-01-15",
-          "spread_bps": 37
+          "spread_bps": 37.0
         },
         {
           "observation_date": "2026-01-16",
@@ -4239,7 +4238,7 @@
         },
         {
           "observation_date": "2026-02-04",
-          "spread_bps": 40
+          "spread_bps": 40.0
         },
         {
           "observation_date": "2026-02-05",
@@ -4287,7 +4286,7 @@
         },
         {
           "observation_date": "2026-02-20",
-          "spread_bps": 39
+          "spread_bps": 39.0
         },
         {
           "observation_date": "2026-02-23",
@@ -4295,15 +4294,15 @@
         },
         {
           "observation_date": "2026-02-24",
-          "spread_bps": 38
+          "spread_bps": 38.0
         },
         {
           "observation_date": "2026-02-25",
-          "spread_bps": 38
+          "spread_bps": 38.0
         },
         {
           "observation_date": "2026-02-26",
-          "spread_bps": 40
+          "spread_bps": 40.0
         },
         {
           "observation_date": "2026-02-27",
@@ -4311,7 +4310,7 @@
         },
         {
           "observation_date": "2026-03-02",
-          "spread_bps": 43
+          "spread_bps": 43.0
         },
         {
           "observation_date": "2026-03-03",
@@ -4387,7 +4386,7 @@
         },
         {
           "observation_date": "2026-03-27",
-          "spread_bps": 49
+          "spread_bps": 49.0
         },
         {
           "observation_date": "2026-03-30",
@@ -4419,7 +4418,7 @@
         },
         {
           "observation_date": "2026-04-08",
-          "spread_bps": 42
+          "spread_bps": 42.0
         },
         {
           "observation_date": "2026-04-09",
@@ -4483,7 +4482,7 @@
         },
         {
           "observation_date": "2026-04-30",
-          "spread_bps": 40
+          "spread_bps": 40.0
         },
         {
           "observation_date": "2026-05-01",
@@ -4571,7 +4570,7 @@
         },
         {
           "observation_date": "2026-06-01",
-          "spread_bps": 36
+          "spread_bps": 36.0
         },
         {
           "observation_date": "2026-06-02",
@@ -4591,7 +4590,7 @@
         },
         {
           "observation_date": "2026-06-08",
-          "spread_bps": 39
+          "spread_bps": 39.0
         },
         {
           "observation_date": "2026-06-09",
@@ -4631,7 +4630,7 @@
         },
         {
           "observation_date": "2026-06-22",
-          "spread_bps": 42
+          "spread_bps": 42.0
         },
         {
           "observation_date": "2026-06-23",
@@ -4647,7 +4646,7 @@
         },
         {
           "observation_date": "2026-06-26",
-          "spread_bps": 47
+          "spread_bps": 47.0
         },
         {
           "observation_date": "2026-06-28",
@@ -4679,7 +4678,7 @@
         },
         {
           "observation_date": "2026-07-06",
-          "spread_bps": 46
+          "spread_bps": 46.0
         },
         {
           "observation_date": "2026-07-07",
@@ -4743,7 +4742,7 @@
         },
         {
           "observation_date": "2026-07-23",
-          "spread_bps": 73
+          "spread_bps": 73.0
         },
         {
           "observation_date": "2026-07-24",
@@ -4759,7 +4758,7 @@
         },
         {
           "observation_date": "2026-07-27",
-          "spread_bps": 79
+          "spread_bps": 79.0
         },
         {
           "observation_date": "2026-07-28",
@@ -4783,7 +4782,7 @@
         },
         {
           "observation_date": "2026-08-03",
-          "spread_bps": 85
+          "spread_bps": 85.0
         },
         {
           "observation_date": "2026-08-04",
@@ -4791,7 +4790,7 @@
         },
         {
           "observation_date": "2026-08-05",
-          "spread_bps": 79
+          "spread_bps": 79.0
         },
         {
           "observation_date": "2026-08-06",
@@ -4807,7 +4806,7 @@
         },
         {
           "observation_date": "2026-08-10",
-          "spread_bps": 79
+          "spread_bps": 79.0
         },
         {
           "observation_date": "2026-08-11",
@@ -4815,11 +4814,11 @@
         },
         {
           "observation_date": "2026-08-12",
-          "spread_bps": 80
+          "spread_bps": 80.0
         },
         {
           "observation_date": "2026-08-13",
-          "spread_bps": 78
+          "spread_bps": 78.0
         },
         {
           "observation_date": "2026-08-14",
@@ -4831,11 +4830,11 @@
         },
         {
           "observation_date": "2026-08-17",
-          "spread_bps": 84
+          "spread_bps": 84.0
         },
         {
           "observation_date": "2026-08-18",
-          "spread_bps": 85
+          "spread_bps": 85.0
         },
         {
           "observation_date": "2026-08-19",
@@ -4843,11 +4842,11 @@
         },
         {
           "observation_date": "2026-08-20",
-          "spread_bps": 87
+          "spread_bps": 87.0
         },
         {
           "observation_date": "2026-08-21",
-          "spread_bps": 89
+          "spread_bps": 89.0
         },
         {
           "observation_date": "2026-08-23",
@@ -4855,7 +4854,7 @@
         },
         {
           "observation_date": "2026-08-24",
-          "spread_bps": 91
+          "spread_bps": 91.0
         },
         {
           "observation_date": "2026-08-25",
@@ -4863,7 +4862,7 @@
         },
         {
           "observation_date": "2026-08-26",
-          "spread_bps": 94
+          "spread_bps": 94.0
         },
         {
           "observation_date": "2026-08-27",
@@ -4883,7 +4882,7 @@
         },
         {
           "observation_date": "2026-08-31",
-          "spread_bps": 94
+          "spread_bps": 94.0
         },
         {
           "observation_date": "2026-09-01",
@@ -4947,7 +4946,7 @@
         },
         {
           "observation_date": "2026-09-18",
-          "spread_bps": 79
+          "spread_bps": 79.0
         },
         {
           "observation_date": "2026-09-20",
@@ -4983,11 +4982,11 @@
         },
         {
           "observation_date": "2026-09-30",
-          "spread_bps": 94
+          "spread_bps": 94.0
         },
         {
           "observation_date": "2026-10-01",
-          "spread_bps": 95
+          "spread_bps": 95.0
         },
         {
           "observation_date": "2026-10-02",
@@ -5055,7 +5054,7 @@
         },
         {
           "observation_date": "2026-10-19",
-          "spread_bps": 106
+          "spread_bps": 106.0
         },
         {
           "observation_date": "2026-10-20",
@@ -5067,7 +5066,7 @@
         },
         {
           "observation_date": "2026-10-22",
-          "spread_bps": 110
+          "spread_bps": 110.0
         },
         {
           "observation_date": "2026-10-23",
@@ -5087,7 +5086,7 @@
         },
         {
           "observation_date": "2026-10-28",
-          "spread_bps": 116
+          "spread_bps": 116.0
         },
         {
           "observation_date": "2026-10-29",
@@ -5095,7 +5094,7 @@
         },
         {
           "observation_date": "2026-10-30",
-          "spread_bps": 143
+          "spread_bps": 143.0
         },
         {
           "observation_date": "2026-10-31",
@@ -5107,7 +5106,7 @@
         },
         {
           "observation_date": "2026-11-02",
-          "spread_bps": 147
+          "spread_bps": 147.0
         },
         {
           "observation_date": "2026-11-03",
@@ -6992,7 +6991,7 @@
         },
         {
           "observation_date": "2026-04-15",
-          "spread_bps": 47
+          "spread_bps": 47.0
         },
         {
           "observation_date": "2026-04-16",
@@ -7036,7 +7035,7 @@
         },
         {
           "observation_date": "2026-04-30",
-          "spread_bps": 50
+          "spread_bps": 50.0
         },
         {
           "observation_date": "2026-05-01",
@@ -7076,7 +7075,7 @@
         },
         {
           "observation_date": "2026-05-14",
-          "spread_bps": 50
+          "spread_bps": 50.0
         },
         {
           "observation_date": "2026-05-15",
@@ -7232,7 +7231,7 @@
         },
         {
           "observation_date": "2026-07-06",
-          "spread_bps": 54
+          "spread_bps": 54.0
         },
         {
           "observation_date": "2026-07-07",
@@ -7244,7 +7243,7 @@
         },
         {
           "observation_date": "2026-07-09",
-          "spread_bps": 57
+          "spread_bps": 57.0
         },
         {
           "observation_date": "2026-07-10",
@@ -7260,11 +7259,11 @@
         },
         {
           "observation_date": "2026-07-13",
-          "spread_bps": 61
+          "spread_bps": 61.0
         },
         {
           "observation_date": "2026-07-14",
-          "spread_bps": 61
+          "spread_bps": 61.0
         },
         {
           "observation_date": "2026-07-15",
@@ -7292,11 +7291,11 @@
         },
         {
           "observation_date": "2026-07-22",
-          "spread_bps": 58
+          "spread_bps": 58.0
         },
         {
           "observation_date": "2026-07-23",
-          "spread_bps": 64
+          "spread_bps": 64.0
         },
         {
           "observation_date": "2026-07-24",
@@ -7320,7 +7319,7 @@
         },
         {
           "observation_date": "2026-07-29",
-          "spread_bps": 66
+          "spread_bps": 66.0
         },
         {
           "observation_date": "2026-07-30",
@@ -7336,7 +7335,7 @@
         },
         {
           "observation_date": "2026-08-03",
-          "spread_bps": 57
+          "spread_bps": 57.0
         },
         {
           "observation_date": "2026-08-04",
@@ -7348,7 +7347,7 @@
         },
         {
           "observation_date": "2026-08-06",
-          "spread_bps": 58
+          "spread_bps": 58.0
         },
         {
           "observation_date": "2026-08-07",
@@ -7372,7 +7371,7 @@
         },
         {
           "observation_date": "2026-08-13",
-          "spread_bps": 52
+          "spread_bps": 52.0
         },
         {
           "observation_date": "2026-08-14",
@@ -7384,7 +7383,7 @@
         },
         {
           "observation_date": "2026-08-17",
-          "spread_bps": 55
+          "spread_bps": 55.0
         },
         {
           "observation_date": "2026-08-18",
@@ -7416,7 +7415,7 @@
         },
         {
           "observation_date": "2026-08-26",
-          "spread_bps": 58
+          "spread_bps": 58.0
         },
         {
           "observation_date": "2026-08-27",
@@ -7440,7 +7439,7 @@
         },
         {
           "observation_date": "2026-09-01",
-          "spread_bps": 61
+          "spread_bps": 61.0
         },
         {
           "observation_date": "2026-09-02",
@@ -7448,7 +7447,7 @@
         },
         {
           "observation_date": "2026-09-03",
-          "spread_bps": 60
+          "spread_bps": 60.0
         },
         {
           "observation_date": "2026-09-04",
@@ -7468,7 +7467,7 @@
         },
         {
           "observation_date": "2026-09-09",
-          "spread_bps": 61
+          "spread_bps": 61.0
         },
         {
           "observation_date": "2026-09-10",
@@ -7492,7 +7491,7 @@
         },
         {
           "observation_date": "2026-09-16",
-          "spread_bps": 63
+          "spread_bps": 63.0
         },
         {
           "observation_date": "2026-09-17",
@@ -7512,7 +7511,7 @@
         },
         {
           "observation_date": "2026-09-22",
-          "spread_bps": 70
+          "spread_bps": 70.0
         },
         {
           "observation_date": "2026-09-23",
@@ -7524,7 +7523,7 @@
         },
         {
           "observation_date": "2026-09-25",
-          "spread_bps": 72
+          "spread_bps": 72.0
         },
         {
           "observation_date": "2026-09-28",
@@ -7532,11 +7531,11 @@
         },
         {
           "observation_date": "2026-09-29",
-          "spread_bps": 71
+          "spread_bps": 71.0
         },
         {
           "observation_date": "2026-09-30",
-          "spread_bps": 72
+          "spread_bps": 72.0
         },
         {
           "observation_date": "2026-10-01",
@@ -7584,7 +7583,7 @@
         },
         {
           "observation_date": "2026-10-13",
-          "spread_bps": 73
+          "spread_bps": 73.0
         },
         {
           "observation_date": "2026-10-14",
@@ -7596,7 +7595,7 @@
         },
         {
           "observation_date": "2026-10-16",
-          "spread_bps": 73
+          "spread_bps": 73.0
         },
         {
           "observation_date": "2026-10-17",
@@ -7612,19 +7611,19 @@
         },
         {
           "observation_date": "2026-10-20",
-          "spread_bps": 79
+          "spread_bps": 79.0
         },
         {
           "observation_date": "2026-10-21",
-          "spread_bps": 81
+          "spread_bps": 81.0
         },
         {
           "observation_date": "2026-10-22",
-          "spread_bps": 79
+          "spread_bps": 79.0
         },
         {
           "observation_date": "2026-10-23",
-          "spread_bps": 87
+          "spread_bps": 87.0
         },
         {
           "observation_date": "2026-10-25",
@@ -7640,7 +7639,7 @@
         },
         {
           "observation_date": "2026-10-28",
-          "spread_bps": 77
+          "spread_bps": 77.0
         },
         {
           "observation_date": "2026-10-29",
@@ -7664,7 +7663,7 @@
         },
         {
           "observation_date": "2026-11-03",
-          "spread_bps": 90
+          "spread_bps": 90.0
         }
       ]
     },
@@ -9069,7 +9068,7 @@
         },
         {
           "observation_date": "2025-10-30",
-          "spread_bps": 27
+          "spread_bps": 27.0
         },
         {
           "observation_date": "2025-10-31",
@@ -9121,7 +9120,7 @@
         },
         {
           "observation_date": "2025-11-18",
-          "spread_bps": 35
+          "spread_bps": 35.0
         },
         {
           "observation_date": "2025-11-19",
@@ -9321,7 +9320,7 @@
         },
         {
           "observation_date": "2026-01-27",
-          "spread_bps": 32
+          "spread_bps": 32.0
         },
         {
           "observation_date": "2026-01-28",
@@ -9353,11 +9352,11 @@
         },
         {
           "observation_date": "2026-02-06",
-          "spread_bps": 35
+          "spread_bps": 35.0
         },
         {
           "observation_date": "2026-02-09",
-          "spread_bps": 36
+          "spread_bps": 36.0
         },
         {
           "observation_date": "2026-02-10",
@@ -9385,7 +9384,7 @@
         },
         {
           "observation_date": "2026-02-18",
-          "spread_bps": 37
+          "spread_bps": 37.0
         },
         {
           "observation_date": "2026-02-19",
@@ -9421,7 +9420,7 @@
         },
         {
           "observation_date": "2026-03-03",
-          "spread_bps": 43
+          "spread_bps": 43.0
         },
         {
           "observation_date": "2026-03-04",
@@ -9437,7 +9436,7 @@
         },
         {
           "observation_date": "2026-03-09",
-          "spread_bps": 43
+          "spread_bps": 43.0
         },
         {
           "observation_date": "2026-03-10",
@@ -9453,11 +9452,11 @@
         },
         {
           "observation_date": "2026-03-13",
-          "spread_bps": 43
+          "spread_bps": 43.0
         },
         {
           "observation_date": "2026-03-16",
-          "spread_bps": 38
+          "spread_bps": 38.0
         },
         {
           "observation_date": "2026-03-17",
@@ -9549,7 +9548,7 @@
         },
         {
           "observation_date": "2026-04-16",
-          "spread_bps": 40
+          "spread_bps": 40.0
         },
         {
           "observation_date": "2026-04-17",
@@ -9697,7 +9696,7 @@
         },
         {
           "observation_date": "2026-06-08",
-          "spread_bps": 40
+          "spread_bps": 40.0
         },
         {
           "observation_date": "2026-06-09",
@@ -9717,7 +9716,7 @@
         },
         {
           "observation_date": "2026-06-15",
-          "spread_bps": 38
+          "spread_bps": 38.0
         },
         {
           "observation_date": "2026-06-16",
@@ -9725,7 +9724,7 @@
         },
         {
           "observation_date": "2026-06-17",
-          "spread_bps": 39
+          "spread_bps": 39.0
         },
         {
           "observation_date": "2026-06-18",
@@ -9741,11 +9740,11 @@
         },
         {
           "observation_date": "2026-06-23",
-          "spread_bps": 40
+          "spread_bps": 40.0
         },
         {
           "observation_date": "2026-06-24",
-          "spread_bps": 40
+          "spread_bps": 40.0
         },
         {
           "observation_date": "2026-06-25",
@@ -9813,7 +9812,7 @@
         },
         {
           "observation_date": "2026-07-13",
-          "spread_bps": 47
+          "spread_bps": 47.0
         },
         {
           "observation_date": "2026-07-14",
@@ -9849,7 +9848,7 @@
         },
         {
           "observation_date": "2026-07-23",
-          "spread_bps": 50
+          "spread_bps": 50.0
         },
         {
           "observation_date": "2026-07-24",
@@ -9865,7 +9864,7 @@
         },
         {
           "observation_date": "2026-07-27",
-          "spread_bps": 51
+          "spread_bps": 51.0
         },
         {
           "observation_date": "2026-07-28",
@@ -9913,7 +9912,7 @@
         },
         {
           "observation_date": "2026-08-10",
-          "spread_bps": 44
+          "spread_bps": 44.0
         },
         {
           "observation_date": "2026-08-11",
@@ -9925,11 +9924,11 @@
         },
         {
           "observation_date": "2026-08-13",
-          "spread_bps": 42
+          "spread_bps": 42.0
         },
         {
           "observation_date": "2026-08-14",
-          "spread_bps": 43
+          "spread_bps": 43.0
         },
         {
           "observation_date": "2026-08-16",
@@ -9977,7 +9976,7 @@
         },
         {
           "observation_date": "2026-08-28",
-          "spread_bps": 46
+          "spread_bps": 46.0
         },
         {
           "observation_date": "2026-08-29",
@@ -9989,11 +9988,11 @@
         },
         {
           "observation_date": "2026-08-31",
-          "spread_bps": 46
+          "spread_bps": 46.0
         },
         {
           "observation_date": "2026-09-01",
-          "spread_bps": 47
+          "spread_bps": 47.0
         },
         {
           "observation_date": "2026-09-02",
@@ -10001,7 +10000,7 @@
         },
         {
           "observation_date": "2026-09-03",
-          "spread_bps": 46
+          "spread_bps": 46.0
         },
         {
           "observation_date": "2026-09-04",
@@ -10021,7 +10020,7 @@
         },
         {
           "observation_date": "2026-09-09",
-          "spread_bps": 47
+          "spread_bps": 47.0
         },
         {
           "observation_date": "2026-09-10",
@@ -10037,7 +10036,7 @@
         },
         {
           "observation_date": "2026-09-14",
-          "spread_bps": 48
+          "spread_bps": 48.0
         },
         {
           "observation_date": "2026-09-15",
@@ -10049,7 +10048,7 @@
         },
         {
           "observation_date": "2026-09-17",
-          "spread_bps": 44
+          "spread_bps": 44.0
         },
         {
           "observation_date": "2026-09-18",
@@ -10065,7 +10064,7 @@
         },
         {
           "observation_date": "2026-09-22",
-          "spread_bps": 49
+          "spread_bps": 49.0
         },
         {
           "observation_date": "2026-09-23",
@@ -10081,7 +10080,7 @@
         },
         {
           "observation_date": "2026-09-28",
-          "spread_bps": 52
+          "spread_bps": 52.0
         },
         {
           "observation_date": "2026-09-29",
@@ -10093,7 +10092,7 @@
         },
         {
           "observation_date": "2026-10-01",
-          "spread_bps": 52
+          "spread_bps": 52.0
         },
         {
           "observation_date": "2026-10-02",
@@ -10109,7 +10108,7 @@
         },
         {
           "observation_date": "2026-10-06",
-          "spread_bps": 45
+          "spread_bps": 45.0
         },
         {
           "observation_date": "2026-10-07",
@@ -10177,7 +10176,7 @@
         },
         {
           "observation_date": "2026-10-23",
-          "spread_bps": 56
+          "spread_bps": 56.0
         },
         {
           "observation_date": "2026-10-25",
@@ -10185,7 +10184,7 @@
         },
         {
           "observation_date": "2026-10-26",
-          "spread_bps": 55
+          "spread_bps": 55.0
         },
         {
           "observation_date": "2026-10-27",
@@ -10217,7 +10216,7 @@
         },
         {
           "observation_date": "2026-11-03",
-          "spread_bps": 57
+          "spread_bps": 57.0
         }
       ]
     },
@@ -10938,7 +10937,7 @@
         },
         {
           "observation_date": "2025-03-05",
-          "spread_bps": 38
+          "spread_bps": 38.0
         },
         {
           "observation_date": "2025-03-06",
@@ -10970,7 +10969,7 @@
         },
         {
           "observation_date": "2025-03-17",
-          "spread_bps": 46
+          "spread_bps": 46.0
         },
         {
           "observation_date": "2025-03-18",
@@ -10978,11 +10977,11 @@
         },
         {
           "observation_date": "2025-03-19",
-          "spread_bps": 45
+          "spread_bps": 45.0
         },
         {
           "observation_date": "2025-03-20",
-          "spread_bps": 48
+          "spread_bps": 48.0
         },
         {
           "observation_date": "2025-03-21",
@@ -11126,7 +11125,7 @@
         },
         {
           "observation_date": "2025-05-09",
-          "spread_bps": 48
+          "spread_bps": 48.0
         },
         {
           "observation_date": "2025-05-12",
@@ -11150,7 +11149,7 @@
         },
         {
           "observation_date": "2025-05-19",
-          "spread_bps": 44
+          "spread_bps": 44.0
         },
         {
           "observation_date": "2025-05-20",
@@ -11234,11 +11233,11 @@
         },
         {
           "observation_date": "2025-06-17",
-          "spread_bps": 34
+          "spread_bps": 34.0
         },
         {
           "observation_date": "2025-06-18",
-          "spread_bps": 37
+          "spread_bps": 37.0
         },
         {
           "observation_date": "2025-06-19",
@@ -11282,7 +11281,7 @@
         },
         {
           "observation_date": "2025-07-03",
-          "spread_bps": 36
+          "spread_bps": 36.0
         },
         {
           "observation_date": "2025-07-04",
@@ -11318,7 +11317,7 @@
         },
         {
           "observation_date": "2025-07-16",
-          "spread_bps": 38
+          "spread_bps": 38.0
         },
         {
           "observation_date": "2025-07-17",
@@ -11366,7 +11365,7 @@
         },
         {
           "observation_date": "2025-08-01",
-          "spread_bps": 40
+          "spread_bps": 40.0
         },
         {
           "observation_date": "2025-08-04",
@@ -11390,7 +11389,7 @@
         },
         {
           "observation_date": "2025-08-11",
-          "spread_bps": 41
+          "spread_bps": 41.0
         },
         {
           "observation_date": "2025-08-12",
@@ -11418,7 +11417,7 @@
         },
         {
           "observation_date": "2025-08-20",
-          "spread_bps": 43
+          "spread_bps": 43.0
         },
         {
           "observation_date": "2025-08-21",
@@ -11470,15 +11469,15 @@
         },
         {
           "observation_date": "2025-09-08",
-          "spread_bps": 47
+          "spread_bps": 47.0
         },
         {
           "observation_date": "2025-09-09",
-          "spread_bps": 47
+          "spread_bps": 47.0
         },
         {
           "observation_date": "2025-09-10",
-          "spread_bps": 45
+          "spread_bps": 45.0
         },
         {
           "observation_date": "2025-09-11",
@@ -11518,7 +11517,7 @@
         },
         {
           "observation_date": "2025-09-24",
-          "spread_bps": 50
+          "spread_bps": 50.0
         },
         {
           "observation_date": "2025-09-25",
@@ -11534,7 +11533,7 @@
         },
         {
           "observation_date": "2025-09-30",
-          "spread_bps": 57
+          "spread_bps": 57.0
         },
         {
           "observation_date": "2025-10-01",
@@ -11542,7 +11541,7 @@
         },
         {
           "observation_date": "2025-10-02",
-          "spread_bps": 59
+          "spread_bps": 59.0
         },
         {
           "observation_date": "2025-10-03",
@@ -11558,7 +11557,7 @@
         },
         {
           "observation_date": "2025-10-08",
-          "spread_bps": 62
+          "spread_bps": 62.0
         },
         {
           "observation_date": "2025-10-09",
@@ -11582,7 +11581,7 @@
         },
         {
           "observation_date": "2025-10-16",
-          "spread_bps": 73
+          "spread_bps": 73.0
         },
         {
           "observation_date": "2025-10-17",
@@ -11598,7 +11597,7 @@
         },
         {
           "observation_date": "2025-10-22",
-          "spread_bps": 76
+          "spread_bps": 76.0
         },
         {
           "observation_date": "2025-10-23",
@@ -11614,11 +11613,11 @@
         },
         {
           "observation_date": "2025-10-28",
-          "spread_bps": 73
+          "spread_bps": 73.0
         },
         {
           "observation_date": "2025-10-29",
-          "spread_bps": 75
+          "spread_bps": 75.0
         },
         {
           "observation_date": "2025-10-30",
@@ -11626,7 +11625,7 @@
         },
         {
           "observation_date": "2025-10-31",
-          "spread_bps": 86
+          "spread_bps": 86.0
         },
         {
           "observation_date": "2025-11-03",
@@ -11638,11 +11637,11 @@
         },
         {
           "observation_date": "2025-11-05",
-          "spread_bps": 82
+          "spread_bps": 82.0
         },
         {
           "observation_date": "2025-11-06",
-          "spread_bps": 86
+          "spread_bps": 86.0
         },
         {
           "observation_date": "2025-11-07",
@@ -11662,31 +11661,31 @@
         },
         {
           "observation_date": "2025-11-13",
-          "spread_bps": 99
+          "spread_bps": 99.0
         },
         {
           "observation_date": "2025-11-14",
-          "spread_bps": 101
+          "spread_bps": 101.0
         },
         {
           "observation_date": "2025-11-17",
-          "spread_bps": 105
+          "spread_bps": 105.0
         },
         {
           "observation_date": "2025-11-18",
-          "spread_bps": 111
+          "spread_bps": 111.0
         },
         {
           "observation_date": "2025-11-19",
-          "spread_bps": 110
+          "spread_bps": 110.0
         },
         {
           "observation_date": "2025-11-20",
-          "spread_bps": 107
+          "spread_bps": 107.0
         },
         {
           "observation_date": "2025-11-21",
-          "spread_bps": 116
+          "spread_bps": 116.0
         },
         {
           "observation_date": "2025-11-24",
@@ -11694,7 +11693,7 @@
         },
         {
           "observation_date": "2025-11-25",
-          "spread_bps": 125
+          "spread_bps": 125.0
         },
         {
           "observation_date": "2025-11-26",
@@ -11710,11 +11709,11 @@
         },
         {
           "observation_date": "2025-12-01",
-          "spread_bps": 125
+          "spread_bps": 125.0
         },
         {
           "observation_date": "2025-12-02",
-          "spread_bps": 128
+          "spread_bps": 128.0
         },
         {
           "observation_date": "2025-12-03",
@@ -11726,7 +11725,7 @@
         },
         {
           "observation_date": "2025-12-05",
-          "spread_bps": 120
+          "spread_bps": 120.0
         },
         {
           "observation_date": "2025-12-08",
@@ -11750,7 +11749,7 @@
         },
         {
           "observation_date": "2025-12-15",
-          "spread_bps": 149
+          "spread_bps": 149.0
         },
         {
           "observation_date": "2025-12-16",
@@ -11758,7 +11757,7 @@
         },
         {
           "observation_date": "2025-12-17",
-          "spread_bps": 153
+          "spread_bps": 153.0
         },
         {
           "observation_date": "2025-12-18",
@@ -11766,7 +11765,7 @@
         },
         {
           "observation_date": "2025-12-19",
-          "spread_bps": 145
+          "spread_bps": 145.0
         },
         {
           "observation_date": "2025-12-22",
@@ -11774,7 +11773,7 @@
         },
         {
           "observation_date": "2025-12-23",
-          "spread_bps": 144
+          "spread_bps": 144.0
         },
         {
           "observation_date": "2025-12-24",
@@ -11814,19 +11813,19 @@
         },
         {
           "observation_date": "2026-01-06",
-          "spread_bps": 145
+          "spread_bps": 145.0
         },
         {
           "observation_date": "2026-01-07",
-          "spread_bps": 147
+          "spread_bps": 147.0
         },
         {
           "observation_date": "2026-01-08",
-          "spread_bps": 148
+          "spread_bps": 148.0
         },
         {
           "observation_date": "2026-01-09",
-          "spread_bps": 150
+          "spread_bps": 150.0
         },
         {
           "observation_date": "2026-01-12",
@@ -11834,11 +11833,11 @@
         },
         {
           "observation_date": "2026-01-13",
-          "spread_bps": 149
+          "spread_bps": 149.0
         },
         {
           "observation_date": "2026-01-14",
-          "spread_bps": 153
+          "spread_bps": 153.0
         },
         {
           "observation_date": "2026-01-15",
@@ -11846,7 +11845,7 @@
         },
         {
           "observation_date": "2026-01-16",
-          "spread_bps": 151
+          "spread_bps": 151.0
         },
         {
           "observation_date": "2026-01-19",
@@ -11858,11 +11857,11 @@
         },
         {
           "observation_date": "2026-01-21",
-          "spread_bps": 154
+          "spread_bps": 154.0
         },
         {
           "observation_date": "2026-01-22",
-          "spread_bps": 156
+          "spread_bps": 156.0
         },
         {
           "observation_date": "2026-01-23",
@@ -11870,7 +11869,7 @@
         },
         {
           "observation_date": "2026-01-26",
-          "spread_bps": 161
+          "spread_bps": 161.0
         },
         {
           "observation_date": "2026-01-27",
@@ -11890,7 +11889,7 @@
         },
         {
           "observation_date": "2026-02-02",
-          "spread_bps": 129
+          "spread_bps": 129.0
         },
         {
           "observation_date": "2026-02-03",
@@ -11898,11 +11897,11 @@
         },
         {
           "observation_date": "2026-02-04",
-          "spread_bps": 141
+          "spread_bps": 141.0
         },
         {
           "observation_date": "2026-02-05",
-          "spread_bps": 150
+          "spread_bps": 150.0
         },
         {
           "observation_date": "2026-02-06",
@@ -11938,7 +11937,7 @@
         },
         {
           "observation_date": "2026-02-18",
-          "spread_bps": 157
+          "spread_bps": 157.0
         },
         {
           "observation_date": "2026-02-19",
@@ -11966,7 +11965,7 @@
         },
         {
           "observation_date": "2026-02-27",
-          "spread_bps": 164
+          "spread_bps": 164.0
         },
         {
           "observation_date": "2026-03-02",
@@ -11974,7 +11973,7 @@
         },
         {
           "observation_date": "2026-03-03",
-          "spread_bps": 166
+          "spread_bps": 166.0
         },
         {
           "observation_date": "2026-03-04",
@@ -11986,19 +11985,19 @@
         },
         {
           "observation_date": "2026-03-06",
-          "spread_bps": 168
+          "spread_bps": 168.0
         },
         {
           "observation_date": "2026-03-09",
-          "spread_bps": 164
+          "spread_bps": 164.0
         },
         {
           "observation_date": "2026-03-10",
-          "spread_bps": 160
+          "spread_bps": 160.0
         },
         {
           "observation_date": "2026-03-11",
-          "spread_bps": 152
+          "spread_bps": 152.0
         },
         {
           "observation_date": "2026-03-12",
@@ -12014,11 +12013,11 @@
         },
         {
           "observation_date": "2026-03-17",
-          "spread_bps": 162
+          "spread_bps": 162.0
         },
         {
           "observation_date": "2026-03-18",
-          "spread_bps": 165
+          "spread_bps": 165.0
         },
         {
           "observation_date": "2026-03-19",
@@ -12046,15 +12045,15 @@
         },
         {
           "observation_date": "2026-03-27",
-          "spread_bps": 199
+          "spread_bps": 199.0
         },
         {
           "observation_date": "2026-03-30",
-          "spread_bps": 185
+          "spread_bps": 185.0
         },
         {
           "observation_date": "2026-03-31",
-          "spread_bps": 190
+          "spread_bps": 190.0
         },
         {
           "observation_date": "2026-04-01",
@@ -12070,19 +12069,19 @@
         },
         {
           "observation_date": "2026-04-06",
-          "spread_bps": 181
+          "spread_bps": 181.0
         },
         {
           "observation_date": "2026-04-07",
-          "spread_bps": 184
+          "spread_bps": 184.0
         },
         {
           "observation_date": "2026-04-08",
-          "spread_bps": 160
+          "spread_bps": 160.0
         },
         {
           "observation_date": "2026-04-09",
-          "spread_bps": 177
+          "spread_bps": 177.0
         },
         {
           "observation_date": "2026-04-10",
@@ -12094,7 +12093,7 @@
         },
         {
           "observation_date": "2026-04-14",
-          "spread_bps": 168
+          "spread_bps": 168.0
         },
         {
           "observation_date": "2026-04-15",
@@ -12102,7 +12101,7 @@
         },
         {
           "observation_date": "2026-04-16",
-          "spread_bps": 165
+          "spread_bps": 165.0
         },
         {
           "observation_date": "2026-04-17",
@@ -12118,7 +12117,7 @@
         },
         {
           "observation_date": "2026-04-22",
-          "spread_bps": 165
+          "spread_bps": 165.0
         },
         {
           "observation_date": "2026-04-23",
@@ -12130,19 +12129,19 @@
         },
         {
           "observation_date": "2026-04-27",
-          "spread_bps": 170
+          "spread_bps": 170.0
         },
         {
           "observation_date": "2026-04-28",
-          "spread_bps": 175
+          "spread_bps": 175.0
         },
         {
           "observation_date": "2026-04-29",
-          "spread_bps": 177
+          "spread_bps": 177.0
         },
         {
           "observation_date": "2026-04-30",
-          "spread_bps": 179
+          "spread_bps": 179.0
         },
         {
           "observation_date": "2026-05-01",
@@ -12150,19 +12149,19 @@
         },
         {
           "observation_date": "2026-05-04",
-          "spread_bps": 176
+          "spread_bps": 176.0
         },
         {
           "observation_date": "2026-05-05",
-          "spread_bps": 173
+          "spread_bps": 173.0
         },
         {
           "observation_date": "2026-05-06",
-          "spread_bps": 169
+          "spread_bps": 169.0
         },
         {
           "observation_date": "2026-05-07",
-          "spread_bps": 168
+          "spread_bps": 168.0
         },
         {
           "observation_date": "2026-05-08",
@@ -12178,11 +12177,11 @@
         },
         {
           "observation_date": "2026-05-13",
-          "spread_bps": 170
+          "spread_bps": 170.0
         },
         {
           "observation_date": "2026-05-14",
-          "spread_bps": 165
+          "spread_bps": 165.0
         },
         {
           "observation_date": "2026-05-15",
@@ -12198,7 +12197,7 @@
         },
         {
           "observation_date": "2026-05-20",
-          "spread_bps": 168
+          "spread_bps": 168.0
         },
         {
           "observation_date": "2026-05-21",
@@ -12214,7 +12213,7 @@
         },
         {
           "observation_date": "2026-05-26",
-          "spread_bps": 163
+          "spread_bps": 163.0
         },
         {
           "observation_date": "2026-05-27",
@@ -12254,7 +12253,7 @@
         },
         {
           "observation_date": "2026-06-09",
-          "spread_bps": 158
+          "spread_bps": 158.0
         },
         {
           "observation_date": "2026-06-10",
@@ -12262,7 +12261,7 @@
         },
         {
           "observation_date": "2026-06-11",
-          "spread_bps": 158
+          "spread_bps": 158.0
         },
         {
           "observation_date": "2026-06-12",
@@ -12354,7 +12353,7 @@
         },
         {
           "observation_date": "2026-07-10",
-          "spread_bps": 188
+          "spread_bps": 188.0
         },
         {
           "observation_date": "2026-07-11",
@@ -12366,15 +12365,15 @@
         },
         {
           "observation_date": "2026-07-13",
-          "spread_bps": 187
+          "spread_bps": 187.0
         },
         {
           "observation_date": "2026-07-14",
-          "spread_bps": 187
+          "spread_bps": 187.0
         },
         {
           "observation_date": "2026-07-15",
-          "spread_bps": 187
+          "spread_bps": 187.0
         },
         {
           "observation_date": "2026-07-16",
@@ -12382,7 +12381,7 @@
         },
         {
           "observation_date": "2026-07-17",
-          "spread_bps": 200
+          "spread_bps": 200.0
         },
         {
           "observation_date": "2026-07-19",
@@ -12394,19 +12393,19 @@
         },
         {
           "observation_date": "2026-07-21",
-          "spread_bps": 206
+          "spread_bps": 206.0
         },
         {
           "observation_date": "2026-07-22",
-          "spread_bps": 207
+          "spread_bps": 207.0
         },
         {
           "observation_date": "2026-07-23",
-          "spread_bps": 211
+          "spread_bps": 211.0
         },
         {
           "observation_date": "2026-07-24",
-          "spread_bps": 214
+          "spread_bps": 214.0
         },
         {
           "observation_date": "2026-07-25",
@@ -12418,7 +12417,7 @@
         },
         {
           "observation_date": "2026-07-27",
-          "spread_bps": 210
+          "spread_bps": 210.0
         },
         {
           "observation_date": "2026-07-28",
@@ -12430,7 +12429,7 @@
         },
         {
           "observation_date": "2026-07-30",
-          "spread_bps": 207
+          "spread_bps": 207.0
         },
         {
           "observation_date": "2026-07-31",
@@ -12446,11 +12445,11 @@
         },
         {
           "observation_date": "2026-08-04",
-          "spread_bps": 189
+          "spread_bps": 189.0
         },
         {
           "observation_date": "2026-08-05",
-          "spread_bps": 194
+          "spread_bps": 194.0
         },
         {
           "observation_date": "2026-08-06",
@@ -12470,19 +12469,19 @@
         },
         {
           "observation_date": "2026-08-11",
-          "spread_bps": 197
+          "spread_bps": 197.0
         },
         {
           "observation_date": "2026-08-12",
-          "spread_bps": 198
+          "spread_bps": 198.0
         },
         {
           "observation_date": "2026-08-13",
-          "spread_bps": 195
+          "spread_bps": 195.0
         },
         {
           "observation_date": "2026-08-14",
-          "spread_bps": 197
+          "spread_bps": 197.0
         },
         {
           "observation_date": "2026-08-16",
@@ -12494,7 +12493,7 @@
         },
         {
           "observation_date": "2026-08-18",
-          "spread_bps": 209
+          "spread_bps": 209.0
         },
         {
           "observation_date": "2026-08-19",
@@ -12506,7 +12505,7 @@
         },
         {
           "observation_date": "2026-08-21",
-          "spread_bps": 217
+          "spread_bps": 217.0
         },
         {
           "observation_date": "2026-08-23",
@@ -12518,11 +12517,11 @@
         },
         {
           "observation_date": "2026-08-25",
-          "spread_bps": 216
+          "spread_bps": 216.0
         },
         {
           "observation_date": "2026-08-26",
-          "spread_bps": 211
+          "spread_bps": 211.0
         },
         {
           "observation_date": "2026-08-27",
@@ -12570,7 +12569,7 @@
         },
         {
           "observation_date": "2026-09-08",
-          "spread_bps": 195
+          "spread_bps": 195.0
         },
         {
           "observation_date": "2026-09-09",
@@ -12578,11 +12577,11 @@
         },
         {
           "observation_date": "2026-09-10",
-          "spread_bps": 193
+          "spread_bps": 193.0
         },
         {
           "observation_date": "2026-09-11",
-          "spread_bps": 180
+          "spread_bps": 180.0
         },
         {
           "observation_date": "2026-09-13",
@@ -12598,7 +12597,7 @@
         },
         {
           "observation_date": "2026-09-16",
-          "spread_bps": 191
+          "spread_bps": 191.0
         },
         {
           "observation_date": "2026-09-17",
@@ -12618,7 +12617,7 @@
         },
         {
           "observation_date": "2026-09-22",
-          "spread_bps": 212
+          "spread_bps": 212.0
         },
         {
           "observation_date": "2026-09-23",
@@ -12630,11 +12629,11 @@
         },
         {
           "observation_date": "2026-09-25",
-          "spread_bps": 228
+          "spread_bps": 228.0
         },
         {
           "observation_date": "2026-09-28",
-          "spread_bps": 250
+          "spread_bps": 250.0
         },
         {
           "observation_date": "2026-09-29",
@@ -12646,7 +12645,7 @@
         },
         {
           "observation_date": "2026-10-01",
-          "spread_bps": 249
+          "spread_bps": 249.0
         },
         {
           "observation_date": "2026-10-02",
@@ -12690,7 +12689,7 @@
         },
         {
           "observation_date": "2026-10-13",
-          "spread_bps": 264
+          "spread_bps": 264.0
         },
         {
           "observation_date": "2026-10-14",
@@ -12698,7 +12697,7 @@
         },
         {
           "observation_date": "2026-10-15",
-          "spread_bps": 302
+          "spread_bps": 302.0
         },
         {
           "observation_date": "2026-10-16",
@@ -12726,7 +12725,7 @@
         },
         {
           "observation_date": "2026-10-22",
-          "spread_bps": 314
+          "spread_bps": 314.0
         },
         {
           "observation_date": "2026-10-23",
@@ -12746,7 +12745,7 @@
         },
         {
           "observation_date": "2026-10-28",
-          "spread_bps": 276
+          "spread_bps": 276.0
         },
         {
           "observation_date": "2026-10-29",
@@ -12754,7 +12753,7 @@
         },
         {
           "observation_date": "2026-10-30",
-          "spread_bps": 293
+          "spread_bps": 293.0
         },
         {
           "observation_date": "2026-10-31",
@@ -12770,9 +12769,10 @@
         },
         {
           "observation_date": "2026-11-03",
-          "spread_bps": 300
+          "spread_bps": 300.0
         }
       ]
     }
-  }
+  },
+  "retrieved_at": "2026-11-05T07:43:06.249755+00:00"
 }
