@@ -1634,15 +1634,15 @@ def build_fig2(date_range):
             f"10Y 名义收益率有 {len(inferred_dates)} 个日期由 DFII10＋T10YIE 恒等式重建（非独立 DGS10 实测值）。"
         ]})
     for column, name, width, dash, yaxis in [
-        ("DGS10", "10Y Nominal", 2.8, None, None),
-        ("DFII10", "10Y Real · TIPS (R1)", 2.6, None, "y2"),
-        ("T10YIE", "10Y Breakeven (R1)", 2.5, "dot", "y2"),
+        ("DGS10", "10年期名义收益率（DGS10）", 2.8, None, None),
+        ("DFII10", "10年期实际收益率（TIPS · DFII10，右轴）", 2.6, None, "y2"),
+        ("T10YIE", "10年期盈亏平衡通胀率（BEI · T10YIE，右轴）", 2.5, "dot", "y2"),
     ]:
         add_line(fig, data, column, name, width, dash, yaxis)
     fig.update_layout(
-        yaxis_title="Nominal Yield (%)",
+        yaxis_title="名义收益率（%）",
         yaxis2=dict(
-            title="Real yield / breakeven (%)", overlaying="y", side="right",
+            title="实际收益率 / 盈亏平衡通胀率（%）", overlaying="y", side="right",
             anchor="free", position=0.99, showgrid=False, zeroline=False,
             fixedrange=True, automargin=False, tickfont=dict(size=9),
             ticks="outside", ticklen=3,
@@ -2064,7 +2064,7 @@ CRYPTO_MARKET_DESCRIPTION = (
 
 PARAM_DESCRIPTIONS = [
     '<div class="parameter-note"><b>IORB：</b>准备金余额利率，代表美联储支付给合资格银行的准备金利息，是美元短期利率的重要政策锚；单位为年化%。</div><div class="parameter-note"><b>ON RRP Rate：</b>隔夜逆回购工具利率，代表合资格机构把资金隔夜放入美联储该工具可获得的年化利率，为货币市场利率提供支撑。</div><div class="parameter-note"><b>EFFR：</b>有效联邦基金利率，代表银行等机构之间无抵押隔夜美元交易的实际融资价格；单位为年化%。</div><div class="parameter-note"><b>SOFR：</b>有担保隔夜融资利率，代表以美国国债作抵押借入隔夜美元的市场成本；单位为年化%，相对政策锚上升可提示回购融资压力。</div><div class="parameter-note"><b>SRF Rate：</b>美联储常备回购工具利率，采用FRED SRFTSYD公布的政策操作利率，以虚线显示；合资格对手方可抵押合格证券获取隔夜资金，为回购融资利率提供上方缓冲，并非所有市场参与者都能使用的硬上限；单位为年化%。</div><div class="parameter-note"><b>SRF实际用量 (R1)：</b>纽约联储当日常备回购操作实际接受金额，合计国债、机构债和机构MBS三类抵押品；2025年6月26日起合计上午、下午两场，单位为十亿美元，柱状图使用独立右轴。排除逆回购、期限回购和小额演练；当日各场结果不齐时留空，已公布零成交保留为0。属于当日成交总额，不是净投放或未偿余额。</div><div class="parameter-context">口径说明：ON RRP和SRF线为利率，SRF用量柱为成交金额；各自保留实际观测日，缺失不补零。</div>',
-    '<div class="parameter-note"><b>10Y Nominal：</b>美国10年期名义国债收益率，代表美元长期无风险名义利率基准，综合反映实际利率、通胀补偿等定价；单位为年化%。</div><div class="parameter-note"><b>10Y Real · TIPS (R1)：</b>美国10年期TIPS实际收益率，代表通胀保值国债的实际利率定价，上升表示实际贴现率抬高；单位为年化%。</div><div class="parameter-note"><b>10Y Breakeven (R1)：</b>10年期盈亏平衡通胀率，等于同期限名义收益率减实际收益率，代表未来十年的平均通胀补偿，含风险和流动性溢价；并非当期CPI。</div><div class="parameter-context">口径说明：R1为独立右轴；收益率及通胀补偿均以年化%显示。</div>',
+    '<div class="parameter-note"><b>10年期名义收益率（DGS10）：</b>美国10年期名义国债收益率，代表美元长期无风险名义利率基准，综合反映实际利率、通胀补偿等定价；单位为年化%。</div><div class="parameter-note"><b>10年期实际收益率（TIPS · DFII10，右轴）：</b>美国10年期TIPS实际收益率，代表通胀保值国债的实际利率定价，上升表示实际贴现率抬高；单位为年化%。</div><div class="parameter-note"><b>10年期盈亏平衡通胀率（BEI · T10YIE，右轴）：</b>10年期盈亏平衡通胀率，等于同期限名义收益率减实际收益率，代表未来十年的平均通胀补偿，含风险和流动性溢价；并非当期CPI。</div><div class="parameter-context">口径说明：实际收益率和BEI使用右轴；BEI＝名义收益率−实际收益率，三项均以年化%显示。</div>',
     '<div class="parameter-note"><b>3M：</b>美国3个月期国债收益率，代表短期美元国债的年化收益水平，对当前政策利率及近期政策预期较敏感。</div><div class="parameter-note"><b>2Y：</b>美国2年期国债收益率，代表未来两年利率路径的市场定价之一，同时包含期限溢价；不是两年期通胀率。</div><div class="parameter-note"><b>10Y：</b>美国10年期国债收益率，代表长期美元利率基准，反映长期实际利率、通胀补偿等因素；单位为年化%。</div><div class="parameter-note"><b>30Y：</b>美国30年期名义国债收益率，反映超长期美元利率定价；采用FRED DGS30原始日频观测，单位为年化%。</div><div class="parameter-note"><b>10Y−2Y (R1)：</b>10年减2年国债收益率之差，代表中长端收益率曲线斜率；负值为倒挂，上升为曲线变陡；单位为百分点。</div><div class="parameter-note"><b>30Y−10Y (R1)：</b>同一观测日30年减10年国债收益率之差，代表美债长端曲线斜率；上升为变陡、下降为变平，负值为倒挂；单位为百分点。任一腿缺失时不计算、不跨日补值。</div><div class="parameter-context">口径说明：国债收益率为年化%；两条期限利差为百分点。</div>',
     '<div class="parameter-note"><b>Net Liquidity：</b>美元净流动性代理＝美联储总资产−TGA−ON RRP余额，辅助观察央行资产负债表的流动性变化；单位为万亿美元，不等于流入股市的资金。</div><div class="parameter-note"><b>Reserve Balances (R1)：</b>银行准备金余额，代表存款机构在美联储持有的准备金存量；单位为万亿美元，使用周频观测。</div><div class="parameter-note"><b>TGA (R1)：</b>美国财政部在美联储的账户余额，代表财政现金存量；在其他因素不变时，余额增加通常会抽走银行准备金；单位为万亿美元。</div><div class="parameter-note"><b>ON RRP (R2)：</b>美联储隔夜逆回购余额，代表合资格机构使用该工具存放的隔夜资金规模；单位为十亿美元，与第1图的ON RRP利率不同。</div><div class="parameter-context">口径说明：该代理不包含所有美元资金流动。TGA优先使用日频，不可用时回退到周频；各系列保留实际观测日。</div>',
     '<div class="parameter-note"><b>M2 YoY：</b>港元广义货币M2同比增速，代表现金及相关存款规模相对上年同期的增长情况；单位为%，不等于股市资金净流入。</div><div class="parameter-note"><b>M2 MoM：</b>港元广义货币M2环比增速，以柱状图显示逐月增减，代表货币存量相对上个月的边际变化；单位为%，会受到季节性等因素影响。</div><div class="parameter-note"><b>Monetary Base YoY：</b>香港货币基础同比增速，代表负债证明书、政府流通纸币硬币、总结余及外汇基金票据债券合计规模的变化。</div><div class="parameter-note"><b>Tencent Price (R1)：</b>腾讯控股股价，代表该股票的市场定价及表现；单位为港元，价格变化本身不等于资金净流入量。</div><div class="parameter-note"><b>HKEX Price (R1)：</b>香港交易所股价，代表交易所公司的股票市场表现；单位为港元，不是港股市场成交额。</div><div class="parameter-note"><b>HSTECH Index (R2)：</b>恒生科技指数，代表其科技主题成分股的综合表现；单位为指数点。</div><div class="parameter-note"><b>HSI Index (R2)：</b>恒生指数，代表香港主要上市公司构成的指数表现；单位为指数点。</div><div class="parameter-context">口径说明：月度货币数据有公布时滞；股票和指数使用各自实际观测日。</div>',
@@ -2429,13 +2429,13 @@ def render_macro_chart_1(prebuilt_fig=None):
 def render_macro_chart_2(prebuilt_fig=None):
     _render_standard_macro_chart(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[2]}. US Treasury Yield Structure · 10Y</div>',
-        '<div class="section-description">10Y Nominal / 10Y Real · TIPS (R1) / 10Y Breakeven (R1)</div>',
+        '<div class="section-description">10年期名义收益率（DGS10） / 10年期实际收益率（TIPS · DFII10，右轴） / 10年期盈亏平衡通胀率（BEI · T10YIE，右轴）</div>',
         "normal_yield10_range",
         build_fig2,
         [
-            ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
-            ("10Y Real · TIPS (DFII10)", "https://fred.stlouisfed.org/series/DFII10"),
-            ("10Y Breakeven (T10YIE)", "https://fred.stlouisfed.org/series/T10YIE"),
+            ("10年期名义收益率（DGS10）", "https://fred.stlouisfed.org/series/DGS10"),
+            ("10年期实际收益率（TIPS · DFII10）", "https://fred.stlouisfed.org/series/DFII10"),
+            ("10年期盈亏平衡通胀率（BEI · T10YIE）", "https://fred.stlouisfed.org/series/T10YIE"),
         ],
         1,
         prebuilt_fig=prebuilt_fig,
@@ -2452,7 +2452,7 @@ def render_macro_chart_3(prebuilt_fig=None):
         [
             ("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"),
             ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"),
-            ("10Y Nominal (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
+            ("10年期名义收益率（DGS10）", "https://fred.stlouisfed.org/series/DGS10"),
             ("30Y Treasury (DGS30)", "https://fred.stlouisfed.org/series/DGS30"),
             ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"),
             ("30Y−10Y Spread · DGS30 minus DGS10", "https://fred.stlouisfed.org/series/DGS30"),

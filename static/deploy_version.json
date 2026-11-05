@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-05-srf-usage-ten-year-tips-r96",
+  "release": "2026-11-05-chart-two-chinese-labels-r97",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -38,6 +38,7 @@
     "public_ai_company_5y_cds_curves_with_actual_dates_and_implied_labels",
     "copper_spot_tcrc_weekly_signed_independent_units_actual_dates",
     "official_srf_complete_daily_all_collateral_accepted_amounts",
-    "ten_year_tips_dfii10_single_observed_series_in_chart_two"
+    "ten_year_tips_dfii10_single_observed_series_in_chart_two",
+    "chart_two_chinese_series_names_with_fred_codes_and_bei_identity"
   ]
 }

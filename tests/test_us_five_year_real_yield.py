@@ -54,7 +54,7 @@ class TenYearTIPSChartTests(unittest.TestCase):
     def test_ten_year_tips_is_observed_once_on_the_right_axis(self):
         fig = self.ns["build_fig2"]("5Y")
         self.assertEqual(len(fig.data), 3)
-        tips = next(x for x in fig.data if x.name == "10Y Real · TIPS (R1)")
+        tips = next(x for x in fig.data if x.name == "10年期实际收益率（TIPS · DFII10，右轴）")
         self.assertEqual(tips.yaxis, "y2")
         self.assertEqual(list(tips.y[:2]), [1.5, 1.6])
         self.assertTrue(pd.isna(tips.y[2]))
@@ -67,7 +67,7 @@ class TenYearTIPSChartTests(unittest.TestCase):
         fig = self.ns["build_fig2"]("5Y")
         for period in ("5Y", "1Y", "6M", "3M", "1M"):
             option = build_adaptive_echarts_option(fig, period)
-            tips = next(x for x in option["series"] if x["name"] == "10Y Real · TIPS (R1)")
+            tips = next(x for x in option["series"] if x["name"] == "10年期实际收益率（TIPS · DFII10，右轴）")
             self.assertEqual(tips["yAxisIndex"], 1)
             self.assertEqual(len(tips["data"]), 4)
             self.assertIsNone(tips["data"][2][1])
@@ -77,8 +77,8 @@ class TenYearTIPSChartTests(unittest.TestCase):
         self.ns["get_dfii10"].return_value = sample("DFII10", [], [])
         fig = self.ns["build_fig2"]("5Y")
         self.assertEqual(len(fig.data), 2)
-        self.assertIn("10Y Real · TIPS (R1)", fig.layout.meta["missing_series"])
-        self.assertEqual([x.name for x in fig.data], ["10Y Nominal", "10Y Breakeven (R1)"])
+        self.assertIn("10年期实际收益率（TIPS · DFII10，右轴）", fig.layout.meta["missing_series"])
+        self.assertEqual([x.name for x in fig.data], ["10年期名义收益率（DGS10）", "10年期盈亏平衡通胀率（BEI · T10YIE，右轴）"])
         self.ns["get_dfii5"].assert_not_called()
 
     def test_chart_two_title_description_and_sources_use_ten_year_tips(self):

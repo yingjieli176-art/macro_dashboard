@@ -681,7 +681,7 @@ def main():
             yield_chart.wait_for(timeout=30000)
             yield_names = yield_chart.evaluate("""element => (""" + INSTANCE_JS + """)(element)
                 .getOption().series.map(s=>s.name)""")
-            assert yield_names == ['10Y Nominal','10Y Real · TIPS (R1)','10Y Breakeven (R1)'], yield_names
+            assert yield_names == ['10年期名义收益率（DGS10）','10年期实际收益率（TIPS · DFII10，右轴）','10年期盈亏平衡通胀率（BEI · T10YIE，右轴）'], yield_names
             page.get_by_text('2. US Treasury Yield Structure · 10Y', exact=True).scroll_into_view_if_needed()
             page.screenshot(path='browser_ten_year_tips.png')
             report['ten_year_tips'] = yield_names
