@@ -199,7 +199,8 @@ def _responsive_chart_layout(option, fig, axis_map):
     # Reset every property introduced by a media override, including the
     # legend's explicit row breaks and toolbox icon size.
     desktop["legend"].update({"data": [series["name"] for series in option["series"]],
-                              "right": "auto", "itemWidth": 25, "itemHeight": 14,
+                              "type": "plain", "left": 4, "right": 4,
+                              "itemWidth": 25, "itemHeight": 14,
                               "itemGap": 10})
     desktop["legend"].setdefault("textStyle", {})["lineHeight"] = 14
     desktop["legend"]["textStyle"].setdefault("fontSize", 12)
@@ -325,7 +326,7 @@ def build_safe_echarts_option(fig, date_range="1Y"):
     window_start = (latest - RANGE_OFFSETS[date_range]).isoformat()
     return _responsive_chart_layout({
         "animation": False,
-        "legend": {"type": "scroll", "top": 14},
+        "legend": {"type": "plain", "top": 14},
         "grid": {
             "left": 80, "right": 55 + max(0, len(axes)-1)*70,
             "top": 68, "bottom": 72,
@@ -522,7 +523,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
     return _responsive_chart_layout({
         "animation": False,
         "legend": {
-            "type": "scroll",
+            "type": "plain",
             "top": 31, "left": 12,
             "textStyle": {"color": "#475569", "fontSize": 11},
         },

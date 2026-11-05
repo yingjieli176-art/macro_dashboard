@@ -44,17 +44,40 @@ export function dailyPriceTooltip(params, labels) {
   })].join('\n');
 }
 export function compactLegend(option, labels, width) {
-  const names = option.series.map(series => series.name);
-  const display = name => labels[name] || name;
-  const packed = [], usable = Math.max(width - 40, 120);
-  let used = 0, rows = 1;
+  const names = [...new Set(option.series.map(series => series.name))];
+  const prior = option.legend || {};
+  const fontSize = prior.textStyle?.fontSize || 12;
+  const lineHeight = Math.max(prior.textStyle?.lineHeight || 0, fontSize + 4);
+  const itemWidth = prior.itemWidth || 25, itemGap = 10;
+  const usable = Math.max(width - 24, 80);
+  const textWidth = text => [...text].reduce((n, char) =>
+    n + (/[^\x00-\x7f]/.test(char) ? fontSize : fontSize * 0.65), 0);
+  const displays = {};
+  const packed = [];
+  let used = 0, rowHeight = lineHeight, height = 0;
   for (const name of names) {
-    const size = 30 + [...display(name)].reduce((n, char) => n + (/[^\x00-\x7f]/.test(char) ? 10 : 6.2), 0);
-    if (used && used + size > usable) { packed.push('\n'); used = 0; rows++; }
-    packed.push(name); used += size;
+    // Wrap a long individual label too, so a narrow screen never clips it.
+    const lines = [''], limit = Math.max(usable - itemWidth - 8, 32);
+    for (const char of labels[name] || name) {
+      if (lines.at(-1) && textWidth(lines.at(-1) + char) > limit) lines.push('');
+      lines[lines.length - 1] += char;
+    }
+    displays[name] = lines.join('\n');
+    const size = itemWidth + 8 + Math.max(...lines.map(textWidth));
+    if (used && used + itemGap + size > usable) {
+      packed.push('\n'); height += rowHeight + itemGap;
+      used = 0; rowHeight = lineHeight;
+    }
+    packed.push(name);
+    used += (used ? itemGap : 0) + size;
+    rowHeight = Math.max(rowHeight, lines.length * lineHeight);
   }
-  option.legend = {...option.legend, data:packed, formatter:display};
-  option.grid.top = Math.max(option.grid.top || 0, 40 + rows * 22);
+  height += rowHeight;
+  option.legend = {...prior, type:'plain', orient:'horizontal', top:26,
+    left:8, right:8, padding:0, itemWidth, itemGap, data:packed,
+    formatter:name => displays[name] || labels[name] || name,
+    textStyle:{...prior.textStyle, fontSize, lineHeight}};
+  option.grid.top = Math.max(Number(option.grid.top) || 0, 26 + height + 30);
   return option;
 }
 
@@ -205,17 +228,7 @@ export default function({data, parentElement}) {
         lineStyle:{color:'#94a3b8', type:'dashed', width:1}, data:[{yAxis:0}]}
     }))];
     const names = [...base.series.map(series => series.name), ...ratioNames];
-    if (mobile) {
-      const packed = [], usable = Math.max(element.clientWidth - 32, 120);
-      let used = 0, rows = 1;
-      for (const name of names) {
-        const width = 30 + [...name].reduce((total, char) => total + (/[^\x00-\x7f]/.test(char) ? 10 : 6.2), 0);
-        if (used && used + width > usable) { packed.push('\n'); used = 0; rows++; }
-        packed.push(name); used += width;
-      }
-      option.legend.data = packed;
-      option.grid.top = Math.max(option.grid.top, 26 + rows * 22 + 40);
-    } else option.legend.data = names;
+    option.legend.data = names;
     option.tooltip = {...option.tooltip, trigger:'axis', formatter:params => dailyPriceTooltip(params, shortNames)};
     // Price and percentage paths share one grid and one calendar axis.
     // Both slider handles clip both kinds of series to the same dates.
@@ -398,3 +411,4 @@ export default function({data, parentElement}) {
     buttons.forEach(button => { button.onclick = null; });
   };
 }
+

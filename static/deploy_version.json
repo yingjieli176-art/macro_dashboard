@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-05-restored-chart-explanations-r103",
+  "release": "2026-11-05-wrapping-legends-r104",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -47,6 +47,7 @@
     "cds_observation_coverage_first_last_dates_and_source_calendar_lag",
     "only_nvidia_amd_alphabet_microsoft_oracle_five_year_cds",
     "compact_parenthetical_chart_labels_without_parameter_tables",
-    "original_chart_explanations_retained"
+    "original_chart_explanations_retained",
+    "all_chart_legends_wrap_without_pagination"
   ]
 }
