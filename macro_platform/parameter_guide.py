@@ -96,8 +96,8 @@ def describe(name, axis="y"):
                  "百分点" if spread else "年化%", "同日长端减短端；负值为倒挂。" if spread else "该国本币国债的市场利率。")
     if entry is None and "回撤比例" in key:
         entry = (key, "%", "（当日收盘÷所选区间最高收盘−1）×100%；高点当日为0，高点前不画线。")
-    if entry is None and (match := re.fullmatch(r"(Oracle|Intel|AMD|NVIDIA|CoreWeave|Alphabet|Nebius|CDX IG) (1Y|5Y)(.*)", key)):
-        company = {"Oracle": "甲骨文", "Intel": "英特尔", "AMD": "超威半导体", "NVIDIA": "英伟达", "Alphabet": "谷歌母公司Alphabet", "Nebius": "Nebius（NBIS）", "CoreWeave": "CoreWeave云算力公司", "CDX IG": "投资级公司信用指数"}[match[1]]
+    if entry is None and (match := re.fullmatch(r"(Oracle|Intel|AMD|NVIDIA|CoreWeave|Alphabet|Microsoft|Nebius|CDX IG) (1Y|5Y)(.*)", key)):
+        company = {"Oracle": "甲骨文", "Intel": "英特尔", "AMD": "超威半导体", "NVIDIA": "英伟达", "Alphabet": "谷歌母公司Alphabet", "Microsoft": "微软", "Nebius": "Nebius（NBIS）", "CoreWeave": "CoreWeave云算力公司", "CDX IG": "投资级公司信用指数"}[match[1]]
         years = "1年" if match[2] == "1Y" else "5年"
         entry = (company + years + ("信用指数利差" if match[1] == "CDX IG" else "信用违约掉期利差（CDS）"), "基点bp",
                  "100bp＝1%/年；走高表示信用保护变贵，不是股价保险。" + ("带*为由预付款推算的隐含利差。" if "*" in key else ""))

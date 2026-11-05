@@ -42,8 +42,6 @@ def figure_rows(figures, now=None):
             monthly = number == MACRO_DISPLAY_NUMBER[6] or (number == MACRO_DISPLAY_NUMBER[5] and any(s in trace.name for s in ("M2 ", "M3 ", "Monetary Base")))
             weekly = any(name in trace.name for name in ("Reserve Balances", "Weekly fallback", "CFTC JPY"))
             cadence = "monthly" if monthly else "weekly" if weekly else "daily"
-            if isinstance(getattr(trace, "meta", None), dict) and trace.meta.get("observation_cadence") in ("daily", "weekly", "monthly"):
-                cadence = trace.meta["observation_cadence"]
             item = {"name": trace.name, "data": [[last.isoformat(), 1]], "observation_cadence": cadence}
             health = option_observation_health({"series": [item]}, now=now) if option_observation_health else {}
             status = ("时效适配器暂不可用" if not health else
@@ -85,7 +83,9 @@ def source_rows(path=SOURCE_REPORT):
         "本地数据日期": row.get("repository_latest") or "实时构建",
         "源站数据日期": row.get("source_latest") or "未取得", "核对结果": labels.get(row["status"],row["status"]),
         "本次核对时间": _local_time(row.get("checked_at")), "说明": row.get("error") or row.get("live_probe_note", "")}
-        for row in report.get("sources", [])]
+        for row in report.get("sources", [])
+        if row.get("id") not in {"NVIDIA_CDS_1Y", "SN_INTEL_CDS_5Y", "SN_COREWEAVE_CDS_5Y",
+                                 "SN_NEBIUS_CDS_5Y", "CDX_IG5_CDS_5Y"}]
 
 
 def render_freshness_overview(figures, *, quote_rows=None, news=None):
@@ -105,3 +105,4 @@ def render_freshness_overview(figures, *, quote_rows=None, news=None):
         times = [str(item["time"]) for item in items if item.get("time")]
         if times:
             st.caption("最新快讯时间：" + times[0])
+

@@ -22,22 +22,18 @@ def source():
 
 
 class AiCreditTests(unittest.TestCase):
-    def test_unpublished_nebius_cds_is_missing_even_when_equity_swap_prices_exist(self):
+    def test_selected_five_exclude_retired_names_equity_prices_and_one_year(self):
         raw = source()
-        raw["series"].pop("sn_nebius")
-        raw["catalogue"] = [row for row in raw["catalogue"] if row["id"] != "sn_nebius"]
         raw["series"]["eq_px_nebius"] = [150., 160., 170.]
+        raw["series"]["sn_nebius"] = [200., 210., 220.]
+        raw["catalogue"].append({"id": "sn_nebius", "label": "Nebius 5y CDS", "unit": "bp"})
         payload = cds.parse_source(raw)
-        self.assertEqual(payload["series"]["sn_nebius"]["records"], [])
-        table = cds.cds_summary(payload).set_index("公司 / 指数")
-        row = table.loc["Nebius 5Y（NBIS）"]
-        self.assertTrue(pd.isna(row["最新CDS（bp）"]))
-        self.assertEqual(row["观测数"], 0)
-        self.assertEqual(row["数据状态"], "公开源未提供5Y CDS")
-        with patch.object(cds, "load_nvidia_cds", return_value=pd.DataFrame(columns=["tenor"])):
-            fig = cds.build_cds_figure(payload=payload)
-        self.assertNotIn("Nebius 5Y（NBIS）", [trace.name for trace in fig.data])
-        self.assertIn("Nebius 5Y（NBIS）", fig.layout.meta["missing_series"])
+        expected = ["NVIDIA 5Y", "AMD 5Y", "Alphabet 5Y（谷歌）", "Microsoft 5Y（微软）", "Oracle 5Y"]
+        self.assertEqual(cds.cds_summary(payload)["公司 / 指数"].tolist(), expected)
+        fig = cds.build_cds_figure(payload=payload)
+        self.assertEqual([trace.name for trace in fig.data], expected)
+        self.assertFalse(fig.layout.meta["missing_series"])
+        self.assertEqual(set(payload["series"]), set(cds.SERIES))
 
     def test_coverage_uses_actual_priced_days_and_each_companys_date(self):
         table = cds.cds_summary(cds.parse_source(source())).set_index("公司 / 指数")
@@ -47,18 +43,18 @@ class AiCreditTests(unittest.TestCase):
         self.assertEqual(table.loc["NVIDIA 5Y", "距源截止日（天）"], 1)
         self.assertEqual(table.loc["Alphabet 5Y（谷歌）", "实际观测日"], "2026-10-28")
 
-    def test_optional_name_still_rejects_equity_price_descriptor(self):
+    def test_company_name_still_rejects_equity_price_descriptor(self):
         raw = source()
         next(row for row in raw["catalogue"] if row["id"] == "sn_alphabet")["unit"] = "usd"
         with self.assertRaises(ValueError):
             cds.parse_source(raw)
 
-    def test_whitelists_only_cds_and_labels_implied_series(self):
+    def test_whitelists_only_selected_corporate_cds(self):
         payload = cds.parse_source(source())
         self.assertEqual(set(payload["series"]), set(cds.SERIES))
-        self.assertEqual(payload["series"]["sn_coreweave"]["quote_basis"], "upfront_implied")
+        self.assertEqual(payload["series"]["sn_microsoft"]["quote_basis"], "source_aggregate")
         self.assertNotIn("eq_px_nvidia", payload["series"])
-        self.assertIn("40% recovery", payload["methodology"])
+        self.assertIn("Five selected corporate", payload["methodology"])
 
     def test_rejects_wrong_measures_dates_nonfinite_and_truncated_calendars(self):
         for mutation in (lambda p: p["catalogue"][0].update(unit="usd"),
@@ -80,18 +76,17 @@ class AiCreditTests(unittest.TestCase):
         self.assertEqual(table.loc["Oracle 5Y", "实际观测日"], "2026-10-28")
 
     def test_native_and_rescue_charts_keep_null_gaps_and_visible_isolated_observations(self):
-        with patch.object(cds, "load_nvidia_cds", return_value=pd.DataFrame(columns=["tenor"])):
-            for window in ("5Y", "1Y", "6M", "3M", "1M"):
-                fig = cds.build_cds_figure(window, cds.parse_source(source()))
-                self.assertEqual(len(fig.data), len(cds.SERIES))
-                self.assertTrue(all(t.connectgaps is False for t in fig.data))
-                for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
-                    option = adapter(fig, window)
-                    oracle = next(s for s in option["series"] if s["name"] == "Oracle 5Y")
-                    self.assertEqual([p[1] for p in oracle["data"]], [100., None, 110.])
-                    self.assertTrue(oracle["showSymbol"])
-                    self.assertFalse(oracle["connectNulls"])
-                self.assertIn("NVIDIA 1Y · 待数据源", fig.layout.meta["missing_series"])
+        for window in ("5Y", "1Y", "6M", "3M", "1M"):
+            fig = cds.build_cds_figure(window, cds.parse_source(source()))
+            self.assertEqual(len(fig.data), len(cds.SERIES))
+            self.assertTrue(all(t.connectgaps is False for t in fig.data))
+            for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
+                option = adapter(fig, window)
+                oracle = next(s for s in option["series"] if s["name"] == "Oracle 5Y")
+                self.assertEqual([p[1] for p in oracle["data"]], [100., None, 110.])
+                self.assertTrue(oracle["showSymbol"])
+                self.assertFalse(oracle["connectNulls"])
+            self.assertNotIn("NVIDIA 1Y · 待数据源", fig.layout.meta["missing_series"])
 
     def test_invalid_refresh_never_overwrites_last_good_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -121,18 +116,15 @@ class AiCreditTests(unittest.TestCase):
         table = cds.cds_summary().set_index("公司 / 指数")
         for key, (label, _) in cds.SERIES.items():
             actual = [r for r in payload["series"][key]["records"] if r["spread_bps"] is not None]
-            if not actual:
-                self.assertIn(key, cds.OPTIONAL_SERIES)
-                self.assertTrue(pd.isna(table.loc[label, "最新CDS（bp）"]))
-                continue
+            self.assertTrue(actual)
             self.assertEqual(table.loc[label, "最新CDS（bp）"], actual[-1]["spread_bps"])
             self.assertEqual(table.loc[label, "实际观测日"], actual[-1]["observation_date"])
             self.assertLessEqual(actual[-1]["observation_date"], payload["source_asof"])
 
-    def test_freshness_probe_uses_independent_source_and_preserves_missing_1y(self):
+    def test_freshness_probe_uses_independent_source_and_omits_retired_tenors(self):
         from scripts import probe_all_sources as probe
         jobs = {j[0]: j for j in probe.jobs()}
-        self.assertIn("NVIDIA_CDS_1Y", jobs)
+        self.assertNotIn("NVIDIA_CDS_1Y", jobs)
         with patch.object(probe, "get", return_value=type("Response", (), {"json": lambda self: source()})()):
             row = probe.check(jobs["NVIDIA_CDS_5Y"])
         self.assertEqual(row["source_latest"], "2026-10-27")

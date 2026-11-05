@@ -728,7 +728,8 @@ def main():
                     valid:s.data.filter(p=>Number.isFinite(p[1])).length,
                     gaps:s.data.filter(p=>p[1]===null).length}));
             }""")
-            for name in ('Oracle 5Y', 'Intel 5Y', 'AMD 5Y', 'NVIDIA 5Y', 'Alphabet 5Y（谷歌）', 'CoreWeave 5Y*', 'CDX IG 5Y · 指数'):
+            assert [s['name'] for s in cds_state] == ['NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）', 'Oracle 5Y']
+            for name in ('NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）', 'Oracle 5Y'):
                 found = next(s for s in cds_state if s['name'] == name)
                 assert found['valid'] > 10 and found['markers'] and not found['connect'], found
                 assert found['axis'] == 0, found
@@ -891,4 +892,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

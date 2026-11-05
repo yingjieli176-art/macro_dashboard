@@ -474,15 +474,6 @@ def jobs():
         add(field, [16], "daily", snapshot("copper_market_daily.json", "date", field), lambda field=field: lme(field))
     for field in ("tc_usd_dmt", "rc_cents_lb"):
         add(field, [16], "weekly", snapshot("copper_tcrc_weekly.json", "observation_date", field), copper_tcrc_source)
-    def nvidia_cds(tenor):
-        from macro_platform.nvidia_cds import load_nvidia_cds
-        data = load_nvidia_cds()
-        part = data.loc[data.tenor.eq(tenor)]
-        if part.empty:
-            raise ValueError("Authorized NVIDIA " + tenor + " CDS spread source is not connected")
-        # A local export is not proof of source-latest status.
-        raise ValueError("NVIDIA CDS export loaded; source-latest quote requires provider connection")
-    output.append(("NVIDIA_CDS_1Y", [19], "daily", None, lambda: nvidia_cds("1Y")))
     from macro_platform.ai_credit import SOURCE_URL as CDS_URL, SERIES as CDS_SERIES, load_cds_snapshot, parse_source
     saved_cds = load_cds_snapshot()
     def public_cds(key):

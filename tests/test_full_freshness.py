@@ -110,10 +110,11 @@ class FullFreshness(unittest.TestCase):
         self.assertEqual(before,same)
         self.assertNotEqual(before,after)
 
-    def test_market_and_watchlist_have_automatic_refresh_fragments(self):
+    def test_market_keeps_automatic_refresh_and_retired_watchlist_is_absent(self):
         source=Path(__file__).resolve().parents[1]/"app.py"
         tree=ast.parse(source.read_text())
-        for name in ("render_market_overview","render_watchlists"):
+        self.assertNotIn("render_watchlists", {n.name for n in tree.body if isinstance(n, ast.FunctionDef)})
+        for name in ("render_market_overview",):
             node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name==name)
             period=[kw.value.value for decorator in node.decorator_list if isinstance(decorator,ast.Call)
                     for kw in decorator.keywords if kw.arg=="run_every"]

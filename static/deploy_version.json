@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-05-cds-coverage-audit-r100",
+  "release": "2026-11-05-five-company-cds-r101",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -46,6 +46,7 @@
     "srf_usage_opaque_teal_bars_with_visible_border",
     "alphabet_five_year_cds_and_explicit_nebius_unavailable_slot",
     "cds_observation_coverage_first_last_dates_and_source_calendar_lag",
-    "parameter_explanations_retained_when_crypto_sources_are_unavailable"
+    "parameter_explanations_retained_when_crypto_sources_are_unavailable",
+    "only_nvidia_amd_alphabet_microsoft_oracle_five_year_cds"
   ]
 }
