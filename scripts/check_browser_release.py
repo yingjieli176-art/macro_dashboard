@@ -660,7 +660,7 @@ def main():
             assert page.get_by_text("该图表目前没有可验证的有效观测数据", exact=False).count() > 0
             report["checks"].append({"chart_positions": 19, "painted_native_charts": len(paints),
                                       "missing_positions_are_explicit": True})
-            policy = page.locator('.st-key-normal_corridor_range_adaptive_default_1Y').get_by_test_id(
+            policy = page.locator('.st-key-normal_corridor_range_echarts_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             policy.wait_for(timeout=30000)
             policy_state = policy.evaluate("""element => {
@@ -676,7 +676,7 @@ def main():
             policy.scroll_into_view_if_needed()
             page.screenshot(path='browser_srf_usage.png')
             report['srf_usage'] = policy_state
-            yield_chart = page.locator('.st-key-normal_yield10_range_adaptive_default_1Y').get_by_test_id(
+            yield_chart = page.locator('.st-key-normal_yield10_range_echarts_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             yield_chart.wait_for(timeout=30000)
             yield_names = yield_chart.evaluate("""element => (""" + INSTANCE_JS + """)(element)

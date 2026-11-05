@@ -87,7 +87,8 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertIn("USD bn", corridor["yAxis"][1]["name"])
         self.assertFalse(corridor["yAxis"][1]["scale"])
         self.assertTrue(any(point[1] == 0 for point in usage["data"]))
-        ten_year = next(json.loads(spec) for spec in specs if '10Y Real · TIPS (R1)' in spec)
+        ten_year = next(json.loads(spec) for spec in specs
+                        if any(s['name'] == '10Y Real · TIPS (R1)' for s in json.loads(spec)['series']))
         self.assertEqual([s["name"] for s in ten_year["series"]],
                          ["10Y Nominal", "10Y Real · TIPS (R1)", "10Y Breakeven (R1)"])
         srf = next(series for series in corridor["series"] if series["name"] == "SRF")
