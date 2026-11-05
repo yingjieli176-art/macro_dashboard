@@ -8,6 +8,7 @@ import re
 import sys
 import tempfile
 from datetime import datetime, timezone
+from html.parser import HTMLParser
 from urllib.parse import urljoin
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,13 +18,41 @@ from macro_platform.copper_tcrc import SNAPSHOT_PATH, validate_record
 INDEX_URL = "https://news.mysteel.com/article/p-4536-------------1.html"
 
 
+class PublicDocument(HTMLParser):
+    def __init__(self, html):
+        super().__init__(convert_charrefs=True)
+        self.text, self.links, self.anchor, self.ignored = [], [], None, 0
+        if isinstance(html, bytes):
+            charset = re.search(br"charset=[\"']?([a-zA-Z0-9_-]+)", html[:4096])
+            html = html.decode(charset[1].decode() if charset else "utf-8", errors="replace")
+        self.feed(html)
+
+    def handle_starttag(self, tag, attrs):
+        if tag in ("script", "style"):
+            self.ignored += 1
+        if tag == "a":
+            self.anchor = [dict(attrs).get("href", ""), []]
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style"):
+            self.ignored = max(0, self.ignored - 1)
+        if tag == "a" and self.anchor:
+            self.links.append((self.anchor[0], "".join(self.anchor[1])))
+            self.anchor = None
+
+    def handle_data(self, data):
+        if not self.ignored:
+            self.text.append(data)
+            if self.anchor:
+                self.anchor[1].append(data)
+
+
 def parse_article(html, url, today=None):
-    from bs4 import BeautifulSoup
     publication = re.search(r"/a/(\d{6})\d{2}/", url)
     if not publication:
         raise ValueError("Article publication date missing")
     published = datetime.strptime(publication[1], "%y%m%d").date()
-    text = BeautifulSoup(html, "html.parser").get_text(" ", strip=True).replace("−", "-").replace("－", "-")
+    text = re.sub(r"\s+", "", "".join(PublicDocument(html).text)).replace("−", "-").replace("－", "-")
     # Only explicitly dated index fixings qualify. Bids, deals, annual
     # benchmarks, weekly changes and undated commentary cannot become points.
     pattern = (r"(\d{1,2})月(\d{1,2})日[，,\s]*"
@@ -70,14 +99,12 @@ def refresh(rows, path=SNAPSHOT_PATH, today=None):
 
 def collect():
     import requests
-    from bs4 import BeautifulSoup
     session = requests.Session()
     response = session.get(INDEX_URL, timeout=(10, 30))
     response.raise_for_status()
     links = set()
-    for anchor in BeautifulSoup(response.content, "html.parser").find_all("a", href=True):
-        title = anchor.get_text(" ", strip=True)
-        url = urljoin(INDEX_URL, anchor["href"])
+    for href, title in PublicDocument(response.content).links:
+        url = urljoin(INDEX_URL, href)
         if ("铜产业早读" in title or ("周报" in title and "铜精矿" in title)) and re.match(r"https://youse\.mysteel\.com/a/\d{8}/[A-Fa-f0-9]+\.html$", url):
             links.add(url)
     rows = []
