@@ -150,6 +150,11 @@ def _responsive_chart_layout(option, fig, axis_map):
         (480, 336, 44, 10),
         (360, 236, 40, 9),
     ):
+        # Seven independent copper axes need narrower numeric columns on a
+        # phone. Keep >80px for data at 360px screens without hiding any axis.
+        compact_units = len(option["yAxis"]) > 5 and maximum <= 480
+        if compact_units:
+            spacing = 30
         names, used, rows = [], 0, 1
         for series in option["series"]:
             name = series["name"]
@@ -164,9 +169,13 @@ def _responsive_chart_layout(option, fig, axis_map):
             used += width
         axes = deepcopy(option["yAxis"])
         for index, axis in enumerate(axes):
+            unit = units[index]
+            if compact_units:
+                unit = {"USD/t": "$/t", "USD/bbl": "$/bbl", "USD/dmt": "$/dmt",
+                        "US cents/lb": "¢/lb"}.get(unit, unit)
             axis.update({
                 "show": True,
-                "name": f"{'L' if index == 0 else 'R' + str(index)}\n{units[index]}",
+                "name": f"{'L' if index == 0 else 'R' + str(index)}\n{unit}",
                 "nameLocation": "end", "nameRotate": 0, "nameGap": 10,
                 "nameTextStyle": {"fontSize": 9, "lineHeight": 12,
                                   "align": "center", "color": "#475569"},
