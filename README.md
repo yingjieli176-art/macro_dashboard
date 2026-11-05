@@ -250,3 +250,7 @@ r92：第5图将VIX3M−VIX替换为VIX/VIX3M，加入同日VIX9D/VIX（9D/30D�
 NVIDIA CDS授权CSV导入：`python scripts/import_nvidia_cds.py --csv export.csv`。必需列：`issuer,observation_date,tenor,spread_bps,currency,seniority,quote_type,source,source_url`；期限为1Y/5Y，currency=USD，seniority=SENIOR_UNSECURED，quote_type=par_spread。只导入已有数据授权且允许在该看板展示的实际报价。
 
 r93：第5图新增同日VVIX÷VIX的VVIX/VIX比值，以倍数在R1显示；复用原始VVIX与VIX观测，不跨日填充，任一腿缺失或VIX为0时留空。新增图例、悬停和参数说明，保留原VVIX独立指数点曲线及其R3坐标。
+
+r94：第19图扩展为AI公司CDS历史曲线及最新观测表，展示Oracle、Intel、AMD、NVIDIA、CoreWeave和CDX IG的5Y利差（bp）。来源注明Open-Sourced Rates Observatory, irates.today；只提取公开`chart_data.json`中的CDS字段，不使用股票掉期价格。5Y为剩余期限4.4–5.6年的成交分组、按日聚合；CoreWeave以星号及虚线标注源站预付款推算利差（固定违约强度、40%回收率），不是直接成交利差。无数据日留空、实际观测用圆点显示；每家公司单独报告观测日期和样本数。英伟达1Y授权导入入口保留，不从5Y推算。`update-ai-cds.yml`定时刷新并原子发布快照，源站异常或历史明显截短时保留有效数据，加入独立日期审计。首次接入源站日历截至2026-11-03；NVIDIA最新为2026-10-29，不能称为11月3日实时报价。
+
+第19图附联动观察说明：CDS与资本开支、美债期限溢价与美联储政策、日经和韩国股市与美硬件。均明确标为待检验假设，不把收盘时差或期限风险补偿当成已证实的领先规律。

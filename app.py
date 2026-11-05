@@ -65,7 +65,7 @@ try:
 except ImportError:
     def load_spx_put_call_snapshot():
         return pd.DataFrame(columns=["observation_date", "SPX_PCR"])
-from macro_platform.nvidia_cds import build_nvidia_cds_figure
+from macro_platform.ai_credit import build_cds_figure, cds_summary, load_cds_snapshot
 from macro_platform.copper import build_copper_flow_spread_figure
 from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
 from macro_platform.yen_index import load_yen_market_index
@@ -114,7 +114,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-04-vvix-vix-ratio-r93"
+CHART_BUILD = "2026-11-05-ai-credit-cds-curves-r94"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -3011,15 +3011,26 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
 
 @st.fragment(key="nvidia_cds_viewport")
 def render_nvidia_cds():
-    st.markdown('<div class="section-title">19. NVIDIA CDS · 英伟达信用违约互换</div>'
-                '<div class="section-description">USD · Senior unsecured · 1Y / 5Y · bp</div>', unsafe_allow_html=True)
-    figure = build_nvidia_cds_figure("5Y")
+    st.markdown('<div class="section-title">19. AI Credit · 公司CDS信用风险</div>'
+                '<div class="section-description">Oracle · Intel · AMD · NVIDIA · CoreWeave* · CDX IG · 5Y · bp</div>', unsafe_allow_html=True)
+    payload = load_cds_snapshot()
+    figure = build_cds_figure("5Y", payload=payload)
     _render_adaptive_macro_figure(figure, "nvidia_cds")
     if not figure.data:
-        st.info("1年期、5年期CDS利差：待接入可核实的授权行情。当前没有可绘制的实际观测。")
-    st.caption("CDS利差单位为基点（100 bp = 1%/年）。只展示同一参考实体、币种和偿债顺位的原始1Y/5Y报价；结算价格、标准票息及预付款不替代利差，缺少的期限保持缺失。")
-    add_sources([("S&P Global · CDS Pricing", "https://www.marketplace.spglobal.com/en/datasets/cds-pricing-(251)"),
-                 ("ICE · CDS Settlement Prices", "https://www.ice.com/cds-settlement-prices")])
+        st.info("暂未取得可绘制的CDS观测，请查看数据源更新状态。")
+    st.dataframe(cds_summary(payload), hide_index=True, width="stretch")
+    st.caption(f"来源：Open-Sourced Rates Observatory, irates.today。数据日历截至 {payload.get('source_asof', '未取得')}；各公司的实际最新观测日见表。日度成交汇总，不是实时买卖报价；无成交的日期留空，圆点表示实际观测，可点击图例比较公司。")
+    st.caption("5Y为剩余期限4.4–5.6年的成交分组，单位bp（100 bp = 1%/年）。CoreWeave*为源站基于预付款、固定违约强度及40%回收率推算的利差，使用虚线标注；CDX IG为信用指数。英伟达1Y继续保留独立数据入口，缺少报价时不推算。")
+    st.markdown('<div class="mini-description">'
+        '<div class="parameter-note"><b>CDS与资本开支：</b>CDS走阔可作为融资压力的早期观察信号，需与资本开支指引、经营现金流和债务到期安排交叉核对；不能仅凭利差上升判断公司已削减开支。</div>'
+        '<div class="parameter-note"><b>美债期限溢价与美联储：</b>长期美债收益率可分解为预期短期利率的平均值与期限溢价。期限溢价变化还可能反映通胀不确定性、债券供给和久期风险；判断政策动作，应同时看联邦基金期货或OIS中的利率路径预期。</div>'
+        '<div class="parameter-note"><b>日经、韩国股市与美硬件：</b>可观察亚洲时段的硬件情绪，但大盘指数包含其他行业，也可能在消化前一日美股行情。应结合半导体指数、相关个股及美国盘前或期货，统一时区与币种后检验领先关系。</div>'
+        '<div class="parameter-context">以上为联动观察假设，尚未完成针对这些曲线的领先滞后检验，不代表已确认的预测规律或固定领先天数。</div></div>', unsafe_allow_html=True)
+    add_sources([("Open-Sourced Rates Observatory · AI capex", "https://irates.today/capex.html"),
+                 ("CDS历史聚合数据", "https://irates.today/chart_data.json"),
+                 ("数据方法与使用说明", "https://irates.today/about.html"),
+                 ("纽约联储 · 美债期限溢价", "https://www.newyorkfed.org/research/data_indicators/term-premia-tabs"),
+                 ("OFR · CDS价格发现研究", "https://www.financialresearch.gov/working-papers/2024/07/17/do-credit-default-swaps-still-lead/")])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -3184,7 +3195,7 @@ def _render_all_source_freshness(figures):
                        for number, figure in figures.items()}
     display_figures[MACRO_DISPLAY_NUMBER["us_drawdown"]] = _build_equity_drawdown()
     display_figures[MACRO_DISPLAY_NUMBER["cn_drawdown"]] = _build_china_drawdown()
-    display_figures[19] = build_nvidia_cds_figure("5Y")
+    display_figures[19] = build_cds_figure("5Y")
     render_freshness_overview(display_figures, quote_rows=rows, news=_read_existing_news_snapshot())
 
 _render_all_source_freshness(macro_figures)
