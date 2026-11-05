@@ -299,7 +299,8 @@ def build_copper_flow_spread_figure(date_range: str) -> go.Figure:
             continue
         fig.add_trace(go.Scatter(
             x=charges["observation_date"], y=charges[field], name=name,
-            yaxis=axis, mode="lines+markers", line=dict(width=2, color=color),
+            yaxis=axis, mode="lines+markers", line=dict(width=2, color=color,
+                dash="dot" if field == "rc_cents_lb" else "solid"),
             marker=dict(size=5), meta={"observation_cadence": "weekly"},
             hovertemplate=name + ": %{y:.3f} " + unit + "<extra></extra>"))
 
@@ -316,6 +317,13 @@ def build_copper_flow_spread_figure(date_range: str) -> go.Figure:
             tickformat=",.2f", tickfont=dict(size=9))})
     fig.update_layout(xaxis_domain=[0, 0.60], margin_r=180,
                       yaxis2_position=0.62, yaxis3_position=0.74)
+    if not charges.empty:
+        # The native adapter computes responsive offsets. Keep fallback Plotly
+        # axes distinct too, instead of stacking TC/RC on the oil ratio axis.
+        fig.update_layout(xaxis_domain=[0, 0.48], margin_r=210,
+            yaxis2_position=0.51, yaxis3_position=0.60,
+            yaxis4_position=0.69, yaxis5_position=0.78,
+            yaxis6_position=0.87, yaxis7_position=0.98)
     return fig
 
 
