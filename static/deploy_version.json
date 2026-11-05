@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-05-five-company-cds-r101",
+  "release": "2026-11-05-compact-parameter-labels-r102",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -41,12 +41,11 @@
     "ten_year_tips_dfii10_single_observed_series_in_chart_two",
     "chart_two_chinese_series_names_with_fred_codes_and_bei_identity",
     "watchlist_section_navigation_and_quote_jobs_removed",
-    "chinese_parameter_glossary_for_all_chart_series",
     "nikkei_225_chinese_names_ratio_formula_axes_and_session_basis",
     "srf_usage_opaque_teal_bars_with_visible_border",
     "alphabet_five_year_cds_and_explicit_nebius_unavailable_slot",
     "cds_observation_coverage_first_last_dates_and_source_calendar_lag",
-    "parameter_explanations_retained_when_crypto_sources_are_unavailable",
-    "only_nvidia_amd_alphabet_microsoft_oracle_five_year_cds"
+    "only_nvidia_amd_alphabet_microsoft_oracle_five_year_cds",
+    "compact_parenthetical_chart_labels_without_parameter_tables"
   ]
 }

@@ -43,6 +43,32 @@ export function dailyPriceTooltip(params, labels) {
     return `${labels[index]} ${ratio ? '回撤比例' : '收盘'}：${text}`;
   })].join('\n');
 }
+export function compactLegend(option, labels, width) {
+  const names = option.series.map(series => series.name);
+  const display = name => labels[name] || name;
+  const packed = [], usable = Math.max(width - 40, 120);
+  let used = 0, rows = 1;
+  for (const name of names) {
+    const size = 30 + [...display(name)].reduce((n, char) => n + (/[^\x00-\x7f]/.test(char) ? 10 : 6.2), 0);
+    if (used && used + size > usable) { packed.push('\n'); used = 0; rows++; }
+    packed.push(name); used += size;
+  }
+  option.legend = {...option.legend, data:packed, formatter:display};
+  option.grid.top = Math.max(option.grid.top || 0, 40 + rows * 22);
+  return option;
+}
+
+export function compactTooltip(params, labels) {
+  const rows = (Array.isArray(params) ? params : [params]).filter(Boolean);
+  if (!rows.length) return '';
+  const first = rows[0], day = Array.isArray(first.value) ? first.value[0] : first.axisValue;
+  const when = typeof day === 'number' ? new Date(day).toISOString().slice(0,10) : String(day || first.axisValueLabel || '').slice(0,10);
+  return [when, ...rows.map(row => {
+    const value = Array.isArray(row.value) ? row.value[1] : row.value;
+    return `${labels[row.seriesName] || row.seriesName}：${Number.isFinite(value) ? value.toLocaleString('en-US', {maximumFractionDigits:4}) : '暂无观测'}`;
+  })].join('\n');
+}
+
 function merge(target, source) {
   for (const [key, value] of Object.entries(source)) {
     if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -73,6 +99,7 @@ export default function({data, parentElement}) {
   const shell = parentElement.querySelector('.macro-chart-shell');
   const error = parentElement.querySelector('.macro-chart-error');
   const buttons = parentElement.querySelectorAll('button');
+  const labels = data.parameter_labels || {};
   const source = copy(data.option);
   const base = copy(source);
   delete base.media;
@@ -282,10 +309,11 @@ export default function({data, parentElement}) {
   function updateLayout() {
     if (!chart || disposed) return;
     refreshPriceGuides(chart.getOption().dataZoom);
-    const option = sizeBars(withDrawdownOverlay(axisLayout(presentation())), chart.getOption().dataZoom);
+    const option = sizeBars(compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth), chart.getOption().dataZoom);
     if (option.toolbox) option.toolbox.right = 54;
     // Price observations stay intact. Only derived paths and annotations
     // change with the selection; the live dataZoom bounds are preserved.
+    if (!hasPriceGuides) option.tooltip = {...option.tooltip, formatter:params => compactTooltip(params, labels)};
     const patch = {legend: {...option.legend, selected}, grid: option.grid,
       yAxis: option.yAxis, xAxis: option.xAxis, toolbox: option.toolbox, tooltip:option.tooltip};
     if (hasPriceGuides) {
@@ -303,10 +331,11 @@ export default function({data, parentElement}) {
   loadEngine().then(echarts => {
     if (disposed) return;
     if (hasPriceGuides) refreshPriceGuides(saved?.zoom || base.dataZoom);
-    const option = withDrawdownOverlay(axisLayout(presentation()));
+    const option = compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth);
     option.legend.selected = selected;
     option.aria = {enabled:true};
-    option.tooltip = {...option.tooltip, renderMode:'richText'};
+    option.tooltip = {...option.tooltip, renderMode:'richText',
+      ...(!hasPriceGuides ? {formatter:params => compactTooltip(params, labels)} : {})};
     if (saved?.zoom) option.dataZoom = saved.zoom;
     sizeBars(option, option.dataZoom);
     // Keep toolbox clear of the download/fullscreen buttons.
@@ -369,4 +398,3 @@ export default function({data, parentElement}) {
     buttons.forEach(button => { button.onclick = null; });
   };
 }
-

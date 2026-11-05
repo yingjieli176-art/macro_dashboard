@@ -116,7 +116,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-05-five-company-cds-r101"
+CHART_BUILD = "2026-11-05-compact-parameter-labels-r102"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -159,119 +159,7 @@ def _start_news_background_updater():
 
 _start_news_background_updater()
 
-st.markdown("""
-<style>
-.block-container { padding-top: 0.70rem; padding-bottom: 2rem; max-width: 1760px; }
-html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "PingFang TC", "Segoe UI", sans-serif; }
-.dashboard-title { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.1rem; }
-.section-title { font-size: 1.18rem; font-weight: 680; letter-spacing: -0.012em; margin-top: 0.52rem; margin-bottom: 0.04rem; min-height: 26px; display: flex; align-items: center; color:#1f2937; }
-.section-description { color: #7b8493; font-size: 0.80rem; margin-bottom: 0.16rem; min-height: 17px; display: flex; align-items: center; }
-.mini-description { color: #4b5563; font-size: 0.78rem; line-height: 1.6; margin: 4px 0 8px; overflow-wrap: anywhere; }
-.parameter-note { margin: 3px 0; }
-.parameter-note b { color: #374151; font-weight: 600; }
-.parameter-context { color: #6b7280; font-size: 0.74rem; margin-top: 5px; }
-.source-text { color: #6b7280; font-size: 0.72rem; margin: 2px 0 6px; line-height: 1.35; }
-.source-text a { color: #6b7280; text-decoration: none !important; white-space: nowrap; }
-.source-text a:hover { color: #374151; text-decoration: underline !important; }
-.data-health-warning { color:#991b1b; background:rgba(254,242,242,.94); border:1px solid #fecaca; border-radius:6px; padding:3px 6px; font-size:.68rem; line-height:1.25; }
-.source-sep { color: #d1d5db; margin: 0 5px; }
-.chart-divider { margin: 0.18rem 0 0.38rem; border-top: 1px solid #e5e7eb; }
-.compact-title { font-size: 0.98rem; font-weight: 650; margin-bottom: 0.15rem; min-height: 25px; display: flex; align-items: center; }
-.compact-description { color: #6b7280; font-size: 0.73rem; line-height: 1.35; margin-bottom: 0.35rem; min-height: 20px; display: flex; align-items: center; }
-.news-status { color: #6b7280; font-size: 0.75rem; margin-bottom: 0.5rem; }
-.news-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; background: #ffffff; max-height: 650px; overflow-y: auto; overflow-x: hidden; }
-.news-item { display: flex; align-items: flex-start; padding: 8px 3px; border-bottom: 1px solid #eeeeee; line-height: 1.5; font-size: 0.84rem; overflow: visible; }
-.news-item:last-child { border-bottom: none; }
-.news-index { flex: 0 0 32px; width: 32px; color: #9ca3af; font-size: 0.72rem; font-family: "Segoe UI", sans-serif; padding-top: 2px; }
-.news-time { flex: 0 0 72px; width: 72px; color: #6b7280; font-size: 0.72rem; white-space: nowrap; padding-top: 2px; margin-right: 6px; }
-.news-content { flex: 1; min-width: 0; overflow: visible; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
-.news-content a { color: #374151; text-decoration: none !important; display: block; white-space: normal; overflow: visible; overflow-wrap: anywhere; word-break: break-word; }
-.market-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 0.45rem; }
-.market-group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px 5px; background: #fff; min-width: 0; min-height: 96px; box-sizing: border-box; }
-.market-group-title { color: #374151; font-size: 0.88rem; font-weight: 650; margin-bottom: 5px; }
-.market-group-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; min-height: 66px; align-items: start; }
-.market-group-row.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.market-item { min-width: 0; height: 66px; min-height: 66px; max-height: 66px; padding-right: 4px; border-right: 1px solid #f0f0f0; box-sizing: border-box; overflow: hidden; }
-.market-item:last-child { border-right: none; }
-.market-name { color: #6b7280; font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.market-price { color: #111827; font-size: 0.98rem; font-weight: 650; margin-top: 1px; white-space: nowrap; }
-.market-change { font-size: 0.76rem; white-space: nowrap; }
-.market-meta { color: #9ca3af; font-size: 0.66rem; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.search-title { color: #374151; font-size: 1.05rem; font-weight: 650; margin: 0.55rem 0 0.3rem; }
-.search-result { padding: 4px 5px; margin-top: 1px; border-radius: 6px; height: 76px; min-height: 76px; max-height: 76px; box-sizing: border-box; overflow: hidden; }
-.search-result-label { color: #374151; font-size: 0.80rem; line-height: 1.3; }
-.search-result-symbol { color: #6b7280; font-size: 0.70rem; }
-.search-price { color: #111827; font-size: 0.94rem; font-weight: 650; margin-top: 1px; width: 118px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.search-after { color: #6b7280; font-size: 0.72rem; margin-top: 1px; }
-.search-hint { color: #9ca3af; font-size: 0.68rem; margin-top: 1px; }
-.module-delete { display: flex; justify-content: flex-end; align-items: flex-start; margin-top: -7px; margin-right: -4px; transform: none; position: relative; z-index: 5; }
-.module-delete button { min-width: 24px !important; width: 24px !important; max-width: 24px !important; height: 24px !important; padding: 0 !important; margin: 0 !important; font-size: 14px !important; line-height: 24px !important; border: 0 !important; }
-.search-result .search-after, .search-result .search-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* Watchlist workstation */
-.watch-toolbar { display:flex; align-items:center; min-height:34px; color:#6b7280; font-size:.74rem; }
-.watch-market-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 7px; }
-.watch-market-head-main { min-width:0; }
-.watch-market-title { color:#111827; font-size:.90rem; font-weight:700; line-height:1.25; }
-.watch-market-subtitle { color:#9ca3af; font-size:.64rem; letter-spacing:.08em; margin-top:2px; }
-.watch-count { display:inline-flex; min-width:24px; height:22px; padding:0 7px; align-items:center; justify-content:center; border:1px solid #e5e7eb; border-radius:999px; color:#6b7280; background:#f9fafb; font-size:.68rem; font-weight:650; }
-.watch-card-body { min-width:0; padding:2px 1px 1px; }
-.watch-card-top { display:flex; align-items:baseline; gap:7px; min-width:0; padding-right:2px; }
-.watch-card-name { color:#111827; font-size:.86rem; font-weight:680; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.watch-card-symbol { color:#9ca3af; font-size:.66rem; font-family:"Segoe UI",sans-serif; white-space:nowrap; }
-.watch-price-row { display:flex; align-items:baseline; gap:9px; margin-top:4px; min-width:0; }
-.watch-price { color:#111827; font-size:1.08rem; line-height:1.15; font-weight:720; letter-spacing:-.01em; white-space:nowrap; }
-.watch-change { font-size:.78rem; font-weight:650; white-space:nowrap; }
-.watch-up { color:#15803d; }
-.watch-down { color:#b91c1c; }
-.watch-flat { color:#6b7280; }
-.watch-session { color:#6b7280; font-size:.69rem; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.watch-meta { color:#9ca3af; font-size:.64rem; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.watch-search-note { color:#9ca3af; font-size:.67rem; margin:4px 0 5px; }
-.watch-empty { color:#9ca3af; font-size:.72rem; padding:9px 2px 7px; }
-.module-delete { margin-top:-4px; margin-right:-3px; }
-.module-delete button { color:#9ca3af !important; border-radius:999px !important; }
-.module-delete button:hover { color:#b91c1c !important; background:#fef2f2 !important; }
-@media (max-width: 900px) { .market-groups { grid-template-columns: 1fr; } }
-
-html { scroll-behavior: smooth; }
-.dashboard-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 3px 0 10px; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; }
-.dashboard-heading { min-width: 0; }
-.dashboard-eyebrow { color: #9ca3af; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; margin-bottom: 2px; }
-.dashboard-subtitle { color: #6b7280; font-size: 0.82rem; line-height: 1.5; margin-top: 2px; }
-.dashboard-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 620px; padding-top: 4px; }
-.dashboard-links a { color: #374151 !important; text-decoration: none !important; font-size: 0.76rem; line-height: 1; padding: 7px 10px; border: 1px solid #e5e7eb; border-radius: 999px; background: #fff; white-space: nowrap; }
-.dashboard-links a:hover { border-color: #9ca3af; background: #f9fafb; color: #111827 !important; }
-.dashboard-links a.external { font-weight: 650; }
-.section-anchor { height: 0; visibility: hidden; scroll-margin-top: 18px; }
-.section-kicker { color: #9ca3af; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; margin-top: 0.12rem; margin-bottom: 0.04rem; line-height: 1.1; }
-.section-toolbar-note { color: #9ca3af; font-size: 0.72rem; margin-top: -0.15rem; margin-bottom: 0.5rem; }
-div[data-testid="stVerticalBlockBorderWrapper"] { border-color: #e5e7eb !important; border-radius: 12px !important; }
-div[data-testid="stPlotlyChart"] { border: 1px solid #e5eaf0; border-radius: 12px; padding: 0; background: #fff; overflow: hidden; box-shadow: 0 1px 2px rgba(15,23,42,.03); }
-.stButton > button { border-radius: 8px; }
-.source-text a { display: inline-block; padding: 1px 0; }
-.news-box { border-radius: 12px; padding: 8px 12px; }
-@media (max-width: 1100px) {
-  .dashboard-header { display: block; }
-  .dashboard-links { justify-content: flex-start; max-width: none; margin-top: 10px; }
-}
-@media (max-width: 700px) {
-  .block-container { padding-left: 0.75rem; padding-right: 0.75rem; }
-  .dashboard-links a { font-size: 0.72rem; padding: 6px 8px; }
-  .dashboard-title { font-size: 1.55rem; }
-  .section-title { font-size: 1.12rem; }
-}
-
-
-.hk-liquidity-strip { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; margin:5px 0 10px; }
-.hk-liquidity-strip > div { border:1px solid #e5e7eb; border-radius:9px; background:#fff; padding:7px 9px; min-width:0; }
-.hk-liquidity-strip span { display:block; color:#9ca3af; font-size:.66rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.hk-liquidity-strip strong { display:block; color:#111827; font-size:.82rem; font-weight:650; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-@media (max-width:1100px) { .hk-liquidity-strip { grid-template-columns:repeat(4,minmax(0,1fr)); } }
-@media (max-width:700px) { .hk-liquidity-strip { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-
-</style>
-""", unsafe_allow_html=True)
+pass
 
 st.markdown(
     f"""
@@ -1230,7 +1118,7 @@ def render_market_groups(defer_initial=False):
     st.markdown('<div class="market-groups">' + "".join(cards) + '</div>', unsafe_allow_html=True)
 
 st.markdown('<div id="market-overview" class="section-anchor"></div><div class="section-kicker">MARKET OVERVIEW</div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">市场概览</div><div class="section-description">美股、港股与 A 股主要指数</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">市场概览</div>', unsafe_allow_html=True)
 
 @st.fragment(run_every=60, key="market_overview")
 def render_market_overview(defer_initial=False):
@@ -1961,7 +1849,7 @@ PARAM_DESCRIPTIONS = [
 ]
 
 
-def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
+pass
 
 HK_PARAMETER_DESCRIPTIONS = [
     '<div class="parameter-note"><b>M2 YoY：</b>港元广义货币M2同比增速，代表现金及相关存款规模相对上年同期的增长情况；单位为%，不等于股市资金净流入。</div><div class="parameter-note"><b>M2 MoM：</b>港元广义货币M2环比增速，以柱状图显示逐月增减，代表货币存量相对上个月的边际变化；单位为%，会受到季节性等因素影响。</div><div class="parameter-note"><b>Monetary Base YoY：</b>香港货币基础同比增速，代表负债证明书、政府流通纸币硬币、总结余及外汇基金票据债券合计规模的变化。</div><div class="parameter-note"><b>Tencent Price (R1)：</b>腾讯控股股价，代表该股票的市场定价及表现；单位为港元，价格变化本身不等于资金净流入量。</div><div class="parameter-note"><b>HKEX Price (R1)：</b>香港交易所股价，代表交易所公司的股票市场表现；单位为港元，不是港股市场成交额。</div><div class="parameter-note"><b>HSTECH Index (R2)：</b>恒生科技指数，代表其科技主题成分股的综合表现；单位为指数点。</div><div class="parameter-note"><b>HSI Index (R2)：</b>恒生指数，代表香港主要上市公司构成的指数表现；单位为指数点。</div><div class="parameter-context">口径说明：月度货币数据有公布时滞；股票和指数使用各自实际观测日。</div>',
@@ -1972,7 +1860,7 @@ HK_PARAMETER_DESCRIPTIONS = [
 
 
 def show_hk_parameter_description(index):
-    st.markdown(f'<div class="mini-description">{HK_PARAMETER_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
+    pass
 
 
 US_EQUITY_RISK_DESCRIPTION = (
@@ -2188,8 +2076,7 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=Fal
     # whether ECharts or Plotly is currently the available renderer.
     # Their parent fragments prevent an X/Y viewport change from rerunning
     # the entire dashboard and refetching unrelated market data.
-    from macro_platform.parameter_guide import render_parameter_guide
-    render_parameter_guide(base_fig, element_key)
+    pass
     selected_range = st.segmented_control(
         "时间范围", options=RANGES, default=DEFAULT_CHART_RANGE,
         key=f"{element_key}_time_window", label_visibility="collapsed",
@@ -2250,7 +2137,7 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=Fal
 
 
 def _show_standard_chart_health(base_fig, element_key, selected_range, reused):
-    st.caption("动态Y轴：切换时间范围或拖动底部滑块时，按可见样本自适应（左右轴分别计算）。")
+    pass
     missing_series = list((base_fig.layout.meta or {}).get("missing_series", [])) if isinstance(base_fig.layout.meta, dict) else []
     if missing_series:
         st.warning("以下序列缺少观测数据：" + " · ".join(missing_series))
@@ -2286,14 +2173,14 @@ def _show_standard_chart_health(base_fig, element_key, selected_range, reused):
 def _render_standard_macro_chart(title, description, range_key, builder, sources, desc_index, prebuilt_fig=None):
     st.markdown(title, unsafe_allow_html=True)
     st.markdown(description, unsafe_allow_html=True)
-    st.caption(f"图表版本 {CHART_BUILD} · X/Y 自适应缩放")
+    pass
     base_fig = prebuilt_fig if prebuilt_fig is not None else builder("5Y")
     _render_adaptive_macro_figure(base_fig, range_key, standard=True)
     _show_data_quality_notes(base_fig)
     if range_key == "normal_corridor_range":
-        st.caption("深青色实心柱＝SRF实际用量（右轴，十亿美元）；其余线条＝年化利率（左轴，%）。零成交不会人为画成正值。")
+        pass
         st.caption(usage_caption())
-    show_parameter_description(desc_index)
+    pass
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -2302,7 +2189,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
 def render_macro_chart_1(prebuilt_fig=None):
     _render_standard_macro_chart(
         '<div class="section-title">1. Fed Policy Rate, Money Market & SRF Usage</div>',
-        '<div class="section-description">IORB / ON RRP Rate / EFFR / SOFR / SRF Rate · 年化% · SRF 实际用量 (R1) · 十亿美元</div>',
+        '',
         "normal_corridor_range",
         build_fig1,
         [
@@ -2322,7 +2209,7 @@ def render_macro_chart_1(prebuilt_fig=None):
 def render_macro_chart_2(prebuilt_fig=None):
     _render_standard_macro_chart(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[2]}. US Treasury Yield Structure · 10Y</div>',
-        '<div class="section-description">10年期名义收益率（DGS10） / 10年期实际收益率（TIPS · DFII10，右轴） / 10年期盈亏平衡通胀率（BEI · T10YIE，右轴）</div>',
+        '',
         "normal_yield10_range",
         build_fig2,
         [
@@ -2339,7 +2226,7 @@ def render_macro_chart_2(prebuilt_fig=None):
 def render_macro_chart_3(prebuilt_fig=None):
     _render_standard_macro_chart(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[3]}. Treasury Yield & Curve Spread</div>',
-        '<div class="section-description">3M / 2Y / 10Y / 30Y / 10Y−2Y (R1) / 30Y−10Y (R1)</div>',
+        '',
         "normal_treasury_range",
         build_fig3,
         [
@@ -2359,20 +2246,14 @@ def render_macro_chart_3(prebuilt_fig=None):
 def render_macro_chart_4(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[4]}. 标普500 / 日经225（Nikkei 225）相对强弱</div>'
-        '<div class="section-description">标普500（美国）÷ 日经225（日本）· 左轴：比值 · 右轴R1：标普点位 · 右轴R2：日经点位</div>',
+        '',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 4", build_sp500_nikkei_ratio_figure,
     )
     _render_adaptive_macro_figure(base_fig, "sp500_nikkei_ratio")
-    st.markdown(
-        '<div class="mini-description"><div class="parameter-note"><b>比值（左轴）：</b>标普500指数点位 ÷ 日经225指数点位。上升表示标普500相对走强，下降表示日经225相对走强。</div>'
-        '<div class="parameter-note"><b>分子（右侧Y轴一）：</b>美国标普500（S&amp;P 500）市值加权价格指数；每日收盘点位，单位为点，不做归一化。</div>'
-        '<div class="parameter-note"><b>分母（右侧Y轴二）：</b>日本日经225（Nikkei 225）价格加权指数，包含东京证券交易所Prime市场225只股票；每日收盘点位，单位为点，不是日元金额。</div>'
-        '<div class="parameter-context">口径：仅使用两地均有有效收盘的共同日期；不对休市日以前值填充。指数收盘值四舍五入为整数；标普500与日经225分别使用独立Y轴显示真实点位，比值使用第三个Y轴显示。两地同日收盘发生在不同时刻；比值没有换算汇率，也不含股息再投资，不能直接解释为美元投资回报或领先关系。</div></div>',
-        unsafe_allow_html=True,
-    )
+    pass
     add_sources([
         ("Yahoo Finance · S&P 500 (^GSPC)", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
         ("Yahoo Finance · Nikkei 225 (^N225)", "https://finance.yahoo.com/quote/%5EN225/history/"),
@@ -2384,7 +2265,7 @@ def render_macro_chart_4(prebuilt_fig=None):
 HK_CHART_CONFIGS = [
     (
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[5]}. HK Money Supply & Market Pulse</div>',
-        '<div class="section-description">M2 YoY / M2 MoM / Monetary Base YoY · Tencent / HKEX (R1) · HSTECH / HSI (R2)</div>',
+        '',
         "hk_5_range",
         [
             ("HKMA Monetary Statistics", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics/"),
@@ -2395,7 +2276,7 @@ HK_CHART_CONFIGS = [
     ),
     (
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[6]}. Banking-system Liquidity</div>',
-        '<div class="section-description">Aggregate Balance · Outstanding EFBN (R1) · EFBN Held by Licensed Banks (R1)</div>',
+        '',
         "hk_6_range",
         [
             ("HKMA Monetary Base", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod/"),
@@ -2404,7 +2285,7 @@ HK_CHART_CONFIGS = [
     ),
     (
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[7]}. HKD Funding</div>',
-        '<div class="section-description">O/N HIBOR · 3M HIBOR · HKMA Base Rate · O/N−3M Spread (R1)</div>',
+        '',
         "hk_7_range",
         [
             ("HKMA Open API", "https://apidocs.hkma.gov.hk/"),
@@ -2414,7 +2295,7 @@ HK_CHART_CONFIGS = [
     ),
     (
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[8]}. USD/HKD Convertibility Band & Market</div>',
-        '<div class="section-description">USD/HKD · Strong-side 7.75 · Center 7.80 · Weak-side 7.85 · Tencent / HKEX (R1) · HSTECH / HSI (R2)</div>',
+        '',
         "hk_8_range",
         [
             ("HKMA Linked Exchange Rate System", "https://www.hkma.gov.hk/eng/key-functions/money/linked-exchange-rate-system/"),
@@ -2432,7 +2313,7 @@ def _render_hk_macro_chart(hk_index, prebuilt_fig=None):
     st.markdown(description, unsafe_allow_html=True)
     fig = prebuilt_fig if prebuilt_fig is not None else _safe_hk_bundle(_macro_snapshot_revision())[hk_index]
     _render_adaptive_macro_figure(fig, range_key)
-    show_hk_parameter_description(hk_index)
+    pass
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -2480,13 +2361,13 @@ def _build_equity_drawdown():
 @st.fragment(key="equity_drawdown_viewport")
 def _render_equity_drawdown():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["us_drawdown"]}. SPX / RSP · 价格走势与区间高点</div>', unsafe_allow_html=True)
-    st.caption("实线为实际收盘走势；点线“高”标记当前坐标时间内的最高收盘价和日期，虚线“现”为最新收盘价。切换时间或拖动滑块会自动重算区间高点。SPX左轴（点），RSP右轴（美元）；异色虚线为独立的“回撤比例”日线参数，使用最右侧百分比轴；点击图例可单独开关。")
+    pass
     figure = _build_equity_drawdown()
     _render_adaptive_macro_figure(figure, "us_equity_drawdown", standard=True)
     summaries = (figure.layout.meta or {}).get("price_summary", [])
     for row in summaries:
         st.caption(f'{row["symbol"]} 最新收盘：{row["close"]:,.2f}（{row["date"]}）')
-    st.caption("同图回撤曲线以所选区间最高收盘日为起点（0%），固定该高点为基准，逐日计算（当日收盘÷区间最高收盘−1）×100%，一直画到最新收盘；高点前不画线。价格与回撤共用同一日期轴，切换周期或拖动左右滑块，会自动重选高点、重算回撤并同步显示所选日期。“回撤比例”作为独立日线持续显示各交易日从高点起的回撤变化（下跌为负值），在图例可单独开关；图底另列最新回撤幅度，超过选区前高时显示高出比例。SPX以点计、RSP以美元计，使用独立坐标轴；均为已完成交易日收盘，非实时行情。RSP已处理拆股，不含股息再投资，存在费用及跟踪误差。")
+    pass
     add_sources([
         ("SPX 日线价格", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
         ("RSP 日线价格", "https://finance.yahoo.com/quote/RSP/history/"),
@@ -2512,12 +2393,12 @@ def _build_china_drawdown():
 @st.fragment(key="china_equity_drawdown_viewport")
 def _render_china_drawdown():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["cn_drawdown"]}. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势</div>', unsafe_allow_html=True)
-    st.caption("实线为三只指数的实际收盘点位（左轴），异色虚线为独立的“回撤比例”日线参数（右轴百分比），可在图例单独开关。点线“高”为当前坐标时间内的最高收盘价和日期，随时间切换、滑块缩放自动更新；虚线“现”保持最新收盘价。")
+    pass
     figure = _build_china_drawdown()
     _render_adaptive_macro_figure(figure, "china_equity_drawdown", standard=True)
     for row in (figure.layout.meta or {}).get("price_summary", []):
         st.caption(f'{row["name"]}（{row["symbol"]}）最新收盘：{row["close"]:,.2f}（{row["date"]}）')
-    st.caption("同图回撤曲线以各指数所选区间最高收盘日为起点（0%），固定该高点为基准，逐日计算（当日收盘÷区间最高收盘−1）×100%，一直画到最新收盘；高点前不画线。价格与回撤共用同一日期轴，切换周期或拖动左右滑块，会自动重选高点、重算回撤并同步显示所选日期。“回撤比例”作为独立日线持续显示各交易日从高点起的回撤变化（下跌为负值），在图例可单独开关；图底另列最新回撤幅度，超过选区前高时显示高出比例。中证官网已完成交易日价格指数，不含股息再投资；发布前数据为官方回溯数据。最新日期以观测日为准。")
+    pass
     add_sources([(name, f"https://www.csindex.com.cn/zh-CN/indices/index-detail/{code}")
                  for code, name in (("000300", "沪深300"), ("000852", "中证1000"), ("932000", "中证2000"))])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
@@ -2527,12 +2408,12 @@ def _render_china_drawdown():
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[9]}. US Equity Risk & Volatility Structure</div>'
-        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3)</div>',
+        '',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig9("5Y")
     _render_adaptive_macro_figure(base_fig, "us_equity_risk")
-    st.markdown(f'<div class="mini-description">{US_EQUITY_RISK_DESCRIPTION}</div>', unsafe_allow_html=True)
+    pass
     add_sources([
         ("Cboe VIX", "https://www.cboe.com/tradable-products/vix/"),
         ("Cboe VIXEQ / Dispersion", "https://www.cboe.com/us/indices/dispersion/"),
@@ -2546,15 +2427,15 @@ def render_macro_chart_9(prebuilt_fig=None):
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure</div>'
-        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX/VIX3M (R1) · VVIX/VIX (R1) · 9D/30D (R1) · SPX P/C (R1) · SKEW (R2) · VVIX (R3)</div>',
+        '',
         unsafe_allow_html=True,
     )
-    st.caption("VIX反映未来30个日历天（约1个月）的年化隐含波动率，正式代码仍是VIX；VIX3M约为3个月。上方1M、3M等按钮只控制历史显示范围，不改变指数期限。")
+    pass
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 10", lambda: _cached_macro_figure(10, _macro_snapshot_revision(), CHART_BUILD),
     )
     _render_adaptive_macro_figure(base_fig, "vix_term_structure")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>VIX：</b>标普500指数未来30个日历天（约1M）的年化隐含波动率指标，代表近期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M：</b>标普500指数约未来3个月的年化隐含波动率指标，代表较长期波动风险的期权定价。</div><div class="parameter-note"><b>VIX/VIX3M (R1)：</b>同日30天隐含波动率÷约3个月隐含波动率；大于1表示近端隐含波动率更高，单位为倍。</div><div class="parameter-note"><b>VVIX/VIX (R1)：</b>同日Cboe VVIX指数÷VIX指数，表示VVIX相对VIX的指数点比值，单位为倍；两个指数衡量对象不同，该比值不代表涨跌概率。</div><div class="parameter-note"><b>9D/30D (R1)：</b>同日Cboe VIX9D÷VIX，即SPX约9天与30天年化隐含波动率的比值；大于1表示超短期隐含波动率更高，单位为倍。</div><div class="parameter-note"><b>SPX P/C (R1)：</b>Cboe SPX+SPXW当日Put成交量÷Call成交量，含周度期权；保留官方公布的比值精度。成交量包含买卖双方，不直接等于净看空仓位，也不是持仓量比。</div><div class="parameter-note"><b>SKEW (R2)：</b>Cboe SKEW指数，反映标普500期权对尾部风险的定价；指数点不是暴跌概率，不能直接解释为未来跌幅。</div><div class="parameter-note"><b>VVIX (R3)：</b>Cboe VIX预期波动率指数，即“恐慌指数的恐慌指数”，反映VIX自身的预期波动。</div><div class="parameter-context">口径说明：三项指数比值只使用同日有效观测，分母缺失或为0时不计算；VIX和VIX3M原始指数在左轴，四项比值在R1，SKEW和VVIX在R2/R3；不跨日补值。</div></div>', unsafe_allow_html=True)
+    pass
     add_sources([
         ("FRED · VIX (VIXCLS)", "https://fred.stlouisfed.org/series/VIXCLS"),
         ("FRED · VIX3M (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),
@@ -2570,14 +2451,14 @@ def render_macro_chart_10(prebuilt_fig=None):
 def render_macro_chart_11(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[11]}. Precious Metals</div>'
-        '<div class="section-description">Gold · Silver · Gold/Silver Ratio · Gold Volatility GVZ</div>',
+        '',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 11", lambda: _cached_macro_figure(11, _macro_snapshot_revision(), CHART_BUILD),
     )
     _render_adaptive_macro_figure(base_fig, "precious_metals")
-    st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
+    pass
     add_sources([
         ("Yahoo Finance · Gold Futures GC=F", "https://finance.yahoo.com/quote/GC=F/history/"),
         ("Yahoo Finance · Silver Futures SI=F", "https://finance.yahoo.com/quote/SI=F/history/"),
@@ -2591,14 +2472,14 @@ def render_macro_chart_11(prebuilt_fig=None):
 def render_macro_chart_12(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[12]}. Crypto Market</div>'
-        '<div class="section-description">BTC · ETH · ETH/BTC · BTC 30D 实际波动率</div>',
+        '',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 12", lambda: _cached_macro_figure(12, _macro_snapshot_revision(), CHART_BUILD),
     )
     _render_adaptive_macro_figure(base_fig, "crypto_market")
-    st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
+    pass
     add_sources([
         ("Yahoo Finance · Bitcoin BTC-USD", "https://finance.yahoo.com/quote/BTC-USD/history/"),
         ("Yahoo Finance · Ethereum ETH-USD", "https://finance.yahoo.com/quote/ETH-USD/history/"),
@@ -2610,7 +2491,7 @@ def render_macro_chart_12(prebuilt_fig=None):
 def render_macro_chart_13(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[13]}. Copper Flow, WTI & TC/RC</div>'
-        '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2) · WTI (R3) · 铜油比 (R4) · TC (R5) · RC (R6)</div>',
+        '',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig13("5Y")
@@ -2619,10 +2500,10 @@ def render_macro_chart_13(prebuilt_fig=None):
     if tcrc_rows:
         st.dataframe(pd.DataFrame(tcrc_rows), hide_index=True, width="stretch",
                      column_config={"最新值": st.column_config.NumberColumn(format="%.3f")})
-        st.caption("TC/RC：Mysteel 进口干净铜精矿现货周指数；RC 按发布方方法由 TC 数值÷10 计算。仅展示已核实的周度报价，历史覆盖自2026-10-16起，不补齐日线。")
+        pass
     else:
         st.warning("TC/RC 暂无有效观测，等待来源恢复。")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>COMEX 库存：</b>COMEX仓库铜库存，代表美国该交割体系内报告的铜存量；单位为千公吨，不是全球铜总库存。</div><div class="parameter-note"><b>LME 库存：</b>LME仓库铜库存，代表该交易所仓库体系内报告的铜存量；单位为千公吨，可与COMEX对照观察库存地域分布。</div><div class="parameter-note"><b>LME 3M 铜价 (R1)：</b>LME三个月期铜价，代表该市场三个月期限的铜定价；单位为美元/公吨。</div><div class="parameter-note"><b>COMEX HG 换算价 (R1)：</b>COMEX铜期货价格换算为美元/公吨，代表统一重量单位后的美国期货价格，便于与LME对照。</div><div class="parameter-note"><b>COMEX−LME 3M 价差 (R2)：</b>同日COMEX换算价减LME三个月铜价，代表两地铜价差；为正表示COMEX较贵。期限、交割及费用不同，不能直接视为无风险套利利润。</div><div class="parameter-note"><b>WTI 原油 (R3)：</b>NYMEX WTI近月期货代理（CL=F）的已完成日线收盘价，单位为美元/桶；换月会影响价格。</div><div class="parameter-note"><b>铜油比 (R4)：</b>同日COMEX铜价（美元/磅）×2204.62262185÷WTI（美元/桶），单位为桶/公吨；表示一公吨铜相当于多少桶原油，仅在两者均有有效收盘价时计算，不跨日补值。</div><div class="parameter-note"><b>TC 粗炼费 (R5) / RC 精炼费 (R6)：</b>Mysteel进口干净铜精矿现货周指数，分别使用美元/干吨和美分/磅的独立坐标；RC按发布方方法论取TC数值的十分之一，并非另行采样的独立报价。允许负值，不与年度长单基准混用。TC走低可反映原料竞争加剧，需结合冶炼产能、硫酸等副产品收入判断。</div><div class="parameter-context">口径说明：各序列保留原始单位和实际观测日；库存一增一减需结合交割、运输及需求判断。</div></div>', unsafe_allow_html=True)
+    pass
     add_sources([
         ("Mysteel · 铜精矿TC/RC指数方法论", COPPER_TCRC_METHOD_URL),
         ("Mysteel · 2026-10-30现货TC指数原始发布", "https://youse.mysteel.com/a/26110208/7DCD2C67E671022B.html"),
@@ -2642,13 +2523,13 @@ def render_macro_chart_13(prebuilt_fig=None):
 def render_macro_chart_14(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[14]}. China Government Yields & US 5Y Real Yield</div>'
-        '<div class="section-description">China 2Y / 10Y · US 5Y Real · TIPS · China 10Y−2Y (R1)</div>',
+        '',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 14", lambda: _cached_macro_figure(14, _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(base_fig, "china_rates")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>China 2Y：</b>中国2年期国债收益率，代表人民币较短期限国债的市场利率水平；单位为年化%。</div><div class="parameter-note"><b>China 10Y：</b>中国10年期国债收益率，代表人民币长期国债利率基准；单位为年化%。</div><div class="parameter-note"><b>US 5Y Real · TIPS：</b>美国5年期TIPS实际收益率，代表美元中期实际利率，用于跨市场对照；与中国名义国债收益率的差不能直接当作可交易套息收益。</div><div class="parameter-note"><b>China 10Y−2Y (R1)：</b>中国10年减2年国债收益率之差，代表中国国债曲线斜率；上升为变陡，负值为倒挂；单位为百分点。</div><div class="parameter-context">口径说明：收益率单位为年化%，曲线利差单位为百分点；各曲线保留实际观测日。</div></div>', unsafe_allow_html=True)
+    pass
     add_sources([
         ("Eastmoney · China Treasury Yield History", "https://data.eastmoney.com/cjsj/zmgzsyl.html"),
         ("FRED · US 5Y TIPS Real Yield (DFII5)", "https://fred.stlouisfed.org/series/DFII5"),
@@ -2660,13 +2541,13 @@ def render_macro_chart_14(prebuilt_fig=None):
 def render_macro_chart_15(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[15]}. Japan Government Yields & Nikkei 225 & USD/JPY</div>'
-        '<div class="section-description">Japan 2Y / 10Y / 30Y · Japan 10Y−2Y / 30Y−10Y (R1) · Nikkei 225 (R2) · USD/JPY (R3)</div>',
+        '',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 15", lambda: _cached_macro_figure(15, _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(base_fig, "japan_rates")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>Japan 2Y：</b>日本2年期国债收益率，代表日元较短期限国债的市场利率水平；单位为年化%。</div><div class="parameter-note"><b>Japan 10Y：</b>日本10年期国债收益率，代表日元长期国债利率基准；单位为年化%。</div><div class="parameter-note"><b>Japan 30Y：</b>日本30年期国债收益率，代表日元超长期国债利率；单位为年化%。</div><div class="parameter-note"><b>Japan 30Y−10Y (R1)：</b>同一观测日30年减10年国债收益率之差，代表日本长端曲线斜率；单位为百分点，任一腿缺失则不计算。</div><div class="parameter-note"><b>Japan 10Y−2Y (R1)：</b>日本10年减2年国债收益率之差，代表日本国债曲线斜率；上升为变陡，负值为倒挂；单位为百分点。</div><div class="parameter-note"><b>Nikkei 225 (R2)：</b>日经225指数，代表其日本上市公司成分股的综合表现；单位为指数点，使用已完成交易日的收盘值。</div><div class="parameter-note"><b>USD/JPY (R3)：</b>美元兑日元汇率，代表1美元可兑换多少日元；数值上升为日元走弱，下降为日元走强，不是日元综合指数。</div><div class="parameter-context">口径说明：USD/JPY使用已完成交易日的日线价格；盘中报价不作为完成日线。R1为百分点，R2为指数点，R3为日元/美元。</div></div>', unsafe_allow_html=True)
+    pass
     add_sources([
         ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
         ("Yahoo Finance · Nikkei 225", "https://finance.yahoo.com/quote/%5EN225/history/"),
@@ -2679,30 +2560,13 @@ def render_macro_chart_15(prebuilt_fig=None):
 def render_macro_chart_16(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[16]}. 日元套息分析 · Yen Carry Trade</div>'
-        '<div class="section-description">美日10Y利差 · USD/JPY (R1) · 日元20交易日升值幅度 (R2) · CFTC日元投机净仓位 (R3)</div>',
+        '',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 18", lambda: _cached_macro_figure(16, _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(base_fig, "yen_carry")
-    st.markdown(
-        '<div class="mini-description"><div class="parameter-note"><b>US−Japan 10Y spread：</b>'
-        '美国10年期国债收益率减日本10年期国债收益率，单位为百分点；同日均有观测才计算。'
-        '10年期利差反映中长期利率预期、期限溢价及国债供需的综合差异；它不等于日元隔夜融资成本或可实现套息收益。</div>'
-        '<div class="parameter-note"><b>USD/JPY (R1)：</b>1美元兑换的日元数；上升表示日元贬值，下降表示日元升值。</div>'
-        '<div class="parameter-note"><b>JPY 20-session appreciation (R2)：</b>'
-        '（20个有效交易日之前的USD/JPY ÷ 当前USD/JPY − 1）×100%；正值表示日元升值，'
-        '借日元者用美元偿还本金的成本上升。按已完成日线计算，先计算完整窗口再截取显示区间。</div>'
-        '<div class="parameter-note"><b>CFTC JPY speculative net (R3)：</b>'
-        'CFTC日元期货非商业多头减非商业空头，代码097741，采用Legacy Futures Only口径，单位为万张。'
-        '正值为净多日元，负值为净空日元；由负值向零收缩可辅助观察空头回补压力，也可能包含新增多头。'
-        '以零线为基准的周度柱状图，按持仓截至日标点，通常为周二、周五公布；不向日频填充。</div>'
-        '<div class="parameter-context">读图：10年期利差收窄，同时USD/JPY下跌、日元升值幅度转正或扩大，'
-        '可能意味着中长期美元利率优势减弱且日元走强；但10年期利差不能直接代理短期套息融资条件。年度利差与20交易日汇率变动期限不同，不能直接相减。'
-        'CFTC只覆盖报告内日元期货投机仓位，不能等同全部跨境套息仓位或平仓规模。'
-        '本图不测量含杠杆净收益；不补齐不同市场假日缺值。</div></div>',
-        unsafe_allow_html=True,
-    )
+    pass
     add_sources([
         ("FRED · US 10Y Treasury (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
         ("CFTC · Commitments of Traders", "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"),
@@ -2931,7 +2795,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
 @st.fragment(key="nvidia_cds_viewport")
 def render_nvidia_cds():
     st.markdown('<div class="section-title">19. AI Credit · 公司CDS信用风险</div>'
-                '<div class="section-description">英伟达 NVIDIA · AMD · 谷歌 Alphabet · 微软 Microsoft · 甲骨文 Oracle · 5Y · bp</div>', unsafe_allow_html=True)
+                '', unsafe_allow_html=True)
     payload = load_cds_snapshot()
     figure = build_cds_figure("5Y", payload=payload)
     _render_adaptive_macro_figure(figure, "nvidia_cds")
@@ -2941,14 +2805,10 @@ def render_nvidia_cds():
     st.dataframe(summary, hide_index=True, width="stretch",
                  column_config={"最新CDS（bp）": st.column_config.NumberColumn(format="%.2f"),
                                 "源日历覆盖率（%）": st.column_config.NumberColumn(format="%.1f%%")})
-    st.caption("口径：谷歌使用母公司Alphabet的5Y CDS。覆盖率＝有效观测日数÷公开源日历天数，空缺可能来自无成交、不可计价或披露范围限制，不能仅据此认定当天没有交易。")
+    pass
     st.caption(f"来源：Open-Sourced Rates Observatory, irates.today。数据日历截至 {payload.get('source_asof', '未取得')}；各公司的实际最新观测日见表。日度成交汇总，不是实时买卖报价；没有可用计价观测的日期留空，圆点表示实际观测，可点击图例比较公司。")
-    st.caption("五家公司均显示5Y CDS；5Y为剩余期限4.4–5.6年的成交分组，单位bp（100 bp＝1%/年）。缺少计价观测的日期保持空缺。")
-    st.markdown('<div class="mini-description">'
-        '<div class="parameter-note"><b>CDS与资本开支：</b>CDS走阔可作为融资压力的早期观察信号，需与资本开支指引、经营现金流和债务到期安排交叉核对；不能仅凭利差上升判断公司已削减开支。</div>'
-        '<div class="parameter-note"><b>美债期限溢价与美联储：</b>长期美债收益率可分解为预期短期利率的平均值与期限溢价。期限溢价变化还可能反映通胀不确定性、债券供给和久期风险；判断政策动作，应同时看联邦基金期货或OIS中的利率路径预期。</div>'
-        '<div class="parameter-note"><b>日经、韩国股市与美硬件：</b>可观察亚洲时段的硬件情绪，但大盘指数包含其他行业，也可能在消化前一日美股行情。应结合半导体指数、相关个股及美国盘前或期货，统一时区与币种后检验领先关系。</div>'
-        '<div class="parameter-context">以上为联动观察假设，尚未完成针对这些曲线的领先滞后检验，不代表已确认的预测规律或固定领先天数。</div></div>', unsafe_allow_html=True)
+    pass
+    pass
     add_sources([("Open-Sourced Rates Observatory · AI capex", "https://irates.today/capex.html"),
                  ("CDS历史聚合数据", "https://irates.today/chart_data.json"),
                  ("数据方法与使用说明", "https://irates.today/about.html"),
