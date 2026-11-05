@@ -1,0 +1,16 @@
+{
+  "provider": "Mysteel",
+  "instrument": "Imported clean copper concentrate spot weekly index",
+  "observation_cadence": "weekly",
+  "tc_unit": "USD/dmt",
+  "rc_unit": "US cents/lb",
+  "rc_basis": "TC numeric value / 10, according to publisher methodology; not an independently sampled RC quote",
+  "methodology_url": "https://mfs.mysteelcdn.com/group1/M00/18/2B/rBL64GI9YFqAKHS8AAZRnysuAGc193.pdf",
+  "verified_at": "2026-11-05",
+  "coverage_note": "Only explicitly dated index values in public publisher articles; no daily filling or back-calculation from weekly changes.",
+  "records": [
+    {"observation_date": "2026-10-16", "tc_usd_dmt": -240.83, "rc_cents_lb": -24.083, "source_url": "https://youse.mysteel.com/a/26101908/6C05950211C10559.html"},
+    {"observation_date": "2026-10-23", "tc_usd_dmt": -241.07, "rc_cents_lb": -24.107, "source_url": "https://youse.mysteel.com/a/26102608/307CD3FF6FD4A8E5.html"},
+    {"observation_date": "2026-10-30", "tc_usd_dmt": -245.33, "rc_cents_lb": -24.533, "source_url": "https://youse.mysteel.com/a/26110208/7DCD2C67E671022B.html"}
+  ]
+}

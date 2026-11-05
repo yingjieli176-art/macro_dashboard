@@ -7,6 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis
+from macro_platform.copper_tcrc import load_tcrc_snapshot
 
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT_PATH = ROOT / "data_snapshots" / "copper_market_daily.json"
@@ -286,17 +287,43 @@ def build_copper_flow_spread_figure(date_range: str) -> go.Figure:
             line=dict(width=2, color="#0891b2"),
             hovertemplate="铜油比: %{y:.2f} bbl/t<extra></extra>"))
 
+    # Weekly charges keep their own calendar and signed values. Never join or
+    # forward-fill them onto daily inventory / futures dates.
+    charges = _slice(load_tcrc_snapshot(), date_range)
+    for field, name, axis, unit, color in (
+        ("tc_usd_dmt", "TC 粗炼费 · 周度 (R5)", "y6", "USD/dmt", "#15803d"),
+        ("rc_cents_lb", "RC 精炼费 · 按方法计算 · 周度 (R6)", "y7", "US cents/lb", "#be185d"),
+    ):
+        if charges.empty:
+            _add_missing(fig, name)
+            continue
+        fig.add_trace(go.Scatter(
+            x=charges["observation_date"], y=charges[field], name=name,
+            yaxis=axis, mode="lines+markers", line=dict(width=2, color=color,
+                dash="dot" if field == "rc_cents_lb" else "solid"),
+            marker=dict(size=5), meta={"observation_cadence": "weekly"},
+            hovertemplate=name + ": %{y:.3f} " + unit + "<extra></extra>"))
+
     fig.data = tuple(sorted(fig.data, key=lambda trace: int((trace.yaxis or "y")[1:] or "1")))
     fig = _finish_combined(fig, date_range)
     # Original inventory, copper price and venue spread retain separate units.
     for index, title, position in ((4, "WTI · USD/bbl", 0.86),
-                                   (5, "Copper / WTI · bbl/t", 0.98)):
+                                   (5, "Copper / WTI · bbl/t", 0.98),
+                                   (6, "TC · USD/dmt", 0.98),
+                                   (7, "RC · US cents/lb", 0.99)):
         fig.update_layout(**{f"yaxis{index}": dict(
             title=title, overlaying="y", side="right", anchor="free",
             position=position, showgrid=False, zeroline=False, fixedrange=True,
             tickformat=",.2f", tickfont=dict(size=9))})
     fig.update_layout(xaxis_domain=[0, 0.60], margin_r=180,
                       yaxis2_position=0.62, yaxis3_position=0.74)
+    if not charges.empty:
+        # The native adapter computes responsive offsets. Keep fallback Plotly
+        # axes distinct too, instead of stacking TC/RC on the oil ratio axis.
+        fig.update_layout(xaxis_domain=[0, 0.48], margin_r=210,
+            yaxis2_position=0.51, yaxis3_position=0.60,
+            yaxis4_position=0.69, yaxis5_position=0.78,
+            yaxis6_position=0.87, yaxis7_position=0.98)
     return fig
 
 
@@ -307,4 +334,3 @@ def build_comex_copper_figure(date_range: str) -> go.Figure:
 
 def build_lme_copper_figure(date_range: str) -> go.Figure:
     return build_copper_flow_spread_figure(date_range)
-

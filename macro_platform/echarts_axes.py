@@ -36,6 +36,10 @@ def _axis_unit(axis, traces):
         return "HK$ bn"
     if "usd/oz" in text:
         return "USD/oz"
+    if "usd/dmt" in text:
+        return "USD/dmt"
+    if "us cents/lb" in text:
+        return "US cents/lb"
     if "usd/bbl" in text or "$/bbl" in text:
         return "USD/bbl"
     if "bbl/t" in text:
@@ -146,6 +150,11 @@ def _responsive_chart_layout(option, fig, axis_map):
         (480, 336, 44, 10),
         (360, 236, 40, 9),
     ):
+        # Seven independent copper axes need narrower numeric columns on a
+        # phone. Keep >80px for data at 360px screens without hiding any axis.
+        compact_units = len(option["yAxis"]) > 5 and maximum <= 480
+        if compact_units:
+            spacing = 30
         names, used, rows = [], 0, 1
         for series in option["series"]:
             name = series["name"]
@@ -160,9 +169,13 @@ def _responsive_chart_layout(option, fig, axis_map):
             used += width
         axes = deepcopy(option["yAxis"])
         for index, axis in enumerate(axes):
+            unit = units[index]
+            if compact_units:
+                unit = {"USD/t": "$/t", "USD/bbl": "$/bbl", "USD/dmt": "$/dmt",
+                        "US cents/lb": "¢/lb"}.get(unit, unit)
             axis.update({
                 "show": True,
-                "name": f"{'L' if index == 0 else 'R' + str(index)}\n{units[index]}",
+                "name": f"{'L' if index == 0 else 'R' + str(index)}\n{unit}",
                 "nameLocation": "end", "nameRotate": 0, "nameGap": 10,
                 "nameTextStyle": {"fontSize": 9, "lineHeight": 12,
                                   "align": "center", "color": "#475569"},
@@ -266,7 +279,7 @@ def build_safe_echarts_option(fig, date_range="1Y"):
         series.append({
             "name": str(getattr(trace, "name", None) or "Series"),
             "type": "line",
-            "showSymbol": bool((fig.layout.meta or {}).get("show_observation_markers")),
+            "showSymbol": bool((fig.layout.meta or {}).get("show_observation_markers")) or "markers" in str(getattr(trace, "mode", "")),
             "symbolSize": 4,
             "connectNulls": False,
             "data": points,
@@ -277,6 +290,8 @@ def build_safe_echarts_option(fig, date_range="1Y"):
         if isinstance(color, str) and color:
             series[-1]["lineStyle"] = {"color": color}
             series[-1]["itemStyle"] = {"color": color}
+        if isinstance(getattr(trace, "meta", None), dict) and trace.meta.get("observation_cadence") in ("daily", "weekly", "monthly"):
+            series[-1]["observation_cadence"] = trace.meta["observation_cadence"]
         _bar_style(series[-1], trace)
     if latest is None or not series:
         return None
@@ -406,7 +421,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
         series.append({
             "name": trace_name,
             "type": "bar" if getattr(trace, "type", "") == "bar" else "line",
-            "showSymbol": bool((fig.layout.meta or {}).get("show_observation_markers")),
+            "showSymbol": bool((fig.layout.meta or {}).get("show_observation_markers")) or "markers" in str(getattr(trace, "mode", "")),
             "symbolSize": 4,
             "connectNulls": False,
             "lineStyle": line_style,
@@ -419,6 +434,8 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             # ECharts uses itemStyle for legend symbols and tooltip markers.
             # Match them to the explicit line color instead of its palette.
             series[-1]["itemStyle"] = {"color": color}
+        if isinstance(getattr(trace, "meta", None), dict) and trace.meta.get("observation_cadence") in ("daily", "weekly", "monthly"):
+            series[-1]["observation_cadence"] = trace.meta["observation_cadence"]
         _bar_style(series[-1], trace)
 
     if latest is None or not series:

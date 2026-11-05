@@ -21,6 +21,7 @@ SPECS = [
     ("jpy_neer_daily.json", "date", "", ["value"]),
     ("censtat_hkd_money_supply.json", "end_of_month", "hk_6_range", ["m2_hkd", "m3_hkd"]),
     ("copper_market_daily.json", "date", "", ["comex_stock_t", "lme_stock_t", "comex_price_usd_lb", "lme_3m_usd_t", "wti_usd_bbl", "vvix"]),
+    ("copper_tcrc_weekly.json", "observation_date", "", ["tc_usd_dmt", "rc_cents_lb"]),
     ("usdhkd_daily.json", "observation_date", "", ["value"]),
     ("vixeq_daily.json", "observation_date", "", ["close"]),
     ("skew_daily.json", "observation_date", "", ["close"]),
@@ -96,7 +97,7 @@ def audit(root=ROOT, now=None):
                     date = (pd.Timestamp(date + "-01") + pd.offsets.MonthEnd(0)).strftime("%Y-%m-%d")
                 points.append([date, row.get(field)])
             series.append({"name": field, "data": points,
-                           "observation_cadence": "weekly" if filename in {"jpy_neer_daily.json", "cftc_jpy_weekly.json"} else "daily"})
+                           "observation_cadence": "weekly" if filename in {"jpy_neer_daily.json", "cftc_jpy_weekly.json", "copper_tcrc_weekly.json"} else "daily"})
         health = option_observation_health({"series": series}, chart_key=cadence, now=now)
         missing = [field for field in fields if field not in health["latest_by_name"]]
         reports.append({"file": filename, **health, "missing_names": missing})
