@@ -1,0 +1,41 @@
+name: Refresh actual daily standing repo usage
+on:
+  schedule:
+    - cron: '10 19,21,23 * * 1-5'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - macro_platform/srf_usage.py
+      - scripts/update_srf_usage.py
+      - .github/workflows/update-srf-usage.yml
+permissions:
+  contents: write
+concurrency:
+  group: srf-usage-snapshot
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pandas requests plotly
+      - name: Validate and collect completed AM plus PM results
+        run: python scripts/update_srf_usage.py
+      - name: Publish official accepted amounts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data_snapshots/srf_usage_daily.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Refresh complete daily SRF accepted amounts"
+          bash scripts/push_snapshot.sh
+      - name: Audit actual operation dates
+        run: python scripts/audit_source_freshness.py --only srf_usage_daily.json

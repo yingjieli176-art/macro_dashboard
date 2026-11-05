@@ -660,6 +660,31 @@ def main():
             assert page.get_by_text("该图表目前没有可验证的有效观测数据", exact=False).count() > 0
             report["checks"].append({"chart_positions": 19, "painted_native_charts": len(paints),
                                       "missing_positions_are_explicit": True})
+            policy = page.locator('.st-key-normal_corridor_range_adaptive_default_1Y').get_by_test_id(
+                re.compile(r"^(macro|st)EChartsChart$"))
+            policy.wait_for(timeout=30000)
+            policy_state = policy.evaluate("""element => {
+                const option = (""" + INSTANCE_JS + """)(element).getOption();
+                return {axes:option.yAxis.map(a=>({name:a.name,scale:a.scale})),
+                    series:option.series.map(s=>({name:s.name,type:s.type,axis:s.yAxisIndex,
+                        first:s.data[0],last:s.data[s.data.length-1],samples:s.data.length}))};
+            }""")
+            usage = next(s for s in policy_state['series'] if s['name'] == 'SRF 实际用量 (R1)')
+            assert usage['type'] == 'bar' and usage['axis'] == 1 and usage['samples'] > 1200, policy_state
+            assert 'USD bn' in policy_state['axes'][1]['name'], policy_state
+            assert policy_state['axes'][1]['scale'] is False, policy_state
+            policy.scroll_into_view_if_needed()
+            page.screenshot(path='browser_srf_usage.png')
+            report['srf_usage'] = policy_state
+            yield_chart = page.locator('.st-key-normal_yield10_range_adaptive_default_1Y').get_by_test_id(
+                re.compile(r"^(macro|st)EChartsChart$"))
+            yield_chart.wait_for(timeout=30000)
+            yield_names = yield_chart.evaluate("""element => (""" + INSTANCE_JS + """)(element)
+                .getOption().series.map(s=>s.name)""")
+            assert yield_names == ['10Y Nominal','10Y Real · TIPS (R1)','10Y Breakeven (R1)'], yield_names
+            page.get_by_text('2. US Treasury Yield Structure · 10Y', exact=True).scroll_into_view_if_needed()
+            page.screenshot(path='browser_ten_year_tips.png')
+            report['ten_year_tips'] = yield_names
             copper_tcrc = page.locator('.st-key-copper_flow_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             copper_tcrc.wait_for(timeout=30000)
@@ -865,3 +890,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

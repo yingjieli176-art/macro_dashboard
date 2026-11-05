@@ -79,6 +79,11 @@ on:
       - tests/test_truth_source_integrity.py
       - macro_platform/copper.py
       - macro_platform/copper_tcrc.py
+      - macro_platform/srf_usage.py
+      - scripts/update_srf_usage.py
+      - tests/test_srf_usage.py
+      - data_snapshots/srf_usage_daily.json
+      - .github/workflows/update-srf-usage.yml
       - scripts/update_copper_tcrc.py
       - tests/test_copper_tcrc.py
       - data_snapshots/copper_tcrc_weekly.json
@@ -189,6 +194,11 @@ on:
       - tests/test_fred_observation_admission.py
       - macro_platform/copper.py
       - macro_platform/copper_tcrc.py
+      - macro_platform/srf_usage.py
+      - scripts/update_srf_usage.py
+      - tests/test_srf_usage.py
+      - data_snapshots/srf_usage_daily.json
+      - .github/workflows/update-srf-usage.yml
       - scripts/update_copper_tcrc.py
       - tests/test_copper_tcrc.py
       - data_snapshots/copper_tcrc_weekly.json
@@ -313,6 +323,8 @@ jobs:
             browser_acceptance.png
             browser_ai_cds.png
             browser_copper_tcrc.png
+            browser_srf_usage.png
+            browser_ten_year_tips.png
             browser_mobile.png
             browser_equity_drawdown.png
             browser_china_drawdown.png
@@ -473,3 +485,4 @@ jobs:
             data_snapshots/fred_cache/
             fred_sync_health.json
           if-no-files-found: error
+
