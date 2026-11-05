@@ -461,8 +461,18 @@ def jobs():
             raise ValueError("Authorized NVIDIA " + tenor + " CDS spread source is not connected")
         # A local export is not proof of source-latest status.
         raise ValueError("NVIDIA CDS export loaded; source-latest quote requires provider connection")
-    for tenor in ("1Y", "5Y"):
-        output.append(("NVIDIA_CDS_" + tenor, [19], "daily", None, lambda tenor=tenor: nvidia_cds(tenor)))
+    output.append(("NVIDIA_CDS_1Y", [19], "daily", None, lambda: nvidia_cds("1Y")))
+    from macro_platform.ai_credit import SOURCE_URL as CDS_URL, SERIES as CDS_SERIES, load_cds_snapshot, parse_source
+    saved_cds = load_cds_snapshot()
+    def public_cds(key):
+        public = parse_source(get(CDS_URL).json())
+        points = public["series"][key]["records"]
+        return max(r["observation_date"] for r in points if r["spread_bps"] is not None), CDS_URL
+    for key in CDS_SERIES:
+        points = saved_cds.get("series", {}).get(key, {}).get("records", [])
+        stored = max((r["observation_date"] for r in points if r["spread_bps"] is not None), default=None)
+        identifier = "NVIDIA_CDS_5Y" if key == "sn_nvidia" else key.upper() + "_CDS_5Y"
+        output.append((identifier, [19], "daily", stored, lambda key=key: public_cds(key)))
     return output
 
 

@@ -266,7 +266,8 @@ def build_safe_echarts_option(fig, date_range="1Y"):
         series.append({
             "name": str(getattr(trace, "name", None) or "Series"),
             "type": "line",
-            "showSymbol": False,
+            "showSymbol": bool((fig.layout.meta or {}).get("show_observation_markers")),
+            "symbolSize": 4,
             "connectNulls": False,
             "data": points,
             "yAxisIndex": axis_map[ref],
@@ -405,7 +406,8 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
         series.append({
             "name": trace_name,
             "type": "bar" if getattr(trace, "type", "") == "bar" else "line",
-            "showSymbol": False,
+            "showSymbol": bool((fig.layout.meta or {}).get("show_observation_markers")),
+            "symbolSize": 4,
             "connectNulls": False,
             "lineStyle": line_style,
             "yAxisIndex": y_axis_map[axis_ref],
@@ -690,4 +692,3 @@ def expected_viewport_y_bounds(fig, date_range="1Y") -> dict[str, list[float]]:
     window = date_range if date_range in RANGE_OFFSETS else "1Y"
     start = latest - RANGE_OFFSETS[window]
     return _visible_y_ranges(fig, start, latest)
-

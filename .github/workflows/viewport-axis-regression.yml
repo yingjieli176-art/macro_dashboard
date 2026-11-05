@@ -12,6 +12,11 @@ on:
       - scripts/update_censtat_money_supply.py
       - macro_platform/spx_options.py
       - macro_platform/nvidia_cds.py
+      - macro_platform/ai_credit.py
+      - scripts/update_ai_cds_snapshot.py
+      - tests/test_ai_credit.py
+      - data_snapshots/ai_cds_daily.json
+      - .github/workflows/update-ai-cds.yml
       - macro_platform/dashboard_layout.py
       - scripts/update_spx_put_call_snapshot.py
       - scripts/import_nvidia_cds.py
@@ -123,6 +128,11 @@ on:
       - scripts/update_censtat_money_supply.py
       - macro_platform/spx_options.py
       - macro_platform/nvidia_cds.py
+      - macro_platform/ai_credit.py
+      - scripts/update_ai_cds_snapshot.py
+      - tests/test_ai_credit.py
+      - data_snapshots/ai_cds_daily.json
+      - .github/workflows/update-ai-cds.yml
       - macro_platform/dashboard_layout.py
       - scripts/update_spx_put_call_snapshot.py
       - scripts/import_nvidia_cds.py

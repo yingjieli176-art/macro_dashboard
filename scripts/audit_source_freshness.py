@@ -50,7 +50,7 @@ def raw_record_issues(payload, now=None):
     issues = {"invalid_date_rows": 0, "future_date_rows": 0,
               "duplicate_date_rows": 0, "invalid_value_cells": 0}
     nodes = list((payload.get("series") or {}).values()) if payload.get("series") else [payload]
-    numeric = {"value", "close", "japan_2y", "japan_10y", "close_today_bal", "open_today_bal"}
+    numeric = {"value", "close", "spread_bps", "japan_2y", "japan_10y", "close_today_bal", "open_today_bal"}
     numeric.update(field for _, _, _, fields in SPECS for field in fields)
     for node in nodes:
         seen = set()
@@ -100,6 +100,14 @@ def audit(root=ROOT, now=None):
         health = option_observation_health({"series": series}, chart_key=cadence, now=now)
         missing = [field for field in fields if field not in health["latest_by_name"]]
         reports.append({"file": filename, **health, "missing_names": missing})
+    from macro_platform.ai_credit import SERIES as CDS_SERIES
+    cds = read_payload(root / "data_snapshots" / "ai_cds_daily.json")
+    cds_series = [{"name": label, "data": [[row.get("observation_date"), row.get("spread_bps")]
+        for row in cds.get("series", {}).get(key, {}).get("records", [])]}
+        for key, (label, _) in CDS_SERIES.items()]
+    cds_health = option_observation_health({"series": cds_series}, now=now)
+    reports.append({"file": "ai_cds_daily.json", **cds_health,
+        "missing_names": [label for label, _ in CDS_SERIES.values() if label not in cds_health["latest_by_name"]]})
     market = read_payload(root / "data_snapshots" / "hk_market_daily.json")
     series = [{"name": symbol, "data": [[r["observation_date"], r.get("close")]
                                           for r in node.get("records", [])]}
