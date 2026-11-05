@@ -25,7 +25,7 @@ class CopperContextTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "copper.json"
             path.write_text(json.dumps({"records": rows}))
-            with patch.object(copper, "SNAPSHOT_PATH", path):
+            with patch.object(copper, "SNAPSHOT_PATH", path), patch.object(copper, "load_tcrc_snapshot", return_value=pd.DataFrame()):
                 for period in ("5Y", "1Y", "6M", "3M", "1M"):
                     fig = copper.build_copper_flow_spread_figure(period)
                     ratio = next(t for t in fig.data if t.name == "铜油比 (R4)")

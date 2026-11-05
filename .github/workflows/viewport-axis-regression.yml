@@ -78,6 +78,11 @@ on:
       - tests/test_series_calendars.py
       - tests/test_truth_source_integrity.py
       - macro_platform/copper.py
+      - macro_platform/copper_tcrc.py
+      - scripts/update_copper_tcrc.py
+      - tests/test_copper_tcrc.py
+      - data_snapshots/copper_tcrc_weekly.json
+      - .github/workflows/update-copper-tcrc.yml
       - macro_platform/asia_rates.py
       - macro_platform/yen_index.py
       - macro_platform/yen_carry.py
@@ -183,6 +188,11 @@ on:
       - macro_platform/fred_observations.py
       - tests/test_fred_observation_admission.py
       - macro_platform/copper.py
+      - macro_platform/copper_tcrc.py
+      - scripts/update_copper_tcrc.py
+      - tests/test_copper_tcrc.py
+      - data_snapshots/copper_tcrc_weekly.json
+      - .github/workflows/update-copper-tcrc.yml
       - macro_platform/asia_rates.py
       - macro_platform/yen_index.py
       - macro_platform/yen_carry.py
@@ -302,6 +312,7 @@ jobs:
             browser_acceptance.json
             browser_acceptance.png
             browser_ai_cds.png
+            browser_copper_tcrc.png
             browser_mobile.png
             browser_equity_drawdown.png
             browser_china_drawdown.png

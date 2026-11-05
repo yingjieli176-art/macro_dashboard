@@ -353,6 +353,16 @@ def lme(value):
     return latest(frame, "date", value), WESTMETALL_URL.format(year=datetime.now().year)
 
 
+@shared_fetch
+def copper_tcrc_source():
+    from scripts.update_copper_tcrc import collect
+    rows = collect()
+    if not rows:
+        raise ValueError("No explicit public Mysteel spot index observations returned")
+    latest_row = max(rows, key=lambda row: row["observation_date"])
+    return latest_row["observation_date"], latest_row["source_url"]
+
+
 def csindex(code):
     from macro_platform.china_equity import SOURCE, completed_china_date, parse_csindex_history
     end = completed_china_date()
@@ -453,6 +463,8 @@ def jobs():
     add("comex_stock_t", [16], "daily", snapshot("copper_market_daily.json", "date", "comex_stock_t"), cme)
     for field in ("lme_stock_t", "lme_3m_usd_t"):
         add(field, [16], "daily", snapshot("copper_market_daily.json", "date", field), lambda field=field: lme(field))
+    for field in ("tc_usd_dmt", "rc_cents_lb"):
+        add(field, [16], "weekly", snapshot("copper_tcrc_weekly.json", "observation_date", field), copper_tcrc_source)
     def nvidia_cds(tenor):
         from macro_platform.nvidia_cds import load_nvidia_cds
         data = load_nvidia_cds()

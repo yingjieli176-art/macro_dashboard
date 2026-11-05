@@ -660,6 +660,28 @@ def main():
             assert page.get_by_text("该图表目前没有可验证的有效观测数据", exact=False).count() > 0
             report["checks"].append({"chart_positions": 19, "painted_native_charts": len(paints),
                                       "missing_positions_are_explicit": True})
+            copper_tcrc = page.locator('.st-key-copper_flow_adaptive_default_1Y').get_by_test_id(
+                re.compile(r"^(macro|st)EChartsChart$"))
+            copper_tcrc.wait_for(timeout=30000)
+            tcrc_state = copper_tcrc.evaluate("""element => {
+                const chart = (""" + INSTANCE_JS + """)(element);
+                const option = chart.getOption();
+                return {axes:option.yAxis.map(a=>a.name), series:option.series
+                    .filter(s=>/^(TC |RC )/.test(s.name))
+                    .map(s=>({name:s.name, axis:s.yAxisIndex, data:s.data,
+                              markers:s.showSymbol, cadence:s.observation_cadence}))};
+            }""")
+            assert len(tcrc_state['axes']) == 7, tcrc_state
+            assert len(tcrc_state['series']) == 2, tcrc_state
+            for series in tcrc_state['series']:
+                assert series['axis'] in (5, 6) and series['markers'], series
+                assert series['cadence'] == 'weekly', series
+                assert len(series['data']) >= 3 and any(p[1] < 0 for p in series['data']), series
+            assert 'USD/dmt' in tcrc_state['axes'][5], tcrc_state
+            assert 'US cents/lb' in tcrc_state['axes'][6], tcrc_state
+            page.get_by_text('17. Copper Flow, WTI & TC/RC', exact=True).scroll_into_view_if_needed()
+            page.screenshot(path='browser_copper_tcrc.png')
+            report['copper_tcrc'] = tcrc_state
             report["equity_drawdown"] = exercise_equity_drawdown(page)
             report["china_drawdown"] = exercise_china_drawdown(page)
             report["security_search"] = exercise_security_search(page)

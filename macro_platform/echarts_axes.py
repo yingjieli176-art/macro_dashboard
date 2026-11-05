@@ -36,6 +36,10 @@ def _axis_unit(axis, traces):
         return "HK$ bn"
     if "usd/oz" in text:
         return "USD/oz"
+    if "usd/dmt" in text:
+        return "USD/dmt"
+    if "us cents/lb" in text:
+        return "US cents/lb"
     if "usd/bbl" in text or "$/bbl" in text:
         return "USD/bbl"
     if "bbl/t" in text:
@@ -266,7 +270,7 @@ def build_safe_echarts_option(fig, date_range="1Y"):
         series.append({
             "name": str(getattr(trace, "name", None) or "Series"),
             "type": "line",
-            "showSymbol": bool((fig.layout.meta or {}).get("show_observation_markers")),
+            "showSymbol": bool((fig.layout.meta or {}).get("show_observation_markers")) or "markers" in str(getattr(trace, "mode", "")),
             "symbolSize": 4,
             "connectNulls": False,
             "data": points,
@@ -277,6 +281,8 @@ def build_safe_echarts_option(fig, date_range="1Y"):
         if isinstance(color, str) and color:
             series[-1]["lineStyle"] = {"color": color}
             series[-1]["itemStyle"] = {"color": color}
+        if isinstance(getattr(trace, "meta", None), dict) and trace.meta.get("observation_cadence") in ("daily", "weekly", "monthly"):
+            series[-1]["observation_cadence"] = trace.meta["observation_cadence"]
         _bar_style(series[-1], trace)
     if latest is None or not series:
         return None
@@ -406,7 +412,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
         series.append({
             "name": trace_name,
             "type": "bar" if getattr(trace, "type", "") == "bar" else "line",
-            "showSymbol": bool((fig.layout.meta or {}).get("show_observation_markers")),
+            "showSymbol": bool((fig.layout.meta or {}).get("show_observation_markers")) or "markers" in str(getattr(trace, "mode", "")),
             "symbolSize": 4,
             "connectNulls": False,
             "lineStyle": line_style,
@@ -419,6 +425,8 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             # ECharts uses itemStyle for legend symbols and tooltip markers.
             # Match them to the explicit line color instead of its palette.
             series[-1]["itemStyle"] = {"color": color}
+        if isinstance(getattr(trace, "meta", None), dict) and trace.meta.get("observation_cadence") in ("daily", "weekly", "monthly"):
+            series[-1]["observation_cadence"] = trace.meta["observation_cadence"]
         _bar_style(series[-1], trace)
 
     if latest is None or not series:
