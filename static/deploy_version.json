@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-05-compact-parameter-labels-r102",
+  "release": "2026-11-05-restored-chart-explanations-r103",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -46,6 +46,7 @@
     "alphabet_five_year_cds_and_explicit_nebius_unavailable_slot",
     "cds_observation_coverage_first_last_dates_and_source_calendar_lag",
     "only_nvidia_amd_alphabet_microsoft_oracle_five_year_cds",
-    "compact_parenthetical_chart_labels_without_parameter_tables"
+    "compact_parenthetical_chart_labels_without_parameter_tables",
+    "original_chart_explanations_retained"
   ]
 }
