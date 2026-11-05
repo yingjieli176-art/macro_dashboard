@@ -487,8 +487,10 @@ def jobs():
     saved_cds = load_cds_snapshot()
     def public_cds(key):
         public = parse_source(get(CDS_URL).json())
-        points = public["series"][key]["records"]
-        return max(r["observation_date"] for r in points if r["spread_bps"] is not None), CDS_URL
+        points = [r for r in public["series"][key]["records"] if r["spread_bps"] is not None]
+        if not points:
+            raise ValueError("Public source has no priced 5Y CDS observations for " + key + "; equity swap prices are excluded")
+        return max(r["observation_date"] for r in points), CDS_URL
     for key in CDS_SERIES:
         points = saved_cds.get("series", {}).get(key, {}).get("records", [])
         stored = max((r["observation_date"] for r in points if r["spread_bps"] is not None), default=None)
@@ -571,4 +573,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

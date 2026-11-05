@@ -61,7 +61,7 @@ def main():
     result = refresh(payload)
     print(json.dumps({"source_asof": result["source_asof"], "series": {
         key: {"observations": sum(r["spread_bps"] is not None for r in node["records"]),
-              "latest": max(r["observation_date"] for r in node["records"] if r["spread_bps"] is not None)}
+              "latest": max((r["observation_date"] for r in node["records"] if r["spread_bps"] is not None), default=None)}
         for key, node in result["series"].items()}}, ensure_ascii=False))
 
 

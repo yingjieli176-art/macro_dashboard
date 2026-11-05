@@ -96,8 +96,8 @@ def describe(name, axis="y"):
                  "百分点" if spread else "年化%", "同日长端减短端；负值为倒挂。" if spread else "该国本币国债的市场利率。")
     if entry is None and "回撤比例" in key:
         entry = (key, "%", "（当日收盘÷所选区间最高收盘−1）×100%；高点当日为0，高点前不画线。")
-    if entry is None and (match := re.fullmatch(r"(Oracle|Intel|AMD|NVIDIA|CoreWeave|CDX IG) (1Y|5Y)(.*)", key)):
-        company = {"Oracle": "甲骨文", "Intel": "英特尔", "AMD": "超威半导体", "NVIDIA": "英伟达", "CoreWeave": "CoreWeave云算力公司", "CDX IG": "投资级公司信用指数"}[match[1]]
+    if entry is None and (match := re.fullmatch(r"(Oracle|Intel|AMD|NVIDIA|CoreWeave|Alphabet|Nebius|CDX IG) (1Y|5Y)(.*)", key)):
+        company = {"Oracle": "甲骨文", "Intel": "英特尔", "AMD": "超威半导体", "NVIDIA": "英伟达", "Alphabet": "谷歌母公司Alphabet", "Nebius": "Nebius（NBIS）", "CoreWeave": "CoreWeave云算力公司", "CDX IG": "投资级公司信用指数"}[match[1]]
         years = "1年" if match[2] == "1Y" else "5年"
         entry = (company + years + ("信用指数利差" if match[1] == "CDX IG" else "信用违约掉期利差（CDS）"), "基点bp",
                  "100bp＝1%/年；走高表示信用保护变贵，不是股价保险。" + ("带*为由预付款推算的隐含利差。" if "*" in key else ""))
@@ -108,12 +108,34 @@ def describe(name, axis="y"):
 
 
 def parameter_rows(fig):
-    return [row for trace in fig.data if (row := describe(trace.name, trace.yaxis)) is not None]
+    rows = [row for trace in fig.data if (row := describe(trace.name, trace.yaxis)) is not None]
+    shown = {str(trace.name) for trace in fig.data}
+    meta = fig.layout.meta if isinstance(fig.layout.meta, dict) else {}
+    for name in meta.get("missing_series", []):
+        if name in shown:
+            continue
+        match = re.search(r"(?:\(R|· R)(\d+)", name)
+        axis = "y" + str(int(match[1]) + 1) if match else "y"
+        row = describe(name, axis)
+        if row is not None:
+            row["图例参数"] += "（暂无数据）"
+            rows.append(row)
+    return rows
 
 
 def render_parameter_guide(fig, element_key):
     import streamlit as st
     rows = parameter_rows(fig)
+    # A complete source outage can leave a figure without even trace metadata.
+    # Keep the four crypto definitions available in that state as well.
+    if element_key == "crypto_market":
+        present = {row["图例参数"].removesuffix("（暂无数据）") for row in rows}
+        for name, axis in (("BTC · USD", "y"), ("ETH · USD · R1", "y2"),
+                           ("ETH/BTC 强弱 · R2", "y3"), ("BTC 30D 实际波动率 · R3", "y4")):
+            if name not in present:
+                row = describe(name, axis)
+                row["图例参数"] += "（暂无数据）"
+                rows.append(row)
     if not rows:
         return
     with st.expander("参数对照：中文名称、单位、坐标与读法", expanded=element_key == "sp500_nikkei_ratio"):

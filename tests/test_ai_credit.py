@@ -22,6 +22,37 @@ def source():
 
 
 class AiCreditTests(unittest.TestCase):
+    def test_unpublished_nebius_cds_is_missing_even_when_equity_swap_prices_exist(self):
+        raw = source()
+        raw["series"].pop("sn_nebius")
+        raw["catalogue"] = [row for row in raw["catalogue"] if row["id"] != "sn_nebius"]
+        raw["series"]["eq_px_nebius"] = [150., 160., 170.]
+        payload = cds.parse_source(raw)
+        self.assertEqual(payload["series"]["sn_nebius"]["records"], [])
+        table = cds.cds_summary(payload).set_index("公司 / 指数")
+        row = table.loc["Nebius 5Y（NBIS）"]
+        self.assertTrue(pd.isna(row["最新CDS（bp）"]))
+        self.assertEqual(row["观测数"], 0)
+        self.assertEqual(row["数据状态"], "公开源未提供5Y CDS")
+        with patch.object(cds, "load_nvidia_cds", return_value=pd.DataFrame(columns=["tenor"])):
+            fig = cds.build_cds_figure(payload=payload)
+        self.assertNotIn("Nebius 5Y（NBIS）", [trace.name for trace in fig.data])
+        self.assertIn("Nebius 5Y（NBIS）", fig.layout.meta["missing_series"])
+
+    def test_coverage_uses_actual_priced_days_and_each_companys_date(self):
+        table = cds.cds_summary(cds.parse_source(source())).set_index("公司 / 指数")
+        self.assertEqual(table.loc["NVIDIA 5Y", "观测数"], 2)
+        self.assertEqual(table.loc["NVIDIA 5Y", "源日历天数"], 3)
+        self.assertEqual(table.loc["NVIDIA 5Y", "源日历覆盖率（%）"], 66.7)
+        self.assertEqual(table.loc["NVIDIA 5Y", "距源截止日（天）"], 1)
+        self.assertEqual(table.loc["Alphabet 5Y（谷歌）", "实际观测日"], "2026-10-28")
+
+    def test_optional_name_still_rejects_equity_price_descriptor(self):
+        raw = source()
+        next(row for row in raw["catalogue"] if row["id"] == "sn_alphabet")["unit"] = "usd"
+        with self.assertRaises(ValueError):
+            cds.parse_source(raw)
+
     def test_whitelists_only_cds_and_labels_implied_series(self):
         payload = cds.parse_source(source())
         self.assertEqual(set(payload["series"]), set(cds.SERIES))
@@ -52,7 +83,7 @@ class AiCreditTests(unittest.TestCase):
         with patch.object(cds, "load_nvidia_cds", return_value=pd.DataFrame(columns=["tenor"])):
             for window in ("5Y", "1Y", "6M", "3M", "1M"):
                 fig = cds.build_cds_figure(window, cds.parse_source(source()))
-                self.assertEqual(len(fig.data), 6)
+                self.assertEqual(len(fig.data), len(cds.SERIES))
                 self.assertTrue(all(t.connectgaps is False for t in fig.data))
                 for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
                     option = adapter(fig, window)
@@ -90,6 +121,10 @@ class AiCreditTests(unittest.TestCase):
         table = cds.cds_summary().set_index("公司 / 指数")
         for key, (label, _) in cds.SERIES.items():
             actual = [r for r in payload["series"][key]["records"] if r["spread_bps"] is not None]
+            if not actual:
+                self.assertIn(key, cds.OPTIONAL_SERIES)
+                self.assertTrue(pd.isna(table.loc[label, "最新CDS（bp）"]))
+                continue
             self.assertEqual(table.loc[label, "最新CDS（bp）"], actual[-1]["spread_bps"])
             self.assertEqual(table.loc[label, "实际观测日"], actual[-1]["observation_date"])
             self.assertLessEqual(actual[-1]["observation_date"], payload["source_asof"])

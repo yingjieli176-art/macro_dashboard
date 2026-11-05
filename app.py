@@ -116,7 +116,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-05-parameter-guide-srf-contrast-r99"
+CHART_BUILD = "2026-11-05-cds-coverage-audit-r100"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2931,14 +2931,18 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
 @st.fragment(key="nvidia_cds_viewport")
 def render_nvidia_cds():
     st.markdown('<div class="section-title">19. AI Credit · 公司CDS信用风险</div>'
-                '<div class="section-description">Oracle · Intel · AMD · NVIDIA · CoreWeave* · CDX IG · 5Y · bp</div>', unsafe_allow_html=True)
+                '<div class="section-description">Oracle · Intel · AMD · NVIDIA · Alphabet（谷歌）· Nebius（NBIS，待数据）· CoreWeave* · CDX IG · 5Y · bp</div>', unsafe_allow_html=True)
     payload = load_cds_snapshot()
     figure = build_cds_figure("5Y", payload=payload)
     _render_adaptive_macro_figure(figure, "nvidia_cds")
     if not figure.data:
         st.info("暂未取得可绘制的CDS观测，请查看数据源更新状态。")
-    st.dataframe(cds_summary(payload), hide_index=True, width="stretch")
-    st.caption(f"来源：Open-Sourced Rates Observatory, irates.today。数据日历截至 {payload.get('source_asof', '未取得')}；各公司的实际最新观测日见表。日度成交汇总，不是实时买卖报价；无成交的日期留空，圆点表示实际观测，可点击图例比较公司。")
+    summary = cds_summary(payload)
+    st.dataframe(summary, hide_index=True, width="stretch",
+                 column_config={"最新CDS（bp）": st.column_config.NumberColumn(format="%.2f"),
+                                "源日历覆盖率（%）": st.column_config.NumberColumn(format="%.1f%%")})
+    st.caption("缺数核对：谷歌使用母公司Alphabet的5Y CDS。Nebius（NBIS）的5Y CDS未在当前公开源发布；股票掉期价格不作替代。覆盖率＝有效观测日数÷公开源日历天数，空缺可能来自无成交、不可计价或披露范围限制，不能仅据此认定当天没有交易。")
+    st.caption(f"来源：Open-Sourced Rates Observatory, irates.today。数据日历截至 {payload.get('source_asof', '未取得')}；各公司的实际最新观测日见表。日度成交汇总，不是实时买卖报价；没有可用计价观测的日期留空，圆点表示实际观测，可点击图例比较公司。")
     st.caption("5Y为剩余期限4.4–5.6年的成交分组，单位bp（100 bp = 1%/年）。CoreWeave*为源站基于预付款、固定违约强度及40%回收率推算的利差，使用虚线标注；CDX IG为信用指数。英伟达1Y继续保留独立数据入口，缺少报价时不推算。")
     st.markdown('<div class="mini-description">'
         '<div class="parameter-note"><b>CDS与资本开支：</b>CDS走阔可作为融资压力的早期观察信号，需与资本开支指引、经营现金流和债务到期安排交叉核对；不能仅凭利差上升判断公司已削减开支。</div>'
