@@ -42,7 +42,7 @@ def reconcile_report(root):
 def publish(root=ROOT, audit=reconcile_report):
     base = git(root, "rev-parse", "HEAD").stdout.decode().strip()
     names = git(root, "ls-files", "--modified", "--others", "--exclude-standard", "-z", "--", "data_snapshots/").stdout
-    paths = {name.decode() for name in names.split(b"\0") if name}
+    paths = {name.decode() for name in names.split(b"\0") if name and name.endswith(b".json")}
     candidates = {name: (root / name).read_bytes() for name in paths if (root / name).is_file()}
     for _ in range(5):
         git(root, "fetch", "origin", "main")
@@ -63,7 +63,10 @@ def publish(root=ROOT, audit=reconcile_report):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(content)
         audit(root)
-        git(root, "add", "--", "data_snapshots/")
+        staged = sorted(set(candidates) | ({"data_snapshots/all_source_freshness.json"}
+                        if (root / "data_snapshots/all_source_freshness.json").is_file() else set()))
+        if staged:
+            git(root, "add", "--", *staged)
         if git(root, "diff", "--cached", "--quiet", check=False).returncode == 0:
             print("No observation changes to publish", flush=True)
             return
