@@ -429,8 +429,8 @@ def jobs():
     add("VIX9D", [10], "daily", snapshot("vix9d_daily.json", "observation_date", "close"), lambda: cboe("VIX9D"))
     def spx_pc():
         from scripts.update_spx_put_call_snapshot import fetch_daily
-        from macro_platform.spx_options import SOURCE_TEMPLATE
-        end = pd.Timestamp.now(tz="America/New_York").normalize() - pd.Timedelta(days=1)
+        from macro_platform.spx_options import SOURCE_TEMPLATE, completed_report_date
+        end = pd.Timestamp(completed_report_date())
         for day in pd.bdate_range(end-pd.Timedelta(days=10), end)[::-1]:
             row = fetch_daily(day.strftime("%Y-%m-%d"))
             if row is not None:

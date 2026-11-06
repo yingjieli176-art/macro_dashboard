@@ -9,6 +9,7 @@ from urllib.parse import quote
 
 import pandas as pd
 import requests
+from datetime import date, datetime, timezone
 
 from macro_platform.market_history import completed_daily_closes
 
@@ -24,6 +25,22 @@ def bar(day, zone, next_day, instrument="ETF"):
 
 
 class DailyObservationDates(unittest.TestCase):
+    def test_spx_report_cutoff_advances_after_publication_hour(self):
+        from macro_platform.spx_options import completed_report_date
+        self.assertEqual(completed_report_date(datetime(2026,11,5,22,59,tzinfo=timezone.utc)),date(2026,11,4))
+        self.assertEqual(completed_report_date(datetime(2026,11,5,23,0,tzinfo=timezone.utc)),date(2026,11,5))
+
+    def test_cme_activity_date_accepts_single_digit_and_excel_dates(self):
+        from scripts.update_copper_snapshot import parse_cme_stocks
+        for text in ("Activity Date: 11/4/2026", "Activity Date: 11/04/2026", "Activity Date 2026-11-04 00:00:00"):
+            frame=pd.DataFrame([["COPPER - HIGH GRADE","Short Tons"],[text,None],
+                                ["Category","TOTAL TODAY"],["Total Registered (warranted)",100],
+                                ["Total Eligible (non-warranted)",200],["TOTAL COPPER",300]])
+            self.assertEqual(parse_cme_stocks(frame,today=date(2026,11,6))["date"],"2026-11-04")
+        frame.iloc[1,0]="Report Date: 11/4/2026"
+        with self.assertRaises(ValueError):
+            parse_cme_stocks(frame,today=date(2026,11,6))
+
     def test_live_history_compares_hosts_instead_of_accepting_old_first_response(self):
         source = Path(__file__).resolve().parents[1] / "app.py"
         node = next(n for n in ast.parse(source.read_text()).body

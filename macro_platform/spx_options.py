@@ -12,10 +12,14 @@ SOURCE_TEMPLATE = "https://cdn.cboe.com/data/us/options/market_statistics/daily/
 PRODUCT = "SPX + SPXW"
 
 
+def completed_report_date(now=None):
+    local = (now or datetime.now(ZoneInfo("America/New_York"))).astimezone(ZoneInfo("America/New_York"))
+    return local.date() if local.time() >= time(18) else local.date() - timedelta(days=1)
+
+
 def parse_daily(payload, day, now=None):
     stamp = pd.Timestamp(day)
-    local = (now or datetime.now(ZoneInfo("America/New_York"))).astimezone(ZoneInfo("America/New_York"))
-    cutoff = local.date() if local.time() >= time(18) else local.date() - timedelta(days=1)
+    cutoff = completed_report_date(now)
     if pd.isna(stamp) or stamp.date() > cutoff or stamp.weekday() >= 5:
         raise ValueError("Uncompleted or invalid SPX operation date")
     ratios = [r for r in payload.get("ratios", []) if r.get("name") == PRODUCT + " PUT/CALL RATIO"]
@@ -53,3 +57,4 @@ def load_spx_put_call_snapshot():
         return pd.DataFrame(rows, columns=empty.columns).sort_values("observation_date").drop_duplicates("observation_date", keep="last")
     except (OSError, ValueError, TypeError, KeyError):
         return empty
+

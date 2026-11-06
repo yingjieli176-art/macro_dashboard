@@ -27,7 +27,8 @@ def fetch_daily(day, now=None):
 def refresh(previous, now, fetch=fetch_daily, backfill=False):
     start = (pd.Timestamp(now.date()) - pd.DateOffset(years=5)).strftime("%Y-%m-%d")
     existing = {r["observation_date"]: r for r in previous.get("records", []) if r["observation_date"] >= start}
-    end = pd.Timestamp(now.astimezone(ZoneInfo("America/New_York")).date()) - pd.Timedelta(days=1)
+    from macro_platform.spx_options import completed_report_date
+    end = pd.Timestamp(completed_report_date(now))
     begin = pd.Timestamp(start) if backfill or len(existing) < 700 else end - pd.Timedelta(days=14)
     days = [d.strftime("%Y-%m-%d") for d in pd.bdate_range(begin, end)]
     downloaded, errors = [], []
@@ -70,3 +71,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

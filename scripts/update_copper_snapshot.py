@@ -34,10 +34,11 @@ def parse_cme_stocks(frame: pd.DataFrame, today: date | None = None) -> dict:
     text = " ".join(cells)
     if "COPPER - HIGH GRADE" not in text or "Short Tons" not in text:
         raise ValueError("Unexpected CME commodity or inventory unit")
-    match = re.search(r"Activity Date:\s*(\d{2}/\d{2}/\d{4})", text)
+    match = re.search(r"\bActivity\s+Date\s*:?\s*(\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})(?:\s|$)", text, re.I)
     if not match:
         raise ValueError("CME activity date missing; report date is not a substitute")
-    activity = datetime.strptime(match[1], "%m/%d/%Y").date()
+    activity = (datetime.strptime(match[1], "%m/%d/%Y").date() if "/" in match[1]
+                else date.fromisoformat(match[1]))
     if activity > (today or date.today()):
         raise ValueError("CME inventory has a future activity date")
     header = next((i for i, row in frame.iterrows()
@@ -466,4 +467,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 
