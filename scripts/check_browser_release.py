@@ -692,12 +692,19 @@ def main():
                 const chart = (""" + INSTANCE_JS + """)(element);
                 const option = chart.getOption();
                 return {axes:option.yAxis.map(a=>a.name), series:option.series
-                    .filter(s=>/^(TC |RC )/.test(s.name))
+                    .filter(s=>/^(TC[（ ]|RC[（ ])/.test(s.name))
                     .map(s=>({name:s.name, axis:s.yAxisIndex, data:s.data,
                               markers:s.showSymbol, cadence:s.observation_cadence}))};
             }""")
-            assert len(tcrc_state['axes']) == 5, tcrc_state
-            assert tcrc_state['series'] == [], tcrc_state
+            assert len(tcrc_state['axes']) == 7, tcrc_state
+            assert len(tcrc_state['series']) == 2, tcrc_state
+            from macro_platform.copper_tcrc import load_tcrc_snapshot
+            history = load_tcrc_snapshot()
+            for series in tcrc_state['series']:
+                assert series['axis'] in (5, 6) and series['markers'], series
+                assert len(series['data']) == len(history), series
+                assert [point[0][:10] for point in series['data']] == history.observation_date.dt.strftime('%Y-%m-%d').tolist(), series
+            assert page.get_by_text(re.compile(r'^动态Y轴：|^数据观测日：|^实际观测日：')).count() == 0
             page.get_by_text('TC / RC（近半年已核实报价）', exact=True).wait_for(timeout=30000)
             table_caption = page.get_by_text(re.compile(r'近半年共\d+个已核实报价日')).inner_text()
             from macro_platform.copper_tcrc import tcrc_history_rows
@@ -707,7 +714,7 @@ def main():
             assert table_rows[-1]['报价日期'] in table_caption and table_rows[0]['报价日期'] in table_caption, table_caption
             assert 'TC÷10' in table_caption, table_caption
             tcrc_state['table_caption'] = table_caption
-            page.get_by_text('17. Copper Flow & WTI · TC/RC 报价表', exact=True).scroll_into_view_if_needed()
+            page.get_by_text('17. Copper Flow, WTI & TC/RC', exact=True).scroll_into_view_if_needed()
             page.screenshot(path='browser_copper_tcrc.png')
             report['copper_tcrc'] = tcrc_state
             report["equity_drawdown"] = exercise_equity_drawdown(page)

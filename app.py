@@ -75,7 +75,7 @@ from macro_platform import copper_tcrc as _copper_tcrc
 # Refresh only the two affected modules when that old interface is detected.
 if not hasattr(_copper_tcrc, "tcrc_history_rows"):
     _copper_tcrc = importlib.reload(_copper_tcrc)
-if not getattr(_copper_module, "TCRC_TABLE_ONLY", False):
+if not getattr(_copper_module, "TCRC_LINE_HISTORY", False):
     _copper_module = importlib.reload(_copper_module)
 build_copper_flow_spread_figure = _copper_module.build_copper_flow_spread_figure
 from macro_platform.copper_tcrc import METHOD_URL as COPPER_TCRC_METHOD_URL
@@ -131,7 +131,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-06-tcrc-six-month-table-r112"
+CHART_BUILD = "2026-11-06-clean-notes-tcrc-lines-r113"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2135,7 +2135,7 @@ def _show_data_quality_notes(fig):
 
 
 def _show_macro_plot_health(fig, option, element_key):
-    """Show timestamps and missing/stale observations without new network I/O."""
+    """Keep data-quality checks without per-chart observation-date footers."""
     meta = fig.layout.meta if isinstance(fig.layout.meta, dict) else {}
     missing = list((meta or {}).get("missing_series") or [])
     if missing:
@@ -2147,11 +2147,6 @@ def _show_macro_plot_health(fig, option, element_key):
         return
     try:
         report = checker(option, chart_key=element_key)
-        dates = report.get("latest_by_name", {})
-        if dates:
-            st.caption("实际观测日：" + " · ".join(
-                f"{name} {day}" for name, day in dates.items()
-            ))
         if report.get("future_names"):
             st.warning("发现超前观测日期，请检查数据源：" +
                        " · ".join(report["future_names"]))
@@ -2271,7 +2266,7 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=Fal
                 )
                 if not standard:
                     if reused:
-                        st.caption("动态 Y 轴已保留上次有效数据；数据更新暂不可用。")
+                        st.caption("沿用上次有效数据，更新暂不可用。")
                     _show_macro_plot_health(base_fig, option, element_key)
                 return
             except Exception as exc:
@@ -2304,12 +2299,11 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=Fal
 
 
 def _show_standard_chart_health(base_fig, element_key, selected_range, reused):
-    st.caption("动态Y轴：切换时间范围或拖动底部滑块时，按可见样本自适应（左右轴分别计算）。")
     missing_series = list((base_fig.layout.meta or {}).get("missing_series", [])) if isinstance(base_fig.layout.meta, dict) else []
     if missing_series:
         st.warning("以下序列缺少观测数据：" + " · ".join(missing_series))
     if reused:
-        st.caption("当前沿用上次正常加载的动态曲线，数据可能未更新；Y 轴缩放仍可使用。")
+        st.caption("沿用上次有效数据，更新暂不可用。")
     # Extra diagnostics are optional: version skew must not break the charts.
     if st.query_params.get("debug_chart") == "1":
         bounds_helper = getattr(_echarts_axes, "expected_viewport_y_bounds", None)
@@ -2327,10 +2321,6 @@ def _show_standard_chart_health(base_fig, element_key, selected_range, reused):
         health = health_helper(
             base_fig, maximum_age_days=15 if element_key == "us_liquidity_range" else 10,
         )
-        if health.get("latest_by_name"):
-            st.caption("数据观测日：" + " · ".join(
-                f"{name} {obs}" for name, obs in health["latest_by_name"].items()
-            ))
         if health.get("stale_names"):
             st.warning("以下序列可能尚未更新：" + "、".join(health["stale_names"]))
         if health.get("future_names"):
@@ -2664,8 +2654,8 @@ def render_macro_chart_12(prebuilt_fig=None):
 @st.fragment(key="macro_chart_13_viewport")
 def render_macro_chart_13(prebuilt_fig=None):
     st.markdown(
-        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[13]}. Copper Flow & WTI · TC/RC 报价表</div>'
-        '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2) · WTI (R3) · 铜油比 (R4)</div>',
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[13]}. Copper Flow, WTI & TC/RC</div>'
+        '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2) · WTI (R3) · 铜油比 (R4) · TC（粗炼费，R5） · RC（精炼费，TC÷10，R6）</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig13("5Y")
@@ -2684,7 +2674,7 @@ def render_macro_chart_13(prebuilt_fig=None):
                    "缺失日期不补值。Mysteel现货周指数；RC按发布方方法由TC÷10计算。")
     else:
         st.warning("TC/RC 近半年暂无已核实报价。")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>COMEX 库存：</b>COMEX仓库铜库存，代表美国该交割体系内报告的铜存量；单位为千公吨，不是全球铜总库存。</div><div class="parameter-note"><b>LME 库存：</b>LME仓库铜库存，代表该交易所仓库体系内报告的铜存量；单位为千公吨，可与COMEX对照观察库存地域分布。</div><div class="parameter-note"><b>LME 3M 铜价 (R1)：</b>LME三个月期铜价，代表该市场三个月期限的铜定价；单位为美元/公吨。</div><div class="parameter-note"><b>COMEX HG 换算价 (R1)：</b>COMEX铜期货价格换算为美元/公吨，代表统一重量单位后的美国期货价格，便于与LME对照。</div><div class="parameter-note"><b>COMEX−LME 3M 价差 (R2)：</b>同日COMEX换算价减LME三个月铜价，代表两地铜价差；为正表示COMEX较贵。期限、交割及费用不同，不能直接视为无风险套利利润。</div><div class="parameter-note"><b>WTI 原油 (R3)：</b>NYMEX WTI近月期货代理（CL=F）的已完成日线收盘价，单位为美元/桶；换月会影响价格。</div><div class="parameter-note"><b>铜油比 (R4)：</b>同日COMEX铜价（美元/磅）×2204.62262185÷WTI（美元/桶），单位为桶/公吨；表示一公吨铜相当于多少桶原油，仅在两者均有有效收盘价时计算，不跨日补值。</div><div class="parameter-note"><b>TC 粗炼费 / RC 精炼费（下表）：</b>Mysteel进口干净铜精矿现货周指数，分别以美元/干吨和美分/磅列示；RC按发布方方法论取TC数值的十分之一，并非另行采样的独立报价。允许负值，不与年度长单基准混用。TC走低可反映原料竞争加剧，需结合冶炼产能、硫酸等副产品收入判断。</div><div class="parameter-context">口径说明：各序列保留原始单位和实际观测日；库存一增一减需结合交割、运输及需求判断。</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-description"><div class="parameter-note"><b>COMEX 库存：</b>COMEX仓库铜库存，代表美国该交割体系内报告的铜存量；单位为千公吨，不是全球铜总库存。</div><div class="parameter-note"><b>LME 库存：</b>LME仓库铜库存，代表该交易所仓库体系内报告的铜存量；单位为千公吨，可与COMEX对照观察库存地域分布。</div><div class="parameter-note"><b>LME 3M 铜价 (R1)：</b>LME三个月期铜价，代表该市场三个月期限的铜定价；单位为美元/公吨。</div><div class="parameter-note"><b>COMEX HG 换算价 (R1)：</b>COMEX铜期货价格换算为美元/公吨，代表统一重量单位后的美国期货价格，便于与LME对照。</div><div class="parameter-note"><b>COMEX−LME 3M 价差 (R2)：</b>同日COMEX换算价减LME三个月铜价，代表两地铜价差；为正表示COMEX较贵。期限、交割及费用不同，不能直接视为无风险套利利润。</div><div class="parameter-note"><b>WTI 原油 (R3)：</b>NYMEX WTI近月期货代理（CL=F）的已完成日线收盘价，单位为美元/桶；换月会影响价格。</div><div class="parameter-note"><b>铜油比 (R4)：</b>同日COMEX铜价（美元/磅）×2204.62262185÷WTI（美元/桶），单位为桶/公吨；表示一公吨铜相当于多少桶原油，仅在两者均有有效收盘价时计算，不跨日补值。</div><div class="parameter-note"><b>TC 粗炼费（R5）/ RC 精炼费（R6）：</b>Mysteel进口干净铜精矿现货周指数，分别使用美元/干吨和美分/磅的独立坐标；RC按发布方方法论取TC数值的十分之一，并非另行采样的独立报价。允许负值，不与年度长单基准混用。TC走低可反映原料竞争加剧，需结合冶炼产能、硫酸等副产品收入判断。</div><div class="parameter-context">口径说明：各序列保留原始单位和实际观测日；库存一增一减需结合交割、运输及需求判断。</div></div>', unsafe_allow_html=True)
     add_sources([
         ("Mysteel · 铜精矿TC/RC指数方法论", COPPER_TCRC_METHOD_URL),
         ("Mysteel · 2026-10-30现货TC指数原始发布", "https://youse.mysteel.com/a/26110208/7DCD2C67E671022B.html"),
