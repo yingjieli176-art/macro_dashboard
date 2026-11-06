@@ -121,7 +121,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-06-vix-delayed-quotes-r108"
+CHART_BUILD = "2026-11-06-vix-risk-colors-r109"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1656,9 +1656,9 @@ def build_fig9(date_range):
 
     fig = go.Figure()
     for column, name, width, dash, axis, unit in (
-        ("VIXCLS", "VIX", 2.7, None, None, ""),
-        ("VIXEQ", "VIXEQ", 2.4, "dash", None, ""),
-        ("SP500", "S&P 500 (R1)", 2.4, None, "y2", " pts"),
+        ("VIXCLS", "VIX", 3.0, None, None, ""),
+        ("VIXEQ", "VIXEQ", 2.8, "dash", None, ""),
+        ("SP500", "S&P 500 (R1)", 2.6, None, "y2", " pts"),
     ):
         source = sources.get(column, pd.DataFrame(columns=["observation_date"]))
         add_line(fig, data.loc[data["observation_date"].isin(source["observation_date"])],
@@ -1666,16 +1666,16 @@ def build_fig9(date_range):
     ratio_dates = [date for column in ("VIXEQ", "VIXCLS") if column in sources
                    for date in sources[column]["observation_date"]]
     add_line(fig, data.loc[data["observation_date"].isin(ratio_dates)],
-             "VIXEQ/VIX", "VIXEQ/VIX (R2)", 2.2, "dot", "y3", unit="x")
-    for symbol, dash in (("COR3M", "dot"),):
+             "VIXEQ/VIX", "VIXEQ/VIX (R2)", 2.8, "dot", "y3", unit="x")
+    for symbol, dash in (("COR3M", "solid"),):
         source = sources.get(symbol, pd.DataFrame(columns=["observation_date"]))
         add_line(fig, data.loc[data["observation_date"].isin(source["observation_date"])],
-                 symbol, f"{symbol} (R3)", 2.0, dash, "y4", unit=" pts")
+                 symbol, f"{symbol} (R3)", 3.2, dash, "y4", unit=" pts")
 
-    # Fixed contrasting colors remain readable where these two lines overlap.
+    # Saturated, distinct hues and a solid COR3M stroke stay visible at crossings.
     risk_colors = {
-        "VIX": "#5070dd", "VIXEQ": "#15803d", "S&P 500 (R1)": "#505372",
-        "VIXEQ/VIX (R2)": "#92400e", "COR3M (R3)": "#785db0",
+        "VIX": "#1d4ed8", "VIXEQ": "#00875a", "S&P 500 (R1)": "#374151",
+        "VIXEQ/VIX (R2)": "#d97706", "COR3M (R3)": "#c0006f",
     }
     for name, color in risk_colors.items():
         fig.update_traces(line_color=color, selector=dict(name=name))
@@ -3298,5 +3298,3 @@ def render_news_panel():
 
 
 render_news_panel()
-
-

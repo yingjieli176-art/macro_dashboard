@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-06-vix-delayed-quotes-r108",
+  "release": "2026-11-06-vix-risk-colors-r109",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -55,6 +55,7 @@
     "completed_cme_daily_sessions_and_conflict_safe_snapshot_publication",
     "official_cboe_vix_delayed_quote_with_observation_time",
     "vix_quote_background_refresh_every_sixty_seconds",
-    "confirmed_vix_close_complements_lagging_daily_csv"
+    "confirmed_vix_close_complements_lagging_daily_csv",
+    "distinct_vix_risk_series_colors_with_bold_solid_cor3m"
   ]
 }
