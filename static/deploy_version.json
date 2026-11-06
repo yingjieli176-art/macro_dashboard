@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-06-published-observations-r107",
+  "release": "2026-11-06-vix-delayed-quotes-r108",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -52,6 +52,9 @@
     "utc_observation_calendar_and_completed_session_rollover",
     "automatic_refresh_of_verified_pipeline_lags",
     "newest_valid_yahoo_host_observations",
-    "completed_cme_daily_sessions_and_conflict_safe_snapshot_publication"
+    "completed_cme_daily_sessions_and_conflict_safe_snapshot_publication",
+    "official_cboe_vix_delayed_quote_with_observation_time",
+    "vix_quote_background_refresh_every_sixty_seconds",
+    "confirmed_vix_close_complements_lagging_daily_csv"
   ]
 }

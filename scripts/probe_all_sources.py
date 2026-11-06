@@ -97,6 +97,20 @@ def snapshot(filename, date, value, symbol=None):
 
 def fred(symbol):
     from scripts.sync_fred_verified_cache import CBOE_FILES, TREASURY_FIELDS, _fetch_primary, _fetch_api
+    if symbol == "VIXCLS":
+        from macro_platform.vix_market import fetch_quote, confirmed_close, QUOTE_URL
+        close = None
+        try:
+            close = confirmed_close(fetch_quote())
+        except (requests.RequestException, ValueError, KeyError, TypeError):
+            pass
+        try:
+            day, url = cboe("VIX")
+        except Exception:
+            if close is None:
+                raise
+            return close["date"], QUOTE_URL
+        return (close["date"], QUOTE_URL) if close and close["date"] > day else (day, url)
     if symbol in CBOE_FILES:
         name = CBOE_FILES[symbol].removesuffix("_History.csv")
         return cboe(name)
@@ -565,4 +579,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

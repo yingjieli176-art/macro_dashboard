@@ -84,6 +84,10 @@ from macro_platform.market_history import completed_daily_closes
 # Keep startup-compatible with older data.py during Streamlit Cloud rolling
 # deployments: optional/newer market getters must never crash the whole page.
 import data as _market_data_module
+try:
+    from macro_platform import vix_market as _vix_market
+except ImportError:
+    _vix_market = None
 from data import (
     fetch_eastmoney_news, get_dgs3mo, get_dgs2, get_dgs10, get_dfii10,
     get_sofr, get_iorb, get_effr, get_rrp_rate, get_walcl, get_wresbal,
@@ -117,7 +121,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-06-published-observations-r107"
+CHART_BUILD = "2026-11-06-vix-delayed-quotes-r108"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -159,6 +163,40 @@ def _start_news_background_updater():
 
 
 _start_news_background_updater()
+
+
+def _refresh_vix_market():
+    if _vix_market is None:
+        return
+    quote = _vix_market.fetch_quote(get=http_get)
+    _vix_market.write_quote(quote)
+    # Share the existing FRED writer lock so an older background response
+    # cannot overwrite a newly confirmed VIX close.
+    with _market_data_module._FRED_LOCK:
+        _vix_market.append_confirmed_close(quote)
+
+
+@st.cache_resource(show_spinner=False, on_release=lambda worker: worker.close())
+def _start_vix_quote_updater():
+    return PeriodicWorker(_refresh_vix_market, 60, "vix-market-updater")
+
+
+if _vix_market is not None:
+    _start_vix_quote_updater()
+
+
+@st.fragment(run_every=60, key="vix_latest_quote")
+def render_latest_vix_quote():
+    quote = _vix_market.read_quote() if _vix_market is not None else None
+    if not quote:
+        st.caption("VIX最新延迟报价暂未取得，历史曲线仍显示已核实的收盘数据。")
+        return
+    when = datetime.fromisoformat(quote["observed_at"])
+    label = "最近收盘" if _vix_market.confirmed_close(quote) else "最新延迟报价"
+    st.markdown(f'**VIX（{label}）：{quote["value"]:.2f}**')
+    st.caption(f'报价时间：{when.astimezone(ZoneInfo("America/New_York")):%Y-%m-%d %H:%M:%S} 美东'
+               f' / {when.astimezone(ZoneInfo("Asia/Shanghai")):%Y-%m-%d %H:%M:%S} 北京'
+               ' · Cboe延迟行情，非逐笔实时 · 每60秒检查更新')
 
 st.markdown("""
 <style>
@@ -2536,6 +2574,7 @@ def render_macro_chart_9(prebuilt_fig=None):
         '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3)</div>',
         unsafe_allow_html=True,
     )
+    render_latest_vix_quote()
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig9("5Y")
     _render_adaptive_macro_figure(base_fig, "us_equity_risk")
     st.markdown(f'<div class="mini-description">{US_EQUITY_RISK_DESCRIPTION}</div>', unsafe_allow_html=True)
@@ -3259,4 +3298,5 @@ def render_news_panel():
 
 
 render_news_panel()
+
 

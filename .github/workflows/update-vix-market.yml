@@ -1,0 +1,37 @@
+name: Refresh official VIX quote and confirmed close
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - macro_platform/vix_market.py
+      - scripts/update_vix_market.py
+      - tests/test_vix_market.py
+      - .github/workflows/update-vix-market.yml
+permissions:
+  contents: write
+concurrency:
+  group: official-vix-market
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - run: python -m unittest discover -s tests -p test_vix_market.py
+      - run: python scripts/update_vix_market.py
+      - name: Publish verified VIX observations
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python scripts/publish_source_refresh.py
