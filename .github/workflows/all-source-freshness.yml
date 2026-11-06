@@ -1,22 +1,27 @@
 name: Verify all dashboard source dates
 on:
   schedule:
-    - cron: '37 */3 * * *'
+    # Hourly around Asian and US closes; retain checks through UTC midnight.
+    - cron: '17 0-8,12,16,20-23 * * *'
   workflow_dispatch:
   push:
     branches: [main]
     paths:
       - scripts/probe_all_sources.py
+      - scripts/refresh_audited_sources.py
+      - macro_platform/market_history.py
+      - tests/test_daily_observation_dates.py
+      - tests/test_chart_calendar_dates.mjs
       - .github/workflows/all-source-freshness.yml
 permissions:
   contents: write
 concurrency:
   group: full-dashboard-source-dates
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,7 +30,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install -r requirements.txt curl_cffi==0.13.0 akshare xlrd curl_cffi==0.13.0
+      - run: python -m pip install -r requirements.txt curl_cffi==0.13.0 akshare xlrd
+      - name: Validate completed sessions and observation calendar dates
+        run: |
+          python -m unittest discover -s tests -p test_daily_observation_dates.py
+          for chart_tz in Asia/Shanghai America/New_York UTC; do
+            TZ="$chart_tz" node tests/test_chart_calendar_dates.mjs
+          done
+      - name: Identify published observations missing from local snapshots
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/probe_all_sources.py --output source_freshness_before.json
+      - name: Refresh lagging families with validated source collectors
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/refresh_audited_sources.py source_freshness_before.json
       - name: Compare every configured source with its own observation calendar
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
@@ -34,14 +53,17 @@ jobs:
         if: always()
         with:
           name: complete-source-date-comparison
-          path: data_snapshots/all_source_freshness.json
+          path: |
+            source_freshness_before.json
+            data_snapshots/all_source_freshness.json
       - name: Publish verification results including unresolved sources
         if: always()
         run: |
           test -s data_snapshots/all_source_freshness.json || exit 0
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data_snapshots/all_source_freshness.json
+          git add data_snapshots/
           git diff --cached --quiet && exit 0
-          git commit -m 'data: record complete source freshness verification'
+          git commit -m 'data: refresh published observations and verify source dates'
           bash scripts/push_snapshot.sh
+

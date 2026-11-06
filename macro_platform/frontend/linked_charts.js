@@ -1,6 +1,10 @@
 // App-owned component. Never reach into Streamlit's React internals.
 const copy = value => JSON.parse(JSON.stringify(value));
-const asTime = value => typeof value === 'number' ? value : Date.parse(value);
+// These are observation calendar dates, not the viewer's local midnight.
+// Explicit UTC keeps axis labels, tooltips and peaks on the same source day.
+export const asTime = value => typeof value === 'number' ? value : Date.parse(
+  typeof value === 'string' && /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)?$/.test(value)
+    ? value.slice(0,10) + 'T00:00:00Z' : value);
 
 // Weekly/monthly columns need widths based on their own observation cadence,
 // even when daily price lines share the time axis. Never add calendar samples.
@@ -124,13 +128,19 @@ export default function({data, parentElement}) {
   const buttons = parentElement.querySelectorAll('button');
   const labels = data.parameter_labels || {};
   const source = copy(data.option);
+  source.useUTC = true;
+  for (const series of source.series) series.data = series.data.map(point =>
+    Array.isArray(point) ? [asTime(point[0]), ...point.slice(1)] : point);
+  for (const zoom of source.dataZoom || []) {
+    for (const key of ['startValue', 'endValue']) if (zoom[key] != null) zoom[key] = asTime(zoom[key]);
+  }
   const base = copy(source);
   delete base.media;
   // Legend filtering must not change the time domain, especially when every
   // series is hidden. Bounds come only from existing observation dates.
   let first = Infinity, last = -Infinity;
   for (const series of base.series) for (const point of series.data) {
-    const time = typeof point[0] === 'number' ? point[0] : Date.parse(point[0]);
+    const time = asTime(point[0]);
     if (Number.isFinite(time)) { first = Math.min(first, time); last = Math.max(last, time); }
   }
   if (first < last) base.xAxis = {...base.xAxis, min:first, max:last};
@@ -411,4 +421,5 @@ export default function({data, parentElement}) {
     buttons.forEach(button => { button.onclick = null; });
   };
 }
+
 

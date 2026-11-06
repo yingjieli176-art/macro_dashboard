@@ -1,0 +1,14 @@
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const source=await fs.readFile(new URL('../macro_platform/frontend/linked_charts.js',import.meta.url),'utf8');
+const {asTime,peakDrawdown,compactTooltip}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const midnight=Date.UTC(2026,10,5);
+assert.equal(asTime('2026-11-05'),midnight);
+assert.equal(asTime('2026-11-05T00:00:00'),midnight);
+assert.equal(asTime('2026-11-05T00:00:00Z'),midnight);
+const points=[['2026-11-04T00:00:00',100],['2026-11-05T00:00:00',110]];
+const path=peakDrawdown(points,midnight,midnight);
+assert.equal(path.peak.value,110);
+assert.equal(path.data[0][1],0);
+assert(compactTooltip([{seriesName:'SPX',value:[midnight,7353.73]}],{}).startsWith('2026-11-05\n'));
+console.log('PASS source date, peak selection and tooltip in',process.env.TZ);

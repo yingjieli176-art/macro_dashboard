@@ -76,8 +76,14 @@ def save_snapshot(frame, path=OUTPUT):
     ]
     old_dates = {row["date"] for row in old.get("records", [])}
     new_dates = {row["date"] for row in records}
-    if old_dates and not old_dates.issubset(new_dates):
+    # A rolling six-year request naturally omits the oldest stored dates.
+    # Preserve those verified observations; reject holes inside the new span.
+    first_new = min(new_dates) if new_dates else None
+    missing = old_dates - new_dates
+    if missing and (first_new is None or any(day >= first_new for day in missing)):
         raise ValueError("Nikkei 225 response lost previously verified observations")
+    records = sorted([row for row in old.get("records", []) if row["date"] not in new_dates]
+                     + records, key=lambda row: row["date"])
     if old.get("records") == records:
         return False
     payload = {
@@ -107,3 +113,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
