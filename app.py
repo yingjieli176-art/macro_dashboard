@@ -7,6 +7,7 @@ import math
 import os
 import time
 import uuid
+import requests
 from macro_platform.request_runtime import http_get, submit_jobs, completed_jobs, PeriodicWorker, observed_cache, IncompleteObservedBundle
 from datetime import datetime
 from pathlib import Path
@@ -116,7 +117,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-06-source-date-refresh-r105"
+CHART_BUILD = "2026-11-06-latest-source-observations-r106"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1748,18 +1749,25 @@ def build_fig10(date_range):
 @observed_cache()
 def get_yahoo_daily_history(symbol):
     """Fetch five years of completed daily closes from Yahoo chart API."""
-    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{quote(symbol, safe='')}"
-    response = http_get(
-        url,
-        params={"range": "5y", "interval": "1d", "includePrePost": "false", "events": "div,splits"},
-        headers={"User-Agent": "Mozilla/5.0 (compatible; MacroDashboard/1.0)"},
-        timeout=(3.0, 8.0),
-    )
-    response.raise_for_status()
-    result = ((response.json() or {}).get("chart") or {}).get("result") or []
-    if not result:
-        return pd.DataFrame(columns=["observation_date", "close"])
-    return completed_daily_closes(result[0])
+    best = pd.DataFrame(columns=["observation_date", "close"])
+    for host in ("query1.finance.yahoo.com", "query2.finance.yahoo.com"):
+        try:
+            response = http_get(
+                f"https://{host}/v8/finance/chart/{quote(symbol, safe='')}",
+                params={"range": "5y", "interval": "1d", "includePrePost": "false", "events": "div,splits"},
+                headers={"User-Agent": "Mozilla/5.0 (compatible; MacroDashboard/1.0)"},
+                timeout=(3.0, 8.0),
+            )
+            response.raise_for_status()
+            result = ((response.json() or {}).get("chart") or {}).get("result") or []
+            if len(result) != 1:
+                continue
+            frame = completed_daily_closes(result[0])
+            if not frame.empty and (best.empty or frame.observation_date.max() > best.observation_date.max()):
+                best = frame
+        except (requests.RequestException, ValueError, KeyError, TypeError):
+            continue
+    return best
 
 
 def _load_yahoo_histories(symbols):
@@ -3251,3 +3259,4 @@ def render_news_panel():
 
 
 render_news_panel()
+

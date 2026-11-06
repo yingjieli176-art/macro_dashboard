@@ -22,6 +22,7 @@ def collect_history():
     period1 = int((now - pd.DateOffset(years=6)).timestamp())
     period2 = int(now.timestamp())
     errors = []
+    best = None
     for host in ("query1.finance.yahoo.com", "query2.finance.yahoo.com"):
         url = f"https://{host}/v8/finance/chart/{quote(SYMBOL, safe='')}"
         try:
@@ -60,9 +61,12 @@ def collect_history():
             if latest > cutoff or latest + pd.offsets.BDay(3) < cutoff:
                 raise ValueError("Nikkei 225 source is future-dated or stale")
             frame.attrs["source_url"] = response.url
-            return frame
+            if best is None or frame.observation_date.max() > best.observation_date.max():
+                best = frame
         except (requests.RequestException, ValueError, KeyError, TypeError) as error:
             errors.append(f"{host}: {type(error).__name__}: {error}")
+    if best is not None:
+        return best
     raise RuntimeError("No valid Nikkei 225 daily history: " + "; ".join(errors))
 
 

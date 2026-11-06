@@ -1,10 +1,14 @@
 """Completed daily bars keep source dates across session and UTC rollovers."""
 import json
+import ast
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import Mock
+from urllib.parse import quote
 
 import pandas as pd
+import requests
 
 from macro_platform.market_history import completed_daily_closes
 
@@ -20,6 +24,21 @@ def bar(day, zone, next_day, instrument="ETF"):
 
 
 class DailyObservationDates(unittest.TestCase):
+    def test_live_history_compares_hosts_instead_of_accepting_old_first_response(self):
+        source = Path(__file__).resolve().parents[1] / "app.py"
+        node = next(n for n in ast.parse(source.read_text()).body
+                    if isinstance(n, ast.FunctionDef) and n.name == "get_yahoo_daily_history")
+        node.decorator_list = []
+        frames = [pd.DataFrame({"observation_date":pd.to_datetime([day]), "close":[value]})
+                  for day,value in [("2026-11-04",7688.62),("2026-11-05",7353.73)]]
+        ns={"pd":pd,"requests":requests,"quote":quote,"http_get":Mock(return_value=Mock(
+            json=lambda:{"chart":{"result":[{}]}})),
+            "completed_daily_closes":Mock(side_effect=frames)}
+        exec(compile(ast.Module(body=[node],type_ignores=[]),str(source),"exec"),ns)
+        result=ns["get_yahoo_daily_history"]("^GSPC")
+        self.assertEqual(result.close.tolist(),[7353.73])
+        self.assertEqual(ns["http_get"].call_count,2)
+
     def test_winter_us_postmarket_keeps_just_completed_session(self):
         node = bar("2026-11-05", "America/New_York", "2026-11-06")
         self.assertTrue(completed_daily_closes(node, "2026-11-05T20:00Z").empty)

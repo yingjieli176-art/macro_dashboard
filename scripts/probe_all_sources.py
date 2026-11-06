@@ -177,6 +177,7 @@ def yahoo(symbol):
         frame = _fetch_hstech()
         return latest(frame, "observation_date", "close"), "https://finance.sina.com.cn/stock/hkstock/HSTECH/klc2_kl.js"
     errors = []
+    best = None
     for host in ("query1.finance.yahoo.com", "query2.finance.yahoo.com"):
         url = "https://" + host + "/v8/finance/chart/" + quote(symbol, safe="")
         try:
@@ -199,11 +200,14 @@ def yahoo(symbol):
             observed = latest(frame, "observation_date", "close")
             if observed is None:
                 raise ValueError("Yahoo Finance returned no completed daily close")
-            return observed, url
+            if best is None or observed > best[0]:
+                best = (observed, url)
         except Exception as error:
             errors.append(f"{host}: {type(error).__name__}: {error}")
             if "429" in str(error):
                 time.sleep(1.0)
+    if best is not None:
+        return best
     raise RuntimeError("Yahoo Finance history unavailable: " + "; ".join(errors))
 
 def cboe(symbol):
@@ -564,3 +568,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -62,6 +62,7 @@ def _fetch_yahoo(symbol: str) -> pd.DataFrame:
         "https://query2.finance.yahoo.com/v8/finance/chart/",
     )
     last_error: Exception | None = None
+    best = None
     for host in hosts:
         try:
             response = requests.get(
@@ -84,10 +85,13 @@ def _fetch_yahoo(symbol: str) -> pd.DataFrame:
             frame = completed_daily_closes(node)
             if len(frame) < MIN_POINTS:
                 raise RuntimeError(f"Yahoo history too short for {symbol}: {len(frame)}")
-            return frame[["observation_date", "close"]]
+            if best is None or frame.observation_date.max() > best.observation_date.max():
+                best = frame[["observation_date", "close"]]
         except Exception as exc:
             last_error = exc
             time.sleep(1)
+    if best is not None:
+        return best
     raise RuntimeError(f"Yahoo fetch failed for {symbol}: {last_error}")
 
 
@@ -199,4 +203,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 

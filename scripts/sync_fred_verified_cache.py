@@ -210,15 +210,22 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
         return _merge_verified_history(series_id, _fetch_reverse_repo(session, series_id))
     if series_id == "SP500":
         from macro_platform.market_history import completed_daily_closes
-        response = session.get("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC",
-                               params={"range": "1y", "interval": "1d"},
-                               headers={"User-Agent": "Mozilla/5.0 MacroDashboard/1.0"}, timeout=FETCH_TIMEOUT)
-        response.raise_for_status()
-        node = response.json()["chart"]["result"][0]
-        frame = completed_daily_closes(node).rename(columns={"observation_date": "date", "close": "value"})
-        if frame.empty:
+        best = None
+        for host in ("query1.finance.yahoo.com", "query2.finance.yahoo.com"):
+            try:
+                response = session.get(f"https://{host}/v8/finance/chart/%5EGSPC",
+                                       params={"range": "1y", "interval": "1d"},
+                                       headers={"User-Agent": "Mozilla/5.0 MacroDashboard/1.0"}, timeout=FETCH_TIMEOUT)
+                response.raise_for_status()
+                node = response.json()["chart"]["result"][0]
+                frame = completed_daily_closes(node).rename(columns={"observation_date": "date", "close": "value"})
+                if not frame.empty and (best is None or frame.date.max() > best.date.max()):
+                    best = frame
+            except (requests.RequestException, ValueError, KeyError, TypeError):
+                continue
+        if best is None:
             raise ValueError("No completed S&P 500 daily closes")
-        return _merge_verified_history(series_id, frame)
+        return _merge_verified_history(series_id, best)
     if series_id in TREASURY_FIELDS:
         return _fetch_treasury(session, series_id)
     if series_id in CBOE_FILES:
@@ -452,4 +459,5 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
