@@ -49,25 +49,29 @@ class CopperTcrcTests(unittest.TestCase):
                     refresh(bad, path, today="2026-11-05")
                 self.assertEqual(path.read_bytes(), saved)
 
-    def test_charge_lines_use_all_real_fixings_and_preserve_seven_independent_axes(self):
-        fig = copper.build_copper_flow_spread_figure("1Y")
+    def test_charge_lines_are_standalone_and_use_all_real_fixings(self):
+        fig = copper.build_copper_tcrc_figure("1Y")
         saved = copper_tcrc.load_tcrc_snapshot()
-        self.assertEqual(len(fig.data), 9)
+        self.assertEqual(len(fig.data), 2)
+        from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER
+        self.assertEqual(MACRO_DISPLAY_ORDER[MACRO_DISPLAY_ORDER.index(13) + 1], "copper_tcrc")
+        copper_fig = copper.build_copper_flow_spread_figure("1Y")
+        self.assertEqual(len(copper_fig.data), 7)
+        self.assertFalse(any(t.name.startswith(("TC（", "RC（")) for t in copper_fig.data))
         for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
             for period in ("1M", "3M", "6M", "1Y", "5Y"):
                 option = adapter(fig, period)
-                self.assertEqual(len(option["yAxis"]), 7)
+                self.assertEqual(len(option["yAxis"]), 2)
                 tc = next(s for s in option["series"] if s["name"].startswith("TC（"))
                 rc = next(s for s in option["series"] if s["name"].startswith("RC（"))
                 self.assertEqual([p[0][:10] for p in tc["data"]], saved.observation_date.dt.strftime("%Y-%m-%d").tolist())
                 self.assertEqual([p[1] for p in tc["data"]], saved.tc_usd_dmt.tolist())
                 self.assertEqual([p[1] for p in rc["data"]], saved.rc_cents_lb.tolist())
                 self.assertNotIn("2026-09-24", [p[0][:10] for p in tc["data"]])
-                self.assertEqual(tc["yAxisIndex"], 5)
-                self.assertEqual(rc["yAxisIndex"], 6)
+                self.assertEqual(tc["yAxisIndex"], 0)
+                self.assertEqual(rc["yAxisIndex"], 1)
                 self.assertTrue(tc["showSymbol"] and rc["showSymbol"])
                 self.assertFalse(tc["connectNulls"] or rc["connectNulls"])
-                self.assertTrue(any(series["name"] == "铜油比 (R4)" for series in option["series"]))
                 json.dumps(option, allow_nan=False)
 
     def test_history_table_filters_calendar_months_preserves_signed_values_and_dates(self):

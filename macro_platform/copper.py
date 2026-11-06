@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis
 from macro_platform.copper_tcrc import load_tcrc_snapshot
 
-TCRC_LINE_HISTORY = True
+TCRC_STANDALONE = True
 
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT_PATH = ROOT / "data_snapshots" / "copper_market_daily.json"
@@ -289,12 +289,29 @@ def build_copper_flow_spread_figure(date_range: str) -> go.Figure:
             line=dict(width=2, color="#0891b2"),
             hovertemplate="铜油比: %{y:.2f} bbl/t<extra></extra>"))
 
+    fig.data = tuple(sorted(fig.data, key=lambda trace: int((trace.yaxis or "y")[1:] or "1")))
+    fig = _finish_combined(fig, date_range)
+    # Original inventory, copper price and venue spread retain separate units.
+    for index, title, position in ((4, "WTI · USD/bbl", 0.86),
+                                   (5, "Copper / WTI · bbl/t", 0.98)):
+        fig.update_layout(**{f"yaxis{index}": dict(
+            title=title, overlaying="y", side="right", anchor="free",
+            position=position, showgrid=False, zeroline=False, fixedrange=True,
+            tickformat=",.2f", tickfont=dict(size=9))})
+    fig.update_layout(xaxis_domain=[0, 0.60], margin_r=180,
+                      yaxis2_position=0.62, yaxis3_position=0.74)
+    return fig
+
+
+def build_copper_tcrc_figure(date_range: str) -> go.Figure:
+    """Plot actual spot processing-charge fixings in their original units."""
+    fig = go.Figure()
     # Join the actual dated fixings visually, without creating observations
     # for the dates between them. The markers identify the available quotes.
     charges = _slice(load_tcrc_snapshot(), date_range)
     for field, name, axis, unit, color, dash in (
-        ("tc_usd_dmt", "TC（粗炼费，R5）", "y6", "USD/dmt", "#15803d", "solid"),
-        ("rc_cents_lb", "RC（精炼费，TC÷10，R6）", "y7", "US cents/lb", "#be185d", "dash"),
+        ("tc_usd_dmt", "TC（粗炼费）", "y", "USD/dmt", "#15803d", "solid"),
+        ("rc_cents_lb", "RC（精炼费，TC÷10，右轴）", "y2", "US cents/lb", "#be185d", "dash"),
     ):
         if charges.empty:
             _add_missing(fig, name)
@@ -302,28 +319,20 @@ def build_copper_flow_spread_figure(date_range: str) -> go.Figure:
         fig.add_trace(go.Scatter(
             x=charges["observation_date"], y=charges[field], name=name,
             yaxis=axis, mode="lines+markers", line=dict(width=2.6, color=color, dash=dash),
-            marker=dict(size=4), connectgaps=False,
+            marker=dict(size=5), connectgaps=False,
             meta={"observation_cadence": "weekly"},
             hovertemplate=name + ": %{y:.3f} " + unit + "<extra></extra>"))
 
-    fig.data = tuple(sorted(fig.data, key=lambda trace: int((trace.yaxis or "y")[1:] or "1")))
-    fig = _finish_combined(fig, date_range)
-    # Original inventory, copper price and venue spread retain separate units.
-    for index, title, position in ((4, "WTI · USD/bbl", 0.86),
-                                   (5, "Copper / WTI · bbl/t", 0.98),
-                                   (6, "TC · USD/dmt", 0.98),
-                                   (7, "RC · US cents/lb", 0.99)):
-        fig.update_layout(**{f"yaxis{index}": dict(
-            title=title, overlaying="y", side="right", anchor="free",
-            position=position, showgrid=False, zeroline=False, fixedrange=True,
-            tickformat=",.2f", tickfont=dict(size=9))})
-    fig.update_layout(xaxis_domain=[0, 0.60], margin_r=180,
-                      yaxis2_position=0.62, yaxis3_position=0.74)
-    if not charges.empty:
-        fig.update_layout(xaxis_domain=[0, 0.48], margin_r=210,
-            yaxis2_position=0.51, yaxis3_position=0.60,
-            yaxis4_position=0.69, yaxis5_position=0.78,
-            yaxis6_position=0.87, yaxis7_position=0.98)
+    fig = apply_time_axis(fig, date_range)
+    fig.update_layout(
+        height=465, paper_bgcolor="white", plot_bgcolor="white",
+        margin=dict(l=75, r=85, t=70, b=38), hovermode="x unified",
+        legend=dict(orientation="h", y=1.08, x=0.01),
+        yaxis=dict(title="TC · USD/dmt", fixedrange=True, zeroline=False,
+                   showgrid=True, gridcolor="#e5e7eb", tickformat=".2f"),
+        yaxis2=dict(title="RC · US cents/lb", overlaying="y", side="right",
+                    fixedrange=True, zeroline=False, showgrid=False, tickformat=".3f"),
+    )
     return fig
 
 

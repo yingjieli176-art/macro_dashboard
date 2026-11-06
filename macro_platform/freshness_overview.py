@@ -40,7 +40,7 @@ def figure_rows(figures, now=None):
                 continue
             last = max(dates)
             monthly = number == MACRO_DISPLAY_NUMBER[6] or (number == MACRO_DISPLAY_NUMBER[5] and any(s in trace.name for s in ("M2 ", "M3 ", "Monetary Base")))
-            weekly = any(name in trace.name for name in ("Reserve Balances", "Weekly fallback", "CFTC JPY"))
+            weekly = any(name in trace.name for name in ("Reserve Balances", "Weekly fallback", "CFTC JPY", "TC（", "RC（"))
             cadence = "monthly" if monthly else "weekly" if weekly else "daily"
             item = {"name": trace.name, "data": [[last.isoformat(), 1]], "observation_cadence": cadence}
             health = option_observation_health({"series": [item]}, now=now) if option_observation_health else {}
@@ -68,7 +68,11 @@ def source_rows(path=SOURCE_REPORT):
         report = json.loads(path.read_text())
     except (OSError, ValueError, TypeError):
         return None, []
-    if report.get("chart_numbering") == "display_us_jp_cn_18":
+    if report.get("chart_numbering") in {"display_us_jp_cn_18", "display_us_jp_cn_19"}:
+        report["sources"] = [dict(row, charts=([MACRO_DISPLAY_NUMBER["copper_tcrc"]]
+                             if row["id"] in {"tc_usd_dmt", "rc_cents_lb"} else
+                             [number + (number >= 18) for number in row["charts"]]))
+                             for row in report.get("sources", [])]
         report["chart_numbering"] = CHART_NUMBERING
     if report.get("chart_numbering") in {"display_17", "display_18"}:
         report["sources"] = [dict(row, charts=legacy_chart_numbers(row["charts"])) for row in report.get("sources", [])]
@@ -105,4 +109,3 @@ def render_freshness_overview(figures, *, quote_rows=None, news=None):
         times = [str(item["time"]) for item in items if item.get("time")]
         if times:
             st.caption("最新快讯时间：" + times[0])
-

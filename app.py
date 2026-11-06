@@ -70,16 +70,15 @@ except ImportError:
 from macro_platform.ai_credit import build_cds_figure, cds_summary, load_cds_snapshot
 from macro_platform import copper as _copper_module
 from macro_platform.srf_usage import load_srf_usage, usage_caption
-from macro_platform import copper_tcrc as _copper_tcrc
-# Streamlit Cloud may retain imported modules while pulling a new app.py.
-# Refresh only the two affected modules when that old interface is detected.
-if not hasattr(_copper_tcrc, "tcrc_history_rows"):
-    _copper_tcrc = importlib.reload(_copper_tcrc)
-if not getattr(_copper_module, "TCRC_LINE_HISTORY", False):
+# Refresh the builder during rolling deployments with cached modules.
+if not getattr(_copper_module, "TCRC_STANDALONE", False):
     _copper_module = importlib.reload(_copper_module)
 build_copper_flow_spread_figure = _copper_module.build_copper_flow_spread_figure
+build_copper_tcrc_figure = _copper_module.build_copper_tcrc_figure
 from macro_platform.copper_tcrc import METHOD_URL as COPPER_TCRC_METHOD_URL
-tcrc_history_rows = getattr(_copper_tcrc, "tcrc_history_rows", lambda **_kwargs: [])
+from macro_platform import dashboard_layout as _dashboard_layout
+if "copper_tcrc" not in _dashboard_layout.MACRO_DISPLAY_NUMBER:
+    _dashboard_layout = importlib.reload(_dashboard_layout)
 from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
 from macro_platform.yen_index import load_yen_market_index
 from macro_platform.sp500_nikkei_ratio import build_sp500_nikkei_ratio_figure
@@ -88,7 +87,10 @@ try:
 except ImportError:
     _yen_carry = None
 from macro_platform.security_search import search_securities
-from macro_platform.freshness_overview import render_freshness_overview
+from macro_platform import freshness_overview as _freshness_overview
+if _freshness_overview.CHART_NUMBERING != _dashboard_layout.CHART_NUMBERING:
+    _freshness_overview = importlib.reload(_freshness_overview)
+render_freshness_overview = _freshness_overview.render_freshness_overview
 from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
 from macro_platform.market_history import completed_daily_closes
 # Keep startup-compatible with older data.py during Streamlit Cloud rolling
@@ -131,7 +133,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-06-clean-notes-tcrc-lines-r113"
+CHART_BUILD = "2026-11-06-standalone-tcrc-r114"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2654,30 +2656,14 @@ def render_macro_chart_12(prebuilt_fig=None):
 @st.fragment(key="macro_chart_13_viewport")
 def render_macro_chart_13(prebuilt_fig=None):
     st.markdown(
-        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[13]}. Copper Flow, WTI & TC/RC</div>'
-        '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2) · WTI (R3) · 铜油比 (R4) · TC（粗炼费，R5） · RC（精炼费，TC÷10，R6）</div>',
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER[13]}. Copper Flow & WTI</div>'
+        '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2) · WTI (R3) · 铜油比 (R4)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig13("5Y")
     _render_adaptive_macro_figure(base_fig, "copper_flow")
-    tcrc_rows = tcrc_history_rows(months=6)
-    st.markdown("**TC / RC（近半年已核实报价）**")
-    if tcrc_rows:
-        st.dataframe(pd.DataFrame(tcrc_rows), hide_index=True, width="stretch",
-                     height=35 * (len(tcrc_rows) + 1) + 3,
-                     column_config={
-                         "TC 粗炼费（美元/干吨）": st.column_config.NumberColumn(format="%.2f"),
-                         "RC 精炼费（美分/磅，TC÷10）": st.column_config.NumberColumn(format="%.3f"),
-                         "来源": st.column_config.LinkColumn(display_text="查看原文"),
-                     })
-        st.caption(f"近半年共{len(tcrc_rows)}个已核实报价日（{tcrc_rows[-1]['报价日期']}至{tcrc_rows[0]['报价日期']}）；"
-                   "缺失日期不补值。Mysteel现货周指数；RC按发布方方法由TC÷10计算。")
-    else:
-        st.warning("TC/RC 近半年暂无已核实报价。")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>COMEX 库存：</b>COMEX仓库铜库存，代表美国该交割体系内报告的铜存量；单位为千公吨，不是全球铜总库存。</div><div class="parameter-note"><b>LME 库存：</b>LME仓库铜库存，代表该交易所仓库体系内报告的铜存量；单位为千公吨，可与COMEX对照观察库存地域分布。</div><div class="parameter-note"><b>LME 3M 铜价 (R1)：</b>LME三个月期铜价，代表该市场三个月期限的铜定价；单位为美元/公吨。</div><div class="parameter-note"><b>COMEX HG 换算价 (R1)：</b>COMEX铜期货价格换算为美元/公吨，代表统一重量单位后的美国期货价格，便于与LME对照。</div><div class="parameter-note"><b>COMEX−LME 3M 价差 (R2)：</b>同日COMEX换算价减LME三个月铜价，代表两地铜价差；为正表示COMEX较贵。期限、交割及费用不同，不能直接视为无风险套利利润。</div><div class="parameter-note"><b>WTI 原油 (R3)：</b>NYMEX WTI近月期货代理（CL=F）的已完成日线收盘价，单位为美元/桶；换月会影响价格。</div><div class="parameter-note"><b>铜油比 (R4)：</b>同日COMEX铜价（美元/磅）×2204.62262185÷WTI（美元/桶），单位为桶/公吨；表示一公吨铜相当于多少桶原油，仅在两者均有有效收盘价时计算，不跨日补值。</div><div class="parameter-note"><b>TC 粗炼费（R5）/ RC 精炼费（R6）：</b>Mysteel进口干净铜精矿现货周指数，分别使用美元/干吨和美分/磅的独立坐标；RC按发布方方法论取TC数值的十分之一，并非另行采样的独立报价。允许负值，不与年度长单基准混用。TC走低可反映原料竞争加剧，需结合冶炼产能、硫酸等副产品收入判断。</div><div class="parameter-context">口径说明：各序列保留原始单位和实际观测日；库存一增一减需结合交割、运输及需求判断。</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-description"><div class="parameter-note"><b>COMEX 库存：</b>COMEX仓库铜库存，代表美国该交割体系内报告的铜存量；单位为千公吨，不是全球铜总库存。</div><div class="parameter-note"><b>LME 库存：</b>LME仓库铜库存，代表该交易所仓库体系内报告的铜存量；单位为千公吨，可与COMEX对照观察库存地域分布。</div><div class="parameter-note"><b>LME 3M 铜价 (R1)：</b>LME三个月期铜价，代表该市场三个月期限的铜定价；单位为美元/公吨。</div><div class="parameter-note"><b>COMEX HG 换算价 (R1)：</b>COMEX铜期货价格换算为美元/公吨，代表统一重量单位后的美国期货价格，便于与LME对照。</div><div class="parameter-note"><b>COMEX−LME 3M 价差 (R2)：</b>同日COMEX换算价减LME三个月铜价，代表两地铜价差；为正表示COMEX较贵。期限、交割及费用不同，不能直接视为无风险套利利润。</div><div class="parameter-note"><b>WTI 原油 (R3)：</b>NYMEX WTI近月期货代理（CL=F）的已完成日线收盘价，单位为美元/桶；换月会影响价格。</div><div class="parameter-note"><b>铜油比 (R4)：</b>同日COMEX铜价（美元/磅）×2204.62262185÷WTI（美元/桶），单位为桶/公吨；表示一公吨铜相当于多少桶原油，仅在两者均有有效收盘价时计算，不跨日补值。</div><div class="parameter-context">口径说明：各序列保留原始单位和实际观测日；库存一增一减需结合交割、运输及需求判断。</div></div>', unsafe_allow_html=True)
     add_sources([
-        ("Mysteel · 铜精矿TC/RC指数方法论", COPPER_TCRC_METHOD_URL),
-        ("Mysteel · 2026-10-30现货TC指数原始发布", "https://youse.mysteel.com/a/26110208/7DCD2C67E671022B.html"),
         ("CME · COMEX Warehouse & Depository Stocks", "https://www.cmegroup.com/solutions/clearing/operations-and-deliveries/nymex-delivery-notices.html"),
         ("CME · Copper Stocks 原始日报", "https://www.cmegroup.com/delivery_reports/Copper_Stocks.xls"),
         ("Yahoo Finance · COMEX Copper HG=F", "https://finance.yahoo.com/quote/HG=F/history/"),
@@ -2686,6 +2672,23 @@ def render_macro_chart_13(prebuilt_fig=None):
         ("LME Warehouse & Stocks Reports", "https://www.lme.com/Market-data/Reports-and-data/Warehouse-and-stocks-reports"),
         ("Westmetall · LME Copper Daily Table", "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"),
         ("COCHILCO · Copper Inventories", "https://boletin.cochilco.cl/estadisticas/inventarios.asp"),
+    ])
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+
+@st.fragment(key="copper_tcrc_viewport")
+def render_copper_tcrc():
+    st.markdown(
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER["copper_tcrc"]}. Copper TC/RC · 铜精矿加工费</div>'
+        '<div class="section-description">TC（粗炼费，美元/干吨） · RC（精炼费，TC÷10，美分/磅，右轴）</div>',
+        unsafe_allow_html=True,
+    )
+    figure = _safe_macro_build("TC/RC", lambda: build_copper_tcrc_figure("5Y"))
+    _render_adaptive_macro_figure(figure, "copper_tcrc")
+    st.markdown('<div class="mini-description"><div class="parameter-note"><b>TC 粗炼费 / RC 精炼费（右轴）：</b>Mysteel进口干净铜精矿现货周指数，分别使用美元/干吨和美分/磅的独立坐标；RC按发布方方法论取TC数值的十分之一，并非另行采样的独立报价。允许负值，不与年度长单基准混用。TC走低可反映原料竞争加剧，需结合冶炼产能、硫酸等副产品收入判断。</div></div>', unsafe_allow_html=True)
+    add_sources([
+        ("Mysteel · 铜精矿TC/RC指数方法论", COPPER_TCRC_METHOD_URL),
+        ("Mysteel · 2026-10-30现货TC指数原始发布", "https://youse.mysteel.com/a/26110208/7DCD2C67E671022B.html"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -2982,7 +2985,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
 
 @st.fragment(key="nvidia_cds_viewport")
 def render_nvidia_cds():
-    st.markdown('<div class="section-title">19. AI Credit · 公司CDS信用风险</div>'
+    st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["nvidia_cds"]}. AI Credit · 公司CDS信用风险</div>'
                 '<div class="section-description">英伟达 NVIDIA · AMD · 谷歌 Alphabet · 微软 Microsoft · 甲骨文 Oracle · 5Y · bp</div>', unsafe_allow_html=True)
     payload = load_cds_snapshot()
     figure = build_cds_figure("5Y", payload=payload)
@@ -3027,6 +3030,8 @@ for number in MACRO_DISPLAY_ORDER:
         _render_equity_drawdown()
     elif number == "cn_drawdown":
         _render_china_drawdown()
+    elif number == "copper_tcrc":
+        render_copper_tcrc()
     elif number == "nvidia_cds":
         render_nvidia_cds()
     else:
@@ -3153,7 +3158,8 @@ def _render_all_source_freshness(figures):
                        for number, figure in figures.items()}
     display_figures[MACRO_DISPLAY_NUMBER["us_drawdown"]] = _build_equity_drawdown()
     display_figures[MACRO_DISPLAY_NUMBER["cn_drawdown"]] = _build_china_drawdown()
-    display_figures[19] = build_cds_figure("5Y")
+    display_figures[MACRO_DISPLAY_NUMBER["copper_tcrc"]] = build_copper_tcrc_figure("5Y")
+    display_figures[MACRO_DISPLAY_NUMBER["nvidia_cds"]] = build_cds_figure("5Y")
     render_freshness_overview(display_figures, quote_rows=rows, news=_read_existing_news_snapshot())
 
 _render_all_source_freshness(macro_figures)

@@ -335,7 +335,7 @@ def exercise_china_drawdown(page):
 
 def wait_for_page(page, url):
     page.goto(url, wait_until="domcontentloaded", timeout=60000)
-    page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 19", timeout=60000)
+    page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 20", timeout=60000)
     page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8 || document.querySelector('[data-testid=macroEChartsChartError]')", timeout=60000)
     failures = page.locator('.macro-chart-error:not([hidden])').all_text_contents()
     assert not failures, failures
@@ -636,13 +636,13 @@ def main():
             page.on("pageerror", lambda error: errors.append({"message": str(error), "stack": error.stack}))
             wait_for_page(page, args.url)
             groups = page.get_by_test_id("stButtonGroup")
-            page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 19", timeout=60000)
+            page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 20", timeout=60000)
             page.get_by_text("8. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
             charts = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
             page.get_by_text("5. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
             page.get_by_text("16. Precious Metals", exact=True).wait_for(timeout=30000)
-            assert groups.count() == 19
+            assert groups.count() == 20
             assert charts.count() >= 8
             assert page.get_by_test_id("stException").count() == 0
             assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
@@ -658,7 +658,7 @@ def main():
             })""")
             assert all(paints), paints
             assert page.get_by_text("该图表目前没有可验证的有效观测数据", exact=False).count() > 0
-            report["checks"].append({"chart_positions": 19, "painted_native_charts": len(paints),
+            report["checks"].append({"chart_positions": 20, "painted_native_charts": len(paints),
                                       "missing_positions_are_explicit": True})
             policy = page.locator('.st-key-normal_corridor_range_echarts_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
@@ -685,7 +685,7 @@ def main():
             page.get_by_text('2. US Treasury Yield Structure · 10Y', exact=True).scroll_into_view_if_needed()
             page.screenshot(path='browser_ten_year_tips.png')
             report['ten_year_tips'] = yield_names
-            copper_tcrc = page.locator('.st-key-copper_flow_adaptive_default_1Y').get_by_test_id(
+            copper_tcrc = page.locator('.st-key-copper_tcrc_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             copper_tcrc.wait_for(timeout=30000)
             tcrc_state = copper_tcrc.evaluate("""element => {
@@ -696,25 +696,24 @@ def main():
                     .map(s=>({name:s.name, axis:s.yAxisIndex, data:s.data,
                               markers:s.showSymbol, cadence:s.observation_cadence}))};
             }""")
-            assert len(tcrc_state['axes']) == 7, tcrc_state
+            assert len(tcrc_state['axes']) == 2, tcrc_state
             assert len(tcrc_state['series']) == 2, tcrc_state
             from macro_platform.copper_tcrc import load_tcrc_snapshot
             history = load_tcrc_snapshot()
             for series in tcrc_state['series']:
-                assert series['axis'] in (5, 6) and series['markers'], series
+                assert series['axis'] in (0, 1) and series['markers'], series
                 assert len(series['data']) == len(history), series
                 assert [point[0][:10] for point in series['data']] == history.observation_date.dt.strftime('%Y-%m-%d').tolist(), series
             assert page.get_by_text(re.compile(r'^动态Y轴：|^数据观测日：|^实际观测日：')).count() == 0
-            page.get_by_text('TC / RC（近半年已核实报价）', exact=True).wait_for(timeout=30000)
-            table_caption = page.get_by_text(re.compile(r'近半年共\d+个已核实报价日')).inner_text()
-            from macro_platform.copper_tcrc import tcrc_history_rows
-            table_rows = tcrc_history_rows()
-            assert table_rows, 'Verified TC/RC history missing'
-            assert f'近半年共{len(table_rows)}个已核实报价日' in table_caption, table_caption
-            assert table_rows[-1]['报价日期'] in table_caption and table_rows[0]['报价日期'] in table_caption, table_caption
-            assert 'TC÷10' in table_caption, table_caption
-            tcrc_state['table_caption'] = table_caption
-            page.get_by_text('17. Copper Flow, WTI & TC/RC', exact=True).scroll_into_view_if_needed()
+            assert page.get_by_text('TC / RC（近半年已核实报价）', exact=True).count() == 0
+            copper_names = page.locator('.st-key-copper_flow_adaptive_default_1Y').get_by_test_id(
+                re.compile(r"^(macro|st)EChartsChart$")).evaluate("""element => (""" + INSTANCE_JS + """)(element)
+                    .getOption().series.map(s=>s.name)""")
+            assert len(copper_names) == 7 and not any(name.startswith(('TC（', 'RC（')) for name in copper_names), copper_names
+            titles = page.locator('.section-title').all_text_contents()
+            copper_index = titles.index('17. Copper Flow & WTI')
+            assert titles[copper_index + 1] == '18. Copper TC/RC · 铜精矿加工费', titles
+            page.get_by_text('18. Copper TC/RC · 铜精矿加工费', exact=True).scroll_into_view_if_needed()
             page.screenshot(path='browser_copper_tcrc.png')
             report['copper_tcrc'] = tcrc_state
             report["equity_drawdown"] = exercise_equity_drawdown(page)
@@ -722,12 +721,12 @@ def main():
             report["security_search"] = exercise_security_search(page)
             # All five controls exist for every position, including unavailable charts.
             report["controls"] = groups.all_text_contents()
-            for index in range(19):
+            for index in range(20):
                 for label in ("5Y", "1Y", "6M", "3M", "1M"):
                     # React Aria's selected toggle changes its accessible
                     # name; the visible range label stays stable.
                     assert groups.nth(index).get_by_text(label, exact=True).count() == 1, (index, label, report["controls"][index])
-            page.get_by_text("19. AI Credit · 公司CDS信用风险", exact=True).wait_for()
+            page.get_by_text("20. AI Credit · 公司CDS信用风险", exact=True).wait_for()
             cds_chart = page.locator('.st-key-nvidia_cds_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             cds_chart.wait_for(timeout=30000)
@@ -835,14 +834,14 @@ def main():
                 'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',MACRO_DISPLAY_NUMBER[10]-1),
             }
             page.set_viewport_size({'width':1440,'height':1000})
-            freshness = page.get_by_text(re.compile(r'^数据最新时间 · 19 张图'))
+            freshness = page.get_by_text(re.compile(r'^数据最新时间 · 20 张图'))
             freshness.click()
             page.get_by_test_id('stDataFrame').first.wait_for()
             assert page.get_by_test_id('stDataFrame').count() >= 2
             assert page.get_by_text('独立数据源核对', exact=True).count() == 0
             page.screenshot(path='browser_freshness.png')
             freshness.click()
-            report['all_source_freshness_overview'] = {'chart_positions':19,'observation_dates_visible':True}
+            report['all_source_freshness_overview'] = {'chart_positions':20,'observation_dates_visible':True}
             report["checks"].append({"slider": True, "download_and_fullscreen_only": True,
                                       "processed_observations_fit_independent_axes": True})
             # Two separate browser contexts produce independent Streamlit
