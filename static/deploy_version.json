@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-06-vix-risk-colors-r109",
+  "release": "2026-11-06-tcrc-six-month-table-r111",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -56,6 +56,7 @@
     "official_cboe_vix_delayed_quote_with_observation_time",
     "vix_quote_background_refresh_every_sixty_seconds",
     "confirmed_vix_close_complements_lagging_daily_csv",
-    "distinct_vix_risk_series_colors_with_bold_solid_cor3m"
+    "distinct_vix_risk_series_colors_with_bold_solid_cor3m",
+    "tcrc_verified_six_month_history_table_without_chart_traces"
   ]
 }

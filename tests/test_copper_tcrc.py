@@ -49,46 +49,45 @@ class CopperTcrcTests(unittest.TestCase):
                     refresh(bad, path, today="2026-11-05")
                 self.assertEqual(path.read_bytes(), saved)
 
-    def test_chart_preserves_daily_series_and_weekly_units_dates_both_adapters(self):
+    def test_chart_has_no_charge_traces_axes_or_missing_charge_warnings(self):
         fig = copper.build_copper_flow_spread_figure("1Y")
-        self.assertEqual(len(fig.data), 9)
-        self.assertFalse(any("VVIX" in trace.name for trace in fig.data))
+        self.assertEqual(len(fig.data), 7)
+        self.assertFalse(any(trace.name.startswith(("TC ", "RC ")) for trace in fig.data))
+        self.assertIsNone(fig.layout.yaxis6 if "yaxis6" in fig.layout else None)
+        self.assertFalse(any(str(name).startswith(("TC ", "RC "))
+                             for name in (fig.layout.meta or {}).get("missing_series", [])))
         for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
             for period in ("1M", "3M", "6M", "1Y", "5Y"):
                 option = adapter(fig, period)
-                self.assertEqual(len(option["yAxis"]), 7)
-                tc = next(s for s in option["series"] if s["name"].startswith("TC "))
-                rc = next(s for s in option["series"] if s["name"].startswith("RC "))
-                self.assertEqual(tc["yAxisIndex"], 5)
-                self.assertEqual(rc["yAxisIndex"], 6)
-                self.assertEqual(tc["observation_cadence"], "weekly")
-                self.assertTrue(tc["showSymbol"])
-                self.assertFalse(tc["connectNulls"])
-                self.assertEqual([p[0][:10] for p in tc["data"]], ["2026-10-16", "2026-10-23", "2026-10-30"])
-                self.assertAlmostEqual(tc["data"][-1][1], -245.33)
-                self.assertAlmostEqual(rc["data"][-1][1], -24.533)
-                self.assertIn("USD/dmt", option["yAxis"][5]["name"])
-                self.assertIn("US cents/lb", option["yAxis"][6]["name"])
-                phone = next(m["option"] for m in option["media"] if m.get("query", {}).get("maxWidth") == 360)
-                self.assertGreater(336 - phone["grid"]["left"] - phone["grid"]["right"], 80)
-                self.assertEqual(len(phone["yAxis"]), 7)
-                self.assertEqual(phone["yAxis"][6]["name"], "R6\n¢/lb")
-                health = option_observation_health({"series": [tc, rc]}, now="2026-11-05")
-                self.assertFalse(health["stale_names"])
+                self.assertEqual(len(option["yAxis"]), 5)
+                self.assertTrue(any(series["name"] == "铜油比 (R4)" for series in option["series"]))
+                self.assertFalse(any(series["name"].startswith(("TC ", "RC ")) for series in option["series"]))
                 json.dumps(option, allow_nan=False)
-        rows = [r for r in figure_rows({17: fig}, now="2026-11-05") if r["指标"].startswith(("TC ", "RC "))]
-        self.assertEqual(len(rows), 2)
-        self.assertTrue(all(r["频率"] == "周频" and r["实际观测日"] == "2026-10-30" for r in rows))
 
-    def test_missing_charges_do_not_remove_copper_oil_and_table_date_is_observation(self):
-        with patch.object(copper, "load_tcrc_snapshot", return_value=pd.DataFrame()):
-            fig = copper.build_copper_flow_spread_figure("1Y")
-        self.assertEqual(len(fig.data), 7)
-        self.assertEqual(len(fig.layout.meta["missing_series"]), 2)
-        rows = copper_tcrc.latest_tcrc_rows()
-        self.assertEqual(rows[0]["实际报价日"], "2026-10-30")
-        self.assertEqual(rows[0]["最新值"], -245.33)
-        self.assertEqual(rows[1]["单位"], "美分/磅")
+    def test_history_table_filters_calendar_months_preserves_signed_values_and_dates(self):
+        dates = ["2026-05-05", "2026-05-06", "2026-06-18", "2026-10-30"]
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "charges.json"
+            path.write_text(json.dumps({"records": [row(day, tc) for day, tc in zip(dates, [-80, 0, -120.5, -245.33])]}))
+            with patch.object(copper_tcrc, "SNAPSHOT_PATH", path):
+                rows = copper_tcrc.tcrc_history_rows(now="2026-11-06T01:00:00+00:00")
+        self.assertEqual([r["报价日期"] for r in rows], ["2026-10-30", "2026-06-18", "2026-05-06"])
+        self.assertEqual(rows[0]["TC 粗炼费（美元/干吨）"], -245.33)
+        self.assertEqual(rows[0]["RC 精炼费（美分/磅，TC÷10）"], -24.533)
+        self.assertEqual(rows[-1]["TC 粗炼费（美元/干吨）"], 0)
+        self.assertEqual(rows[0]["来源"], URL)
+
+    def test_backfill_sources_remain_same_provider_and_snapshot_has_no_filled_dates(self):
+        for url in ("https://list1.mysteel.com/zhishi/tjkTCjg.html",
+                    "https://youse.m.mysteel.com/a/26052218/5E58782A6DC333C9_abc.html"):
+            self.assertEqual(copper_tcrc.validate_record(dict(row(), source_url=url))["source_url"], url)
+        for url in ("https://youse.mysteel.com.evil.example/a/article", "https://list1.mysteel.com/other", "https://hq.smm.cn/copper"):
+            with self.assertRaises(ValueError):
+                copper_tcrc.validate_record(dict(row(), source_url=url))
+        rows = copper_tcrc.tcrc_history_rows(now="2026-11-06")
+        self.assertGreaterEqual(len(rows), 21)
+        self.assertEqual(rows[-1]["报价日期"], "2026-05-08")
+        self.assertNotIn("2026-09-24", [r["报价日期"] for r in rows])
 
 
 if __name__ == "__main__":

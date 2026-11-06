@@ -6,9 +6,117 @@
   "rc_unit": "US cents/lb",
   "rc_basis": "TC numeric value / 10, according to publisher methodology; not an independently sampled RC quote",
   "methodology_url": "https://mfs.mysteelcdn.com/group1/M00/18/2B/rBL64GI9YFqAKHS8AAZRnysuAGc193.pdf",
-  "verified_at": "2026-11-05",
-  "coverage_note": "Only explicitly dated index values in public publisher articles; no daily filling or back-calculation from weekly changes.",
+  "verified_at": "2026-11-06",
+  "coverage_note": "Partial verified observations within the last six calendar months. Only explicit dated Mysteel bulletins or dated weekly-report fixings are stored. Missing dates are not filled, interpolated or reconstructed from changes. RC is calculated as TC/10 under the publisher methodology.",
   "records": [
+    {
+      "observation_date": "2026-05-08",
+      "tc_usd_dmt": -93.7,
+      "rc_cents_lb": -9.37,
+      "source_url": "https://list1.m.mysteel.com/zhishi/jrtjkxhdsqyddsqyd.html"
+    },
+    {
+      "observation_date": "2026-05-15",
+      "tc_usd_dmt": -103.62,
+      "rc_cents_lb": -10.362,
+      "source_url": "https://list1.mysteel.com/zhishi/tjkpfcjzx86362.html"
+    },
+    {
+      "observation_date": "2026-05-22",
+      "tc_usd_dmt": -106.2,
+      "rc_cents_lb": -10.62,
+      "source_url": "https://youse.m.mysteel.com/a/26052218/5E58782A6DC333C9_abc.html"
+    },
+    {
+      "observation_date": "2026-05-29",
+      "tc_usd_dmt": -107.2,
+      "rc_cents_lb": -10.72,
+      "source_url": "https://list1.m.mysteel.com/zhishi/gjtjkrmbjgb.html"
+    },
+    {
+      "observation_date": "2026-06-05",
+      "tc_usd_dmt": -115.3,
+      "rc_cents_lb": -11.53,
+      "source_url": "https://youse.mysteel.com/a/26060916/88DD68982837C51D.html"
+    },
+    {
+      "observation_date": "2026-06-12",
+      "tc_usd_dmt": -119.33,
+      "rc_cents_lb": -11.933,
+      "source_url": "https://list1.mysteel.com/zhishi/tjkjgzscx.html"
+    },
+    {
+      "observation_date": "2026-06-18",
+      "tc_usd_dmt": -120.5,
+      "rc_cents_lb": -12.05,
+      "source_url": "https://list1.mysteel.com/zhishi/tjkjgzscx.html"
+    },
+    {
+      "observation_date": "2026-06-26",
+      "tc_usd_dmt": -125,
+      "rc_cents_lb": -12.5,
+      "source_url": "https://list1.mysteel.com/zhishi/tjkTCjg.html"
+    },
+    {
+      "observation_date": "2026-07-10",
+      "tc_usd_dmt": -134,
+      "rc_cents_lb": -13.4,
+      "source_url": "https://list1.mysteel.com/zhishi/tjkTCjg.html"
+    },
+    {
+      "observation_date": "2026-07-17",
+      "tc_usd_dmt": -141.5,
+      "rc_cents_lb": -14.15,
+      "source_url": "https://list1.mysteel.com/zhishi/gjtjkjg.html"
+    },
+    {
+      "observation_date": "2026-07-24",
+      "tc_usd_dmt": -157.2,
+      "rc_cents_lb": -15.72,
+      "source_url": "https://youse.m.mysteel.com/a/26072418/473EA92F7E129692_abc.html"
+    },
+    {
+      "observation_date": "2026-08-07",
+      "tc_usd_dmt": -172.92,
+      "rc_cents_lb": -17.292,
+      "source_url": "https://list1.mysteel.com/zhishi/tjkTCjg.html"
+    },
+    {
+      "observation_date": "2026-08-14",
+      "tc_usd_dmt": -176.22,
+      "rc_cents_lb": -17.622,
+      "source_url": "https://youse.mysteel.com/a/26081417/A2BF85B97020B14D.html"
+    },
+    {
+      "observation_date": "2026-08-21",
+      "tc_usd_dmt": -181.25,
+      "rc_cents_lb": -18.125,
+      "source_url": "https://list1.mysteel.com/zhishi/tjkTCjg.html"
+    },
+    {
+      "observation_date": "2026-09-04",
+      "tc_usd_dmt": -201.56,
+      "rc_cents_lb": -20.156,
+      "source_url": "https://list1.m.mysteel.com/zhishi/tjkxhtc.html"
+    },
+    {
+      "observation_date": "2026-09-11",
+      "tc_usd_dmt": -211.5,
+      "rc_cents_lb": -21.15,
+      "source_url": "https://list1.m.mysteel.com/zhishi/tjkxhtc.html"
+    },
+    {
+      "observation_date": "2026-09-18",
+      "tc_usd_dmt": -224.47,
+      "rc_cents_lb": -22.447,
+      "source_url": "https://list1.mysteel.com/zhishi/tjkTCjg.html"
+    },
+    {
+      "observation_date": "2026-10-09",
+      "tc_usd_dmt": -237.8,
+      "rc_cents_lb": -23.78,
+      "source_url": "https://youse.mysteel.com/a/26100917/6E23AEFD2A19F016.html"
+    },
     {
       "observation_date": "2026-10-16",
       "tc_usd_dmt": -240.83,
@@ -28,5 +136,19 @@
       "source_url": "https://youse.mysteel.com/a/26110208/CDF64D0D0E9F7007.html"
     }
   ],
-  "retrieved_at": "2026-11-05T13:30:15.576082+00:00"
+  "retrieved_at": "2026-11-05T13:30:15.576082+00:00",
+  "historical_backfill": {
+    "verified_on": "2026-11-06",
+    "first_observation": "2026-05-08",
+    "observation_count": 21,
+    "source_kinds": [
+      "Mysteel original reports",
+      "Mysteel dated price bulletins",
+      "Mysteel related-report excerpts with explicit weekly periods"
+    ],
+    "excluded_observations": [
+      "2026-09-24: inconsistent published value/change context; not reconstructed"
+    ],
+    "availability": "A complete continuous long-history export has not been obtained from the current public access."
+  }
 }
