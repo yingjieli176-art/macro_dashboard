@@ -53,13 +53,13 @@
     },
     {
       "observation_date": "2026-06-26",
-      "tc_usd_dmt": -125,
+      "tc_usd_dmt": -125.0,
       "rc_cents_lb": -12.5,
       "source_url": "https://list1.mysteel.com/zhishi/tjkTCjg.html"
     },
     {
       "observation_date": "2026-07-10",
-      "tc_usd_dmt": -134,
+      "tc_usd_dmt": -134.0,
       "rc_cents_lb": -13.4,
       "source_url": "https://list1.mysteel.com/zhishi/tjkTCjg.html"
     },
@@ -136,7 +136,7 @@
       "source_url": "https://youse.mysteel.com/a/26110208/CDF64D0D0E9F7007.html"
     }
   ],
-  "retrieved_at": "2026-11-05T13:30:15.576082+00:00",
+  "retrieved_at": "2026-11-06T08:31:13.267605+00:00",
   "historical_backfill": {
     "verified_on": "2026-11-06",
     "first_observation": "2026-05-08",
