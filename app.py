@@ -1,4 +1,5 @@
 import html
+import importlib
 from collections.abc import Mapping
 from copy import deepcopy
 import json
@@ -67,9 +68,16 @@ except ImportError:
     def load_spx_put_call_snapshot():
         return pd.DataFrame(columns=["observation_date", "SPX_PCR"])
 from macro_platform.ai_credit import build_cds_figure, cds_summary, load_cds_snapshot
-from macro_platform.copper import build_copper_flow_spread_figure
+from macro_platform import copper as _copper_module
 from macro_platform.srf_usage import load_srf_usage, usage_caption
 from macro_platform import copper_tcrc as _copper_tcrc
+# Streamlit Cloud may retain imported modules while pulling a new app.py.
+# Refresh only the two affected modules when that old interface is detected.
+if not hasattr(_copper_tcrc, "tcrc_history_rows"):
+    _copper_tcrc = importlib.reload(_copper_tcrc)
+if not getattr(_copper_module, "TCRC_TABLE_ONLY", False):
+    _copper_module = importlib.reload(_copper_module)
+build_copper_flow_spread_figure = _copper_module.build_copper_flow_spread_figure
 from macro_platform.copper_tcrc import METHOD_URL as COPPER_TCRC_METHOD_URL
 tcrc_history_rows = getattr(_copper_tcrc, "tcrc_history_rows", lambda **_kwargs: [])
 from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
@@ -123,7 +131,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-06-tcrc-six-month-table-r111"
+CHART_BUILD = "2026-11-06-tcrc-six-month-table-r112"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"

@@ -8,6 +8,8 @@ import plotly.graph_objects as go
 
 from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis
 
+TCRC_TABLE_ONLY = True
+
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT_PATH = ROOT / "data_snapshots" / "copper_market_daily.json"
 LB_PER_METRIC_TONNE = 2204.62262185
