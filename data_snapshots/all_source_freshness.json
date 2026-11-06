@@ -8,12 +8,12 @@
         11
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-05",
+      "repository_latest": "2026-11-06",
       "checked_at": "2026-11-06T09:26:06.831909+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-05",
       "source_url": "https://www.csindex.com.cn/csindex-home/perf/index-perf",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "000852",
@@ -21,12 +21,12 @@
         11
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-05",
+      "repository_latest": "2026-11-06",
       "checked_at": "2026-11-06T09:26:07.445196+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-05",
       "source_url": "https://www.csindex.com.cn/csindex-home/perf/index-perf",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "0388.HK",
@@ -62,12 +62,12 @@
         11
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-05",
+      "repository_latest": "2026-11-06",
       "checked_at": "2026-11-06T09:26:08.083097+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-05",
       "source_url": "https://www.csindex.com.cn/csindex-home/perf/index-perf",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "BTC-USD",
@@ -287,12 +287,12 @@
         15
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-05",
+      "repository_latest": "2026-11-06",
       "checked_at": "2026-11-06T09:25:50.720075+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-05",
       "source_url": "https://finance.sina.com.cn/stock/hkstock/HSTECH/klc2_kl.js",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "IORB",
@@ -714,12 +714,12 @@
         14
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-05",
+      "repository_latest": "2026-11-06",
       "checked_at": "2026-11-06T09:26:05.132600+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-05",
       "source_url": "https://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics/2026/11/ms-20261105/",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "comex_stock_t",
@@ -740,12 +740,12 @@
         14
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-05",
+      "repository_latest": "2026-11-06",
       "checked_at": "2026-11-06T09:25:59.583405+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-05",
       "source_url": "https://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics/2026/11/ms-20261105/",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "hibor_3m",
@@ -937,5 +937,5 @@
   "elapsed_seconds": 30.162,
   "shared_http_requests": 24,
   "shared_http_reuses": 15,
-  "repository_reconciled_at": "2026-11-06T11:13:17.775968+00:00"
+  "repository_reconciled_at": "2026-11-06T18:09:01.164517+00:00"
 }
