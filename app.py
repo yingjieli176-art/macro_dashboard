@@ -28,6 +28,8 @@ except (ImportError, AttributeError) as _echarts_module_error:
     _echarts_axes = None
 else:
     _echarts_module_error = None
+if _echarts_axes is not None and getattr(_echarts_axes, "SRF_JPY_BAR_WIDTH", None) != 8:
+    _echarts_axes = importlib.reload(_echarts_axes)
 try:
     from macro_platform import linked_charts as _linked_charts
 except ImportError:
@@ -133,7 +135,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-06-standalone-tcrc-r114"
+CHART_BUILD = "2026-11-06-srf-jpy-bar-width-r115"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1542,7 +1544,7 @@ def build_fig1(date_range):
         _mark_missing_series(fig, "SRF 实际用量 (R1)")
     else:
         fig.add_trace(go.Bar(x=usage["observation_date"], y=usage["SRF_USAGE_BN"],
-            name="SRF 实际用量 (R1)", yaxis="y2", marker=dict(color="#007f73", opacity=1.0, line=dict(color="#004c46", width=1)),
+            name="SRF 实际用量 (R1)", yaxis="y2", width=4*86400000, marker=dict(color="#007f73", opacity=1.0, line=dict(color="#004c46", width=1)),
             hovertemplate="SRF实际用量: %{y:.3f} 十亿美元<extra></extra>"))
     fig.update_layout(yaxis_title="Rate (%)", barmode="overlay", yaxis2=dict(
         title="SRF usage · USD bn", overlaying="y", side="right", showgrid=False,

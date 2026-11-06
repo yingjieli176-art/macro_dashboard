@@ -215,6 +215,9 @@ def _responsive_chart_layout(option, fig, axis_map):
 
 
 
+SRF_JPY_BAR_WIDTH = 8
+
+
 def _bar_style(series, trace):
     if getattr(trace, "type", "") != "bar":
         return
@@ -223,7 +226,10 @@ def _bar_style(series, trace):
     if opacity is None:
         opacity = getattr(trace, "opacity", None)
     border = getattr(marker, "line", None)
-    series.update(type="bar", barMinWidth=2 if str(trace.name).startswith("SRF 实际用量") else 1, barMaxWidth=16, z=1,
+    same_width = str(trace.name).startswith(("SRF 实际用量", "CFTC JPY"))
+    width = {"barWidth": SRF_JPY_BAR_WIDTH, "barMinWidth": SRF_JPY_BAR_WIDTH,
+             "barMaxWidth": SRF_JPY_BAR_WIDTH} if same_width else {"barMinWidth": 1, "barMaxWidth": 16}
+    series.update(type="bar", **width, z=1,
                   itemStyle={"color": getattr(marker, "color", None) or "#8a61c4",
                              "opacity": 0.6 if opacity is None else opacity,
                              "borderColor": getattr(border, "color", None) or "transparent",

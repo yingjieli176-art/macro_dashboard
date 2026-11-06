@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-06-standalone-tcrc-r114",
+  "release": "2026-11-06-srf-jpy-bar-width-r115",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -58,6 +58,7 @@
     "confirmed_vix_close_complements_lagging_daily_csv",
     "distinct_vix_risk_series_colors_with_bold_solid_cor3m",
     "chart_instruction_and_observation_date_footers_removed",
-    "standalone_tcrc_chart_after_copper_without_detail_table"
+    "standalone_tcrc_chart_after_copper_without_detail_table",
+    "srf_usage_bars_match_yen_position_eight_pixel_width"
   ]
 }
