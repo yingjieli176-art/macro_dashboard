@@ -437,10 +437,7 @@ def jobs():
                 return row["observation_date"], SOURCE_TEMPLATE.format(row["observation_date"])
         raise ValueError("No completed SPX put/call volume report")
     add("SPX_PCR", [10], "daily", snapshot("spx_put_call_daily.json", "observation_date", "ratio"), spx_pc)
-    def vvix():
-        from scripts.update_copper_snapshot import _parse_vvix, VVIX_URL
-        return latest(_parse_vvix(get(VVIX_URL).text), "date", "vvix"), VVIX_URL
-    add("VVIX", [], "daily", snapshot("copper_market_daily.json", "date", "vvix"), vvix)
+    # Copper no longer plots VVIX; the active term chart is audited as VVIX_TERM.
     for field, charts in (("m2_hkd", [5]), ("m3_hkd", [5])):
         add(field, charts, "monthly", snapshot("censtat_hkd_money_supply.json", "end_of_month", field),
             lambda field=field: hkma("monthly-statistical-bulletin/financial/monetary-statistics", field, "end_of_month"))

@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-06-latest-source-observations-r106",
+  "release": "2026-11-06-published-observations-r107",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -51,6 +51,7 @@
     "all_chart_legends_wrap_without_pagination",
     "utc_observation_calendar_and_completed_session_rollover",
     "automatic_refresh_of_verified_pipeline_lags",
-    "newest_valid_yahoo_host_observations"
+    "newest_valid_yahoo_host_observations",
+    "completed_cme_daily_sessions_and_conflict_safe_snapshot_publication"
   ]
 }

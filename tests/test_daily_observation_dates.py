@@ -70,6 +70,13 @@ class DailyObservationDates(unittest.TestCase):
             node = bar("2026-11-05", zone, "2026-11-06", instrument)
             self.assertTrue(completed_daily_closes(node, "2026-11-05T23:00Z").empty)
 
+    def test_known_cme_contracts_keep_closed_day_during_next_overnight_session(self):
+        for symbol in ("GC=F", "SI=F", "HG=F", "CL=F"):
+            node = bar("2026-11-05", "America/New_York", "2026-11-06", "FUTURE")
+            node["meta"]["symbol"] = symbol
+            self.assertTrue(completed_daily_closes(node, "2026-11-05T21:30Z").empty)
+            self.assertEqual(len(completed_daily_closes(node, "2026-11-06T01:00Z")),1)
+
     def test_crypto_daily_boundary_is_utc_even_with_local_metadata(self):
         node = bar("2026-11-05", "America/New_York", "2026-11-06", "CRYPTOCURRENCY")
         node["timestamp"] = [int(pd.Timestamp(day).timestamp()) for day in

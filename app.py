@@ -117,7 +117,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-06-latest-source-observations-r106"
+CHART_BUILD = "2026-11-06-published-observations-r107"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"

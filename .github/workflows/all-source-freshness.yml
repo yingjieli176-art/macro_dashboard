@@ -9,6 +9,7 @@ on:
     paths:
       - scripts/probe_all_sources.py
       - scripts/refresh_audited_sources.py
+      - scripts/publish_source_refresh.py
       - macro_platform/market_history.py
       - tests/test_daily_observation_dates.py
       - tests/test_chart_calendar_dates.mjs
@@ -62,8 +63,5 @@ jobs:
           test -s data_snapshots/all_source_freshness.json || exit 0
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data_snapshots/
-          git diff --cached --quiet && exit 0
-          git commit -m 'data: refresh published observations and verify source dates'
-          bash scripts/push_snapshot.sh
+          python scripts/publish_source_refresh.py
 
