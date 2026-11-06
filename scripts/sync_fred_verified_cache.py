@@ -306,6 +306,7 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
 
 def refresh_one(series_id: str):
     failures = []
+    best = None
     with requests.Session() as session:
         fetchers = (_fetch_primary, _fetch_csv, _fetch_api)
         for fetcher in fetchers:
@@ -351,10 +352,15 @@ def refresh_one(series_id: str):
                         for date, value in zip(frame.date, frame.value)
                     ],
                 }
-                return series_id, payload, ""
+                # A valid original feed can lag FRED's separately published
+                # copy. Compare observation dates before accepting a result.
+                if best is None or payload["coverage_end"] > best["coverage_end"]:
+                    best = payload
+                if fetcher is _fetch_csv:
+                    break
             except Exception as exc:
                 failures.append(f"{getattr(fetcher, '__name__', type(fetcher).__name__)}: {type(exc).__name__}: {exc}")
-    return series_id, None, " | ".join(failures)
+    return (series_id, best, "") if best is not None else (series_id, None, " | ".join(failures))
 
 
 def save_snapshot(series_id, payload):

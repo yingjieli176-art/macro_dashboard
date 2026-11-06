@@ -4,7 +4,7 @@ import ast
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from urllib.parse import quote
 
 import pandas as pd
@@ -25,6 +25,19 @@ def bar(day, zone, next_day, instrument="ETF"):
 
 
 class DailyObservationDates(unittest.TestCase):
+    def test_fred_refresh_keeps_newer_published_copy_when_primary_feed_lags(self):
+        from scripts import sync_fred_verified_cache as sync
+        primary=pd.DataFrame({"date":pd.to_datetime(["2026-11-04"]),"value":[16.61]})
+        newer=pd.DataFrame({"date":pd.to_datetime(["2026-11-05"]),"value":[27.01]})
+        with patch.object(sync,"_fetch_primary",return_value=primary), \
+             patch.object(sync,"_fetch_csv",return_value=newer), \
+             patch.object(sync,"_fetch_api") as api:
+            _,payload,error=sync.refresh_one("VIXCLS")
+        self.assertEqual(payload["coverage_end"],"2026-11-05")
+        self.assertEqual(payload["records"][-1]["value"],27.01)
+        self.assertEqual(error,"")
+        api.assert_not_called()
+
     def test_spx_report_cutoff_advances_after_publication_hour(self):
         from macro_platform.spx_options import completed_report_date
         self.assertEqual(completed_report_date(datetime(2026,11,5,22,59,tzinfo=timezone.utc)),date(2026,11,4))
