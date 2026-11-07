@@ -88,12 +88,12 @@
         9
       ],
       "cadence": "weekly",
-      "repository_latest": "2026-10-27",
+      "repository_latest": "2026-11-03",
       "checked_at": "2026-11-07T00:12:38.521580+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-03",
       "source_url": "https://publicreporting.cftc.gov/resource/6dca-aqww.json",
-      "status": "pipeline_lag"
+      "status": "at_source_latest"
     },
     {
       "id": "CL=F",
@@ -387,12 +387,12 @@
         5
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-05",
+      "repository_latest": "2026-11-06",
       "checked_at": "2026-11-07T00:12:15.789341+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-05",
       "source_url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/SKEW_History.csv",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "SN_ALPHABET_CDS_5Y",
@@ -933,5 +933,5 @@
   "elapsed_seconds": 61.278,
   "shared_http_requests": 25,
   "shared_http_reuses": 13,
-  "repository_reconciled_at": "2026-11-07T00:12:48.830876+00:00"
+  "repository_reconciled_at": "2026-11-07T02:58:14.030984+00:00"
 }
