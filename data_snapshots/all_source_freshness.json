@@ -313,12 +313,12 @@
         9
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-06",
+      "repository_latest": "2026-11-07",
       "checked_at": "2026-11-07T23:43:32.546157+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-06",
       "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/JPY%3DX",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "NVIDIA_CDS_5Y",
@@ -936,5 +936,5 @@
   "elapsed_seconds": 42.753,
   "shared_http_requests": 23,
   "shared_http_reuses": 13,
-  "repository_reconciled_at": "2026-11-07T23:43:51.328553+00:00"
+  "repository_reconciled_at": "2026-11-08T00:48:43.454148+00:00"
 }
