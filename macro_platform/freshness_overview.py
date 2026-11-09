@@ -5,7 +5,9 @@ import math
 from pathlib import Path
 
 import pandas as pd
-from macro_platform.dashboard_layout import CHART_NUMBERING, MACRO_DISPLAY_NUMBER, legacy_chart_numbers
+from macro_platform.dashboard_layout import (
+    CHART_NUMBERING, DISPLAY_US_JP_CN_20_ORDER, MACRO_DISPLAY_NUMBER, legacy_chart_numbers,
+)
 
 SOURCE_REPORT = Path(__file__).resolve().parents[1] / "data_snapshots/all_source_freshness.json"
 
@@ -69,10 +71,15 @@ def source_rows(path=SOURCE_REPORT):
     except (OSError, ValueError, TypeError):
         return None, []
     if report.get("chart_numbering") in {"display_us_jp_cn_18", "display_us_jp_cn_19"}:
-        report["sources"] = [dict(row, charts=([MACRO_DISPLAY_NUMBER["copper_tcrc"]]
+        report["sources"] = [dict(row, charts=([DISPLAY_US_JP_CN_20_ORDER.index("copper_tcrc") + 1]
                              if row["id"] in {"tc_usd_dmt", "rc_cents_lb"} else
                              [number + (number >= 18) for number in row["charts"]]))
                              for row in report.get("sources", [])]
+        report["chart_numbering"] = "display_us_jp_cn_20"
+    if report.get("chart_numbering") == "display_us_jp_cn_20":
+        report["sources"] = [dict(row, charts=sorted(
+            MACRO_DISPLAY_NUMBER[DISPLAY_US_JP_CN_20_ORDER[number - 1]] for number in row["charts"]
+        )) for row in report.get("sources", [])]
         report["chart_numbering"] = CHART_NUMBERING
     if report.get("chart_numbering") in {"display_17", "display_18"}:
         report["sources"] = [dict(row, charts=legacy_chart_numbers(row["charts"])) for row in report.get("sources", [])]

@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-09-hy-oas-cds-r122",
+  "release": "2026-11-09-us-credit-order-r123",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -64,6 +64,7 @@
     "yen_carry_with_completed_topix_closes_on_independent_right_axis",
     "treasury_curve_with_nasdaq_100_daily_closes",
     "yen_carry_explicit_us_and_japan_10y_label",
-    "ai_credit_with_fred_high_yield_oas_on_independent_percent_axis"
+    "ai_credit_with_fred_high_yield_oas_on_independent_percent_axis",
+    "us_credit_chart_before_us_japan_relative_strength"
   ]
 }

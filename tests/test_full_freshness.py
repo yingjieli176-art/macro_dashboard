@@ -10,6 +10,7 @@ import time
 import pandas as pd
 import plotly.graph_objects as go
 
+from macro_platform.dashboard_layout import CHART_NUMBERING, MACRO_DISPLAY_NUMBER
 from macro_platform.freshness_overview import figure_rows, source_rows
 from scripts.probe_all_sources import check, jobs, fred
 from scripts import sync_fred_verified_cache as sync
@@ -122,19 +123,40 @@ class FullFreshness(unittest.TestCase):
 
     def test_inventory_covers_every_chart_and_previously_omitted_live_sources(self):
         config = jobs()
-        self.assertEqual({c for _, charts, _, _, _ in config for c in charts}, set(range(1,20)))
+        self.assertEqual({c for _, charts, _, _, _ in config for c in charts}, set(MACRO_DISPLAY_NUMBER.values()))
         mapped = {row[0]: row[1] for row in config}
+        yen_carry = MACRO_DISPLAY_NUMBER[16]
+        relative_strength = MACRO_DISPLAY_NUMBER[4]
         for source in ("DGS10", "japan_10y", "JPY=X"):
-            self.assertIn(9, mapped[source])
-        self.assertNotIn(9, mapped["DGS2"])
-        self.assertNotIn(9, mapped["japan_2y"])
-        self.assertIn(7, mapped["SP500"])
-        self.assertIn(7, mapped["^N225"])
+            self.assertIn(yen_carry, mapped[source])
+        self.assertNotIn(yen_carry, mapped["DGS2"])
+        self.assertNotIn(yen_carry, mapped["japan_2y"])
+        self.assertIn(relative_strength, mapped["SP500"])
+        self.assertIn(relative_strength, mapped["^N225"])
         self.assertEqual(mapped["WALCL"], [])
         self.assertEqual(mapped["WRESBAL"], [])
         self.assertEqual(mapped["RRPONTSYD"], [])
         self.assertTrue({"GC=F","SI=F","BTC-USD","ETH-USD","^N225","china_2y","japan_2y","GVZCLS"}
                         <= {row[0] for row in config})
+
+    def test_source_reports_follow_chart_identities_across_layouts(self):
+        cases = (
+            (CHART_NUMBERING, [7, 19, 20, 10]),
+            ("display_us_jp_cn_20", [20, 18, 19, 9]),
+            ("display_us_jp_cn_19", [19, 17, 18, 9]),
+        )
+        ids = ["NVIDIA_CDS_5Y", "tc_usd_dmt", "BTC-USD", "japan_10y"]
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "sources.json"
+            for numbering, charts in cases:
+                with self.subTest(numbering=numbering):
+                    path.write_text(json.dumps({"chart_numbering": numbering, "sources": [
+                        {"id": key, "charts": [chart], "status": "at_source_latest"}
+                        for key, chart in zip(ids, charts)
+                    ]}))
+                    _, rows = source_rows(path)
+                    self.assertEqual({row["源指标"]: row["图表"] for row in rows},
+                                     dict(zip(ids, ["7", "19", "20", "10"])))
 
     def test_hibor_audit_uses_text_relay_when_direct_hkab_page_has_no_fixing(self):
         from scripts import probe_all_sources as probe
@@ -229,17 +251,19 @@ class FullFreshness(unittest.TestCase):
         fig = go.Figure(go.Scatter(x=pd.to_datetime(["2026-10-19","2026-10-20"]),
                                  y=[4.,None], name="10Y−2Y (R1)"))
         monthly = go.Figure(go.Scatter(x=pd.to_datetime(["2026-09-30"]), y=[1.], name="Balance"))
-        rows = figure_rows({3:fig,13:monthly}, now="2026-10-21")
+        balance = MACRO_DISPLAY_NUMBER[6]
+        rows = figure_rows({3:fig, balance:monthly}, now="2026-10-21")
         self.assertEqual(len(rows),15)
         self.assertEqual(next(r for r in rows if r["图表"]==3)["实际观测日"],"2026-10-19")
-        self.assertEqual(next(r for r in rows if r["图表"]==13)["频率"],"月频")
-        self.assertEqual(next(r for r in rows if r["图表"]==14)["状态"],"待恢复")
+        self.assertEqual(next(r for r in rows if r["图表"]==balance)["频率"],"月频")
+        self.assertEqual(next(r for r in rows if r["图表"]==MACRO_DISPLAY_NUMBER[7])["状态"],"待恢复")
 
     def test_reference_guide_levels_are_not_dated_observations(self):
         fig=go.Figure(go.Scatter(x=["2026-10-20"],y=[7.8],name="USD/HKD"))
         for name in ("Strong-side CU 7.75","Linked Rate Center 7.80","Weak-side CU 7.85"):
             fig.add_trace(go.Scatter(x=["2026-10-21"],y=[7.8],name=name))
-        rows=[r for r in figure_rows({8:fig}) if r["图表"]==8]
+        chart = MACRO_DISPLAY_NUMBER[8]
+        rows=[r for r in figure_rows({chart:fig}) if r["图表"]==chart]
         self.assertEqual([r["指标"] for r in rows],["USD/HKD"])
 
     def test_gvz_original_export_uses_named_value_column(self):

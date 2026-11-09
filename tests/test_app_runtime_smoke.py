@@ -49,9 +49,14 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertEqual(titles, [str(number) for number in range(1, 21)])
         title_text = " ".join(element.value for element in instance.markdown)
         self.assertIn('4. US Equity Risk', title_text)
-        self.assertIn('8. Japan Government Yields', title_text)
-        self.assertIn('9. 日元套息分析', title_text)
-        self.assertIn('10. China Government Yields', title_text)
+        self.assertIn('6. SPX / RSP', title_text)
+        self.assertIn('7. AI Credit · 公司CDS信用风险', title_text)
+        self.assertIn('8. 标普500 / 日经225', title_text)
+        self.assertIn('9. Japan Government Yields', title_text)
+        self.assertIn('10. 日元套息分析', title_text)
+        self.assertIn('11. China Government Yields', title_text)
+        self.assertEqual([control.key for control in instance.get("button_group")[6:9]],
+                         ["nvidia_cds_time_window", "sp500_nikkei_ratio_time_window", "japan_rates_time_window"])
         specs = chart_specs(instance)
         # AppTest does not execute browser JavaScript. This assertion proves
         # the real Streamlit renderer emitted native chart messages, rather

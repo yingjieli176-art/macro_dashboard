@@ -81,7 +81,7 @@ build_copper_flow_spread_figure = _copper_module.build_copper_flow_spread_figure
 build_copper_tcrc_figure = _copper_module.build_copper_tcrc_figure
 from macro_platform.copper_tcrc import METHOD_URL as COPPER_TCRC_METHOD_URL
 from macro_platform import dashboard_layout as _dashboard_layout
-if "copper_tcrc" not in _dashboard_layout.MACRO_DISPLAY_NUMBER:
+if _dashboard_layout.CHART_NUMBERING != "display_us_credit_jp_cn_20":
     _dashboard_layout = importlib.reload(_dashboard_layout)
 from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
 from macro_platform.yen_index import load_yen_market_index
@@ -141,7 +141,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-09-hy-oas-cds-r122"
+CHART_BUILD = "2026-11-09-us-credit-order-r123"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -3064,10 +3064,12 @@ st.markdown(
 # Reserve the existing document order, then fill sections as workers finish.
 # Only the main Streamlit thread creates containers, fragments and widgets.
 macro_slots = {}
-section_headers = {9: "US EQUITY RISK", 4: "US / JAPAN RELATIVE STRENGTH",
+section_headers = {9: "US EQUITY RISK", "nvidia_cds": "US CREDIT RISK", 4: "US / JAPAN RELATIVE STRENGTH",
                    15: "JAPAN RATES & YEN", 14: "CHINA RATES & EQUITIES",
                    5: "HONG KONG LIQUIDITY", 11: "COMMODITIES", 12: "CRYPTO MARKET"}
 for number in MACRO_DISPLAY_ORDER:
+    if number in section_headers:
+        st.markdown(f'<div class="section-kicker">{section_headers[number]}</div>', unsafe_allow_html=True)
     if number == "us_drawdown":
         _render_equity_drawdown()
     elif number == "cn_drawdown":
@@ -3077,8 +3079,6 @@ for number in MACRO_DISPLAY_ORDER:
     elif number == "nvidia_cds":
         render_nvidia_cds()
     else:
-        if number in section_headers:
-            st.markdown(f'<div class="section-kicker">{section_headers[number]}</div>', unsafe_allow_html=True)
         macro_slots[number] = st.container()
 
 

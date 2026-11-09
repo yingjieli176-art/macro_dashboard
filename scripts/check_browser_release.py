@@ -637,11 +637,11 @@ def main():
             wait_for_page(page, args.url)
             groups = page.get_by_test_id("stButtonGroup")
             page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 20", timeout=60000)
-            page.get_by_text("8. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
+            page.get_by_text(f"{MACRO_DISPLAY_NUMBER[15]}. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
             charts = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
             page.get_by_text("5. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
-            page.get_by_text("16. Precious Metals", exact=True).wait_for(timeout=30000)
+            page.get_by_text(f"{MACRO_DISPLAY_NUMBER[11]}. Precious Metals", exact=True).wait_for(timeout=30000)
             assert groups.count() == 20
             assert charts.count() >= 8
             assert page.get_by_test_id("stException").count() == 0
@@ -711,9 +711,10 @@ def main():
                     .getOption().series.map(s=>s.name)""")
             assert len(copper_names) == 7 and not any(name.startswith(('TC（', 'RC（')) for name in copper_names), copper_names
             titles = page.locator('.section-title').all_text_contents()
-            copper_index = titles.index('17. Copper Flow & WTI')
-            assert titles[copper_index + 1] == '18. Copper TC/RC · 铜精矿加工费', titles
-            page.get_by_text('18. Copper TC/RC · 铜精矿加工费', exact=True).scroll_into_view_if_needed()
+            copper_index = titles.index(f'{MACRO_DISPLAY_NUMBER[13]}. Copper Flow & WTI')
+            tcrc_title = f'{MACRO_DISPLAY_NUMBER["copper_tcrc"]}. Copper TC/RC · 铜精矿加工费'
+            assert titles[copper_index + 1] == tcrc_title, titles
+            page.get_by_text(tcrc_title, exact=True).scroll_into_view_if_needed()
             page.screenshot(path='browser_copper_tcrc.png')
             report['copper_tcrc'] = tcrc_state
             report["equity_drawdown"] = exercise_equity_drawdown(page)
@@ -726,7 +727,8 @@ def main():
                     # React Aria's selected toggle changes its accessible
                     # name; the visible range label stays stable.
                     assert groups.nth(index).get_by_text(label, exact=True).count() == 1, (index, label, report["controls"][index])
-            page.get_by_text("20. AI Credit · 公司CDS信用风险", exact=True).wait_for()
+            cds_title = f'{MACRO_DISPLAY_NUMBER["nvidia_cds"]}. AI Credit · 公司CDS信用风险'
+            page.get_by_text(cds_title, exact=True).wait_for()
             cds_chart = page.locator('.st-key-nvidia_cds_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             cds_chart.wait_for(timeout=30000)
@@ -754,7 +756,7 @@ def main():
                 assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
             assert page.get_by_test_id("stRadio").count() == 0
             assert page.get_by_text("Rebased 100", exact=True).count() == 0
-            page.get_by_text("10. China Government Yields & US 5Y Real Yield", exact=False).wait_for()
+            page.get_by_text(f"{MACRO_DISPLAY_NUMBER[14]}. China Government Yields & US 5Y Real Yield", exact=False).wait_for()
             assert page.get_by_text("China & Japan Government Yield Curves", exact=False).count() == 0
             groups.nth(MACRO_DISPLAY_NUMBER[14]-1).get_by_text("3M", exact=True).click()
             china_selected = page.locator(".st-key-china_rates_adaptive_default_3M").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
@@ -764,7 +766,7 @@ def main():
             groups.nth(MACRO_DISPLAY_NUMBER[14]-1).get_by_text("1Y", exact=True).click()
             groups.nth(MACRO_DISPLAY_NUMBER[15]-1).get_by_text("1Y", exact=True).click()
             report["checks"].append({"china_japan_separate": True, "country_ranges_independent": True})
-            page.get_by_text("9. 日元套息分析", exact=False).wait_for()
+            page.get_by_text(f"{MACRO_DISPLAY_NUMBER[16]}. 日元套息分析", exact=False).wait_for()
             carry = page.locator('.st-key-yen_carry_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             japan_chart = page.locator('.st-key-japan_rates_adaptive_default_1Y').get_by_test_id(

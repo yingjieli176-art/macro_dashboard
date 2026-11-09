@@ -1,6 +1,6 @@
 # Macro Dashboard
 
-Market and macroeconomic data dashboard with 18 interactive charts and
+Market and macroeconomic data dashboard with 20 interactive charts and
 watchlists. Production UI: <https://data-macromarket.streamlit.app/>.
 
 **Stable application baseline:** `2026-10-09-tga-close-recovery-r38`. A green
@@ -41,7 +41,7 @@ Chart 1 retains its policy corridor. US rates, VIX and US equities lead; Japan
 rates and yen carry follow; China and Hong Kong follow Japan. Titles, source
 inventory and browser checks share the stable chart identity mapping.
 
-## Yen carry analysis (chart 9)
+## Yen carry analysis (chart 10)
 
 `2026-10-30-position-growth-columns-r81` displays CFTC yen speculative net
 positions and chart 5's monthly M2 MoM growth as columns from zero. Prices,
@@ -103,11 +103,12 @@ automatic data jobs never run the obsolete HSTECH code-wiring patch.
 |---|---|
 | 1–3 | Fed policy corridor, US nominal/real yields and Treasury curve |
 | 4–6 | US VIX/VIXEQ, VIX term structure, SPX/RSP prices and drawdowns |
-| 7 | S&P 500 / Nikkei 225 relative strength |
-| 8–9 | Japan 2Y/10Y/30Y, curve spreads, Nikkei/USDJPY and yen carry |
-| 10–11 | China yields and A-share broad indices |
-| 12–15 | Hong Kong monetary pulse, bank liquidity, funding and HKD overlays |
-| 16–18 | Precious metals, copper and crypto |
+| 7 | US credit risk, with company 5Y CDS and high-yield OAS |
+| 8 | S&P 500 / Nikkei 225 relative strength |
+| 9–10 | Japan 2Y/10Y/30Y, curve spreads, Nikkei/USDJPY and yen carry |
+| 11–12 | China yields and A-share broad indices |
+| 13–16 | Hong Kong monetary pulse, bank liquidity, funding and HKD overlays |
+| 17–20 | Precious metals, copper, copper treatment and refining charges, and crypto |
 
 The 5Y / 1Y / 6M / 3M / 1M selectors must keep **both X and each Y axis
 adaptive**. A Plotly compatibility view is not proof that native ECharts
@@ -151,7 +152,7 @@ The Treasury DTS TGA closing account changed field placement in April 2022;
 `macro_platform/treasury_cash.py` records the correct account-label-based
 interpretation.
 
-## SPX / RSP price chart (11)
+## SPX / RSP price chart (6)
 
 SPX uses the S&P 500 float-adjusted market-cap-weighted **price index**;
 RSP is the Invesco S&P 500 Equal Weight ETF. RSP is a fund, not an index:
@@ -160,7 +161,7 @@ Both histories use completed US daily `quote.close` prices, split-adjusted
 but **without dividend reinvestment**. Never mix Yahoo `adjclose` total-return
 adjustments with the SPX price index. `range=max` monthly responses are rejected.
 
-Chart 11 displays original close prices: SPX in index points on the left axis
+Chart 6 displays original close prices: SPX in index points on the left axis
 and RSP in USD on the right axis. High guides are recomputed from the closing prices inside the current
 coordinate time window, including client-side slider zoom. Dotted horizontal lines
 mark interval highs and dashed lines mark latest closes. Captions retain the
@@ -185,20 +186,18 @@ The data-only China equity workflow atomically updates all three histories.
 Incomplete sessions, missing indices, shortened history and stale responses
 cannot replace the last-good snapshot. Actual observation dates remain visible.
 
-Display order: 1–3 US monetary policy and Treasury yields; 4 S&P 500 / Nikkei 225 relative strength; 5–8 Hong Kong liquidity;
-9 US equity risk; 10 VIX term structure; 11 US equity prices;
-12 China equity prices; 13 China rates; 14 Japan rates/equity;
-15 precious metals; 16 copper; 17 crypto; 18 yen carry.
-Chart 4 replaces the former US Liquidity chart. It shows the same-date
+## US / Japan relative strength (chart 8)
+
+Chart 8 follows US credit risk and leads into Japan rates and yen carry. It shows the same-date
 S&P 500 / Nikkei 225 index-point ratio plus both component indices at their
 actual integer closing levels. The ratio, S&P 500 and Nikkei 225 each use an
 independent Y axis; no rebasing or normalization is applied. Dates without a
 close in either market are omitted. The ratio is not an FX-adjusted total return.
 
 
-## Equity price charts and reference lines (11–12)
+## Equity price charts and reference lines (6 and 12)
 
-Charts 11 and 12 display original daily closing prices, not normalized prices
+Charts 6 and 12 display original daily closing prices, not normalized prices
 or percentage drawdown curves. SPX uses the left points axis and RSP the right
 USD axis. CSI 300/1000/2000 share an index-points axis. Each asset has a dotted
 visible-window highest-close line and a dashed latest-close line with numeric
