@@ -14,16 +14,18 @@ from scripts.audit_source_freshness import audit
 
 
 def payload():
-    dates = pd.to_datetime(["2026-10-19 00:00Z", "2026-10-20 00:00Z", "2026-10-21 12:00Z"])
+    dates = pd.to_datetime([
+        "2026-10-17 00:00Z", "2026-10-19 00:00Z", "2026-10-20 00:00Z", "2026-10-21 12:00Z",
+    ])
     return {"chart": {"result": [{"meta": {"symbol": "JPY=X", "currency": "JPY",
         "instrumentType": "CURRENCY", "exchangeTimezoneName": "Europe/London"},
         "timestamp": [int(day.timestamp()) for day in dates],
-        "indicators": {"quote": [{"close": [160., 125., 100.]}],
-                       "adjclose": [{"adjclose": [1., 1., 1.]}]}}]}}
+        "indicators": {"quote": [{"close": [150., 160., 125., 100.]}],
+                       "adjclose": [{"adjclose": [1., 1., 1., 1.]}]}}]}}
 
 
 class YenMarketTests(unittest.TestCase):
-    def test_uses_actual_closes_and_inverse_direction_excludes_running_bar(self):
+    def test_uses_actual_closes_and_excludes_weekend_and_running_bars(self):
         frame = parse_yahoo_yen(payload(), now="2026-10-21 13:00Z")
         self.assertEqual(frame.observation_date.dt.strftime("%Y-%m-%d").tolist(), ["2026-10-19", "2026-10-20"])
         self.assertEqual(frame.usd_jpy_close.tolist(), [160., 125.])
@@ -49,6 +51,19 @@ class YenMarketTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     save_market_snapshot(bad, path, now=now)
                 self.assertEqual(path.read_bytes(), old)
+
+    def test_updater_removes_legacy_weekend_record(self):
+        dates = pd.bdate_range("2021-11-08", "2026-11-06")
+        frame = yen_index_from_fx(pd.DataFrame({"observation_date": dates, "usd_jpy_close": 160.}))
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "yen.json"
+            self.assertTrue(save_market_snapshot(frame, path, now="2026-11-09"))
+            original = json.loads(path.read_text())["records"]
+            payload = json.loads(path.read_text())
+            payload["records"].append({"date": "2026-11-07", "usd_jpy_close": 158.425})
+            path.write_text(json.dumps(payload))
+            self.assertTrue(save_market_snapshot(frame, path, now="2026-11-09"))
+            self.assertEqual(json.loads(path.read_text())["records"], original)
 
     def test_snapshot_replacement_is_visible_without_waiting_for_ttl(self):
         import macro_platform.yen_index as source

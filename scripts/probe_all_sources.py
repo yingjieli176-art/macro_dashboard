@@ -22,6 +22,7 @@ import requests
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from macro_platform.market_history import completed_daily_closes
+from macro_platform.yen_index import parse_yahoo_yen
 from macro_platform.dashboard_layout import CHART_NUMBERING, MACRO_DISPLAY_NUMBER, legacy_chart_numbers
 
 
@@ -207,11 +208,15 @@ def yahoo(symbol):
                 payload = response.json() or {}
             except ImportError:
                 payload = get(url, params={"range": "1mo", "interval": "1d"}).json() or {}
-            nodes = ((payload.get("chart") or {}).get("result") or [])
-            if len(nodes) != 1:
-                raise ValueError("Yahoo Finance returned no unique history")
-            frame = completed_daily_closes(nodes[0])
-            observed = latest(frame, "observation_date", "close")
+            if symbol == "JPY=X":
+                frame = parse_yahoo_yen(payload)
+                observed = latest(frame, "observation_date", "usd_jpy_close")
+            else:
+                nodes = ((payload.get("chart") or {}).get("result") or [])
+                if len(nodes) != 1:
+                    raise ValueError("Yahoo Finance returned no unique history")
+                frame = completed_daily_closes(nodes[0])
+                observed = latest(frame, "observation_date", "close")
             if observed is None:
                 raise ValueError("Yahoo Finance returned no completed daily close")
             if best is None or observed > best[0]:

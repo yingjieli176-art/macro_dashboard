@@ -24,7 +24,12 @@ def yen_index_from_fx(frame):
     out = frame[["observation_date", "usd_jpy_close"]].copy()
     out["usd_jpy_close"] = pd.to_numeric(out["usd_jpy_close"], errors="coerce")
     out["observation_date"] = pd.to_datetime(out["observation_date"], errors="coerce")
-    valid = out.usd_jpy_close.gt(0) & out.usd_jpy_close.lt(float("inf"))
+    # Yahoo's completed USD/JPY daily history has weekday observations.
+    valid = (
+        out.usd_jpy_close.gt(0)
+        & out.usd_jpy_close.lt(float("inf"))
+        & out.observation_date.dt.day_of_week.lt(5)
+    )
     out = out.loc[valid].dropna().sort_values("observation_date").drop_duplicates("observation_date", keep="last")
     out["jpy_usd_index"] = 10000.0 / out["usd_jpy_close"]
     return out.reset_index(drop=True)

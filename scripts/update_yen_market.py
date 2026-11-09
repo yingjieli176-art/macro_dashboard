@@ -9,13 +9,16 @@ import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from macro_platform.yen_index import MARKET_FORMULA, MARKET_SNAPSHOT, MARKET_SOURCE_URL, parse_yahoo_yen
+from macro_platform.yen_index import (
+    MARKET_FORMULA, MARKET_SNAPSHOT, MARKET_SOURCE_URL, parse_yahoo_yen, yen_index_from_fx,
+)
 
 
 def save_market_snapshot(frame, path=MARKET_SNAPSHOT, now=None):
     clock = pd.Timestamp.now(tz="UTC").tz_localize(None) if now is None else pd.Timestamp(now)
     if clock.tzinfo is not None:
         clock = clock.tz_convert("UTC").tz_localize(None)
+    frame = yen_index_from_fx(frame)
     if len(frame) < 1000 or frame.observation_date.min() > clock - pd.DateOffset(years=4, months=10):
         raise ValueError("Incomplete five-year USD/JPY history")
     latest = frame.observation_date.max()
@@ -26,9 +29,12 @@ def save_market_snapshot(frame, path=MARKET_SNAPSHOT, now=None):
     if path.exists():
         previous = json.loads(path.read_text())
         old = previous["records"]
-        if latest < pd.Timestamp(max(row["date"] for row in old)):
+        previous_dates = {
+            row["date"] for row in old if pd.Timestamp(row["date"]).day_of_week < 5
+        }
+        if previous_dates and latest < pd.Timestamp(max(previous_dates)):
             raise ValueError("USD/JPY response regressed")
-        retained = {row["date"] for row in old if row["date"] >= records[0]["date"]}
+        retained = {day for day in previous_dates if day >= records[0]["date"]}
         if not retained.issubset({row["date"] for row in records}):
             raise ValueError("USD/JPY response lost existing dates")
         if records == old:
