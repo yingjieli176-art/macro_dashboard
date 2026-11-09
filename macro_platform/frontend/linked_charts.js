@@ -365,7 +365,8 @@ export default function({data, parentElement}) {
     if (option.toolbox) option.toolbox.right = 54;
     chart = echarts.init(element, null, {renderer:'canvas'});
     element.__macroChart = chart;
-    chart.setOption(option);
+    // Replace the whole option when Streamlit reuses a mounted chart element.
+    chart.setOption(option, {notMerge:true});
     if (hasPriceGuides) updateLayout();
     element.setAttribute('aria-busy', 'false');
     for (const event of ['legendselectchanged','legendselected','legendunselected',
