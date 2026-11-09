@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-06-srf-jpy-bar-width-r115",
+  "release": "2026-11-09-vix-independent-ratio-axes-r116",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -59,6 +59,7 @@
     "distinct_vix_risk_series_colors_with_bold_solid_cor3m",
     "chart_instruction_and_observation_date_footers_removed",
     "standalone_tcrc_chart_after_copper_without_detail_table",
-    "srf_usage_bars_match_yen_position_eight_pixel_width"
+    "srf_usage_bars_match_yen_position_eight_pixel_width",
+    "vix9d_vix_and_spx_put_call_each_have_independent_y_axes"
   ]
 }

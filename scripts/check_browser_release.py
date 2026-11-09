@@ -795,11 +795,12 @@ def main():
             report["copper_without_vvix"] = copper_names
             tail = page.locator('.st-key-vix_term_structure_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
-            report["tail_risk_zoom"] = exercise_client_zoom(page, tail, minimum_axes=4)
+            report["tail_risk_zoom"] = exercise_client_zoom(page, tail, minimum_axes=6)
             sentiment = tail.evaluate("element => element.__macroChart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,valid:s.data.filter(p=>Number.isFinite(p[1])).length}))")
-            for name in ("VIX/VIX3M (R1)", "VVIX/VIX (R1)", "9D/30D (R1)", "SPX P/C (R1)"):
+            for name, axis in (("VIX/VIX3M (R1)", 1), ("VVIX/VIX (R1)", 1),
+                               ("9D/30D (R4)", 4), ("SPX P/C (R5)", 5)):
                 series = next(s for s in sentiment if s['name'] == name)
-                assert series['axis'] == 1 and series['valid'] > 150, series
+                assert series['axis'] == axis and series['valid'] > 150, series
             assert any('VVIX' in s['name'] for s in sentiment), sentiment
             assert not any('VIX3M−VIX' in s['name'] for s in sentiment), sentiment
             report['spx_sentiment'] = sentiment
