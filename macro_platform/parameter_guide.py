@@ -9,6 +9,8 @@ def short_parameter_label(name):
     if name == "ON RRP (R2)":
         return "ON RRP（隔夜逆回购余额）"
     direct = {
+        "NASDAQ-100": "NASDAQ-100（纳斯达克100）",
+        "US 10Y - Japan 10Y": "US 10Y - Japan 10Y（美日10年国债利差）",
         "10年期名义收益率（DGS10）": "DGS10（10年名义美债）",
         "10年期实际收益率（TIPS · DFII10，右轴）": "DFII10（10年实际利率）",
         "10年期盈亏平衡通胀率（BEI · T10YIE，右轴）": "T10YIE（10年通胀补偿）",

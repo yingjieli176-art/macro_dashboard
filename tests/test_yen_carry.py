@@ -30,8 +30,8 @@ class YenCarryTests(unittest.TestCase):
         rates, _ = carry_observations(us, japan, self.fx)
         self.assertAlmostEqual(rates.spread_pp.iloc[0], 4.3 - 1.15)
         fig = build_yen_carry_figure("1Y", us=us, japan=japan, fx=self.fx)
-        self.assertEqual(fig.data[0].name, "US 10Y - Japan 10Y spread")
-        self.assertIn("10Y", fig.layout.yaxis.title.text)
+        self.assertEqual(fig.data[0].name, "US 10Y - Japan 10Y")
+        self.assertEqual(fig.layout.yaxis.title.text, "US 10Y - Japan 10Y · pp")
         self.assertAlmostEqual(fig.data[0].y[-1], 3.15)
 
     def test_exact_yen_repayment_cost_formula_and_lookback(self):

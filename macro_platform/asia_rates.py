@@ -325,10 +325,10 @@ def build_china_rates_figure(date_range: str, us_real_yield: pd.DataFrame | None
         _add_trace(fig, china, "china_2y", "China 2Y", width=2.1)
         _add_trace(fig, china, "china_10y", "China 10Y", width=2.8)
         _add_trace(fig, real, "DFII5", "US 5Y Real · TIPS", width=2.5, dash="dash")
-        _add_trace(fig, china, "china_10y_2y_pct", "China 10Y - China 2Y (R1)",
+        _add_trace(fig, china, "china_10y_2y_pct", "China 10Y−2Y (R1)",
                    width=2.0, dash="dot", yaxis="y2", suffix=" pp")
     return _finish_rates_figure(fig, date_range, latest,
-                               ("China 2Y", "China 10Y", "US 5Y Real · TIPS", "China 10Y - China 2Y (R1)"))
+                               ("China 2Y", "China 10Y", "US 5Y Real · TIPS", "China 10Y−2Y (R1)"))
 
 
 def build_japan_rates_figure(date_range: str, nikkei: pd.DataFrame | None = None,
@@ -355,20 +355,20 @@ def build_japan_rates_figure(date_range: str, nikkei: pd.DataFrame | None = None
         _add_trace(fig, japan, "japan_2y", "Japan 2Y", width=2.1)
         _add_trace(fig, japan, "japan_10y", "Japan 10Y", width=2.8)
         _add_trace(fig, japan, "japan_30y", "Japan 30Y", width=2.5)
-        _add_trace(fig, japan, "japan_10y_2y_pct", "Japan 10Y - Japan 2Y (R1)",
+        _add_trace(fig, japan, "japan_10y_2y_pct", "Japan 10Y−2Y (R1)",
                    width=2.0, dash="dot", yaxis="y2", suffix=" pp")
-        _add_trace(fig, japan, "japan_30y_10y_pct", "Japan 30Y - Japan 10Y (R1)",
+        _add_trace(fig, japan, "japan_30y_10y_pct", "Japan 30Y−10Y (R1)",
                    width=2.0, dash="dash", yaxis="y2", suffix=" pp")
         _add_trace(fig, index, "close", "Nikkei 225 (R2)", width=2.5, yaxis="y3", suffix=" pts")
         _add_trace(fig, yen, "usd_jpy_close", "USD/JPY (R3)", width=2.5,
                    dash="dash", yaxis="y4", suffix=" JPY per USD")
-    expected = ("Japan 2Y", "Japan 10Y", "Japan 30Y", "Japan 10Y - Japan 2Y (R1)",
-                "Japan 30Y - Japan 10Y (R1)", "Nikkei 225 (R2)")
+    expected = ("Japan 2Y", "Japan 10Y", "Japan 30Y", "Japan 10Y−2Y (R1)",
+                "Japan 30Y−10Y (R1)", "Nikkei 225 (R2)")
     if yen_index is not None:
         expected += ("USD/JPY (R3)",)
     fig = _finish_rates_figure(fig, date_range, latest,
                               expected, nikkei_axis=True, yen_axis=yen_index is not None)
-    fig.update_layout(yaxis2_title="Japan 10Y - Japan 2Y / Japan 30Y - Japan 10Y (pp)")
+    fig.update_layout(yaxis2_title="10Y−2Y / 30Y−10Y spread (pp)")
     return fig
 
 
@@ -401,7 +401,7 @@ def _finish_rates_figure(fig, date_range, latest, expected, nikkei_axis=False, y
             tickformat=".2f",
         ),
         yaxis2=dict(
-            title="10Y - 2Y spread (pp)",
+            title="10Y−2Y spread (pp)",
             overlaying="y",
             side="right",
             showgrid=False,

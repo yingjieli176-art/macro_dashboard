@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 
 from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis
 
-SPREAD_NAME = "US 10Y - Japan 10Y spread"
+SPREAD_NAME = "US 10Y - Japan 10Y"
 FX_NAME = "USD/JPY (R1)"
 PRESSURE_NAME = "JPY 20-session appreciation (R2)"
 POSITION_NAME = "CFTC JPY speculative net (R3)"
@@ -74,7 +74,7 @@ def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None, topix=N
         margin=dict(l=64, r=160, t=74, b=36),
         legend=dict(orientation="h", yanchor="bottom", y=1.09, font=dict(size=10)),
         xaxis=dict(domain=[0, 0.81]),
-        yaxis=dict(title="US 10Y - Japan 10Y · pp", fixedrange=True, tickformat=".2f", zeroline=True),
+        yaxis=dict(title=f"{SPREAD_NAME} · pp", fixedrange=True, tickformat=".2f", zeroline=True),
         yaxis2=dict(title="R1 · JPY/USD", overlaying="y", side="right", anchor="free",
                     position=0.83, showgrid=False, fixedrange=True, tickformat=".1f"),
         yaxis3=dict(title="R2 · %", overlaying="y", side="right", anchor="free",

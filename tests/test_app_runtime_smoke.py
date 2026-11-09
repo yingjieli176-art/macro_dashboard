@@ -29,7 +29,7 @@ class DashboardBootSmoke(unittest.TestCase):
             second = AppTest.from_file(str(app), default_timeout=90).run()
         self.assertFalse(first.exception)
         self.assertFalse(second.exception)
-        self.assertEqual(len(second.get('button_group')), 19)
+        self.assertEqual(len(second.get('button_group')), 20)
         self.assertGreaterEqual(len(chart_specs(second)), 8)
         self.assertEqual(chart_specs(first), chart_specs(second))
 
@@ -43,10 +43,10 @@ class DashboardBootSmoke(unittest.TestCase):
             msg="Streamlit app crashed during full script execution: "
                 + "; ".join(str(error.message) for error in instance.exception),
         )
-        self.assertEqual(len(instance.get("button_group")), 19)
+        self.assertEqual(len(instance.get("button_group")), 20)
         titles = [match.group(1) for element in instance.markdown
                   if (match := re.search(r'class="section-title">(\d+)\.', element.value))]
-        self.assertEqual(titles, [str(number) for number in range(1, 20)])
+        self.assertEqual(titles, [str(number) for number in range(1, 21)])
         title_text = " ".join(element.value for element in instance.markdown)
         self.assertIn('4. US Equity Risk', title_text)
         self.assertIn('8. Japan Government Yields', title_text)
@@ -107,22 +107,23 @@ class DashboardBootSmoke(unittest.TestCase):
             self.assertTrue(any(point[1] is not None for point in risk_series[name]["data"]))
         self.assertNotIn("Rebased", spec_text)
         japan = next(json.loads(spec) for spec in specs
-                     if any(series["name"] == "Japan 30Y - Japan 10Y (R1)"
+                     if any(series["name"] == "Japan 30Y−10Y (R1)"
                             for series in json.loads(spec)["series"]))
         japan_series = {series["name"]: series for series in japan["series"]}
         self.assertEqual(len(japan_series), 7)
         self.assertEqual(japan_series["Nikkei 225 (R2)"]["yAxisIndex"], 2)
         self.assertEqual(japan_series["USD/JPY (R3)"]["yAxisIndex"], 3)
         self.assertEqual(japan_series["Japan 30Y"]["yAxisIndex"], 0)
-        self.assertEqual(japan_series["Japan 30Y - Japan 10Y (R1)"]["yAxisIndex"], 1)
+        self.assertEqual(japan_series["Japan 30Y−10Y (R1)"]["yAxisIndex"], 1)
         self.assertTrue(any(point[1] is not None for point in japan_series["Japan 30Y"]["data"]))
-        self.assertTrue(any(point[1] is not None for point in japan_series["Japan 30Y - Japan 10Y (R1)"]["data"]))
+        self.assertTrue(any(point[1] is not None for point in japan_series["Japan 30Y−10Y (R1)"]["data"]))
         carry = next(json.loads(spec) for spec in specs if 'JPY 20-session appreciation (R2)' in spec)
-        self.assertEqual(len(carry["yAxis"]), 4)
+        self.assertEqual(len(carry["yAxis"]), 5)
         self.assertEqual([series["name"] for series in carry["series"]],
-                         ["US 10Y - Japan 10Y spread", "USD/JPY (R1)", "JPY 20-session appreciation (R2)", "CFTC JPY speculative net (R3)"])
-        self.assertEqual([series["yAxisIndex"] for series in carry["series"]], [0, 1, 2, 3])
-        self.assertEqual(carry["series"][-1]["type"], "bar")
+                         ["US 10Y - Japan 10Y", "USD/JPY (R1)", "JPY 20-session appreciation (R2)",
+                          "CFTC JPY speculative net (R3)", "TOPIX（东证指数） (R4)"])
+        self.assertEqual([series["yAxisIndex"] for series in carry["series"]], [0, 1, 2, 3, 4])
+        self.assertEqual(carry["series"][3]["type"], "bar")
         money = next(json.loads(spec) for spec in specs if '"M2 MoM"' in spec)
         self.assertEqual(next(s for s in money["series"] if s["name"] == "M2 MoM")["type"], "bar")
         self.assertTrue(all(any(point[1] is not None for point in series["data"]) for series in carry["series"]))
