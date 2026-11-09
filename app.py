@@ -2732,8 +2732,6 @@ def render_macro_chart_15(prebuilt_fig=None):
         ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
         ("Yahoo Finance · Nikkei 225", "https://finance.yahoo.com/quote/%5EN225/history/"),
         ("Yahoo · USD/JPY daily closes", "https://finance.yahoo.com/quote/JPY%3DX/history/"),
-        ("Yahoo! Japan · TOPIX 日收盘", "https://finance.yahoo.co.jp/quote/998405.T/history"),
-        ("JPX · TOPIX 指数说明", "https://www.jpx.co.jp/markets/indices/topix/index.html"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -2773,6 +2771,8 @@ def render_macro_chart_16(prebuilt_fig=None):
         ("CFTC · Commitments of Traders", "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"),
         ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
         ("Yahoo · USD/JPY daily closes", "https://finance.yahoo.com/quote/JPY%3DX/history/"),
+        ("Yahoo! Japan · TOPIX 日收盘", "https://finance.yahoo.co.jp/quote/998405.T/history"),
+        ("JPX · TOPIX 指数说明", "https://www.jpx.co.jp/markets/indices/topix/index.html"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
