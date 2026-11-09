@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from macro_platform.yen_carry import (
-    FX_NAME, PRESSURE_NAME, SPREAD_NAME, build_yen_carry_figure, carry_observations,
+    FX_NAME, PRESSURE_NAME, SPREAD_NAME, TOPIX_NAME, build_yen_carry_figure, carry_observations,
 )
 
 
@@ -71,6 +71,25 @@ class YenCarryTests(unittest.TestCase):
             self.assertEqual([t.name for t in fig.data], [SPREAD_NAME, FX_NAME, PRESSURE_NAME])
             self.assertEqual([t.yaxis for t in fig.data], ["y", "y2", "y3"])
             self.assertTrue(all(len(t.x) == len(t.y) for t in fig.data))
+
+    def test_topix_uses_its_own_dates_and_point_axis(self):
+        from macro_platform.echarts_axes import build_adaptive_echarts_option, build_safe_echarts_option
+
+        dates = self.days[[20, 22, 26]]
+        index = pd.DataFrame({"observation_date": dates, "topix_close": [3711.24, 3842.31, 3790.19]})
+        positions = pd.DataFrame({"observation_date": dates, "net_contracts": [-1000, 0, 1000]})
+        fig = build_yen_carry_figure("6M", us=self.us, japan=self.jp, fx=self.fx,
+                                     positions=positions, topix=index)
+        trace = next(trace for trace in fig.data if trace.name == TOPIX_NAME)
+        self.assertEqual(trace.yaxis, "y5")
+        self.assertEqual(list(trace.x), list(dates))
+        self.assertEqual(list(trace.y), index.topix_close.tolist())
+        for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
+            option = adapter(fig, "6M")
+            series = next(series for series in option["series"] if series["name"] == TOPIX_NAME)
+            self.assertEqual(series["yAxisIndex"], 4)
+            self.assertEqual(option["yAxis"][4]["name"], "R4 · pts")
+            self.assertTrue(option["yAxis"][4]["scale"])
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ SPREAD_NAME = "US−Japan 10Y spread"
 FX_NAME = "USD/JPY (R1)"
 PRESSURE_NAME = "JPY 20-session appreciation (R2)"
 POSITION_NAME = "CFTC JPY speculative net (R3)"
+TOPIX_NAME = "TOPIX（东证指数） (R4)"
 
 
 def _observations(frame, column):
@@ -38,7 +39,7 @@ def carry_observations(us, japan, fx):
     return rates, exchange
 
 
-def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None):
+def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None, topix=None):
     rates, exchange = carry_observations(us, japan, fx)
     positioning = _observations(positions, "net_contracts")
     positioning["net_10k_contracts"] = positioning.net_contracts / 10000
@@ -46,6 +47,10 @@ def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None):
                (exchange, "usd_jpy_close", FX_NAME, "y2", "#4e6cf5", "solid", " JPY/USD"),
                (exchange, "yen_appreciation_pct", PRESSURE_NAME, "y3", "#e88939", "dash", "%"),
                (positioning, "net_10k_contracts", POSITION_NAME, "y4", "#8a61c4", "dot", " 万张"))
+    if topix is not None:
+        index = _observations(topix, "topix_close")
+        index.loc[index.topix_close.le(0), "topix_close"] = np.nan
+        sources += ((index, "topix_close", TOPIX_NAME, "y5", "#087c5a", "solid", " pts"),)
     latest_dates = [frame.loc[frame[column].notna(), "observation_date"].max()
                     for frame, column, *_ in sources if frame[column].notna().any()]
     latest = max(latest_dates) if latest_dates else None
@@ -78,6 +83,13 @@ def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None):
                     position=0.995, showgrid=False, fixedrange=True, tickformat=".1f", zeroline=True),
         meta={"missing_series": missing},
     )
+    if any(trace.name == TOPIX_NAME for trace in fig.data):
+        fig.update_layout(
+            xaxis_domain=[0, 0.63], yaxis2_position=0.65,
+            yaxis3_position=0.75, yaxis4_position=0.85,
+            yaxis5=dict(title="R4 · TOPIX · pts", overlaying="y", side="right", anchor="free",
+                        position=0.95, showgrid=False, fixedrange=True, tickformat=",.0f"),
+        )
     if latest is None:
         fig.add_annotation(text="数据暂不可用", x=0.5, y=0.5, xref="paper", yref="paper", showarrow=False)
         return fig

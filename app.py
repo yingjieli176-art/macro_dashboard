@@ -86,6 +86,8 @@ from macro_platform.yen_index import load_yen_market_index
 from macro_platform.sp500_nikkei_ratio import build_sp500_nikkei_ratio_figure
 try:
     import macro_platform.yen_carry as _yen_carry
+    if not hasattr(_yen_carry, "TOPIX_NAME"):
+        _yen_carry = importlib.reload(_yen_carry)
 except ImportError:
     _yen_carry = None
 from macro_platform.security_search import search_securities
@@ -135,7 +137,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-09-vix-shared-ratio-axis-r117"
+CHART_BUILD = "2026-11-09-topix-yen-carry-r118"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1997,13 +1999,16 @@ def build_fig16(date_range):
         raise RuntimeError("Yen carry chart module unavailable")
     from macro_platform.asia_rates import load_japan_gov_yields
     from macro_platform.cftc_yen import load_cftc_yen
+    from macro_platform.topix import load_topix_snapshot
     frames = []
-    for loader in (get_dgs10, load_japan_gov_yields, load_yen_market_index, load_cftc_yen):
+    for loader in (get_dgs10, load_japan_gov_yields, load_yen_market_index, load_cftc_yen, load_topix_snapshot):
         try:
             frames.append(loader())
         except Exception:
             frames.append(pd.DataFrame())
-    return _yen_carry.build_yen_carry_figure(date_range, us=frames[0], japan=frames[1], fx=frames[2], positions=frames[3])
+    return _yen_carry.build_yen_carry_figure(
+        date_range, us=frames[0], japan=frames[1], fx=frames[2], positions=frames[3], topix=frames[4],
+    )
 
 
 CRYPTO_MARKET_DESCRIPTION = (
@@ -2727,6 +2732,8 @@ def render_macro_chart_15(prebuilt_fig=None):
         ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
         ("Yahoo Finance · Nikkei 225", "https://finance.yahoo.com/quote/%5EN225/history/"),
         ("Yahoo · USD/JPY daily closes", "https://finance.yahoo.com/quote/JPY%3DX/history/"),
+        ("Yahoo! Japan · TOPIX 日收盘", "https://finance.yahoo.co.jp/quote/998405.T/history"),
+        ("JPX · TOPIX 指数说明", "https://www.jpx.co.jp/markets/indices/topix/index.html"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -2735,7 +2742,7 @@ def render_macro_chart_15(prebuilt_fig=None):
 def render_macro_chart_16(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[16]}. 日元套息分析 · Yen Carry Trade</div>'
-        '<div class="section-description">美日10Y利差 · USD/JPY (R1) · 日元20交易日升值幅度 (R2) · CFTC日元投机净仓位 (R3)</div>',
+        '<div class="section-description">美日10Y利差 · USD/JPY (R1) · 日元20交易日升值幅度 (R2) · CFTC日元投机净仓位 (R3) · TOPIX（东证指数，R4）</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2753,6 +2760,8 @@ def render_macro_chart_16(prebuilt_fig=None):
         'CFTC日元期货非商业多头减非商业空头，代码097741，采用Legacy Futures Only口径，单位为万张。'
         '正值为净多日元，负值为净空日元；由负值向零收缩可辅助观察空头回补压力，也可能包含新增多头。'
         '以零线为基准的周度柱状图，按持仓截至日标点，通常为周二、周五公布；不向日频填充。</div>'
+        '<div class="parameter-note"><b>TOPIX（东证指数，R4）：</b>'
+        '以自由流通市值加权的日本股市宽基指数。使用日本交易日的原始收盘点位，单位为点。</div>'
         '<div class="parameter-context">读图：10年期利差收窄，同时USD/JPY下跌、日元升值幅度转正或扩大，'
         '可能意味着中长期美元利率优势减弱且日元走强；但10年期利差不能直接代理短期套息融资条件。年度利差与20交易日汇率变动期限不同，不能直接相减。'
         'CFTC只覆盖报告内日元期货投机仓位，不能等同全部跨境套息仓位或平仓规模。'
