@@ -107,20 +107,20 @@ class DashboardBootSmoke(unittest.TestCase):
             self.assertTrue(any(point[1] is not None for point in risk_series[name]["data"]))
         self.assertNotIn("Rebased", spec_text)
         japan = next(json.loads(spec) for spec in specs
-                     if any(series["name"] == "Japan 30Y−10Y (R1)"
+                     if any(series["name"] == "Japan 30Y - Japan 10Y (R1)"
                             for series in json.loads(spec)["series"]))
         japan_series = {series["name"]: series for series in japan["series"]}
         self.assertEqual(len(japan_series), 7)
         self.assertEqual(japan_series["Nikkei 225 (R2)"]["yAxisIndex"], 2)
         self.assertEqual(japan_series["USD/JPY (R3)"]["yAxisIndex"], 3)
         self.assertEqual(japan_series["Japan 30Y"]["yAxisIndex"], 0)
-        self.assertEqual(japan_series["Japan 30Y−10Y (R1)"]["yAxisIndex"], 1)
+        self.assertEqual(japan_series["Japan 30Y - Japan 10Y (R1)"]["yAxisIndex"], 1)
         self.assertTrue(any(point[1] is not None for point in japan_series["Japan 30Y"]["data"]))
-        self.assertTrue(any(point[1] is not None for point in japan_series["Japan 30Y−10Y (R1)"]["data"]))
+        self.assertTrue(any(point[1] is not None for point in japan_series["Japan 30Y - Japan 10Y (R1)"]["data"]))
         carry = next(json.loads(spec) for spec in specs if 'JPY 20-session appreciation (R2)' in spec)
         self.assertEqual(len(carry["yAxis"]), 4)
         self.assertEqual([series["name"] for series in carry["series"]],
-                         ["US−Japan 10Y spread", "USD/JPY (R1)", "JPY 20-session appreciation (R2)", "CFTC JPY speculative net (R3)"])
+                         ["US 10Y - Japan 10Y spread", "USD/JPY (R1)", "JPY 20-session appreciation (R2)", "CFTC JPY speculative net (R3)"])
         self.assertEqual([series["yAxisIndex"] for series in carry["series"]], [0, 1, 2, 3])
         self.assertEqual(carry["series"][-1]["type"], "bar")
         money = next(json.loads(spec) for spec in specs if '"M2 MoM"' in spec)
