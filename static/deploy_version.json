@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-09-topix-yen-carry-r118",
+  "release": "2026-11-09-vix-three-ratios-r119",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -60,7 +60,7 @@
     "chart_instruction_and_observation_date_footers_removed",
     "standalone_tcrc_chart_after_copper_without_detail_table",
     "srf_usage_bars_match_yen_position_eight_pixel_width",
-    "vix9d_vix_and_spx_put_call_share_a_separate_y_axis",
+    "vix_term_three_ratios_share_r1_vvix_vix_uses_r4",
     "yen_carry_with_completed_topix_closes_on_independent_right_axis"
   ]
 }

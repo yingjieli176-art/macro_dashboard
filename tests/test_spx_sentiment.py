@@ -49,17 +49,17 @@ class SpxSentimentTests(unittest.TestCase):
         fig = ns["build_fig10"]("1M")
         traces = {t.name: t for t in fig.data}
         self.assertEqual(list(pd.Series(traces["VIX/VIX3M (R1)"].y).dropna()), [.8, 0.])
-        self.assertEqual(list(pd.Series(traces["9D/30D (R4)"].y).dropna()), [.9])
-        self.assertEqual(list(pd.Series(traces["VVIX/VIX (R1)"].y).dropna()), [5.])
-        self.assertEqual(list(traces["SPX P/C (R4)"].x), [pd.Timestamp("2026-10-02")])
+        self.assertEqual(list(pd.Series(traces["9D/30D (R1)"].y).dropna()), [.9])
+        self.assertEqual(list(pd.Series(traces["VVIX/VIX (R4)"].y).dropna()), [5.])
+        self.assertEqual(list(traces["SPX P/C (R1)"].x), [pd.Timestamp("2026-10-02")])
         for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
             option = adapter(fig, "1M")
             self.assertEqual(len(option["yAxis"]), 5)
             axes = {series["name"]: series["yAxisIndex"] for series in option["series"]}
             self.assertEqual(axes["VIX/VIX3M (R1)"], 1)
-            self.assertEqual(axes["VVIX/VIX (R1)"], 1)
-            self.assertEqual(axes["9D/30D (R4)"], 4)
-            self.assertEqual(axes["SPX P/C (R4)"], 4)
+            self.assertEqual(axes["VVIX/VIX (R4)"], 4)
+            self.assertEqual(axes["9D/30D (R1)"], 1)
+            self.assertEqual(axes["SPX P/C (R1)"], 1)
             self.assertTrue(all(axis["scale"] for axis in option["yAxis"]))
             self.assertFalse(any("VIX3M−VIX" in name for name in axes))
 
@@ -74,10 +74,10 @@ class SpxSentimentTests(unittest.TestCase):
         ns["load_tail_risk_snapshot"] = load
         for period in ("5Y", "1Y", "6M", "3M", "1M"):
             fig = ns["build_fig10"](period)
-            trace = next(t for t in fig.data if t.name == "VVIX/VIX (R1)")
+            trace = next(t for t in fig.data if t.name == "VVIX/VIX (R4)")
             self.assertEqual(list(pd.Series(trace.y).dropna()), [5.])
             self.assertEqual(list(pd.Series(trace.y).isna()), [False, True, True, True, True, True])
-            self.assertEqual(trace.yaxis, "y2")
+            self.assertEqual(trace.yaxis, "y5")
             option = build_adaptive_echarts_option(fig, period)
             series = next(s for s in option["series"] if s["name"] == trace.name)
             self.assertFalse(series["connectNulls"])

@@ -797,8 +797,8 @@ def main():
                 re.compile(r"^(macro|st)EChartsChart$"))
             report["tail_risk_zoom"] = exercise_client_zoom(page, tail, minimum_axes=5)
             sentiment = tail.evaluate("element => element.__macroChart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,valid:s.data.filter(p=>Number.isFinite(p[1])).length}))")
-            for name, axis in (("VIX/VIX3M (R1)", 1), ("VVIX/VIX (R1)", 1),
-                               ("9D/30D (R4)", 4), ("SPX P/C (R4)", 4)):
+            for name, axis in (("VIX/VIX3M (R1)", 1), ("VVIX/VIX (R4)", 4),
+                               ("9D/30D (R1)", 1), ("SPX P/C (R1)", 1)):
                 series = next(s for s in sentiment if s['name'] == name)
                 assert series['axis'] == axis and series['valid'] > 150, series
             assert any('VVIX' in s['name'] for s in sentiment), sentiment

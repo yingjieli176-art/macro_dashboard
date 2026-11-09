@@ -137,7 +137,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-09-topix-yen-carry-r118"
+CHART_BUILD = "2026-11-09-vix-three-ratios-r119"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1767,22 +1767,22 @@ def build_fig10(date_range):
         fig.update_traces(line_color=color, selector=dict(name=name))
     relative = sources["VIXCLS"].merge(tail_sources["VVIX"], on="observation_date", how="outer").sort_values("observation_date")
     relative["VVIX/VIX"] = relative["VVIX"] / relative["VIXCLS"].where(relative["VIXCLS"].gt(0))
-    add_line(fig, filter_range(relative, date_range), "VVIX/VIX", "VVIX/VIX (R1)", 2.2, "dashdot", "y2", " x")
-    fig.update_traces(line_color="#be185d", selector=dict(name="VVIX/VIX (R1)"))
+    add_line(fig, filter_range(relative, date_range), "VVIX/VIX", "VVIX/VIX (R4)", 2.2, "dashdot", "y5", " x")
+    fig.update_traces(line_color="#be185d", selector=dict(name="VVIX/VIX (R4)"))
     try:
         short = load_tail_risk_snapshot("VIX9D")
     except Exception:
         short = pd.DataFrame(columns=["observation_date", "VIX9D"])
     short = sources["VIXCLS"].merge(short, on="observation_date", how="outer").sort_values("observation_date")
     short["9D/30D"] = short["VIX9D"] / short["VIXCLS"].where(short["VIXCLS"].gt(0))
-    add_line(fig, filter_range(short, date_range), "9D/30D", "9D/30D (R4)", 2.2, "dot", "y5", " x")
-    fig.update_traces(line_color="#0891b2", selector=dict(name="9D/30D (R4)"))
+    add_line(fig, filter_range(short, date_range), "9D/30D", "9D/30D (R1)", 2.2, "dot", "y2", " x")
+    fig.update_traces(line_color="#0891b2", selector=dict(name="9D/30D (R1)"))
     try:
         pc = filter_range(load_spx_put_call_snapshot(), date_range)
     except Exception:
         pc = pd.DataFrame(columns=["observation_date", "SPX_PCR"])
-    add_line(fig, pc, "SPX_PCR", "SPX P/C (R4)", 2.1, yaxis="y5", unit=" x")
-    fig.update_traces(line_color="#15803d", selector=dict(name="SPX P/C (R4)"))
+    add_line(fig, pc, "SPX_PCR", "SPX P/C (R1)", 2.1, yaxis="y2", unit=" x")
+    fig.update_traces(line_color="#15803d", selector=dict(name="SPX P/C (R1)"))
     fig.update_layout(
         yaxis_title="VIX / VIX3M · pts",
         yaxis2=dict(title="R1 · Ratios · x", overlaying="y", side="right", anchor="free",
@@ -1791,7 +1791,7 @@ def build_fig10(date_range):
                     position=0.75, showgrid=False, zeroline=False, fixedrange=True),
         yaxis4=dict(title="R3 · VVIX · pts", overlaying="y", side="right", anchor="free",
                     position=0.85, showgrid=False, zeroline=False, fixedrange=True),
-        yaxis5=dict(title="R4 · 9D/30D & SPX P/C · x", overlaying="y", side="right", anchor="free",
+        yaxis5=dict(title="R4 · VVIX/VIX · x", overlaying="y", side="right", anchor="free",
                     position=0.94, showgrid=False, zeroline=False, fixedrange=True),
     )
     fig = apply_chart_style(fig, chart_height(310, 420), date_range)
@@ -2599,7 +2599,7 @@ def render_macro_chart_9(prebuilt_fig=None):
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure</div>'
-        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX/VIX3M (R1) · VVIX/VIX (R1) · 9D/30D (R4) · SPX P/C (R4) · SKEW (R2) · VVIX (R3)</div>',
+        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX/VIX3M · 9D/30D · SPX P/C（共用 R1） · SKEW (R2) · VVIX (R3) · VVIX/VIX (R4)</div>',
         unsafe_allow_html=True,
     )
     st.caption("VIX反映未来30个日历天（约1个月）的年化隐含波动率，正式代码仍是VIX；VIX3M约为3个月。上方1M、3M等按钮只控制历史显示范围，不改变指数期限。")
@@ -2607,7 +2607,7 @@ def render_macro_chart_10(prebuilt_fig=None):
         "Chart 10", lambda: _cached_macro_figure(10, _macro_snapshot_revision(), CHART_BUILD),
     )
     _render_adaptive_macro_figure(base_fig, "vix_term_structure")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>VIX：</b>标普500指数未来30个日历天（约1M）的年化隐含波动率指标，代表近期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M：</b>标普500指数约未来3个月的年化隐含波动率指标，代表较长期波动风险的期权定价。</div><div class="parameter-note"><b>VIX/VIX3M (R1)：</b>同日30天隐含波动率÷约3个月隐含波动率；大于1表示近端隐含波动率更高，单位为倍。</div><div class="parameter-note"><b>VVIX/VIX (R1)：</b>同日Cboe VVIX指数÷VIX指数，表示VVIX相对VIX的指数点比值，单位为倍；两个指数衡量对象不同，该比值不代表涨跌概率。</div><div class="parameter-note"><b>9D/30D (R4)：</b>同日Cboe VIX9D÷VIX，即SPX约9天与30天年化隐含波动率的比值；大于1表示超短期隐含波动率更高，单位为倍。</div><div class="parameter-note"><b>SPX P/C (R4)：</b>Cboe SPX+SPXW当日Put成交量÷Call成交量，含周度期权；保留官方公布的比值精度。成交量包含买卖双方，不直接等于净看空仓位，也不是持仓量比。</div><div class="parameter-note"><b>SKEW (R2)：</b>Cboe SKEW指数，反映标普500期权对尾部风险的定价；指数点不是暴跌概率，不能直接解释为未来跌幅。</div><div class="parameter-note"><b>VVIX (R3)：</b>Cboe VIX预期波动率指数，即“恐慌指数的恐慌指数”，反映VIX自身的预期波动。</div><div class="parameter-context">口径说明：三项指数比值只使用同日有效观测，分母缺失或为0时不计算；VIX和VIX3M原始指数在左轴，VIX/VIX3M与VVIX/VIX共用R1，SKEW和VVIX分别用R2、R3。9D/30D与SPX P/C共用右轴R4。不跨日补值。</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-description"><div class="parameter-note"><b>VIX：</b>标普500指数未来30个日历天（约1M）的年化隐含波动率指标，代表近期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M：</b>标普500指数约未来3个月的年化隐含波动率指标，代表较长期波动风险的期权定价。</div><div class="parameter-note"><b>VIX/VIX3M (R1)：</b>同日30天隐含波动率÷约3个月隐含波动率；大于1表示近端隐含波动率更高，单位为倍。</div><div class="parameter-note"><b>VVIX/VIX (R4)：</b>同日Cboe VVIX指数÷VIX指数，表示VVIX相对VIX的指数点比值，单位为倍；两个指数衡量对象不同，该比值不代表涨跌概率。</div><div class="parameter-note"><b>9D/30D (R1)：</b>同日Cboe VIX9D÷VIX，即SPX约9天与30天年化隐含波动率的比值；大于1表示超短期隐含波动率更高，单位为倍。</div><div class="parameter-note"><b>SPX P/C (R1)：</b>Cboe SPX+SPXW当日Put成交量÷Call成交量，含周度期权；保留官方公布的比值精度。成交量包含买卖双方，不直接等于净看空仓位，也不是持仓量比。</div><div class="parameter-note"><b>SKEW (R2)：</b>Cboe SKEW指数，反映标普500期权对尾部风险的定价；指数点不是暴跌概率，不能直接解释为未来跌幅。</div><div class="parameter-note"><b>VVIX (R3)：</b>Cboe VIX预期波动率指数，即“恐慌指数的恐慌指数”，反映VIX自身的预期波动。</div><div class="parameter-context">口径说明：三项指数比值只使用同日有效观测，分母缺失或为0时不计算；VIX和VIX3M原始指数在左轴，VIX/VIX3M、9D/30D与SPX P/C共用右轴R1，SKEW和VVIX分别用R2、R3，VVIX/VIX用右轴R4。不跨日补值。</div></div>', unsafe_allow_html=True)
     add_sources([
         ("FRED · VIX (VIXCLS)", "https://fred.stlouisfed.org/series/VIXCLS"),
         ("FRED · VIX3M (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),
