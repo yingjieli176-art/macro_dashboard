@@ -79,7 +79,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         ns["get_fred_series"] = load
         figure = ns["build_fig10"]("1M")
         self.assertEqual([t.name for t in figure.data], ["VIX"])
-        self.assertEqual(set(figure.layout.meta["missing_series"]), {"VIX3M", "VIX/VIX3M (R1)", "SKEW (R2)", "VVIX (R3)", "VVIX/VIX (R1)", "9D/30D (R4)", "SPX P/C (R5)"})
+        self.assertEqual(set(figure.layout.meta["missing_series"]), {"VIX3M", "VIX/VIX3M (R1)", "SKEW (R2)", "VVIX (R3)", "VVIX/VIX (R1)", "9D/30D (R4)", "SPX P/C (R4)"})
 
     def test_equity_correlation_calendar_and_removed_series(self):
         ns = builders()

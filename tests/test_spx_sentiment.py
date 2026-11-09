@@ -35,7 +35,7 @@ class SpxSentimentTests(unittest.TestCase):
         for day in ("2026-11-04", "2026-11-07", "2099-01-01"):
             with self.assertRaises(ValueError): parse_daily(self.payload(), day, now)
 
-    def test_ratios_keep_direction_gaps_and_independent_sentiment_axes(self):
+    def test_ratios_keep_direction_gaps_and_shared_sentiment_axis(self):
         ns = builders()
         dates = ["2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06"]
         sources = {"VIXCLS": frame(dates, "VIXCLS", [20., 0., 24., None]),
@@ -51,15 +51,15 @@ class SpxSentimentTests(unittest.TestCase):
         self.assertEqual(list(pd.Series(traces["VIX/VIX3M (R1)"].y).dropna()), [.8, 0.])
         self.assertEqual(list(pd.Series(traces["9D/30D (R4)"].y).dropna()), [.9])
         self.assertEqual(list(pd.Series(traces["VVIX/VIX (R1)"].y).dropna()), [5.])
-        self.assertEqual(list(traces["SPX P/C (R5)"].x), [pd.Timestamp("2026-10-02")])
+        self.assertEqual(list(traces["SPX P/C (R4)"].x), [pd.Timestamp("2026-10-02")])
         for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
             option = adapter(fig, "1M")
-            self.assertEqual(len(option["yAxis"]), 6)
+            self.assertEqual(len(option["yAxis"]), 5)
             axes = {series["name"]: series["yAxisIndex"] for series in option["series"]}
             self.assertEqual(axes["VIX/VIX3M (R1)"], 1)
             self.assertEqual(axes["VVIX/VIX (R1)"], 1)
             self.assertEqual(axes["9D/30D (R4)"], 4)
-            self.assertEqual(axes["SPX P/C (R5)"], 5)
+            self.assertEqual(axes["SPX P/C (R4)"], 4)
             self.assertTrue(all(axis["scale"] for axis in option["yAxis"]))
             self.assertFalse(any("VIX3M−VIX" in name for name in axes))
 
