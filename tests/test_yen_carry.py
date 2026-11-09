@@ -30,7 +30,7 @@ class YenCarryTests(unittest.TestCase):
         rates, _ = carry_observations(us, japan, self.fx)
         self.assertAlmostEqual(rates.spread_pp.iloc[0], 4.3 - 1.15)
         fig = build_yen_carry_figure("1Y", us=us, japan=japan, fx=self.fx)
-        self.assertEqual(fig.data[0].name, "US−Japan 10Y spread")
+        self.assertEqual(fig.data[0].name, "US 10Y - Japan 10Y spread")
         self.assertIn("10Y", fig.layout.yaxis.title.text)
         self.assertAlmostEqual(fig.data[0].y[-1], 3.15)
 
