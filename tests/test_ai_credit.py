@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 import pandas as pd
+import requests
 
 from macro_platform import ai_credit as cds
 from macro_platform.echarts_axes import build_adaptive_echarts_option, build_safe_echarts_option
@@ -87,6 +88,41 @@ class AiCreditTests(unittest.TestCase):
                 self.assertTrue(oracle["showSymbol"])
                 self.assertFalse(oracle["connectNulls"])
             self.assertNotIn("NVIDIA 1Y · 待数据源", fig.layout.meta["missing_series"])
+
+    def test_hy_oas_retains_percent_values_and_its_own_calendar_and_axis(self):
+        payload = cds.parse_source(source())
+        hy_oas = pd.DataFrame({"observation_date": pd.to_datetime(["2026-10-24", "2026-10-29"]),
+                               "oas_pct": [3.12, 3.48]})
+        for window in ("5Y", "1Y", "6M", "3M", "1M"):
+            fig = cds.build_cds_figure(window, payload, hy_oas=hy_oas)
+            for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
+                option = adapter(fig, window)
+                self.assertEqual(len(option["series"]), 6)
+                *companies, oas = option["series"]
+                self.assertTrue(all(series["yAxisIndex"] == 0 for series in companies))
+                self.assertEqual(oas["name"], cds.HY_OAS_NAME)
+                self.assertEqual(oas["yAxisIndex"], 1)
+                self.assertEqual(oas["data"], [["2026-10-24T00:00:00", 3.12], ["2026-10-29T00:00:00", 3.48]])
+                self.assertEqual(option["yAxis"][1]["name"], "R1 · %")
+                self.assertEqual(option["dataZoom"][0]["endValue"], "2026-10-29T00:00:00")
+        missing = cds.build_cds_figure(payload=payload, hy_oas=hy_oas.iloc[:0])
+        self.assertEqual(len(missing.data), 5)
+        self.assertEqual(missing.layout.meta["missing_series"], [cds.HY_OAS_NAME])
+
+    def test_hy_oas_reads_validated_fred_observations_without_persisting(self):
+        import data
+        response = requests.Response()
+        response.status_code = 200
+        response._content = b"observation_date,BAMLH0A0HYM2\n2026-10-26,3.12\n2026-10-27,\n2026-10-28,3.48\n"
+        with patch.object(data, "http_get", return_value=response) as fetch, \
+             patch.object(data, "_save_fred_success") as save:
+            frame = data.get_hy_oas.__wrapped__()
+        self.assertEqual(fetch.call_args.kwargs["params"], {"id": "BAMLH0A0HYM2"})
+        self.assertEqual(frame.observation_date.dt.strftime("%Y-%m-%d").tolist(), ["2026-10-26", "2026-10-28"])
+        self.assertEqual(frame.oas_pct.tolist(), [3.12, 3.48])
+        save.assert_not_called()
+        with patch.object(data, "http_get", side_effect=requests.Timeout):
+            self.assertTrue(data.get_hy_oas.__wrapped__().empty)
 
     def test_invalid_refresh_never_overwrites_last_good_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:

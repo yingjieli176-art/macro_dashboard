@@ -94,12 +94,12 @@ def _normalize_fred_frame(frame, series_id):
     )
 
 
-def _fetch_fred_graph(series_id):
+def _fetch_fred_graph(series_id, *, timeout=(2.5, 5.0)):
     response = http_get(
         FRED_GRAPH_URL,
         params={"id": series_id},
         headers={"User-Agent": "MacroDashboard/1.0"},
-        timeout=(2.5, 5.0),
+        timeout=timeout,
     )
     response.raise_for_status()
     frame = pd.read_csv(StringIO(response.text))
@@ -138,6 +138,17 @@ def _fetch_fred_api(series_id):
         raise RuntimeError(f"FRED API {series_id} 没有返回有效数据。")
     frame.attrs.update({"source": "FRED API", "is_stale": False, "is_fallback": True})
     return frame
+
+
+@observed_cache()
+def get_hy_oas():
+    """Read ICE's FRED series into memory for the private dashboard."""
+    series_id = "BAMLH0A0HYM2"
+    try:
+        frame = validate_observations(_fetch_fred_graph(series_id, timeout=(8, 8)), series_id)
+    except (requests.RequestException, RuntimeError, ValueError):
+        return pd.DataFrame(columns=["observation_date", "oas_pct"])
+    return frame.rename(columns={series_id: "oas_pct"})
 
 
 @st.cache_data(max_entries=64, show_spinner=False)

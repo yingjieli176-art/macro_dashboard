@@ -69,7 +69,9 @@ try:
 except ImportError:
     def load_spx_put_call_snapshot():
         return pd.DataFrame(columns=["observation_date", "SPX_PCR"])
-from macro_platform.ai_credit import build_cds_figure, cds_summary, load_cds_snapshot
+from macro_platform import ai_credit as _ai_credit
+if not hasattr(_ai_credit, "HY_OAS_NAME"):
+    _ai_credit = importlib.reload(_ai_credit)
 from macro_platform import copper as _copper_module
 from macro_platform.srf_usage import load_srf_usage, usage_caption
 # Refresh the builder during rolling deployments with cached modules.
@@ -124,6 +126,8 @@ if not callable(get_dgs30):
     def get_dgs30():
         return _fred_series("DGS30")
 
+get_hy_oas = getattr(_market_data_module, "get_hy_oas", pd.DataFrame)
+
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
 
@@ -137,7 +141,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-09-ndx-yen-carry-r121"
+CHART_BUILD = "2026-11-09-hy-oas-cds-r122"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -3019,13 +3023,16 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
 @st.fragment(key="nvidia_cds_viewport")
 def render_nvidia_cds():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["nvidia_cds"]}. AI Credit · 公司CDS信用风险</div>'
-                '<div class="section-description">英伟达 NVIDIA · AMD · 谷歌 Alphabet · 微软 Microsoft · 甲骨文 Oracle · 5Y · bp</div>', unsafe_allow_html=True)
-    payload = load_cds_snapshot()
-    figure = build_cds_figure("5Y", payload=payload)
+                '<div class="section-description">英伟达 NVIDIA · AMD · 谷歌 Alphabet · 微软 Microsoft · 甲骨文 Oracle · 5Y CDS（bp） / HY OAS（R1 · %）</div>', unsafe_allow_html=True)
+    payload = _ai_credit.load_cds_snapshot()
+    hy_oas = get_hy_oas()
+    figure = _ai_credit.build_cds_figure("5Y", payload=payload, hy_oas=hy_oas)
     _render_adaptive_macro_figure(figure, "nvidia_cds")
     if not figure.data:
         st.info("暂未取得可绘制的CDS观测，请查看数据源更新状态。")
-    summary = cds_summary(payload)
+    if hy_oas.attrs.get("is_stale"):
+        st.caption("HY OAS 更新暂不可用，显示最近一次成功获取的观测。")
+    summary = _ai_credit.cds_summary(payload)
     st.dataframe(summary, hide_index=True, width="stretch",
                  column_config={"最新CDS（bp）": st.column_config.NumberColumn(format="%.2f"),
                                 "源日历覆盖率（%）": st.column_config.NumberColumn(format="%.1f%%")})
@@ -3033,12 +3040,14 @@ def render_nvidia_cds():
     st.caption(f"来源：Open-Sourced Rates Observatory, irates.today。数据日历截至 {payload.get('source_asof', '未取得')}；各公司的实际最新观测日见表。日度成交汇总，不是实时买卖报价；没有可用计价观测的日期留空，圆点表示实际观测，可点击图例比较公司。")
     st.caption("五家公司均显示5Y CDS；5Y为剩余期限4.4–5.6年的成交分组，单位bp（100 bp＝1%/年）。缺少计价观测的日期保持空缺。")
     st.markdown('<div class="mini-description">'
+        '<div class="parameter-note"><b>HY OAS：</b>ICE BofA 美国高收益债指数的期权调整利差，相对于美国国债即期曲线，采用 FRED 日收盘观测，右轴按百分比显示。</div>'
         '<div class="parameter-note"><b>CDS与资本开支：</b>CDS走阔可作为融资压力的早期观察信号，需与资本开支指引、经营现金流和债务到期安排交叉核对；不能仅凭利差上升判断公司已削减开支。</div>'
         '<div class="parameter-note"><b>美债期限溢价与美联储：</b>长期美债收益率可分解为预期短期利率的平均值与期限溢价。期限溢价变化还可能反映通胀不确定性、债券供给和久期风险；判断政策动作，应同时看联邦基金期货或OIS中的利率路径预期。</div>'
         '<div class="parameter-note"><b>日经、韩国股市与美硬件：</b>可观察亚洲时段的硬件情绪，但大盘指数包含其他行业，也可能在消化前一日美股行情。应结合半导体指数、相关个股及美国盘前或期货，统一时区与币种后检验领先关系。</div>'
         '<div class="parameter-context">以上为联动观察假设，尚未完成针对这些曲线的领先滞后检验，不代表已确认的预测规律或固定领先天数。</div></div>', unsafe_allow_html=True)
     add_sources([("Open-Sourced Rates Observatory · AI capex", "https://irates.today/capex.html"),
                  ("CDS历史聚合数据", "https://irates.today/chart_data.json"),
+                 ("ICE Data Indices via FRED · HY OAS (BAMLH0A0HYM2)", _ai_credit.HY_OAS_URL),
                  ("数据方法与使用说明", "https://irates.today/about.html"),
                  ("纽约联储 · 美债期限溢价", "https://www.newyorkfed.org/research/data_indicators/term-premia-tabs"),
                  ("OFR · CDS价格发现研究", "https://www.financialresearch.gov/working-papers/2024/07/17/do-credit-default-swaps-still-lead/")])
@@ -3192,7 +3201,7 @@ def _render_all_source_freshness(figures):
     display_figures[MACRO_DISPLAY_NUMBER["us_drawdown"]] = _build_equity_drawdown()
     display_figures[MACRO_DISPLAY_NUMBER["cn_drawdown"]] = _build_china_drawdown()
     display_figures[MACRO_DISPLAY_NUMBER["copper_tcrc"]] = build_copper_tcrc_figure("5Y")
-    display_figures[MACRO_DISPLAY_NUMBER["nvidia_cds"]] = build_cds_figure("5Y")
+    display_figures[MACRO_DISPLAY_NUMBER["nvidia_cds"]] = _ai_credit.build_cds_figure("5Y", hy_oas=get_hy_oas())
     render_freshness_overview(display_figures, quote_rows=rows, news=_read_existing_news_snapshot())
 
 _render_all_source_freshness(macro_figures)
