@@ -141,7 +141,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-09-us-credit-order-r123"
+CHART_BUILD = "2026-11-10-us-close-credit-r124"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -3020,7 +3020,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
     }
 
 
-@st.fragment(key="nvidia_cds_viewport")
+@st.fragment(run_every=60, key="nvidia_cds_viewport")
 def render_nvidia_cds():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["nvidia_cds"]}. AI Credit · 公司CDS信用风险</div>'
                 '<div class="section-description">英伟达 NVIDIA · AMD · 谷歌 Alphabet · 微软 Microsoft · 甲骨文 Oracle · 5Y CDS（bp） / HY OAS（R1 · %）</div>', unsafe_allow_html=True)
@@ -3030,8 +3030,13 @@ def render_nvidia_cds():
     _render_adaptive_macro_figure(figure, "nvidia_cds")
     if not figure.data:
         st.info("暂未取得可绘制的CDS观测，请查看数据源更新状态。")
-    if hy_oas.attrs.get("is_stale"):
-        st.caption("HY OAS 更新暂不可用，显示最近一次成功获取的观测。")
+    if hy_oas.empty:
+        st.caption("HY OAS（R1）暂未取得 FRED 观测，稍后自动重试。")
+    else:
+        latest_oas = hy_oas.iloc[-1]
+        status = " · 最近一次成功获取的观测" if hy_oas.attrs.get("is_stale") else ""
+        st.caption(f"HY OAS（R1）{latest_oas.oas_pct:.2f}% · "
+                   f"实际观测日 {latest_oas.observation_date:%Y-%m-%d}{status}")
     summary = _ai_credit.cds_summary(payload)
     st.dataframe(summary, hide_index=True, width="stretch",
                  column_config={"最新CDS（bp）": st.column_config.NumberColumn(format="%.2f"),

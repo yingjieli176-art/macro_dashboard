@@ -240,11 +240,13 @@ class SourceFreshnessTests(unittest.TestCase):
         csv = "DATE,OPEN,HIGH,LOW,CLOSE\n" + "\n".join(
             f"{d:%m/%d/%Y},15,20,12,18.5" for d in pd.date_range(end="2026-10-20", periods=20))
         session = Mock()
-        session.get.return_value = Mock(text=csv)
+        session.get.side_effect = [Mock(text=csv), Mock(json=lambda: {
+            "symbol": "_VIX3M", "timestamp": "2026-10-20 22:00:00", "data": [],
+        })]
         actual = sync._fetch_primary(session, "VXVCLS")
         self.assertEqual(actual.iloc[-1]["date"], pd.Timestamp("2026-10-20"))
         self.assertEqual(actual.iloc[-1]["value"], 18.5)
-        self.assertTrue(session.get.call_args.args[0].endswith("/VIX3M_History.csv"))
+        self.assertTrue(session.get.call_args_list[0].args[0].endswith("/VIX3M_History.csv"))
 
 if __name__ == "__main__":
     unittest.main()

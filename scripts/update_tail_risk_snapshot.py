@@ -10,10 +10,11 @@ import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from macro_platform.cboe_history import supplement_closes
 from macro_platform.tail_risk import SYMBOLS, SOURCE_TEMPLATE, completed_date
 
 
-def prepare_snapshot(text, symbol, previous, now):
+def prepare_snapshot(text, symbol, previous, now, *, get=None):
     if symbol not in SYMBOLS:
         raise ValueError(f"Unsupported index: {symbol}")
     frame = pd.read_csv(io.StringIO(text))
@@ -34,6 +35,14 @@ def prepare_snapshot(text, symbol, previous, now):
     fresh = fresh.sort_values("observation_date").drop_duplicates("observation_date", keep="last")
     if len(fresh) < 700:
         raise ValueError(f"{symbol} source history unexpectedly short: {len(fresh)}")
+    latest_source = None
+    if get is not None:
+        records = [{"observation_date": r.observation_date.strftime("%Y-%m-%d"), "close": float(r.close)}
+                   for r in fresh.itertuples(index=False)]
+        records, latest_source = supplement_closes(records, symbol, now, get)
+        if latest_source:
+            fresh = pd.DataFrame(records)
+            fresh["observation_date"] = pd.to_datetime(fresh.observation_date)
     old = pd.DataFrame(previous.get("records") or [], columns=["observation_date", "close"])
     old["observation_date"] = pd.to_datetime(old.observation_date, errors="coerce")
     old = old.loc[old.observation_date.between(start, cutoff)]
@@ -45,10 +54,13 @@ def prepare_snapshot(text, symbol, previous, now):
                for r in merged.itertuples(index=False)]
     if records == previous.get("records"):
         return None
-    return dict(symbol=symbol, source="Cboe Global Indices", source_url=SOURCE_TEMPLATE.format(symbol),
+    payload = dict(symbol=symbol, source="Cboe Global Indices", source_url=SOURCE_TEMPLATE.format(symbol),
                 unit="index points", updated_at=now.astimezone(timezone.utc).isoformat(),
                 coverage_start=records[0]["observation_date"], coverage_end=records[-1]["observation_date"],
                 record_count=len(records), records=records)
+    if latest_source:
+        payload["latest_source_url"] = latest_source
+    return payload
 
 
 def main():
@@ -59,7 +71,7 @@ def main():
         previous = json.loads(path.read_text()) if path.exists() else {}
         response = requests.get(SOURCE_TEMPLATE.format(symbol), headers={"User-Agent": "MacroDashboard/1.0"}, timeout=30)
         response.raise_for_status()
-        payload = prepare_snapshot(response.text, symbol, previous, now)
+        payload = prepare_snapshot(response.text, symbol, previous, now, get=requests.get)
         if payload is not None:
             pending.append((path, payload))
     # Validate both sources before replacing either last-good file.

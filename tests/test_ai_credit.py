@@ -124,6 +124,19 @@ class AiCreditTests(unittest.TestCase):
         with patch.object(data, "http_get", side_effect=requests.Timeout):
             self.assertTrue(data.get_hy_oas.__wrapped__().empty)
 
+    def test_hy_oas_uses_the_official_vintage_export_when_fred_is_unavailable(self):
+        import data
+        response = requests.Response()
+        response.status_code = 200
+        response._content = b"observation_date,BAMLH0A0HYM2_20261109\n2026-11-06,3.42\n"
+        with patch.object(data, "http_get", side_effect=[requests.Timeout(), response]) as fetch, \
+             patch.object(data, "FRED_API_KEY", ""), patch.object(data, "_save_fred_success") as save:
+            frame = data.get_hy_oas.__wrapped__()
+        self.assertEqual(fetch.call_args.args[0], data.ALFRED_GRAPH_URL)
+        self.assertEqual(frame.oas_pct.tolist(), [3.42])
+        self.assertEqual(frame.observation_date.dt.strftime("%Y-%m-%d").tolist(), ["2026-11-06"])
+        save.assert_not_called()
+
     def test_invalid_refresh_never_overwrites_last_good_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "cds.json"
