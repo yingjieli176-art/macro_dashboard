@@ -125,7 +125,13 @@ def _responsive_chart_layout(option, fig, axis_map):
         title = str(getattr(getattr(source, "title", None), "text", None) or "")
         if ref in explicit_titles and title:
             option["yAxis"][index]["name"] = title
-            compact_titles.append(title.replace(" · ", "\n"))
+            compact = title.replace(" · ", "\n")
+            if "\n" not in compact:
+                compact = ("L" if index == 0 else f"R{index}") + "\n" + compact
+            if (fig.layout.meta or {}).get("yen_combined"):
+                unit = _axis_unit(source, [t for t in fig.data if (t.yaxis or "y") == ref])
+                compact = ("L" if index == 0 else f"R{index}") + "\n" + (unit or title.rsplit(" · ", 1)[-1])
+            compact_titles.append(compact)
             continue
         traces = [trace for trace in fig.data if (getattr(trace, "yaxis", None) or "y") == ref]
         unit = _axis_unit(source, traces)
@@ -136,6 +142,9 @@ def _responsive_chart_layout(option, fig, axis_map):
         label = "L" if index == 0 else f"R{index}"
         compact_titles.append(f"{label}\n{unit}")
 
+    if (fig.layout.meta or {}).get("yen_combined"):
+        # Reserve space for the complete multi-row legend on desktop.
+        option["grid"]["top"] = 210
     desktop = {key: deepcopy(option[key]) for key in ("legend", "grid", "yAxis", "xAxis")}
     for axis in desktop["yAxis"]:
         axis["nameRotate"] = 90
@@ -303,7 +312,7 @@ def build_safe_echarts_option(fig, date_range="1Y"):
             "type": "line",
             "showSymbol": bool((fig.layout.meta or {}).get("show_observation_markers")) or "markers" in str(getattr(trace, "mode", "")),
             "symbolSize": 4,
-            "connectNulls": False,
+            "connectNulls": bool(getattr(trace, "connectgaps", False)),
             "data": points,
             "yAxisIndex": axis_map[ref],
             "animation": False,
@@ -445,7 +454,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             "type": "bar" if getattr(trace, "type", "") == "bar" else "line",
             "showSymbol": bool((fig.layout.meta or {}).get("show_observation_markers")) or "markers" in str(getattr(trace, "mode", "")),
             "symbolSize": 4,
-            "connectNulls": False,
+            "connectNulls": bool(getattr(trace, "connectgaps", False)),
             "lineStyle": line_style,
             "yAxisIndex": y_axis_map[axis_ref],
             "data": points,

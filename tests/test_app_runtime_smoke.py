@@ -102,18 +102,18 @@ class DashboardBootSmoke(unittest.TestCase):
         options = [json.loads(spec) for spec in specs]
         yen_vol = next(option for option in options
                        if any(s["name"] == "USD/JPY 20日实际波动率" for s in option["series"]))
-        self.assertEqual([s["name"] for s in yen_vol["series"]],
+        self.assertEqual([s["name"] for s in yen_vol["series"][9:12]],
                          ["USD/JPY 20日实际波动率", "USD/JPY 60日实际波动率", "BOJ 政策利率（右轴）"])
-        self.assertEqual(yen_vol["series"][-1]["step"], "end")
-        self.assertEqual(yen_vol["series"][-1]["yAxisIndex"], 1)
+        self.assertEqual(yen_vol["series"][11]["step"], "end")
+        self.assertEqual(yen_vol["series"][11]["yAxisIndex"], 0)
         for series_name in ("GPIF 美债票据与长期债券", "九家主要寿险 · 外债对冲率"):
             institutional = next(s for option in options for s in option["series"] if s["name"] == series_name)
             self.assertEqual(len(institutional["data"]), 6)
             self.assertTrue(institutional["showSymbol"])
         yen_tic = next(option for option in options
                        if any(s["name"] == "日本美债总持仓" for s in option["series"]))
-        self.assertEqual([s["yAxisIndex"] for s in yen_tic["series"]], [0, 0, 0, 1, 1])
-        self.assertTrue(all(s["observation_cadence"] == "monthly" for s in yen_tic["series"]))
+        self.assertEqual([s["yAxisIndex"] for s in yen_tic["series"][12:17]], [6, 6, 6, 7, 7])
+        self.assertTrue(all(s["observation_cadence"] == "monthly" for s in yen_tic["series"][12:17]))
         corridor = next(json.loads(spec) for spec in specs if '"SRF"' in spec)
         self.assertEqual({series["name"] for series in corridor["series"]},
                          {"IORB", "ON RRP", "EFFR", "SOFR", "SRF", "SRF 实际用量 (R1)"})
@@ -154,14 +154,18 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertTrue(any(point[1] is not None for point in japan_series["Japan 30Y"]["data"]))
         self.assertTrue(any(point[1] is not None for point in japan_series["Japan 30Y−10Y (R1)"]["data"]))
         carry = next(json.loads(spec) for spec in specs if 'JPY 20-session appreciation (R2)' in spec)
-        self.assertEqual(len(carry["yAxis"]), 6)
-        self.assertEqual([series["name"] for series in carry["series"]],
+        self.assertEqual(len(carry["yAxis"]), 9)
+        self.assertEqual([series["name"] for series in carry["series"][:9]],
                          ["US 10Y - Japan 10Y", "USD/JPY (R1)", "JPY 20-session appreciation (R2)",
-                          "CFTC JPY speculative net (R3)", "TOPIX（东证指数） (R4)", "美元指数 DXY (R5)"])
-        self.assertEqual([series["yAxisIndex"] for series in carry["series"]], [0, 1, 2, 3, 4, 5])
+                          "CFTC JPY speculative net (R3)", "TOPIX（东证指数） (R4)", "美元指数 DXY (R5)",
+                          "JPY 3M", "JPY 10Y", "JPY 10Y - JPY 3M"])
+        self.assertEqual([series["yAxisIndex"] for series in carry["series"][:9]], [0, 1, 2, 3, 4, 5, 0, 0, 0])
         for index in (1, 2):
             self.assertIn("阳轴", carry["yAxis"][index]["name"])
             self.assertFalse(carry["yAxis"][index]["inverse"])
+        self.assertGreater(len(carry["series"]), 20)
+        for name in ("USD/JPY 20日实际波动率", "日本美债总持仓", "GPIF 美债票据与长期债券", "九家主要寿险 · 外债对冲率"):
+            self.assertIn(name, [series["name"] for series in carry["series"]])
         self.assertIn("https://finance.yahoo.com/quote/DX-Y.NYB/history/", source_rows[9])
         self.assertEqual(carry["series"][3]["type"], "bar")
         money = next(json.loads(spec) for spec in specs if '"M2 MoM"' in spec)

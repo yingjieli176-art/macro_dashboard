@@ -105,7 +105,7 @@ automatic data jobs never run the obsolete HSTECH code-wiring patch.
 | 4–6 | US VIX/VIXEQ, VIX term structure, SPX/RSP prices and drawdowns |
 | 7 | US credit risk, with company 5Y CDS and high-yield OAS |
 | 8 | S&P 500 / Nikkei 225 relative strength |
-| 9–10 | Japan 2Y/10Y/30Y, curve spreads, Nikkei/USDJPY and yen carry |
+| 9–10 | Japan 2Y/10Y/30Y, curve spreads, Nikkei/USDJPY and yen carry; chart 10 also includes JPY 3M, JPY 10Y and JPY 10Y - JPY 3M |
 | 11–12 | China yields and A-share broad indices |
 | 13–16 | Hong Kong monetary pulse, bank liquidity, funding and HKD overlays |
 | 17–20 | Precious metals, copper, copper treatment and refining charges, and crypto |
