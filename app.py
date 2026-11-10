@@ -141,7 +141,7 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-10-us-close-credit-r124"
+CHART_BUILD = "2026-11-10-chart-sources-r125"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -225,10 +225,6 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .dashboard-title { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.1rem; }
 .section-title { font-size: 1.18rem; font-weight: 680; letter-spacing: -0.012em; margin-top: 0.52rem; margin-bottom: 0.04rem; min-height: 26px; display: flex; align-items: center; color:#1f2937; }
 .section-description { color: #7b8493; font-size: 0.80rem; margin-bottom: 0.16rem; min-height: 17px; display: flex; align-items: center; }
-.mini-description { color: #4b5563; font-size: 0.78rem; line-height: 1.6; margin: 4px 0 8px; overflow-wrap: anywhere; }
-.parameter-note { margin: 3px 0; }
-.parameter-note b { color: #374151; font-weight: 600; }
-.parameter-context { color: #6b7280; font-size: 0.74rem; margin-top: 5px; }
 .source-text { color: #6b7280; font-size: 0.72rem; margin: 2px 0 6px; line-height: 1.35; }
 .source-text a { color: #6b7280; text-decoration: none !important; white-space: nowrap; }
 .source-text a:hover { color: #374151; text-decoration: underline !important; }
@@ -2037,44 +2033,6 @@ def build_fig16(date_range):
     )
 
 
-CRYPTO_MARKET_DESCRIPTION = (
-    '<div class="parameter-note"><b>BTC · USD：</b>比特币美元日线价格，代表比特币的市场价格表现；单位为美元。</div><div class="parameter-note"><b>ETH · USD · R1：</b>以太币美元日线价格，代表以太币的市场价格表现；单位为美元。</div><div class="parameter-note"><b>ETH/BTC 强弱 · R2：</b>同日以太币价格除以比特币价格，代表两者相对强弱；上升表示ETH相对BTC走强，不等于资金净流入。</div><div class="parameter-note"><b>BTC 30D 实际波动率 · R3：</b>比特币过去30日日收益率波动的年化估计，代表已经发生的价格波动程度；单位为%，与期权隐含的未来波动率不同。</div><div class="parameter-context">口径说明：30D实际波动率按日收益率估计并以365天年化；不足完整窗口时，至少使用20个有效样本。</div>'
-)
-
-
-PARAM_DESCRIPTIONS = [
-    '<div class="parameter-note"><b>IORB：</b>准备金余额利率，代表美联储支付给合资格银行的准备金利息，是美元短期利率的重要政策锚；单位为年化%。</div><div class="parameter-note"><b>ON RRP Rate：</b>隔夜逆回购工具利率，代表合资格机构把资金隔夜放入美联储该工具可获得的年化利率，为货币市场利率提供支撑。</div><div class="parameter-note"><b>EFFR：</b>有效联邦基金利率，代表银行等机构之间无抵押隔夜美元交易的实际融资价格；单位为年化%。</div><div class="parameter-note"><b>SOFR：</b>有担保隔夜融资利率，代表以美国国债作抵押借入隔夜美元的市场成本；单位为年化%，相对政策锚上升可提示回购融资压力。</div><div class="parameter-note"><b>SRF Rate：</b>美联储常备回购工具利率，采用FRED SRFTSYD公布的政策操作利率，以虚线显示；合资格对手方可抵押合格证券获取隔夜资金，为回购融资利率提供上方缓冲，并非所有市场参与者都能使用的硬上限；单位为年化%。</div><div class="parameter-note"><b>SRF实际用量 (R1)：</b>纽约联储当日常备回购操作实际接受金额，合计国债、机构债和机构MBS三类抵押品；2025年6月26日起合计上午、下午两场，单位为十亿美元，柱状图使用独立右轴。排除逆回购、期限回购和小额演练；当日各场结果不齐时留空，已公布零成交保留为0。属于当日成交总额，不是净投放或未偿余额。</div><div class="parameter-context">口径说明：ON RRP和SRF线为利率，SRF用量柱为成交金额；各自保留实际观测日，缺失不补零。</div>',
-    '<div class="parameter-note"><b>10年期名义收益率（DGS10）：</b>美国10年期名义国债收益率，代表美元长期无风险名义利率基准，综合反映实际利率、通胀补偿等定价；单位为年化%。</div><div class="parameter-note"><b>10年期实际收益率（TIPS · DFII10，右轴）：</b>美国10年期TIPS实际收益率，代表通胀保值国债的实际利率定价，上升表示实际贴现率抬高；单位为年化%。</div><div class="parameter-note"><b>10年期盈亏平衡通胀率（BEI · T10YIE，右轴）：</b>10年期盈亏平衡通胀率，等于同期限名义收益率减实际收益率，代表未来十年的平均通胀补偿，含风险和流动性溢价；并非当期CPI。</div><div class="parameter-context">口径说明：实际收益率和BEI使用右轴；BEI＝名义收益率−实际收益率，三项均以年化%显示。</div>',
-    '<div class="parameter-note"><b>3M：</b>美国3个月期国债收益率，代表短期美元国债的年化收益水平，对当前政策利率及近期政策预期较敏感。</div><div class="parameter-note"><b>2Y：</b>美国2年期国债收益率，代表未来两年利率路径的市场定价之一，同时包含期限溢价；不是两年期通胀率。</div><div class="parameter-note"><b>10Y：</b>美国10年期国债收益率，代表长期美元利率基准，反映长期实际利率、通胀补偿等因素；单位为年化%。</div><div class="parameter-note"><b>30Y：</b>美国30年期名义国债收益率，反映超长期美元利率定价；采用FRED DGS30原始日频观测，单位为年化%。</div><div class="parameter-note"><b>10Y−2Y (R1)：</b>10年减2年国债收益率之差，代表中长端收益率曲线斜率；负值为倒挂，上升为曲线变陡；单位为百分点。</div><div class="parameter-note"><b>30Y−10Y (R1)：</b>同一观测日30年减10年国债收益率之差，代表美债长端曲线斜率；上升为变陡、下降为变平，负值为倒挂；单位为百分点。任一腿缺失时不计算、不跨日补值。</div><div class="parameter-note"><b>NASDAQ-100 (R2)：</b>纳斯达克100指数已完成交易日的收盘值，独立右轴，单位为指数点。</div><div class="parameter-context">口径说明：国债收益率为年化%；两条期限利差为百分点。</div>',
-    '<div class="parameter-note"><b>Net Liquidity：</b>美元净流动性代理＝美联储总资产−TGA−ON RRP余额，辅助观察央行资产负债表的流动性变化；单位为万亿美元，不等于流入股市的资金。</div><div class="parameter-note"><b>Reserve Balances (R1)：</b>银行准备金余额，代表存款机构在美联储持有的准备金存量；单位为万亿美元，使用周频观测。</div><div class="parameter-note"><b>TGA (R1)：</b>美国财政部在美联储的账户余额，代表财政现金存量；在其他因素不变时，余额增加通常会抽走银行准备金；单位为万亿美元。</div><div class="parameter-note"><b>ON RRP (R2)：</b>美联储隔夜逆回购余额，代表合资格机构使用该工具存放的隔夜资金规模；单位为十亿美元，与第1图的ON RRP利率不同。</div><div class="parameter-context">口径说明：该代理不包含所有美元资金流动。TGA优先使用日频，不可用时回退到周频；各系列保留实际观测日。</div>',
-    '<div class="parameter-note"><b>M2 YoY：</b>港元广义货币M2同比增速，代表现金及相关存款规模相对上年同期的增长情况；单位为%，不等于股市资金净流入。</div><div class="parameter-note"><b>M2 MoM：</b>港元广义货币M2环比增速，以柱状图显示逐月增减，代表货币存量相对上个月的边际变化；单位为%，会受到季节性等因素影响。</div><div class="parameter-note"><b>Monetary Base YoY：</b>香港货币基础同比增速，代表负债证明书、政府流通纸币硬币、总结余及外汇基金票据债券合计规模的变化。</div><div class="parameter-note"><b>Tencent Price (R1)：</b>腾讯控股股价，代表该股票的市场定价及表现；单位为港元，价格变化本身不等于资金净流入量。</div><div class="parameter-note"><b>HKEX Price (R1)：</b>香港交易所股价，代表交易所公司的股票市场表现；单位为港元，不是港股市场成交额。</div><div class="parameter-note"><b>HSTECH Index (R2)：</b>恒生科技指数，代表其科技主题成分股的综合表现；单位为指数点。</div><div class="parameter-note"><b>HSI Index (R2)：</b>恒生指数，代表香港主要上市公司构成的指数表现；单位为指数点。</div><div class="parameter-context">口径说明：月度货币数据有公布时滞；股票和指数使用各自实际观测日。</div>',
-]
-
-
-def show_parameter_description(index): st.markdown(f'<div class="mini-description">{PARAM_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
-
-HK_PARAMETER_DESCRIPTIONS = [
-    '<div class="parameter-note"><b>M2 YoY：</b>港元广义货币M2同比增速，代表现金及相关存款规模相对上年同期的增长情况；单位为%，不等于股市资金净流入。</div><div class="parameter-note"><b>M2 MoM：</b>港元广义货币M2环比增速，以柱状图显示逐月增减，代表货币存量相对上个月的边际变化；单位为%，会受到季节性等因素影响。</div><div class="parameter-note"><b>Monetary Base YoY：</b>香港货币基础同比增速，代表负债证明书、政府流通纸币硬币、总结余及外汇基金票据债券合计规模的变化。</div><div class="parameter-note"><b>Tencent Price (R1)：</b>腾讯控股股价，代表该股票的市场定价及表现；单位为港元，价格变化本身不等于资金净流入量。</div><div class="parameter-note"><b>HKEX Price (R1)：</b>香港交易所股价，代表交易所公司的股票市场表现；单位为港元，不是港股市场成交额。</div><div class="parameter-note"><b>HSTECH Index (R2)：</b>恒生科技指数，代表其科技主题成分股的综合表现；单位为指数点。</div><div class="parameter-note"><b>HSI Index (R2)：</b>恒生指数，代表香港主要上市公司构成的指数表现；单位为指数点。</div><div class="parameter-context">口径说明：月度货币数据有公布时滞；股票和指数使用各自实际观测日。</div>',
-    '<div class="parameter-note"><b>Closing Aggregate Balance：</b>银行体系收市总结余，代表银行在金管局结算账户里的港元余额合计，观察银行间结算资金供应；单位为十亿港元，54.125即541.25亿港元。</div><div class="parameter-note"><b>Outstanding EFBN (R1)：</b>未偿还外汇基金票据及债券，代表该类港元证券的存量；本图按官方市值口径、以十亿港元显示，不是现金余额。</div><div class="parameter-note"><b>EFBN Held by Licensed Banks (R1)：</b>持牌银行持有的外汇基金票据及债券，代表银行持有的这一类证券资产规模，可配合总结余观察流动资产构成；单位为十亿港元。</div><div class="parameter-context">口径说明：总结余是结算资金存量，不等于客户存款或股市资金流量；变化需结合外汇交收、票据及贴现窗记录判断。各点以实际观测日为准。</div>',
-    '<div class="parameter-note"><b>O/N HIBOR：</b>隔夜香港银行同业拆息，代表银行借用一天港元的年化融资成本；上升可反映短端资金需求增加或供给收紧，不直接等于资金外流。</div><div class="parameter-note"><b>3M HIBOR：</b>3个月期香港银行同业拆息，代表锁定三个月港元融资的年化成本，可观察较持续的融资压力；单位为%。</div><div class="parameter-note"><b>HKMA Base Rate：</b>金管局基本利率，代表贴现窗融资的基准利率，反映政策及流动性工具的定价；不是商业银行客户实际贷款利率。</div><div class="parameter-note"><b>O/N−3M Spread (R1)：</b>隔夜减3个月HIBOR之差，代表即时融资与较长期融资的价格差；转正可提示短端需求集中，不能单独确认资金危机；单位为百分点。</div><div class="parameter-context">口径说明：HIBOR为银行公会定盘；长期历史以官方月末值补充，单位均为年化%。缺失日期留空。</div>',
-    '<div class="parameter-note"><b>USD/HKD：</b>美元兑港元汇率，代表1美元可兑换多少港元；数值上升为港元走弱，下降为港元走强。本图左轴反向，曲线向上表示港元走强。</div><div class="parameter-note"><b>Tencent Price (R1)：</b>腾讯控股股价，代表该股票的港元价格表现，用于对照汇率与股票走势。</div><div class="parameter-note"><b>HKEX Price (R1)：</b>香港交易所股价，代表交易所公司的港元价格表现，不能直接推算资金流向。</div><div class="parameter-note"><b>HSTECH Index (R2)：</b>恒生科技指数，代表科技主题成分股的综合表现；单位为指数点。</div><div class="parameter-note"><b>HSI Index (R2)：</b>恒生指数，代表香港主要上市公司的综合表现；单位为指数点。</div><div class="parameter-context">口径说明：7.75为强方兑换保证、7.80为区间中点、7.85为弱方兑换保证；红区7.84–7.85提示接近弱方，不代表已发生金管局兑换保证交易。</div>',
-]
-
-
-def show_hk_parameter_description(index):
-    st.markdown(f'<div class="mini-description">{HK_PARAMETER_DESCRIPTIONS[index]}</div>', unsafe_allow_html=True)
-
-
-US_EQUITY_RISK_DESCRIPTION = (
-    '<div class="parameter-note"><b>VIX：</b>标普500指数未来30个日历天（约1M）的年化隐含波动率指标，代表指数期权对未来波动幅度的定价，不代表涨跌方向。</div><div class="parameter-note"><b>VIXEQ：</b>标普500成分股篮子的市值加权30天隐含波动率指标，代表个股层面的预期波动水平。</div><div class="parameter-note"><b>S&amp;P 500 (R1)：</b>标普500指数，代表美国大盘股的综合价格表现；单位为指数点。</div><div class="parameter-note"><b>VIXEQ/VIX (R2)：</b>同日个股篮子与指数隐含波动率之比，代表个股预期波动相对指数的倍数差异；不是资金杠杆倍数。</div><div class="parameter-note"><b>COR3M (R3)：</b>3个月期隐含相关性指数，代表较长观察期内成分股的预期共同波动程度。</div><div class="parameter-context">口径说明：比值只使用同日有效观测；COR3M为指数刻度。VIXEQ和COR早期数据包含官方回溯序列。</div>'
-)
-
-
-PRECIOUS_METALS_DESCRIPTION = (
-    '<div class="parameter-note"><b>Gold：</b>COMEX黄金期货连续合约日线价格，代表该期货市场的黄金定价；单位为美元/金衡盎司，与现货报价口径不同。</div><div class="parameter-note"><b>Silver (R1)：</b>COMEX白银期货连续合约日线价格，代表该期货市场的白银定价；单位为美元/金衡盎司。</div><div class="parameter-note"><b>Gold/Silver Ratio (R2)：</b>同日黄金价格除以白银价格，代表一盎司黄金相当于多少盎司白银；上升表示黄金相对白银走强。</div><div class="parameter-note"><b>Gold Volatility · GVZ (R3)：</b>黄金ETF波动率指数，代表GLD期权隐含的约未来30天年化波动水平，衡量预期波动幅度，不直接预测金价方向。</div><div class="parameter-context">口径说明：连续期货价格可能受换月影响；金银比仅使用同日有效价格。</div>'
-)
-
-
 compact_mode = False
 
 def _prepare_chart_for_client_ranges(fig, element_key, mode=None):
@@ -2361,17 +2319,14 @@ def _show_standard_chart_health(base_fig, element_key, selected_range, reused):
             st.warning("以下序列的观测日期超前，请检查源数据：" + "、".join(health["future_names"]))
 
 
-def _render_standard_macro_chart(title, description, range_key, builder, sources, desc_index, prebuilt_fig=None):
+def _render_standard_macro_chart(title, description, range_key, builder, sources, prebuilt_fig=None):
     st.markdown(title, unsafe_allow_html=True)
     st.markdown(description, unsafe_allow_html=True)
-    st.caption(f"图表版本 {CHART_BUILD} · X/Y 自适应缩放")
     base_fig = prebuilt_fig if prebuilt_fig is not None else builder("5Y")
     _render_adaptive_macro_figure(base_fig, range_key, standard=True)
     _show_data_quality_notes(base_fig)
     if range_key == "normal_corridor_range":
-        st.caption("深青色实心柱＝SRF实际用量（右轴，十亿美元）；其余线条＝年化利率（左轴，%）。零成交不会人为画成正值。")
         st.caption(usage_caption())
-    show_parameter_description(desc_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -2391,7 +2346,6 @@ def render_macro_chart_1(prebuilt_fig=None):
             ("SRF Rate (SRFTSYD)", "https://fred.stlouisfed.org/series/SRFTSYD"),
             ("NY Fed · SRF actual accepted amounts", "https://www.newyorkfed.org/markets/desk-operations/repo"),
         ],
-        0,
         prebuilt_fig=prebuilt_fig,
     )
 
@@ -2408,7 +2362,6 @@ def render_macro_chart_2(prebuilt_fig=None):
             ("10年期实际收益率（TIPS · DFII10）", "https://fred.stlouisfed.org/series/DFII10"),
             ("10年期盈亏平衡通胀率（BEI · T10YIE）", "https://fred.stlouisfed.org/series/T10YIE"),
         ],
-        1,
         prebuilt_fig=prebuilt_fig,
     )
 
@@ -2425,11 +2378,8 @@ def render_macro_chart_3(prebuilt_fig=None):
             ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"),
             ("10年期名义收益率（DGS10）", "https://fred.stlouisfed.org/series/DGS10"),
             ("30Y Treasury (DGS30)", "https://fred.stlouisfed.org/series/DGS30"),
-            ("10Y−2Y Spread (T10Y2Y)", "https://fred.stlouisfed.org/series/T10Y2Y"),
-            ("30Y−10Y Spread · DGS30 minus DGS10", "https://fred.stlouisfed.org/series/DGS30"),
             ("NASDAQ-100 (^NDX)", "https://finance.yahoo.com/quote/%5ENDX/history/"),
         ],
-        2,
         prebuilt_fig=prebuilt_fig,
     )
 
@@ -2445,19 +2395,20 @@ def render_macro_chart_4(prebuilt_fig=None):
         "Chart 4", build_sp500_nikkei_ratio_figure,
     )
     _render_adaptive_macro_figure(base_fig, "sp500_nikkei_ratio")
-    st.markdown(
-        '<div class="mini-description"><div class="parameter-note"><b>比值（左轴）：</b>标普500指数点位 ÷ 日经225指数点位。上升表示标普500相对走强，下降表示日经225相对走强。</div>'
-        '<div class="parameter-note"><b>分子（右侧Y轴一）：</b>美国标普500（S&amp;P 500）市值加权价格指数；每日收盘点位，单位为点，不做归一化。</div>'
-        '<div class="parameter-note"><b>分母（右侧Y轴二）：</b>日本日经225（Nikkei 225）价格加权指数，包含东京证券交易所Prime市场225只股票；每日收盘点位，单位为点，不是日元金额。</div>'
-        '<div class="parameter-context">口径：仅使用两地均有有效收盘的共同日期；不对休市日以前值填充。指数收盘值四舍五入为整数；标普500与日经225分别使用独立Y轴显示真实点位，比值使用第三个Y轴显示。两地同日收盘发生在不同时刻；比值没有换算汇率，也不含股息再投资，不能直接解释为美元投资回报或领先关系。</div></div>',
-        unsafe_allow_html=True,
-    )
     add_sources([
         ("Yahoo Finance · S&P 500 (^GSPC)", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
         ("Yahoo Finance · Nikkei 225 (^N225)", "https://finance.yahoo.com/quote/%5EN225/history/"),
         ("日经指数官方 · 日经225定义", "https://indexes.nikkei.co.jp/en/nkave/index/profile?idx=nk225"),
     ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+
+HK_EQUITY_SOURCES = [
+    ("Yahoo Finance · 腾讯 (0700.HK)", "https://hk.finance.yahoo.com/quote/0700.HK/history/"),
+    ("Yahoo Finance · 港交所 (0388.HK)", "https://hk.finance.yahoo.com/quote/0388.HK/history/"),
+    ("恒生指数公司 · 恒生科技指数", "https://www.hsi.com.hk/eng/indexes/all-indexes/hstech"),
+    ("恒生指数公司 · 恒生指数", "https://www.hsi.com.hk/eng/indexes/all-indexes/hsi"),
+]
 
 
 HK_CHART_CONFIGS = [
@@ -2467,9 +2418,8 @@ HK_CHART_CONFIGS = [
         "hk_5_range",
         [
             ("HKMA Monetary Statistics", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics/"),
-            ("Hang Seng Indexes · HSTECH", "https://www.hsi.com.hk/eng/indexes/all-indexes/hstech"),
-            ("Hang Seng Indexes · HSI", "https://www.hsi.com.hk/eng/indexes/all-indexes/hsi"),
-            ("Yahoo Finance Market History", "https://finance.yahoo.com/"),
+            ("HKMA Monetary Base", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod/"),
+            *HK_EQUITY_SOURCES,
         ],
     ),
     (
@@ -2486,8 +2436,8 @@ HK_CHART_CONFIGS = [
         '<div class="section-description">O/N HIBOR · 3M HIBOR · HKMA Base Rate · O/N−3M Spread (R1)</div>',
         "hk_7_range",
         [
-            ("HKMA Open API", "https://apidocs.hkma.gov.hk/"),
-            ("HKAB 当日 HIBOR 定盘", "https://www.hkab.org.hk/en/rates/hibor"),
+            ("HKMA · HIBOR 日线", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/er-ir/hk-interbank-ir-daily/"),
+            ("HKAB 当日 HIBOR 定盘", "https://www.hkab.org.hk/en/home"),
             ("HKMA Base Rate", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/disc-win-liquid-adj-win-rates-endperiod/"),
         ],
     ),
@@ -2497,9 +2447,8 @@ HK_CHART_CONFIGS = [
         "hk_8_range",
         [
             ("HKMA Linked Exchange Rate System", "https://www.hkma.gov.hk/eng/key-functions/money/linked-exchange-rate-system/"),
-            ("Yahoo Finance Market History", "https://finance.yahoo.com/"),
-            ("Hang Seng Indexes · HSTECH", "https://www.hsi.com.hk/eng/indexes/all-indexes/hstech"),
-            ("Hang Seng Indexes · HSI", "https://www.hsi.com.hk/eng/indexes/all-indexes/hsi"),
+            ("Yahoo Finance · USD/HKD 日线", "https://finance.yahoo.com/quote/HKD%3DX/history/"),
+            *HK_EQUITY_SOURCES,
         ],
     ),
 ]
@@ -2511,7 +2460,6 @@ def _render_hk_macro_chart(hk_index, prebuilt_fig=None):
     st.markdown(description, unsafe_allow_html=True)
     fig = prebuilt_fig if prebuilt_fig is not None else _safe_hk_bundle(_macro_snapshot_revision())[hk_index]
     _render_adaptive_macro_figure(fig, range_key)
-    show_hk_parameter_description(hk_index)
     add_sources(sources)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -2559,13 +2507,12 @@ def _build_equity_drawdown():
 @st.fragment(key="equity_drawdown_viewport")
 def _render_equity_drawdown():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["us_drawdown"]}. SPX / RSP · 价格走势与区间高点</div>', unsafe_allow_html=True)
-    st.caption("实线为实际收盘走势；点线“高”标记当前坐标时间内的最高收盘价和日期，虚线“现”为最新收盘价。切换时间或拖动滑块会自动重算区间高点。SPX左轴（点），RSP右轴（美元）；异色虚线为独立的“回撤比例”日线参数，使用最右侧百分比轴；点击图例可单独开关。")
+    st.caption("SPX 按点、RSP 按美元显示。回撤以所选区间最高收盘价为基准。")
     figure = _build_equity_drawdown()
     _render_adaptive_macro_figure(figure, "us_equity_drawdown", standard=True)
     summaries = (figure.layout.meta or {}).get("price_summary", [])
     for row in summaries:
         st.caption(f'{row["symbol"]} 最新收盘：{row["close"]:,.2f}（{row["date"]}）')
-    st.caption("同图回撤曲线以所选区间最高收盘日为起点（0%），固定该高点为基准，逐日计算（当日收盘÷区间最高收盘−1）×100%，一直画到最新收盘；高点前不画线。价格与回撤共用同一日期轴，切换周期或拖动左右滑块，会自动重选高点、重算回撤并同步显示所选日期。“回撤比例”作为独立日线持续显示各交易日从高点起的回撤变化（下跌为负值），在图例可单独开关；图底另列最新回撤幅度，超过选区前高时显示高出比例。SPX以点计、RSP以美元计，使用独立坐标轴；均为已完成交易日收盘，非实时行情。RSP已处理拆股，不含股息再投资，存在费用及跟踪误差。")
     add_sources([
         ("SPX 日线价格", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
         ("RSP 日线价格", "https://finance.yahoo.com/quote/RSP/history/"),
@@ -2591,12 +2538,11 @@ def _build_china_drawdown():
 @st.fragment(key="china_equity_drawdown_viewport")
 def _render_china_drawdown():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["cn_drawdown"]}. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势</div>', unsafe_allow_html=True)
-    st.caption("实线为三只指数的实际收盘点位（左轴），异色虚线为独立的“回撤比例”日线参数（右轴百分比），可在图例单独开关。点线“高”为当前坐标时间内的最高收盘价和日期，随时间切换、滑块缩放自动更新；虚线“现”保持最新收盘价。")
+    st.caption("价格按指数点显示。回撤以各指数在所选区间的最高收盘价为基准。")
     figure = _build_china_drawdown()
     _render_adaptive_macro_figure(figure, "china_equity_drawdown", standard=True)
     for row in (figure.layout.meta or {}).get("price_summary", []):
         st.caption(f'{row["name"]}（{row["symbol"]}）最新收盘：{row["close"]:,.2f}（{row["date"]}）')
-    st.caption("同图回撤曲线以各指数所选区间最高收盘日为起点（0%），固定该高点为基准，逐日计算（当日收盘÷区间最高收盘−1）×100%，一直画到最新收盘；高点前不画线。价格与回撤共用同一日期轴，切换周期或拖动左右滑块，会自动重选高点、重算回撤并同步显示所选日期。“回撤比例”作为独立日线持续显示各交易日从高点起的回撤变化（下跌为负值），在图例可单独开关；图底另列最新回撤幅度，超过选区前高时显示高出比例。中证官网已完成交易日价格指数，不含股息再投资；发布前数据为官方回溯数据。最新日期以观测日为准。")
     add_sources([(name, f"https://www.csindex.com.cn/zh-CN/indices/index-detail/{code}")
                  for code, name in (("000300", "沪深300"), ("000852", "中证1000"), ("932000", "中证2000"))])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
@@ -2612,7 +2558,6 @@ def render_macro_chart_9(prebuilt_fig=None):
     render_latest_vix_quote()
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig9("5Y")
     _render_adaptive_macro_figure(base_fig, "us_equity_risk")
-    st.markdown(f'<div class="mini-description">{US_EQUITY_RISK_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Cboe VIX", "https://www.cboe.com/tradable-products/vix/"),
         ("Cboe VIXEQ / Dispersion", "https://www.cboe.com/us/indices/dispersion/"),
@@ -2629,12 +2574,10 @@ def render_macro_chart_10(prebuilt_fig=None):
         '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX/VIX3M · 9D/30D · SPX P/C（共用 R1） · SKEW (R2) · VVIX (R3) · VVIX/VIX (R4)</div>',
         unsafe_allow_html=True,
     )
-    st.caption("VIX反映未来30个日历天（约1个月）的年化隐含波动率，正式代码仍是VIX；VIX3M约为3个月。上方1M、3M等按钮只控制历史显示范围，不改变指数期限。")
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 10", lambda: _cached_macro_figure(10, _macro_snapshot_revision(), CHART_BUILD),
     )
     _render_adaptive_macro_figure(base_fig, "vix_term_structure")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>VIX：</b>标普500指数未来30个日历天（约1M）的年化隐含波动率指标，代表近期波动风险的期权定价。</div><div class="parameter-note"><b>VIX3M：</b>标普500指数约未来3个月的年化隐含波动率指标，代表较长期波动风险的期权定价。</div><div class="parameter-note"><b>VIX/VIX3M (R1)：</b>同日30天隐含波动率÷约3个月隐含波动率；大于1表示近端隐含波动率更高，单位为倍。</div><div class="parameter-note"><b>VVIX/VIX (R4)：</b>同日Cboe VVIX指数÷VIX指数，表示VVIX相对VIX的指数点比值，单位为倍；两个指数衡量对象不同，该比值不代表涨跌概率。</div><div class="parameter-note"><b>9D/30D (R1)：</b>同日Cboe VIX9D÷VIX，即SPX约9天与30天年化隐含波动率的比值；大于1表示超短期隐含波动率更高，单位为倍。</div><div class="parameter-note"><b>SPX P/C (R1)：</b>Cboe SPX+SPXW当日Put成交量÷Call成交量，含周度期权；保留官方公布的比值精度。成交量包含买卖双方，不直接等于净看空仓位，也不是持仓量比。</div><div class="parameter-note"><b>SKEW (R2)：</b>Cboe SKEW指数，反映标普500期权对尾部风险的定价；指数点不是暴跌概率，不能直接解释为未来跌幅。</div><div class="parameter-note"><b>VVIX (R3)：</b>Cboe VIX预期波动率指数，即“恐慌指数的恐慌指数”，反映VIX自身的预期波动。</div><div class="parameter-context">口径说明：三项指数比值只使用同日有效观测，分母缺失或为0时不计算；VIX和VIX3M原始指数在左轴，VIX/VIX3M、9D/30D与SPX P/C共用右轴R1，SKEW和VVIX分别用R2、R3，VVIX/VIX用右轴R4。不跨日补值。</div></div>', unsafe_allow_html=True)
     add_sources([
         ("FRED · VIX (VIXCLS)", "https://fred.stlouisfed.org/series/VIXCLS"),
         ("FRED · VIX3M (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),
@@ -2657,7 +2600,6 @@ def render_macro_chart_11(prebuilt_fig=None):
         "Chart 11", lambda: _cached_macro_figure(11, _macro_snapshot_revision(), CHART_BUILD),
     )
     _render_adaptive_macro_figure(base_fig, "precious_metals")
-    st.markdown(f'<div class="mini-description">{PRECIOUS_METALS_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Yahoo Finance · Gold Futures GC=F", "https://finance.yahoo.com/quote/GC=F/history/"),
         ("Yahoo Finance · Silver Futures SI=F", "https://finance.yahoo.com/quote/SI=F/history/"),
@@ -2678,7 +2620,6 @@ def render_macro_chart_12(prebuilt_fig=None):
         "Chart 12", lambda: _cached_macro_figure(12, _macro_snapshot_revision(), CHART_BUILD),
     )
     _render_adaptive_macro_figure(base_fig, "crypto_market")
-    st.markdown(f'<div class="mini-description">{CRYPTO_MARKET_DESCRIPTION}</div>', unsafe_allow_html=True)
     add_sources([
         ("Yahoo Finance · Bitcoin BTC-USD", "https://finance.yahoo.com/quote/BTC-USD/history/"),
         ("Yahoo Finance · Ethereum ETH-USD", "https://finance.yahoo.com/quote/ETH-USD/history/"),
@@ -2695,7 +2636,6 @@ def render_macro_chart_13(prebuilt_fig=None):
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig13("5Y")
     _render_adaptive_macro_figure(base_fig, "copper_flow")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>COMEX 库存：</b>COMEX仓库铜库存，代表美国该交割体系内报告的铜存量；单位为千公吨，不是全球铜总库存。</div><div class="parameter-note"><b>LME 库存：</b>LME仓库铜库存，代表该交易所仓库体系内报告的铜存量；单位为千公吨，可与COMEX对照观察库存地域分布。</div><div class="parameter-note"><b>LME 3M 铜价 (R1)：</b>LME三个月期铜价，代表该市场三个月期限的铜定价；单位为美元/公吨。</div><div class="parameter-note"><b>COMEX HG 换算价 (R1)：</b>COMEX铜期货价格换算为美元/公吨，代表统一重量单位后的美国期货价格，便于与LME对照。</div><div class="parameter-note"><b>COMEX−LME 3M 价差 (R2)：</b>同日COMEX换算价减LME三个月铜价，代表两地铜价差；为正表示COMEX较贵。期限、交割及费用不同，不能直接视为无风险套利利润。</div><div class="parameter-note"><b>WTI 原油 (R3)：</b>NYMEX WTI近月期货代理（CL=F）的已完成日线收盘价，单位为美元/桶；换月会影响价格。</div><div class="parameter-note"><b>铜油比 (R4)：</b>同日COMEX铜价（美元/磅）×2204.62262185÷WTI（美元/桶），单位为桶/公吨；表示一公吨铜相当于多少桶原油，仅在两者均有有效收盘价时计算，不跨日补值。</div><div class="parameter-context">口径说明：各序列保留原始单位和实际观测日；库存一增一减需结合交割、运输及需求判断。</div></div>', unsafe_allow_html=True)
     add_sources([
         ("CME · COMEX Warehouse & Depository Stocks", "https://www.cmegroup.com/solutions/clearing/operations-and-deliveries/nymex-delivery-notices.html"),
         ("CME · Copper Stocks 原始日报", "https://www.cmegroup.com/delivery_reports/Copper_Stocks.xls"),
@@ -2718,7 +2658,6 @@ def render_copper_tcrc():
     )
     figure = _safe_macro_build("TC/RC", lambda: build_copper_tcrc_figure("5Y"))
     _render_adaptive_macro_figure(figure, "copper_tcrc")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>TC 粗炼费 / RC 精炼费（右轴）：</b>Mysteel进口干净铜精矿现货周指数，分别使用美元/干吨和美分/磅的独立坐标；RC按发布方方法论取TC数值的十分之一，并非另行采样的独立报价。允许负值，不与年度长单基准混用。TC走低可反映原料竞争加剧，需结合冶炼产能、硫酸等副产品收入判断。</div></div>', unsafe_allow_html=True)
     add_sources([
         ("Mysteel · 铜精矿TC/RC指数方法论", COPPER_TCRC_METHOD_URL),
         ("Mysteel · 2026-10-30现货TC指数原始发布", "https://youse.mysteel.com/a/26110208/7DCD2C67E671022B.html"),
@@ -2736,7 +2675,6 @@ def render_macro_chart_14(prebuilt_fig=None):
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 14", lambda: _cached_macro_figure(14, _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(base_fig, "china_rates")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>China 2Y：</b>中国2年期国债收益率，代表人民币较短期限国债的市场利率水平；单位为年化%。</div><div class="parameter-note"><b>China 10Y：</b>中国10年期国债收益率，代表人民币长期国债利率基准；单位为年化%。</div><div class="parameter-note"><b>US 5Y Real · TIPS：</b>美国5年期TIPS实际收益率，代表美元中期实际利率，用于跨市场对照；与中国名义国债收益率的差不能直接当作可交易套息收益。</div><div class="parameter-note"><b>China 10Y−2Y (R1)：</b>中国10年减2年国债收益率之差，代表中国国债曲线斜率；上升为变陡，负值为倒挂；单位为百分点。</div><div class="parameter-context">口径说明：收益率单位为年化%，曲线利差单位为百分点；各曲线保留实际观测日。</div></div>', unsafe_allow_html=True)
     add_sources([
         ("Eastmoney · China Treasury Yield History", "https://data.eastmoney.com/cjsj/zmgzsyl.html"),
         ("FRED · US 5Y TIPS Real Yield (DFII5)", "https://fred.stlouisfed.org/series/DFII5"),
@@ -2754,7 +2692,6 @@ def render_macro_chart_15(prebuilt_fig=None):
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 15", lambda: _cached_macro_figure(15, _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(base_fig, "japan_rates")
-    st.markdown('<div class="mini-description"><div class="parameter-note"><b>Japan 2Y：</b>日本2年期国债收益率，代表日元较短期限国债的市场利率水平；单位为年化%。</div><div class="parameter-note"><b>Japan 10Y：</b>日本10年期国债收益率，代表日元长期国债利率基准；单位为年化%。</div><div class="parameter-note"><b>Japan 30Y：</b>日本30年期国债收益率，代表日元超长期国债利率；单位为年化%。</div><div class="parameter-note"><b>Japan 30Y−10Y (R1)：</b>同一观测日30年减10年国债收益率之差，代表日本长端曲线斜率；单位为百分点，任一腿缺失则不计算。</div><div class="parameter-note"><b>Japan 10Y−2Y (R1)：</b>日本10年减2年国债收益率之差，代表日本国债曲线斜率；上升为变陡，负值为倒挂；单位为百分点。</div><div class="parameter-note"><b>Nikkei 225 (R2)：</b>日经225指数，代表其日本上市公司成分股的综合表现；单位为指数点，使用已完成交易日的收盘值。</div><div class="parameter-note"><b>USD/JPY (R3)：</b>美元兑日元汇率，代表1美元可兑换多少日元；数值上升为日元走弱，下降为日元走强，不是日元综合指数。</div><div class="parameter-context">口径说明：USD/JPY使用已完成交易日的日线价格；盘中报价不作为完成日线。R1为百分点，R2为指数点，R3为日元/美元。</div></div>', unsafe_allow_html=True)
     add_sources([
         ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
         ("Yahoo Finance · Nikkei 225", "https://finance.yahoo.com/quote/%5EN225/history/"),
@@ -2773,26 +2710,6 @@ def render_macro_chart_16(prebuilt_fig=None):
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 18", lambda: _cached_macro_figure(16, _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(base_fig, "yen_carry")
-    st.markdown(
-        '<div class="mini-description"><div class="parameter-note"><b>US 10Y - Japan 10Y：</b>'
-        '美国10年期国债收益率减日本10年期国债收益率，单位为百分点；同日均有观测才计算。'
-        '10年期利差反映中长期利率预期、期限溢价及国债供需的综合差异；它不等于日元隔夜融资成本或可实现套息收益。</div>'
-        '<div class="parameter-note"><b>USD/JPY (R1)：</b>1美元兑换的日元数；上升表示日元贬值，下降表示日元升值。</div>'
-        '<div class="parameter-note"><b>JPY 20-session appreciation (R2)：</b>'
-        '（20个有效交易日之前的USD/JPY ÷ 当前USD/JPY − 1）×100%；正值表示日元升值，'
-        '借日元者用美元偿还本金的成本上升。按已完成日线计算，先计算完整窗口再截取显示区间。</div>'
-        '<div class="parameter-note"><b>CFTC JPY speculative net (R3)：</b>'
-        'CFTC日元期货非商业多头减非商业空头，代码097741，采用Legacy Futures Only口径，单位为万张。'
-        '正值为净多日元，负值为净空日元；由负值向零收缩可辅助观察空头回补压力，也可能包含新增多头。'
-        '以零线为基准的周度柱状图，按持仓截至日标点，通常为周二、周五公布；不向日频填充。</div>'
-        '<div class="parameter-note"><b>TOPIX（东证指数，R4）：</b>'
-        '以自由流通市值加权的日本股市宽基指数。使用日本交易日的原始收盘点位，单位为点。</div>'
-        '<div class="parameter-context">读图：10年期利差收窄，同时USD/JPY下跌、日元升值幅度转正或扩大，'
-        '可能意味着中长期美元利率优势减弱且日元走强；但10年期利差不能直接代理短期套息融资条件。年度利差与20交易日汇率变动期限不同，不能直接相减。'
-        'CFTC只覆盖报告内日元期货投机仓位，不能等同全部跨境套息仓位或平仓规模。'
-        '本图不测量含杠杆净收益；不补齐不同市场假日缺值。</div></div>',
-        unsafe_allow_html=True,
-    )
     add_sources([
         ("FRED · US 10Y Treasury (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
         ("CFTC · Commitments of Traders", "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"),
@@ -3041,21 +2958,11 @@ def render_nvidia_cds():
     st.dataframe(summary, hide_index=True, width="stretch",
                  column_config={"最新CDS（bp）": st.column_config.NumberColumn(format="%.2f"),
                                 "源日历覆盖率（%）": st.column_config.NumberColumn(format="%.1f%%")})
-    st.caption("口径：谷歌使用母公司Alphabet的5Y CDS。覆盖率＝有效观测日数÷公开源日历天数，空缺可能来自无成交、不可计价或披露范围限制，不能仅据此认定当天没有交易。")
-    st.caption(f"来源：Open-Sourced Rates Observatory, irates.today。数据日历截至 {payload.get('source_asof', '未取得')}；各公司的实际最新观测日见表。日度成交汇总，不是实时买卖报价；没有可用计价观测的日期留空，圆点表示实际观测，可点击图例比较公司。")
-    st.caption("五家公司均显示5Y CDS；5Y为剩余期限4.4–5.6年的成交分组，单位bp（100 bp＝1%/年）。缺少计价观测的日期保持空缺。")
-    st.markdown('<div class="mini-description">'
-        '<div class="parameter-note"><b>HY OAS：</b>ICE BofA 美国高收益债指数的期权调整利差，相对于美国国债即期曲线，采用 FRED 日收盘观测，右轴按百分比显示。</div>'
-        '<div class="parameter-note"><b>CDS与资本开支：</b>CDS走阔可作为融资压力的早期观察信号，需与资本开支指引、经营现金流和债务到期安排交叉核对；不能仅凭利差上升判断公司已削减开支。</div>'
-        '<div class="parameter-note"><b>美债期限溢价与美联储：</b>长期美债收益率可分解为预期短期利率的平均值与期限溢价。期限溢价变化还可能反映通胀不确定性、债券供给和久期风险；判断政策动作，应同时看联邦基金期货或OIS中的利率路径预期。</div>'
-        '<div class="parameter-note"><b>日经、韩国股市与美硬件：</b>可观察亚洲时段的硬件情绪，但大盘指数包含其他行业，也可能在消化前一日美股行情。应结合半导体指数、相关个股及美国盘前或期货，统一时区与币种后检验领先关系。</div>'
-        '<div class="parameter-context">以上为联动观察假设，尚未完成针对这些曲线的领先滞后检验，不代表已确认的预测规律或固定领先天数。</div></div>', unsafe_allow_html=True)
-    add_sources([("Open-Sourced Rates Observatory · AI capex", "https://irates.today/capex.html"),
-                 ("CDS历史聚合数据", "https://irates.today/chart_data.json"),
-                 ("ICE Data Indices via FRED · HY OAS (BAMLH0A0HYM2)", _ai_credit.HY_OAS_URL),
-                 ("数据方法与使用说明", "https://irates.today/about.html"),
-                 ("纽约联储 · 美债期限溢价", "https://www.newyorkfed.org/research/data_indicators/term-premia-tabs"),
-                 ("OFR · CDS价格发现研究", "https://www.financialresearch.gov/working-papers/2024/07/17/do-credit-default-swaps-still-lead/")])
+    add_sources([
+        ("Open-Sourced Rates Observatory · CDS 历史数据", _ai_credit.SOURCE_URL),
+        ("CDS 统计方法", _ai_credit.METHOD_URL),
+        ("ICE Data Indices via FRED · HY OAS (BAMLH0A0HYM2)", _ai_credit.HY_OAS_URL),
+    ])
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 

@@ -55,6 +55,15 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertIn('9. Japan Government Yields', title_text)
         self.assertIn('10. 日元套息分析', title_text)
         self.assertIn('11. China Government Yields', title_text)
+        source_rows = [element.value for element in instance.markdown
+                       if element.value.startswith('<div class="source-text">Source: ')]
+        self.assertEqual(len(source_rows), 20)
+        for url in ("https://irates.today/chart_data.json", "https://irates.today/capex.html#method",
+                    "https://fred.stlouisfed.org/series/BAMLH0A0HYM2"):
+            self.assertIn(url, source_rows[6])
+        self.assertNotIn("term-premia-tabs", source_rows[6])
+        self.assertNotIn('class="mini-description"', title_text)
+        self.assertFalse(any(caption.value.startswith("来源：Open-Sourced") for caption in instance.caption))
         self.assertEqual([control.key for control in instance.get("button_group")[6:9]],
                          ["nvidia_cds_time_window", "sp500_nikkei_ratio_time_window", "japan_rates_time_window"])
         specs = chart_specs(instance)

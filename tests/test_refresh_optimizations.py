@@ -125,15 +125,11 @@ class RefreshOptimizationTests(unittest.TestCase):
                 "_safe_hk_bundle": builder,
                 "_macro_snapshot_revision": lambda: "snap",
                 "_render_adaptive_macro_figure": Mock(),
-                "show_hk_parameter_description": Mock(),
                 "add_sources": Mock(),
                 "_safe_macro_build": Mock(side_effect=lambda label, callback: callback()),
                 "_cached_macro_figure": Mock(return_value="rebuilt"),
                 "CHART_BUILD": "perf-test",
                 "MACRO_DISPLAY_NUMBER": {11: 16, 12: 18},
-                "US_EQUITY_RISK_DESCRIPTION": "",
-                "PRECIOUS_METALS_DESCRIPTION": "",
-                "CRYPTO_MARKET_DESCRIPTION": "",
             },
         )
         return ns, state, chart, builder
