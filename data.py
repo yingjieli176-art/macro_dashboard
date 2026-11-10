@@ -143,7 +143,7 @@ def _fetch_fred_api(series_id):
 
 def _fetch_alfred_graph(series_id):
     response = http_get(ALFRED_GRAPH_URL, params={"id": series_id},
-                        headers={"User-Agent": "MacroDashboard/1.0"}, timeout=(2.5, 5.0))
+                        headers={"User-Agent": "MacroDashboard/1.0"}, timeout=(8, 8))
     response.raise_for_status()
     raw = pd.read_csv(StringIO(response.text))
     vintage_columns = [column for column in raw.columns if re.fullmatch(series_id + r"_\d{8}", column)]
@@ -158,7 +158,8 @@ def _fetch_alfred_graph(series_id):
 def get_hy_oas():
     """Read validated ICE observations without persisting the licensed feed."""
     series_id = "BAMLH0A0HYM2"
-    for fetcher in (_fetch_fred_graph, _fetch_fred_api, _fetch_alfred_graph):
+    for fetcher in (lambda sid: _fetch_fred_graph(sid, timeout=(8, 8)),
+                    _fetch_fred_api, _fetch_alfred_graph):
         try:
             frame = validate_observations(fetcher(series_id), series_id)
             return frame.rename(columns={series_id: "oas_pct"})
