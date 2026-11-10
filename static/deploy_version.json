@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-10-yen-carry-dxy-r127",
+  "release": "2026-11-10-yen-tic-volatility-r128",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -66,6 +66,7 @@
     "treasury_curve_with_nasdaq_100_daily_closes",
     "yen_carry_explicit_us_and_japan_10y_label",
     "ai_credit_with_fred_high_yield_oas_on_independent_percent_axis",
-    "us_credit_chart_before_us_japan_relative_strength"
+    "us_credit_chart_before_us_japan_relative_strength",
+    "yen_carry_realized_volatility_japan_tic_and_institutional_disclosures"
   ]
 }

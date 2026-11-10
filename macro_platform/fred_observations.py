@@ -5,6 +5,9 @@ import pandas as pd
 
 
 RATE_LIMITS = {sid: (-10, 30) for sid in ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR", "SRFTSYD")}
+TIC_JAPAN_SERIES = (
+    "FORTREASPOS42609", "FORLTTREASPOS42609", "FORLTTREASNET42609", "FORLTTREASVALCHG42609",
+)
 
 
 def validate_observations(frame, series_id, *, date_column="observation_date",

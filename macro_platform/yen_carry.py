@@ -9,6 +9,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis
+from macro_platform.fred_observations import TIC_JAPAN_SERIES
 
 SPREAD_NAME = "US 10Y - Japan 10Y"
 FX_NAME = "USD/JPY (R1)"
@@ -49,11 +50,78 @@ def carry_observations(us, japan, fx):
     rates = _observations(us, "DGS10").merge(
         _observations(japan, "japan_10y"), on="observation_date", how="outer").sort_values("observation_date")
     rates["spread_pp"] = rates.DGS10 - rates.japan_10y
-    exchange = _observations(fx, "usd_jpy_close")
-    exchange.loc[exchange.usd_jpy_close.le(0), "usd_jpy_close"] = np.nan
+    exchange = _fx_observations(fx)
     valid = exchange.usd_jpy_close.dropna()
     exchange["yen_appreciation_pct"] = (valid.shift(20) / valid - 1) * 100
     return rates, exchange
+
+
+def _fx_observations(fx):
+    exchange = _observations(fx, "usd_jpy_close")
+    exchange.loc[exchange.usd_jpy_close.le(0), "usd_jpy_close"] = np.nan
+    return exchange
+
+
+def build_yen_volatility_figure(date_range, *, fx):
+    """Use completed FX closes and full rolling windows before viewport slicing."""
+    exchange = _fx_observations(fx)
+    returns = np.log(exchange.usd_jpy_close.dropna().astype(float)).diff()
+    fig = go.Figure()
+    missing = []
+    for sessions, color in ((20, "#a61e63"), (60, "#4e6cf5")):
+        name = f"USD/JPY {sessions}日实际波动率"
+        vol = returns.rolling(sessions).std() * np.sqrt(252) * 100
+        if not vol.notna().any():
+            missing.append(name)
+            continue
+        fig.add_scatter(x=exchange.observation_date, y=vol.reindex(exchange.index),
+                        name=name, mode="lines", connectgaps=False,
+                        line=dict(color=color, width=2.3),
+                        hovertemplate="%{y:.2f}%<extra></extra>")
+    fig.update_layout(template="plotly_white", hovermode="x unified",
+                      yaxis=dict(title="年化波动率 · %", fixedrange=True),
+                      meta={"missing_series": missing})
+    latest = exchange.loc[returns.index, "observation_date"].max()
+    return apply_time_axis(fig, date_range, latest=latest)
+
+
+def build_japan_tic_figure(date_range, *, series):
+    """Keep stocks and signed monthly changes on independent axes."""
+    total, long, net, valuation = TIC_JAPAN_SERIES
+    frames = {key: _observations(series.get(key), key) for key in TIC_JAPAN_SERIES}
+    holdings = frames[total].merge(frames[long], on="observation_date", how="outer")
+    holdings["short"] = (holdings[total] - holdings[long]).where(holdings[total].ge(holdings[long]))
+    traces = (
+        (holdings, total, "日本美债总持仓", "y", "#4e6cf5"),
+        (holdings, long, "长期美债持仓", "y", "#087c5a"),
+        (holdings, "short", "短期美债持仓（总额减长期）", "y", "#64748b"),
+        (frames[net], net, "长期美债净买入（右轴）", "y2", "#a61e63"),
+        (frames[valuation], valuation, "长期美债估值变动（右轴）", "y2", "#e88939"),
+    )
+    fig = go.Figure()
+    missing = []
+    for frame, column, name, axis, color in traces:
+        rows = frame.dropna(subset=[column]).sort_values("observation_date")
+        if rows.empty:
+            missing.append(name)
+            continue
+        # FRED labels monthly records with the first day. TIC measures
+        # positions at month end and transactions over that same month.
+        common = dict(x=rows.observation_date + pd.offsets.MonthEnd(0),
+                      y=rows[column] / 1000, name=name, yaxis=axis,
+                      meta={"observation_cadence": "monthly"},
+                      hovertemplate="%{y:,.2f} 十亿美元<extra></extra>")
+        if axis == "y2":
+            fig.add_bar(**common, marker_color=color, opacity=0.72)
+        else:
+            fig.add_scatter(**common, mode="lines+markers", connectgaps=False,
+                            line=dict(color=color, width=2.2), marker_size=4)
+    fig.update_layout(template="plotly_white", hovermode="x unified", barmode="group",
+                      yaxis=dict(title="月末持仓 · 十亿美元", fixedrange=True),
+                      yaxis2=dict(title="当月变动 · 十亿美元", overlaying="y", side="right",
+                                  showgrid=False, zeroline=True, fixedrange=True),
+                      meta={"missing_series": missing, "preserve_axis_titles": ["y", "y2"]})
+    return apply_time_axis(fig, date_range)
 
 
 def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None, topix=None, dxy=None):

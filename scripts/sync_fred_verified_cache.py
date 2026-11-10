@@ -20,7 +20,7 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from macro_platform.cboe_history import supplement_closes
-from macro_platform.fred_observations import validate_observations
+from macro_platform.fred_observations import TIC_JAPAN_SERIES, validate_observations
 from macro_platform.tail_risk import completed_date
 
 OUT = Path("data_snapshots/fred_cache")
@@ -40,7 +40,7 @@ SERIES = (
     "WRESBAL", "WTREGEN", "RRPONTSYD", "VIXCLS", "VXVCLS",
     "SP500", "GVZCLS", "GFDEBTN", "FYGFDPUN",
     "FDHBFRBN", "FDHBFIN", "FDHBPIN",
-)
+) + TIC_JAPAN_SERIES
 CRITICAL = ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR", "SRFTSYD")
 START = "2020-01-01"
 
@@ -423,7 +423,11 @@ def snapshot_health(series_id, now=None):
         # Debt series are monthly/quarterly; market/rate series are daily/weekly.
         tolerance = (550 if series_id == "FYGFDPUN" else
                      150 if series_id in ("GFDEBTN", "FDHBFRBN", "FDHBFIN", "FDHBPIN") else None)
-        deadline = (dates.max().normalize() + pd.Timedelta(days=tolerance)
+        # The CSV date is the first of the observation month. The following
+        # month's reading is normally published by the 20th three months later.
+        deadline = (dates.max() + pd.offsets.MonthEnd(3) + pd.Timedelta(days=20)
+                    if series_id in TIC_JAPAN_SERIES else
+                    dates.max().normalize() + pd.Timedelta(days=tolerance)
                     if tolerance is not None else
                     dates.max().normalize() + pd.Timedelta(days=10)
                     if series_id in ("WALCL", "WRESBAL", "WTREGEN") else

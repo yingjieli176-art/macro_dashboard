@@ -54,6 +54,7 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertIn('8. 标普500 / 日经225', title_text)
         self.assertIn('9. Japan Government Yields', title_text)
         self.assertIn('10. 日元套息分析', title_text)
+        self.assertIn('日本寿险与养老金 · 机构披露', title_text)
         self.assertIn('11. China Government Yields', title_text)
         source_rows = [element.value for element in instance.markdown
                        if element.value.startswith('<div class="source-text">Source: ')]
@@ -98,6 +99,15 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertFalse(any("距前高跌幅" in element.value.columns for element in instance.dataframe))
         # Market assets retain their original unit and independent price axes.
         spec_text = " ".join(specs)
+        options = [json.loads(spec) for spec in specs]
+        yen_vol = next(option for option in options
+                       if any(s["name"] == "USD/JPY 20日实际波动率" for s in option["series"]))
+        self.assertEqual([s["name"] for s in yen_vol["series"]],
+                         ["USD/JPY 20日实际波动率", "USD/JPY 60日实际波动率"])
+        yen_tic = next(option for option in options
+                       if any(s["name"] == "日本美债总持仓" for s in option["series"]))
+        self.assertEqual([s["yAxisIndex"] for s in yen_tic["series"]], [0, 0, 0, 1, 1])
+        self.assertTrue(all(s["observation_cadence"] == "monthly" for s in yen_tic["series"]))
         corridor = next(json.loads(spec) for spec in specs if '"SRF"' in spec)
         self.assertEqual({series["name"] for series in corridor["series"]},
                          {"IORB", "ON RRP", "EFFR", "SOFR", "SRF", "SRF 实际用量 (R1)"})

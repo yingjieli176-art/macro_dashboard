@@ -88,7 +88,7 @@ from macro_platform.yen_index import load_yen_market_index
 from macro_platform.sp500_nikkei_ratio import build_sp500_nikkei_ratio_figure
 try:
     import macro_platform.yen_carry as _yen_carry
-    if not hasattr(_yen_carry, "DXY_NAME"):
+    if not hasattr(_yen_carry, "build_japan_tic_figure"):
         _yen_carry = importlib.reload(_yen_carry)
 except ImportError:
     _yen_carry = None
@@ -142,7 +142,7 @@ RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES
-CHART_BUILD = "2026-11-10-yen-carry-dxy-r127"
+CHART_BUILD = "2026-11-10-yen-tic-volatility-r128"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2049,6 +2049,18 @@ def build_fig16(date_range):
     return _yen_carry.build_yen_carry_figure(date_range, **inputs)
 
 
+def build_yen_volatility(date_range):
+    return _yen_carry.build_yen_volatility_figure(date_range, fx=load_yen_market_index())
+
+
+def build_yen_tic(date_range):
+    from macro_platform.fred_observations import TIC_JAPAN_SERIES
+
+    return _yen_carry.build_japan_tic_figure(
+        date_range, series={sid: get_fred_series(sid) for sid in TIC_JAPAN_SERIES},
+    )
+
+
 compact_mode = False
 
 def _prepare_chart_for_client_ranges(fig, element_key, mode=None):
@@ -2236,7 +2248,7 @@ def _try_minimal_adaptive_chart(base_fig, element_key, selected_range, mode=None
         return False
 
 
-def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=False):
+def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=False, selected_range=None):
     """Use viewport-filtered ECharts for every macro chart, not only US 1-4.
 
     Plotly's native time selector changes X without recalculating Y after
@@ -2247,10 +2259,11 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=Fal
     # whether ECharts or Plotly is currently the available renderer.
     # Their parent fragments prevent an X/Y viewport change from rerunning
     # the entire dashboard and refetching unrelated market data.
-    selected_range = st.segmented_control(
-        "时间范围", options=RANGES, default=DEFAULT_CHART_RANGE,
-        key=f"{element_key}_time_window", label_visibility="collapsed",
-    ) or DEFAULT_CHART_RANGE
+    if selected_range is None:
+        selected_range = st.segmented_control(
+            "时间范围", options=RANGES, default=DEFAULT_CHART_RANGE,
+            key=f"{element_key}_time_window", label_visibility="collapsed",
+        ) or DEFAULT_CHART_RANGE
     if not _chart_has_recoverable_data(base_fig, element_key, mode):
         _explain_missing_chart_data(base_fig, element_key)
         return
@@ -2726,6 +2739,33 @@ def render_macro_chart_16(prebuilt_fig=None):
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 10", lambda: _cached_macro_figure(16, _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(base_fig, "yen_carry")
+    selected_range = st.session_state.get("yen_carry_time_window") or DEFAULT_CHART_RANGE
+    revision = _macro_snapshot_revision()
+
+    st.markdown("#### 日元波动率 · USD/JPY")
+    st.caption("20 与 60 个交易日的实际波动率，使用同一 USD/JPY 已完成日线。两个窗口均按 252 个交易日年化。")
+    volatility = _safe_macro_build(
+        "日元波动率", lambda: _cached_macro_figure("yen_volatility", revision, CHART_BUILD),
+    )
+    _render_adaptive_macro_figure(volatility, "yen_volatility", selected_range=selected_range)
+
+    st.markdown("#### 日本美债持仓与交易 · TIC")
+    st.caption("左轴为月末持仓，右轴为当月长期美债净买入与估值变动。日本栏包含官方及非官方持有，第三地托管会影响国别归属。")
+    tic = _safe_macro_build("日本美债 TIC", lambda: _cached_macro_figure("yen_tic", revision, CHART_BUILD))
+    _render_adaptive_macro_figure(tic, "yen_tic", selected_range=selected_range)
+
+    st.markdown(
+        "#### 日本寿险与养老金 · 机构披露\n\n"
+        "| 样本与日期 | 美债持仓 | 外债规模与汇率对冲 |\n"
+        "| --- | --- | --- |\n"
+        "| 日本九家主要寿险 · 2026-03-31 | 样本美债总额未单列 | 外债约 67 万亿日元，"
+        "其中约 43% 对冲。日本央行按一般账户估算，涵盖多个币种。 |\n"
+        "| 日本公共养老金 GPIF · 2026-03-31 | 36.84 万亿日元 | 按 GPIF 逐券表加总 297 只美国国债票据和长期债券。"
+        "美债专属对冲率未披露。 |\n"
+        "| 日本邮政保险 · 2026-06-30 | 美债金额未单列 | 收益型资产外债 4.34 万亿日元。"
+        "其中单列的 1.5 万亿日元外币债券约 80% 对冲，按披露的约数计算。 |"
+    )
+    st.caption("TIC、寿险外债和 GPIF 的逐券披露各有统计口径。GPIF 在资产配置表中将日元对冲外债归入国内债券。")
     add_sources([
         ("FRED · US 10Y Treasury (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
         ("CFTC · Commitments of Traders", "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"),
@@ -2734,6 +2774,11 @@ def render_macro_chart_16(prebuilt_fig=None):
         ("Yahoo! Japan · TOPIX 日收盘", "https://finance.yahoo.co.jp/quote/998405.T/history"),
         ("JPX · TOPIX 指数说明", "https://www.jpx.co.jp/markets/indices/topix/index.html"),
         ("Yahoo Finance · DXY 日收盘", "https://finance.yahoo.com/quote/DX-Y.NYB/history/"),
+        ("美国财政部 · TIC Table 5", "https://ticdata.treasury.gov/Publish/slt_table5.html"),
+        ("FRED · 日本美债 TIC/CSLT", "https://fred.stlouisfed.org/series/FORTREASPOS42609"),
+        ("日本央行 · 寿险外债与对冲（图 III-2-5）", "https://www.boj.or.jp/en/research/brp/fsr/data/fsr261023a.pdf#page=29"),
+        ("GPIF · FY2025 年报与逐券表", "https://www.gpif.go.jp/en/performance/last-years-results.html"),
+        ("日本邮政保险 · 2026 年 6 月财报", "https://www.jp-life.japanpost.jp/english/news/assets/pdf/2026/pr0807en-01.pdf#page=32"),
     ], "yen_carry")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -2818,6 +2863,8 @@ def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
         9: build_fig9, 10: build_fig10, 11: build_fig11, 12: build_fig12,
         13: build_fig13, 14: build_fig14, 15: build_fig15, 16: build_fig16,
     }
+    if isinstance(chart_number, str):
+        builders.update(yen_volatility=build_yen_volatility, yen_tic=build_yen_tic)
     if chart_number == 4:
         try:
             builder = build_sp500_nikkei_ratio_figure

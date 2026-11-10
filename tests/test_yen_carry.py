@@ -5,7 +5,9 @@ import pandas as pd
 
 from macro_platform.yen_carry import (
     DXY_NAME, FX_NAME, PRESSURE_NAME, SPREAD_NAME, TOPIX_NAME, build_yen_carry_figure, carry_observations,
+    build_japan_tic_figure, build_yen_volatility_figure,
 )
+from macro_platform.fred_observations import TIC_JAPAN_SERIES
 
 
 class YenCarryTests(unittest.TestCase):
@@ -111,6 +113,40 @@ class YenCarryTests(unittest.TestCase):
                 self.assertFalse(option["yAxis"][index]["inverse"])
                 self.assertIn("阳轴", option["yAxis"][index]["name"])
                 self.assertIn("阳轴", option["media"][0]["option"]["yAxis"][index]["name"])
+
+    def test_realized_volatility_uses_full_windows_and_keeps_missing_close_blank(self):
+        self.fx.loc[31, "usd_jpy_close"] = np.nan
+        returns = np.log(self.fx.usd_jpy_close.dropna()).diff()
+        fig = build_yen_volatility_figure("1M", fx=self.fx)
+        for trace, window in zip(fig.data, (20, 60), strict=True):
+            expected = returns.rolling(window).std().iloc[-1] * np.sqrt(252) * 100
+            self.assertAlmostEqual(trace.y[-1], expected)
+            self.assertTrue(np.isnan(trace.y[31]))
+            self.assertTrue(np.isnan(trace.y[window - 1]))
+
+    def test_tic_matches_months_and_keeps_signed_flows_off_the_holdings_axis(self):
+        from macro_platform.echarts_axes import build_adaptive_echarts_option
+
+        total, long, net, valuation = TIC_JAPAN_SERIES
+        def frame(key, dates, values):
+            return pd.DataFrame({"observation_date": dates, key: values})
+
+        dates = ["2026-07-01", "2026-08-01"]
+        series = {
+            total: frame(total, dates, [1103943, 1068283]),
+            long: frame(long, dates[1:], [1036972]),
+            net: frame(net, dates, [-8846, 11858]),
+            valuation: frame(valuation, dates, [-12120, 1028]),
+        }
+        fig = build_japan_tic_figure("1Y", series=series)
+        self.assertEqual(list(fig.data[2].x), [pd.Timestamp("2026-08-31")])
+        self.assertAlmostEqual(fig.data[2].y[0], 31.311)
+        self.assertEqual(list(fig.data[3].y), [-8.846, 11.858])
+        option = build_adaptive_echarts_option(fig, "1Y")
+        self.assertEqual([s["yAxisIndex"] for s in option["series"]], [0, 0, 0, 1, 1])
+        self.assertTrue(all(s["observation_cadence"] == "monthly" for s in option["series"]))
+        self.assertFalse(option["yAxis"][1]["scale"])
+        self.assertEqual(len(build_japan_tic_figure("1Y", series={net: series[net]}).data), 1)
 
 
 if __name__ == "__main__":
