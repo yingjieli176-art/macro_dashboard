@@ -68,13 +68,12 @@ class ChartRendererRecoveryTests(unittest.TestCase):
             "apply_time_axis": Mock(return_value=self.fig),
             "PLOTLY_CONFIG": {},
             "logging": logging,
-            "show_parameter_description": Mock(),
             "add_sources": Mock(),
         })
 
     def _render_standard(self):
         self.ns["_render_standard_macro_chart"](
-            "<b>Chart</b>", "Description", "test_chart", Mock(), [], 1, self.fig
+            "<b>Chart</b>", "Description", "test_chart", Mock(), [], self.fig
         )
 
     def test_adaptive_chart_still_renders_when_echarts_throws(self):
@@ -99,7 +98,6 @@ class ChartRendererRecoveryTests(unittest.TestCase):
         self.adapter.side_effect = ValueError("echarts option error")
         self._render_standard()
         self.st.plotly_chart.assert_called_once()
-        self.ns["show_parameter_description"].assert_called_once_with(1)
         self.ns["add_sources"].assert_called_once_with([])
 
     def test_standard_macro_renderer_failure_recovers(self):
@@ -127,7 +125,7 @@ class ChartRendererRecoveryTests(unittest.TestCase):
         self.adapter.return_value = working_option
 
         self.ns["_render_standard_macro_chart"](
-            "<b>Rates</b>", "Description", "fed_range", Mock(), [], 1, self.fig
+            "<b>Rates</b>", "Description", "fed_range", Mock(), [], self.fig
         )
         self.assertEqual(self.st.echarts_chart.call_count, 1)
         self.assertEqual(self.st.plotly_chart.call_count, 0)
@@ -135,7 +133,7 @@ class ChartRendererRecoveryTests(unittest.TestCase):
         self.st.segmented_control.return_value = "1M"
         self.adapter.side_effect = RuntimeError("temporary converter failure")
         self.ns["_render_standard_macro_chart"](
-            "<b>Rates</b>", "Description", "fed_range", Mock(), [], 1, self.fig
+            "<b>Rates</b>", "Description", "fed_range", Mock(), [], self.fig
         )
         self.assertEqual(self.st.echarts_chart.call_count, 2)
         self.st.plotly_chart.assert_not_called()
@@ -174,7 +172,7 @@ class ChartRendererRecoveryTests(unittest.TestCase):
         ))
         self.st.segmented_control.return_value = "1M"
         self.ns["_render_standard_macro_chart"](
-            "<b>Rates</b>", "Description", "fed_range", Mock(), [], 1, fig
+            "<b>Rates</b>", "Description", "fed_range", Mock(), [], fig
         )
         self.st.plotly_chart.assert_called_once()
         rendered = self.st.plotly_chart.call_args.args[0]
@@ -280,7 +278,7 @@ class ChartRendererRecoveryTests(unittest.TestCase):
 
     def test_standard_us_chart_distinguishes_missing_feed_from_renderer_failure(self):
         self.ns["_render_standard_macro_chart"](
-            "Rates", "Rates", "fed_range", Mock(), [], 1, go.Figure()
+            "Rates", "Rates", "fed_range", Mock(), [], go.Figure()
         )
         self.st.error.assert_called_once()
         self.assertIn("有效观测数据", self.st.error.call_args.args[0])
