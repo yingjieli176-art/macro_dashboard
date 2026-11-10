@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-09-us-credit-order-r123",
+  "release": "2026-11-10-us-close-credit-r124",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",

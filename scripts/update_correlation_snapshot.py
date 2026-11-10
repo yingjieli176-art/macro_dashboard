@@ -6,12 +6,16 @@ import json
 import math
 from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
+import sys
 from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from macro_platform.cboe_history import supplement_closes
+
 SYMBOLS = ("COR1M", "COR3M")
 SOURCE_TEMPLATE = "https://cdn.cboe.com/api/global/us_indices/daily_prices/{}_History.csv"
 
@@ -40,15 +44,18 @@ def parse_history(text: str, symbol: str, now: datetime) -> list[dict]:
              "close": float(row.close)} for row in out.itertuples(index=False)]
 
 
-def prepare_snapshot(text: str, symbol: str, previous: dict, now: datetime) -> dict | None:
+def prepare_snapshot(text: str, symbol: str, previous: dict, now: datetime, *, get=None) -> dict | None:
     records = parse_history(text, symbol, now)
+    latest_source = None
+    if get is not None:
+        records, latest_source = supplement_closes(records, symbol, now, get, bounds=(-100, 100))
     old_records = previous.get("records") or []
     if (records[-1]["observation_date"] < str(previous.get("coverage_end") or "")
             or len(records) < len(old_records)):
         raise ValueError(f"{symbol} source would roll back or truncate saved history")
     if records == old_records:
         return None  # Keep the original fetch timestamp when nothing changed.
-    return {
+    payload = {
         "symbol": symbol,
         "name": f"Cboe {1 if symbol == 'COR1M' else 3}-Month Implied Correlation Index",
         "source": "Cboe Global Indices",
@@ -60,6 +67,9 @@ def prepare_snapshot(text: str, symbol: str, previous: dict, now: datetime) -> d
         "coverage_end": records[-1]["observation_date"],
         "records": records,
     }
+    if latest_source:
+        payload["latest_source_url"] = latest_source
+    return payload
 
 
 def main() -> None:
@@ -71,7 +81,7 @@ def main() -> None:
         response = requests.get(SOURCE_TEMPLATE.format(symbol),
                                 headers={"User-Agent": "MacroDashboard/1.0"}, timeout=30)
         response.raise_for_status()
-        payload = prepare_snapshot(response.text, symbol, previous, now)
+        payload = prepare_snapshot(response.text, symbol, previous, now, get=requests.get)
         if payload is not None:
             pending.append((path, payload))
         else:

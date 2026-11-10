@@ -27,6 +27,7 @@ EASTMONEY_NEWS_URL = "https://kuaixun.eastmoney.com/"
 NEWS_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36", "Referer": EASTMONEY_NEWS_URL, "Accept": "application/json, text/plain, */*"}
 
 FRED_GRAPH_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv"
+ALFRED_GRAPH_URL = "https://alfred.stlouisfed.org/graph/alfredgraph.csv"
 _FRED_LAST_GOOD = {}
 _FRED_LOCK = threading.RLock()
 _FRED_REFRESH = BackgroundRefresh()
@@ -140,15 +141,30 @@ def _fetch_fred_api(series_id):
     return frame
 
 
-@observed_cache()
+def _fetch_alfred_graph(series_id):
+    response = http_get(ALFRED_GRAPH_URL, params={"id": series_id},
+                        headers={"User-Agent": "MacroDashboard/1.0"}, timeout=(2.5, 5.0))
+    response.raise_for_status()
+    raw = pd.read_csv(StringIO(response.text))
+    vintage_columns = [column for column in raw.columns if re.fullmatch(series_id + r"_\d{8}", column)]
+    if len(vintage_columns) != 1 or "observation_date" not in raw.columns:
+        raise ValueError(f"ALFRED graph response has no unique {series_id} vintage")
+    frame = _normalize_fred_frame(raw.rename(columns={vintage_columns[0]: series_id}), series_id)
+    frame.attrs.update({"source": "ALFRED graph CSV", "is_stale": False, "is_fallback": True})
+    return frame
+
+
+@observed_cache(ttl=300)
 def get_hy_oas():
-    """Read ICE's FRED series into memory for the private dashboard."""
+    """Read validated ICE observations without persisting the licensed feed."""
     series_id = "BAMLH0A0HYM2"
-    try:
-        frame = validate_observations(_fetch_fred_graph(series_id, timeout=(8, 8)), series_id)
-    except (requests.RequestException, RuntimeError, ValueError):
-        return pd.DataFrame(columns=["observation_date", "oas_pct"])
-    return frame.rename(columns={series_id: "oas_pct"})
+    for fetcher in (_fetch_fred_graph, _fetch_fred_api, _fetch_alfred_graph):
+        try:
+            frame = validate_observations(fetcher(series_id), series_id)
+            return frame.rename(columns={series_id: "oas_pct"})
+        except (requests.RequestException, RuntimeError, ValueError):
+            continue
+    return pd.DataFrame(columns=["observation_date", "oas_pct"])
 
 
 @st.cache_data(max_entries=64, show_spinner=False)

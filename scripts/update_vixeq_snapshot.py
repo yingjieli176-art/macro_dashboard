@@ -4,16 +4,22 @@ import io
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+import sys
 
 import pandas as pd
 import requests
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from macro_platform.cboe_history import supplement_closes
+from macro_platform.tail_risk import completed_date
+
 SNAPSHOT = ROOT / "data_snapshots" / "vixeq_daily.json"
 SOURCE_URL = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIXEQ_History.csv"
 
 
 def main() -> None:
+    now = datetime.now(timezone.utc)
     response = requests.get(
         SOURCE_URL,
         headers={"User-Agent": "MacroDashboard/1.0"},
@@ -35,6 +41,8 @@ def main() -> None:
         .sort_values("observation_date")
         .drop_duplicates("observation_date", keep="last")
     )
+    out = out.loc[out.observation_date.le(pd.Timestamp(completed_date(now)))
+                  & out.close.gt(0) & out.close.lt(float("inf"))]
     if len(out) < 200:
         raise RuntimeError(f"VIXEQ history unexpectedly short: {len(out)} rows")
 
@@ -42,6 +50,7 @@ def main() -> None:
         {"observation_date": row.observation_date.strftime("%Y-%m-%d"), "close": float(row.close)}
         for row in out.itertuples(index=False)
     ]
+    records, latest_source = supplement_closes(records, "VIXEQ", now, requests.get)
     # The official Cboe CDN can lag. Never stamp an unchanged old fixing
     # as an updated market observation, and never replace a newer snapshot
     # with an earlier upstream export.
@@ -64,13 +73,17 @@ def main() -> None:
         "name": "Cboe S&P 500 Constituent Volatility Index",
         "source": "Cboe Global Indices",
         "source_url": SOURCE_URL,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": now.isoformat(),
         "record_count": len(records),
         "coverage_start": records[0]["observation_date"],
         "coverage_end": records[-1]["observation_date"],
         "records": records,
     }
-    SNAPSHOT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    if latest_source:
+        payload["latest_source_url"] = latest_source
+    temporary = SNAPSHOT.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporary.replace(SNAPSHOT)
     print(
         "VIXEQ snapshot",
         payload["record_count"],

@@ -19,7 +19,9 @@ import pandas as pd
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from macro_platform.cboe_history import supplement_closes
 from macro_platform.fred_observations import validate_observations
+from macro_platform.tail_risk import completed_date
 
 OUT = Path("data_snapshots/fred_cache")
 FRED_GRAPH = "https://fred.stlouisfed.org/graph/fredgraph.csv"
@@ -243,7 +245,21 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
         text = "DATE," + series_id + "\n" + "\n".join(
             f"{day},{value}" for day, value in zip(rows["DATE"], rows[value_column])
         )
-        return _parse_source(text, series_id)
+        frame = _parse_source(text, series_id)
+        if series_id in ("VIXCLS", "VXVCLS"):
+            now = datetime.now(timezone.utc)
+            frame = frame.loc[frame.date.le(pd.Timestamp(completed_date(now))) & frame.value.gt(0)]
+            records = [{"observation_date": day.strftime("%Y-%m-%d"), "close": float(value)}
+                       for day, value in zip(frame.date, frame.value)]
+            if not records:
+                raise ValueError(f"No completed Cboe closes for {series_id}")
+            records, latest_source = supplement_closes(records, CBOE_FILES[series_id].split("_")[0],
+                                                       now, session.get)
+            if latest_source:
+                frame = pd.DataFrame({"date": pd.to_datetime([row["observation_date"] for row in records]),
+                                      "value": [row["close"] for row in records]})
+                frame.attrs["latest_source_url"] = latest_source
+        return frame
 
     if series_id == "IORB":
         response = session.get(
@@ -352,6 +368,8 @@ def refresh_one(series_id: str):
                         for date, value in zip(frame.date, frame.value)
                     ],
                 }
+                if frame.attrs.get("latest_source_url"):
+                    payload["latest_source_url"] = frame.attrs["latest_source_url"]
                 # A valid original feed can lag FRED's separately published
                 # copy. Compare observation dates before accepting a result.
                 if best is None or payload["coverage_end"] > best["coverage_end"]:
