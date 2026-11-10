@@ -141,7 +141,8 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
-CHART_BUILD = "2026-11-10-chart-sources-r125"
+from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES
+CHART_BUILD = "2026-11-10-chart-parameters-r126"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -225,6 +226,8 @@ html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "M
 .dashboard-title { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.1rem; }
 .section-title { font-size: 1.18rem; font-weight: 680; letter-spacing: -0.012em; margin-top: 0.52rem; margin-bottom: 0.04rem; min-height: 26px; display: flex; align-items: center; color:#1f2937; }
 .section-description { color: #7b8493; font-size: 0.80rem; margin-bottom: 0.16rem; min-height: 17px; display: flex; align-items: center; }
+.chart-parameters { color: #4b5563; font-size: 0.78rem; line-height: 1.55; margin: 4px 0 8px; overflow-wrap: anywhere; }
+.chart-parameters > div { margin: 2px 0; }
 .source-text { color: #6b7280; font-size: 0.72rem; margin: 2px 0 6px; line-height: 1.35; }
 .source-text a { color: #6b7280; text-decoration: none !important; white-space: nowrap; }
 .source-text a:hover { color: #374151; text-decoration: underline !important; }
@@ -1378,7 +1381,12 @@ def _confirm_selected(key):
 def _cancel_search(key):
     st.session_state[f"{key}_open"] = False; st.session_state.pop(f"{key}_results", None)
 
-def add_sources(sources):
+def add_sources(sources, chart_key):
+    notes = "".join(
+        f"<div><b>{html.escape(name)}</b> · {html.escape(definition)}</div>"
+        for name, definition in CHART_PARAMETER_GUIDES[chart_key]
+    )
+    st.markdown(f'<div class="chart-parameters">{notes}</div>', unsafe_allow_html=True)
     links = [f'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">{html.escape(text)}</a>' for text, url in sources]
     st.markdown('<div class="source-text">Source: ' + '<span class="source-sep">|</span>'.join(links) + '</div>', unsafe_allow_html=True)
 
@@ -2327,7 +2335,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
     _show_data_quality_notes(base_fig)
     if range_key == "normal_corridor_range":
         st.caption(usage_caption())
-    add_sources(sources)
+    add_sources(sources, range_key)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2399,7 +2407,7 @@ def render_macro_chart_4(prebuilt_fig=None):
         ("Yahoo Finance · S&P 500 (^GSPC)", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
         ("Yahoo Finance · Nikkei 225 (^N225)", "https://finance.yahoo.com/quote/%5EN225/history/"),
         ("日经指数官方 · 日经225定义", "https://indexes.nikkei.co.jp/en/nkave/index/profile?idx=nk225"),
-    ])
+    ], "sp500_nikkei_ratio")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2460,7 +2468,7 @@ def _render_hk_macro_chart(hk_index, prebuilt_fig=None):
     st.markdown(description, unsafe_allow_html=True)
     fig = prebuilt_fig if prebuilt_fig is not None else _safe_hk_bundle(_macro_snapshot_revision())[hk_index]
     _render_adaptive_macro_figure(fig, range_key)
-    add_sources(sources)
+    add_sources(sources, range_key)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2507,7 +2515,6 @@ def _build_equity_drawdown():
 @st.fragment(key="equity_drawdown_viewport")
 def _render_equity_drawdown():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["us_drawdown"]}. SPX / RSP · 价格走势与区间高点</div>', unsafe_allow_html=True)
-    st.caption("SPX 按点、RSP 按美元显示。回撤以所选区间最高收盘价为基准。")
     figure = _build_equity_drawdown()
     _render_adaptive_macro_figure(figure, "us_equity_drawdown", standard=True)
     summaries = (figure.layout.meta or {}).get("price_summary", [])
@@ -2517,7 +2524,7 @@ def _render_equity_drawdown():
         ("SPX 日线价格", "https://finance.yahoo.com/quote/%5EGSPC/history/"),
         ("RSP 日线价格", "https://finance.yahoo.com/quote/RSP/history/"),
         ("Invesco RSP", "https://www.invesco.com/us/financial-products/etfs/product-detail?productId=RSP"),
-    ])
+    ], "us_equity_drawdown")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2538,13 +2545,12 @@ def _build_china_drawdown():
 @st.fragment(key="china_equity_drawdown_viewport")
 def _render_china_drawdown():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["cn_drawdown"]}. A股宽基 · 沪深300 / 中证1000 / 中证2000 价格走势</div>', unsafe_allow_html=True)
-    st.caption("价格按指数点显示。回撤以各指数在所选区间的最高收盘价为基准。")
     figure = _build_china_drawdown()
     _render_adaptive_macro_figure(figure, "china_equity_drawdown", standard=True)
     for row in (figure.layout.meta or {}).get("price_summary", []):
         st.caption(f'{row["name"]}（{row["symbol"]}）最新收盘：{row["close"]:,.2f}（{row["date"]}）')
     add_sources([(name, f"https://www.csindex.com.cn/zh-CN/indices/index-detail/{code}")
-                 for code, name in (("000300", "沪深300"), ("000852", "中证1000"), ("932000", "中证2000"))])
+                 for code, name in (("000300", "沪深300"), ("000852", "中证1000"), ("932000", "中证2000"))], "china_equity_drawdown")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2563,7 +2569,7 @@ def render_macro_chart_9(prebuilt_fig=None):
         ("Cboe VIXEQ / Dispersion", "https://www.cboe.com/us/indices/dispersion/"),
         ("Cboe COR3M", "https://www.cboe.com/us/indices/implied/"),
         ("FRED S&P 500 (SP500)", "https://fred.stlouisfed.org/series/SP500"),
-    ])
+    ], "us_equity_risk")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2585,7 +2591,7 @@ def render_macro_chart_10(prebuilt_fig=None):
         ("Cboe · VVIX Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv"),
         ("Cboe · VIX9D Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VIX9D_History.csv"),
         ("Cboe · SPX + SPXW Volume Put/Call", "https://www.cboe.com/markets/us/options/market-statistics/daily"),
-    ])
+    ], "vix_term_structure")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2605,7 +2611,7 @@ def render_macro_chart_11(prebuilt_fig=None):
         ("Yahoo Finance · Silver Futures SI=F", "https://finance.yahoo.com/quote/SI=F/history/"),
         ("FRED · Cboe Gold ETF Volatility Index (GVZCLS)", "https://fred.stlouisfed.org/series/GVZCLS"),
         ("Cboe · Gold Volatility", "https://www.cboe.com/tradable_products/vix/vix_historical_data/"),
-    ])
+    ], "precious_metals")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2623,7 +2629,7 @@ def render_macro_chart_12(prebuilt_fig=None):
     add_sources([
         ("Yahoo Finance · Bitcoin BTC-USD", "https://finance.yahoo.com/quote/BTC-USD/history/"),
         ("Yahoo Finance · Ethereum ETH-USD", "https://finance.yahoo.com/quote/ETH-USD/history/"),
-    ])
+    ], "crypto_market")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2645,7 +2651,7 @@ def render_macro_chart_13(prebuilt_fig=None):
         ("LME Warehouse & Stocks Reports", "https://www.lme.com/Market-data/Reports-and-data/Warehouse-and-stocks-reports"),
         ("Westmetall · LME Copper Daily Table", "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"),
         ("COCHILCO · Copper Inventories", "https://boletin.cochilco.cl/estadisticas/inventarios.asp"),
-    ])
+    ], "copper_flow")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2661,7 +2667,7 @@ def render_copper_tcrc():
     add_sources([
         ("Mysteel · 铜精矿TC/RC指数方法论", COPPER_TCRC_METHOD_URL),
         ("Mysteel · 2026-10-30现货TC指数原始发布", "https://youse.mysteel.com/a/26110208/7DCD2C67E671022B.html"),
-    ])
+    ], "copper_tcrc")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2678,7 +2684,7 @@ def render_macro_chart_14(prebuilt_fig=None):
     add_sources([
         ("Eastmoney · China Treasury Yield History", "https://data.eastmoney.com/cjsj/zmgzsyl.html"),
         ("FRED · US 5Y TIPS Real Yield (DFII5)", "https://fred.stlouisfed.org/series/DFII5"),
-    ])
+    ], "china_rates")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2696,7 +2702,7 @@ def render_macro_chart_15(prebuilt_fig=None):
         ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
         ("Yahoo Finance · Nikkei 225", "https://finance.yahoo.com/quote/%5EN225/history/"),
         ("Yahoo · USD/JPY daily closes", "https://finance.yahoo.com/quote/JPY%3DX/history/"),
-    ])
+    ], "japan_rates")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2717,7 +2723,7 @@ def render_macro_chart_16(prebuilt_fig=None):
         ("Yahoo · USD/JPY daily closes", "https://finance.yahoo.com/quote/JPY%3DX/history/"),
         ("Yahoo! Japan · TOPIX 日收盘", "https://finance.yahoo.co.jp/quote/998405.T/history"),
         ("JPX · TOPIX 指数说明", "https://www.jpx.co.jp/markets/indices/topix/index.html"),
-    ])
+    ], "yen_carry")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2962,7 +2968,7 @@ def render_nvidia_cds():
         ("Open-Sourced Rates Observatory · CDS 历史数据", _ai_credit.SOURCE_URL),
         ("CDS 统计方法", _ai_credit.METHOD_URL),
         ("ICE Data Indices via FRED · HY OAS (BAMLH0A0HYM2)", _ai_credit.HY_OAS_URL),
-    ])
+    ], "nvidia_cds")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
