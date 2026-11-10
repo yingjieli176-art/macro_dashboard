@@ -157,8 +157,9 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertEqual(len(carry["yAxis"]), 6)
         self.assertEqual([series["name"] for series in carry["series"]],
                          ["US 10Y - Japan 10Y", "USD/JPY (R1)", "JPY 20-session appreciation (R2)",
-                          "CFTC JPY speculative net (R3)", "TOPIX（东证指数） (R4)", "美元指数 DXY (R5)"])
-        self.assertEqual([series["yAxisIndex"] for series in carry["series"]], [0, 1, 2, 3, 4, 5])
+                          "CFTC JPY speculative net (R3)", "TOPIX（东证指数） (R4)", "美元指数 DXY (R5)",
+                          "JPY 3M", "JPY 10Y", "JPY 10Y - JPY 3M"])
+        self.assertEqual([series["yAxisIndex"] for series in carry["series"]], [0, 1, 2, 3, 4, 5, 0, 0, 0])
         for index in (1, 2):
             self.assertIn("阳轴", carry["yAxis"][index]["name"])
             self.assertFalse(carry["yAxis"][index]["inverse"])

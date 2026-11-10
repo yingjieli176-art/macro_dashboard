@@ -40,18 +40,18 @@ class SpxSentimentTests(unittest.TestCase):
         dates = ["2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06"]
         sources = {"VIXCLS": frame(dates, "VIXCLS", [20., 0., 24., None]),
                    "VXVCLS": frame(dates, "VXVCLS", [25., 25., 0., 21.])}
-        tail = {"SKEW": frame(dates[:1], "SKEW", [150.]),
+        tail = {"SKEW": frame(pd.bdate_range(end=dates[0], periods=5), "SKEW", [150.] * 5),
                 "VVIX": frame(dates[:1], "VVIX", [100.]),
                 "VIX9D": frame(dates, "VIX9D", [18., 19., None, 20.])}
         ns["get_fred_series"] = lambda key: sources[key].copy()
         ns["load_tail_risk_snapshot"] = lambda key: tail[key].copy()
-        ns["load_spx_put_call_snapshot"] = lambda: frame(["2026-10-02"], "SPX_PCR", [1.13])
+        ns["load_spx_put_call_snapshot"] = lambda: frame(pd.bdate_range(end="2026-10-02", periods=63), "SPX_PCR", [1.13] * 63)
         fig = ns["build_fig10"]("1M")
         traces = {t.name: t for t in fig.data}
         self.assertEqual(list(pd.Series(traces["VIX/VIX3M (R1)"].y).dropna()), [.8, 0.])
         self.assertEqual(list(pd.Series(traces["9D/30D (R1)"].y).dropna()), [.9])
         self.assertEqual(list(pd.Series(traces["VVIX/VIX (R4)"].y).dropna()), [5.])
-        self.assertEqual(list(traces["SPX P/C (R1)"].x), [pd.Timestamp("2026-10-02")])
+        self.assertEqual(list(pd.Series(traces["SPX P/C 63D MA (R1)"].y).dropna()), [1.13])
         for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
             option = adapter(fig, "1M")
             self.assertEqual(len(option["yAxis"]), 5)
@@ -59,9 +59,36 @@ class SpxSentimentTests(unittest.TestCase):
             self.assertEqual(axes["VIX/VIX3M (R1)"], 1)
             self.assertEqual(axes["VVIX/VIX (R4)"], 4)
             self.assertEqual(axes["9D/30D (R1)"], 1)
-            self.assertEqual(axes["SPX P/C (R1)"], 1)
+            self.assertEqual(axes["SPX P/C 63D MA (R1)"], 1)
             self.assertTrue(all(axis["scale"] for axis in option["yAxis"]))
             self.assertFalse(any("VIX3M−VIX" in name for name in axes))
+
+    def test_means_use_full_history_and_connect_observations_in_both_renderers(self):
+        ns = builders()
+        dates = pd.bdate_range("2026-06-01", periods=90)
+        ns["get_fred_series"] = lambda key: frame(dates, key, [20.] * len(dates))
+        ns["load_spx_put_call_snapshot"] = lambda: frame(dates[::-1], "SPX_PCR", list(range(90, 0, -1)))
+        ns["load_tail_risk_snapshot"] = lambda key: frame(dates, key, list(range(100, 190)))
+        full = ns["build_fig10"]("5Y")
+        traces = {t.name: t for t in full.data}
+        pc = traces["SPX P/C 63D MA (R1)"]
+        skew = traces["SKEW 5D MA (R2)"]
+        self.assertTrue(pd.Series(pc.y).iloc[:62].isna().all())
+        self.assertEqual(pc.y[62], 32.)
+        self.assertEqual(pc.y[-1], 59.)
+        self.assertTrue(pd.Series(skew.y).iloc[:4].isna().all())
+        self.assertEqual(skew.y[4], 102.)
+        self.assertEqual(skew.y[-1], 187.)
+        cropped = ns["build_fig10"]("1M")
+        for name in (pc.name, skew.name):
+            trace = next(t for t in cropped.data if t.name == name)
+            expected = pd.Series(traces[name].y, index=pd.DatetimeIndex(traces[name].x))
+            self.assertEqual(list(trace.y), list(expected.loc[pd.DatetimeIndex(trace.x)]))
+            self.assertTrue(pd.notna(trace.y[0]))
+        for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
+            option = adapter(cropped, "1M")
+            self.assertTrue(all(s["connectNulls"] for s in option["series"]))
+        self.assertTrue(all(t.connectgaps and t.line.dash == "solid" for t in cropped.data))
 
     def test_vvix_ratio_keeps_gaps_and_never_reuses_another_days_vix(self):
         ns = builders()
@@ -80,7 +107,7 @@ class SpxSentimentTests(unittest.TestCase):
             self.assertEqual(trace.yaxis, "y5")
             option = build_adaptive_echarts_option(fig, period)
             series = next(s for s in option["series"] if s["name"] == trace.name)
-            self.assertFalse(series["connectNulls"])
+            self.assertTrue(series["connectNulls"])
 
 
 if __name__ == "__main__": unittest.main()

@@ -142,7 +142,7 @@ RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES
-CHART_BUILD = "2026-11-10-boj-policy-institutions-r129"
+CHART_BUILD = "2026-11-10-jpy-3m-10y-curve-r130"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1764,6 +1764,17 @@ def build_fig9(date_range):
 
 def build_fig10(date_range):
     """SPX implied-volatility ratios and dated SPX option volume sentiment."""
+    def daily_mean(frame, column, window):
+        # Average actual daily observations before cropping the visible range.
+        frame = frame.copy()
+        frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
+        frame[column] = pd.to_numeric(frame[column], errors="coerce")
+        frame = frame.loc[frame[column].ge(0) & frame[column].lt(float("inf"))]
+        frame = frame.dropna(subset=["observation_date"]).sort_values("observation_date")
+        frame = frame.drop_duplicates("observation_date", keep="last")
+        frame[column] = frame[column].rolling(window, min_periods=window).mean()
+        return frame
+
     sources = {}
     for column in ("VIXCLS", "VXVCLS"):
         try:
@@ -1786,10 +1797,13 @@ def build_fig10(date_range):
     for name, color in (("VIX", "#5070dd"), ("VIX3M", "#785db0"), ("VIX/VIX3M (R1)", "#ff994d")):
         fig.update_traces(line_color=color, selector=dict(name=name))
     tail_sources = {}
-    for symbol, name, axis, color in (("SKEW", "SKEW (R2)", "y3", "#b45309"),
+    for symbol, name, axis, color in (("SKEW", "SKEW 5D MA (R2)", "y3", "#b45309"),
                                        ("VVIX", "VVIX (R3)", "y4", "#dc2626")):
         try:
-            observed = filter_range(load_tail_risk_snapshot(symbol), date_range)
+            observed = load_tail_risk_snapshot(symbol)
+            if symbol == "SKEW":
+                observed = daily_mean(observed, symbol, 5)
+            observed = filter_range(observed, date_range)
         except Exception:
             observed = pd.DataFrame(columns=["observation_date", symbol])
         tail_sources[symbol] = observed
@@ -1808,11 +1822,11 @@ def build_fig10(date_range):
     add_line(fig, filter_range(short, date_range), "9D/30D", "9D/30D (R1)", 2.2, "dot", "y2", " x")
     fig.update_traces(line_color="#0891b2", selector=dict(name="9D/30D (R1)"))
     try:
-        pc = filter_range(load_spx_put_call_snapshot(), date_range)
+        pc = filter_range(daily_mean(load_spx_put_call_snapshot(), "SPX_PCR", 63), date_range)
     except Exception:
         pc = pd.DataFrame(columns=["observation_date", "SPX_PCR"])
-    add_line(fig, pc, "SPX_PCR", "SPX P/C (R1)", 2.1, yaxis="y2", unit=" x")
-    fig.update_traces(line_color="#15803d", selector=dict(name="SPX P/C (R1)"))
+    add_line(fig, pc, "SPX_PCR", "SPX P/C 63D MA (R1)", 2.1, yaxis="y2", unit=" x")
+    fig.update_traces(line_color="#15803d", selector=dict(name="SPX P/C 63D MA (R1)"))
     fig.update_layout(
         yaxis_title="VIX / VIX3M · pts",
         yaxis2=dict(title="R1 · Ratios · x", overlaying="y", side="right", anchor="free",
@@ -1825,6 +1839,8 @@ def build_fig10(date_range):
                     position=0.94, showgrid=False, zeroline=False, fixedrange=True),
     )
     fig = apply_chart_style(fig, chart_height(310, 420), date_range)
+    # Join observed values for display; source values and ratio dates stay intact.
+    fig.update_traces(connectgaps=True, line_dash="solid")
     fig.update_layout(xaxis_domain=[0, 0.63], margin_r=180)
     return fig
 
@@ -2034,13 +2050,15 @@ def build_fig16(date_range):
     from macro_platform.asia_rates import load_japan_gov_yields
     from macro_platform.cftc_yen import load_cftc_yen
     from macro_platform.topix import load_topix_snapshot
+    from macro_platform.japan_short_rates import load_japan_3m
     frames = []
-    for loader in (get_dgs10, load_japan_gov_yields, load_yen_market_index, load_cftc_yen, load_topix_snapshot):
+    for loader in (get_dgs10, load_japan_gov_yields, load_yen_market_index, load_cftc_yen, load_topix_snapshot, load_japan_3m):
         try:
             frames.append(loader())
         except Exception:
             frames.append(pd.DataFrame())
     inputs = dict(us=frames[0], japan=frames[1], fx=frames[2], positions=frames[3], topix=frames[4])
+    inputs["japan_short"] = frames[5]
     if hasattr(_yen_carry, "DXY_NAME"):
         symbol = _yen_carry.DXY_SYMBOL
         stored = _yen_carry.load_dxy_snapshot()
@@ -2602,7 +2620,7 @@ def render_macro_chart_9(prebuilt_fig=None):
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure</div>'
-        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX/VIX3M · 9D/30D · SPX P/C（共用 R1） · SKEW (R2) · VVIX (R3) · VVIX/VIX (R4)</div>',
+        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX/VIX3M · 9D/30D · SPX P/C 63日均（共用 R1） · SKEW 5日均 (R2) · VVIX (R3) · VVIX/VIX (R4)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2737,12 +2755,15 @@ def render_macro_chart_16(prebuilt_fig=None):
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[16]}. 日元套息分析 · Yen Carry Trade</div>'
         '<div class="section-description">美日10Y利差 · USD/JPY（R1 阳轴，向上＝日元走弱） · '
         '日元20交易日升值幅度（R2 阳轴，向上＝升值幅度增加） · CFTC日元投机净仓位 (R3) · '
-        'TOPIX（东证指数，R4） · 美元指数 DXY (R5)</div>',
+        'TOPIX（东证指数，R4） · 美元指数 DXY (R5) · JPY 3M · JPY 10Y · JPY 10Y - JPY 3M</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 10", lambda: _cached_macro_figure(16, _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(base_fig, "yen_carry")
+    st.caption("JPY 3M：日本财务省3个月国库短期证券平均拍卖收益率，通常为周度；"
+               "JPY 10Y：日本财务省日度10年期国债收益率。左轴收益率单位为%，利差为百分点（pp）。"
+               "JPY 10Y - JPY 3M 仅使用拍卖日同日观测，不向前填充。")
     selected_range = st.session_state.get("yen_carry_time_window") or DEFAULT_CHART_RANGE
     revision = _macro_snapshot_revision()
 
@@ -2787,6 +2808,7 @@ def render_macro_chart_16(prebuilt_fig=None):
         ("FRED · US 10Y Treasury (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
         ("CFTC · Commitments of Traders", "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"),
         ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
+        ("Japan MOF · 3M Treasury Bill Auction History", "https://www.mof.go.jp/jgbs/reference/appendix/index.htm"),
         ("Yahoo · USD/JPY daily closes", "https://finance.yahoo.com/quote/JPY%3DX/history/"),
         ("Yahoo! Japan · TOPIX 日收盘", "https://finance.yahoo.co.jp/quote/998405.T/history"),
         ("JPX · TOPIX 指数说明", "https://www.jpx.co.jp/markets/indices/topix/index.html"),

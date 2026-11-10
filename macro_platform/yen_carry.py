@@ -18,6 +18,9 @@ PRESSURE_NAME = "JPY 20-session appreciation (R2)"
 POSITION_NAME = "CFTC JPY speculative net (R3)"
 TOPIX_NAME = "TOPIX（东证指数） (R4)"
 DXY_NAME = "美元指数 DXY (R5)"
+JPY_3M_NAME = "JPY 3M"
+JPY_10Y_NAME = "JPY 10Y"
+JPY_CURVE_NAME = "JPY 10Y - JPY 3M"
 DXY_SYMBOL = "DX-Y.NYB"
 DXY_SNAPSHOT = Path(__file__).resolve().parents[1] / "data_snapshots/dxy_daily.json"
 INSTITUTIONS_SNAPSHOT = DXY_SNAPSHOT.with_name("japan_institutions.json")
@@ -170,7 +173,8 @@ def build_japan_tic_figure(date_range, *, series):
     return apply_time_axis(fig, date_range)
 
 
-def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None, topix=None, dxy=None):
+def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None, topix=None, dxy=None,
+                           japan_short=None):
     rates, exchange = carry_observations(us, japan, fx)
     positioning = _observations(positions, "net_contracts")
     positioning["net_10k_contracts"] = positioning.net_contracts / 10000
@@ -186,6 +190,16 @@ def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None, topix=N
         dollar = _observations(dxy, "close")
         dollar.loc[dollar.close.le(0), "close"] = np.nan
         sources += ((dollar, "close", DXY_NAME, "y6", "#a61e63", "solid", " pts"),)
+    if japan_short is not None:
+        long = _observations(japan, "japan_10y")
+        short = _observations(japan_short, "japan_3m")
+        curve = short.merge(long, on="observation_date", how="left")
+        curve["japan_curve_pp"] = curve.japan_10y - curve.japan_3m
+        sources += (
+            (short, "japan_3m", JPY_3M_NAME, "y", "#009e73", "dot", "%"),
+            (long, "japan_10y", JPY_10Y_NAME, "y", "#0072b2", "solid", "%"),
+            (curve, "japan_curve_pp", JPY_CURVE_NAME, "y", "#d55e00", "dash", " pp"),
+        )
     latest_dates = [frame.loc[frame[column].notna(), "observation_date"].max()
                     for frame, column, *_ in sources if frame[column].notna().any()]
     latest = max(latest_dates) if latest_dates else None
@@ -218,6 +232,9 @@ def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None, topix=N
                     position=0.995, showgrid=False, fixedrange=True, tickformat=".1f", zeroline=True),
         meta={"missing_series": missing, "preserve_axis_titles": ["y2", "y3", "y6"]},
     )
+    if japan_short is not None:
+        fig.update_layout(yaxis_title="左轴 · 收益率 % / 利差 pp")
+        fig.layout.meta["preserve_axis_titles"].append("y")
     has_topix = any(trace.name == TOPIX_NAME for trace in fig.data)
     if has_topix:
         fig.update_layout(

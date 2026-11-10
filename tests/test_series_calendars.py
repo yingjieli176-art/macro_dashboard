@@ -68,7 +68,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
             self.assertEqual(list(pd.Series(spread.y).isna()), [False, True, True, False, True])
             option = build_adaptive_echarts_option(term, window)
             self.assertEqual([s["yAxisIndex"] for s in option["series"]], [0, 0, 1])
-            self.assertFalse(option["series"][2]["connectNulls"])
+            self.assertTrue(option["series"][2]["connectNulls"])
 
     def test_term_chart_reports_failed_leg_without_losing_available_vix(self):
         ns = builders()
@@ -79,7 +79,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         ns["get_fred_series"] = load
         figure = ns["build_fig10"]("1M")
         self.assertEqual([t.name for t in figure.data], ["VIX"])
-        self.assertEqual(set(figure.layout.meta["missing_series"]), {"VIX3M", "VIX/VIX3M (R1)", "SKEW (R2)", "VVIX (R3)", "VVIX/VIX (R4)", "9D/30D (R1)", "SPX P/C (R1)"})
+        self.assertEqual(set(figure.layout.meta["missing_series"]), {"VIX3M", "VIX/VIX3M (R1)", "SKEW 5D MA (R2)", "VVIX (R3)", "VVIX/VIX (R4)", "9D/30D (R1)", "SPX P/C 63D MA (R1)"})
 
     def test_equity_correlation_calendar_and_removed_series(self):
         ns = builders()

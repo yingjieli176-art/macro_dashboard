@@ -20,7 +20,7 @@ class TailRiskTests(unittest.TestCase):
         sources = {
             "VIXCLS": frame(["2026-10-01", "2026-10-02", "2026-10-05"], "VIXCLS", [20., None, 24.]),
             "VXVCLS": frame(["2026-10-01", "2026-10-05"], "VXVCLS", [22., 21.]),
-            "SKEW": frame(["2026-10-02", "2026-10-06"], "SKEW", [145., 150.]),
+            "SKEW": frame(pd.bdate_range(end="2026-10-06", periods=6), "SKEW", [140., 141., 142., 143., 145., 150.]),
             "VVIX": frame(["2026-10-01", "2026-10-05"], "VVIX", [100., 108.]),
         }
         ns["get_fred_series"] = lambda s: sources[s].copy()
@@ -28,7 +28,7 @@ class TailRiskTests(unittest.TestCase):
         for period in ("5Y", "1Y", "6M", "3M", "1M"):
             fig = ns["build_fig10"](period)
             self.assertEqual([t.name for t in fig.data],
-                             ["VIX", "VIX3M", "VIX/VIX3M (R1)", "SKEW (R2)", "VVIX (R3)", "VVIX/VIX (R4)"])
+                             ["VIX", "VIX3M", "VIX/VIX3M (R1)", "SKEW 5D MA (R2)", "VVIX (R3)", "VVIX/VIX (R4)"])
             for i, s in ((0, "VIXCLS"), (1, "VXVCLS"), (3, "SKEW"), (4, "VVIX")):
                 self.assertEqual(list(pd.to_datetime(fig.data[i].x)), list(sources[s].observation_date))
             self.assertEqual(list(pd.Series(fig.data[2].y).dropna()), [20./22., 24./21.])
@@ -38,7 +38,7 @@ class TailRiskTests(unittest.TestCase):
                 self.assertEqual([s["yAxisIndex"] for s in option["series"]], [0, 0, 1, 2, 3, 4])
                 self.assertEqual(len(option["yAxis"]), 5)
                 self.assertTrue(all(a["scale"] for a in option["yAxis"]))
-                self.assertTrue(all(not s["connectNulls"] for s in option["series"]))
+                self.assertTrue(all(s["connectNulls"] for s in option["series"]))
                 json.dumps(option, allow_nan=False)
 
     def test_tail_failure_does_not_hide_vix_or_fabricate_values(self):
@@ -47,7 +47,7 @@ class TailRiskTests(unittest.TestCase):
         ns["load_tail_risk_snapshot"] = lambda s: (_ for _ in ()).throw(OSError("outage"))
         fig = ns["build_fig10"]("1M")
         self.assertEqual([t.name for t in fig.data], ["VIX", "VIX3M", "VIX/VIX3M (R1)"])
-        self.assertEqual(set(fig.layout.meta["missing_series"]), {"SKEW (R2)", "VVIX (R3)", "VVIX/VIX (R4)", "9D/30D (R1)", "SPX P/C (R1)"})
+        self.assertEqual(set(fig.layout.meta["missing_series"]), {"SKEW 5D MA (R2)", "VVIX (R3)", "VVIX/VIX (R4)", "9D/30D (R1)", "SPX P/C 63D MA (R1)"})
 
     def history(self, symbol="SKEW", stop="2026-11-03", value=150):
         dates = pd.bdate_range("2022-01-03", stop)
