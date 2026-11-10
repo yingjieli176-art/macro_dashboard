@@ -62,7 +62,13 @@ class DashboardBootSmoke(unittest.TestCase):
                     "https://fred.stlouisfed.org/series/BAMLH0A0HYM2"):
             self.assertIn(url, source_rows[6])
         self.assertNotIn("term-premia-tabs", source_rows[6])
-        self.assertNotIn('class="mini-description"', title_text)
+        parameter_rows = [element.value for element in instance.markdown
+                          if element.value.startswith('<div class="chart-parameters">')]
+        self.assertEqual(len(parameter_rows), 20)
+        for label in ("公司 5Y CDS", "实际观测与覆盖率", "HY OAS（R1）"):
+            self.assertIn(label, parameter_rows[6])
+        for unrelated in ("资本开支", "期限溢价与美联储", "韩国股市"):
+            self.assertNotIn(unrelated, parameter_rows[6])
         self.assertFalse(any(caption.value.startswith("来源：Open-Sourced") for caption in instance.caption))
         self.assertEqual([control.key for control in instance.get("button_group")[6:9]],
                          ["nvidia_cds_time_window", "sp500_nikkei_ratio_time_window", "japan_rates_time_window"])

@@ -98,7 +98,7 @@ class ChartRendererRecoveryTests(unittest.TestCase):
         self.adapter.side_effect = ValueError("echarts option error")
         self._render_standard()
         self.st.plotly_chart.assert_called_once()
-        self.ns["add_sources"].assert_called_once_with([])
+        self.ns["add_sources"].assert_called_once_with([], "test_chart")
 
     def test_standard_macro_renderer_failure_recovers(self):
         self.st.echarts_chart.side_effect = RuntimeError("Cloud chart renderer error")

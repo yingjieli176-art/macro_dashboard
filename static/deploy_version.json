@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-10-chart-sources-r125",
+  "release": "2026-11-10-chart-parameters-r126",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
