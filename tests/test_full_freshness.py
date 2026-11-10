@@ -127,7 +127,7 @@ class FullFreshness(unittest.TestCase):
         mapped = {row[0]: row[1] for row in config}
         yen_carry = MACRO_DISPLAY_NUMBER[16]
         relative_strength = MACRO_DISPLAY_NUMBER[4]
-        for source in ("DGS10", "japan_10y", "JPY=X"):
+        for source in ("DGS10", "japan_10y", "JPY=X", "DX-Y.NYB"):
             self.assertIn(yen_carry, mapped[source])
         self.assertNotIn(yen_carry, mapped["DGS2"])
         self.assertNotIn(yen_carry, mapped["japan_2y"])

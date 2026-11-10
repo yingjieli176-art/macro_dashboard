@@ -88,7 +88,7 @@ from macro_platform.yen_index import load_yen_market_index
 from macro_platform.sp500_nikkei_ratio import build_sp500_nikkei_ratio_figure
 try:
     import macro_platform.yen_carry as _yen_carry
-    if not hasattr(_yen_carry, "TOPIX_NAME"):
+    if not hasattr(_yen_carry, "DXY_NAME"):
         _yen_carry = importlib.reload(_yen_carry)
 except ImportError:
     _yen_carry = None
@@ -142,7 +142,7 @@ RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES
-CHART_BUILD = "2026-11-10-chart-parameters-r126"
+CHART_BUILD = "2026-11-10-yen-carry-dxy-r127"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1845,6 +1845,10 @@ def get_yahoo_daily_history(symbol):
             result = ((response.json() or {}).get("chart") or {}).get("result") or []
             if len(result) != 1:
                 continue
+            if symbol == "DX-Y.NYB":
+                meta = result[0].get("meta") or {}
+                if (meta.get("symbol"), meta.get("instrumentType"), meta.get("dataGranularity")) != (symbol, "INDEX", "1d"):
+                    continue
             frame = completed_daily_closes(result[0])
             if not frame.empty and (best.empty or frame.observation_date.max() > best.observation_date.max()):
                 best = frame
@@ -2036,9 +2040,13 @@ def build_fig16(date_range):
             frames.append(loader())
         except Exception:
             frames.append(pd.DataFrame())
-    return _yen_carry.build_yen_carry_figure(
-        date_range, us=frames[0], japan=frames[1], fx=frames[2], positions=frames[3], topix=frames[4],
-    )
+    inputs = dict(us=frames[0], japan=frames[1], fx=frames[2], positions=frames[3], topix=frames[4])
+    if hasattr(_yen_carry, "DXY_NAME"):
+        symbol = _yen_carry.DXY_SYMBOL
+        stored = _yen_carry.load_dxy_snapshot()
+        live = _load_yahoo_histories((symbol,))[symbol]
+        inputs["dxy"] = pd.concat([stored, live], ignore_index=True)
+    return _yen_carry.build_yen_carry_figure(date_range, **inputs)
 
 
 compact_mode = False
@@ -2710,11 +2718,13 @@ def render_macro_chart_15(prebuilt_fig=None):
 def render_macro_chart_16(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[16]}. 日元套息分析 · Yen Carry Trade</div>'
-        '<div class="section-description">美日10Y利差 · USD/JPY (R1) · 日元20交易日升值幅度 (R2) · CFTC日元投机净仓位 (R3) · TOPIX（东证指数，R4）</div>',
+        '<div class="section-description">美日10Y利差 · USD/JPY（R1 阳轴，向上＝日元走弱） · '
+        '日元20交易日升值幅度（R2 阳轴，向上＝升值幅度增加） · CFTC日元投机净仓位 (R3) · '
+        'TOPIX（东证指数，R4） · 美元指数 DXY (R5)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
-        "Chart 18", lambda: _cached_macro_figure(16, _macro_snapshot_revision(), CHART_BUILD))
+        "Chart 10", lambda: _cached_macro_figure(16, _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(base_fig, "yen_carry")
     add_sources([
         ("FRED · US 10Y Treasury (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
@@ -2723,6 +2733,7 @@ def render_macro_chart_16(prebuilt_fig=None):
         ("Yahoo · USD/JPY daily closes", "https://finance.yahoo.com/quote/JPY%3DX/history/"),
         ("Yahoo! Japan · TOPIX 日收盘", "https://finance.yahoo.co.jp/quote/998405.T/history"),
         ("JPX · TOPIX 指数说明", "https://www.jpx.co.jp/markets/indices/topix/index.html"),
+        ("Yahoo Finance · DXY 日收盘", "https://finance.yahoo.com/quote/DX-Y.NYB/history/"),
     ], "yen_carry")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 

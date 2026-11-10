@@ -60,7 +60,9 @@ def completed_daily_closes(node, now=None):
         # Unknown venues and futures still require explicit session evidence.
         close_times = {"America/New_York": (16, 15), "Asia/Hong_Kong": (16, 15),
                        "Asia/Tokyo": (15, 45)}
-        if instrument in {"EQUITY", "ETF", "INDEX"} and tz_name in close_times:
+        # DXY continues publishing after the US cash-equity close.
+        if (instrument in {"EQUITY", "ETF", "INDEX"} and tz_name in close_times
+                and meta.get("symbol") != "DX-Y.NYB"):
             try:
                 next_start = pd.Timestamp(float(regular["start"]), unit="s", tz="UTC")
                 local_clock = clock.tz_convert(tz_name)

@@ -118,6 +118,24 @@ def _responsive_chart_layout(option, fig, axis_map):
     geometry when a phone rotates or a browser window grows again.
     """
     option = _price_reference_annotations(option, fig)
+    explicit_titles = (fig.layout.meta or {}).get("preserve_axis_titles", ())
+    compact_titles = []
+    for ref, index in sorted(axis_map.items(), key=lambda pair: pair[1]):
+        source = getattr(fig.layout, "yaxis" if ref == "y" else "yaxis" + ref[1:], None)
+        title = str(getattr(getattr(source, "title", None), "text", None) or "")
+        if ref in explicit_titles and title:
+            option["yAxis"][index]["name"] = title
+            compact_titles.append(title.replace(" · ", "\n"))
+            continue
+        traces = [trace for trace in fig.data if (getattr(trace, "yaxis", None) or "y") == ref]
+        unit = _axis_unit(source, traces)
+        if not unit:
+            # Preserve compact source units such as kt for copper inventories.
+            suffix = title.rsplit(" · ", 1)[-1].strip()
+            unit = suffix if suffix and len(suffix) <= 12 else "value"
+        label = "L" if index == 0 else f"R{index}"
+        compact_titles.append(f"{label}\n{unit}")
+
     desktop = {key: deepcopy(option[key]) for key in ("legend", "grid", "yAxis", "xAxis")}
     for axis in desktop["yAxis"]:
         axis["nameRotate"] = 90
@@ -129,20 +147,8 @@ def _responsive_chart_layout(option, fig, axis_map):
     if "toolbox" in option:
         desktop["toolbox"] = deepcopy(option["toolbox"])
 
-    units = []
-    for ref, index in sorted(axis_map.items(), key=lambda pair: pair[1]):
-        source = getattr(fig.layout, "yaxis" if ref == "y" else "yaxis" + ref[1:], None)
-        traces = [trace for trace in fig.data if (getattr(trace, "yaxis", None) or "y") == ref]
-        unit = _axis_unit(source, traces)
-        if not unit:
-            # Keep compact source units the older desktop title helper does
-            # not recognize (for example copper inventories in kt).
-            title = str(getattr(getattr(source, "title", None), "text", None) or "")
-            suffix = title.rsplit(" · ", 1)[-1].strip()
-            unit = suffix if suffix and len(suffix) <= 12 else "value"
-        units.append(unit)
-
     media = []
+    extra_title_space = 12 * max(0, max((title.count("\n") for title in compact_titles), default=0) - 1)
     # Estimate legend rows conservatively at each band's lower width. Explicit
     # row breaks keep the plain legend complete without a pagination control.
     for maximum, usable, spacing, label_size in (
@@ -169,13 +175,13 @@ def _responsive_chart_layout(option, fig, axis_map):
             used += width
         axes = deepcopy(option["yAxis"])
         for index, axis in enumerate(axes):
-            unit = units[index]
+            label, unit = compact_titles[index].split("\n", 1)
             if compact_units:
                 unit = {"USD/t": "$/t", "USD/bbl": "$/bbl", "USD/dmt": "$/dmt",
                         "US cents/lb": "¢/lb"}.get(unit, unit)
             axis.update({
                 "show": True,
-                "name": f"{'L' if index == 0 else 'R' + str(index)}\n{unit}",
+                "name": f"{label}\n{unit}",
                 "nameLocation": "end", "nameRotate": 0, "nameGap": 10,
                 "nameTextStyle": {"fontSize": 9, "lineHeight": 12,
                                   "align": "center", "color": "#475569"},
@@ -189,7 +195,7 @@ def _responsive_chart_layout(option, fig, axis_map):
                        "data": names, "itemWidth": 14, "itemHeight": 8,
                        "itemGap": 8, "textStyle": {"fontSize": 10, "lineHeight": 14}},
             "grid": {"left": 42, "right": 38 + max(0, len(axes) - 2) * spacing,
-                     "top": 26 + rows * 22 + 40, "bottom": 58, "containLabel": False},
+                     "top": 26 + rows * 22 + 40 + extra_title_space, "bottom": 58, "containLabel": False},
             "yAxis": axes,
             "xAxis": {"splitNumber": 3, "axisLabel": {"margin": 8, "fontSize": 9}},
         }

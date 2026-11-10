@@ -1,6 +1,9 @@
 """Observed carry incentives and FX pressure; no inferred positioning or P&L."""
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -12,6 +15,9 @@ FX_NAME = "USD/JPY (R1)"
 PRESSURE_NAME = "JPY 20-session appreciation (R2)"
 POSITION_NAME = "CFTC JPY speculative net (R3)"
 TOPIX_NAME = "TOPIX（东证指数） (R4)"
+DXY_NAME = "美元指数 DXY (R5)"
+DXY_SYMBOL = "DX-Y.NYB"
+DXY_SNAPSHOT = Path(__file__).resolve().parents[1] / "data_snapshots/dxy_daily.json"
 
 
 def _observations(frame, column):
@@ -21,6 +27,17 @@ def _observations(frame, column):
     out["observation_date"] = pd.to_datetime(out.observation_date, errors="coerce", utc=True).dt.tz_localize(None).dt.normalize()
     out[column] = pd.to_numeric(out[column], errors="coerce").replace([np.inf, -np.inf], np.nan)
     return out.dropna(subset=["observation_date"]).sort_values("observation_date", kind="stable").drop_duplicates("observation_date", keep="last").reset_index(drop=True)
+
+
+def load_dxy_snapshot(path=DXY_SNAPSHOT):
+    """Keep verified DXY closes available during a Yahoo outage."""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if payload["symbol"] == DXY_SYMBOL:
+            return _observations(pd.DataFrame(payload["records"]), "close")
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return _observations(None, "close")
 
 
 def carry_observations(us, japan, fx):
@@ -39,7 +56,7 @@ def carry_observations(us, japan, fx):
     return rates, exchange
 
 
-def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None, topix=None):
+def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None, topix=None, dxy=None):
     rates, exchange = carry_observations(us, japan, fx)
     positioning = _observations(positions, "net_contracts")
     positioning["net_10k_contracts"] = positioning.net_contracts / 10000
@@ -51,6 +68,10 @@ def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None, topix=N
         index = _observations(topix, "topix_close")
         index.loc[index.topix_close.le(0), "topix_close"] = np.nan
         sources += ((index, "topix_close", TOPIX_NAME, "y5", "#087c5a", "solid", " pts"),)
+    if dxy is not None:
+        dollar = _observations(dxy, "close")
+        dollar.loc[dollar.close.le(0), "close"] = np.nan
+        sources += ((dollar, "close", DXY_NAME, "y6", "#a61e63", "solid", " pts"),)
     latest_dates = [frame.loc[frame[column].notna(), "observation_date"].max()
                     for frame, column, *_ in sources if frame[column].notna().any()]
     latest = max(latest_dates) if latest_dates else None
@@ -75,21 +96,31 @@ def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None, topix=N
         legend=dict(orientation="h", yanchor="bottom", y=1.09, font=dict(size=10)),
         xaxis=dict(domain=[0, 0.81]),
         yaxis=dict(title=f"{SPREAD_NAME} · pp", fixedrange=True, tickformat=".2f", zeroline=True),
-        yaxis2=dict(title="R1 · JPY/USD", overlaying="y", side="right", anchor="free",
+        yaxis2=dict(title="R1 · USD/JPY · 阳轴", overlaying="y", side="right", anchor="free",
                     position=0.83, showgrid=False, fixedrange=True, tickformat=".1f"),
-        yaxis3=dict(title="R2 · %", overlaying="y", side="right", anchor="free",
+        yaxis3=dict(title="R2 · % · 阳轴", overlaying="y", side="right", anchor="free",
                     position=0.91, showgrid=False, fixedrange=True, tickformat=".1f", zeroline=True),
         yaxis4=dict(title="R3 · 万张", overlaying="y", side="right", anchor="free",
                     position=0.995, showgrid=False, fixedrange=True, tickformat=".1f", zeroline=True),
-        meta={"missing_series": missing},
+        meta={"missing_series": missing, "preserve_axis_titles": ["y2", "y3", "y6"]},
     )
-    if any(trace.name == TOPIX_NAME for trace in fig.data):
+    has_topix = any(trace.name == TOPIX_NAME for trace in fig.data)
+    if has_topix:
         fig.update_layout(
             xaxis_domain=[0, 0.63], yaxis2_position=0.65,
             yaxis3_position=0.75, yaxis4_position=0.85,
             yaxis5=dict(title="R4 · TOPIX · pts", overlaying="y", side="right", anchor="free",
                         position=0.95, showgrid=False, fixedrange=True, tickformat=",.0f"),
         )
+    if any(trace.name == DXY_NAME for trace in fig.data):
+        fig.update_layout(
+            xaxis_domain=[0, 0.55], yaxis2_position=0.57,
+            yaxis3_position=0.67, yaxis4_position=0.77,
+            yaxis6=dict(title="R5 · DXY · pts", overlaying="y", side="right", anchor="free",
+                        position=0.98, showgrid=False, fixedrange=True, tickformat=".1f"),
+        )
+        if has_topix:
+            fig.update_layout(yaxis5_position=0.87)
     if latest is None:
         fig.add_annotation(text="数据暂不可用", x=0.5, y=0.5, xref="paper", yref="paper", showarrow=False)
         return fig

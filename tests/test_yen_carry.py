@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from macro_platform.yen_carry import (
-    FX_NAME, PRESSURE_NAME, SPREAD_NAME, TOPIX_NAME, build_yen_carry_figure, carry_observations,
+    DXY_NAME, FX_NAME, PRESSURE_NAME, SPREAD_NAME, TOPIX_NAME, build_yen_carry_figure, carry_observations,
 )
 
 
@@ -90,6 +90,27 @@ class YenCarryTests(unittest.TestCase):
             self.assertEqual(series["yAxisIndex"], 4)
             self.assertEqual(option["yAxis"][4]["name"], "R4 · pts")
             self.assertTrue(option["yAxis"][4]["scale"])
+
+    def test_dxy_keeps_its_dates_and_yen_axis_labels_in_both_renderers(self):
+        from macro_platform.echarts_axes import build_adaptive_echarts_option, build_safe_echarts_option
+
+        dates = self.days[[20, 22, 26]]
+        dollar = pd.DataFrame({"observation_date": dates, "close": [98.17, 99.23, 98.92]})
+        fig = build_yen_carry_figure("6M", us=self.us, japan=self.jp, fx=self.fx, dxy=dollar)
+        trace = next(trace for trace in fig.data if trace.name == DXY_NAME)
+        self.assertEqual(trace.yaxis, "y6")
+        self.assertEqual(list(trace.x), list(dates))
+        self.assertEqual(list(trace.y), dollar.close.tolist())
+        for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
+            option = adapter(fig, "6M")
+            series = next(series for series in option["series"] if series["name"] == DXY_NAME)
+            self.assertEqual(series["yAxisIndex"], 3)
+            self.assertEqual(option["yAxis"][3]["name"], "R5 · DXY · pts")
+            self.assertEqual([point[1] for point in series["data"]], dollar.close.tolist())
+            for index in (1, 2):
+                self.assertFalse(option["yAxis"][index]["inverse"])
+                self.assertIn("阳轴", option["yAxis"][index]["name"])
+                self.assertIn("阳轴", option["media"][0]["option"]["yAxis"][index]["name"])
 
 
 if __name__ == "__main__":

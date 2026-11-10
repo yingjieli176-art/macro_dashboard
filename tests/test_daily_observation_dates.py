@@ -81,6 +81,12 @@ class DailyObservationDates(unittest.TestCase):
         self.assertTrue(completed_daily_closes(node, "2026-07-02T19:00Z").empty)
         self.assertEqual(len(completed_daily_closes(node, "2026-07-02T20:20Z")), 1)
 
+    def test_dxy_does_not_use_us_equity_close_cutoff(self):
+        node = bar("2026-11-05", "America/New_York", "2026-11-06", "INDEX")
+        node["meta"]["symbol"] = "DX-Y.NYB"
+        self.assertTrue(completed_daily_closes(node, "2026-11-05T22:00Z").empty)
+        self.assertEqual(len(completed_daily_closes(node, "2026-11-06T06:00Z")), 1)
+
     def test_explicit_short_session_takes_precedence(self):
         node = bar("2026-11-27", "America/New_York", "2026-11-30")
         node["tradingPeriods"] = {"regular": [[{

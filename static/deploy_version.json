@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-10-chart-parameters-r126",
+  "release": "2026-11-10-yen-carry-dxy-r127",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -62,6 +62,7 @@
     "srf_usage_bars_match_yen_position_eight_pixel_width",
     "vix_term_three_ratios_share_r1_vvix_vix_uses_r4",
     "yen_carry_with_completed_topix_closes_on_independent_right_axis",
+    "yen_carry_dxy_daily_close_and_yen_axis_direction_labels",
     "treasury_curve_with_nasdaq_100_daily_closes",
     "yen_carry_explicit_us_and_japan_10y_label",
     "ai_credit_with_fred_high_yield_oas_on_independent_percent_axis",

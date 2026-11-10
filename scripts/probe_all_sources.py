@@ -431,6 +431,7 @@ def jobs():
             snapshot(f"fred_cache/{symbol}.json", "date", "value"), lambda symbol=symbol: fred(symbol))
     for symbol, charts, filename, field in (
         ("HKD=X", [8], "usdhkd_daily.json", "value"), ("JPY=X", [14,18], "jpy_market_daily.json", "usd_jpy_close"),
+        ("DX-Y.NYB", [18], "dxy_daily.json", "close"),
         ("0700.HK", [5,8], "hk_market_daily.json", "close"), ("0388.HK", [5,8], "hk_market_daily.json", "close"),
         ("^HSI", [5,8], "hk_market_daily.json", "close"), ("HSTECH", [5,8], "hk_market_daily.json", "close"),
         ("GC=F", [15], None, "close"), ("SI=F", [15], None, "close"),
