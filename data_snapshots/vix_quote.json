@@ -1,8 +1,8 @@
 {
   "symbol": "^VIX",
-  "value": 20.96,
-  "observed_at": "2026-11-10T17:43:31+00:00",
-  "retrieved_at": "2026-11-10T17:59:33.150432+00:00",
+  "value": 19.46,
+  "observed_at": "2026-11-10T21:15:01+00:00",
+  "retrieved_at": "2026-11-10T23:35:40.184844+00:00",
   "source": "Cboe delayed index quote",
   "source_url": "https://cdn-api.cboe.com/api/global/delayed_quotes/quotes/_VIX.json",
   "delayed": true
