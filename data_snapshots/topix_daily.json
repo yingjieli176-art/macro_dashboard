@@ -4885,6 +4885,10 @@
     {
       "observation_date": "2026-11-09",
       "close": 3818.16
+    },
+    {
+      "observation_date": "2026-11-10",
+      "close": 3893.71
     }
   ]
 }
