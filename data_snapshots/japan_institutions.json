@@ -1,0 +1,132 @@
+{
+  "gpif": {
+    "method": "Sum JPY market values for security names starting with US TREASURY N/B in each fiscal year-end Foreign Bonds worksheet.",
+    "records": [
+      {
+        "observation_date": "2021-03-31",
+        "market_value_jpy": 15862635140822,
+        "securities": 238,
+        "source": "https://www.gpif.go.jp/en/performance/unyoujoukyou_2020_16_en.xlsx"
+      },
+      {
+        "observation_date": "2022-03-31",
+        "market_value_jpy": 19020710326199,
+        "securities": 245,
+        "source": "https://www.gpif.go.jp/en/unyoujoukyou_2021_16_en.xlsx"
+      },
+      {
+        "observation_date": "2023-03-31",
+        "market_value_jpy": 20736201741213,
+        "securities": 266,
+        "source": "https://www.gpif.go.jp/en/performance/79328564gpif/unyoujoukyou_2022_16_en%20.xlsx"
+      },
+      {
+        "observation_date": "2024-03-31",
+        "market_value_jpy": 29505356869369,
+        "securities": 302,
+        "source": "https://www.gpif.go.jp/en/performance/65829801gpif/unyoujoukyou_2022_17_en.xlsx"
+      },
+      {
+        "observation_date": "2025-03-31",
+        "market_value_jpy": 32369389360996,
+        "securities": 309,
+        "source": "https://www.gpif.go.jp/en/performance/32821257gpif/unyoujoukyou_2024_15_en.xlsx"
+      },
+      {
+        "observation_date": "2026-03-31",
+        "market_value_jpy": 36841418400192,
+        "securities": 297,
+        "source": "https://www.gpif.go.jp/en/performance/73509681gpif/unyoujoukyou_2025_20_en_2.xlsx"
+      }
+    ]
+  },
+  "boj_life_insurers": {
+    "source": "https://www.boj.or.jp/en/research/brp/fsr/data/fsr261023a.pdf#page=29",
+    "method": "Chart III-2-5, nine insurers, general accounts. Digitized points rounded to whole percentage points and JPY trillions. Fiscal years map to the following March 31.",
+    "records": [
+      {
+        "observation_date": "2021-03-31",
+        "foreign_bonds_jpy_trillion": 66,
+        "hedge_pct": 59
+      },
+      {
+        "observation_date": "2022-03-31",
+        "foreign_bonds_jpy_trillion": 68,
+        "hedge_pct": 60
+      },
+      {
+        "observation_date": "2023-03-31",
+        "foreign_bonds_jpy_trillion": 56,
+        "hedge_pct": 48
+      },
+      {
+        "observation_date": "2024-03-31",
+        "foreign_bonds_jpy_trillion": 63,
+        "hedge_pct": 43
+      },
+      {
+        "observation_date": "2025-03-31",
+        "foreign_bonds_jpy_trillion": 61,
+        "hedge_pct": 41
+      },
+      {
+        "observation_date": "2026-03-31",
+        "foreign_bonds_jpy_trillion": 67,
+        "hedge_pct": 43
+      }
+    ]
+  },
+  "japan_post_insurance": {
+    "method": "Divide the rounded hedged balance by the rounded total of the separately disclosed foreign-currency-denominated bonds portfolio.",
+    "records": [
+      {
+        "observation_date": "2024-03-31",
+        "hedged_jpy_trillion": 1.2,
+        "foreign_currency_bonds_jpy_trillion": 1.7,
+        "source": "https://www.jp-life.japanpost.jp/english/news/assets/pdf/2025/pr0515en-01_01.pdf"
+      },
+      {
+        "observation_date": "2024-09-30",
+        "hedged_jpy_trillion": 1.2,
+        "foreign_currency_bonds_jpy_trillion": 1.4,
+        "source": "https://www.jp-life.japanpost.jp/english/news/assets/pdf/2024/pr1114en-03.pdf"
+      },
+      {
+        "observation_date": "2025-03-31",
+        "hedged_jpy_trillion": 1.1,
+        "foreign_currency_bonds_jpy_trillion": 1.4,
+        "source": "https://www.jp-life.japanpost.jp/english/news/assets/pdf/2025/pr0515en-01_01.pdf"
+      },
+      {
+        "observation_date": "2025-06-30",
+        "hedged_jpy_trillion": 1.2,
+        "foreign_currency_bonds_jpy_trillion": 1.5,
+        "source": "https://www.jp-life.japanpost.jp/english/news/assets/pdf/2025/pr0808en-01.pdf#page=29"
+      },
+      {
+        "observation_date": "2025-09-30",
+        "hedged_jpy_trillion": 1.3,
+        "foreign_currency_bonds_jpy_trillion": 1.6,
+        "source": "https://www.jp-life.japanpost.jp/english/news/assets/pdf/2025/pr1114en-04.pdf"
+      },
+      {
+        "observation_date": "2025-12-31",
+        "hedged_jpy_trillion": 1.3,
+        "foreign_currency_bonds_jpy_trillion": 1.6,
+        "source": "https://www.jp-life.japanpost.jp/english/news/assets/pdf/2026/pr0213en-01.pdf#page=29"
+      },
+      {
+        "observation_date": "2026-03-31",
+        "hedged_jpy_trillion": 1.1,
+        "foreign_currency_bonds_jpy_trillion": 1.4,
+        "source": "https://www.jp-life.japanpost.jp/english/news/assets/pdf/2026/pr0515en-3-01.pdf"
+      },
+      {
+        "observation_date": "2026-06-30",
+        "hedged_jpy_trillion": 1.2,
+        "foreign_currency_bonds_jpy_trillion": 1.5,
+        "source": "https://www.jp-life.japanpost.jp/english/news/assets/pdf/2026/pr0807en-01.pdf#page=32"
+      }
+    ]
+  }
+}

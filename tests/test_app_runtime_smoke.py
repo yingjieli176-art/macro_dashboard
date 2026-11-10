@@ -103,7 +103,13 @@ class DashboardBootSmoke(unittest.TestCase):
         yen_vol = next(option for option in options
                        if any(s["name"] == "USD/JPY 20日实际波动率" for s in option["series"]))
         self.assertEqual([s["name"] for s in yen_vol["series"]],
-                         ["USD/JPY 20日实际波动率", "USD/JPY 60日实际波动率"])
+                         ["USD/JPY 20日实际波动率", "USD/JPY 60日实际波动率", "BOJ 政策利率（右轴）"])
+        self.assertEqual(yen_vol["series"][-1]["step"], "end")
+        self.assertEqual(yen_vol["series"][-1]["yAxisIndex"], 1)
+        for series_name in ("GPIF 美债票据与长期债券", "九家主要寿险 · 外债对冲率"):
+            institutional = next(s for option in options for s in option["series"] if s["name"] == series_name)
+            self.assertEqual(len(institutional["data"]), 6)
+            self.assertTrue(institutional["showSymbol"])
         yen_tic = next(option for option in options
                        if any(s["name"] == "日本美债总持仓" for s in option["series"]))
         self.assertEqual([s["yAxisIndex"] for s in yen_tic["series"]], [0, 0, 0, 1, 1])

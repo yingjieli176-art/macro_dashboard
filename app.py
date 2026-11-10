@@ -88,7 +88,7 @@ from macro_platform.yen_index import load_yen_market_index
 from macro_platform.sp500_nikkei_ratio import build_sp500_nikkei_ratio_figure
 try:
     import macro_platform.yen_carry as _yen_carry
-    if not hasattr(_yen_carry, "build_japan_tic_figure"):
+    if not hasattr(_yen_carry, "build_japan_institution_figure"):
         _yen_carry = importlib.reload(_yen_carry)
 except ImportError:
     _yen_carry = None
@@ -142,7 +142,7 @@ RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES
-CHART_BUILD = "2026-11-10-yen-tic-volatility-r128"
+CHART_BUILD = "2026-11-10-boj-policy-institutions-r129"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2050,7 +2050,11 @@ def build_fig16(date_range):
 
 
 def build_yen_volatility(date_range):
-    return _yen_carry.build_yen_volatility_figure(date_range, fx=load_yen_market_index())
+    from macro_platform.boj_policy import load_boj_policy
+
+    return _yen_carry.build_yen_volatility_figure(
+        date_range, fx=load_yen_market_index(), policy=load_boj_policy(),
+    )
 
 
 def build_yen_tic(date_range):
@@ -2742,8 +2746,10 @@ def render_macro_chart_16(prebuilt_fig=None):
     selected_range = st.session_state.get("yen_carry_time_window") or DEFAULT_CHART_RANGE
     revision = _macro_snapshot_revision()
 
-    st.markdown("#### 日元波动率 · USD/JPY")
-    st.caption("20 与 60 个交易日的实际波动率，使用同一 USD/JPY 已完成日线。两个窗口均按 252 个交易日年化。")
+    st.markdown("#### 日元波动率与 BOJ 政策利率阶梯")
+    st.caption("左轴是 USD/JPY 20 日与 60 日实际波动率，按 252 个交易日年化。"
+               "右轴是 BOJ 短期政策利率，按生效日跳变。2024 年 3 月前为负利率框架；"
+               "退出负利率后的 0%～0.10% 区间按 BIS 口径取中点 0.05%。")
     volatility = _safe_macro_build(
         "日元波动率", lambda: _cached_macro_figure("yen_volatility", revision, CHART_BUILD),
     )
@@ -2766,6 +2772,17 @@ def render_macro_chart_16(prebuilt_fig=None):
         "其中单列的 1.5 万亿日元外币债券约 80% 对冲，按披露的约数计算。 |"
     )
     st.caption("TIC、寿险外债和 GPIF 的逐券披露各有统计口径。GPIF 在资产配置表中将日元对冲外债归入国内债券。")
+    st.markdown("##### 机构持仓历史")
+    st.caption("GPIF 逐年加总外国债券明细表中标为 US TREASURY N/B 的证券。日元市值受交易、债价与汇率影响。"
+               "九家寿险的外债余额来自日本央行图 III-2-5，按图读数取整，涵盖多个币种。")
+    holdings = _safe_macro_build("机构持仓历史", lambda: _cached_macro_figure("yen_holdings", revision, CHART_BUILD))
+    _render_adaptive_macro_figure(holdings, "yen_holdings", selected_range="5Y")
+
+    st.markdown("##### 寿险汇率对冲历史")
+    st.caption("九家寿险对冲率是日本央行一般账户外债估计。邮政保险只覆盖单列的外币债券，"
+               "比率按已对冲金额除以组合总额计算。圆点标记各期披露，两条线的分母不同。")
+    hedging = _safe_macro_build("寿险对冲历史", lambda: _cached_macro_figure("yen_hedging", revision, CHART_BUILD))
+    _render_adaptive_macro_figure(hedging, "yen_hedging", selected_range="5Y")
     add_sources([
         ("FRED · US 10Y Treasury (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
         ("CFTC · Commitments of Traders", "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"),
@@ -2776,8 +2793,11 @@ def render_macro_chart_16(prebuilt_fig=None):
         ("Yahoo Finance · DXY 日收盘", "https://finance.yahoo.com/quote/DX-Y.NYB/history/"),
         ("美国财政部 · TIC Table 5", "https://ticdata.treasury.gov/Publish/slt_table5.html"),
         ("FRED · 日本美债 TIC/CSLT", "https://fred.stlouisfed.org/series/FORTREASPOS42609"),
+        ("BIS · 日本政策利率 D.JP", "https://data.bis.org/topics/CBPOL/BIS,WS_CBPOL,1.0/D.JP"),
+        ("BOJ · 2026 年 10 月政策声明", "https://www.boj.or.jp/en/mopo/mpmdeci/mpr_2026/k261030a.pdf"),
         ("日本央行 · 寿险外债与对冲（图 III-2-5）", "https://www.boj.or.jp/en/research/brp/fsr/data/fsr261023a.pdf#page=29"),
         ("GPIF · FY2025 年报与逐券表", "https://www.gpif.go.jp/en/performance/last-years-results.html"),
+        ("GPIF · 历年逐券披露", "https://www.gpif.go.jp/en/performance/past-performances.html"),
         ("日本邮政保险 · 2026 年 6 月财报", "https://www.jp-life.japanpost.jp/english/news/assets/pdf/2026/pr0807en-01.pdf#page=32"),
     ], "yen_carry")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
@@ -2864,7 +2884,11 @@ def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
         13: build_fig13, 14: build_fig14, 15: build_fig15, 16: build_fig16,
     }
     if isinstance(chart_number, str):
-        builders.update(yen_volatility=build_yen_volatility, yen_tic=build_yen_tic)
+        builders.update(
+            yen_volatility=build_yen_volatility, yen_tic=build_yen_tic,
+            yen_holdings=lambda period: _yen_carry.build_japan_institution_figure(period, metric="holdings"),
+            yen_hedging=lambda period: _yen_carry.build_japan_institution_figure(period, metric="hedging"),
+        )
     if chart_number == 4:
         try:
             builder = build_sp500_nikkei_ratio_figure

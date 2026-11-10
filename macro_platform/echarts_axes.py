@@ -224,7 +224,10 @@ def _responsive_chart_layout(option, fig, axis_map):
 SRF_JPY_BAR_WIDTH = 8
 
 
-def _bar_style(series, trace):
+def _trace_geometry(series, trace):
+    shape = getattr(getattr(trace, "line", None), "shape", None)
+    if shape == "hv":
+        series["step"] = "end"
     if getattr(trace, "type", "") != "bar":
         return
     marker = getattr(trace, "marker", None)
@@ -311,7 +314,7 @@ def build_safe_echarts_option(fig, date_range="1Y"):
             series[-1]["itemStyle"] = {"color": color}
         if isinstance(getattr(trace, "meta", None), dict) and trace.meta.get("observation_cadence") in ("daily", "weekly", "monthly"):
             series[-1]["observation_cadence"] = trace.meta["observation_cadence"]
-        _bar_style(series[-1], trace)
+        _trace_geometry(series[-1], trace)
     if latest is None or not series:
         return None
     axes = []
@@ -455,7 +458,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             series[-1]["itemStyle"] = {"color": color}
         if isinstance(getattr(trace, "meta", None), dict) and trace.meta.get("observation_cadence") in ("daily", "weekly", "monthly"):
             series[-1]["observation_cadence"] = trace.meta["observation_cadence"]
-        _bar_style(series[-1], trace)
+        _trace_geometry(series[-1], trace)
 
     if latest is None or not series:
         return None

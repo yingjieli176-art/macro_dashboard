@@ -9,6 +9,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis
+from macro_platform.boj_policy import BOJ_POLICY_NAME, RATE_COLUMN
 from macro_platform.fred_observations import TIC_JAPAN_SERIES
 
 SPREAD_NAME = "US 10Y - Japan 10Y"
@@ -19,6 +20,7 @@ TOPIX_NAME = "TOPIX（东证指数） (R4)"
 DXY_NAME = "美元指数 DXY (R5)"
 DXY_SYMBOL = "DX-Y.NYB"
 DXY_SNAPSHOT = Path(__file__).resolve().parents[1] / "data_snapshots/dxy_daily.json"
+INSTITUTIONS_SNAPSHOT = DXY_SNAPSHOT.with_name("japan_institutions.json")
 
 
 def _observations(frame, column):
@@ -62,7 +64,7 @@ def _fx_observations(fx):
     return exchange
 
 
-def build_yen_volatility_figure(date_range, *, fx):
+def build_yen_volatility_figure(date_range, *, fx, policy=None):
     """Use completed FX closes and full rolling windows before viewport slicing."""
     exchange = _fx_observations(fx)
     returns = np.log(exchange.usd_jpy_close.dropna().astype(float)).diff()
@@ -81,8 +83,52 @@ def build_yen_volatility_figure(date_range, *, fx):
     fig.update_layout(template="plotly_white", hovermode="x unified",
                       yaxis=dict(title="年化波动率 · %", fixedrange=True),
                       meta={"missing_series": missing})
-    latest = exchange.loc[returns.index, "observation_date"].max()
-    return apply_time_axis(fig, date_range, latest=latest)
+    if policy is not None:
+        policy = _observations(policy, RATE_COLUMN).dropna(subset=[RATE_COLUMN])
+        if policy.empty:
+            fig.layout.meta["missing_series"].append(BOJ_POLICY_NAME)
+        else:
+            fig.add_scatter(x=policy.observation_date, y=policy[RATE_COLUMN],
+                            name=BOJ_POLICY_NAME, yaxis="y2", mode="lines",
+                            line=dict(color="#087c5a", width=2.5, shape="hv"),
+                            hovertemplate="%{y:.2f}%<extra></extra>")
+            fig.update_layout(yaxis2=dict(title="BOJ 政策利率 · %", overlaying="y",
+                                          side="right", showgrid=False, fixedrange=True),
+                              meta={"preserve_axis_titles": ["y", "y2"]})
+    return apply_time_axis(fig, date_range)
+
+
+def build_japan_institution_figure(date_range, *, metric, path=INSTITUTIONS_SNAPSHOT):
+    """Compare only published disclosure dates and preserve each scope."""
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    life = pd.DataFrame(payload["boj_life_insurers"]["records"])
+    if metric == "holdings":
+        gpif = pd.DataFrame(payload["gpif"]["records"])
+        gpif["market_value_jpy_trillion"] = gpif.market_value_jpy / 1e12
+        lines = (
+            (gpif, "market_value_jpy_trillion", "GPIF 美债票据与长期债券", "#4e6cf5"),
+            (life, "foreign_bonds_jpy_trillion", "九家主要寿险 · 外债（多币种）", "#a61e63"),
+        )
+        title, fmt, unit = "持仓 · 万亿日元", ",.2f", " 万亿日元"
+    else:
+        postal = pd.DataFrame(payload["japan_post_insurance"]["records"])
+        postal["hedge_pct"] = postal.hedged_jpy_trillion / postal.foreign_currency_bonds_jpy_trillion * 100
+        lines = (
+            (life, "hedge_pct", "九家主要寿险 · 外债对冲率", "#a61e63"),
+            (postal, "hedge_pct", "日本邮政保险 · 单列外币债券对冲率", "#087c5a"),
+        )
+        title, fmt, unit = "汇率对冲率 · %", ".0f", "%"
+    fig = go.Figure()
+    for frame, column, name, color in lines:
+        rows = _observations(frame, column)
+        fig.add_scatter(x=rows.observation_date, y=rows[column], name=name,
+                        mode="lines+markers", marker_size=6, connectgaps=False,
+                        line=dict(color=color, width=2.3),
+                        hovertemplate=f"%{{y:{fmt}}}{unit}<extra></extra>")
+    fig.update_layout(template="plotly_white", hovermode="closest",
+                      yaxis=dict(title=title, fixedrange=True),
+                      meta={"preserve_axis_titles": ["y"]})
+    return apply_time_axis(fig, date_range)
 
 
 def build_japan_tic_figure(date_range, *, series):

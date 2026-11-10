@@ -8,6 +8,7 @@ from macro_platform.yen_carry import (
     build_japan_tic_figure, build_yen_volatility_figure,
 )
 from macro_platform.fred_observations import TIC_JAPAN_SERIES
+from macro_platform.boj_policy import BOJ_POLICY_NAME, RATE_COLUMN, parse_bis_policy_csv
 
 
 class YenCarryTests(unittest.TestCase):
@@ -147,6 +148,25 @@ class YenCarryTests(unittest.TestCase):
         self.assertTrue(all(s["observation_cadence"] == "monthly" for s in option["series"]))
         self.assertFalse(option["yAxis"][1]["scale"])
         self.assertEqual(len(build_japan_tic_figure("1Y", series={net: series[net]}).data), 1)
+
+    def test_boj_step_changes_on_effective_date_in_both_renderers(self):
+        from macro_platform.echarts_axes import build_adaptive_echarts_option, build_safe_echarts_option
+
+        data = ("DATAFLOW,FREQ,REF_AREA,TIME_PERIOD,OBS_VALUE,UNIT_MEASURE\n"
+                "BIS:WS_CBPOL(1.0),D,JP,2024-03-20,-0.1,368\n"
+                "BIS:WS_CBPOL(1.0),D,JP,2024-03-21,0.05,368\n")
+        policy = parse_bis_policy_csv(data)
+        self.assertEqual(list(policy[RATE_COLUMN]), [-0.1, 0.05])
+        with self.assertRaises(ValueError):
+            parse_bis_policy_csv(data.replace(",JP,", ",US,"))
+        fig = build_yen_volatility_figure("5Y", fx=self.fx, policy=policy)
+        self.assertEqual(fig.data[-1].line.shape, "hv")
+        self.assertEqual(fig.data[-1].yaxis, "y2")
+        for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
+            option = adapter(fig, "5Y")
+            step = next(s for s in option["series"] if s["name"] == BOJ_POLICY_NAME)
+            self.assertEqual(step["step"], "end")
+            self.assertEqual(step["data"][1], ["2024-03-21T00:00:00", 0.05])
 
 
 if __name__ == "__main__":
