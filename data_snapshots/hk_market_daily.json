@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-11T17:08:02.334805+00:00",
+  "updated_at": "2026-11-11T22:42:49.475570+00:00",
   "retention": "rolling 5 years plus one month buffer",
   "policy": "merge fresh observations into last-known-good history; never erase a usable series on fetch failure",
   "coverage_start": "2021-10-11",
@@ -11,10 +11,10 @@
       "unit": "HKD",
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
-      "record_count": 1249,
+      "record_count": 1250,
       "coverage_start": "2021-10-11",
-      "coverage_end": "2026-11-10",
-      "last_successful_fetch": "2026-11-11T17:08:02.334805+00:00",
+      "coverage_end": "2026-11-11",
+      "last_successful_fetch": "2026-11-11T22:42:49.475570+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -5013,6 +5013,10 @@
         {
           "observation_date": "2026-11-10",
           "close": 417.799988
+        },
+        {
+          "observation_date": "2026-11-11",
+          "close": 409.600006
         }
       ]
     },
@@ -5021,10 +5025,10 @@
       "unit": "HKD",
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
-      "record_count": 1249,
+      "record_count": 1250,
       "coverage_start": "2021-10-11",
-      "coverage_end": "2026-11-10",
-      "last_successful_fetch": "2026-11-11T17:08:02.334805+00:00",
+      "coverage_end": "2026-11-11",
+      "last_successful_fetch": "2026-11-11T22:42:49.475570+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -10023,6 +10027,10 @@
         {
           "observation_date": "2026-11-10",
           "close": 386.399994
+        },
+        {
+          "observation_date": "2026-11-11",
+          "close": 383.600006
         }
       ]
     },
@@ -10034,7 +10042,7 @@
       "record_count": 1249,
       "coverage_start": "2021-10-11",
       "coverage_end": "2026-11-10",
-      "last_successful_fetch": "2026-11-11T17:08:02.334805+00:00",
+      "last_successful_fetch": "2026-11-11T22:42:49.475570+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -15044,7 +15052,7 @@
       "record_count": 1250,
       "coverage_start": "2021-10-11",
       "coverage_end": "2026-11-11",
-      "last_successful_fetch": "2026-11-11T17:08:02.334805+00:00",
+      "last_successful_fetch": "2026-11-11T22:42:49.475570+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
