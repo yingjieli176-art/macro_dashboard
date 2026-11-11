@@ -1,260 +1,51 @@
-name: Viewport Y-axis regression
+name: Dashboard regression
 on:
   push:
     branches: [main]
     paths:
       - app.py
-      - tests/test_source_freshness.py
-      - scripts/push_snapshot.sh
-      - scripts/update_hkma_snapshot.py
-      - scripts/update_hkma_daily_snapshot.py
-      - scripts/update_usdhkd_snapshot.py
-      - scripts/update_censtat_money_supply.py
-      - macro_platform/spx_options.py
-      - macro_platform/nvidia_cds.py
-      - macro_platform/ai_credit.py
-      - scripts/update_ai_cds_snapshot.py
-      - tests/test_ai_credit.py
-      - data_snapshots/ai_cds_daily.json
-      - .github/workflows/update-ai-cds.yml
-      - macro_platform/dashboard_layout.py
-      - scripts/update_spx_put_call_snapshot.py
-      - scripts/import_nvidia_cds.py
-      - tests/test_spx_sentiment.py
-      - tests/test_nvidia_cds.py
-      - data_snapshots/vix9d_daily.json
-      - data_snapshots/spx_put_call_daily.json
-      - data_snapshots/nvidia_cds_daily.json
-      - .github/workflows/update-spx-put-call.yml
-      - macro_platform/tail_risk.py
-      - scripts/update_tail_risk_snapshot.py
-      - tests/test_tail_risk.py
-      - data_snapshots/skew_daily.json
-      - data_snapshots/vvix_daily.json
-      - .github/workflows/update-tail-risk-snapshot.yml
-      - macro_platform/us_equity_risk.py
-      - macro_platform/equity_drawdown.py
-      - macro_platform/china_equity.py
-      - scripts/update_china_equity_snapshot.py
-      - tests/test_china_equity.py
-      - data_snapshots/china_equity_daily.json
-      - .github/workflows/update-china-equity-snapshot.yml
-      - scripts/update_us_equity_snapshot.py
-      - tests/test_equity_drawdown.py
-      - tests/test_price_reference_charts.py
-      - data_snapshots/us_equity_daily.json
-      - .github/workflows/update-us-equity-snapshot.yml
-      - scripts/update_correlation_snapshot.py
-      - tests/test_correlation_snapshot.py
-      - data_snapshots/cor1m_daily.json
-      - data_snapshots/cor3m_daily.json
-      - .github/workflows/update-correlation-snapshot.yml
-      - macro_platform/market_history.py
-      - macro_platform/background_refresh.py
-      - macro_platform/request_runtime.py
-      - tests/test_consolidated_runtime.py
-      - tests/test_release_acceptance.py
-      - tests/browser_offline_app.py
-      - tests/acceptance_offline.py
-      - scripts/check_browser_release.py
-      - scripts/check_rollback_release.py
-      - scripts/benchmark_runtime.py
-      - tests/test_accuracy_performance.py
-      - static/deploy_version.json
-      - scripts/update_hk_market_daily.py
       - data.py
-      - macro_platform/fred_observations.py
-      - tests/test_fred_observation_admission.py
       - requirements.txt
-      - macro_platform/chart_axes.py
-      - macro_platform/linked_charts.py
-      - macro_platform/frontend/**
-      - static/macro-echarts-6.0.0.js.txt
-      - macro_platform/echarts_axes.py
-      - tests/test_viewport_axes.py
-      - tests/test_echarts_axes.py
-      - tests/test_chart_render_safety.py
-      - tests/test_data_axis_integrity.py
-      - tests/test_series_calendars.py
-      - tests/test_truth_source_integrity.py
-      - macro_platform/copper.py
-      - macro_platform/copper_tcrc.py
-      - macro_platform/srf_usage.py
-      - scripts/update_srf_usage.py
-      - tests/test_srf_usage.py
-      - data_snapshots/srf_usage_daily.json
-      - .github/workflows/update-srf-usage.yml
-      - scripts/update_copper_tcrc.py
-      - tests/test_copper_tcrc.py
-      - data_snapshots/copper_tcrc_weekly.json
-      - .github/workflows/update-copper-tcrc.yml
-      - macro_platform/asia_rates.py
-      - macro_platform/yen_index.py
-      - macro_platform/yen_carry.py
-      - macro_platform/cftc_yen.py
-      - scripts/update_cftc_yen.py
-      - tests/test_cftc_yen.py
-      - data_snapshots/cftc_jpy_weekly.json
-      - .github/workflows/update-cftc-yen.yml
-      - tests/test_yen_carry.py
-      - scripts/update_yen_index.py
-      - tests/test_yen_index.py
-      - data_snapshots/jpy_neer_daily.json
-      - data_snapshots/jpy_market_daily.json
-      - scripts/update_yen_market.py
-      - tests/test_yen_market.py
-      - tests/test_asia_rates.py
-      - scripts/update_copper_snapshot.py
-      - tests/test_us_five_year_real_yield.py
-      - tests/test_refresh_optimizations.py
-      - tests/test_dashboard_loading.py
-      - tests/test_hk_liquidity_real_snapshot.py
-      - tests/test_us_liquidity_source_freshness.py
-      - macro_platform/treasury_cash.py
-      - scripts/sync_tga_daily_snapshot.py
-      - tests/test_tga_closing_schema_2022.py
-      - .github/workflows/sync-tga-official-snapshot.yml
-      - macro_platform/hk_liquidity.py
-      - macro_platform/freshness_overview.py
-      - scripts/probe_all_sources.py
-      - tests/test_full_freshness.py
-      - scripts/update_vixeq_snapshot.py
-      - .github/workflows/update-vixeq-snapshot.yml
-      - tests/test_app_runtime_smoke.py
-      - tests/test_fred_verified_cold_boot.py
-      - scripts/sync_fred_verified_cache.py
-      - .github/workflows/sync-fred-verified-cache.yml
-      - tests/test_app_import_compat.py
+      - macro_platform/**
+      - scripts/**
+      - tests/**
+      - static/deploy_version.json
       - .github/workflows/viewport-axis-regression.yml
   pull_request:
     branches: [main]
     paths:
       - app.py
-      - tests/test_source_freshness.py
-      - scripts/push_snapshot.sh
-      - scripts/update_hkma_snapshot.py
-      - scripts/update_hkma_daily_snapshot.py
-      - scripts/update_usdhkd_snapshot.py
-      - scripts/update_censtat_money_supply.py
-      - macro_platform/spx_options.py
-      - macro_platform/nvidia_cds.py
-      - macro_platform/ai_credit.py
-      - scripts/update_ai_cds_snapshot.py
-      - tests/test_ai_credit.py
-      - data_snapshots/ai_cds_daily.json
-      - .github/workflows/update-ai-cds.yml
-      - macro_platform/dashboard_layout.py
-      - scripts/update_spx_put_call_snapshot.py
-      - scripts/import_nvidia_cds.py
-      - tests/test_spx_sentiment.py
-      - tests/test_nvidia_cds.py
-      - data_snapshots/vix9d_daily.json
-      - data_snapshots/spx_put_call_daily.json
-      - data_snapshots/nvidia_cds_daily.json
-      - .github/workflows/update-spx-put-call.yml
-      - macro_platform/tail_risk.py
-      - scripts/update_tail_risk_snapshot.py
-      - tests/test_tail_risk.py
-      - data_snapshots/skew_daily.json
-      - data_snapshots/vvix_daily.json
-      - .github/workflows/update-tail-risk-snapshot.yml
-      - macro_platform/us_equity_risk.py
-      - macro_platform/equity_drawdown.py
-      - macro_platform/china_equity.py
-      - scripts/update_china_equity_snapshot.py
-      - tests/test_china_equity.py
-      - data_snapshots/china_equity_daily.json
-      - .github/workflows/update-china-equity-snapshot.yml
-      - scripts/update_us_equity_snapshot.py
-      - tests/test_equity_drawdown.py
-      - tests/test_price_reference_charts.py
-      - data_snapshots/us_equity_daily.json
-      - .github/workflows/update-us-equity-snapshot.yml
-      - scripts/update_correlation_snapshot.py
-      - tests/test_correlation_snapshot.py
-      - data_snapshots/cor1m_daily.json
-      - data_snapshots/cor3m_daily.json
-      - .github/workflows/update-correlation-snapshot.yml
-      - macro_platform/market_history.py
-      - macro_platform/background_refresh.py
-      - macro_platform/request_runtime.py
-      - tests/test_consolidated_runtime.py
-      - tests/test_release_acceptance.py
-      - tests/browser_offline_app.py
-      - tests/acceptance_offline.py
-      - scripts/check_browser_release.py
-      - scripts/check_rollback_release.py
-      - scripts/benchmark_runtime.py
-      - tests/test_accuracy_performance.py
-      - static/deploy_version.json
-      - scripts/update_hk_market_daily.py
-      - tests/test_app_import_compat.py
       - data.py
-      - macro_platform/fred_observations.py
-      - tests/test_fred_observation_admission.py
-      - macro_platform/copper.py
-      - macro_platform/copper_tcrc.py
-      - macro_platform/srf_usage.py
-      - scripts/update_srf_usage.py
-      - tests/test_srf_usage.py
-      - data_snapshots/srf_usage_daily.json
-      - .github/workflows/update-srf-usage.yml
-      - scripts/update_copper_tcrc.py
-      - tests/test_copper_tcrc.py
-      - data_snapshots/copper_tcrc_weekly.json
-      - .github/workflows/update-copper-tcrc.yml
-      - macro_platform/asia_rates.py
-      - macro_platform/yen_index.py
-      - macro_platform/yen_carry.py
-      - macro_platform/cftc_yen.py
-      - scripts/update_cftc_yen.py
-      - tests/test_cftc_yen.py
-      - data_snapshots/cftc_jpy_weekly.json
-      - .github/workflows/update-cftc-yen.yml
-      - tests/test_yen_carry.py
-      - scripts/update_yen_index.py
-      - tests/test_yen_index.py
-      - data_snapshots/jpy_neer_daily.json
-      - data_snapshots/jpy_market_daily.json
-      - scripts/update_yen_market.py
-      - tests/test_yen_market.py
-      - tests/test_asia_rates.py
-      - scripts/update_copper_snapshot.py
-      - tests/test_truth_source_integrity.py
-      - data_snapshots/copper_market_daily.json
-      - macro_platform/linked_charts.py
-      - macro_platform/frontend/**
-      - static/macro-echarts-6.0.0.js.txt
-      - macro_platform/echarts_axes.py
-      - macro_platform/chart_axes.py
-      - tests/test_echarts_axes.py
-      - tests/test_chart_render_safety.py
-      - tests/test_data_axis_integrity.py
-      - tests/test_series_calendars.py
-      - tests/test_us_five_year_real_yield.py
-      - tests/test_refresh_optimizations.py
-      - tests/test_dashboard_loading.py
-      - tests/test_hk_liquidity_real_snapshot.py
-      - tests/test_us_liquidity_source_freshness.py
-      - macro_platform/treasury_cash.py
-      - scripts/sync_tga_daily_snapshot.py
-      - tests/test_tga_closing_schema_2022.py
-      - .github/workflows/sync-tga-official-snapshot.yml
-      - macro_platform/hk_liquidity.py
-      - macro_platform/freshness_overview.py
-      - scripts/probe_all_sources.py
-      - tests/test_full_freshness.py
-      - scripts/update_vixeq_snapshot.py
-      - .github/workflows/update-vixeq-snapshot.yml
-      - tests/test_app_runtime_smoke.py
-      - tests/test_fred_verified_cold_boot.py
-      - scripts/sync_fred_verified_cache.py
-      - .github/workflows/sync-fred-verified-cache.yml
-      - tests/test_viewport_axes.py
+      - requirements.txt
+      - macro_platform/**
+      - scripts/**
+      - tests/**
+      - data_snapshots/**
+      - static/deploy_version.json
       - .github/workflows/viewport-axis-regression.yml
   workflow_dispatch:
 
 jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install production requirements and test runner
+        run: python -m pip install -r requirements.txt pytest
+      - name: Run complete application regression independently of live-source probes
+        run: python -m pytest tests -q --tb=short --junitxml=regression-tests.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: complete-regression-results
+          path: regression-tests.xml
+
   axes:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -276,8 +67,6 @@ jobs:
         run: python scripts/sync_tga_daily_snapshot.py --verify-only
       - name: Verify the completed daily yen market source from this runner
         run: python scripts/update_yen_market.py
-      - name: Run complete regression suite including Asia curves and date controls
-        run: python -m unittest discover -s tests -v
 
   browser:
     runs-on: ubuntu-latest

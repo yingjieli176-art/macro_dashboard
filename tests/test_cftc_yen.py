@@ -75,7 +75,7 @@ class CFTCJPYTests(unittest.TestCase):
             "data": [["2026-10-20", -1.5]]}]}, now="2026-10-26")
         self.assertEqual(health["cadence_by_name"][POSITION_NAME], "周频")
         self.assertFalse(health["stale_names"])
-        self.assertEqual(figure_rows({18: fig})[-1]["频率"], "周频")
+        self.assertEqual(next(row for row in figure_rows({18: fig}) if row["指标"] == POSITION_NAME)["频率"], "周频")
 
 
 if __name__ == "__main__":

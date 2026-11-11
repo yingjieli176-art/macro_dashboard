@@ -1,4 +1,7 @@
 """Regression cases discovered in the final accuracy/performance audit."""
+from macro_platform.dashboard_layout import NUMERIC_CHART_IDS, HK_CHART_IDS
+from app_test_helpers import load_functions as load_app_functions
+
 import ast
 import uuid
 from macro_platform.request_runtime import submit_jobs, completed_jobs
@@ -24,6 +27,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def helpers(path, names, namespace):
+    namespace.setdefault("NUMERIC_CHART_IDS", NUMERIC_CHART_IDS)
+    namespace.setdefault("HK_CHART_IDS", HK_CHART_IDS)
     namespace.setdefault("uuid", uuid)
     namespace.setdefault("submit_jobs", submit_jobs)
     namespace.setdefault("completed_jobs", completed_jobs)
@@ -34,11 +39,7 @@ def helpers(path, names, namespace):
         namespace.setdefault("_cached_fred_snapshot", lambda sid, revision: namespace["_read_fred_success"](sid))
         namespace.setdefault("_FRED_LOCK", threading.RLock())
         namespace.setdefault("_FRED_LAST_GOOD", {})
-    tree = ast.parse((ROOT / path).read_text())
-    selected = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in names]
-    for node in selected:
-        node.decorator_list = []
-    exec(compile(ast.Module(body=selected, type_ignores=[]), path, "exec"), namespace)
+    load_app_functions(names, namespace, filename=path, strip_decorators=True)
     return namespace
 
 

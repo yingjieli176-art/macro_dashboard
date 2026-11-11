@@ -1,6 +1,6 @@
 # Macro Dashboard: maintenance and safe optimization plan
 
-> Current build: `2026-10-10-fred-admission-r43`. This document is
+> Current release: `V1.0`. All current features are retained; no historical rollback. This document is
 > for maintainers. Do **not** treat a green CI build as proof that Streamlit
 > Cloud has deployed it; check the chart build label and Cloud logs separately.
 
@@ -8,7 +8,7 @@
 
 | Source | Responsibility | Reliability rule |
 | --- | --- | --- |
-| `app.py` | 14-chart layout, Streamlit widgets/fragments, rendering recovery, market overview | Only the main Streamlit script creates widgets; keep chart controls fragment-local |
+| `app.py` | 21-chart layout, Streamlit widgets/fragments, rendering recovery, market overview | Only the main Streamlit script creates widgets; keep chart controls fragment-local |
 | `data.py` | FRED, NY Fed, Treasury, market/news clients | Cache **observed** values; label missing and stale data, never fake market observations |
 | `macro_platform/chart_axes.py` | Plotly date ranges, multi-axis fallback | A zoom must refit visible samples, never silently revert to full-range Y |
 | `macro_platform/echarts_axes.py` | Native ECharts time slider and independently rescaled axes | Preserve real observation timestamps and null gaps; keep `filterMode: filter` |
@@ -94,11 +94,11 @@ CI can still accompany explicitly reported partial coverage.
 The largest avoidable costs should be measured, not guessed. Use separate
 timings for (a) cold Streamlit Cloud wake-up, (b) warm page rerun, (c) single
 chart window/mode change and (d) slow/failing external data providers.
-Measure across several runs, with all 14 figures present, and compare medians
+Measure across several runs, with all 21 chart sections present, and compare medians
 and high-percentile wall times before accepting an optimization.
 
 1. **First priority — measure chart construction and figure serialization.**
-   `_build_macro_figures_parallel()` prepares all 14 figures, publishes ready
+   `_build_macro_figures_parallel()` prepares the shared numeric figure bundle, publishes ready
    sections immediately, and serializes
    several full five-year traces. Profile the worker completion times,
    Streamlit payload size and browser-side ECharts initialization. Only then
@@ -168,3 +168,30 @@ series. Disk readers apply the same checks. Invalid responses preserve last-good
 observations and continue to the next source. Missing points remain missing.
 Live memory and its persisted copy share a fetch timestamp; the live copy wins
 an exact tie so a successful recovery is not mislabeled as a stale disk fallback.
+
+## V1.0 consolidation
+
+The public version is reset to V1.0 without reverting features or source histories.
+Stable runtime chart identities are derived from dashboard_layout.py, while display
+numbers remain independent. The dispatcher, job creation and result collection
+share that registry rather than maintaining parallel numeric dictionaries.
+
+Nine completed one-time migrations and their nine manual workflows have been
+removed after checking that no runtime, active collector or remaining workflow
+references them. They remain recoverable in Git history. All scheduled source
+collectors, publication safeguards and original data snapshots are retained.
+
+Test function extraction is centralized in tests/app_test_helpers.py. Source ASTs
+are revision-cached and copied before removing decorators to prevent cross-test
+contamination. Valid market/calendar/cache/renderer assertions remain; the obsolete
+watchlist UI test is removed, and retired-result handling is tested as an ignored
+callback. Dispatch tests exercise the selected renderer rather than matching an
+implementation dictionary's text.
+
+The complete unit/application suite now runs once in the `regression` job of
+`Dashboard regression`, independently of live-source availability. The temporary
+Japan feature-specific suite is folded into it. Browser, source transport and
+restoration checks remain separate. Automated snapshot-only pushes no longer
+launch the expensive full browser/restoration matrix; scheduled collectors and
+source-date audits still validate and publish those observations. Snapshot
+changes proposed in a pull request remain covered by the regression workflow.

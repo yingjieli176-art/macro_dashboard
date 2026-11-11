@@ -15,6 +15,7 @@ import requests
 from macro_platform.echarts_axes import option_observation_health, summarize_series_dates
 from macro_platform.request_runtime import observed_cache
 from scripts import probe_all_sources as probe
+from macro_platform.dashboard_layout import MACRO_DISPLAY_NUMBER
 from scripts.audit_source_freshness import raw_record_issues
 
 
@@ -22,15 +23,20 @@ class DateAndSourceAudit(unittest.TestCase):
     def tearDown(self):
         probe.reset_probe_cache()
 
-    def test_inventory_uses_all_twenty_display_numbers(self):
+    def test_inventory_uses_every_current_display_number(self):
         inventory = {key: charts for key, charts, *_ in probe.jobs()}
-        self.assertEqual({c for charts in inventory.values() for c in charts}, set(range(1, 21)))
-        for key, charts in {"SP500": [4,8], "^N225": [8,9], "SPX": [6], "RSP": [6],
-                            "NVIDIA_CDS_5Y": [7], "SN_ORACLE_CDS_5Y": [7],
-                            "000300": [12], "000852": [12], "932000": [12],
-                            "china_2y": [11], "japan_2y": [9], "japan_10y": [9,10], "japan_30y": [9],
-                            "DGS2": [3], "DGS10": [2,3,10], "JPY=X": [9,10], "SRFTSYD": [1],
-                            "GC=F": [17], "HG=F": [18], "tc_usd_dmt": [19], "BTC-USD": [20]}.items():
+        self.assertEqual({c for charts in inventory.values() for c in charts}, set(MACRO_DISPLAY_NUMBER.values()))
+        expected = {
+            'SP500': (9,4), '^N225': (4,15), 'SPX': ('us_drawdown',), 'RSP': ('us_drawdown',),
+            'NVIDIA_CDS_5Y': ('nvidia_cds',), 'SN_ORACLE_CDS_5Y': ('nvidia_cds',),
+            '000300': ('cn_drawdown',), '000852': ('cn_drawdown',), '932000': ('cn_drawdown',),
+            'china_2y': (14,), 'japan_2y': (15,), 'japan_10y': (15,16), 'japan_30y': (15,),
+            'DGS2': (3,), 'DGS10': (2,3,16), 'JPY=X': (15,16), 'SRFTSYD': (1,),
+            'GC=F': (11,), 'HG=F': (13,), 'tc_usd_dmt': ('copper_tcrc',), 'BTC-USD': (12,),
+            'JP_CORRIDOR_TONA': ('japan_corridor',),
+        }
+        for key, identities in expected.items():
+            charts = sorted(MACRO_DISPLAY_NUMBER[identity] for identity in identities)
             self.assertEqual(inventory[key], charts)
 
     def test_tomorrows_observation_is_invalid_even_with_a_fresh_fetch(self):

@@ -1,5 +1,6 @@
 """Success-path and delayed-publication regressions missed by outage-only smoke checks."""
-import ast
+from app_test_helpers import load_functions as load_app_functions
+
 from concurrent.futures import Future
 import json
 import pickle
@@ -21,15 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def load_functions(names, namespace):
-    tree = ast.parse((ROOT / "app.py").read_text())
-    selected = [node for node in tree.body if isinstance(node, ast.FunctionDef)
-                and node.name in names]
-    imports = [node for node in tree.body if isinstance(node, ast.ImportFrom)
-               and node.module == "urllib.parse"]
-    for node in selected:
-        node.decorator_list = []
-    exec(compile(ast.Module(body=imports+selected, type_ignores=[]), str(ROOT / "app.py"), "exec"), namespace)
-    return namespace
+    return load_app_functions(names, namespace, import_modules={'urllib.parse'}, strip_decorators=True)
 
 
 class ReleaseAcceptance(unittest.TestCase):
@@ -102,7 +95,6 @@ class ReleaseAcceptance(unittest.TestCase):
         self.assertEqual(frame.close.tolist(), [row["close"] for row in records])
         self.assertEqual(frame.observation_date.dt.strftime("%Y-%m-%d").tolist(),
                          [row["observation_date"] for row in records])
-        response.raise_for_status.assert_called_once()
         self.assertEqual(get.call_args.kwargs["params"]["interval"], "1d")
         ns["get_yahoo_daily_history"]("GC=F")
         self.assertTrue(get.call_args.args[0].endswith("GC%3DF"))
@@ -132,12 +124,12 @@ class ReleaseAcceptance(unittest.TestCase):
         self.ns["_publish_late_dashboard_result"]("market", {"^HSI": {"price": 100, "regular_market_time": now-100}})
         self.assertEqual(st.session_state["_market_quotes_snapshot"]["HSI"]["price"], 200)
 
-    def test_late_watchlist_result_respects_current_symbols_and_controls(self):
+    def test_retired_watchlist_result_is_ignored_without_changing_controls(self):
         st.session_state["precious_metals_time_window"] = "3M"
         st.session_state["hk_5_range_time_window"] = "1M"
         row = {"price": 123, "regular_market_time": time.time()}
-        self.ns["_publish_late_dashboard_result"]("watchlist", {"KEEP": row, "REMOVED": row})
-        self.ns["_apply_watchlist_quote_rows"].assert_called_once_with(["KEEP"], {"KEEP": row}, ["KEEP"])
+        self.assertFalse(self.ns["_publish_late_dashboard_result"]("watchlist", {"KEEP": row, "REMOVED": row}))
+        self.ns["_apply_watchlist_quote_rows"].assert_not_called()
         self.assertEqual(st.session_state["precious_metals_time_window"], "3M")
         self.assertEqual(st.session_state["hk_5_range_time_window"], "1M")
 

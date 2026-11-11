@@ -27,7 +27,7 @@ class Sp500NikkeiRatioTests(unittest.TestCase):
         self.assertEqual(list(figure.data[1].y), frame.SP500.tolist())
         self.assertEqual(list(figure.data[2].y), frame.NIKKEI.tolist())
         self.assertEqual(figure.layout.yaxis.title.text, "指数点位比值（倍）")
-        self.assertEqual(figure.layout.yaxis2.title.text, "S&P 500（点）")
+        self.assertEqual(figure.layout.yaxis2.title.text, "标普500（点）")
         self.assertEqual(figure.layout.yaxis3.title.text, "日经225（点）")
         self.assertNotIn("rebased", str(figure.to_plotly_json()).lower())
         self.assertNotIn("起点=100", str(figure.to_plotly_json()))

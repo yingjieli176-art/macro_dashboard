@@ -7,7 +7,7 @@ import pandas as pd
 
 from macro_platform.spx_options import PRODUCT, parse_daily
 from macro_platform.echarts_axes import build_adaptive_echarts_option, build_safe_echarts_option
-from test_series_calendars import builders, frame
+from app_test_helpers import builders, frame
 
 
 class SpxSentimentTests(unittest.TestCase):

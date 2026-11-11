@@ -1,5 +1,6 @@
 """Execute native charts in Chromium; this is CI evidence, not Cloud acceptance."""
 import argparse
+from datetime import datetime, timezone
 import json
 import re
 from pathlib import Path
@@ -9,6 +10,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from macro_platform.dashboard_layout import MACRO_DISPLAY_NUMBER
 
 from playwright.sync_api import sync_playwright
+
+
+def observation_date(value):
+    """Compare chart dates whether ECharts returns ISO text or epoch milliseconds."""
+    if isinstance(value, (int, float)):
+        return datetime.fromtimestamp(value / 1000, tz=timezone.utc).date().isoformat()
+    return str(value)[:10]
 
 
 # CI-only bridge for the pinned native Streamlit component. The production
@@ -154,7 +162,7 @@ def assert_price_guides_follow_viewport(chart):
             for (let index=0; index<data.count(); index++) {
                 const value = data.get(y, index);
                 if (Number.isFinite(value) && (!best || value > best.value)) {
-                    best = {value, date:raw[data.getRawIndex(index)][0].slice(0,10)};
+                    best = {value, date:new Date(raw[data.getRawIndex(index)][0]).toISOString().slice(0,10)};
                 }
             }
             const guides = series.get('markLine').data;
@@ -167,14 +175,14 @@ def assert_price_guides_follow_viewport(chart):
                 ratio_text:footer?.style?.text, footer_bottom:footer?.bottom,
                 slider_bottom:option.dataZoom.find(zoom=>zoom.type==='slider').bottom,
                 path:option.series.find(item => item.id === `macro-peak-drawdown-${index}`)?.data,
-                expected_path:raw.filter(point => Date.parse(point[0]) >= Date.parse(best.date))
+                expected_path:raw.filter(point => new Date(point[0]).getTime() >= Date.parse(best.date))
                     .map(point => [point[0], Number.isFinite(point[1]) && point[1] > 0 ?
                         (point[1]/best.value-1)*100 : null, point[1]]),
                 grids:option.grid.length, x_axes:option.xAxis.length,
                 overlay:option.series.find(item => item.id === `macro-peak-drawdown-${index}`),
                 percent_axis:option.yAxis.at(-1),
                 zoom_axes:option.dataZoom.map(zoom=>zoom.xAxisIndex),
-                latest_time:Date.parse(raw.filter(point=>Number.isFinite(point[1])).at(-1)[0]),
+                latest_time:new Date(raw.filter(point=>Number.isFinite(point[1])).at(-1)[0]).getTime(),
                 latest:raw.filter(point=>Number.isFinite(point[1])).at(-1)[1]});
         });
         return values;
@@ -198,7 +206,7 @@ def assert_price_guides_follow_viewport(chart):
         assert value['footer_bottom'] < value['slider_bottom'], value
         assert value['path'] == value['expected_path'], value
         assert value['path'][0][1] == 0, value
-        assert value['path'][0][0][:10] == value['expected']['date'], value
+        assert observation_date(value['path'][0][0]) == value['expected']['date'], value
         assert abs(value['path'][-1][1] + percent) < .00001, value
         assert value['path'][-1][2] == value['latest'], value
     return values
@@ -254,7 +262,7 @@ def exercise_price_path_legend(page, chart):
         const series=option.series.find(s=>s.id.startsWith('macro-peak-drawdown-') && s.data.length>1);
         const point=series.data[1];
         return {text:option.tooltip[0].formatter([{seriesId:series.id,value:point}]),
-            expected:point[1].toFixed(2)+'%',date:point[0].slice(0,10)};
+            expected:point[1].toFixed(2)+'%',date:new Date(point[0]).toISOString().slice(0,10)};
     }""")
     assert '回撤比例' in tooltip['text'] and tooltip['expected'] in tooltip['text'], tooltip
     assert tooltip['date'] in tooltip['text'], tooltip
@@ -599,27 +607,6 @@ def exercise_range_legend_persistence(page, prefix, group_index):
 
 
 
-def exercise_security_search(page):
-    page.locator('.st-key-market_search_hk_open_button button:visible').filter(has_text='＋ 添加标的').click()
-    search = page.locator('.st-key-market_search_hk input:visible')
-    search.fill('小米')
-    search.press('Enter')
-    selected = page.locator('.st-key-market_search_hk_result_select').get_by_role('combobox').filter(visible=True)
-    selected.wait_for(state='visible', timeout=15000)
-    page.locator('.st-key-market_search_hk_confirm_selected button:visible').filter(has_text='确认添加').click()
-    card = page.locator('.watch-card-body').filter(has_text='1810.HK')
-    card.wait_for(timeout=15000)
-    assert '小米集团-W' in card.inner_text()
-    page.locator('[class*="st-key-market_search_hk_delete_"] button:visible').last.click()
-    card.wait_for(state='detached', timeout=15000)
-    assert card.count() == 0
-    # A removed card can disappear before its full rerun registers all fragments.
-    # Wait for the server's completion signal before clicking chart controls.
-    page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'",
-                           timeout=30000)
-    return {'chinese_name':True, 'enter_to_search':True, 'confirmed_symbol':'1810.HK', 'add_remove':True}
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="http://127.0.0.1:8501")
@@ -703,7 +690,7 @@ def main():
             for series in tcrc_state['series']:
                 assert series['axis'] in (0, 1) and series['markers'], series
                 assert len(series['data']) == len(history), series
-                assert [point[0][:10] for point in series['data']] == history.observation_date.dt.strftime('%Y-%m-%d').tolist(), series
+                assert [observation_date(point[0]) for point in series['data']] == history.observation_date.dt.strftime('%Y-%m-%d').tolist(), series
             assert page.get_by_text(re.compile(r'^动态Y轴：|^数据观测日：|^实际观测日：')).count() == 0
             assert page.get_by_text('TC / RC（近半年已核实报价）', exact=True).count() == 0
             copper_names = page.locator('.st-key-copper_flow_adaptive_default_1Y').get_by_test_id(
@@ -719,7 +706,6 @@ def main():
             report['copper_tcrc'] = tcrc_state
             report["equity_drawdown"] = exercise_equity_drawdown(page)
             report["china_drawdown"] = exercise_china_drawdown(page)
-            report["security_search"] = exercise_security_search(page)
             # All five controls exist for every position, including unavailable charts.
             report["controls"] = groups.all_text_contents()
             for index in range(21):
@@ -739,11 +725,14 @@ def main():
                     valid:s.data.filter(p=>Number.isFinite(p[1])).length,
                     gaps:s.data.filter(p=>p[1]===null).length}));
             }""")
-            assert [s['name'] for s in cds_state] == ['NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）', 'Oracle 5Y']
+            assert [s['name'] for s in cds_state] == ['NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）', 'Oracle 5Y'], cds_state
             for name in ('NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）', 'Oracle 5Y'):
                 found = next(s for s in cds_state if s['name'] == name)
                 assert found['valid'] > 10 and found['markers'] and not found['connect'], found
                 assert found['axis'] == 0, found
+            # Offline acceptance has no verified HY OAS repository snapshot.
+            # Missing data must be disclosed rather than synthesized.
+            assert page.get_by_text('HY OAS（R1）暂未取得 FRED 观测，稍后自动重试。', exact=True).count() == 1
             report['ai_cds'] = cds_state
             report['ai_cds_zoom'] = exercise_client_zoom(page, cds_chart, minimum_axes=1)
             page.screenshot(path='browser_ai_cds.png')
@@ -771,6 +760,14 @@ def main():
                 re.compile(r"^(macro|st)EChartsChart$"))
             japan_chart = page.locator('.st-key-japan_rates_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
+            # A range rerun mounts the component before its ECharts instance.
+            # Wait for actual readiness; a persistent failure still times out.
+            page.wait_for_function("""() => {
+                const element = document.querySelector('.st-key-japan_rates_adaptive_default_1Y [aria-busy=false]');
+                if (!element) return false;
+                try { return Boolean((""" + INSTANCE_JS + """)(element).getModel()); }
+                catch (_) { return false; }
+            }""", timeout=30000)
             japan_series = japan_chart.evaluate("""element => {
                 const chart = (""" + INSTANCE_JS + """)(element);
                 return chart.getOption().series.map(s => ({name:s.name, axis:s.yAxisIndex,
@@ -800,7 +797,7 @@ def main():
             report["tail_risk_zoom"] = exercise_client_zoom(page, tail, minimum_axes=5)
             sentiment = tail.evaluate("element => element.__macroChart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,valid:s.data.filter(p=>Number.isFinite(p[1])).length}))")
             for name, axis in (("VIX/VIX3M (R1)", 1), ("VVIX/VIX (R4)", 4),
-                               ("9D/30D (R1)", 1), ("SPX P/C (R1)", 1)):
+                               ("9D/30D (R1)", 1), ("SPX P/C 63D MA (R1)", 1)):
                 series = next(s for s in sentiment if s['name'] == name)
                 assert series['axis'] == axis and series['valid'] > 150, series
             assert any('VVIX' in s['name'] for s in sentiment), sentiment
