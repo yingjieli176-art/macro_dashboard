@@ -142,7 +142,7 @@ RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES
-CHART_BUILD = "2026-11-10-yen-combined-sentiment-r131"
+CHART_BUILD = "2026-11-11-equity-risk-freshness-r132"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2607,6 +2607,14 @@ def render_macro_chart_9(prebuilt_fig=None):
     render_latest_vix_quote()
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig9("5Y")
     _render_adaptive_macro_figure(base_fig, "us_equity_risk")
+    observed_dates = []
+    for trace in base_fig.data:
+        valid_dates = [pd.Timestamp(day) for day, value in zip(trace.x, trace.y)
+                       if pd.notna(value) and pd.notna(day)]
+        if valid_dates:
+            observed_dates.append(f"{trace.name}：{max(valid_dates):%Y-%m-%d}")
+    if observed_dates:
+        st.caption("日线实际观测日 · " + " · ".join(observed_dates))
     add_sources([
         ("Cboe VIX", "https://www.cboe.com/tradable-products/vix/"),
         ("Cboe VIXEQ / Dispersion", "https://www.cboe.com/us/indices/dispersion/"),

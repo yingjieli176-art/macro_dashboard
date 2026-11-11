@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-10-yen-combined-sentiment-r131",
+  "release": "2026-11-11-equity-risk-freshness-r132",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -70,6 +70,7 @@
     "yen_carry_realized_volatility_japan_tic_and_institutional_disclosures",
     "yen_carry_boj_policy_steps_and_institutional_history",
     "yen_carry_all_series_single_plot",
-    "spx_pc_63_session_mean_skew_5_session_mean"
+    "spx_pc_63_session_mean_skew_5_session_mean",
+    "independent_equity_risk_official_close_refresh"
   ]
 }
