@@ -142,7 +142,7 @@ RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES
-CHART_BUILD = "2026-11-11-equity-risk-freshness-r132"
+CHART_BUILD = "2026-11-11-us-automatic-freshness-r133"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -1845,10 +1845,23 @@ def build_fig10(date_range):
     return fig
 
 
-@observed_cache()
+@observed_cache(lambda: tuple(Path(__file__).resolve().parent.joinpath("data_snapshots", name)
+    for name in ("nasdaq100_daily.json", "gold_daily.json", "silver_daily.json")), ttl=300)
 def get_yahoo_daily_history(symbol):
     """Fetch five years of completed daily closes from Yahoo chart API."""
     best = pd.DataFrame(columns=["observation_date", "close"])
+    filename = {"^NDX": "nasdaq100_daily.json", "GC=F": "gold_daily.json", "SI=F": "silver_daily.json"}.get(symbol)
+    if filename:
+        try:
+            payload = json.loads(Path(__file__).resolve().parent.joinpath("data_snapshots", filename).read_text())
+            if payload.get("symbol") == symbol:
+                saved = pd.DataFrame(payload["records"])
+                saved["observation_date"] = pd.to_datetime(saved.observation_date, errors="coerce")
+                saved["close"] = pd.to_numeric(saved.close, errors="coerce")
+                cutoff = pd.Timestamp.now(tz="UTC").tz_localize(None).normalize()
+                best = saved.loc[saved.observation_date.le(cutoff) & saved.close.gt(0) & saved.close.lt(float("inf"))].dropna()
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
     for host in ("query1.finance.yahoo.com", "query2.finance.yahoo.com"):
         try:
             response = http_get(
@@ -2641,7 +2654,7 @@ def render_macro_chart_10(prebuilt_fig=None):
         ("Cboe · SKEW Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/SKEW_History.csv"),
         ("Cboe · VVIX Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv"),
         ("Cboe · VIX9D Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VIX9D_History.csv"),
-        ("Cboe · SPX + SPXW Volume Put/Call", "https://www.cboe.com/markets/us/options/market-statistics/daily"),
+        ("Cboe · SPX系列 Volume Put/Call（按报告口径，新报告含SPXO）", "https://www.cboe.com/markets/us/options/market-statistics/daily"),
     ], "vix_term_structure")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 

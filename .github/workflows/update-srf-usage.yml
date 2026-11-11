@@ -1,14 +1,7 @@
 name: Refresh actual daily standing repo usage
 on:
-  schedule:
-    - cron: '10 19,21,23 * * 1-5'
+  # Scheduled collection is owned by update-us-sources.yml.
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - macro_platform/srf_usage.py
-      - scripts/update_srf_usage.py
-      - .github/workflows/update-srf-usage.yml
 permissions:
   contents: write
 concurrency:

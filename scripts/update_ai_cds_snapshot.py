@@ -32,6 +32,8 @@ def refresh(payload, path=SNAPSHOT):
                 if day not in current or current[day]["spread_bps"] is None:
                     current[day] = row
             candidate["series"][key]["records"] = [current[d] for d in sorted(current)]
+    if old and candidate.get("series") == old.get("series") and candidate.get("source_asof") == old.get("source_asof"):
+        return old
     candidate["retrieved_at"] = datetime.now(timezone.utc).isoformat()
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)

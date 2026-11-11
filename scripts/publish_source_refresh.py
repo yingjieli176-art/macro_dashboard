@@ -39,6 +39,38 @@ def reconcile_report(root):
     path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
 
 
+def merge_fred_snapshot(name, candidate, upstream):
+    """Union dated same-definition observations; upstream wins revised dates.
+
+    This resolves real parallel JSON conflicts without dropping newer local
+    dates or rolling back revisions already on main. Reject malformed inputs.
+    """
+    if not name.startswith("data_snapshots/fred_cache/"):
+        return None
+    try:
+        import pandas as pd
+        from macro_platform.fred_observations import validate_observations
+        local, remote = json.loads(candidate), json.loads(upstream)
+        sid = Path(name).stem
+        if local["series_id"] != sid or remote["series_id"] != sid:
+            return None
+        for node in (local, remote):
+            validate_observations(pd.DataFrame(node["records"]), sid,
+                                  date_column="date", value_column="value", min_rows=12)
+        records = {row["date"]: row for row in local["records"]}
+        records.update({row["date"]: row for row in remote["records"]})
+        # Metadata describes the source supplying the newest observation.
+        result = dict(local if local["coverage_end"] > remote["coverage_end"] else remote)
+        result["records"] = [records[d] for d in sorted(records)]
+        result["coverage_end"] = result["records"][-1]["date"]
+        if result["records"] == remote["records"]:
+            return upstream
+        result["merge_sources"] = sorted({str(local.get("source_series", "")), str(remote.get("source_series", ""))})
+        return (json.dumps(result, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
+    except (ValueError, KeyError, TypeError):
+        return None
+
+
 def publish(root=ROOT, audit=reconcile_report):
     base = git(root, "rev-parse", "HEAD").stdout.decode().strip()
     names = git(root, "ls-files", "--modified", "--others", "--exclude-standard", "-z", "--", "data_snapshots/").stdout
@@ -55,6 +87,11 @@ def publish(root=ROOT, audit=reconcile_report):
         for name in changed.intersection(candidates):
             if (root / name).is_file() and (root / name).read_bytes() == candidates[name]:
                 continue
+            if (root / name).is_file():
+                merged = merge_fred_snapshot(name, candidates[name], (root / name).read_bytes())
+                if merged is not None:
+                    candidates[name] = merged
+                    continue
             print("Preserving concurrent upstream snapshot:", name, flush=True)
             if name != "data_snapshots/all_source_freshness.json":
                 candidates.pop(name)

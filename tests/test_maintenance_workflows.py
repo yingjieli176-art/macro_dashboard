@@ -80,7 +80,12 @@ class WorkflowSafetyTests(unittest.TestCase):
         for name in OFFICIAL_REFRESHES:
             with self.subTest(workflow=name):
                 events, content = workflow_events(name)
-                self.assertIn("schedule", events, name)
+                if "Scheduled collection is owned by update-us-sources.yml" in content:
+                    central = (WORKFLOWS / "update-us-sources.yml").read_text()
+                    self.assertIn("schedule:", central)
+                    self.assertIn("refresh_us_sources.py", central)
+                else:
+                    self.assertIn("schedule", events, name)
                 self.assertIn("workflow_dispatch", events, name)
                 self.assertIn("data_snapshots/", content)
                 self.assertNotRegex(

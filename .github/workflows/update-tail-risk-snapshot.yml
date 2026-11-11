@@ -1,14 +1,7 @@
 name: Refresh official Cboe SKEW, VVIX and VIX9D
 on:
-  schedule:
-    - cron: '47 0-6,12,22 * * *'
+  # Scheduled collection is owned by update-us-sources.yml.
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/update_tail_risk_snapshot.py
-      - macro_platform/tail_risk.py
-      - .github/workflows/update-tail-risk-snapshot.yml
 permissions:
   contents: write
 concurrency:

@@ -1,15 +1,7 @@
 name: Sync official Treasury TGA closing balance
 on:
-  schedule:
-    - cron: '29 0,2,6,12,18,22 * * *'
+  # Scheduled collection is owned by update-us-sources.yml.
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/sync_tga_daily_snapshot.py
-      - macro_platform/treasury_cash.py
-      - .github/workflows/sync-tga-official-snapshot.yml
-
 permissions:
   contents: write
 

@@ -1,5 +1,5 @@
 {
-  "release": "2026-11-11-equity-risk-freshness-r132",
+  "release": "2026-11-11-us-automatic-freshness-r133",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",

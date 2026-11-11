@@ -1,0 +1,63 @@
+name: Refresh and verify all US dashboard sources
+on:
+  schedule:
+    # All day includes NY Fed morning, Treasury/Fed afternoon and delayed closes.
+    - cron: '11,41 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/refresh_us_sources.py
+      - scripts/update_*.py
+      - scripts/refresh_copper_current.py
+      - scripts/sync_fred_verified_cache.py
+      - scripts/sync_tga_daily_snapshot.py
+      - macro_platform/fred_observations.py
+      - macro_platform/cboe_history.py
+      - macro_platform/tail_risk.py
+      - requirements.txt
+      - scripts/publish_source_refresh.py
+      - .github/workflows/update-us-sources.yml
+permissions:
+  contents: write
+concurrency:
+  group: us-dashboard-source-refresh
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt xlrd curl_cffi==0.13.0
+      - name: Collect each family, audit dates and retry missing publications
+        id: collect
+        continue-on-error: true
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/refresh_us_sources.py
+      - name: Publish successful observations independently of failed sources
+        if: always()
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python scripts/publish_source_refresh.py
+      - name: Verify the data actually published on main
+        if: always()
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/refresh_us_sources.py --verify-published
+      - name: Preserve per-source results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: us-source-freshness
+          path: |
+            data_snapshots/all_source_freshness.json
+            fred_sync_health.json

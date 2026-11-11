@@ -11,7 +11,7 @@ import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from macro_platform.spx_options import PRODUCT, SOURCE_TEMPLATE, parse_daily
+from macro_platform.spx_options import PRODUCT, PRODUCT_FAMILY, SOURCE_TEMPLATE, parse_daily
 
 OUT = ROOT / "data_snapshots/spx_put_call_daily.json"
 
@@ -51,7 +51,7 @@ def refresh(previous, now, fetch=fetch_daily, backfill=False):
         raise RuntimeError(f"SPX history too short: {len(records)}; saved snapshot retained")
     if records == previous.get("records"):
         return None
-    return dict(product=PRODUCT, ratio_basis="put_volume/call_volume", unit="ratio", source="Cboe Daily Market Statistics",
+    return dict(product=PRODUCT_FAMILY, product_basis_note="Each record retains Cboe published basket; SPXO is included only when explicitly published. The 63-session mean follows that dated source definition.", ratio_basis="put_volume/call_volume", unit="ratio", source="Cboe Daily Market Statistics",
                 source_url="https://www.cboe.com/markets/us/options/market-statistics/daily",
                 source_template=SOURCE_TEMPLATE, updated_at=now.isoformat(), records=records,
                 record_count=len(records), coverage_start=records[0]["observation_date"],
