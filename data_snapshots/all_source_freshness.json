@@ -378,12 +378,12 @@
         9
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-10",
+      "repository_latest": "2026-11-11",
       "checked_at": "2026-11-11T07:47:30.705864+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-10",
       "source_url": "https://www.boj.or.jp/en/statistics/market/short/mutan/d_release/md/2026/md20261110.xlsx",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "NVIDIA_CDS_5Y",
@@ -1000,5 +1000,5 @@
   "elapsed_seconds": 49.929,
   "shared_http_requests": 25,
   "shared_http_reuses": 15,
-  "repository_reconciled_at": "2026-11-11T07:47:39.713070+00:00"
+  "repository_reconciled_at": "2026-11-11T09:55:34.666159+00:00"
 }
