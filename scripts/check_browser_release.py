@@ -725,13 +725,14 @@ def main():
                     valid:s.data.filter(p=>Number.isFinite(p[1])).length,
                     gaps:s.data.filter(p=>p[1]===null).length}));
             }""")
-            assert [s['name'] for s in cds_state] == ['NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）', 'Oracle 5Y', 'HY OAS (R1)']
+            assert [s['name'] for s in cds_state] == ['NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）', 'Oracle 5Y'], cds_state
             for name in ('NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）', 'Oracle 5Y'):
                 found = next(s for s in cds_state if s['name'] == name)
                 assert found['valid'] > 10 and found['markers'] and not found['connect'], found
                 assert found['axis'] == 0, found
-            hy = next(s for s in cds_state if s['name'] == 'HY OAS (R1)')
-            assert hy['axis'] == 1 and hy['valid'] > 150, hy
+            # Offline acceptance has no verified HY OAS repository snapshot.
+            # Missing data must be disclosed rather than synthesized.
+            assert page.get_by_text('HY OAS（R1）暂未取得 FRED 观测，稍后自动重试。', exact=True).count() == 1
             report['ai_cds'] = cds_state
             report['ai_cds_zoom'] = exercise_client_zoom(page, cds_chart, minimum_axes=1)
             page.screenshot(path='browser_ai_cds.png')
