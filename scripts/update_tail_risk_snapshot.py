@@ -63,24 +63,41 @@ def prepare_snapshot(text, symbol, previous, now, *, get=None):
     return payload
 
 
-def main():
-    pending = []
-    now = datetime.now(timezone.utc)
-    for symbol in SYMBOLS:
-        path = ROOT / "data_snapshots" / f"{symbol.lower()}_daily.json"
-        previous = json.loads(path.read_text()) if path.exists() else {}
-        response = requests.get(SOURCE_TEMPLATE.format(symbol), headers={"User-Agent": "MacroDashboard/1.0"}, timeout=30)
+def refresh_one(symbol, now, get=requests.get):
+    path = ROOT / "data_snapshots" / f"{symbol.lower()}_daily.json"
+    previous = json.loads(path.read_text()) if path.exists() else {}
+    try:
+        response = get(SOURCE_TEMPLATE.format(symbol), headers={"User-Agent": "MacroDashboard/1.0"}, timeout=30)
         response.raise_for_status()
-        payload = prepare_snapshot(response.text, symbol, previous, now, get=requests.get)
-        if payload is not None:
-            pending.append((path, payload))
-    # Validate both sources before replacing either last-good file.
-    for path, payload in pending:
-        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = prepare_snapshot(response.text, symbol, previous, now, get=get)
+    except (requests.RequestException, ValueError):
+        # History and closing endpoints fail independently. A CSV outage must
+        # not prevent the official dated close from advancing verified history.
+        if previous.get("symbol") != symbol or not previous.get("records"):
+            raise
+        records, source = supplement_closes(previous["records"], symbol, now, get)
+        if records == previous["records"]:
+            raise
+        payload = dict(previous, records=records, record_count=len(records),
+                       coverage_end=records[-1]["observation_date"],
+                       latest_source_url=source, updated_at=now.isoformat())
+    if payload is not None:
         temporary = path.with_suffix(".json.tmp")
         temporary.write_text(json.dumps(payload, indent=2, allow_nan=False) + "\n")
         temporary.replace(path)
-        print(payload["symbol"], payload["record_count"], payload["coverage_end"])
+    print(symbol, (payload or previous).get("coverage_end"), flush=True)
+
+
+def main():
+    now = datetime.now(timezone.utc)
+    errors = []
+    for symbol in SYMBOLS:
+        try:
+            refresh_one(symbol, now)
+        except Exception as exc:
+            errors.append(symbol + ": " + type(exc).__name__)
+    if errors:
+        raise RuntimeError("; ".join(errors))
 
 
 if __name__ == "__main__":

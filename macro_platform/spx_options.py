@@ -10,6 +10,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_TEMPLATE = "https://cdn.cboe.com/data/us/options/market_statistics/daily/{}_daily_options"
 PRODUCT = "SPX + SPXW"
+PRODUCTS = (PRODUCT, "SPX + SPXW + SPXO")
+PRODUCT_FAMILY = "SPX family (publisher-defined aggregate)"
 
 
 def completed_report_date(now=None):
@@ -22,8 +24,15 @@ def parse_daily(payload, day, now=None):
     cutoff = completed_report_date(now)
     if pd.isna(stamp) or stamp.date() > cutoff or stamp.weekday() >= 5:
         raise ValueError("Uncompleted or invalid SPX operation date")
-    ratios = [r for r in payload.get("ratios", []) if r.get("name") == PRODUCT + " PUT/CALL RATIO"]
-    volumes = [r for r in payload.get(PRODUCT, []) if r.get("name") == "VOLUME"]
+    # Cboe added SPXO to the named aggregate in November 2026. Preserve
+    # the exact published basket on every record; never use TOTAL/INDEX P/C.
+    products = [p for p in PRODUCTS if p in payload and any(
+        r.get("name") == p + " PUT/CALL RATIO" for r in payload.get("ratios", []))]
+    if len(products) != 1:
+        raise ValueError("Explicit, unambiguous SPX family aggregate required")
+    product = products[0]
+    ratios = [r for r in payload.get("ratios", []) if r.get("name") == product + " PUT/CALL RATIO"]
+    volumes = [r for r in payload.get(product, []) if r.get("name") == "VOLUME"]
     if len(ratios) != 1 or len(volumes) != 1:
         raise ValueError("Explicit SPX + SPXW ratio and volume rows required")
     volume = volumes[0]
@@ -33,7 +42,7 @@ def parse_daily(payload, day, now=None):
             or calls <= 0 or total != calls + puts or not math.isfinite(ratio) or ratio < 0
             or abs(ratio - puts / calls) > 0.0051):
         raise ValueError("SPX put/call volume totals or published ratio do not reconcile")
-    return dict(observation_date=stamp.strftime("%Y-%m-%d"), ratio=ratio,
+    return dict(observation_date=stamp.strftime("%Y-%m-%d"), product=product, ratio=ratio,
                 call_volume=int(calls), put_volume=int(puts), total_volume=int(total),
                 source_url=SOURCE_TEMPLATE.format(stamp.strftime("%Y-%m-%d")))
 
@@ -42,13 +51,14 @@ def load_spx_put_call_snapshot():
     empty = pd.DataFrame(columns=["observation_date", "SPX_PCR"])
     try:
         payload = json.loads((ROOT / "data_snapshots/spx_put_call_daily.json").read_text())
-        if payload.get("product") != PRODUCT or payload.get("ratio_basis") != "put_volume/call_volume":
+        if payload.get("product") not in (*PRODUCTS, PRODUCT_FAMILY) or payload.get("ratio_basis") != "put_volume/call_volume":
             return empty
         rows = []
         for row in payload.get("records", []):
             try:
-                node = {"ratios": [{"name": PRODUCT + " PUT/CALL RATIO", "value": row["ratio"]}],
-                        PRODUCT: [{"name": "VOLUME", "call": row["call_volume"], "put": row["put_volume"],
+                product = row.get("product", PRODUCT)
+                node = {"ratios": [{"name": product + " PUT/CALL RATIO", "value": row["ratio"]}],
+                        product: [{"name": "VOLUME", "call": row["call_volume"], "put": row["put_volume"],
                                    "total": row["total_volume"]}]}
                 valid = parse_daily(node, row["observation_date"])
                 rows.append({"observation_date": pd.Timestamp(valid["observation_date"]), "SPX_PCR": valid["ratio"]})

@@ -1,14 +1,7 @@
 name: Refresh official Cboe VIXEQ
 on:
-  schedule:
-    - cron: '37 0-6,12,22 * * *'
+  # Scheduled collection is owned by update-us-sources.yml.
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/update_vixeq_snapshot.py
-      - .github/workflows/update-vixeq-snapshot.yml
-
 permissions:
   contents: write
 

@@ -286,7 +286,11 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
             "date": pd.to_datetime(table["Time Period"], errors="coerce"),
             "value": pd.to_numeric(table["RESBM_N.D"], errors="coerce"),
         }).dropna()
-        frame = frame.loc[frame["date"] >= pd.Timestamp(START)]
+        # PRATES can announce future effective dates. Only its already
+        # effective daily entries are observations; generic FRED admission
+        # still rejects any future-dated response rather than silently fixing it.
+        frame = frame.loc[(frame["date"] >= pd.Timestamp(START)) & frame["date"].le(
+            pd.Timestamp.now(tz="UTC").tz_localize(None).normalize())]
         if len(frame) < 12:
             raise ValueError("PRATES/IORB missing observed points")
         return _parse_source("DATE,IORB\n" + "\n".join(
@@ -377,7 +381,11 @@ def refresh_one(series_id: str):
                 if fetcher is _fetch_csv:
                     break
             except Exception as exc:
-                failures.append(f"{getattr(fetcher, '__name__', type(fetcher).__name__)}: {type(exc).__name__}: {exc}")
+                detail = str(exc)
+                key = os.environ.get("FRED_API_KEY", "").strip()
+                if key:
+                    detail = detail.replace(key, "[redacted]")
+                failures.append(f"{getattr(fetcher, '__name__', type(fetcher).__name__)}: {type(exc).__name__}: {detail}")
     return (series_id, best, "") if best is not None else (series_id, None, " | ".join(failures))
 
 
@@ -398,8 +406,10 @@ def save_snapshot(series_id, payload):
                     return False
         except (OSError, ValueError):
             pass
-    target.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n",
-                      encoding="utf-8")
+    temporary = target.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n",
+                         encoding="utf-8")
+    temporary.replace(target)
     return True
 
 

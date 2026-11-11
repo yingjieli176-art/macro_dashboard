@@ -16,13 +16,15 @@ SERIES = {
     "COR3M": "data_snapshots/cor3m_daily.json",
     "VIX": "data_snapshots/fred_cache/VIXCLS.json",
     "SPX": "data_snapshots/fred_cache/SP500.json",
+    "VIX3M": "data_snapshots/fred_cache/VXVCLS.json",
+    "GVZ": "data_snapshots/fred_cache/GVZCLS.json",
 }
 
 
 def refresh_payload(previous, symbol, now, get=requests.get):
     """Retain validated history; append only dated, completed official closes."""
-    fred = symbol in ("VIX", "SPX")
-    expected = {"VIX": "VIXCLS", "SPX": "SP500"}.get(symbol)
+    fred = symbol in ("VIX", "SPX", "VIX3M", "GVZ")
+    expected = {"VIX": "VIXCLS", "SPX": "SP500", "VIX3M": "VXVCLS", "GVZ": "GVZCLS"}.get(symbol)
     if (previous.get("series_id") != expected if fred else previous.get("symbol") != symbol):
         raise ValueError(f"Unexpected saved identity for {symbol}")
     records = ([{"observation_date": row["date"], "close": row["value"]}
@@ -61,7 +63,7 @@ def main():
             payload = refresh_payload(previous, symbol, now)
             if payload is not None:
                 temporary = path.with_suffix(".json.tmp")
-                temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=None if symbol in ("VIX", "SPX") else 2, separators=(",", ":") if symbol in ("VIX", "SPX") else None) + "\n")
+                temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=None if symbol in ("VIX", "SPX", "VIX3M", "GVZ") else 2, separators=(",", ":") if symbol in ("VIX", "SPX", "VIX3M", "GVZ") else None) + "\n")
                 temporary.replace(path)
             saved = payload or previous
             print(symbol, "actual observation:", saved.get("coverage_end") or saved["records"][-1].get("date"),

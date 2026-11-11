@@ -1,15 +1,7 @@
 name: Refresh official SPX put-call volume history
 on:
-  schedule:
-    - cron: '53 0-6,12,22 * * *'
+  # Scheduled collection is owned by update-us-sources.yml.
   workflow_dispatch:
-  push:
-    branches: [main, codex/vix-ratios-spx-cds-r92]
-    paths:
-      - scripts/update_spx_put_call_snapshot.py
-      - macro_platform/spx_options.py
-      - scripts/audit_source_freshness.py
-      - .github/workflows/update-spx-put-call.yml
 permissions:
   contents: write
 concurrency:

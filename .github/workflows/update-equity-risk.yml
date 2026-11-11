@@ -1,16 +1,7 @@
 name: Refresh equity risk chart closes
 on:
-  schedule:
-    # After both summer/winter US closes; retry overnight as publishers catch up.
-    - cron: '5,35 20-23,0-7 * * *'
-    - cron: '35 12 * * *'
+  # Scheduled collection is owned by update-us-sources.yml.
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/update_equity_risk_snapshot.py
-      - macro_platform/cboe_history.py
-      - .github/workflows/update-equity-risk.yml
 permissions:
   contents: write
 concurrency:

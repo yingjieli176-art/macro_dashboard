@@ -1,15 +1,7 @@
 name: Sync verified FRED market observations
 on:
-  schedule:
-    - cron: '19 0-6,12,18,22 * * *'
+  # Scheduled collection is owned by update-us-sources.yml.
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/sync_fred_verified_cache.py
-      - macro_platform/fred_observations.py
-      - .github/workflows/sync-fred-verified-cache.yml
-
 permissions:
   contents: write
 

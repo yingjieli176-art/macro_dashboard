@@ -36,7 +36,7 @@ FAMILIES = {
 
 def main():
     report = json.loads(Path(sys.argv[1]).read_text())
-    lagging = {row["id"] for row in report["sources"] if row["status"] == "pipeline_lag"}
+    lagging = {row["id"] for row in report["sources"] if row["status"] in {"pipeline_lag", "unverified", "live_only"}}
     def refresh(item):
         script, sources = item
         print("Refresh observed lag:", script, sorted(lagging.intersection(sources)), flush=True)
