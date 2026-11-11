@@ -760,6 +760,14 @@ def main():
                 re.compile(r"^(macro|st)EChartsChart$"))
             japan_chart = page.locator('.st-key-japan_rates_adaptive_default_1Y').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
+            # A range rerun mounts the component before its ECharts instance.
+            # Wait for actual readiness; a persistent failure still times out.
+            page.wait_for_function("""() => {
+                const element = document.querySelector('.st-key-japan_rates_adaptive_default_1Y [aria-busy=false]');
+                if (!element) return false;
+                try { return Boolean((""" + INSTANCE_JS + """)(element).getModel()); }
+                catch (_) { return false; }
+            }""", timeout=30000)
             japan_series = japan_chart.evaluate("""element => {
                 const chart = (""" + INSTANCE_JS + """)(element);
                 return chart.getOption().series.map(s => ({name:s.name, axis:s.yAxisIndex,
