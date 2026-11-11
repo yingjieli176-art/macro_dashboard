@@ -141,8 +141,9 @@ DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
+from macro_platform import japan_corridor as _japan_corridor
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES
-CHART_BUILD = "2026-11-11-equity-risk-freshness-r132"
+CHART_BUILD = "2026-11-11-japan-rate-corridor-r134"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -3036,6 +3037,23 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
     }
 
 
+@st.fragment(run_every=60, key="japan_corridor_viewport")
+def render_japan_corridor():
+    st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["japan_corridor"]}. 日本利率走廊 · 隔夜资金监控</div>'
+                '<div class="section-description">补充存款利率（下沿参考） / 基本贷款利率（上沿参考） / TONA / Tokyo Repo 隔夜T+0 · 年化%</div>', unsafe_allow_html=True)
+    figure = _japan_corridor.build_corridor_figure("5Y")
+    _render_adaptive_macro_figure(figure, "japan_corridor")
+    rows = _japan_corridor.latest_rows()
+    st.caption(" · ".join(f"{r['指标']}：{r['最新值（%）']:.3f}%（{r['数据日期']}，{r['状态']}）"
+                        for r in rows if r['最新值（%）'] is not None))
+    add_sources([
+        ("BOJ · 官方利率与生效日", "https://www.boj.or.jp/en/"),
+        ("BOJ · TONA每日速報与确报", "https://www.boj.or.jp/en/statistics/market/short/mutan/index.htm"),
+        ("JSDA · Tokyo Repo Rate", "https://www.jsda.or.jp/en/statistics/bonds/trr/"),
+    ], "japan_corridor")
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+
 @st.fragment(run_every=60, key="nvidia_cds_viewport")
 def render_nvidia_cds():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["nvidia_cds"]}. AI Credit · 公司CDS信用风险</div>'
@@ -3076,7 +3094,7 @@ st.markdown(
 # Only the main Streamlit thread creates containers, fragments and widgets.
 macro_slots = {}
 section_headers = {9: "US EQUITY RISK", "nvidia_cds": "US CREDIT RISK", 4: "US / JAPAN RELATIVE STRENGTH",
-                   15: "JAPAN RATES & YEN", 14: "CHINA RATES & EQUITIES",
+                   "japan_corridor": "JAPAN RATES & YEN", 14: "CHINA RATES & EQUITIES",
                    5: "HONG KONG LIQUIDITY", 11: "COMMODITIES", 12: "CRYPTO MARKET"}
 for number in MACRO_DISPLAY_ORDER:
     if number in section_headers:
@@ -3089,6 +3107,8 @@ for number in MACRO_DISPLAY_ORDER:
         render_copper_tcrc()
     elif number == "nvidia_cds":
         render_nvidia_cds()
+    elif number == "japan_corridor":
+        render_japan_corridor()
     else:
         macro_slots[number] = st.container()
 
@@ -3209,6 +3229,7 @@ def _render_all_source_freshness(figures):
         add("市场概览", symbol, st.session_state.get("_market_quotes_snapshot", {}).get(label, {}))
     display_figures = {MACRO_DISPLAY_NUMBER[number]: figure
                        for number, figure in figures.items()}
+    display_figures[MACRO_DISPLAY_NUMBER["japan_corridor"]] = _japan_corridor.build_corridor_figure("5Y")
     display_figures[MACRO_DISPLAY_NUMBER["us_drawdown"]] = _build_equity_drawdown()
     display_figures[MACRO_DISPLAY_NUMBER["cn_drawdown"]] = _build_china_drawdown()
     display_figures[MACRO_DISPLAY_NUMBER["copper_tcrc"]] = build_copper_tcrc_figure("5Y")

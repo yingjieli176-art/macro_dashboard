@@ -141,7 +141,8 @@ class FullFreshness(unittest.TestCase):
 
     def test_source_reports_follow_chart_identities_across_layouts(self):
         cases = (
-            (CHART_NUMBERING, [7, 19, 20, 10]),
+            (CHART_NUMBERING, [7, 20, 21, 11]),
+            ("display_us_credit_jp_cn_20", [7, 19, 20, 10]),
             ("display_us_jp_cn_20", [20, 18, 19, 9]),
             ("display_us_jp_cn_19", [19, 17, 18, 9]),
         )
@@ -156,7 +157,7 @@ class FullFreshness(unittest.TestCase):
                     ]}))
                     _, rows = source_rows(path)
                     self.assertEqual({row["源指标"]: row["图表"] for row in rows},
-                                     dict(zip(ids, ["7", "19", "20", "10"])))
+                                     dict(zip(ids, ["7", "20", "21", "11"])))
 
     def test_hibor_audit_uses_text_relay_when_direct_hkab_page_has_no_fixing(self):
         from scripts import probe_all_sources as probe
@@ -253,7 +254,7 @@ class FullFreshness(unittest.TestCase):
         monthly = go.Figure(go.Scatter(x=pd.to_datetime(["2026-09-30"]), y=[1.], name="Balance"))
         balance = MACRO_DISPLAY_NUMBER[6]
         rows = figure_rows({3:fig, balance:monthly}, now="2026-10-21")
-        self.assertEqual(len(rows),15)
+        self.assertEqual(len(rows),len(MACRO_DISPLAY_NUMBER))
         self.assertEqual(next(r for r in rows if r["图表"]==3)["实际观测日"],"2026-10-19")
         self.assertEqual(next(r for r in rows if r["图表"]==balance)["频率"],"月频")
         self.assertEqual(next(r for r in rows if r["图表"]==MACRO_DISPLAY_NUMBER[7])["状态"],"待恢复")

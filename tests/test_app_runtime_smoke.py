@@ -29,7 +29,7 @@ class DashboardBootSmoke(unittest.TestCase):
             second = AppTest.from_file(str(app), default_timeout=90).run()
         self.assertFalse(first.exception)
         self.assertFalse(second.exception)
-        self.assertEqual(len(second.get('button_group')), 20)
+        self.assertEqual(len(second.get('button_group')), 21)
         self.assertGreaterEqual(len(chart_specs(second)), 8)
         self.assertEqual(chart_specs(first), chart_specs(second))
 
@@ -43,36 +43,37 @@ class DashboardBootSmoke(unittest.TestCase):
             msg="Streamlit app crashed during full script execution: "
                 + "; ".join(str(error.message) for error in instance.exception),
         )
-        self.assertEqual(len(instance.get("button_group")), 20)
+        self.assertEqual(len(instance.get("button_group")), 21)
         titles = [match.group(1) for element in instance.markdown
                   if (match := re.search(r'class="section-title">(\d+)\.', element.value))]
-        self.assertEqual(titles, [str(number) for number in range(1, 21)])
+        self.assertEqual(titles, [str(number) for number in range(1, 22)])
         title_text = " ".join(element.value for element in instance.markdown)
         self.assertIn('4. US Equity Risk', title_text)
         self.assertIn('6. SPX / RSP', title_text)
         self.assertIn('7. AI Credit · 公司CDS信用风险', title_text)
         self.assertIn('8. 标普500 / 日经225', title_text)
-        self.assertIn('9. Japan Government Yields', title_text)
-        self.assertIn('10. 日元套息分析', title_text)
+        self.assertIn('9. 日本利率走廊', title_text)
+        self.assertIn('10. Japan Government Yields', title_text)
+        self.assertIn('11. 日元套息分析', title_text)
         self.assertIn('日本寿险与养老金 · 机构披露', title_text)
-        self.assertIn('11. China Government Yields', title_text)
+        self.assertIn('12. China Government Yields', title_text)
         source_rows = [element.value for element in instance.markdown
                        if element.value.startswith('<div class="source-text">Source: ')]
-        self.assertEqual(len(source_rows), 20)
+        self.assertEqual(len(source_rows), 21)
         for url in ("https://irates.today/chart_data.json", "https://irates.today/capex.html#method",
                     "https://fred.stlouisfed.org/series/BAMLH0A0HYM2"):
             self.assertIn(url, source_rows[6])
         self.assertNotIn("term-premia-tabs", source_rows[6])
         parameter_rows = [element.value for element in instance.markdown
                           if element.value.startswith('<div class="chart-parameters">')]
-        self.assertEqual(len(parameter_rows), 20)
+        self.assertEqual(len(parameter_rows), 21)
         for label in ("公司 5Y CDS", "实际观测与覆盖率", "HY OAS（R1）"):
             self.assertIn(label, parameter_rows[6])
         for unrelated in ("资本开支", "期限溢价与美联储", "韩国股市"):
             self.assertNotIn(unrelated, parameter_rows[6])
         self.assertFalse(any(caption.value.startswith("来源：Open-Sourced") for caption in instance.caption))
         self.assertEqual([control.key for control in instance.get("button_group")[6:9]],
-                         ["nvidia_cds_time_window", "sp500_nikkei_ratio_time_window", "japan_rates_time_window"])
+                         ["nvidia_cds_time_window", "sp500_nikkei_ratio_time_window", "japan_corridor_time_window"])
         specs = chart_specs(instance)
         # AppTest does not execute browser JavaScript. This assertion proves
         # the real Streamlit renderer emitted native chart messages, rather
@@ -166,7 +167,7 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertGreater(len(carry["series"]), 20)
         for name in ("USD/JPY 20日实际波动率", "日本美债总持仓", "GPIF 美债票据与长期债券", "九家主要寿险 · 外债对冲率"):
             self.assertIn(name, [series["name"] for series in carry["series"]])
-        self.assertIn("https://finance.yahoo.com/quote/DX-Y.NYB/history/", source_rows[9])
+        self.assertIn("https://finance.yahoo.com/quote/DX-Y.NYB/history/", source_rows[10])
         self.assertEqual(carry["series"][3]["type"], "bar")
         money = next(json.loads(spec) for spec in specs if '"M2 MoM"' in spec)
         self.assertEqual(next(s for s in money["series"] if s["name"] == "M2 MoM")["type"], "bar")

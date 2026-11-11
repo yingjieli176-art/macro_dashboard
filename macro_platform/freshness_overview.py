@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 from macro_platform.dashboard_layout import (
-    CHART_NUMBERING, DISPLAY_US_JP_CN_20_ORDER, MACRO_DISPLAY_NUMBER, legacy_chart_numbers,
+    CHART_NUMBERING, DISPLAY_US_JP_CN_20_ORDER, MACRO_DISPLAY_NUMBER, PREVIOUS_DISPLAY_ORDER, legacy_chart_numbers,
 )
 
 SOURCE_REPORT = Path(__file__).resolve().parents[1] / "data_snapshots/all_source_freshness.json"
@@ -18,7 +18,7 @@ def figure_rows(figures, now=None):
     except ImportError:
         option_observation_health = None
     rows = []
-    for number in range(1, max(15, max(figures, default=0)) + 1):
+    for number in range(1, max(len(MACRO_DISPLAY_NUMBER), max(figures, default=0)) + 1):
         figure = figures.get(number)
         if figure is None or not getattr(figure, "data", None):
             rows.append({"图表": number, "指标": "整图", "实际观测日": "缺失", "频率": "—", "状态": "待恢复"})
@@ -70,6 +70,11 @@ def source_rows(path=SOURCE_REPORT):
         report = json.loads(path.read_text())
     except (OSError, ValueError, TypeError):
         return None, []
+    if report.get("chart_numbering") == "display_us_credit_jp_cn_20":
+        report["sources"] = [dict(row, charts=sorted(
+            MACRO_DISPLAY_NUMBER[PREVIOUS_DISPLAY_ORDER[number - 1]] for number in row["charts"]
+        )) for row in report.get("sources", [])]
+        report["chart_numbering"] = CHART_NUMBERING
     if report.get("chart_numbering") in {"display_us_jp_cn_18", "display_us_jp_cn_19"}:
         report["sources"] = [dict(row, charts=([DISPLAY_US_JP_CN_20_ORDER.index("copper_tcrc") + 1]
                              if row["id"] in {"tc_usd_dmt", "rc_cents_lb"} else
@@ -102,7 +107,7 @@ def source_rows(path=SOURCE_REPORT):
 def render_freshness_overview(figures, *, quote_rows=None, news=None):
     import streamlit as st
     plotted = figure_rows(figures)
-    with st.expander(f"数据最新时间 · {max(15, max(figures, default=0))} 张图 / {len(plotted)} 条曲线", expanded=False):
+    with st.expander(f"数据最新时间 · {max(len(MACRO_DISPLAY_NUMBER), max(figures, default=0))} 张图 / {len(plotted)} 条曲线", expanded=False):
         st.dataframe(pd.DataFrame(plotted)[["图表", "指标", "实际观测日", "频率", "状态"]],
                      hide_index=True, height=380, width="stretch")
         checked_at, verified = source_rows()
