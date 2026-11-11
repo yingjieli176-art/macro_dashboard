@@ -3,15 +3,11 @@
   "source": "Cboe Global Indices",
   "source_url": "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/SKEW_History.csv",
   "unit": "index points",
-  "updated_at": "2026-11-10T00:34:43.470588+00:00",
-  "coverage_start": "2021-11-10",
-  "coverage_end": "2026-11-09",
+  "updated_at": "2026-11-11T00:41:56.036515+00:00",
+  "coverage_start": "2021-11-11",
+  "coverage_end": "2026-11-10",
   "record_count": 1253,
   "records": [
-    {
-      "observation_date": "2021-11-10",
-      "close": 144.89
-    },
     {
       "observation_date": "2021-11-11",
       "close": 144.03
@@ -5019,6 +5015,10 @@
     {
       "observation_date": "2026-11-09",
       "close": 150.34
+    },
+    {
+      "observation_date": "2026-11-10",
+      "close": 151.12
     }
   ],
   "latest_source_url": "https://cdn-api.cboe.com/api/global/delayed_quotes/quotes/_SKEW.json"
