@@ -418,6 +418,20 @@ def srf_usage_source():
     return data["records"][-1]["observation_date"], SOURCE_URL
 
 
+@shared_fetch
+def japan_corridor_sources():
+    from scripts.update_japan_corridor import collect
+    return collect({'schema': 'japan_corridor_v1', 'series': {}})
+
+
+def japan_corridor_latest(key):
+    output, errors = japan_corridor_sources()
+    if key in errors or (key == 'deposit' and 'admin' in errors):
+        raise RuntimeError('Japan corridor publisher unavailable: ' + key)
+    node = output['series'][key]
+    return node.get('verified_through') or node['records'][-1]['date'], node['source_url']
+
+
 def jobs():
     output = []
     def add(key, charts, cadence, stored, fetch):
@@ -509,6 +523,13 @@ def jobs():
         identifier = "NVIDIA_CDS_5Y" if key == "sn_nvidia" else key.upper() + "_CDS_5Y"
         output.append((identifier, [MACRO_DISPLAY_NUMBER["nvidia_cds"]], "daily", stored, lambda key=key: public_cds(key)))
     output.append(("SRF_USAGE", [1], "daily", snapshot("srf_usage_daily.json", "observation_date", "accepted_usd"), srf_usage_source))
+    from macro_platform.japan_corridor import load_payload
+    corridor = load_payload()
+    for key in ('deposit', 'loan', 'tona', 'repo'):
+        node = corridor.get('series', {}).get(key, {})
+        stored = node.get('verified_through') or max((r['date'] for r in node.get('records', [])), default=None)
+        output.append(('JP_CORRIDOR_' + key.upper(), [MACRO_DISPLAY_NUMBER['japan_corridor']], 'daily',
+                       stored, lambda key=key: japan_corridor_latest(key)))
     return output
 
 

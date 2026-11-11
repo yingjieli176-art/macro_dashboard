@@ -1,0 +1,45 @@
+name: Refresh Japan rate corridor
+on:
+  schedule:
+    # BOJ API/final morning release and TONA afternoon/month-end release.
+    - cron: '23,53 0-3,7-11 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/update_japan_corridor.py
+      - macro_platform/japan_corridor.py
+      - .github/workflows/update-japan-corridor.yml
+permissions:
+  contents: write
+concurrency:
+  group: japan-corridor-observations
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt xlrd openpyxl
+      - name: Validate source semantics
+        run: python -m unittest discover -s tests -p test_japan_corridor.py
+      - name: Fetch independent publishers with retry
+        id: collect
+        continue-on-error: true
+        run: python scripts/update_japan_corridor.py || python scripts/update_japan_corridor.py
+      - name: Publish successful observations even when another feed is unavailable
+        if: always()
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python scripts/publish_source_refresh.py
+      - name: Report unresolved source failures
+        if: steps.collect.outcome == 'failure'
+        run: exit 1

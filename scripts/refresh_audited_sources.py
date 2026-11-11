@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 ROOT = Path(__file__).resolve().parents[1]
 FAMILIES = {
+    "update_japan_corridor.py": {"JP_CORRIDOR_DEPOSIT", "JP_CORRIDOR_LOAN", "JP_CORRIDOR_TONA", "JP_CORRIDOR_REPO"},
     "sync_fred_verified_cache.py": {"IORB", "EFFR", "SOFR", "RRPONTSYAWARD", "DGS3MO", "DGS2", "DGS10", "DGS30",
         "DFII5", "DFII10", "T10YIE", "WALCL", "WRESBAL", "RRPONTSYD", "SRFTSYD", "VIXCLS", "VXVCLS", "SP500", "GVZCLS"},
     "update_usdhkd_snapshot.py": {"HKD=X"},
