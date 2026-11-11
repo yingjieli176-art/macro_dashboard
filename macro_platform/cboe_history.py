@@ -29,7 +29,10 @@ def supplement_closes(records, symbol, now, get, *, bounds=(0, math.inf)):
         payload = response.json()
         if payload["symbol"] != f"_{symbol}" or not isinstance(payload["data"], list):
             raise ValueError("Unexpected Cboe chart history identity")
-        published = datetime.fromisoformat(payload["timestamp"]).replace(tzinfo=timezone.utc)
+        published = datetime.fromisoformat(payload["timestamp"].replace("Z", "+00:00"))
+        published = published.replace(tzinfo=timezone.utc) if published.tzinfo is None else published.astimezone(timezone.utc)
+        if published > now + timedelta(minutes=1):
+            raise ValueError("Cboe publication timestamp is in the future")
         # This endpoint also serves a running daily bar. Its own publication
         # timestamp must be after the US session close for the date admitted.
         cutoff = min(cutoff, completed_date(min(now, published)))
@@ -45,10 +48,10 @@ def supplement_closes(records, symbol, now, get, *, bounds=(0, math.inf)):
     except (requests.RequestException, ValueError, KeyError, TypeError, OverflowError) as exc:
         print(f"Cboe {symbol} chart history unavailable: {type(exc).__name__}")
         additions.clear()
-    if not additions and symbol in ("VIX", "SKEW"):
-        url = QUOTE.format(symbol)
+    if symbol in ("VIX", "SKEW") and max(additions, default=last) < completed_date(now):
+        quote_url = QUOTE.format(symbol)
         try:
-            response = get(url, headers={"User-Agent": "MacroDashboard/1.0"}, timeout=(5, 15))
+            response = get(quote_url, headers={"User-Agent": "MacroDashboard/1.0"}, timeout=(5, 15))
             response.raise_for_status()
             payload = response.json()
             data = payload["data"]
@@ -63,6 +66,7 @@ def supplement_closes(records, symbol, now, get, *, bounds=(0, math.inf)):
                     day = date.fromisoformat(row["date"])
                     if last < day <= completed_date(now):
                         additions[day] = close
+                        url = quote_url
             else:
                 et = ZoneInfo("America/New_York")
                 observed = datetime.fromisoformat(data["last_trade_time"]).replace(tzinfo=et)
@@ -71,6 +75,7 @@ def supplement_closes(records, symbol, now, get, *, bounds=(0, math.inf)):
                 if (last < day and day.weekday() < 5 and time(17) <= observed.time()
                         and observed <= now and close == float(data["current_price"])):
                     additions[day] = close
+                    url = quote_url
         except (requests.RequestException, ValueError, KeyError, TypeError, OverflowError) as exc:
             print(f"Cboe {symbol} closing quote unavailable: {type(exc).__name__}")
     if not additions:

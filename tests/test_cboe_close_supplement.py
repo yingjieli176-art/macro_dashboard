@@ -40,3 +40,14 @@ class CboeCloseSupplementTests(unittest.TestCase):
         quote["data"]["last_trade_time"] = "2026-11-09T15:00:00"
         get = Mock(side_effect=[history, response(quote)])
         self.assertEqual(supplement_closes(PREVIOUS, "VIX", NOW, get), (PREVIOUS, None))
+
+    def test_partial_history_still_checks_latest_confirmed_vix_close(self):
+        now = datetime(2026, 11, 11, 1, tzinfo=timezone.utc)
+        history = response({"symbol": "_VIX", "timestamp": "2026-11-11 00:09:00", "data": [
+            {"date": "2026-11-09", "close": 19.92}]})
+        quote = response({"symbol": "_VIX", "data": {"symbol": "^VIX", "security_type": "index",
+            "current_price": 19.46, "close": 19.46, "last_trade_time": "2026-11-10T16:15:01"}})
+        get = Mock(side_effect=[history, quote])
+        records, url = supplement_closes(PREVIOUS, "VIX", now, get)
+        self.assertEqual([r["observation_date"] for r in records], ["2026-11-06", "2026-11-09", "2026-11-10"])
+        self.assertEqual(url, QUOTE.format("VIX"))
