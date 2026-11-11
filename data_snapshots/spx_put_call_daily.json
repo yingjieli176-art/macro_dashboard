@@ -5,16 +5,8 @@
   "source": "Cboe Daily Market Statistics",
   "source_url": "https://www.cboe.com/markets/us/options/market-statistics/daily",
   "source_template": "https://cdn.cboe.com/data/us/options/market_statistics/daily/{}_daily_options",
-  "updated_at": "2026-11-10T04:23:12.318228+00:00",
+  "updated_at": "2026-11-11T02:18:27.255442+00:00",
   "records": [
-    {
-      "observation_date": "2021-11-10",
-      "ratio": 1.86,
-      "call_volume": 646272,
-      "put_volume": 1199735,
-      "total_volume": 1846007,
-      "source_url": "https://cdn.cboe.com/data/us/options/market_statistics/daily/2021-11-10_daily_options"
-    },
     {
       "observation_date": "2021-11-11",
       "ratio": 1.8,
@@ -10040,10 +10032,14 @@
       "source_url": "https://cdn.cboe.com/data/us/options/market_statistics/daily/2026-11-06_daily_options"
     }
   ],
-  "record_count": 1254,
-  "coverage_start": "2021-11-10",
+  "record_count": 1253,
+  "coverage_start": "2021-11-11",
   "coverage_end": "2026-11-06",
   "fetch_errors": [
+    {
+      "date": "2026-11-10",
+      "error": "ValueError: Explicit SPX + SPXW ratio and volume rows required"
+    },
     {
       "date": "2026-11-09",
       "error": "ValueError: Explicit SPX + SPXW ratio and volume rows required"
