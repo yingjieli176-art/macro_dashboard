@@ -11,7 +11,7 @@ import pandas as pd
 from macro_platform import tail_risk
 from macro_platform.echarts_axes import build_adaptive_echarts_option, build_safe_echarts_option
 from scripts.update_tail_risk_snapshot import prepare_snapshot
-from test_series_calendars import builders, frame
+from app_test_helpers import builders, frame
 
 
 class TailRiskTests(unittest.TestCase):

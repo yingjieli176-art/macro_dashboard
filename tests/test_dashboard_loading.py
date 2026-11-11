@@ -1,6 +1,7 @@
-import time
 """Test loading helpers without running the dashboard's top-level network I/O."""
-import ast
+from macro_platform.dashboard_layout import NUMERIC_CHART_IDS, HK_CHART_IDS
+from app_test_helpers import load_functions as load_app_functions
+import time
 import uuid
 from macro_platform.request_runtime import submit_jobs, completed_jobs, observed_cache, IncompleteObservedBundle
 import logging
@@ -31,11 +32,8 @@ HELPERS = {
 
 def load_helpers():
     source = Path(__file__).resolve().parents[1] / "app.py"
-    tree = ast.parse(source.read_text(encoding="utf-8"))
-    selected = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in HELPERS]
-    constants = [node for node in tree.body if isinstance(node, ast.Assign)
-                 and any(isinstance(target, ast.Name) and target.id in {"DEFAULT_CHART_RANGE", "CHART_BUILD", "MARKET_SYMBOLS"} for target in node.targets)]
     namespace = {
+        "NUMERIC_CHART_IDS": NUMERIC_CHART_IDS, "HK_CHART_IDS": HK_CHART_IDS,
         "__file__": str(source), "st": st, "pd": pd, "go": go, "time": time,
         "logging": logging, "uuid": uuid,
         "math": math, "IncompleteObservedBundle": IncompleteObservedBundle,
@@ -44,7 +42,7 @@ def load_helpers():
     }
     namespace.update({"observed_cache": observed_cache, "submit_jobs": submit_jobs, "completed_jobs": completed_jobs,
                       "_quote_refresh_key": lambda: 0})
-    exec(compile(ast.Module(body=constants + selected, type_ignores=[]), str(source), "exec"), namespace)
+    load_app_functions(HELPERS, namespace, constants={"DEFAULT_CHART_RANGE", "CHART_BUILD", "MARKET_SYMBOLS"})
     return namespace
 
 

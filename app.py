@@ -140,10 +140,10 @@ TENCENT_MINUTE_URL = "https://web.ifzq.gtimg.cn/appstock/app/minute/query"
 DIRECT_QUOTE_FRESH_SECONDS = 90
 RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
-from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER
+from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER, NUMERIC_CHART_IDS, HK_CHART_IDS
 from macro_platform import japan_corridor as _japan_corridor
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES
-CHART_BUILD = "2026-11-11-japan-rate-corridor-r134"
+CHART_BUILD = "V1.0"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -339,7 +339,7 @@ st.markdown(
         <div class="dashboard-eyebrow">MACRO · LIQUIDITY · RATES</div>
         <div class="dashboard-title">Macro Dashboard</div>
         <div class="dashboard-subtitle">跨市场行情、利率、流动性与 7×24 财经信息面板</div>
-        <div class="dashboard-subtitle" style="font-size:.68rem;color:#64748b">运行代码：{CHART_BUILD} · 自适应坐标轴</div>
+        <div class="dashboard-subtitle" style="font-size:.68rem;color:#64748b">版本：{CHART_BUILD} · 自适应坐标轴</div>
       </div>
       <div class="dashboard-links">
         <a href="#market-overview">市场概览</a>
@@ -2890,17 +2890,16 @@ def _cache_safe_figure(figure):
 @st.cache_data(ttl=300, max_entries=32, show_spinner=False)
 def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
     """Reuse successful construction; callers receive isolated figure copies."""
-    builders = {
-        1: build_fig1, 2: build_fig2, 3: build_fig3,
-        9: build_fig9, 10: build_fig10, 11: build_fig11, 12: build_fig12,
-        13: build_fig13, 14: build_fig14, 15: build_fig15, 16: build_fig16,
-    }
     if isinstance(chart_number, str):
-        builders.update(
-            yen_volatility=build_yen_volatility, yen_tic=build_yen_tic,
-            yen_holdings=lambda period: _yen_carry.build_japan_institution_figure(period, metric="holdings"),
-            yen_hedging=lambda period: _yen_carry.build_japan_institution_figure(period, metric="hedging"),
-        )
+        builders = {
+            'yen_volatility': build_yen_volatility,
+            'yen_tic': build_yen_tic,
+            'yen_holdings': lambda period: _yen_carry.build_japan_institution_figure(period, metric='holdings'),
+            'yen_hedging': lambda period: _yen_carry.build_japan_institution_figure(period, metric='hedging'),
+        }
+        builder = builders[chart_number]
+    elif chart_number != 4:
+        builder = globals()[f"build_fig{chart_number}"]
     if chart_number == 4:
         try:
             builder = build_sp500_nikkei_ratio_figure
@@ -2909,8 +2908,6 @@ def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
             # able to resolve the new chart without eagerly evaluating it for
             # unrelated chart numbers.
             from macro_platform.sp500_nikkei_ratio import build_sp500_nikkei_ratio_figure as builder
-    else:
-        builder = builders[chart_number]
     figure = builder("5Y")
     if not _figure_has_real_observations(figure):
         raise ValueError("Source has no observed chart samples")
@@ -2961,21 +2958,12 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
     def cached_chart(number):
         return _safe_macro_build(f"Chart {number}", lambda: _cached_macro_figure(number, snapshot_revision, CHART_BUILD))
 
-    jobs = {
-        1: lambda: cached_chart(1),
-        2: lambda: cached_chart(2),
-        3: lambda: cached_chart(3),
-        4: lambda: cached_chart(4),
-        "hk5": lambda: _safe_hk_bundle(snapshot_revision),
-        9: lambda: cached_chart(9),
-        10: lambda: cached_chart(10),
-        11: lambda: cached_chart(11),
-        12: lambda: cached_chart(12),
-        13: lambda: cached_chart(13),
-        14: lambda: cached_chart(14),
-        15: lambda: cached_chart(15),
-        16: lambda: cached_chart(16),
-    }
+    jobs = {}
+    for number in NUMERIC_CHART_IDS:
+        if number == HK_CHART_IDS[0]:
+            jobs['hk5'] = lambda: _safe_hk_bundle(snapshot_revision)
+        elif number not in HK_CHART_IDS:
+            jobs[number] = lambda number=number: cached_chart(number)
     revision = (snapshot_revision, CHART_BUILD)
     futures = submit_jobs(jobs, name="macro-chart", workers=6, budget=budget, revision=revision)
     aux_futures = submit_jobs(auxiliary_jobs or {}, name="dashboard-aux", workers=2,
@@ -2996,8 +2984,8 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
         results[key] = value
         if on_complete is not None:
             if key == "hk5":
-                for number in (5, 6, 7, 8):
-                    on_complete(number, value[number - 5]); published.add(number)
+                for number in HK_CHART_IDS:
+                    on_complete(number, value[number - HK_CHART_IDS[0]]); published.add(number)
             else:
                 on_complete(key, value); published.add(key)
     # Running tasks remain bounded in shared pools and can warm caches for recovery.
@@ -3008,33 +2996,17 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
             results[key] = ([_macro_error_figure(f"Chart {n}") for n in range(5, 9)]
                             if isinstance(key, str) else _macro_error_figure(f"Chart {key}"))
     if on_complete is not None:
-        for number in range(1, 17):
+        for number in NUMERIC_CHART_IDS:
             if number not in published:
-                if number in (5, 6, 7, 8):
-                    value = results["hk5"][number-5]
+                if number in HK_CHART_IDS:
+                    value = results["hk5"][number-HK_CHART_IDS[0]]
                 else:
                     value = results[number]
                 on_complete(number, value)
 
-    hk5_bundle = results["hk5"]
-    return {
-        1: results[1],
-        2: results[2],
-        3: results[3],
-        4: results[4],
-        5: hk5_bundle[0],
-        6: hk5_bundle[1],
-        7: hk5_bundle[2],
-        8: hk5_bundle[3],
-        9: results[9],
-        10: results[10],
-        11: results[11],
-        12: results[12],
-        13: results[13],
-        14: results[14],
-        15: results[15],
-        16: results[16],
-    }
+    return {number: (results['hk5'][number-HK_CHART_IDS[0]]
+                     if number in HK_CHART_IDS else results[number])
+            for number in NUMERIC_CHART_IDS}
 
 
 @st.fragment(run_every=60, key="japan_corridor_viewport")
@@ -3114,15 +3086,8 @@ for number in MACRO_DISPLAY_ORDER:
 
 
 def _render_completed_macro_chart(number, figure):
-    renderers = {
-        1: render_macro_chart_1, 2: render_macro_chart_2, 3: render_macro_chart_3,
-        4: render_macro_chart_4, 5: render_macro_chart_5, 6: render_macro_chart_6,
-        7: render_macro_chart_7, 8: render_macro_chart_8, 9: render_macro_chart_9,
-        10: render_macro_chart_10, 11: render_macro_chart_11, 12: render_macro_chart_12,
-        13: render_macro_chart_13, 14: render_macro_chart_14, 15: render_macro_chart_15, 16: render_macro_chart_16,
-    }
     with macro_slots[number]:
-        renderers[number](figure)
+        globals()[f"render_macro_chart_{number}"](figure)
 
 
 _auxiliary = {}

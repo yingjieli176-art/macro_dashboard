@@ -1,3 +1,4 @@
+from app_test_helpers import load_functions as load_app_functions
 import ast
 import json
 import os
@@ -5,19 +6,13 @@ from pathlib import Path
 from types import SimpleNamespace
 import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock
 
 
 def load_functions(names, namespace):
-    source = Path(__file__).resolve().parents[1] / "app.py"
     if "requests" in namespace:
         namespace.setdefault("http_get", namespace["requests"].get)
-    tree = ast.parse(source.read_text())
-    functions = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in names]
-    for node in functions:
-        node.decorator_list = []
-    exec(compile(ast.Module(body=functions, type_ignores=[]), str(source), "exec"), namespace)
-    return namespace
+    return load_app_functions(names, namespace, strip_decorators=True)
 
 
 class RefreshOptimizationTests(unittest.TestCase):
@@ -169,8 +164,15 @@ class RefreshOptimizationTests(unittest.TestCase):
                 for dec in method.decorator_list
             ))
         self.assertIn("on_complete=_render_completed_macro_chart", app)
-        for number in (5, 8, 11, 12):
-            self.assertIn(f"{number}: render_macro_chart_{number}", app)
+        # Assert actual dispatch, rather than the old dictionary's source text.
+        handlers = {number: Mock() for number in (5, 8, 11, 12)}
+        namespace = {'macro_slots': {number: MagicMock() for number in handlers}}
+        namespace.update({f'render_macro_chart_{number}': handler for number, handler in handlers.items()})
+        load_app_functions({'_render_completed_macro_chart'}, namespace)
+        figure = object()
+        for number, handler in handlers.items():
+            namespace['_render_completed_macro_chart'](number, figure)
+            handler.assert_called_once_with(figure)
         self.assertIn("@st.cache_data(ttl=300", app)
         # Charts 5, 8, 10 and 11 already have fragments; all remaining
         # macro charts now need them to avoid a full rerun on time clicks.

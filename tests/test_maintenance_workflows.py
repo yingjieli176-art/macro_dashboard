@@ -9,7 +9,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 
-HISTORICAL_MIGRATIONS = (
+RETIRED_MIGRATIONS = (
     "switch-hk-money-to-yoy.yml",
     "extend-hk-money-yoy-history.yml",
     "upgrade-hk-chart5-2-daily.yml",
@@ -69,12 +69,10 @@ class WorkflowSafetyTests(unittest.TestCase):
                     events, _ = workflow_events(path.name)
                     self.assertEqual(events, {"workflow_dispatch"})
 
-    def test_obsolete_code_migrations_are_never_automatic(self):
-        for name in HISTORICAL_MIGRATIONS:
+    def test_completed_migrations_cannot_be_dispatched_again(self):
+        for name in RETIRED_MIGRATIONS:
             with self.subTest(workflow=name):
-                events, content = workflow_events(name)
-                self.assertEqual(events, {"workflow_dispatch"})
-                self.assertIn("permissions:", content)
+                self.assertFalse((WORKFLOWS / name).exists())
 
     def test_verified_data_updaters_remain_scheduled_and_do_not_write_app_code(self):
         for name in OFFICIAL_REFRESHES:

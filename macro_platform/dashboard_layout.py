@@ -21,3 +21,7 @@ LEGACY_TO_DISPLAY = {index: MACRO_DISPLAY_NUMBER[key]
 
 def legacy_chart_numbers(numbers):
     return sorted({LEGACY_TO_DISPLAY[number] for number in numbers})
+
+# Runtime builder identities are independent of displayed chart numbers.
+NUMERIC_CHART_IDS = tuple(sorted(key for key in MACRO_DISPLAY_ORDER if isinstance(key, int)))
+HK_CHART_IDS = (5, 6, 7, 8)

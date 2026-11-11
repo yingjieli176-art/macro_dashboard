@@ -1,6 +1,6 @@
 """A different source's calendar must not split an observed series."""
-import ast
-from pathlib import Path
+from app_test_helpers import builders, frame
+
 import unittest
 from unittest.mock import patch
 
@@ -14,24 +14,10 @@ from macro_platform.echarts_axes import build_adaptive_echarts_option
 from macro_platform.us_equity_risk import load_vixeq_snapshot
 
 
-def builders():
-    source = Path(__file__).resolve().parents[1] / "app.py"
-    names = {"add_line", "_mark_missing_series", "filter_range",
-             "build_fig1", "build_fig9", "build_fig10", "build_fig11", "build_fig12"}
-    ns = {"pd": pd, "go": go, "RANGE_OFFSETS": RANGE_OFFSETS,
-          "load_correlation_snapshot": lambda symbol: frame([], symbol, []),
-          "load_tail_risk_snapshot": lambda symbol: frame([], symbol, []),
-          "load_spx_put_call_snapshot": lambda: frame([], "SPX_PCR", []),
-          "apply_chart_style": lambda fig, *args: fig,
-          "chart_height": lambda *args: 420}
-    nodes = [n for n in ast.parse(source.read_text()).body
-             if isinstance(n, ast.FunctionDef) and n.name in names]
-    exec(compile(ast.Module(body=nodes, type_ignores=[]), str(source), "exec"), ns)
-    return ns
 
 
-def frame(dates, column, values):
-    return pd.DataFrame({"observation_date": pd.to_datetime(dates), column: values})
+
+
 
 
 def values(trace):

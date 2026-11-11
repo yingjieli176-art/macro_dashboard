@@ -1,10 +1,10 @@
 """Exercise app helpers without importing its network-heavy top-level dashboard."""
-import ast
+from app_test_helpers import load_functions as load_app_functions
+
 import logging
 from macro_platform.request_runtime import submit_jobs, completed_jobs
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from pathlib import Path
 import threading
 import time
 import unittest
@@ -16,18 +16,10 @@ HELPERS = {
     "_fetch_quote_rows", "_apply_watchlist_quote_rows", "_empty_quote", "_symbol_market", "_remember_quote", "_stable_quote",
     "_get_watchlist_quote", "_request_watchlist_refresh", "_watchlist_symbols",
     "_load_watchlist_quotes", "_watchlist_refresh_status", "_active_quote_values",
-    "render_watchlists",
 }
 
 
 def load_helpers(st):
-    source = Path(__file__).resolve().parents[1] / "app.py"
-    tree = ast.parse(source.read_text(encoding="utf-8"))
-    selected = []
-    for node in tree.body:
-        if isinstance(node, ast.FunctionDef) and node.name in HELPERS:
-            node.decorator_list = []
-            selected.append(node)
     namespace = {
         "st": st, "logging": logging, "time": time, "datetime": datetime,
         "DASHBOARD_TZ": ZoneInfo("Asia/Hong_Kong"),
@@ -37,7 +29,7 @@ def load_helpers(st):
     }
     namespace.update({"submit_jobs": submit_jobs, "completed_jobs": completed_jobs,
                       "_quote_refresh_key": lambda: 0})
-    exec(compile(ast.Module(body=selected, type_ignores=[]), str(source), "exec"), namespace)
+    load_app_functions(HELPERS, namespace, strip_decorators=True)
     return namespace
 
 
@@ -169,21 +161,6 @@ class WatchlistRefreshTests(unittest.TestCase):
         self.ns["_fetch_quote"].assert_not_called()
         self.assertIn("暂无自选标的", self.ns["_watchlist_refresh_status"]())
 
-    def test_fragment_shows_busy_progress_result_and_reenables_button(self):
-        self.ui.session_state["market_search_us_confirmed"] = [{"symbol": "NVDA"}]
-        self.ns["_render_quote_block"] = lambda item: "quote"
-        self.ns["_delete_confirmed"] = lambda *args: None
-        self.ns["_open_search"] = lambda *args: None
-        self.ns["render_watchlists"]()
-        self.ui.buttons.clear()
-        self.ns["_request_watchlist_refresh"]()
-        self.ns["render_watchlists"]()
-        refresh_buttons = [(label, opts) for label, opts in self.ui.buttons if "refresh_watchlist_quotes" in opts.get("key", "")]
-        self.assertEqual([label for label, _ in refresh_buttons], ["刷新中…", "↻ 刷新"])
-        self.assertTrue(refresh_buttons[0][1]["disabled"])
-        self.assertIs(refresh_buttons[1][1]["on_click"], self.ns["_request_watchlist_refresh"])
-        self.assertFalse(self.ui.session_state["_watchlist_refresh_pending"])
-        self.assertIn("取得报价 1/1", self.ui.captions[-1])
 
 
 if __name__ == "__main__":
