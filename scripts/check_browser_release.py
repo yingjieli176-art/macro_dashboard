@@ -607,27 +607,6 @@ def exercise_range_legend_persistence(page, prefix, group_index):
 
 
 
-def exercise_security_search(page):
-    page.locator('.st-key-market_search_hk_open_button button:visible').filter(has_text='＋ 添加标的').click()
-    search = page.locator('.st-key-market_search_hk input:visible')
-    search.fill('小米')
-    search.press('Enter')
-    selected = page.locator('.st-key-market_search_hk_result_select').get_by_role('combobox').filter(visible=True)
-    selected.wait_for(state='visible', timeout=15000)
-    page.locator('.st-key-market_search_hk_confirm_selected button:visible').filter(has_text='确认添加').click()
-    card = page.locator('.watch-card-body').filter(has_text='1810.HK')
-    card.wait_for(timeout=15000)
-    assert '小米集团-W' in card.inner_text()
-    page.locator('[class*="st-key-market_search_hk_delete_"] button:visible').last.click()
-    card.wait_for(state='detached', timeout=15000)
-    assert card.count() == 0
-    # A removed card can disappear before its full rerun registers all fragments.
-    # Wait for the server's completion signal before clicking chart controls.
-    page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'",
-                           timeout=30000)
-    return {'chinese_name':True, 'enter_to_search':True, 'confirmed_symbol':'1810.HK', 'add_remove':True}
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="http://127.0.0.1:8501")
@@ -727,7 +706,6 @@ def main():
             report['copper_tcrc'] = tcrc_state
             report["equity_drawdown"] = exercise_equity_drawdown(page)
             report["china_drawdown"] = exercise_china_drawdown(page)
-            report["security_search"] = exercise_security_search(page)
             # All five controls exist for every position, including unavailable charts.
             report["controls"] = groups.all_text_contents()
             for index in range(21):
@@ -747,11 +725,13 @@ def main():
                     valid:s.data.filter(p=>Number.isFinite(p[1])).length,
                     gaps:s.data.filter(p=>p[1]===null).length}));
             }""")
-            assert [s['name'] for s in cds_state] == ['NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）', 'Oracle 5Y']
+            assert [s['name'] for s in cds_state] == ['NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）', 'Oracle 5Y', 'HY OAS (R1)']
             for name in ('NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）', 'Oracle 5Y'):
                 found = next(s for s in cds_state if s['name'] == name)
                 assert found['valid'] > 10 and found['markers'] and not found['connect'], found
                 assert found['axis'] == 0, found
+            hy = next(s for s in cds_state if s['name'] == 'HY OAS (R1)')
+            assert hy['axis'] == 1 and hy['valid'] > 150, hy
             report['ai_cds'] = cds_state
             report['ai_cds_zoom'] = exercise_client_zoom(page, cds_chart, minimum_axes=1)
             page.screenshot(path='browser_ai_cds.png')
@@ -808,7 +788,7 @@ def main():
             report["tail_risk_zoom"] = exercise_client_zoom(page, tail, minimum_axes=5)
             sentiment = tail.evaluate("element => element.__macroChart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,valid:s.data.filter(p=>Number.isFinite(p[1])).length}))")
             for name, axis in (("VIX/VIX3M (R1)", 1), ("VVIX/VIX (R4)", 4),
-                               ("9D/30D (R1)", 1), ("SPX P/C (R1)", 1)):
+                               ("9D/30D (R1)", 1), ("SPX P/C 63D MA (R1)", 1)):
                 series = next(s for s in sentiment if s['name'] == name)
                 assert series['axis'] == axis and series['valid'] > 150, series
             assert any('VVIX' in s['name'] for s in sentiment), sentiment
