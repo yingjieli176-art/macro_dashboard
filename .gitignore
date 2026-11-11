@@ -1,0 +1,17 @@
+# Python and local test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Local credentials
+.env
+.env.*
+.streamlit/secrets.toml
+
+# Local regression outputs (source snapshots remain tracked)
+/browser_*.png
+/browser_acceptance.json
+/browser-server.log
+/regression-tests.xml
