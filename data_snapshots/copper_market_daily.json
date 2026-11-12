@@ -10,7 +10,7 @@
     "lme_price_stock": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
     "cochilco_inventory": "https://boletin.cochilco.cl/productos/boletin.asp?tabla=tabla4_2"
   },
-  "updated_at": "2026-11-12T03:11:10.696522+00:00",
+  "updated_at": "2026-11-12T11:35:28.841910+00:00",
   "coverage_start": "2021-11-12",
   "coverage_end": "2026-11-11",
   "counts": {
@@ -16892,7 +16892,7 @@
     },
     {
       "date": "2026-11-11",
-      "comex_price_usd_lb": 6.245999813079834,
+      "comex_price_usd_lb": 6.274499893188477,
       "comex_stock_t": null,
       "lme_cash_usd_t": 13875.5,
       "lme_3m_usd_t": 13795.0,
@@ -16900,7 +16900,7 @@
       "cochilco_lme_stock_t": null,
       "comex_stock_source": null,
       "comex_stock_short_tons": null,
-      "wti_usd_bbl": 85.63999938964844,
+      "wti_usd_bbl": 86.52999877929688,
       "vvix": 90.47
     }
   ]
