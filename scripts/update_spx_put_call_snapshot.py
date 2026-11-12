@@ -44,6 +44,10 @@ def refresh(previous, now, fetch=fetch_daily, backfill=False):
                 errors.append({"date": jobs[future], "error": type(exc).__name__ + ": " + str(exc)[:180]})
             if count % 100 == 0:
                 print("SPX reports", count, "/", len(days), "valid", len(downloaded), "errors", len(errors), flush=True)
+    # Errors must remain visible even when older reports downloaded correctly
+    # and the saved observations are unchanged. Do not change the product basket.
+    for error in sorted(errors, key=lambda item: item["date"]):
+        print("SPX report rejected:", error["date"], error["error"], flush=True)
     if not downloaded:
         raise RuntimeError("No verified SPX reports downloaded; saved snapshot retained")
     records = [existing[k] for k in sorted(existing)]

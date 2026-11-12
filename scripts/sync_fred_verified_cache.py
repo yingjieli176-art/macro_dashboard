@@ -286,7 +286,11 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
             "date": pd.to_datetime(table["Time Period"], errors="coerce"),
             "value": pd.to_numeric(table["RESBM_N.D"], errors="coerce"),
         }).dropna()
-        frame = frame.loc[frame["date"] >= pd.Timestamp(START)]
+        # PRATES can include the next effective date before UTC midnight.
+        # Admit only already-effective dates here; generic observation admission
+        # must continue to reject future dates from every other source.
+        today = pd.Timestamp.now(tz="UTC").tz_localize(None).normalize()
+        frame = frame.loc[frame["date"].between(pd.Timestamp(START), today)]
         if len(frame) < 12:
             raise ValueError("PRATES/IORB missing observed points")
         return _parse_source("DATE,IORB\n" + "\n".join(
