@@ -217,3 +217,11 @@ history is inferred from the change column or created by interpolation.
 and atomically appends genuine observations to `jpy_3m_atm_saxo.json`.
 Unchanged reports preserve original timestamps; failed or older reports cannot
 overwrite last-good history. The regular freshness audit checks actual dates.
+
+### SPX dealer GEX
+
+Chart 5 uses the SqueezeMetrics public DIX.csv gex column, with original session dates and signed dollar values. Display divides dollars by 1e9, on an independent GEX axis. The provider's per-SPX-point convention is retained; do not relabel it as per-1%-move gamma. The estimate depends on modeled dealer inventory. The scheduled update-dealer-gamma workflow refreshes the dated snapshot only, retains earlier history and refuses invalid or regressing files. Native chart fallback keys include the series/axis structure so removed axes cannot survive a structural change.
+
+### MOVE bond volatility
+
+Chart 4 adds ICE BofA MOVE on an independent index-point axis. Yahoo ^MOVE completed raw daily closes are retained (no adjusted data, no unfinished bar or filled holiday). Its current longName metadata is incorrect; the dated ^MOVE series was checked against MOVE closes published by EODData and Fidelity (2026-11-10: 92.43). The index definition is ICE's MOVE product page. update-move-index refreshes the saved five-year series independently, retaining prior history on failures. Latest dates may differ between MOVE and equity indices.

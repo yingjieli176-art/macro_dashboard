@@ -65,7 +65,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         ns["get_fred_series"] = load
         figure = ns["build_fig10"]("1M")
         self.assertEqual([t.name for t in figure.data], ["VIX"])
-        self.assertEqual(set(figure.layout.meta["missing_series"]), {"VIX3M", "VIX/VIX3M (R1)", "SKEW 5D MA (R2)", "VVIX (R3)", "VVIX/VIX (R4)", "9D/30D (R1)", "SPX P/C 63D MA (R1)"})
+        self.assertEqual(set(figure.layout.meta["missing_series"]), {"VIX3M", "VIX/VIX3M (R1)", "SKEW 5D MA (R2)", "VVIX (R3)", "VVIX/VIX (R4)", "9D/30D (R1)", "SPX P/C 63D MA (R1)", "GEX 做市商伽马（十亿美元，R5）"})
 
     def test_equity_correlation_calendar_and_removed_series(self):
         ns = builders()
@@ -103,7 +103,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         ns["load_vixeq_snapshot"] = lambda: frame(dates, "VIXEQ", [40., 42.])
         ns["load_correlation_snapshot"] = lambda symbol: (_ for _ in ()).throw(OSError("unavailable"))
         fig = ns["build_fig9"]("1M")
-        self.assertEqual(fig.layout.meta["missing_series"], ["COR3M (R3)"])
+        self.assertEqual(fig.layout.meta["missing_series"], ["COR3M (R3)", "MOVE 债市波动率（R4）"])
         self.assertIn("VIXEQ/VIX (R2)", {t.name for t in fig.data})
 
     def test_equity_ratio_uses_same_date_valid_legs_and_independent_axis(self):

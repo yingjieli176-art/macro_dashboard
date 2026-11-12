@@ -107,6 +107,23 @@ class ChartRendererRecoveryTests(unittest.TestCase):
         self.st.echarts_chart.assert_called_once()
         self.st.plotly_chart.assert_not_called()
 
+    def test_native_fallback_recreates_changed_axes_but_keeps_data_refresh_state(self):
+        renderer = self.ns["_get_echarts_renderer"]()
+        renderer(self.option, key="yen_carry_adaptive_default_1Y")
+        original_key = self.st.echarts_chart.call_args.kwargs["key"]
+        refreshed = deepcopy(self.option)
+        refreshed["series"][0]["data"].append(["2026-09-02", 4.2])
+        renderer(refreshed, key="yen_carry_adaptive_default_1Y")
+        self.assertEqual(self.st.echarts_chart.call_args.kwargs["key"], original_key)
+        old_combined = deepcopy(self.option)
+        old_combined["yAxis"].append({"name": "TIC净买入 · 十亿美元"})
+        renderer(old_combined, key="yen_carry_adaptive_default_1Y")
+        self.assertNotEqual(self.st.echarts_chart.call_args.kwargs["key"], original_key)
+        renamed = deepcopy(self.option)
+        renamed["yAxis"][0]["name"] = "GEX · 十亿美元"
+        renderer(renamed, key="yen_carry_adaptive_default_1Y")
+        self.assertNotEqual(self.st.echarts_chart.call_args.kwargs["key"], original_key)
+
 
     def test_after_1y_load_a_failed_1m_refresh_reuses_dynamic_view(self):
         # Recreates the screenshot: first chart works, time switch/rerun fails

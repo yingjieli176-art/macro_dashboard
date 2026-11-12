@@ -35,6 +35,8 @@ try:
 except ImportError:
     _linked_charts = None
 from macro_platform import chart_axes as _chart_axes
+from macro_platform import dealer_gamma as _dealer_gamma
+from macro_platform import move_index as _move_index
 RANGE_OFFSETS = _chart_axes.RANGE_OFFSETS
 apply_time_axis = _chart_axes.apply_time_axis
 # Extra chart helpers were added across multiple commits. Treat them as
@@ -1683,10 +1685,18 @@ def build_fig9(date_range):
         except Exception:
             continue
 
+    try:
+        move_source = _move_index.load_move_snapshot()
+        if not move_source.empty:
+            frames.append(move_source)
+            sources["MOVE"] = move_source
+    except Exception:
+        pass
+
     if not frames:
         fig = go.Figure()
         for name in ("VIX", "VIXEQ", "S&P 500 (R1)",
-                     "VIXEQ/VIX (R2)", "COR3M (R3)"):
+                     "VIXEQ/VIX (R2)", "COR3M (R3)", "MOVE 债市波动率（R4）"):
             _mark_missing_series(fig, name)
         return apply_chart_style(fig, chart_height(320, 440), date_range)
 
@@ -1727,6 +1737,10 @@ def build_fig9(date_range):
     }
     for name, color in risk_colors.items():
         fig.update_traces(line_color=color, selector=dict(name=name))
+    move = filter_range(sources.get("MOVE", pd.DataFrame(columns=["observation_date", "MOVE"])), date_range)
+    add_line(fig, move, "MOVE", _move_index.SERIES_NAME, 2.3, yaxis="y5", unit=" pts")
+    fig.update_traces(line_color="#0e7490", connectgaps=False,
+                      selector=dict(name=_move_index.SERIES_NAME))
 
     fig.update_layout(
         yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.85),
@@ -1760,7 +1774,10 @@ def build_fig9(date_range):
             showgrid=False, zeroline=False, fixedrange=True, tickformat=".1f",
             tickfont=dict(size=9), ticks="outside", ticklen=3,
         ),
+        yaxis5=dict(title="R4 · MOVE · pts", overlaying="y", side="right", anchor="free",
+                    position=0.995, showgrid=False, zeroline=False, fixedrange=True),
     )
+    fig.update_layout(margin_r=220, xaxis_domain=[0, 0.72])
     return fig
 
 
@@ -1829,6 +1846,10 @@ def build_fig10(date_range):
         pc = pd.DataFrame(columns=["observation_date", "SPX_PCR"])
     add_line(fig, pc, "SPX_PCR", "SPX P/C 63D MA (R1)", 2.1, yaxis="y2", unit=" x")
     fig.update_traces(line_color="#15803d", selector=dict(name="SPX P/C 63D MA (R1)"))
+    gex = filter_range(_dealer_gamma.load_gex_snapshot(), date_range)
+    add_line(fig, gex, "GEX_BN", _dealer_gamma.SERIES_NAME, 2.2, yaxis="y6", unit=" 十亿美元")
+    fig.update_traces(line_color="#0f766e", connectgaps=False,
+                      selector=dict(name=_dealer_gamma.SERIES_NAME))
     fig.update_layout(
         yaxis_title="VIX / VIX3M · pts",
         yaxis2=dict(title="R1 · Ratios · x", overlaying="y", side="right", anchor="free",
@@ -1839,11 +1860,17 @@ def build_fig10(date_range):
                     position=0.85, showgrid=False, zeroline=False, fixedrange=True),
         yaxis5=dict(title="R4 · VVIX/VIX · x", overlaying="y", side="right", anchor="free",
                     position=0.94, showgrid=False, zeroline=False, fixedrange=True),
+        yaxis6=dict(title="R5 · GEX · 十亿美元", overlaying="y", side="right", anchor="free",
+                    position=0.995, showgrid=False, zeroline=True, fixedrange=True),
     )
     fig = apply_chart_style(fig, chart_height(310, 420), date_range)
     # Join observed values for display; source values and ratio dates stay intact.
     fig.update_traces(connectgaps=True, line_dash="solid")
-    fig.update_layout(xaxis_domain=[0, 0.63], margin_r=180)
+    fig.update_traces(connectgaps=False, selector=dict(name=_dealer_gamma.SERIES_NAME))
+    fig.update_layout(xaxis_domain=[0, 0.60], margin_r=250)
+    meta = dict(fig.layout.meta or {})
+    meta["preserve_axis_titles"] = list(dict.fromkeys([*meta.get("preserve_axis_titles", []), "y6"]))
+    fig.update_layout(meta=meta)
     return fig
 
 
@@ -2246,7 +2273,26 @@ def _explain_missing_chart_data(fig, element_key):
 
 def _get_echarts_renderer():
     linked = getattr(globals().get("_linked_charts"), "render_echarts_chart", None)
-    return linked if callable(linked) else getattr(st, "echarts_chart", None)
+    renderer = linked if callable(linked) else getattr(st, "echarts_chart", None)
+    if not callable(renderer):
+        return None
+
+    def render_isolated(option, **kwargs):
+        # Recreate either renderer when series/axis structure changes, so old
+        # axes and DOM-local selection state cannot survive a chart split.
+        import hashlib
+        import json
+        structure = {
+            "series": [(s.get("name"), s.get("type"), s.get("xAxisIndex", 0),
+                        s.get("yAxisIndex", 0)) for s in option.get("series", [])],
+            "axes": [(a.get("name"), a.get("type"), a.get("position"), a.get("inverse", False))
+                     for a in option.get("yAxis", [])],
+        }
+        token = hashlib.sha256(json.dumps(structure, ensure_ascii=True).encode()).hexdigest()[:12]
+        kwargs["key"] = f"{kwargs.get('key') or 'macro_chart'}_schema_{token}"
+        return renderer(option, **kwargs)
+
+    return render_isolated
 
 
 def _try_minimal_adaptive_chart(base_fig, element_key, selected_range, mode=None):
@@ -2611,7 +2657,7 @@ def _render_china_drawdown():
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[9]}. US Equity Risk & Volatility Structure</div>'
-        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3)</div>',
+        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3) · MOVE 债市波动率 (R4)</div>',
         unsafe_allow_html=True,
     )
     render_latest_vix_quote()
@@ -2627,6 +2673,8 @@ def render_macro_chart_9(prebuilt_fig=None):
         st.caption("日线实际观测日 · " + " · ".join(observed_dates))
     add_sources([
         ("Cboe VIX", "https://www.cboe.com/tradable-products/vix/"),
+        ("ICE · MOVE指数说明", _move_index.METHOD_URL),
+        ("Yahoo · MOVE日度收盘", _move_index.SOURCE_URL),
         ("Cboe VIXEQ / Dispersion", "https://www.cboe.com/us/indices/dispersion/"),
         ("Cboe COR3M", "https://www.cboe.com/us/indices/implied/"),
         ("FRED S&P 500 (SP500)", "https://fred.stlouisfed.org/series/SP500"),
@@ -2638,14 +2686,17 @@ def render_macro_chart_9(prebuilt_fig=None):
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure</div>'
-        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX/VIX3M · 9D/30D · SPX P/C 63日均（共用 R1） · SKEW 5日均 (R2) · VVIX (R3) · VVIX/VIX (R4)</div>',
+        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX/VIX3M · 9D/30D · SPX P/C 63日均（共用 R1） · SKEW 5日均 (R2) · VVIX (R3) · VVIX/VIX (R4) · GEX 做市商伽马（十亿美元，R5）</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 10", lambda: _cached_macro_figure(10, _macro_snapshot_revision(), CHART_BUILD),
     )
     _render_adaptive_macro_figure(base_fig, "vix_term_structure")
+    st.caption("GEX为SqueezeMetrics发布的SPX做市商伽马模型估计，按原始美元值÷10亿显示。"
+               "来源口径对应SPX每变动1点的对冲敞口变化；日期为交易日，日度自动更新。")
     add_sources([
+        ("SqueezeMetrics · SPX GEX daily history", _dealer_gamma.SOURCE_URL),
         ("FRED · VIX (VIXCLS)", "https://fred.stlouisfed.org/series/VIXCLS"),
         ("FRED · VIX3M (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),
         ("Cboe · SKEW Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/SKEW_History.csv"),

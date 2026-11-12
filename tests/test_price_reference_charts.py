@@ -15,6 +15,18 @@ def history(values):
 
 
 class PriceReferenceTests(unittest.TestCase):
+    def test_schema_keys_keep_legends_across_periods_but_isolate_new_axes(self):
+        from macro_platform.linked_charts import render_echarts_chart
+        option = {'series': [], 'yAxis': []}
+        component = Mock()
+        with patch('macro_platform.linked_charts._component', return_value=component):
+            render_echarts_chart(option, key='yen_carry_adaptive_default_1Y_schema_abc')
+            first = component.call_args.kwargs['data']['legend_state_key']
+            render_echarts_chart(option, key='yen_carry_adaptive_default_1M_schema_abc')
+            self.assertEqual(component.call_args.kwargs['data']['legend_state_key'], first)
+            render_echarts_chart(option, key='yen_carry_adaptive_default_1Y_schema_def')
+            self.assertNotEqual(component.call_args.kwargs['data']['legend_state_key'], first)
+
     def test_ratio_footer_reserves_space_without_changing_price_observations(self):
         from macro_platform.linked_charts import render_echarts_chart
         figure = build_price_figure({"SPX": history([9999, 8000, 7600]),

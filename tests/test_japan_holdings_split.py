@@ -31,6 +31,9 @@ class JapanHoldingsSplitTests(unittest.TestCase):
 
     def test_retired_appreciation_and_realized_volatility_are_absent_from_rendered_carry(self):
         base = go.Figure()
+        base.update_layout(yaxis7=dict(title="TIC净买入 · 十亿美元"),
+                           yaxis8=dict(title="TIC估值变动 · 十亿美元"),
+                           yaxis9=dict(title="机构外债 · 万亿日元"))
         for name, axis in (("USD/JPY (R1)", "y2"), ("JPY 20-session appreciation (R2)", "y3"),
                            ("CFTC JPY speculative net (R3)", "y4")):
             base.add_scatter(name=name, x=["2026-11-10"], y=[1], yaxis=axis)
@@ -44,3 +47,5 @@ class JapanHoldingsSplitTests(unittest.TestCase):
         self.assertEqual([t.yaxis for t in result.data], ["y2", "y3", "y"])
         self.assertEqual(len(base.data), 3)
         self.assertEqual(len(volatility.data), 3)
+        self.assertFalse(any(key in result.layout.to_plotly_json()
+                             for key in ("yaxis7", "yaxis8", "yaxis9")))
