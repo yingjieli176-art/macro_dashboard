@@ -2771,8 +2771,8 @@ def render_macro_chart_16(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[16]}. 日元套息分析 · Yen Carry Trade</div>'
         '<div class="section-description">美日10Y利差 · USD/JPY（R1 阳轴，向上＝日元走弱） · '
-        '日元20交易日升值幅度（R2 阳轴，向上＝升值幅度增加） · CFTC日元投机净仓位 (R3) · '
-        'TOPIX（东证指数，R4） · 美元指数 DXY (R5) · JPY 3M · JPY 10Y · JPY 10Y - JPY 3M</div>',
+        'CFTC日元投机净仓位 (R2) · TOPIX（东证指数，R3） · 美元指数 DXY (R4) · '
+        'JPY 3M · JPY 10Y · JPY 10Y - JPY 3M</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2782,7 +2782,7 @@ def render_macro_chart_16(prebuilt_fig=None):
     combined = _yen_carry.combine_yen_carry_figures(base_fig, volatility=volatility)
     _render_adaptive_macro_figure(combined, "yen_carry")
     st.caption("全部曲线共用时间轴，可点击图例隐藏或显示。JPY 3M 为财务省周度拍卖收益率，"
-               "10Y−3M 只按同日观测计算。波动率按252日年化，BOJ利率按生效日阶梯显示。"
+               "10Y−3M 只按同日观测计算。BOJ利率按生效日阶梯显示。"
                "收益率为%，利差为百分点；美债持仓、机构外债及对冲率另见图12。")
     add_sources([
         ("FRED · US 10Y Treasury (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),

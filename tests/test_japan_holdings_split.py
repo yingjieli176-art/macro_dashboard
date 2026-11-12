@@ -28,3 +28,19 @@ class JapanHoldingsSplitTests(unittest.TestCase):
         self.assertEqual(MACRO_DISPLAY_NUMBER['japan_holdings'], 12)
         self.assertEqual(MACRO_DISPLAY_NUMBER[16], 11)
         self.assertEqual(MACRO_DISPLAY_NUMBER[14], 13)
+
+    def test_retired_appreciation_and_realized_volatility_are_absent_from_rendered_carry(self):
+        base = go.Figure()
+        for name, axis in (("USD/JPY (R1)", "y2"), ("JPY 20-session appreciation (R2)", "y3"),
+                           ("CFTC JPY speculative net (R3)", "y4")):
+            base.add_scatter(name=name, x=["2026-11-10"], y=[1], yaxis=axis)
+        volatility = go.Figure()
+        for name, axis in (("USD/JPY 20日实际波动率", "y"), ("USD/JPY 60日实际波动率", "y"),
+                           ("BOJ 政策利率（右轴）", "y2")):
+            volatility.add_scatter(name=name, x=["2026-11-10"], y=[1], yaxis=axis)
+        result = combine_yen_carry_figures(base, volatility=volatility)
+        self.assertEqual([t.name for t in result.data],
+                         ["USD/JPY (R1)", "CFTC JPY speculative net (R2)", "BOJ 政策利率（右轴）"])
+        self.assertEqual([t.yaxis for t in result.data], ["y2", "y3", "y"])
+        self.assertEqual(len(base.data), 3)
+        self.assertEqual(len(volatility.data), 3)

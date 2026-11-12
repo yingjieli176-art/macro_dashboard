@@ -274,13 +274,27 @@ def _append_overlay_traces(fig, sources):
 
 
 def combine_yen_carry_figures(base, *, volatility):
-    """Keep funding, market prices and FX volatility in the carry chart."""
+    """Keep funding and market prices; omit retired appreciation/realized vol."""
     fig = go.Figure(base)
-    missing = _append_overlay_traces(fig, [(volatility, {"y": "y3", "y2": "y"})])
+    fig.data = tuple(t for t in fig.data if t.name != PRESSURE_NAME)
+    remap = {"y4": "y3", "y5": "y4", "y6": "y5"}
+    for trace in fig.data:
+        trace.yaxis = remap.get(trace.yaxis, trace.yaxis)
+        trace.name = {POSITION_NAME: POSITION_NAME.replace("(R3)", "(R2)"),
+                      TOPIX_NAME: TOPIX_NAME.replace("(R4)", "(R3)"),
+                      DXY_NAME: DXY_NAME.replace("(R5)", "(R4)")}.get(trace.name, trace.name)
+    # Policy remains plotted, while both realized-volatility series are retired.
+    policy = go.Figure(volatility)
+    policy.data = tuple(t for t in policy.data if t.name == BOJ_POLICY_NAME)
+    policy.update_layout(meta={"missing_series": [name for name in
+        (volatility.layout.meta or {}).get("missing_series", []) if name == BOJ_POLICY_NAME]})
+    missing = _append_overlay_traces(fig, [(policy, {"y2": "y", "y": "y"})])
+    missing = [name for name in missing if name != PRESSURE_NAME]
+    for key in ("yaxis3", "yaxis4", "yaxis5", "yaxis6"):
+        fig.layout[key] = None
     titles = {
         "y": "收益率 % / 利差 pp / BOJ %", "y2": "USD/JPY · 阳轴",
-        "y3": "升值 / 波动 · % · 阳轴", "y4": "CFTC · 万张",
-        "y5": "TOPIX · pts", "y6": "DXY · pts",
+        "y3": "CFTC · 万张", "y4": "TOPIX · pts", "y5": "DXY · pts",
     }
     for index, (ref, title) in enumerate(titles.items()):
         key = "yaxis" + (ref[1:] if ref != "y" else "")
