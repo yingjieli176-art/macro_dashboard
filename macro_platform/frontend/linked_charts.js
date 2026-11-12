@@ -33,12 +33,24 @@ export function peakDrawdown(points, lower, upper) {
       (value / peak.value - 1) * 100 : null, value]) : []};
 }
 
+export function drawdownDifference(equal, weighted) {
+  const left = new Map(equal.map(p => [asTime(p[0]), p[1]]));
+  const right = new Map(weighted.map(p => [asTime(p[0]), p[1]]));
+  return [...new Set([...left.keys(), ...right.keys()])].sort((a,b)=>a-b)
+    .map(day => [day, Number.isFinite(left.get(day)) && Number.isFinite(right.get(day))
+      ? left.get(day)-right.get(day) : null]);
+}
+
 export function dailyPriceTooltip(params, labels) {
   const rows = (Array.isArray(params) ? params : [params]).filter(row => Array.isArray(row.value));
   if (!rows.length) return '';
   const rawDay = rows[0].value[0];
   const day = typeof rawDay === 'string' ? rawDay.slice(0,10) : new Date(rawDay).toISOString().slice(0,10);
   return [day, ...rows.map(row => {
+    if (row.seriesId === 'macro-peak-drawdown-difference') {
+      const value = row.value[1];
+      return `等权回撤−加权回撤（RSP−SPX）：${Number.isFinite(value) ? value.toFixed(2)+'个百分点' : '暂无同日观测'}`;
+    }
     const ratio = row.seriesId.startsWith('macro-peak-drawdown-');
     const index = Number(row.seriesId.split('-').at(-1));
     const value = row.value[1];
@@ -165,6 +177,9 @@ export default function({data, parentElement}) {
   const shortNames = hasPriceGuides ? base.series.map(series => series.markLine.data.find(line =>
     / · 最高收盘$/.test(line.name)).label.formatter.split(' 高 ')[0]) : [];
   const ratioNames = shortNames.map(name => `${name} 回撤比例`);
+  const equalIndex = shortNames.indexOf('RSP'), weightedIndex = shortNames.indexOf('SPX');
+  const hasDifference = equalIndex >= 0 && weightedIndex >= 0;
+  const differenceName = '等权−加权 回撤比例';
   const ratioColors = ['#9333ea', '#db2777', '#0891b2'];
   const footerSpace = hasPriceGuides ? data.price_footer_height || 0 : 0;
   let drawdowns = [];
@@ -213,7 +228,9 @@ export default function({data, parentElement}) {
   function withDrawdownOverlay(option) {
     if (!hasPriceGuides) return option;
     const axisIndex = option.yAxis.length;
-    const active = drawdowns.some((path, index) => selected[ratioNames[index]] !== false && path.peak);
+    const difference = hasDifference ? drawdownDifference(drawdowns[equalIndex].data, drawdowns[weightedIndex].data) : [];
+    const active = drawdowns.some((path, index) => selected[ratioNames[index]] !== false && path.peak) ||
+      (hasDifference && selected[differenceName] !== false && difference.some(p=>Number.isFinite(p[1])));
     const mobile = element.clientWidth <= 700;
     const spacing = mobile ? (element.clientWidth <= 360 ? 40 : element.clientWidth <= 480 ? 44 : 48) : 58;
     const rightAxes = option.yAxis.filter(axis => axis.position === 'right' && axis.show !== false).length;
@@ -239,6 +256,14 @@ export default function({data, parentElement}) {
     }))];
     const names = [...base.series.map(series => series.name), ...ratioNames];
     for (const name of ratioNames) labels[name] = `${name}（相对区间最高收盘）〔回撤轴 · %〕`;
+    if (hasDifference) {
+      option.series.push({id:'macro-peak-drawdown-difference', name:differenceName, type:'line',
+        xAxisIndex:0, yAxisIndex:axisIndex, data:difference, connectNulls:false,
+        showSymbol:false, animation:false, z:5,
+        lineStyle:{color:'#0f766e',width:2.6,type:'solid'}, itemStyle:{color:'#0f766e'}});
+      names.push(differenceName);
+      labels[differenceName] = '等权回撤−加权回撤（RSP−SPX，百分点）〔回撤轴 · %〕';
+    }
     option.legend.data = names;
     option.tooltip = {...option.tooltip, trigger:'axis', formatter:params => dailyPriceTooltip(params, shortNames)};
     // Price and percentage paths share one grid and one calendar axis.
@@ -381,6 +406,7 @@ export default function({data, parentElement}) {
       selected = Object.fromEntries(base.series.map(series =>
         [series.name, base.legend?.selected?.[series.name] !== false]));
       for (const name of ratioNames) selected[name] = true;
+      if (hasDifference) selected[differenceName] = true;
       rememberSelection(); updateLayout();
     });
     chart.on('datazoom', () => {

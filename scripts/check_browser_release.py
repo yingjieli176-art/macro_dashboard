@@ -187,9 +187,20 @@ def assert_price_guides_follow_viewport(chart):
                 latest_time:new Date(raw.filter(point=>Number.isFinite(point[1])).at(-1)[0]).getTime(),
                 latest:raw.filter(point=>Number.isFinite(point[1])).at(-1)[1]});
         });
+        const difference = option.series.find(s=>s.id==='macro-peak-drawdown-difference');
+        if (difference && values.length) {
+            const equal = new Map(option.series.find(s=>s.id==='macro-peak-drawdown-1').data);
+            const weighted = new Map(option.series.find(s=>s.id==='macro-peak-drawdown-0').data);
+            values[0].difference = {
+                valid:difference.data.filter(p=>Number.isFinite(p[1])).length,
+                correct:difference.data.every(([day,value])=>Number.isFinite(equal.get(day)) && Number.isFinite(weighted.get(day))
+                    ? Math.abs(value-(equal.get(day)-weighted.get(day)))<1e-8 : value===null)};
+        }
         return values;
     }""")
     assert values
+    if 'difference' in values[0]:
+        assert values[0]['difference']['valid'] > 0 and values[0]['difference']['correct'], values[0]['difference']
     assert all(value['zoom_axes'] == [[0], [0]] for value in values), values
     assert all(value['grids'] == 1 and value['x_axes'] == 1 for value in values), values
     for value in values:
