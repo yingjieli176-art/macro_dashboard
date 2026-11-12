@@ -187,9 +187,20 @@ def assert_price_guides_follow_viewport(chart):
                 latest_time:new Date(raw.filter(point=>Number.isFinite(point[1])).at(-1)[0]).getTime(),
                 latest:raw.filter(point=>Number.isFinite(point[1])).at(-1)[1]});
         });
+        const difference = option.series.find(s=>s.id==='macro-peak-drawdown-difference');
+        if (difference && values.length) {
+            const equal = new Map(option.series.find(s=>s.id==='macro-peak-drawdown-1').data);
+            const weighted = new Map(option.series.find(s=>s.id==='macro-peak-drawdown-0').data);
+            values[0].difference = {
+                valid:difference.data.filter(p=>Number.isFinite(p[1])).length,
+                correct:difference.data.every(([day,value])=>Number.isFinite(equal.get(day)) && Number.isFinite(weighted.get(day))
+                    ? Math.abs(value-(equal.get(day)-weighted.get(day)))<1e-8 : value===null)};
+        }
         return values;
     }""")
     assert values
+    if 'difference' in values[0]:
+        assert values[0]['difference']['valid'] > 0 and values[0]['difference']['correct'], values[0]['difference']
     assert all(value['zoom_axes'] == [[0], [0]] for value in values), values
     assert all(value['grids'] == 1 and value['x_axes'] == 1 for value in values), values
     for value in values:
@@ -715,6 +726,18 @@ def main():
                     # React Aria's selected toggle changes its accessible
                     # name; the visible range label stays stable.
                     assert groups.nth(index).get_by_text(label, exact=True).count() == 1, (index, label, report["controls"][index])
+            # Verify the actual frontend formatter, not merely backend names.
+            legend_labels = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$")).evaluate_all("""elements => elements.map(element => {
+                const option = element.__macroChart.getOption();
+                return option.series.filter(s => !s.id?.startsWith('macro-peak-drawdown-')).map(s => {
+                    const formatter = option.legend[0].formatter;
+                    return {name:s.name, label:formatter(s.name).replaceAll('\\n','')};
+                });
+            })""")
+            for chart_labels in legend_labels:
+                for label in chart_labels:
+                    assert '〔' in label['label'] and '〕' in label['label'], label
+            report['readable_axis_legends'] = legend_labels
             cds_title = f'{MACRO_DISPLAY_NUMBER["nvidia_cds"]}. AI Credit · 公司CDS信用风险'
             page.get_by_text(cds_title, exact=True).wait_for()
             cds_chart = page.locator('[class*=st-key-nvidia_cds_adaptive_default_1Y_schema_]').get_by_test_id(
