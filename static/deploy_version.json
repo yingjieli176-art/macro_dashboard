@@ -73,6 +73,7 @@
     "spx_pc_63_session_mean_skew_5_session_mean",
     "independent_equity_risk_official_close_refresh",
     "japan_holdings_and_hedging_standalone_chart_12",
-    "yen_carry_retired_20_session_appreciation_and_20_60_realized_volatility"
+    "yen_carry_retired_20_session_appreciation_and_20_60_realized_volatility",
+    "saxo_usdjpy_three_month_atm_implied_volatility_with_dated_automatic_snapshots"
   ]
 }

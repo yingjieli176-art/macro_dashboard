@@ -12,6 +12,8 @@ from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis
 from macro_platform.boj_policy import BOJ_POLICY_NAME, RATE_COLUMN
 from macro_platform.fred_observations import TIC_JAPAN_SERIES
 
+CARRY_IMPLIED_VERSION = 1
+
 SPREAD_NAME = "US 10Y - Japan 10Y"
 FX_NAME = "USD/JPY (R1)"
 PRESSURE_NAME = "JPY 20-session appreciation (R2)"
@@ -273,7 +275,7 @@ def _append_overlay_traces(fig, sources):
     return list(dict.fromkeys(missing))
 
 
-def combine_yen_carry_figures(base, *, volatility):
+def combine_yen_carry_figures(base, *, volatility, implied=None):
     """Keep funding and market prices; omit retired appreciation/realized vol."""
     fig = go.Figure(base)
     fig.data = tuple(t for t in fig.data if t.name != PRESSURE_NAME)
@@ -289,13 +291,17 @@ def combine_yen_carry_figures(base, *, volatility):
     policy.update_layout(meta={"missing_series": [name for name in
         (volatility.layout.meta or {}).get("missing_series", []) if name == BOJ_POLICY_NAME]})
     missing = _append_overlay_traces(fig, [(policy, {"y2": "y", "y": "y"})])
-    missing = [name for name in missing if name != PRESSURE_NAME]
+    if implied is not None:
+        missing.extend(_append_overlay_traces(fig, [(implied, {"y": "y6"})]))
+    missing = list(dict.fromkeys(name for name in missing if name != PRESSURE_NAME))
     for key in ("yaxis3", "yaxis4", "yaxis5", "yaxis6"):
         fig.layout[key] = None
     titles = {
         "y": "收益率 % / 利差 pp / BOJ %", "y2": "USD/JPY · 阳轴",
         "y3": "CFTC · 万张", "y4": "TOPIX · pts", "y5": "DXY · pts",
     }
+    if implied is not None and implied.data:
+        titles["y6"] = "3M ATM 隐含波动率 · 年化%"
     for index, (ref, title) in enumerate(titles.items()):
         key = "yaxis" + (ref[1:] if ref != "y" else "")
         axis = dict(title=title, fixedrange=True, zeroline=True)

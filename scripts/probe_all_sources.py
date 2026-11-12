@@ -535,6 +535,10 @@ def jobs():
         output.append((symbol, [MACRO_DISPLAY_NUMBER["japan_holdings"]], "monthly",
                        snapshot(f"fred_cache/{symbol}.json", "date", "value"),
                        lambda symbol=symbol: fred(symbol)))
+    from macro_platform.jpy_implied_vol import SOURCE_URL as SAXO_URL, parse_quote
+    output.append(("USDJPY_3M_ATM_SAXO", [MACRO_DISPLAY_NUMBER[16]], "daily",
+                   snapshot("jpy_3m_atm_saxo.json", "observation_date", "value"),
+                   lambda: (parse_quote(get(SAXO_URL).text)["observation_date"], SAXO_URL)))
     return output
 
 

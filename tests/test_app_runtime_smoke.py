@@ -161,7 +161,7 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertTrue(any(point[1] is not None for point in japan_series["Japan 30Y"]["data"]))
         self.assertTrue(any(point[1] is not None for point in japan_series["Japan 30Y−10Y (R1)"]["data"]))
         carry = yen_vol
-        self.assertEqual(len(carry["yAxis"]), 5)
+        self.assertEqual(len(carry["yAxis"]), 6)
         self.assertEqual([series["name"] for series in carry["series"][:8]],
                          ["US 10Y - Japan 10Y", "USD/JPY (R1)",
                           "CFTC JPY speculative net (R2)", "TOPIX（东证指数） (R3)", "美元指数 DXY (R4)",
@@ -169,8 +169,14 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertEqual([series["yAxisIndex"] for series in carry["series"][:8]], [0, 1, 2, 3, 4, 0, 0, 0])
         self.assertIn("阳轴", carry["yAxis"][1]["name"])
         self.assertFalse(carry["yAxis"][1]["inverse"])
-        self.assertEqual(len(carry["series"]), 9)
-        self.assertEqual(len(carry["series"]) + len(yen_tic["series"]), 18)
+        self.assertEqual(len(carry["series"]), 10)
+        self.assertEqual(len(carry["series"]) + len(yen_tic["series"]), 19)
+        iv = next(s for s in carry["series"] if s["name"] == "USD/JPY 3M ATM 隐含波动率（Saxo，R5）")
+        self.assertEqual(iv["yAxisIndex"], 5)
+        self.assertTrue(iv["showSymbol"])
+        from macro_platform.jpy_implied_vol import load_snapshot
+        self.assertEqual(iv["data"][-1][1], load_snapshot()["records"][-1]["value"])
+        self.assertIn("https://fxowebtools.saxobank.com/otc.html", source_rows[10])
         self.assertIn("https://finance.yahoo.com/quote/DX-Y.NYB/history/", source_rows[10])
         self.assertEqual(carry["series"][2]["type"], "bar")
         money = next(json.loads(spec) for spec in specs if '"M2 MoM"' in spec)
