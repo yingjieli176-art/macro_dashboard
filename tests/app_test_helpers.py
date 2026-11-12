@@ -45,10 +45,17 @@ def frame(dates, column, values):
 def builders():
     import pandas as pd
     import plotly.graph_objects as go
+    from macro_platform import dealer_gamma
+    from macro_platform import move_index
+    from types import SimpleNamespace
     from macro_platform.chart_axes import RANGE_OFFSETS
     names = {'add_line', '_mark_missing_series', 'filter_range',
              'build_fig1', 'build_fig9', 'build_fig10', 'build_fig11', 'build_fig12'}
     namespace = {'pd': pd, 'go': go, 'RANGE_OFFSETS': RANGE_OFFSETS,
+        '_dealer_gamma': SimpleNamespace(SERIES_NAME=dealer_gamma.SERIES_NAME,
+            load_gex_snapshot=lambda: pd.DataFrame(columns=['observation_date', 'GEX_BN'])),
+        '_move_index': SimpleNamespace(SERIES_NAME=move_index.SERIES_NAME,
+            load_move_snapshot=lambda: pd.DataFrame(columns=['observation_date', 'MOVE'])),
         'load_correlation_snapshot': lambda symbol: frame([], symbol, []),
         'load_tail_risk_snapshot': lambda symbol: frame([], symbol, []),
         'load_spx_put_call_snapshot': lambda: frame([], 'SPX_PCR', []),

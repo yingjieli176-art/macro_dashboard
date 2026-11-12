@@ -347,7 +347,7 @@ export default function({data, parentElement}) {
       patch.series = option.series.map(series => ({name:series.name,
         ...(series.type === 'bar' ? {barWidth:series.barWidth} : {})}));
     }
-    chart.setOption(patch, {silent:true});
+    chart.setOption(patch, {silent:true, replaceMerge:['yAxis']});
     parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom};
   }
 

@@ -539,6 +539,12 @@ def jobs():
     output.append(("USDJPY_3M_ATM_SAXO", [MACRO_DISPLAY_NUMBER[16]], "daily",
                    snapshot("jpy_3m_atm_saxo.json", "observation_date", "value"),
                    lambda: (parse_quote(get(SAXO_URL).text)["observation_date"], SAXO_URL)))
+    from macro_platform.dealer_gamma import SOURCE_URL as GEX_URL, parse_csv as parse_gex
+    output.append(("SPX_GEX", [MACRO_DISPLAY_NUMBER[10]], "daily",
+                   snapshot("spx_gex_daily.json", "observation_date", "gex_usd"),
+                   lambda: (parse_gex(get(GEX_URL).text)[-1]["observation_date"], GEX_URL)))
+    output.append(("MOVE", [MACRO_DISPLAY_NUMBER[9]], "daily",
+                   snapshot("move_daily.json", "observation_date", "close"), lambda: yahoo("^MOVE")))
     return output
 
 

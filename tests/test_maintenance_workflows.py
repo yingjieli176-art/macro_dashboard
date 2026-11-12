@@ -21,6 +21,8 @@ RETIRED_MIGRATIONS = (
     "add-us-equity-risk-chart.yml",
 )
 OFFICIAL_REFRESHES = (
+    "update-move-index.yml",
+    "update-dealer-gamma.yml",
     "update-jpy-implied-vol.yml",
     "update-hkma-daily-snapshot.yml",
     "update-hkma-snapshot.yml",

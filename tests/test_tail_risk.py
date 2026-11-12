@@ -47,7 +47,7 @@ class TailRiskTests(unittest.TestCase):
         ns["load_tail_risk_snapshot"] = lambda s: (_ for _ in ()).throw(OSError("outage"))
         fig = ns["build_fig10"]("1M")
         self.assertEqual([t.name for t in fig.data], ["VIX", "VIX3M", "VIX/VIX3M (R1)"])
-        self.assertEqual(set(fig.layout.meta["missing_series"]), {"SKEW 5D MA (R2)", "VVIX (R3)", "VVIX/VIX (R4)", "9D/30D (R1)", "SPX P/C 63D MA (R1)"})
+        self.assertEqual(set(fig.layout.meta["missing_series"]), {"SKEW 5D MA (R2)", "VVIX (R3)", "VVIX/VIX (R4)", "9D/30D (R1)", "SPX P/C 63D MA (R1)", "GEX 做市商伽马（十亿美元，R5）"})
 
     def history(self, symbol="SKEW", stop="2026-11-03", value=150):
         dates = pd.bdate_range("2022-01-03", stop)

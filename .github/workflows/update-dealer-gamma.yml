@@ -1,0 +1,46 @@
+name: Refresh public SPX dealer gamma exposure
+on:
+  schedule:
+    - cron: '43 0,7,12 * * 1-6'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/update_dealer_gamma.py
+      - macro_platform/dealer_gamma.py
+      - .github/workflows/update-dealer-gamma.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: squeezemetrics-gex-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install source parser dependencies
+        run: python -m pip install pandas requests
+      - name: Refresh verified published GEX history
+        run: python scripts/update_dealer_gamma.py
+      - name: Publish the data snapshot only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data_snapshots/spx_gex_daily.json
+          if git diff --cached --quiet; then
+            echo 'GEX observations unchanged'
+            exit 0
+          fi
+          git commit -m 'data: refresh published SPX dealer gamma exposure'
+          bash scripts/push_snapshot.sh

@@ -15,6 +15,8 @@ from macro_platform.echarts_axes import option_observation_health
 
 
 SPECS = [
+    ("move_daily.json", "observation_date", "", ["close"]),
+    ("spx_gex_daily.json", "observation_date", "", ["gex_usd"]),
     ("jpy_3m_atm_saxo.json", "observation_date", "", ["value"]),
     ("srf_usage_daily.json", "observation_date", "", ["accepted_usd"]),
     ("cftc_jpy_weekly.json", "observation_date", "", ["noncommercial_long", "noncommercial_short", "net_contracts"]),

@@ -294,8 +294,11 @@ def combine_yen_carry_figures(base, *, volatility, implied=None):
     if implied is not None:
         missing.extend(_append_overlay_traces(fig, [(implied, {"y": "y6"})]))
     missing = list(dict.fromkeys(name for name in missing if name != PRESSURE_NAME))
-    for key in ("yaxis3", "yaxis4", "yaxis5", "yaxis6"):
-        fig.layout[key] = None
+    # Cached pre-split layouts can still contain holdings axes y7 and above.
+    # Rebuild every Y axis rather than carrying any retired layout fields.
+    for key in list(fig.layout.to_plotly_json()):
+        if key.startswith("yaxis"):
+            fig.layout[key] = None
     titles = {
         "y": "收益率 % / 利差 pp / BOJ %", "y2": "USD/JPY · 阳轴",
         "y3": "CFTC · 万张", "y4": "TOPIX · pts", "y5": "DXY · pts",
