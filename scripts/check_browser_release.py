@@ -715,6 +715,18 @@ def main():
                     # React Aria's selected toggle changes its accessible
                     # name; the visible range label stays stable.
                     assert groups.nth(index).get_by_text(label, exact=True).count() == 1, (index, label, report["controls"][index])
+            # Verify the actual frontend formatter, not merely backend names.
+            legend_labels = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$")).evaluate_all("""elements => elements.map(element => {
+                const option = element.__macroChart.getOption();
+                return option.series.filter(s => !s.id?.startsWith('macro-peak-drawdown-')).map(s => {
+                    const formatter = option.legend[0].formatter;
+                    return {name:s.name, label:formatter(s.name).replaceAll('\\n','')};
+                });
+            })""")
+            for chart_labels in legend_labels:
+                for label in chart_labels:
+                    assert '〔' in label['label'] and '〕' in label['label'], label
+            report['readable_axis_legends'] = legend_labels
             cds_title = f'{MACRO_DISPLAY_NUMBER["nvidia_cds"]}. AI Credit · 公司CDS信用风险'
             page.get_by_text(cds_title, exact=True).wait_for()
             cds_chart = page.locator('[class*=st-key-nvidia_cds_adaptive_default_1Y_schema_]').get_by_test_id(

@@ -238,6 +238,7 @@ export default function({data, parentElement}) {
         lineStyle:{color:'#94a3b8', type:'dashed', width:1}, data:[{yAxis:0}]}
     }))];
     const names = [...base.series.map(series => series.name), ...ratioNames];
+    for (const name of ratioNames) labels[name] = `${name}（相对区间最高收盘）〔回撤轴 · %〕`;
     option.legend.data = names;
     option.tooltip = {...option.tooltip, trigger:'axis', formatter:params => dailyPriceTooltip(params, shortNames)};
     // Price and percentage paths share one grid and one calendar axis.

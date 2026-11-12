@@ -98,7 +98,7 @@ class ThirtyYearTreasuryTests(unittest.TestCase):
             self.assertEqual(index["yAxisIndex"], 2)
             self.assertEqual(index["data"], [[date.isoformat(), price] for date, price in zip(dates, prices)])
             self.assertIn("pts", option["yAxis"][2]["name"])
-            self.assertEqual(compact_parameter_labels(option)[index["name"]], "NASDAQ-100（纳斯达克100）")
+            self.assertEqual(compact_parameter_labels(option)[index["name"]], "NASDAQ-100（纳斯达克100）〔R2 · pts〕")
 
     def test_original_source_is_collected_and_included_in_chart_freshness_audit(self):
         from scripts.sync_fred_verified_cache import SERIES, TREASURY_FIELDS
