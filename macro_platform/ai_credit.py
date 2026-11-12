@@ -18,6 +18,8 @@ METHOD_URL = "https://irates.today/capex.html#method"
 ATTRIBUTION = "Open-Sourced Rates Observatory, irates.today"
 HY_OAS_NAME = "HY OAS (R1)"
 HY_OAS_URL = "https://fred.stlouisfed.org/series/BAMLH0A0HYM2"
+IG_OAS_NAME = "IG OAS (R1)"
+IG_OAS_URL = "https://fred.stlouisfed.org/series/BAMLC0A0CM"
 SERIES = {
     "sn_nvidia": ("NVIDIA 5Y", "#16a34a"),
     "sn_amd": ("AMD 5Y", "#785db0"),
@@ -133,7 +135,7 @@ def cds_summary(payload=None):
     return pd.DataFrame(rows)
 
 
-def build_cds_figure(date_range="5Y", payload=None, *, hy_oas=None):
+def build_cds_figure(date_range="5Y", payload=None, *, hy_oas=None, ig_oas=None):
     payload = load_cds_snapshot() if payload is None else payload
     fig = go.Figure()
     missing = []
@@ -150,18 +152,23 @@ def build_cds_figure(date_range="5Y", payload=None, *, hy_oas=None):
             line=dict(color=color, width=2.1, dash="solid"),
             marker=dict(size=3.5), connectgaps=False,
             hovertemplate=label + ": %{y:.2f} bp<extra></extra>"))
-    if hy_oas is not None:
-        if hy_oas.empty:
-            missing.append(HY_OAS_NAME)
+    for oas, name, color, label in (
+        (hy_oas, HY_OAS_NAME, "#be123c", "HY OAS"),
+        (ig_oas, IG_OAS_NAME, "#0369a1", "IG OAS"),
+    ):
+        if oas is None:
+            continue
+        if oas.empty:
+            missing.append(name)
         else:
-            start = hy_oas.observation_date.max() - RANGE_OFFSETS.get(date_range, RANGE_OFFSETS["1Y"])
-            view = hy_oas.loc[hy_oas.observation_date.ge(start)]
+            start = oas.observation_date.max() - RANGE_OFFSETS.get(date_range, RANGE_OFFSETS["1Y"])
+            view = oas.loc[oas.observation_date.ge(start)]
             fig.add_trace(go.Scatter(
-                x=view.observation_date, y=view.oas_pct, mode="lines", name=HY_OAS_NAME,
-                yaxis="y2", line=dict(color="#be123c", width=2.4, dash="dash"),
-                connectgaps=False, hovertemplate="HY OAS: %{y:.2f}%<extra></extra>",
+                x=view.observation_date, y=view.oas_pct, mode="lines", name=name,
+                yaxis="y2", line=dict(color=color, width=2.4, dash="dash"),
+                connectgaps=False, hovertemplate=label + ": %{y:.2f}%<extra></extra>",
             ))
-            fig.update_layout(yaxis2=dict(title="HY OAS · %", overlaying="y", side="right", showgrid=False))
+            fig.update_layout(yaxis2=dict(title="Credit OAS · %", overlaying="y", side="right", showgrid=False))
     fig.update_layout(height=460, yaxis_title="CDS spread · bp", hovermode="x unified",
         paper_bgcolor="white", plot_bgcolor="white", meta={"missing_series": missing,
         "source_asof": asof, "attribution": ATTRIBUTION, "show_observation_markers": True})

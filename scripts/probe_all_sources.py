@@ -432,6 +432,12 @@ def japan_corridor_latest(key):
     return node.get('verified_through') or node['records'][-1]['date'], node['source_url']
 
 
+def credit_oas(symbol):
+    from data import _get_credit_oas
+    frame = _get_credit_oas(symbol)
+    return latest(frame, "observation_date", "oas_pct"), "https://fred.stlouisfed.org/series/" + symbol
+
+
 def jobs():
     output = []
     def add(key, charts, cadence, stored, fetch):
@@ -545,6 +551,9 @@ def jobs():
                    lambda: (parse_gex(get(GEX_URL).text)[-1]["observation_date"], GEX_URL)))
     output.append(("MOVE", [MACRO_DISPLAY_NUMBER[9]], "daily",
                    snapshot("move_daily.json", "observation_date", "close"), lambda: yahoo("^MOVE")))
+    for symbol in ("BAMLH0A0HYM2", "BAMLC0A0CM"):
+        output.append((symbol, [MACRO_DISPLAY_NUMBER["nvidia_cds"]], "daily", None,
+                       lambda symbol=symbol: credit_oas(symbol)))
     return output
 
 

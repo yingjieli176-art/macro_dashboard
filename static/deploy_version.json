@@ -77,6 +77,8 @@
     "saxo_usdjpy_three_month_atm_implied_volatility_with_dated_automatic_snapshots",
     "chart_four_move_index_completed_daily_closes",
     "chart_five_squeezemetrics_gex_dollar_billions",
-    "schema_isolated_chart_axes_and_legend_state"
+    "schema_isolated_chart_axes_and_legend_state",
+    "same_date_move_vix_ratio_on_independent_axis",
+    "investment_grade_oas_with_high_yield_oas_shared_percent_axis"
   ]
 }

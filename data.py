@@ -154,10 +154,8 @@ def _fetch_alfred_graph(series_id):
     return frame
 
 
-@observed_cache(ttl=300)
-def get_hy_oas():
+def _get_credit_oas(series_id):
     """Read validated ICE observations without persisting the licensed feed."""
-    series_id = "BAMLH0A0HYM2"
     for fetcher in (lambda sid: _fetch_fred_graph(sid, timeout=(8, 8)),
                     _fetch_fred_api, _fetch_alfred_graph):
         try:
@@ -166,6 +164,16 @@ def get_hy_oas():
         except (requests.RequestException, RuntimeError, ValueError):
             continue
     return pd.DataFrame(columns=["observation_date", "oas_pct"])
+
+
+@observed_cache(ttl=300)
+def get_hy_oas():
+    return _get_credit_oas("BAMLH0A0HYM2")
+
+
+@observed_cache(ttl=300)
+def get_ig_oas():
+    return _get_credit_oas("BAMLC0A0CM")
 
 
 @st.cache_data(max_entries=64, show_spinner=False)

@@ -62,13 +62,13 @@ class DashboardBootSmoke(unittest.TestCase):
                        if element.value.startswith('<div class="source-text">Source: ')]
         self.assertEqual(len(source_rows), 22)
         for url in ("https://irates.today/chart_data.json", "https://irates.today/capex.html#method",
-                    "https://fred.stlouisfed.org/series/BAMLH0A0HYM2"):
+                    "https://fred.stlouisfed.org/series/BAMLH0A0HYM2", "https://fred.stlouisfed.org/series/BAMLC0A0CM"):
             self.assertIn(url, source_rows[6])
         self.assertNotIn("term-premia-tabs", source_rows[6])
         parameter_rows = [element.value for element in instance.markdown
                           if element.value.startswith('<div class="chart-parameters">')]
         self.assertEqual(len(parameter_rows), 22)
-        for label in ("公司 5Y CDS", "实际观测与覆盖率", "HY OAS（R1）"):
+        for label in ("公司 5Y CDS", "实际观测与覆盖率", "HY OAS（R1）", "IG OAS（R1）"):
             self.assertIn(label, parameter_rows[6])
         for unrelated in ("资本开支", "期限溢价与美联储", "韩国股市"):
             self.assertNotIn(unrelated, parameter_rows[6])
@@ -143,10 +143,13 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertTrue(any(point[1] is not None for point in thirty["data"]))
         risk = next(json.loads(spec) for spec in specs if 'COR3M (R3)' in spec)
         risk_series = {series["name"]: series for series in risk["series"]}
-        self.assertEqual(len(risk["yAxis"]), 5)
+        self.assertEqual(len(risk["yAxis"]), 6)
         move = risk_series["MOVE 债市波动率（R4）"]
         self.assertEqual(move["yAxisIndex"], 4)
         self.assertTrue(any(point[1] is not None for point in move["data"]))
+        ratio = risk_series["MOVE/VIX (R5)"]
+        self.assertEqual(ratio["yAxisIndex"], 5)
+        self.assertTrue(any(point[1] is not None for point in ratio["data"]))
         gex_option = next(json.loads(spec) for spec in specs
                           if any(s["name"].startswith("GEX 做市商伽马") for s in json.loads(spec)["series"]))
         gex = next(s for s in gex_option["series"] if s["name"].startswith("GEX 做市商伽马"))

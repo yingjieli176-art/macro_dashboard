@@ -72,7 +72,7 @@ except ImportError:
     def load_spx_put_call_snapshot():
         return pd.DataFrame(columns=["observation_date", "SPX_PCR"])
 from macro_platform import ai_credit as _ai_credit
-if not hasattr(_ai_credit, "HY_OAS_NAME"):
+if not hasattr(_ai_credit, "IG_OAS_NAME"):
     _ai_credit = importlib.reload(_ai_credit)
 from macro_platform import copper as _copper_module
 from macro_platform.srf_usage import load_srf_usage, usage_caption
@@ -129,6 +129,7 @@ if not callable(get_dgs30):
         return _fred_series("DGS30")
 
 get_hy_oas = getattr(_market_data_module, "get_hy_oas", pd.DataFrame)
+get_ig_oas = getattr(_market_data_module, "get_ig_oas", pd.DataFrame)
 
 
 st.set_page_config(page_title="Macro Dashboard", page_icon="📊", layout="wide")
@@ -1696,7 +1697,7 @@ def build_fig9(date_range):
     if not frames:
         fig = go.Figure()
         for name in ("VIX", "VIXEQ", "S&P 500 (R1)",
-                     "VIXEQ/VIX (R2)", "COR3M (R3)", "MOVE 债市波动率（R4）"):
+                     "VIXEQ/VIX (R2)", "COR3M (R3)", "MOVE 债市波动率（R4）", "MOVE/VIX (R5)"):
             _mark_missing_series(fig, name)
         return apply_chart_style(fig, chart_height(320, 440), date_range)
 
@@ -1710,6 +1711,10 @@ def build_fig9(date_range):
         vix = data["VIXCLS"].where(data["VIXCLS"].gt(0) & data["VIXCLS"].lt(float("inf")))
         vixeq = data["VIXEQ"].where(data["VIXEQ"].ge(0) & data["VIXEQ"].lt(float("inf")))
         data["VIXEQ/VIX"] = (vixeq / vix).replace([float("inf"), -float("inf")], float("nan"))
+    if "MOVE" in data.columns and "VIXCLS" in data.columns:
+        vix = data["VIXCLS"].where(data["VIXCLS"].gt(0) & data["VIXCLS"].lt(float("inf")))
+        move = data["MOVE"].where(data["MOVE"].gt(0) & data["MOVE"].lt(float("inf")))
+        data["MOVE/VIX"] = (move / vix).replace([float("inf"), -float("inf")], float("nan"))
     data = filter_range(data, date_range)
 
     fig = go.Figure()
@@ -1741,6 +1746,11 @@ def build_fig9(date_range):
     add_line(fig, move, "MOVE", _move_index.SERIES_NAME, 2.3, yaxis="y5", unit=" pts")
     fig.update_traces(line_color="#0e7490", connectgaps=False,
                       selector=dict(name=_move_index.SERIES_NAME))
+    ratio_dates = [day for column in ("MOVE", "VIXCLS") if column in sources
+                   for day in sources[column]["observation_date"]]
+    add_line(fig, data.loc[data.observation_date.isin(ratio_dates)],
+             "MOVE/VIX", "MOVE/VIX (R5)", 2.3, "dot", "y6", unit="x")
+    fig.update_traces(line_color="#7c3aed", connectgaps=False, selector=dict(name="MOVE/VIX (R5)"))
 
     fig.update_layout(
         yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.85),
@@ -1776,6 +1786,8 @@ def build_fig9(date_range):
         ),
         yaxis5=dict(title="R4 · MOVE · pts", overlaying="y", side="right", anchor="free",
                     position=0.995, showgrid=False, zeroline=False, fixedrange=True),
+        yaxis6=dict(title="R5 · MOVE/VIX (倍)", overlaying="y", side="right", anchor="free",
+                    position=1, showgrid=False, zeroline=False, fixedrange=True),
     )
     fig.update_layout(margin_r=220, xaxis_domain=[0, 0.72])
     return fig
@@ -2657,7 +2669,7 @@ def _render_china_drawdown():
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[9]}. US Equity Risk & Volatility Structure</div>'
-        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3) · MOVE 债市波动率 (R4)</div>',
+        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3) · MOVE 债市波动率 (R4) · MOVE/VIX (R5)</div>',
         unsafe_allow_html=True,
     )
     render_latest_vix_quote()
@@ -3105,10 +3117,11 @@ def render_japan_corridor():
 @st.fragment(run_every=60, key="nvidia_cds_viewport")
 def render_nvidia_cds():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["nvidia_cds"]}. AI Credit · 公司CDS信用风险</div>'
-                '<div class="section-description">英伟达 NVIDIA · AMD · 谷歌 Alphabet · 微软 Microsoft · 甲骨文 Oracle · 5Y CDS（bp） / HY OAS（R1 · %）</div>', unsafe_allow_html=True)
+                '<div class="section-description">英伟达 NVIDIA · AMD · 谷歌 Alphabet · 微软 Microsoft · 甲骨文 Oracle · 5Y CDS（bp） / HY OAS · IG OAS（R1 · %）</div>', unsafe_allow_html=True)
     payload = _ai_credit.load_cds_snapshot()
     hy_oas = get_hy_oas()
-    figure = _ai_credit.build_cds_figure("5Y", payload=payload, hy_oas=hy_oas)
+    ig_oas = get_ig_oas()
+    figure = _ai_credit.build_cds_figure("5Y", payload=payload, hy_oas=hy_oas, ig_oas=ig_oas)
     _render_adaptive_macro_figure(figure, "nvidia_cds")
     if not figure.data:
         st.info("暂未取得可绘制的CDS观测，请查看数据源更新状态。")
@@ -3120,6 +3133,12 @@ def render_nvidia_cds():
         st.caption(f"HY OAS（R1）{latest_oas.oas_pct:.2f}% · "
                    f"实际观测日 {latest_oas.observation_date:%Y-%m-%d}{status}")
     summary = _ai_credit.cds_summary(payload)
+    if ig_oas.empty:
+        st.caption("IG OAS（R1）暂未取得 FRED 观测，稍后自动重试。")
+    else:
+        latest_ig = ig_oas.iloc[-1]
+        status = " · 最近一次成功获取的观测" if ig_oas.attrs.get("is_stale") else ""
+        st.caption(f"IG OAS（R1）{latest_ig.oas_pct:.2f}% · 实际观测日 {latest_ig.observation_date:%Y-%m-%d}{status}")
     st.dataframe(summary, hide_index=True, width="stretch",
                  column_config={"最新CDS（bp）": st.column_config.NumberColumn(format="%.2f"),
                                 "源日历覆盖率（%）": st.column_config.NumberColumn(format="%.1f%%")})
@@ -3127,6 +3146,7 @@ def render_nvidia_cds():
         ("Open-Sourced Rates Observatory · CDS 历史数据", _ai_credit.SOURCE_URL),
         ("CDS 统计方法", _ai_credit.METHOD_URL),
         ("ICE Data Indices via FRED · HY OAS (BAMLH0A0HYM2)", _ai_credit.HY_OAS_URL),
+        ("ICE Data Indices via FRED · IG OAS (BAMLC0A0CM)", _ai_credit.IG_OAS_URL),
     ], "nvidia_cds")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -3283,7 +3303,7 @@ def _render_all_source_freshness(figures):
     display_figures[MACRO_DISPLAY_NUMBER["us_drawdown"]] = _build_equity_drawdown()
     display_figures[MACRO_DISPLAY_NUMBER["cn_drawdown"]] = _build_china_drawdown()
     display_figures[MACRO_DISPLAY_NUMBER["copper_tcrc"]] = build_copper_tcrc_figure("5Y")
-    display_figures[MACRO_DISPLAY_NUMBER["nvidia_cds"]] = _ai_credit.build_cds_figure("5Y", hy_oas=get_hy_oas())
+    display_figures[MACRO_DISPLAY_NUMBER["nvidia_cds"]] = _ai_credit.build_cds_figure("5Y", hy_oas=get_hy_oas(), ig_oas=get_ig_oas())
     render_freshness_overview(display_figures, quote_rows=rows, news=_read_existing_news_snapshot())
 
 _render_all_source_freshness(macro_figures)

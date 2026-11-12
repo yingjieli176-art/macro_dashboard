@@ -103,7 +103,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         ns["load_vixeq_snapshot"] = lambda: frame(dates, "VIXEQ", [40., 42.])
         ns["load_correlation_snapshot"] = lambda symbol: (_ for _ in ()).throw(OSError("unavailable"))
         fig = ns["build_fig9"]("1M")
-        self.assertEqual(fig.layout.meta["missing_series"], ["COR3M (R3)", "MOVE 债市波动率（R4）"])
+        self.assertEqual(fig.layout.meta["missing_series"], ["COR3M (R3)", "MOVE 债市波动率（R4）", "MOVE/VIX (R5)"])
         self.assertIn("VIXEQ/VIX (R2)", {t.name for t in fig.data})
 
     def test_equity_ratio_uses_same_date_valid_legs_and_independent_axis(self):
