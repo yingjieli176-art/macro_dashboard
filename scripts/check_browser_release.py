@@ -785,7 +785,7 @@ def main():
             report["japan_holdings_ranges"] = exercise_range_legend_persistence(
                 page, 'japan_holdings_adaptive_default', MACRO_DISPLAY_NUMBER["japan_holdings"]-1)
             report["yen_carry_zoom"] = exercise_client_zoom(page, carry, minimum_axes=4)
-            report["cftc_columns"] = assert_bar_baseline(carry, 'CFTC JPY speculative net (R3)')
+            report["cftc_columns"] = assert_bar_baseline(carry, 'CFTC JPY speculative net (R2)')
             report["yen_carry_ranges"] = exercise_range_legend_persistence(
                 page, 'yen_carry_adaptive_default', MACRO_DISPLAY_NUMBER[16]-1)
             chart = page.locator('.st-key-hk_5_range_adaptive_default_1Y').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
