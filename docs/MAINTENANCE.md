@@ -204,3 +204,16 @@ holdings and hedging curves move to independent chart 12, with four separate uni
 axes and its own time controls. Later display charts shift by one (22 charts total).
 The original observation values, dates, disclosures and automatic collectors are retained.
 The 2026-11-11 V1.0 archive remains an unchanged historical baseline.
+
+
+## Saxo USD/JPY three-month implied volatility (2026-11-12)
+
+Chart 11 adds Saxo's USDJPY three-month ATM implied volatility on a dedicated
+annualized-percent axis. It is explicitly labelled Saxo, not Bloomberg USDJPYV3M.
+The initial observed quote is 7.27%, published 2026-11-11 12:30 UTC; no prior
+history is inferred from the change column or created by interpolation.
+`update-jpy-implied-vol.yml` checks the public report on weekdays at 13:17,
+16:17 and 20:17 UTC, validates the ATM section, pair, tenor and report timestamp,
+and atomically appends genuine observations to `jpy_3m_atm_saxo.json`.
+Unchanged reports preserve original timestamps; failed or older reports cannot
+overwrite last-good history. The regular freshness audit checks actual dates.

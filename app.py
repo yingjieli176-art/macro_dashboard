@@ -88,7 +88,7 @@ from macro_platform.yen_index import load_yen_market_index
 from macro_platform.sp500_nikkei_ratio import build_sp500_nikkei_ratio_figure
 try:
     import macro_platform.yen_carry as _yen_carry
-    if not hasattr(_yen_carry, "combine_yen_carry_figures"):
+    if getattr(_yen_carry, "CARRY_IMPLIED_VERSION", None) != 1:
         _yen_carry = importlib.reload(_yen_carry)
 except ImportError:
     _yen_carry = None
@@ -142,6 +142,7 @@ RANGES = ["5Y", "1Y", "6M", "3M", "1M"]
 DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER, NUMERIC_CHART_IDS, HK_CHART_IDS
 from macro_platform import japan_corridor as _japan_corridor
+from macro_platform import jpy_implied_vol as _jpy_iv
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES
 CHART_BUILD = "V1.0"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
@@ -2772,19 +2773,27 @@ def render_macro_chart_16(prebuilt_fig=None):
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[16]}. 日元套息分析 · Yen Carry Trade</div>'
         '<div class="section-description">美日10Y利差 · USD/JPY（R1 阳轴，向上＝日元走弱） · '
         'CFTC日元投机净仓位 (R2) · TOPIX（东证指数，R3） · 美元指数 DXY (R4) · '
-        'JPY 3M · JPY 10Y · JPY 10Y - JPY 3M</div>',
+        'JPY 3M · JPY 10Y · JPY 10Y - JPY 3M · USD/JPY 3M ATM 隐含波动率（Saxo，R5）</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 10", lambda: _cached_macro_figure(16, _macro_snapshot_revision(), CHART_BUILD))
     volatility = _safe_macro_build("yen_volatility", lambda: _cached_macro_figure(
         "yen_volatility", _macro_snapshot_revision(), CHART_BUILD))
-    combined = _yen_carry.combine_yen_carry_figures(base_fig, volatility=volatility)
+    implied = _safe_macro_build("JPY 3M ATM", lambda: _cached_macro_figure(
+        "yen_implied", _macro_snapshot_revision(), CHART_BUILD))
+    combined = _yen_carry.combine_yen_carry_figures(base_fig, volatility=volatility, implied=implied)
     _render_adaptive_macro_figure(combined, "yen_carry")
     st.caption("全部曲线共用时间轴，可点击图例隐藏或显示。JPY 3M 为财务省周度拍卖收益率，"
                "10Y−3M 只按同日观测计算。BOJ利率按生效日阶梯显示。"
                "收益率为%，利差为百分点；美债持仓、机构外债及对冲率另见图12。")
+    iv_rows = _jpy_iv.load_snapshot().get("records", [])
+    if iv_rows:
+        st.caption(f"3个月ATM隐含波动率（Saxo）：{iv_rows[-1]['value']:.2f}% · "
+                   f"报价时间 {iv_rows[-1]['observation_timestamp']}。"
+                   "来源为Saxo银行，非彭博原序列；历史从已核实报价起逐日累计，不补造历史。")
     add_sources([
+        ("Saxo Bank · USDJPY 3M ATM implied volatility", _jpy_iv.SOURCE_URL),
         ("FRED · US 10Y Treasury (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
         ("CFTC · Commitments of Traders", "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"),
         ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
@@ -2910,6 +2919,7 @@ def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
     if isinstance(chart_number, str):
         builders = {
             'yen_volatility': build_yen_volatility,
+            'yen_implied': _jpy_iv.build_figure,
             'japan_holdings': build_japan_holdings,
         }
         builder = builders[chart_number]
@@ -3213,7 +3223,9 @@ def _render_all_source_freshness(figures):
                        for number, figure in figures.items()}
     display_figures[MACRO_DISPLAY_NUMBER[16]] = _yen_carry.combine_yen_carry_figures(
         figures[16], volatility=_safe_macro_build("yen_volatility", lambda: _cached_macro_figure(
-            "yen_volatility", _macro_snapshot_revision(), CHART_BUILD)))
+            "yen_volatility", _macro_snapshot_revision(), CHART_BUILD)),
+        implied=_safe_macro_build("JPY 3M ATM", lambda: _cached_macro_figure(
+            "yen_implied", _macro_snapshot_revision(), CHART_BUILD)))
     display_figures[MACRO_DISPLAY_NUMBER["japan_holdings"]] = _safe_macro_build(
         "Japan holdings", lambda: _cached_macro_figure("japan_holdings", _macro_snapshot_revision(), CHART_BUILD))
     display_figures[MACRO_DISPLAY_NUMBER["japan_corridor"]] = _japan_corridor.build_corridor_figure("5Y")

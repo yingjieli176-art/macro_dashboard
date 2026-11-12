@@ -15,6 +15,7 @@ from macro_platform.echarts_axes import option_observation_health
 
 
 SPECS = [
+    ("jpy_3m_atm_saxo.json", "observation_date", "", ["value"]),
     ("srf_usage_daily.json", "observation_date", "", ["accepted_usd"]),
     ("cftc_jpy_weekly.json", "observation_date", "", ["noncommercial_long", "noncommercial_short", "net_contracts"]),
     ("japan_gov_yields.json", "observation_date", "", ["japan_2y", "japan_10y", "japan_30y"]),
