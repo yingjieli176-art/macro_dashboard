@@ -445,7 +445,7 @@ def jobs():
     for symbol, charts in {
         "IORB": [1], "RRPONTSYAWARD": [1], "EFFR": [1], "SOFR": [1], "SRFTSYD": [1],
         "DGS3MO": [3], "DGS2": [3], "DGS10": [2,3,18], "DGS30": [3], "DFII5": [2,13], "DFII10": [2], "T10YIE": [2],
-        "WALCL": [], "WRESBAL": [], "RRPONTSYD": [], "VIXCLS": [9,10], "VXVCLS": [10], "SP500": [4,9], "GVZCLS": [15],
+        "WALCL": [], "WRESBAL": [], "RRPONTSYD": [], "VIXCLS": [9,10], "VXNCLS": [9], "VXVCLS": [10], "SP500": [4,9], "GVZCLS": [15],
     }.items():
         add(symbol, charts, "weekly" if symbol in ("WALCL", "WRESBAL") else "daily",
             snapshot(f"fred_cache/{symbol}.json", "date", "value"), lambda symbol=symbol: fred(symbol))

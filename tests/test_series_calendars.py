@@ -81,13 +81,13 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         ns["load_correlation_snapshot"] = lambda symbol: correlations[symbol].copy()
         fig = ns["build_fig9"]("5Y")
         self.assertEqual({t.name for t in fig.data},
-                         {"VIX", "VIXEQ", "S&P 500 (R1)", "VIXEQ/VIX (R2)", "COR3M (R3)"})
+                         {"VIX", "VIXEQ", "S&P 500 (R1)", "VIXEQ/VIX (R2)", "COR3M (R3)", "VXN−VIX (R6)"})
         trace = next(t for t in fig.data if t.name == "COR3M (R3)")
         self.assertEqual(list(pd.to_datetime(trace.x)), list(correlations["COR3M"].observation_date))
         self.assertEqual(trace.yaxis, "y4")
         for window in RANGE_OFFSETS:
             option = build_adaptive_echarts_option(fig, window)
-            self.assertEqual(len(option["yAxis"]), 4)
+            self.assertEqual(len(option["yAxis"]), 5)
             for name, axis in (("VIXEQ/VIX (R2)", 2), ("COR3M (R3)", 3)):
                 series = next(s for s in option["series"] if s["name"] == name)
                 self.assertEqual(series["yAxisIndex"], axis)
@@ -142,7 +142,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         ns["load_vixeq_snapshot"] = lambda: frame([], "VIXEQ", [])
         fig = ns["build_fig9"]("1M")
         self.assertIn("VIXEQ/VIX (R2)", fig.layout.meta["missing_series"])
-        self.assertEqual({t.name for t in fig.data}, {"VIX", "S&P 500 (R1)"})
+        self.assertEqual({t.name for t in fig.data}, {"VIX", "S&P 500 (R1)", "VXN−VIX (R6)"})
 
     def test_real_policy_and_equity_sources_keep_exact_dates_in_all_windows(self):
         ns = builders()

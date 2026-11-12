@@ -754,7 +754,7 @@ def main():
                         // Chart adapters serialize each value to 8 decimals.
                         Math.abs(value-move.get(day)/vix.get(day))<1e-8)};
             }""")
-            assert risk_ratio['axes'] == 6 and risk_ratio['axis'] == 5, risk_ratio
+            assert risk_ratio['axes'] == 7 and risk_ratio['axis'] == 5, risk_ratio
             assert risk_ratio['count'] > 100 and risk_ratio['matched'] and not risk_ratio['connect'], risk_ratio
             report['move_vix'] = risk_ratio
             report['move_vix_zoom'] = exercise_client_zoom(page, risk_chart, minimum_axes=6)

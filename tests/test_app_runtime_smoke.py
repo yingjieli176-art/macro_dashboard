@@ -143,7 +143,7 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertTrue(any(point[1] is not None for point in thirty["data"]))
         risk = next(json.loads(spec) for spec in specs if 'COR3M (R3)' in spec)
         risk_series = {series["name"]: series for series in risk["series"]}
-        self.assertEqual(len(risk["yAxis"]), 6)
+        self.assertEqual(len(risk["yAxis"]), 7)
         move = risk_series["MOVE 债市波动率（R4）"]
         self.assertEqual(move["yAxisIndex"], 4)
         self.assertTrue(any(point[1] is not None for point in move["data"]))

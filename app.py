@@ -1657,7 +1657,7 @@ def build_fig9(date_range):
     """US equity risk with implied correlation and same-date vol spreads."""
     frames = []
     sources = {}
-    for series_id in ("VIXCLS", "SP500"):
+    for series_id in ("VIXCLS", "SP500", "VXNCLS"):
         try:
             frame = get_fred_series(series_id).copy()
             frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce")
@@ -1697,7 +1697,7 @@ def build_fig9(date_range):
     if not frames:
         fig = go.Figure()
         for name in ("VIX", "VIXEQ", "S&P 500 (R1)",
-                     "VIXEQ/VIX (R2)", "COR3M (R3)", "MOVE 债市波动率（R4）", "MOVE/VIX (R5)"):
+                     "VIXEQ/VIX (R2)", "COR3M (R3)", "MOVE 债市波动率（R4）", "MOVE/VIX (R5)", "VXN−VIX (R6)"):
             _mark_missing_series(fig, name)
         return apply_chart_style(fig, chart_height(320, 440), date_range)
 
@@ -1715,6 +1715,10 @@ def build_fig9(date_range):
         vix = data["VIXCLS"].where(data["VIXCLS"].gt(0) & data["VIXCLS"].lt(float("inf")))
         move = data["MOVE"].where(data["MOVE"].gt(0) & data["MOVE"].lt(float("inf")))
         data["MOVE/VIX"] = (move / vix).replace([float("inf"), -float("inf")], float("nan"))
+    if "VXNCLS" in data.columns and "VIXCLS" in data.columns:
+        vxn = data.VXNCLS.where(data.VXNCLS.gt(0) & data.VXNCLS.lt(float("inf")))
+        vix = data.VIXCLS.where(data.VIXCLS.gt(0) & data.VIXCLS.lt(float("inf")))
+        data["VXN−VIX"] = vxn - vix
     data = filter_range(data, date_range)
 
     fig = go.Figure()
@@ -1751,6 +1755,11 @@ def build_fig9(date_range):
     add_line(fig, data.loc[data.observation_date.isin(ratio_dates)],
              "MOVE/VIX", "MOVE/VIX (R5)", 2.3, "dot", "y6", unit="x")
     fig.update_traces(line_color="#7c3aed", connectgaps=False, selector=dict(name="MOVE/VIX (R5)"))
+    spread_dates = [day for column in ("VXNCLS", "VIXCLS") if column in sources
+                    for day in sources[column]["observation_date"]]
+    add_line(fig, data.loc[data.observation_date.isin(spread_dates)],
+             "VXN−VIX", "VXN−VIX (R6)", 2.4, yaxis="y7", unit=" pp")
+    fig.update_traces(line_color="#b45309", connectgaps=False, selector=dict(name="VXN−VIX (R6)"))
 
     fig.update_layout(
         yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.85),
@@ -1788,6 +1797,8 @@ def build_fig9(date_range):
                     position=0.995, showgrid=False, zeroline=False, fixedrange=True),
         yaxis6=dict(title="R5 · MOVE/VIX (倍)", overlaying="y", side="right", anchor="free",
                     position=1, showgrid=False, zeroline=False, fixedrange=True),
+        yaxis7=dict(title="R6 · VXN−VIX · pp", overlaying="y", side="right", anchor="free",
+                    position=1, showgrid=False, zeroline=True, fixedrange=True),
     )
     fig.update_layout(margin_r=220, xaxis_domain=[0, 0.72])
     return fig
@@ -2669,7 +2680,7 @@ def _render_china_drawdown():
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[9]}. US Equity Risk & Volatility Structure</div>'
-        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3) · MOVE 债市波动率 (R4) · MOVE/VIX (R5)</div>',
+        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3) · MOVE 债市波动率 (R4) · MOVE/VIX (R5) · VXN−VIX（R6 · 波动率差，pp）</div>',
         unsafe_allow_html=True,
     )
     render_latest_vix_quote()
@@ -2685,6 +2696,7 @@ def render_macro_chart_9(prebuilt_fig=None):
         st.caption("日线实际观测日 · " + " · ".join(observed_dates))
     add_sources([
         ("Cboe VIX", "https://www.cboe.com/tradable-products/vix/"),
+        ("Cboe VXN · 纳斯达克100隐含波动率", "https://cdn.cboe.com/api/global/us_indices/daily_prices/VXN_History.csv"),
         ("ICE · MOVE指数说明", _move_index.METHOD_URL),
         ("Yahoo · MOVE日度收盘", _move_index.SOURCE_URL),
         ("Cboe VIXEQ / Dispersion", "https://www.cboe.com/us/indices/dispersion/"),
