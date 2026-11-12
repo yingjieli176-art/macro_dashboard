@@ -221,12 +221,12 @@
         1
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-09",
+      "repository_latest": "2026-11-10",
       "checked_at": "2026-11-12T12:44:56.148707+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-09",
       "source_url": "https://www.newyorkfed.org/markets/reference-rates/effr",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "ETH-USD",
@@ -352,12 +352,12 @@
         18
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-11",
+      "repository_latest": "2026-11-12",
       "checked_at": "2026-11-12T12:45:01.392446+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-11",
       "source_url": "https://finance.sina.com.cn/stock/hkstock/HSTECH/klc2_kl.js",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "IORB",
@@ -469,23 +469,23 @@
         1
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-10",
+      "repository_latest": "2026-11-12",
       "checked_at": "2026-11-12T12:44:56.148504+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-10",
       "source_url": "https://markets.newyorkfed.org/api/rp/results/search.json",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "RRPONTSYD",
       "charts": [],
       "cadence": "daily",
-      "repository_latest": "2026-11-10",
+      "repository_latest": "2026-11-12",
       "checked_at": "2026-11-12T12:44:57.991379+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-10",
       "source_url": "https://markets.newyorkfed.org/api/rp/results/search.json",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "RSP",
@@ -584,12 +584,12 @@
         1
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-09",
+      "repository_latest": "2026-11-10",
       "checked_at": "2026-11-12T12:44:56.366437+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-09",
       "source_url": "https://www.newyorkfed.org/markets/reference-rates/sofr",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "SP500",
@@ -649,12 +649,12 @@
         1
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-10",
+      "repository_latest": "2026-11-12",
       "checked_at": "2026-11-12T12:44:56.487539+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-10",
       "source_url": "https://fred.stlouisfed.org/series/SRFTSYD",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "SRF_USAGE",
@@ -699,12 +699,12 @@
         11
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-11",
+      "repository_latest": "2026-11-12",
       "checked_at": "2026-11-12T12:45:58.350045+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-12",
       "source_url": "https://fxowebtools.saxobank.com/otc.html",
-      "status": "pipeline_lag"
+      "status": "at_source_latest"
     },
     {
       "id": "VIX9D",
@@ -881,12 +881,12 @@
         20
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-10",
+      "repository_latest": "2026-11-11",
       "checked_at": "2026-11-12T12:45:24.559673+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-10",
       "source_url": "https://www.cmegroup.com/delivery_reports/Copper_Stocks.xls",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "disc_win_base_rate",
@@ -1091,5 +1091,5 @@
   "elapsed_seconds": 82.873,
   "shared_http_requests": 30,
   "shared_http_reuses": 15,
-  "repository_reconciled_at": "2026-11-12T16:22:06.939944+00:00"
+  "repository_reconciled_at": "2026-11-12T20:58:41.330066+00:00"
 }
