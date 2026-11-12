@@ -2,13 +2,14 @@
 
 MACRO_DISPLAY_ORDER = (
     1, 2, 3, 9, 10, "us_drawdown", "nvidia_cds",
-    4, "japan_corridor", 15, 16,
+    4, "japan_corridor", 15, 16, "japan_holdings",
     14, "cn_drawdown", 5, 6, 7, 8,
     11, 13, "copper_tcrc", 12,
 )
 MACRO_DISPLAY_NUMBER = {key: index for index, key in enumerate(MACRO_DISPLAY_ORDER, 1)}
-PREVIOUS_DISPLAY_ORDER = tuple(key for key in MACRO_DISPLAY_ORDER if key != "japan_corridor")
-CHART_NUMBERING = "display_us_credit_jp_corridor_cn_21"
+DISPLAY_US_CREDIT_JP_CORRIDOR_CN_21_ORDER = tuple(key for key in MACRO_DISPLAY_ORDER if key != "japan_holdings")
+PREVIOUS_DISPLAY_ORDER = tuple(key for key in DISPLAY_US_CREDIT_JP_CORRIDOR_CN_21_ORDER if key != "japan_corridor")
+CHART_NUMBERING = "display_us_credit_jp_holdings_cn_22"
 
 # Captured source reports before this release used these display positions.
 DISPLAY_US_JP_CN_20_ORDER = (1, 2, 3, 9, 10, "us_drawdown", 4, 15, 16,

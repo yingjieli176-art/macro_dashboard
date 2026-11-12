@@ -29,7 +29,7 @@ class DashboardBootSmoke(unittest.TestCase):
             second = AppTest.from_file(str(app), default_timeout=90).run()
         self.assertFalse(first.exception)
         self.assertFalse(second.exception)
-        self.assertEqual(len(second.get('button_group')), 21)
+        self.assertEqual(len(second.get('button_group')), 22)
         self.assertGreaterEqual(len(chart_specs(second)), 8)
         self.assertEqual(chart_specs(first), chart_specs(second))
 
@@ -43,10 +43,10 @@ class DashboardBootSmoke(unittest.TestCase):
             msg="Streamlit app crashed during full script execution: "
                 + "; ".join(str(error.message) for error in instance.exception),
         )
-        self.assertEqual(len(instance.get("button_group")), 21)
+        self.assertEqual(len(instance.get("button_group")), 22)
         titles = [match.group(1) for element in instance.markdown
                   if (match := re.search(r'class="section-title">(\d+)\.', element.value))]
-        self.assertEqual(titles, [str(number) for number in range(1, 22)])
+        self.assertEqual(titles, [str(number) for number in range(1, 23)])
         title_text = " ".join(element.value for element in instance.markdown)
         self.assertIn('4. US Equity Risk', title_text)
         self.assertIn('6. SPX / RSP', title_text)
@@ -55,18 +55,19 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertIn('9. 日本利率走廊', title_text)
         self.assertIn('10. Japan Government Yields', title_text)
         self.assertIn('11. 日元套息分析', title_text)
+        self.assertIn('12. 日本美债持仓与机构外债', title_text)
         self.assertIn('日本寿险与养老金 · 机构披露', title_text)
-        self.assertIn('12. China Government Yields', title_text)
+        self.assertIn('13. China Government Yields', title_text)
         source_rows = [element.value for element in instance.markdown
                        if element.value.startswith('<div class="source-text">Source: ')]
-        self.assertEqual(len(source_rows), 21)
+        self.assertEqual(len(source_rows), 22)
         for url in ("https://irates.today/chart_data.json", "https://irates.today/capex.html#method",
                     "https://fred.stlouisfed.org/series/BAMLH0A0HYM2"):
             self.assertIn(url, source_rows[6])
         self.assertNotIn("term-premia-tabs", source_rows[6])
         parameter_rows = [element.value for element in instance.markdown
                           if element.value.startswith('<div class="chart-parameters">')]
-        self.assertEqual(len(parameter_rows), 21)
+        self.assertEqual(len(parameter_rows), 22)
         for label in ("公司 5Y CDS", "实际观测与覆盖率", "HY OAS（R1）"):
             self.assertIn(label, parameter_rows[6])
         for unrelated in ("资本开支", "期限溢价与美联储", "韩国股市"):
@@ -113,8 +114,12 @@ class DashboardBootSmoke(unittest.TestCase):
             self.assertTrue(institutional["showSymbol"])
         yen_tic = next(option for option in options
                        if any(s["name"] == "日本美债总持仓" for s in option["series"]))
-        self.assertEqual([s["yAxisIndex"] for s in yen_tic["series"][12:17]], [6, 6, 6, 7, 7])
-        self.assertTrue(all(s["observation_cadence"] == "monthly" for s in yen_tic["series"][12:17]))
+        self.assertEqual([s["yAxisIndex"] for s in yen_tic["series"][:5]], [0, 0, 0, 1, 1])
+        self.assertTrue(all(s["observation_cadence"] == "monthly" for s in yen_tic["series"][:5]))
+        moved_names = {s["name"] for s in yen_tic["series"]}
+        self.assertEqual(len(moved_names), 9)
+        self.assertTrue(moved_names.isdisjoint(s["name"] for s in yen_vol["series"]))
+        self.assertEqual(instance.get("button_group")[11].key, "japan_holdings_time_window")
         corridor = next(json.loads(spec) for spec in specs if '"SRF"' in spec)
         self.assertEqual({series["name"] for series in corridor["series"]},
                          {"IORB", "ON RRP", "EFFR", "SOFR", "SRF", "SRF 实际用量 (R1)"})
@@ -155,7 +160,7 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertTrue(any(point[1] is not None for point in japan_series["Japan 30Y"]["data"]))
         self.assertTrue(any(point[1] is not None for point in japan_series["Japan 30Y−10Y (R1)"]["data"]))
         carry = next(json.loads(spec) for spec in specs if 'JPY 20-session appreciation (R2)' in spec)
-        self.assertEqual(len(carry["yAxis"]), 9)
+        self.assertEqual(len(carry["yAxis"]), 6)
         self.assertEqual([series["name"] for series in carry["series"][:9]],
                          ["US 10Y - Japan 10Y", "USD/JPY (R1)", "JPY 20-session appreciation (R2)",
                           "CFTC JPY speculative net (R3)", "TOPIX（东证指数） (R4)", "美元指数 DXY (R5)",
@@ -164,8 +169,9 @@ class DashboardBootSmoke(unittest.TestCase):
         for index in (1, 2):
             self.assertIn("阳轴", carry["yAxis"][index]["name"])
             self.assertFalse(carry["yAxis"][index]["inverse"])
-        self.assertGreater(len(carry["series"]), 20)
-        for name in ("USD/JPY 20日实际波动率", "日本美债总持仓", "GPIF 美债票据与长期债券", "九家主要寿险 · 外债对冲率"):
+        self.assertEqual(len(carry["series"]), 12)
+        self.assertEqual(len(carry["series"]) + len(yen_tic["series"]), 21)
+        for name in ("USD/JPY 20日实际波动率", "USD/JPY 60日实际波动率", "BOJ 政策利率（右轴）"):
             self.assertIn(name, [series["name"] for series in carry["series"]])
         self.assertIn("https://finance.yahoo.com/quote/DX-Y.NYB/history/", source_rows[10])
         self.assertEqual(carry["series"][3]["type"], "bar")

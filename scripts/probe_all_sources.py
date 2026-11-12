@@ -530,6 +530,11 @@ def jobs():
         stored = node.get('verified_through') or max((r['date'] for r in node.get('records', [])), default=None)
         output.append(('JP_CORRIDOR_' + key.upper(), [MACRO_DISPLAY_NUMBER['japan_corridor']], 'daily',
                        stored, lambda key=key: japan_corridor_latest(key)))
+    from macro_platform.fred_observations import TIC_JAPAN_SERIES
+    for symbol in TIC_JAPAN_SERIES:
+        output.append((symbol, [MACRO_DISPLAY_NUMBER["japan_holdings"]], "monthly",
+                       snapshot(f"fred_cache/{symbol}.json", "date", "value"),
+                       lambda symbol=symbol: fred(symbol)))
     return output
 
 

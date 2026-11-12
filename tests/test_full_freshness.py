@@ -141,7 +141,8 @@ class FullFreshness(unittest.TestCase):
 
     def test_source_reports_follow_chart_identities_across_layouts(self):
         cases = (
-            (CHART_NUMBERING, [7, 20, 21, 11]),
+            (CHART_NUMBERING, [7, 21, 22, 11]),
+            ("display_us_credit_jp_corridor_cn_21", [7, 20, 21, 11]),
             ("display_us_credit_jp_cn_20", [7, 19, 20, 10]),
             ("display_us_jp_cn_20", [20, 18, 19, 9]),
             ("display_us_jp_cn_19", [19, 17, 18, 9]),
@@ -157,7 +158,7 @@ class FullFreshness(unittest.TestCase):
                     ]}))
                     _, rows = source_rows(path)
                     self.assertEqual({row["源指标"]: row["图表"] for row in rows},
-                                     dict(zip(ids, ["7", "20", "21", "11"])))
+                                     dict(zip(ids, ["7", "21", "22", "11"])))
 
     def test_hibor_audit_uses_text_relay_when_direct_hkab_page_has_no_fixing(self):
         from scripts import probe_all_sources as probe
