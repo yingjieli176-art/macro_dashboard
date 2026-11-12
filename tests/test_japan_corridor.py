@@ -22,8 +22,8 @@ class JapanCorridorTests(unittest.TestCase):
         self.assertEqual(MACRO_DISPLAY_NUMBER['japan_corridor'],9)
         self.assertEqual(MACRO_DISPLAY_NUMBER[15],10)
         self.assertEqual(MACRO_DISPLAY_NUMBER[16],11)
-        self.assertEqual(MACRO_DISPLAY_NUMBER[12],21)
-        self.assertEqual(len(set(MACRO_DISPLAY_ORDER)),21)
+        self.assertEqual(MACRO_DISPLAY_NUMBER[12],22)
+        self.assertEqual(len(set(MACRO_DISPLAY_ORDER)),22)
 
     def test_only_policy_settings_extend_to_publisher_verification_date(self):
         p=self.payload()

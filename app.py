@@ -2084,6 +2084,14 @@ def build_yen_tic(date_range):
     )
 
 
+def build_japan_holdings(date_range):
+    return _yen_carry.combine_japan_holdings_figures(
+        build_yen_tic(date_range), date_range=date_range,
+        holdings=_yen_carry.build_japan_institution_figure(date_range, metric="holdings"),
+        hedging=_yen_carry.build_japan_institution_figure(date_range, metric="hedging"),
+    )
+
+
 compact_mode = False
 
 def _prepare_chart_for_client_ranges(fig, element_key, mode=None):
@@ -2769,19 +2777,38 @@ def render_macro_chart_16(prebuilt_fig=None):
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 10", lambda: _cached_macro_figure(16, _macro_snapshot_revision(), CHART_BUILD))
-    revision = _macro_snapshot_revision()
-    overlays = {
-        metric: _safe_macro_build(key, lambda key=key: _cached_macro_figure(key, revision, CHART_BUILD))
-        for metric, key in (("volatility", "yen_volatility"), ("tic", "yen_tic"),
-                            ("holdings", "yen_holdings"), ("hedging", "yen_hedging"))
-    }
-    combined = _yen_carry.combine_yen_carry_figures(base_fig, **overlays)
+    volatility = _safe_macro_build("yen_volatility", lambda: _cached_macro_figure(
+        "yen_volatility", _macro_snapshot_revision(), CHART_BUILD))
+    combined = _yen_carry.combine_yen_carry_figures(base_fig, volatility=volatility)
     _render_adaptive_macro_figure(combined, "yen_carry")
     st.caption("全部曲线共用时间轴，可点击图例隐藏或显示。JPY 3M 为财务省周度拍卖收益率，"
                "10Y−3M 只按同日观测计算。波动率按252日年化，BOJ利率按生效日阶梯显示。"
-               "TIC 为月末持仓及当月变动；机构持仓和对冲率仅按实际披露日期显示。"
-               "收益率为%，利差为百分点；TIC为十亿美元，机构持仓为万亿日元，各轴注明单位。")
+               "收益率为%，利差为百分点；美债持仓、机构外债及对冲率另见图12。")
+    add_sources([
+        ("FRED · US 10Y Treasury (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
+        ("CFTC · Commitments of Traders", "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"),
+        ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
+        ("Japan MOF · 3M Treasury Bill Auction History", "https://www.mof.go.jp/jgbs/reference/appendix/index.htm"),
+        ("Yahoo · USD/JPY daily closes", "https://finance.yahoo.com/quote/JPY%3DX/history/"),
+        ("Yahoo! Japan · TOPIX 日收盘", "https://finance.yahoo.co.jp/quote/998405.T/history"),
+        ("JPX · TOPIX 指数说明", "https://www.jpx.co.jp/markets/indices/topix/index.html"),
+        ("Yahoo Finance · DXY 日收盘", "https://finance.yahoo.com/quote/DX-Y.NYB/history/"),
+        ("BIS · 日本政策利率 D.JP", "https://data.bis.org/topics/CBPOL/BIS,WS_CBPOL,1.0/D.JP"),
+        ("BOJ · 2026 年 10 月政策声明", "https://www.boj.or.jp/en/mopo/mpmdeci/mpr_2026/k261030a.pdf"),
+    ], "yen_carry")
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
+
+@st.fragment(key="japan_holdings_viewport")
+def render_japan_holdings():
+    st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["japan_holdings"]}. 日本美债持仓与机构外债 · Japan Holdings & Hedging</div>'
+                '<div class="section-description">日本美债总持仓 / 长期 / 短期 · 长期净买入与估值变动 (R1) · '
+                'GPIF与寿险外债 (R2) · 汇率对冲率 (R3)</div>', unsafe_allow_html=True)
+    figure = _safe_macro_build("Japan holdings", lambda: _cached_macro_figure(
+        "japan_holdings", _macro_snapshot_revision(), CHART_BUILD))
+    _render_adaptive_macro_figure(figure, "japan_holdings")
+    st.caption("TIC为月末持仓及当月变动，单位十亿美元；GPIF与寿险外债为万亿日元，"
+               "对冲率为%。不同统计口径分别显示，仅使用实际观测或披露日期，不插值补齐。")
     st.markdown(
         "#### 日本寿险与养老金 · 机构披露\n\n"
         "| 样本与日期 | 美债持仓 | 外债规模与汇率对冲 |\n"
@@ -2795,23 +2822,13 @@ def render_macro_chart_16(prebuilt_fig=None):
     )
     st.caption("TIC、寿险外债和 GPIF 的逐券披露各有统计口径。GPIF 在资产配置表中将日元对冲外债归入国内债券。")
     add_sources([
-        ("FRED · US 10Y Treasury (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
-        ("CFTC · Commitments of Traders", "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"),
-        ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
-        ("Japan MOF · 3M Treasury Bill Auction History", "https://www.mof.go.jp/jgbs/reference/appendix/index.htm"),
-        ("Yahoo · USD/JPY daily closes", "https://finance.yahoo.com/quote/JPY%3DX/history/"),
-        ("Yahoo! Japan · TOPIX 日收盘", "https://finance.yahoo.co.jp/quote/998405.T/history"),
-        ("JPX · TOPIX 指数说明", "https://www.jpx.co.jp/markets/indices/topix/index.html"),
-        ("Yahoo Finance · DXY 日收盘", "https://finance.yahoo.com/quote/DX-Y.NYB/history/"),
         ("美国财政部 · TIC Table 5", "https://ticdata.treasury.gov/Publish/slt_table5.html"),
         ("FRED · 日本美债 TIC/CSLT", "https://fred.stlouisfed.org/series/FORTREASPOS42609"),
-        ("BIS · 日本政策利率 D.JP", "https://data.bis.org/topics/CBPOL/BIS,WS_CBPOL,1.0/D.JP"),
-        ("BOJ · 2026 年 10 月政策声明", "https://www.boj.or.jp/en/mopo/mpmdeci/mpr_2026/k261030a.pdf"),
         ("日本央行 · 寿险外债与对冲（图 III-2-5）", "https://www.boj.or.jp/en/research/brp/fsr/data/fsr261023a.pdf#page=29"),
         ("GPIF · FY2025 年报与逐券表", "https://www.gpif.go.jp/en/performance/last-years-results.html"),
         ("GPIF · 历年逐券披露", "https://www.gpif.go.jp/en/performance/past-performances.html"),
         ("日本邮政保险 · 2026 年 6 月财报", "https://www.jp-life.japanpost.jp/english/news/assets/pdf/2026/pr0807en-01.pdf#page=32"),
-    ], "yen_carry")
+    ], "japan_holdings")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -2893,9 +2910,7 @@ def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
     if isinstance(chart_number, str):
         builders = {
             'yen_volatility': build_yen_volatility,
-            'yen_tic': build_yen_tic,
-            'yen_holdings': lambda period: _yen_carry.build_japan_institution_figure(period, metric='holdings'),
-            'yen_hedging': lambda period: _yen_carry.build_japan_institution_figure(period, metric='hedging'),
+            'japan_holdings': build_japan_holdings,
         }
         builder = builders[chart_number]
     elif chart_number != 4:
@@ -3079,6 +3094,8 @@ for number in MACRO_DISPLAY_ORDER:
         render_copper_tcrc()
     elif number == "nvidia_cds":
         render_nvidia_cds()
+    elif number == "japan_holdings":
+        render_japan_holdings()
     elif number == "japan_corridor":
         render_japan_corridor()
     else:
@@ -3194,6 +3211,11 @@ def _render_all_source_freshness(figures):
         add("市场概览", symbol, st.session_state.get("_market_quotes_snapshot", {}).get(label, {}))
     display_figures = {MACRO_DISPLAY_NUMBER[number]: figure
                        for number, figure in figures.items()}
+    display_figures[MACRO_DISPLAY_NUMBER[16]] = _yen_carry.combine_yen_carry_figures(
+        figures[16], volatility=_safe_macro_build("yen_volatility", lambda: _cached_macro_figure(
+            "yen_volatility", _macro_snapshot_revision(), CHART_BUILD)))
+    display_figures[MACRO_DISPLAY_NUMBER["japan_holdings"]] = _safe_macro_build(
+        "Japan holdings", lambda: _cached_macro_figure("japan_holdings", _macro_snapshot_revision(), CHART_BUILD))
     display_figures[MACRO_DISPLAY_NUMBER["japan_corridor"]] = _japan_corridor.build_corridor_figure("5Y")
     display_figures[MACRO_DISPLAY_NUMBER["us_drawdown"]] = _build_equity_drawdown()
     display_figures[MACRO_DISPLAY_NUMBER["cn_drawdown"]] = _build_china_drawdown()

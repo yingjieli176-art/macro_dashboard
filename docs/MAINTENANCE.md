@@ -195,3 +195,12 @@ restoration checks remain separate. Automated snapshot-only pushes no longer
 launch the expensive full browser/restoration matrix; scheduled collectors and
 source-date audits still validate and publish those observations. Snapshot
 changes proposed in a pull request remain covered by the regression workflow.
+
+
+## Japan holdings split (2026-11-12)
+
+Display chart 11 keeps carry, FX volatility and BOJ policy. Its nine TIC/institutional
+holdings and hedging curves move to independent chart 12, with four separate unit
+axes and its own time controls. Later display charts shift by one (22 charts total).
+The original observation values, dates, disclosures and automatic collectors are retained.
+The 2026-11-11 V1.0 archive remains an unchanged historical baseline.

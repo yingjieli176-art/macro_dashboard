@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 from macro_platform.dashboard_layout import (
-    CHART_NUMBERING, DISPLAY_US_JP_CN_20_ORDER, MACRO_DISPLAY_NUMBER, PREVIOUS_DISPLAY_ORDER, legacy_chart_numbers,
+    DISPLAY_US_CREDIT_JP_CORRIDOR_CN_21_ORDER, CHART_NUMBERING, DISPLAY_US_JP_CN_20_ORDER, MACRO_DISPLAY_NUMBER, PREVIOUS_DISPLAY_ORDER, legacy_chart_numbers,
 )
 
 SOURCE_REPORT = Path(__file__).resolve().parents[1] / "data_snapshots/all_source_freshness.json"
@@ -70,6 +70,11 @@ def source_rows(path=SOURCE_REPORT):
         report = json.loads(path.read_text())
     except (OSError, ValueError, TypeError):
         return None, []
+    if report.get("chart_numbering") == "display_us_credit_jp_corridor_cn_21":
+        report["sources"] = [dict(row, charts=sorted(
+            MACRO_DISPLAY_NUMBER[DISPLAY_US_CREDIT_JP_CORRIDOR_CN_21_ORDER[number - 1]] for number in row["charts"]
+        )) for row in report.get("sources", [])]
+        report["chart_numbering"] = CHART_NUMBERING
     if report.get("chart_numbering") == "display_us_credit_jp_cn_20":
         report["sources"] = [dict(row, charts=sorted(
             MACRO_DISPLAY_NUMBER[PREVIOUS_DISPLAY_ORDER[number - 1]] for number in row["charts"]
