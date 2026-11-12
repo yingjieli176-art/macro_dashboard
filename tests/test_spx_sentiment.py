@@ -88,7 +88,8 @@ class SpxSentimentTests(unittest.TestCase):
         for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
             option = adapter(cropped, "1M")
             self.assertTrue(all(s["connectNulls"] for s in option["series"]))
-        self.assertTrue(all(t.connectgaps and t.line.dash == "solid" for t in cropped.data))
+        self.assertTrue(all(t.connectgaps for t in cropped.data))
+        self.assertEqual(next(t for t in cropped.data if t.name == "VIX/VIX3M (R1)").line.dash, "dash")
 
     def test_vvix_ratio_keeps_gaps_and_never_reuses_another_days_vix(self):
         ns = builders()

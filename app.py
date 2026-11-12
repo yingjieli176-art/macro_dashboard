@@ -1890,6 +1890,21 @@ def build_fig10(date_range):
     # Join observed values for display; source values and ratio dates stay intact.
     fig.update_traces(connectgaps=True, line_dash="solid")
     fig.update_traces(connectgaps=False, selector=dict(name=_dealer_gamma.SERIES_NAME))
+    # Fix colors by metric rather than palette order. Similar hues also use
+    # different strokes so hiding another curve cannot change their identity.
+    for name, color, dash, width in (
+        ("VIX", "#2563eb", "solid", 2.6),
+        ("VIX3M", "#7c3aed", "dash", 2.6),
+        ("VIX/VIX3M (R1)", "#ea580c", "dash", 2.3),
+        ("SKEW 5D MA (R2)", "#92400e", "solid", 2.4),
+        ("VVIX (R3)", "#dc2626", "solid", 2.2),
+        ("VVIX/VIX (R4)", "#be185d", "dashdot", 2.2),
+        ("9D/30D (R1)", "#0891b2", "dot", 2.2),
+        ("SPX P/C 63D MA (R1)", "#15803d", "solid", 2.4),
+        (_dealer_gamma.SERIES_NAME, "#334155", "solid", 2.8),
+    ):
+        fig.update_traces(line_color=color, line_dash=dash, line_width=width,
+                          selector=dict(name=name))
     fig.update_layout(xaxis_domain=[0, 0.60], margin_r=250)
     meta = dict(fig.layout.meta or {})
     meta["preserve_axis_titles"] = list(dict.fromkeys([*meta.get("preserve_axis_titles", []), "y6"]))
