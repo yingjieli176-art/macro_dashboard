@@ -98,9 +98,11 @@ def assert_visible_axes(state, minimum_axes=2):
         minimum, maximum = sorted(axis["extent"])
         tolerance = max(abs(low), abs(high), 1)*1e-8
         assert minimum <= low+tolerance and maximum >= high-tolerance, axis
-        # A full-history or shared-axis scale would be far wider than these
-        # filtered samples. Allow ECharts' own nice-tick rounding and flat data.
-        assert maximum-minimum <= max((high-low)*2, max(abs(low), abs(high), 1)*.05), axis
+        # ECharts expands a constant/single observation before rounding ticks.
+        # Keep the tighter bound for varying series, which catches full-history
+        # or shared-axis scaling after zoom. Flat data may use up to 20%.
+        flat_padding = .20 if high == low else .05
+        assert maximum-minimum <= max((high-low)*2, max(abs(low), abs(high), 1)*flat_padding), axis
     assert populated >= minimum_axes, state
 
 
