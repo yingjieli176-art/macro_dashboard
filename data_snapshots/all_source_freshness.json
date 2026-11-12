@@ -868,12 +868,12 @@
         17
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-11",
+      "repository_latest": "2026-11-12",
       "checked_at": "2026-11-12T12:45:17.797199+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-11",
       "source_url": "https://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics/2026/11/ms-20261111/",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "comex_stock_t",
@@ -894,12 +894,12 @@
         17
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-11",
+      "repository_latest": "2026-11-12",
       "checked_at": "2026-11-12T12:45:09.792864+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-11",
       "source_url": "https://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics/2026/11/ms-20261111/",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "hibor_3m",
@@ -1091,5 +1091,5 @@
   "elapsed_seconds": 82.873,
   "shared_http_requests": 30,
   "shared_http_reuses": 15,
-  "repository_reconciled_at": "2026-11-12T12:46:21.608069+00:00"
+  "repository_reconciled_at": "2026-11-12T12:59:27.518198+00:00"
 }
