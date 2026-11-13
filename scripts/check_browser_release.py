@@ -771,7 +771,7 @@ def main():
             # Offline acceptance has no verified HY OAS repository snapshot.
             # Missing data must be disclosed rather than synthesized.
             assert page.get_by_text('HY OAS（R1）暂未取得 FRED 观测，稍后自动重试。', exact=True).count() == 1
-            assert page.get_by_text('IG OAS（R1）暂未取得 FRED 观测，稍后自动重试。', exact=True).count() == 1
+            assert page.get_by_text('IG OAS（R2）暂未取得 FRED 观测，稍后自动重试。', exact=True).count() == 1
             report['ai_cds'] = cds_state
             report['ai_cds_zoom'] = exercise_client_zoom(page, cds_chart, minimum_axes=1)
             risk_chart = page.locator('[class*=st-key-us_equity_risk_adaptive_default_1Y_schema_]').get_by_test_id(

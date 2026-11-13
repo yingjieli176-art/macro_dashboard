@@ -113,6 +113,31 @@ class DailyObservationDates(unittest.TestCase):
             self.assertTrue(completed_daily_closes(node, "2026-11-05T21:30Z").empty)
             self.assertEqual(len(completed_daily_closes(node, "2026-11-06T01:00Z")),1)
 
+    def test_cme_fallback_does_not_admit_next_day_at_new_york_midnight(self):
+        for symbol in ("GC=F", "SI=F", "HG=F", "CL=F"):
+            node = bar("2026-11-13", "America/New_York", "2026-11-13", "FUTURE")
+            node["meta"]["symbol"] = symbol
+            self.assertTrue(completed_daily_closes(node, "2026-11-13T05:58Z").empty)
+            node["timestamp"].insert(0, int(pd.Timestamp("2026-11-12T09:30", tz="America/New_York").timestamp()))
+            node["indicators"]["quote"][0]["close"].insert(0, 120.)
+            result = completed_daily_closes(node, "2026-11-13T05:58Z")
+            self.assertEqual(result.observation_date.dt.strftime("%Y-%m-%d").tolist(), ["2026-11-12"])
+
+    def test_fred_key_uses_workflow_environment_and_safe_secrets_fallback(self):
+        import os
+        from types import SimpleNamespace
+        from tests.app_test_helpers import load_functions
+        secrets = Mock()
+        secrets.get.return_value = "desktop-key"
+        ns = load_functions({"_fred_api_key"}, {"os":os, "st":SimpleNamespace(secrets=secrets)}, filename="data.py")
+        with patch.dict(os.environ, {"FRED_API_KEY":"  workflow-key  "}):
+            self.assertEqual(ns["_fred_api_key"](), "workflow-key")
+            secrets.get.assert_not_called()
+        with patch.dict(os.environ, {"FRED_API_KEY":""}):
+            self.assertEqual(ns["_fred_api_key"](), "desktop-key")
+            secrets.get.side_effect = RuntimeError("No secrets file")
+            self.assertEqual(ns["_fred_api_key"](), "")
+
     def test_crypto_daily_boundary_is_utc_even_with_local_metadata(self):
         node = bar("2026-11-05", "America/New_York", "2026-11-06", "CRYPTOCURRENCY")
         node["timestamp"] = [int(pd.Timestamp(day).timestamp()) for day in

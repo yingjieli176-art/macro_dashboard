@@ -79,7 +79,8 @@ def completed_daily_closes(node, now=None):
         if instrument == "FUTURE" and meta.get("symbol") in {"GC=F", "SI=F", "HG=F", "CL=F"}:
             local_clock = clock.tz_convert("America/Chicago")
             if local_clock.weekday() < 5 and (local_clock.hour, local_clock.minute) >= (16, 15):
-                completed = completed | (local_dates == today)
+                closed_day = local_clock.tz_localize(None).normalize()
+                completed = completed | (local_dates == closed_day)
     frame = pd.DataFrame({"observation_date": local_dates, "close": pd.to_numeric(values, errors="coerce")})
     valid = frame["close"].map(lambda value: pd.notna(value) and math.isfinite(float(value)) and value > 0)
     frame = frame.loc[completed & valid].dropna(subset=["observation_date"])
