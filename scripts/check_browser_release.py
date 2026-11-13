@@ -415,7 +415,12 @@ def check_mobile_layout(page):
                 assert state['width']-state['grid']['width'] < original['width']-original['grid']['width'], state
             else:
                 assert state['legend_type'] == original['legend_type'], state
-                assert state['grid']['x'] == original['grid']['x'], state
+                # ECharts containLabel can reserve different tick-label widths
+                # at different canvas sizes. Check exact restoration only when
+                # returning to the original width, and containment everywhere.
+                assert state['grid']['x'] >= 0 and state['grid']['x'] + state['grid']['width'] <= state['width'] + 1, state
+                if abs(state['width'] - original['width']) < 1:
+                    assert abs(state['grid']['x'] - original['grid']['x']) < 1, state
                 assert [axis['offset'] for axis in state['axes']] == [axis['offset'] for axis in original['axes']], state
         report.append({'viewport': [width, height], 'charts': len(states),
                        'min_plot_width': min(state['grid']['width'] for state in states)})
