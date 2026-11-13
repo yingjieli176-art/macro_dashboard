@@ -146,7 +146,7 @@ DEFAULT_CHART_RANGE = "1Y"
 from macro_platform.dashboard_layout import MACRO_DISPLAY_ORDER, MACRO_DISPLAY_NUMBER, NUMERIC_CHART_IDS, HK_CHART_IDS
 from macro_platform import japan_corridor as _japan_corridor
 from macro_platform import jpy_implied_vol as _jpy_iv
-from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES
+from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
 CHART_BUILD = "V1.0"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
@@ -1388,7 +1388,7 @@ def _cancel_search(key):
 
 def add_sources(sources, chart_key):
     notes = "".join(
-        f"<div><b>{html.escape(name)}</b> · {html.escape(definition)}</div>"
+        f"<div><b>{html.escape(readable_display_text(name))}</b> · {html.escape(readable_display_text(definition))}</div>"
         for name, definition in CHART_PARAMETER_GUIDES[chart_key]
     )
     st.markdown(f'<div class="chart-parameters">{notes}</div>', unsafe_allow_html=True)
@@ -2695,7 +2695,7 @@ def _render_china_drawdown():
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[9]}. US Equity Risk & Volatility Structure</div>'
-        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3) · MOVE 债市波动率 (R4) · MOVE/VIX (R5) · VXN−VIX（R6 · 波动率差，pp）</div>',
+        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3) · MOVE 债市波动率 (R4) · MOVE/VIX (R5) · VXN−VIX（R6 · 波动率差，%）</div>',
         unsafe_allow_html=True,
     )
     render_latest_vix_quote()

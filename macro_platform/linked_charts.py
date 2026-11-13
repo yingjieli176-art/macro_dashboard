@@ -44,9 +44,9 @@ def render_echarts_chart(option, *, height=465, width="stretch", key=None, theme
         for line in (series.get("markLine") or {}).get("data", []))]
     footer_height = 16 + 20 * len(price_series) if price_series else 0
     component_height = height + footer_height
-    from macro_platform.parameter_guide import compact_parameter_labels
-    return _component()(data={"option": option, "height": component_height,
+    from macro_platform.parameter_guide import compact_parameter_labels, readable_chart_option
+    return _component()(data={"option": readable_chart_option(option), "height": component_height,
                               "parameter_labels": compact_parameter_labels(option),
                               "price_footer_height": footer_height,
                               "legend_state_key": legend_key},
-                        key=key, height=component_height, width=width)
+                        key=key, height="content", width=width)

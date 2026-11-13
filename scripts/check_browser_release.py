@@ -382,7 +382,7 @@ def check_mobile_layout(page):
         model.eachComponent('yAxis', axis => axes.push({
             show: axis.get('show'), name: axis.get('name'),
             scale: axis.get('scale'), offset: axis.get('offset')}));
-        return {width:chart.getWidth(), grid:{x:grid.x,y:grid.y,width:grid.width},
+        return {width:chart.getWidth(), grid:{x:grid.x,y:grid.y,width:grid.width,height:grid.height},
             legend_type:legend.get('type'), legend_data:legend.get('data').filter(x => x !== '\\n'),
             legend_bounds:{x:rect.x,y:rect.y,width:rect.width,height:rect.height}, axes,
             series:chart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,type:s.type,data:s.data})),
@@ -406,6 +406,7 @@ def check_mobile_layout(page):
                 bars = any(s['type'] == 'bar' and s['axis'] == index for s in state['series'])
                 assert axis['show'] and axis['name'] and axis['scale'] == (not bars), state
             assert state['grid']['width'] > 80, (width, state)
+            assert state['grid']['height'] >= 120, (width, 'wrapped legend squeezed plot', state['grid'])
             if state['width'] <= 700:
                 assert state['legend_type'] == 'plain', state
                 assert state['legend_data'] == list(dict.fromkeys(series['name'] for series in state['series'])), state
@@ -415,7 +416,12 @@ def check_mobile_layout(page):
                 assert state['width']-state['grid']['width'] < original['width']-original['grid']['width'], state
             else:
                 assert state['legend_type'] == original['legend_type'], state
-                assert state['grid']['x'] == original['grid']['x'], state
+                # ECharts containLabel can reserve different tick-label widths
+                # at different canvas sizes. Check exact restoration only when
+                # returning to the original width, and containment everywhere.
+                assert state['grid']['x'] >= 0 and state['grid']['x'] + state['grid']['width'] <= state['width'] + 1, state
+                if abs(state['width'] - original['width']) < 1:
+                    assert abs(state['grid']['x'] - original['grid']['x']) < 1, state
                 assert [axis['offset'] for axis in state['axes']] == [axis['offset'] for axis in original['axes']], state
         report.append({'viewport': [width, height], 'charts': len(states),
                        'min_plot_width': min(state['grid']['width'] for state in states)})
@@ -678,7 +684,7 @@ def main():
             }""")
             usage = next(s for s in policy_state['series'] if s['name'] == 'SRF 实际用量 (R1)')
             assert usage['type'] == 'bar' and usage['axis'] == 1 and usage['samples'] > 1200, policy_state
-            assert 'USD bn' in policy_state['axes'][1]['name'], policy_state
+            assert '十亿美元' in policy_state['axes'][1]['name'], policy_state
             assert policy_state['axes'][1]['scale'] is False, policy_state
             policy.scroll_into_view_if_needed()
             page.screenshot(path='browser_srf_usage.png')
@@ -779,6 +785,9 @@ def main():
                 const ratio = curves['MOVE/VIX (R5)'];
                 const valid = ratio.data.filter(p => Number.isFinite(p[1]));
                 return {axes:option.yAxis.length, axis:ratio.yAxisIndex,
+                    axis_names:option.yAxis.map(a=>a.name),
+                    ratio_label:option.legend[0].formatter(ratio.name).replace(/\\s/g,''),
+                    vix_label:option.legend[0].formatter('VIX').replace(/\\s/g,''),
                     connect:ratio.connectNulls, count:valid.length,
                     matched:valid.every(([day,value]) => vix.get(day)>0 && move.get(day)>0 &&
                         // Chart adapters serialize each value to 8 decimals.
@@ -786,6 +795,10 @@ def main():
             }""")
             assert risk_ratio['axes'] == 7 and risk_ratio['axis'] == 5, risk_ratio
             assert risk_ratio['count'] > 100 and risk_ratio['matched'] and not risk_ratio['connect'], risk_ratio
+            assert '年化波动率（%）' in risk_ratio['vix_label'], risk_ratio
+            assert 'R5·×' in risk_ratio['ratio_label'], risk_ratio
+            assert 'R1' in risk_ratio['axis_names'][1] and 'pts' in risk_ratio['axis_names'][1], risk_ratio
+            assert '%' in risk_ratio['axis_names'][6], risk_ratio
             report['move_vix'] = risk_ratio
             report['move_vix_zoom'] = exercise_client_zoom(page, risk_chart, minimum_axes=6)
             page.screenshot(path='browser_ai_cds.png')
