@@ -12,6 +12,25 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from macro_platform.echarts_axes import option_observation_health
+from pandas.tseries.holiday import USFederalHolidayCalendar
+
+
+def federal_publication_health(health, now=None):
+    """Use federal business days only for Treasury/NY Fed daily publications.
+
+    This remains an offline cadence warning, never proof of source freshness.
+    Equity, Cboe and non-US calendars are deliberately unaffected.
+    """
+    today = pd.Timestamp.now(tz="Asia/Hong_Kong") if now is None else pd.Timestamp(now)
+    today = today.tz_localize(None).normalize() if today.tzinfo else today.normalize()
+    business_day = pd.offsets.CustomBusinessDay(calendar=USFederalHolidayCalendar())
+    for name, observed in health["latest_by_name"].items():
+        due = pd.Timestamp(observed) + 2 * business_day
+        health["due_by_name"][name] = due.strftime("%Y-%m-%d")
+        if today <= due and name in health["stale_names"]:
+            health["stale_names"].remove(name)
+            health["stale_details"] = [s for s in health["stale_details"] if not s.startswith(name + "（")]
+    return health
 
 
 SPECS = [
@@ -150,7 +169,7 @@ def audit(root=ROOT, now=None):
     tga = read_verified_tga_snapshot(root / "data_snapshots" / "treasury_tga_daily.json")
     tga_option = {"series": [{"name": "TGA_DAILY", "data": [[str(row.observation_date), row.TGA_DAILY]
                                                              for row in tga.itertuples()]}]}
-    tga_health = option_observation_health(tga_option, now=now)
+    tga_health = federal_publication_health(option_observation_health(tga_option, now=now), now)
     reports.append({"file": "treasury_tga_daily.json", **tga_health,
                     "missing_names": [] if "TGA_DAILY" in tga_health["latest_by_name"] else ["TGA_DAILY"]})
     for symbol in ("IORB", "EFFR", "SOFR", "RRPONTSYAWARD", "SRFTSYD", "DGS3MO", "DGS2", "DGS10", "DGS30",
@@ -159,6 +178,8 @@ def audit(root=ROOT, now=None):
         rows = payload.get("records") or []
         option = {"series": [{"name": symbol, "observation_cadence": "weekly" if symbol in ("WALCL", "WRESBAL") else "daily", "data": [[r.get("date"), r.get("value")] for r in rows]}]}
         health = option_observation_health(option, now=now)
+        if symbol in ("EFFR", "SOFR"):
+            health = federal_publication_health(health, now)
         reports.append({"file": f"fred_cache/{symbol}.json", **health,
                         "missing_names": [] if symbol in health["latest_by_name"] else [symbol]})
     for report in reports:

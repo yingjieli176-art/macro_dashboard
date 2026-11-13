@@ -16,6 +16,7 @@ import sys
 import time
 
 import pandas as pd
+from pandas.tseries.holiday import USFederalHolidayCalendar
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -286,7 +287,11 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
             "date": pd.to_datetime(table["Time Period"], errors="coerce"),
             "value": pd.to_numeric(table["RESBM_N.D"], errors="coerce"),
         }).dropna()
-        frame = frame.loc[frame["date"] >= pd.Timestamp(START)]
+        # PRATES can include the next effective date before UTC midnight.
+        # Admit only already-effective dates here; generic observation admission
+        # must continue to reject future dates from every other source.
+        today = pd.Timestamp.now(tz="UTC").tz_localize(None).normalize()
+        frame = frame.loc[frame["date"].between(pd.Timestamp(START), today)]
         if len(frame) < 12:
             raise ValueError("PRATES/IORB missing observed points")
         return _parse_source("DATE,IORB\n" + "\n".join(
@@ -431,6 +436,8 @@ def snapshot_health(series_id, now=None):
                     if tolerance is not None else
                     dates.max().normalize() + pd.Timedelta(days=10)
                     if series_id in ("WALCL", "WRESBAL", "WTREGEN") else
+                    dates.max().normalize() + 2 * pd.offsets.CustomBusinessDay(calendar=USFederalHolidayCalendar())
+                    if series_id in ("EFFR", "SOFR") else
                     dates.max().normalize() + pd.offsets.BDay(2))
         status = "stale" if now.normalize() > deadline else "available"
         return {"series_id": series_id, "status": status, "coverage_end": end, "rows": len(records)}

@@ -57,6 +57,18 @@ def workflow_events(filename):
 
 
 class WorkflowSafetyTests(unittest.TestCase):
+    def test_source_recovery_followups_only_run_trusted_default_branch_code(self):
+        events, content = workflow_events("all-source-freshness.yml")
+        self.assertIn("workflow_run", events)
+        self.assertIn("types: [completed]", content)
+        self.assertIn("github.event.workflow_run.head_branch == 'main'", content)
+        self.assertIn("github.event.workflow_run.head_repository.full_name == github.repository", content)
+        self.assertIn('fromJSON(\'["schedule","workflow_dispatch"]\')', content)
+        self.assertIn("ref: main", content)
+        self.assertNotIn("ref: ${{ github.event.workflow_run", content)
+        self.assertNotIn("actions/download-artifact", content)
+        self.assertNotIn("- Verify all dashboard source dates", content)
+
     def test_serialized_hkma_writers_checkout_the_latest_main_after_queueing(self):
         for name in ("update-hkma-snapshot.yml", "update-hkma-monetary-base-history.yml"):
             content = (WORKFLOWS / name).read_text()

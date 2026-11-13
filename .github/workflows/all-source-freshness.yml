@@ -3,6 +3,15 @@ on:
   schedule:
     # Hourly around Asian and US closes; retain checks through UTC midnight.
     - cron: '17 0-8,12,16,20-23 * * *'
+    # Extra attempts before the Beijing morning session; cron is best-effort.
+    - cron: '43 21-23 * * *'
+  workflow_run:
+    workflows:
+      - Refresh official VIX quote and confirmed close
+      - Refresh completed SPX and RSP price history
+      - Sync verified FRED market observations
+    branches: [main]
+    types: [completed]
   workflow_dispatch:
   push:
     branches: [main]
@@ -10,6 +19,7 @@ on:
       - scripts/probe_all_sources.py
       - scripts/refresh_audited_sources.py
       - scripts/publish_source_refresh.py
+      - scripts/update_dxy_snapshot.py
       - macro_platform/market_history.py
       - tests/test_daily_observation_dates.py
       - tests/test_chart_calendar_dates.mjs
@@ -21,6 +31,13 @@ concurrency:
   cancel-in-progress: false
 jobs:
   verify:
+    # Only trusted default-branch scheduled/manual writers may trigger repair.
+    # Never execute code or download artifacts from the triggering run.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository &&
+       contains(fromJSON('["schedule","workflow_dispatch"]'), github.event.workflow_run.event))
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -46,16 +63,27 @@ jobs:
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python scripts/refresh_audited_sources.py source_freshness_before.json
+      - name: Recheck sources after the first recovery pass
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/probe_all_sources.py --retry-from source_freshness_before.json --output source_freshness_after_first.json
+      - name: Retry remaining lagging or temporarily unavailable sources
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/refresh_audited_sources.py source_freshness_after_first.json --output source_recovery_retry.json
       - name: Compare every configured source with its own observation calendar
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-        run: python scripts/probe_all_sources.py --output data_snapshots/all_source_freshness.json --strict
+        run: python scripts/probe_all_sources.py --retry-from source_freshness_after_first.json --output data_snapshots/all_source_freshness.json --strict
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: complete-source-date-comparison
           path: |
             source_freshness_before.json
+            source_freshness_after_first.json
+            source_recovery.json
+            source_recovery_retry.json
             data_snapshots/all_source_freshness.json
       - name: Publish verification results including unresolved sources
         if: always()
