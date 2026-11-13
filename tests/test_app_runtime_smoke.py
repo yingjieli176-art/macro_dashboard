@@ -127,7 +127,7 @@ class DashboardBootSmoke(unittest.TestCase):
         usage = next(series for series in corridor["series"] if series["name"] == "SRF 实际用量 (R1)")
         self.assertEqual(usage["type"], "bar")
         self.assertEqual(usage["yAxisIndex"], 1)
-        self.assertIn("USD bn", corridor["yAxis"][1]["name"])
+        self.assertIn("十亿美元", corridor["yAxis"][1]["name"])
         self.assertFalse(corridor["yAxis"][1]["scale"])
         self.assertTrue(any(point[1] == 0 for point in usage["data"]))
         ten_year = next(json.loads(spec) for spec in specs

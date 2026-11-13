@@ -678,7 +678,7 @@ def main():
             }""")
             usage = next(s for s in policy_state['series'] if s['name'] == 'SRF 实际用量 (R1)')
             assert usage['type'] == 'bar' and usage['axis'] == 1 and usage['samples'] > 1200, policy_state
-            assert 'USD bn' in policy_state['axes'][1]['name'], policy_state
+            assert '十亿美元' in policy_state['axes'][1]['name'], policy_state
             assert policy_state['axes'][1]['scale'] is False, policy_state
             policy.scroll_into_view_if_needed()
             page.screenshot(path='browser_srf_usage.png')
