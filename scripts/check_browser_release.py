@@ -382,7 +382,7 @@ def check_mobile_layout(page):
         model.eachComponent('yAxis', axis => axes.push({
             show: axis.get('show'), name: axis.get('name'),
             scale: axis.get('scale'), offset: axis.get('offset')}));
-        return {width:chart.getWidth(), grid:{x:grid.x,y:grid.y,width:grid.width},
+        return {width:chart.getWidth(), grid:{x:grid.x,y:grid.y,width:grid.width,height:grid.height},
             legend_type:legend.get('type'), legend_data:legend.get('data').filter(x => x !== '\\n'),
             legend_bounds:{x:rect.x,y:rect.y,width:rect.width,height:rect.height}, axes,
             series:chart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,type:s.type,data:s.data})),
@@ -406,6 +406,7 @@ def check_mobile_layout(page):
                 bars = any(s['type'] == 'bar' and s['axis'] == index for s in state['series'])
                 assert axis['show'] and axis['name'] and axis['scale'] == (not bars), state
             assert state['grid']['width'] > 80, (width, state)
+            assert state['grid']['height'] >= 120, (width, 'wrapped legend squeezed plot', state['grid'])
             if state['width'] <= 700:
                 assert state['legend_type'] == 'plain', state
                 assert state['legend_data'] == list(dict.fromkeys(series['name'] for series in state['series'])), state

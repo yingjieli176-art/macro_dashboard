@@ -108,7 +108,7 @@ export function compactLegend(option, labels, width) {
     left:8, right:8, padding:0, itemWidth, itemGap, data:packed,
     formatter:name => displays[name] || labels[name] || name,
     textStyle:{...prior.textStyle, fontSize, lineHeight}};
-  option.grid.top = Math.max(Number(option.grid.top) || 0, 26 + height + 30);
+  option.grid.top = Math.max(Number(option.grid.top) || 0, 26 + height + 36);
   return option;
 }
 
@@ -368,10 +368,20 @@ export default function({data, parentElement}) {
     return option;
   }
 
+  function fitChartHeight(option) {
+    // Wrapped Chinese explanations must not consume the price plot. Let the
+    // component grow naturally instead of introducing an inner scrollbar.
+    const height = document.fullscreenElement === shell ? innerHeight : Math.max(
+      data.height || 465, (Number(option.grid.top) || 0) + (Number(option.grid.bottom) || 0) + 220);
+    element.style.height = `${height}px`;
+    if (chart && chart.getHeight() !== height) chart.resize({height});
+  }
+
   function updateLayout() {
     if (!chart || disposed) return;
     refreshPriceGuides(chart.getOption().dataZoom);
     const option = sizeBars(compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth), chart.getOption().dataZoom);
+    fitChartHeight(option);
     if (option.toolbox) option.toolbox.right = 54;
     // Price observations stay intact. Only derived paths and annotations
     // change with the selection; the live dataZoom bounds are preserved.
@@ -402,6 +412,7 @@ export default function({data, parentElement}) {
     sizeBars(option, option.dataZoom);
     // Keep toolbox clear of the download/fullscreen buttons.
     if (option.toolbox) option.toolbox.right = 54;
+    fitChartHeight(option);
     chart = echarts.init(element, null, {renderer:'canvas'});
     element.__macroChart = chart;
     // Replace the whole option when Streamlit reuses a mounted chart element.
@@ -430,7 +441,6 @@ export default function({data, parentElement}) {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         if (disposed) return;
-        element.style.height = `${document.fullscreenElement === shell ? innerHeight : data.height || 465}px`;
         chart.resize(); updateLayout();
       });
     });

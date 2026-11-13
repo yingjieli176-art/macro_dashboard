@@ -49,4 +49,4 @@ def render_echarts_chart(option, *, height=465, width="stretch", key=None, theme
                               "parameter_labels": compact_parameter_labels(option),
                               "price_footer_height": footer_height,
                               "legend_state_key": legend_key},
-                        key=key, height=component_height, width=width)
+                        key=key, height="content", width=width)
