@@ -770,8 +770,8 @@ def main():
                 assert found['axis'] == 0, found
             # Offline acceptance has no verified HY OAS repository snapshot.
             # Missing data must be disclosed rather than synthesized.
-            assert page.get_by_text('HY OAS（右轴1）暂未取得 FRED 观测，稍后自动重试。', exact=True).count() == 1
-            assert page.get_by_text('IG OAS（右轴1）暂未取得 FRED 观测，稍后自动重试。', exact=True).count() == 1
+            assert page.get_by_text('HY OAS（R1）暂未取得 FRED 观测，稍后自动重试。', exact=True).count() == 1
+            assert page.get_by_text('IG OAS（R1）暂未取得 FRED 观测，稍后自动重试。', exact=True).count() == 1
             report['ai_cds'] = cds_state
             report['ai_cds_zoom'] = exercise_client_zoom(page, cds_chart, minimum_axes=1)
             risk_chart = page.locator('[class*=st-key-us_equity_risk_adaptive_default_1Y_schema_]').get_by_test_id(
@@ -796,8 +796,8 @@ def main():
             assert risk_ratio['axes'] == 7 and risk_ratio['axis'] == 5, risk_ratio
             assert risk_ratio['count'] > 100 and risk_ratio['matched'] and not risk_ratio['connect'], risk_ratio
             assert '年化波动率（%）' in risk_ratio['vix_label'], risk_ratio
-            assert '右轴5·倍数' in risk_ratio['ratio_label'], risk_ratio
-            assert '右轴1' in risk_ratio['axis_names'][1] and '指数点' in risk_ratio['axis_names'][1], risk_ratio
+            assert 'R5·倍数' in risk_ratio['ratio_label'], risk_ratio
+            assert 'R1' in risk_ratio['axis_names'][1] and '指数点' in risk_ratio['axis_names'][1], risk_ratio
             assert '百分点' in risk_ratio['axis_names'][6], risk_ratio
             report['move_vix'] = risk_ratio
             report['move_vix_zoom'] = exercise_client_zoom(page, risk_chart, minimum_axes=6)

@@ -14,8 +14,8 @@ class ReadableLabels(unittest.TestCase):
         labels = compact_parameter_labels(option)
         self.assertIn('〔左轴 · 年化波动率（%）〕', labels['VIX'])
         self.assertIn('〔左轴 · 年化波动率（%）〕', labels['VIXEQ'])
-        for name, text in zip(names[2:], ['右轴1 · 指数点','右轴2 · 倍数','右轴3 · 指数点',
-                                         '右轴4 · 指数点','右轴5 · 倍数','右轴6 · 百分点']):
+        for name, text in zip(names[2:], ['R1 · 指数点','R2 · 倍数','R3 · 指数点',
+                                         'R4 · 指数点','R5 · 倍数','R6 · 百分点']):
             self.assertIn(text, labels[name])
 
     def test_axis_translation_covers_mobile_and_desktop_without_mutating_option(self):
@@ -30,9 +30,9 @@ class ReadableLabels(unittest.TestCase):
         self.assertEqual(display['series'], before['series'])
         self.assertEqual(display['dataZoom'], before['dataZoom'])
         self.assertEqual(display['legend'], before['legend'])
-        self.assertEqual(display['yAxis'][1], {'name':'右轴5 · 倍数', 'scale':True, 'offset':58})
+        self.assertEqual(display['yAxis'][1], {'name':'R5 · 倍数', 'scale':True, 'offset':58})
         self.assertEqual(display['media'][0]['option']['yAxis'][0]['name'], '左轴\n年化%')
-        self.assertEqual(display['media'][0]['option']['yAxis'][1]['name'], '右轴5\n倍数')
+        self.assertEqual(display['media'][0]['option']['yAxis'][1]['name'], 'R5\n倍数')
 
     def test_all_known_parameters_keep_axis_markers(self):
         for name in HINTS:
@@ -60,8 +60,8 @@ class ReadableLabels(unittest.TestCase):
         before = deepcopy(option)
         labels = compact_parameter_labels(option)
         self.assertIn('〔左轴 · 基点〕', labels['NVIDIA 5Y'])
-        self.assertIn('〔右轴1 · 百分比（%）〕', labels['HY OAS (R1)'])
-        self.assertIn('〔右轴2 · 指数点〕', labels['NASDAQ-100 (R2)'])
+        self.assertIn('〔R1 · 百分比（%）〕', labels['HY OAS (R1)'])
+        self.assertIn('〔R2 · 指数点〕', labels['NASDAQ-100 (R2)'])
         self.assertEqual(before, option)
         self.assertEqual(labels, compact_parameter_labels(option))
 

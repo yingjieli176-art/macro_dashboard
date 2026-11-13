@@ -2480,7 +2480,7 @@ def _render_standard_macro_chart(title, description, range_key, builder, sources
 def render_macro_chart_1(prebuilt_fig=None):
     _render_standard_macro_chart(
         '<div class="section-title">1. Fed Policy Rate, Money Market & SRF Usage</div>',
-        '<div class="section-description">IORB / ON RRP Rate / EFFR / SOFR / SRF Rate · 年化% · SRF 实际用量 (右轴1) · 十亿美元</div>',
+        '<div class="section-description">IORB / ON RRP Rate / EFFR / SOFR / SRF Rate · 年化% · SRF 实际用量 (R1) · 十亿美元</div>',
         "normal_corridor_range",
         build_fig1,
         [
@@ -2515,7 +2515,7 @@ def render_macro_chart_2(prebuilt_fig=None):
 def render_macro_chart_3(prebuilt_fig=None):
     _render_standard_macro_chart(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[3]}. Treasury Yield & Curve Spread</div>',
-        '<div class="section-description">3M / 2Y / 10Y / 30Y / 10Y−2Y (右轴1) / 30Y−10Y (右轴1) / NASDAQ-100 (右轴2)</div>',
+        '<div class="section-description">3M / 2Y / 10Y / 30Y / 10Y−2Y (R1) / 30Y−10Y (R1) / NASDAQ-100 (R2)</div>',
         "normal_treasury_range",
         build_fig3,
         [
@@ -2559,7 +2559,7 @@ HK_EQUITY_SOURCES = [
 HK_CHART_CONFIGS = [
     (
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[5]}. HK Money Supply & Market Pulse</div>',
-        '<div class="section-description">M2 YoY / M2 MoM / Monetary Base YoY · Tencent / HKEX (右轴1) · HSTECH / HSI (右轴2)</div>',
+        '<div class="section-description">M2 YoY / M2 MoM / Monetary Base YoY · Tencent / HKEX (R1) · HSTECH / HSI (R2)</div>',
         "hk_5_range",
         [
             ("HKMA Monetary Statistics", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics/"),
@@ -2569,7 +2569,7 @@ HK_CHART_CONFIGS = [
     ),
     (
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[6]}. Banking-system Liquidity</div>',
-        '<div class="section-description">Aggregate Balance · Outstanding EFBN (右轴1) · EFBN Held by Licensed Banks (右轴1)</div>',
+        '<div class="section-description">Aggregate Balance · Outstanding EFBN (R1) · EFBN Held by Licensed Banks (R1)</div>',
         "hk_6_range",
         [
             ("HKMA Monetary Base", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod/"),
@@ -2578,7 +2578,7 @@ HK_CHART_CONFIGS = [
     ),
     (
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[7]}. HKD Funding</div>',
-        '<div class="section-description">O/N HIBOR · 3M HIBOR · HKMA Base Rate · O/N−3M Spread (右轴1)</div>',
+        '<div class="section-description">O/N HIBOR · 3M HIBOR · HKMA Base Rate · O/N−3M Spread (R1)</div>',
         "hk_7_range",
         [
             ("HKMA · HIBOR 日线", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/er-ir/hk-interbank-ir-daily/"),
@@ -2588,7 +2588,7 @@ HK_CHART_CONFIGS = [
     ),
     (
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[8]}. USD/HKD Convertibility Band & Market</div>',
-        '<div class="section-description">USD/HKD · Strong-side 7.75 · Center 7.80 · Weak-side 7.85 · Tencent / HKEX (右轴1) · HSTECH / HSI (右轴2)</div>',
+        '<div class="section-description">USD/HKD · Strong-side 7.75 · Center 7.80 · Weak-side 7.85 · Tencent / HKEX (R1) · HSTECH / HSI (R2)</div>',
         "hk_8_range",
         [
             ("HKMA Linked Exchange Rate System", "https://www.hkma.gov.hk/eng/key-functions/money/linked-exchange-rate-system/"),
@@ -2695,7 +2695,7 @@ def _render_china_drawdown():
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[9]}. US Equity Risk & Volatility Structure</div>'
-        '<div class="section-description">VIX · VIXEQ · S&P 500 (右轴1) · VIXEQ/VIX (右轴2) · COR3M (右轴3) · MOVE 债市波动率 (右轴4) · MOVE/VIX (右轴5) · VXN−VIX（右轴6 · 波动率差，百分点）</div>',
+        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3) · MOVE 债市波动率 (R4) · MOVE/VIX (R5) · VXN−VIX（R6 · 波动率差，百分点）</div>',
         unsafe_allow_html=True,
     )
     render_latest_vix_quote()
@@ -2725,7 +2725,7 @@ def render_macro_chart_9(prebuilt_fig=None):
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure</div>'
-        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX/VIX3M · 9D/30D · SPX P/C 63日均（共用 右轴1） · SKEW 5日均 (右轴2) · VVIX (右轴3) · VVIX/VIX (右轴4) · GEX 做市商伽马（十亿美元，右轴5）</div>',
+        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX/VIX3M · 9D/30D · SPX P/C 63日均（共用 R1） · SKEW 5日均 (R2) · VVIX (R3) · VVIX/VIX (R4) · GEX 做市商伽马（十亿美元，R5）</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2788,7 +2788,7 @@ def render_macro_chart_12(prebuilt_fig=None):
 def render_macro_chart_13(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[13]}. Copper Flow & WTI</div>'
-        '<div class="section-description">COMEX inventory · LME inventory · LME 3M (右轴1) · COMEX HG converted (右轴1) · COMEX−LME 3M spread (右轴2) · WTI (右轴3) · 铜油比 (右轴4)</div>',
+        '<div class="section-description">COMEX inventory · LME inventory · LME 3M (R1) · COMEX HG converted (R1) · COMEX−LME 3M spread (R2) · WTI (R3) · 铜油比 (R4)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else build_fig13("5Y")
@@ -2826,7 +2826,7 @@ def render_copper_tcrc():
 def render_macro_chart_14(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[14]}. China Government Yields & US 5Y Real Yield</div>'
-        '<div class="section-description">China 2Y / 10Y · US 5Y Real · TIPS · China 10Y−2Y (右轴1)</div>',
+        '<div class="section-description">China 2Y / 10Y · US 5Y Real · TIPS · China 10Y−2Y (R1)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2843,7 +2843,7 @@ def render_macro_chart_14(prebuilt_fig=None):
 def render_macro_chart_15(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[15]}. Japan Government Yields & Nikkei 225 & USD/JPY</div>'
-        '<div class="section-description">Japan 2Y / 10Y / 30Y · Japan 10Y−2Y / 30Y−10Y (右轴1) · Nikkei 225 (右轴2) · USD/JPY (右轴3)</div>',
+        '<div class="section-description">Japan 2Y / 10Y / 30Y · Japan 10Y−2Y / 30Y−10Y (R1) · Nikkei 225 (R2) · USD/JPY (R3)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2861,9 +2861,9 @@ def render_macro_chart_15(prebuilt_fig=None):
 def render_macro_chart_16(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[16]}. 日元套息分析 · Yen Carry Trade</div>'
-        '<div class="section-description">美日10Y利差 · USD/JPY（右轴1 阳轴，向上＝日元走弱） · '
-        'CFTC日元投机净仓位 (右轴2) · TOPIX（东证指数，右轴3） · 美元指数 DXY (右轴4) · '
-        'JPY 3M · JPY 10Y · JPY 10Y - JPY 3M · USD/JPY 3M ATM 隐含波动率（Saxo，右轴5）</div>',
+        '<div class="section-description">美日10Y利差 · USD/JPY（R1 阳轴，向上＝日元走弱） · '
+        'CFTC日元投机净仓位 (R2) · TOPIX（东证指数，R3） · 美元指数 DXY (R4) · '
+        'JPY 3M · JPY 10Y · JPY 10Y - JPY 3M · USD/JPY 3M ATM 隐含波动率（Saxo，R5）</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2901,8 +2901,8 @@ def render_macro_chart_16(prebuilt_fig=None):
 @st.fragment(key="japan_holdings_viewport")
 def render_japan_holdings():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["japan_holdings"]}. 日本美债持仓与机构外债 · Japan Holdings & Hedging</div>'
-                '<div class="section-description">日本美债总持仓 / 长期 / 短期 · 长期净买入与估值变动 (右轴1) · '
-                'GPIF与寿险外债 (右轴2) · 汇率对冲率 (右轴3)</div>', unsafe_allow_html=True)
+                '<div class="section-description">日本美债总持仓 / 长期 / 短期 · 长期净买入与估值变动 (R1) · '
+                'GPIF与寿险外债 (R2) · 汇率对冲率 (R3)</div>', unsafe_allow_html=True)
     figure = _safe_macro_build("Japan holdings", lambda: _cached_macro_figure(
         "japan_holdings", _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(figure, "japan_holdings")
@@ -3144,7 +3144,7 @@ def render_japan_corridor():
 @st.fragment(run_every=60, key="nvidia_cds_viewport")
 def render_nvidia_cds():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["nvidia_cds"]}. AI Credit · 公司CDS信用风险</div>'
-                '<div class="section-description">英伟达 NVIDIA · AMD · 谷歌 Alphabet · 微软 Microsoft · 甲骨文 Oracle · 5Y CDS（bp） / HY OAS · IG OAS（右轴1 · %）</div>', unsafe_allow_html=True)
+                '<div class="section-description">英伟达 NVIDIA · AMD · 谷歌 Alphabet · 微软 Microsoft · 甲骨文 Oracle · 5Y CDS（bp） / HY OAS · IG OAS（R1 · %）</div>', unsafe_allow_html=True)
     payload = _ai_credit.load_cds_snapshot()
     hy_oas = get_hy_oas()
     ig_oas = get_ig_oas()
@@ -3153,19 +3153,19 @@ def render_nvidia_cds():
     if not figure.data:
         st.info("暂未取得可绘制的CDS观测，请查看数据源更新状态。")
     if hy_oas.empty:
-        st.caption("HY OAS（右轴1）暂未取得 FRED 观测，稍后自动重试。")
+        st.caption("HY OAS（R1）暂未取得 FRED 观测，稍后自动重试。")
     else:
         latest_oas = hy_oas.iloc[-1]
         status = " · 最近一次成功获取的观测" if hy_oas.attrs.get("is_stale") else ""
-        st.caption(f"HY OAS（右轴1）{latest_oas.oas_pct:.2f}% · "
+        st.caption(f"HY OAS（R1）{latest_oas.oas_pct:.2f}% · "
                    f"实际观测日 {latest_oas.observation_date:%Y-%m-%d}{status}")
     summary = _ai_credit.cds_summary(payload)
     if ig_oas.empty:
-        st.caption("IG OAS（右轴1）暂未取得 FRED 观测，稍后自动重试。")
+        st.caption("IG OAS（R1）暂未取得 FRED 观测，稍后自动重试。")
     else:
         latest_ig = ig_oas.iloc[-1]
         status = " · 最近一次成功获取的观测" if ig_oas.attrs.get("is_stale") else ""
-        st.caption(f"IG OAS（右轴1）{latest_ig.oas_pct:.2f}% · 实际观测日 {latest_ig.observation_date:%Y-%m-%d}{status}")
+        st.caption(f"IG OAS（R1）{latest_ig.oas_pct:.2f}% · 实际观测日 {latest_ig.observation_date:%Y-%m-%d}{status}")
     st.dataframe(summary, hide_index=True, width="stretch",
                  column_config={"最新CDS（bp）": st.column_config.NumberColumn(format="%.2f"),
                                 "源日历覆盖率（%）": st.column_config.NumberColumn(format="%.1f%%")})

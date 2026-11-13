@@ -17,8 +17,7 @@ VOLATILITY_PERCENT_NAMES = {"VIX", "VIXEQ", "VIX3M", "Gold Volatility · GVZ"}
 
 def readable_display_text(text):
     """Translate display text only; never use this on series identities."""
-    text = re.sub(r"\bR(\d+)\b", r"右轴\1", str(text))
-    text = text.replace("右轴右轴", "右轴")
+    text = str(text)
     for raw, label in sorted(DISPLAY_UNITS.items(), key=lambda item: -len(item[0])):
         # Keep ticker/currency pairs and words intact; units occupy complete
         # dot/newline/parenthesis-delimited fields in axis titles.
@@ -46,8 +45,8 @@ def readable_chart_option(option):
             names = [re.sub(r"\s*\(R\d+\)$", "", s["name"]).strip()
                      for s in result.get("series", []) if s.get("yAxisIndex", 0) == index]
             if names and all(name in VOLATILITY_PERCENT_NAMES for name in names):
-                marker = re.search(r"右轴\d+", axis["name"])
-                side = marker.group() if marker else ("左轴" if index == 0 else f"右轴{index}")
+                marker = re.search(r"\bR\d+\b", axis["name"])
+                side = marker.group() if marker else ("左轴" if index == 0 else f"R{index}")
                 axis["name"] = side + ("\n年化%" if "\n" in axis["name"] else " · 年化波动率（%）")
     return result
 
@@ -133,7 +132,7 @@ def compact_parameter_labels(option):
         axes = option.get("yAxis", [])
         title = axes[index].get("name", "") if index < len(axes) else ""
         marker = re.search(r"\bR\d+\b", title)
-        axis = readable_display_text(marker.group()) if marker else ("左轴" if index == 0 else f"右轴{index}")
+        axis = readable_display_text(marker.group()) if marker else ("左轴" if index == 0 else f"R{index}")
         # Bind to the rendered axis, not a guessed name suffix. All display
         # labels keep stable internal series keys for legend state and data.
         label = re.sub(r"\s*\(R\d+\)$|（R\d+）$", "", labels[name])
