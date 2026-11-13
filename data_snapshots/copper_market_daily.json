@@ -12,24 +12,24 @@
   },
   "updated_at": "2026-11-13T05:58:20.524656+00:00",
   "coverage_start": "2021-11-15",
-  "coverage_end": "2026-11-13",
+  "coverage_end": "2026-11-12",
   "counts": {
-    "comex_price": 1258,
+    "comex_price": 1257,
     "comex_stock": 1292,
     "lme_price": 1262,
     "lme_stock": 1295,
-    "wti": 1257,
+    "wti": 1256,
     "vvix": 1254
   },
   "latest_by_field": {
-    "comex_price_usd_lb": "2026-11-13",
+    "comex_price_usd_lb": "2026-11-12",
     "comex_stock_t": "2026-11-11",
     "lme_cash_usd_t": "2026-11-12",
     "lme_3m_usd_t": "2026-11-12",
     "lme_stock_t": "2026-11-12",
     "cochilco_lme_stock_t": "2026-10-30",
     "comex_stock_short_tons": "2026-11-11",
-    "wti_usd_bbl": "2026-11-13",
+    "wti_usd_bbl": "2026-11-12",
     "vvix": "2026-11-12"
   },
   "units": {
@@ -16902,19 +16902,6 @@
       "comex_stock_short_tons": null,
       "wti_usd_bbl": 88.73999786376953,
       "vvix": 96.71
-    },
-    {
-      "date": "2026-11-13",
-      "comex_price_usd_lb": 6.1620001792907715,
-      "comex_stock_t": null,
-      "lme_cash_usd_t": null,
-      "lme_3m_usd_t": null,
-      "lme_stock_t": null,
-      "cochilco_lme_stock_t": null,
-      "comex_stock_source": null,
-      "comex_stock_short_tons": null,
-      "wti_usd_bbl": 88.2699966430664,
-      "vvix": null
     }
   ]
 }

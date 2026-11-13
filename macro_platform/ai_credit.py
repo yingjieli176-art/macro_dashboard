@@ -18,7 +18,7 @@ METHOD_URL = "https://irates.today/capex.html#method"
 ATTRIBUTION = "Open-Sourced Rates Observatory, irates.today"
 HY_OAS_NAME = "HY OAS (R1)"
 HY_OAS_URL = "https://fred.stlouisfed.org/series/BAMLH0A0HYM2"
-IG_OAS_NAME = "IG OAS (R1)"
+IG_OAS_NAME = "IG OAS (R2)"
 IG_OAS_URL = "https://fred.stlouisfed.org/series/BAMLC0A0CM"
 SERIES = {
     "sn_nvidia": ("NVIDIA 5Y", "#16a34a"),
@@ -152,9 +152,10 @@ def build_cds_figure(date_range="5Y", payload=None, *, hy_oas=None, ig_oas=None)
             line=dict(color=color, width=2.1, dash="solid"),
             marker=dict(size=3.5), connectgaps=False,
             hovertemplate=label + ": %{y:.2f} bp<extra></extra>"))
-    for oas, name, color, label in (
-        (hy_oas, HY_OAS_NAME, "#be123c", "HY OAS"),
-        (ig_oas, IG_OAS_NAME, "#0369a1", "IG OAS"),
+    oas_axes = []
+    for oas, name, color, label, axis in (
+        (hy_oas, HY_OAS_NAME, "#be123c", "HY OAS", 1),
+        (ig_oas, IG_OAS_NAME, "#0369a1", "IG OAS", 2),
     ):
         if oas is None:
             continue
@@ -165,11 +166,15 @@ def build_cds_figure(date_range="5Y", payload=None, *, hy_oas=None, ig_oas=None)
             view = oas.loc[oas.observation_date.ge(start)]
             fig.add_trace(go.Scatter(
                 x=view.observation_date, y=view.oas_pct, mode="lines", name=name,
-                yaxis="y2", line=dict(color=color, width=2.4, dash="dash"),
+                yaxis=f"y{axis+1}", line=dict(color=color, width=2.4, dash="dash"),
                 connectgaps=False, hovertemplate=label + ": %{y:.2f}%<extra></extra>",
             ))
-            fig.update_layout(yaxis2=dict(title="Credit OAS · %", overlaying="y", side="right", showgrid=False))
+            oas_axes.append(f"y{axis+1}")
+            fig.update_layout(**{f"yaxis{axis+1}": dict(title=f"R{axis} · %", overlaying="y",
+                side="right", anchor="free", position=.88 if axis == 1 else 1, showgrid=False)})
+            fig.update_layout(xaxis_domain=[0, .8], margin_r=140)
     fig.update_layout(height=460, yaxis_title="CDS spread · bp", hovermode="x unified",
         paper_bgcolor="white", plot_bgcolor="white", meta={"missing_series": missing,
-        "source_asof": asof, "attribution": ATTRIBUTION, "show_observation_markers": True})
+        "source_asof": asof, "attribution": ATTRIBUTION, "show_observation_markers": True,
+        "preserve_axis_titles": oas_axes})
     return apply_time_axis(fig, date_range) if fig.data else fig

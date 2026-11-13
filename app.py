@@ -3144,7 +3144,7 @@ def render_japan_corridor():
 @st.fragment(run_every=60, key="nvidia_cds_viewport")
 def render_nvidia_cds():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["nvidia_cds"]}. AI Credit · 公司CDS信用风险</div>'
-                '<div class="section-description">英伟达 NVIDIA · AMD · 谷歌 Alphabet · 微软 Microsoft · 甲骨文 Oracle · 5Y CDS（bp） / HY OAS · IG OAS（R1 · %）</div>', unsafe_allow_html=True)
+                '<div class="section-description">英伟达 NVIDIA · AMD · 谷歌 Alphabet · 微软 Microsoft · 甲骨文 Oracle · 5Y CDS（bp） / HY OAS（R1 · %） · IG OAS（R2 · %）</div>', unsafe_allow_html=True)
     payload = _ai_credit.load_cds_snapshot()
     hy_oas = get_hy_oas()
     ig_oas = get_ig_oas()
@@ -3161,11 +3161,11 @@ def render_nvidia_cds():
                    f"实际观测日 {latest_oas.observation_date:%Y-%m-%d}{status}")
     summary = _ai_credit.cds_summary(payload)
     if ig_oas.empty:
-        st.caption("IG OAS（R1）暂未取得 FRED 观测，稍后自动重试。")
+        st.caption("IG OAS（R2）暂未取得 FRED 观测，稍后自动重试。")
     else:
         latest_ig = ig_oas.iloc[-1]
         status = " · 最近一次成功获取的观测" if ig_oas.attrs.get("is_stale") else ""
-        st.caption(f"IG OAS（R1）{latest_ig.oas_pct:.2f}% · 实际观测日 {latest_ig.observation_date:%Y-%m-%d}{status}")
+        st.caption(f"IG OAS（R2）{latest_ig.oas_pct:.2f}% · 实际观测日 {latest_ig.observation_date:%Y-%m-%d}{status}")
     st.dataframe(summary, hide_index=True, width="stretch",
                  column_config={"最新CDS（bp）": st.column_config.NumberColumn(format="%.2f"),
                                 "源日历覆盖率（%）": st.column_config.NumberColumn(format="%.1f%%")})

@@ -23,7 +23,7 @@ def source():
 
 
 class AiCreditTests(unittest.TestCase):
-    def test_ig_and_hy_share_percent_axis_without_sharing_observation_dates(self):
+    def test_ig_and_hy_have_independent_percent_axes_and_observation_dates(self):
         hy = pd.DataFrame({'observation_date': pd.to_datetime(['2026-10-26', '2026-10-28']),
                            'oas_pct': [3.12, 3.48]})
         ig = pd.DataFrame({'observation_date': pd.to_datetime(['2026-10-27', '2026-10-29']),
@@ -33,16 +33,28 @@ class AiCreditTests(unittest.TestCase):
             for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
                 option = adapter(fig, window)
                 curves = {s['name']: s for s in option['series']}
-                self.assertEqual(curves[cds.IG_OAS_NAME]['yAxisIndex'], 1)
+                self.assertEqual(curves[cds.IG_OAS_NAME]['yAxisIndex'], 2)
                 self.assertEqual(curves[cds.HY_OAS_NAME]['yAxisIndex'], 1)
                 self.assertEqual([p[1] for p in curves[cds.IG_OAS_NAME]['data']], [.82, .91])
                 self.assertEqual([p[0][:10] for p in curves[cds.IG_OAS_NAME]['data']], ['2026-10-27', '2026-10-29'])
                 self.assertEqual([p[0][:10] for p in curves[cds.HY_OAS_NAME]['data']], ['2026-10-26', '2026-10-28'])
                 self.assertFalse(curves[cds.IG_OAS_NAME]['connectNulls'])
                 self.assertEqual(option['yAxis'][1]['name'], 'R1 · %')
+                self.assertEqual(option['yAxis'][2]['name'], 'R2 · %')
+                self.assertTrue(option['yAxis'][1]['scale'] and option['yAxis'][2]['scale'])
         missing = cds.build_cds_figure(payload=cds.parse_source(source()), hy_oas=hy, ig_oas=ig.iloc[:0])
         self.assertIn(cds.IG_OAS_NAME, missing.layout.meta['missing_series'])
         self.assertIn(cds.HY_OAS_NAME, [t.name for t in missing.data])
+
+    def test_ig_keeps_r2_label_when_hy_is_unavailable(self):
+        ig = pd.DataFrame({'observation_date': pd.to_datetime(['2026-10-27', '2026-10-28']),
+                           'oas_pct': [.82, .91]})
+        fig = cds.build_cds_figure(payload=cds.parse_source(source()), ig_oas=ig)
+        self.assertEqual(next(t for t in fig.data if t.name == cds.IG_OAS_NAME).yaxis, 'y3')
+        for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
+            option = adapter(fig, '1Y')
+            curve = next(s for s in option['series'] if s['name'] == cds.IG_OAS_NAME)
+            self.assertEqual(option['yAxis'][curve['yAxisIndex']]['name'], 'R2 · %')
 
     def test_ig_loader_requests_exact_fred_identity_and_does_not_persist(self):
         import data

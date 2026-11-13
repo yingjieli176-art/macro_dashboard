@@ -68,7 +68,7 @@ class DashboardBootSmoke(unittest.TestCase):
         parameter_rows = [element.value for element in instance.markdown
                           if element.value.startswith('<div class="chart-parameters">')]
         self.assertEqual(len(parameter_rows), 22)
-        for label in ("公司 5Y CDS", "实际观测与覆盖率", "HY OAS（R1）", "IG OAS（R1）"):
+        for label in ("公司 5Y CDS", "实际观测与覆盖率", "HY OAS（R1）", "IG OAS（R2）"):
             self.assertIn(label, parameter_rows[6])
         for unrelated in ("资本开支", "期限溢价与美联储", "韩国股市"):
             self.assertNotIn(unrelated, parameter_rows[6])

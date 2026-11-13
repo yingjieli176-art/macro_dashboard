@@ -18,10 +18,17 @@ from macro_platform.treasury_cash import parse_dts_tga_rows, read_verified_tga_s
 TGA_SNAPSHOT_PATH = Path(__file__).resolve().parent / 'data_snapshots' / 'treasury_tga_daily.json'
 
 FRED_API_URL = "https://api.stlouisfed.org/fred/series/observations"
-try:
-    FRED_API_KEY = st.secrets.get("FRED_API_KEY", "")
-except Exception:
-    FRED_API_KEY = ""
+def _fred_api_key():
+    key = os.environ.get("FRED_API_KEY", "").strip()
+    if key:
+        return key
+    try:
+        return st.secrets.get("FRED_API_KEY", "")
+    except Exception:
+        return ""
+
+
+FRED_API_KEY = _fred_api_key()
 EASTMONEY_FOCUS_API = "https://np-weblist.eastmoney.com/comm/web/getFastNewsList"
 EASTMONEY_NEWS_URL = "https://kuaixun.eastmoney.com/"
 NEWS_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36", "Referer": EASTMONEY_NEWS_URL, "Accept": "application/json, text/plain, */*"}
