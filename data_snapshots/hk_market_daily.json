@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-13T09:49:52.949662+00:00",
+  "updated_at": "2026-11-13T14:54:20.527040+00:00",
   "retention": "rolling 5 years plus one month buffer",
   "policy": "merge fresh observations into last-known-good history; never erase a usable series on fetch failure",
   "coverage_start": "2021-10-15",
@@ -14,7 +14,7 @@
       "record_count": 1250,
       "coverage_start": "2021-10-15",
       "coverage_end": "2026-11-13",
-      "last_successful_fetch": "2026-11-13T09:49:52.949662+00:00",
+      "last_successful_fetch": "2026-11-13T14:54:20.527040+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -5028,7 +5028,7 @@
       "record_count": 1250,
       "coverage_start": "2021-10-15",
       "coverage_end": "2026-11-13",
-      "last_successful_fetch": "2026-11-13T09:49:52.949662+00:00",
+      "last_successful_fetch": "2026-11-13T14:54:20.527040+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -10042,7 +10042,7 @@
       "record_count": 1250,
       "coverage_start": "2021-10-15",
       "coverage_end": "2026-11-13",
-      "last_successful_fetch": "2026-11-13T09:49:52.949662+00:00",
+      "last_successful_fetch": "2026-11-13T14:54:20.527040+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -15053,10 +15053,10 @@
       "unit": "points",
       "source": "Sina Finance via AKShare",
       "price_basis": "raw_close",
-      "record_count": 1249,
+      "record_count": 1250,
       "coverage_start": "2021-10-15",
-      "coverage_end": "2026-11-12",
-      "last_successful_fetch": "2026-11-13T09:49:52.949662+00:00",
+      "coverage_end": "2026-11-13",
+      "last_successful_fetch": "2026-11-13T14:54:20.527040+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -20055,6 +20055,10 @@
         {
           "observation_date": "2026-11-12",
           "close": 3931.92993
+        },
+        {
+          "observation_date": "2026-11-13",
+          "close": 3813.18994
         }
       ]
     }
