@@ -23,6 +23,57 @@ def source():
 
 
 class AiCreditTests(unittest.TestCase):
+    def test_ig_and_hy_share_percent_axis_without_sharing_observation_dates(self):
+        hy = pd.DataFrame({'observation_date': pd.to_datetime(['2026-10-26', '2026-10-28']),
+                           'oas_pct': [3.12, 3.48]})
+        ig = pd.DataFrame({'observation_date': pd.to_datetime(['2026-10-27', '2026-10-29']),
+                           'oas_pct': [.82, .91]})
+        for window in ('5Y', '1Y', '6M', '3M', '1M'):
+            fig = cds.build_cds_figure(window, cds.parse_source(source()), hy_oas=hy, ig_oas=ig)
+            for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
+                option = adapter(fig, window)
+                curves = {s['name']: s for s in option['series']}
+                self.assertEqual(curves[cds.IG_OAS_NAME]['yAxisIndex'], 1)
+                self.assertEqual(curves[cds.HY_OAS_NAME]['yAxisIndex'], 1)
+                self.assertEqual([p[1] for p in curves[cds.IG_OAS_NAME]['data']], [.82, .91])
+                self.assertEqual([p[0][:10] for p in curves[cds.IG_OAS_NAME]['data']], ['2026-10-27', '2026-10-29'])
+                self.assertEqual([p[0][:10] for p in curves[cds.HY_OAS_NAME]['data']], ['2026-10-26', '2026-10-28'])
+                self.assertFalse(curves[cds.IG_OAS_NAME]['connectNulls'])
+                self.assertEqual(option['yAxis'][1]['name'], 'R1 · %')
+        missing = cds.build_cds_figure(payload=cds.parse_source(source()), hy_oas=hy, ig_oas=ig.iloc[:0])
+        self.assertIn(cds.IG_OAS_NAME, missing.layout.meta['missing_series'])
+        self.assertIn(cds.HY_OAS_NAME, [t.name for t in missing.data])
+
+    def test_ig_loader_requests_exact_fred_identity_and_does_not_persist(self):
+        import data
+        response = requests.Response()
+        response.status_code = 200
+        response._content = b'observation_date,BAMLC0A0CM\n2026-10-26,0.82\n2026-10-27,.\n2026-10-28,0.91\n'
+        with patch.object(data, 'http_get', return_value=response) as fetch, \
+             patch.object(data, '_save_fred_success') as save:
+            result = data.get_ig_oas.__wrapped__()
+        self.assertEqual(fetch.call_args.kwargs['params'], {'id': 'BAMLC0A0CM'})
+        self.assertEqual(result.oas_pct.tolist(), [.82, .91])
+        self.assertEqual(result.observation_date.dt.strftime('%Y-%m-%d').tolist(), ['2026-10-26', '2026-10-28'])
+        save.assert_not_called()
+        with patch.object(data, 'http_get', side_effect=requests.Timeout):
+            self.assertTrue(data.get_ig_oas.__wrapped__().empty)
+        response._content = response.content.replace(b'BAMLC0A0CM', b'BAMLH0A0HYM2')
+        with patch.object(data, 'http_get', return_value=response), patch.object(data, 'FRED_API_KEY', ''):
+            self.assertTrue(data.get_ig_oas.__wrapped__().empty)
+
+    def test_ig_probe_retains_live_only_status_without_committing_feed_history(self):
+        import data
+        from scripts import probe_all_sources as probe
+        job = next(j for j in probe.jobs() if j[0] == 'BAMLC0A0CM')
+        frame = pd.DataFrame({'observation_date': pd.to_datetime(['2026-10-28']), 'oas_pct': [.91]})
+        with patch.object(data, '_get_credit_oas', return_value=frame):
+            row = probe.check(job)
+        self.assertEqual(row['source_latest'], '2026-10-28')
+        self.assertEqual(row['status'], 'live_only')
+        self.assertEqual(row['source_url'], cds.IG_OAS_URL)
+        self.assertEqual(row['charts'], [7])
+
     def test_selected_five_exclude_retired_names_equity_prices_and_one_year(self):
         raw = source()
         raw["series"]["eq_px_nebius"] = [150., 160., 170.]

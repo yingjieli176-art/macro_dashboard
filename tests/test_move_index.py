@@ -1,15 +1,38 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import unittest
+import pandas as pd
 
 from macro_platform.move_index import parse_yahoo, prepare_snapshot, SERIES_NAME
-from macro_platform.echarts_axes import build_adaptive_echarts_option
+from macro_platform.echarts_axes import build_adaptive_echarts_option, build_safe_echarts_option
 from app_test_helpers import builders, frame
 
 NOW = datetime(2026,11,12,15,tzinfo=timezone.utc)
 
 
 class MoveIndexTests(unittest.TestCase):
+    def test_move_vix_only_divides_same_date_positive_finite_legs(self):
+        ns = builders()
+        dates = ['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-09']
+        ns['get_fred_series'] = lambda key: frame(dates, key, [20, 0, 25, -1, float('inf'), 30])
+        ns['load_vixeq_snapshot'] = lambda: frame([], 'VIXEQ', [])
+        ns['_move_index'].load_move_snapshot = lambda: frame(
+            dates[:5] + ['2026-11-10'], 'MOVE', [100, 90, None, 80, 110, 120])
+        fig = ns['build_fig9']('1Y')
+        trace = next(t for t in fig.data if t.name == 'MOVE/VIX (R5)')
+        self.assertEqual(trace.yaxis, 'y6')
+        self.assertEqual(trace.y[0], 5)
+        self.assertTrue(all(pd.isna(v) for v in trace.y[1:]))
+        self.assertFalse(trace.connectgaps)
+        for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
+            option = adapter(fig, '1Y')
+            ratio = next(s for s in option['series'] if s['name'] == trace.name)
+            move = next(s for s in option['series'] if s['name'] == SERIES_NAME)
+            self.assertNotEqual(ratio['yAxisIndex'], move['yAxisIndex'])
+            self.assertFalse(ratio['connectNulls'])
+            self.assertEqual(ratio['data'][0][1], 5)
+            self.assertTrue(all(p[1] is None for p in ratio['data'][1:]))
+
     def payload(self):
         return {'chart':{'result':[{'meta':{'symbol':'^MOVE','instrumentType':'INDEX',
             'exchangeTimezoneName':'America/New_York'},

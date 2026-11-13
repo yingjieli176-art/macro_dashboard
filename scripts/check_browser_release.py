@@ -758,8 +758,29 @@ def main():
             # Offline acceptance has no verified HY OAS repository snapshot.
             # Missing data must be disclosed rather than synthesized.
             assert page.get_by_text('HY OAS（R1）暂未取得 FRED 观测，稍后自动重试。', exact=True).count() == 1
+            assert page.get_by_text('IG OAS（R1）暂未取得 FRED 观测，稍后自动重试。', exact=True).count() == 1
             report['ai_cds'] = cds_state
             report['ai_cds_zoom'] = exercise_client_zoom(page, cds_chart, minimum_axes=1)
+            risk_chart = page.locator('[class*=st-key-us_equity_risk_adaptive_default_1Y_schema_]').get_by_test_id(
+                re.compile(r"^(macro|st)EChartsChart$"))
+            risk_chart.wait_for(timeout=30000)
+            risk_ratio = risk_chart.evaluate("""element => {
+                const option = element.__macroChart.getOption();
+                const curves = Object.fromEntries(option.series.map(s => [s.name, s]));
+                const vix = new Map(curves['VIX'].data);
+                const move = new Map(curves['MOVE 债市波动率（R4）'].data);
+                const ratio = curves['MOVE/VIX (R5)'];
+                const valid = ratio.data.filter(p => Number.isFinite(p[1]));
+                return {axes:option.yAxis.length, axis:ratio.yAxisIndex,
+                    connect:ratio.connectNulls, count:valid.length,
+                    matched:valid.every(([day,value]) => vix.get(day)>0 && move.get(day)>0 &&
+                        // Chart adapters serialize each value to 8 decimals.
+                        Math.abs(value-move.get(day)/vix.get(day))<1e-8)};
+            }""")
+            assert risk_ratio['axes'] == 7 and risk_ratio['axis'] == 5, risk_ratio
+            assert risk_ratio['count'] > 100 and risk_ratio['matched'] and not risk_ratio['connect'], risk_ratio
+            report['move_vix'] = risk_ratio
+            report['move_vix_zoom'] = exercise_client_zoom(page, risk_chart, minimum_axes=6)
             page.screenshot(path='browser_ai_cds.png')
             # Use a real HK chart to exercise every server range with raw prices.
             for label in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):

@@ -38,7 +38,7 @@ SERIES = (
     "DGS3MO", "DGS2", "DGS10", "DGS30", "DFII5", "DFII10", "T10YIE",
     "SOFR", "IORB", "EFFR", "RRPONTSYAWARD", "SRFTSYD", "WALCL",
     "WRESBAL", "WTREGEN", "RRPONTSYD", "VIXCLS", "VXVCLS",
-    "SP500", "GVZCLS", "GFDEBTN", "FYGFDPUN",
+    "SP500", "VXNCLS", "GVZCLS", "GFDEBTN", "FYGFDPUN",
     "FDHBFRBN", "FDHBFIN", "FDHBPIN",
 ) + TIC_JAPAN_SERIES
 CRITICAL = ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR", "SRFTSYD")
@@ -88,7 +88,7 @@ def _fetch_api(session, series_id: str) -> pd.DataFrame:
 TREASURY_FIELDS = {"DGS3MO": "BC_3MONTH", "DGS2": "BC_2YEAR", "DGS10": "BC_10YEAR",
                    "DGS30": "BC_30YEAR",
                    "DFII5": "TC_5YEAR", "DFII10": "TC_10YEAR"}
-CBOE_FILES = {"VIXCLS": "VIX_History.csv", "VXVCLS": "VIX3M_History.csv", "GVZCLS": "GVZ_History.csv"}
+CBOE_FILES = {"VIXCLS": "VIX_History.csv", "VXVCLS": "VIX3M_History.csv", "GVZCLS": "GVZ_History.csv", "VXNCLS": "VXN_History.csv"}
 
 
 def _fetch_treasury(session, series_id):
@@ -238,7 +238,7 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
         response.raise_for_status()
         rows = pd.read_csv(StringIO(response.text))
         value_column = "CLOSE" if "CLOSE" in rows.columns else {
-            "GVZCLS": "GVZ", "VXVCLS": "VIX3M", "VIXCLS": "VIX"
+            "GVZCLS": "GVZ", "VXVCLS": "VIX3M", "VIXCLS": "VIX", "VXNCLS": "VXN"
         }.get(series_id)
         if "DATE" not in rows.columns or value_column not in rows.columns:
             raise ValueError("Cboe daily close schema changed")
@@ -246,7 +246,7 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
             f"{day},{value}" for day, value in zip(rows["DATE"], rows[value_column])
         )
         frame = _parse_source(text, series_id)
-        if series_id in ("VIXCLS", "VXVCLS"):
+        if series_id in ("VIXCLS", "VXVCLS", "VXNCLS"):
             now = datetime.now(timezone.utc)
             frame = frame.loc[frame.date.le(pd.Timestamp(completed_date(now))) & frame.value.gt(0)]
             records = [{"observation_date": day.strftime("%Y-%m-%d"), "close": float(value)}
