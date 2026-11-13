@@ -156,6 +156,14 @@ def assert_price_guides_follow_viewport(chart):
         const instance = (""" + INSTANCE_JS + """)(element), values = [];
         const option = instance.getOption();
         const graphics = (option.graphic || []).flatMap(group => group.elements || [group]);
+        function expectedRunningPath(raw) {
+            let high = 0;
+            return raw.map(([day,value]) => {
+                if (!Number.isFinite(value) || value <= 0) return [day,null,value];
+                high = Math.max(high,value);
+                return [day,(value/high-1)*100,value];
+            });
+        }
         instance.getModel().eachSeries(series => {
             if (series.id.startsWith('macro-peak-drawdown-')) return;
             const data = series.getData(), y = data.mapDimension('y');
@@ -177,9 +185,7 @@ def assert_price_guides_follow_viewport(chart):
                 ratio_text:footer?.style?.text, footer_bottom:footer?.bottom,
                 slider_bottom:option.dataZoom.find(zoom=>zoom.type==='slider').bottom,
                 path:option.series.find(item => item.id === `macro-peak-drawdown-${index}`)?.data,
-                expected_path:raw.filter(point => new Date(point[0]).getTime() >= Date.parse(best.date))
-                    .map(point => [point[0], Number.isFinite(point[1]) && point[1] > 0 ?
-                        (point[1]/best.value-1)*100 : null, point[1]]),
+                expected_path:expectedRunningPath(raw),
                 grids:option.grid.length, x_axes:option.xAxis.length,
                 overlay:option.series.find(item => item.id === `macro-peak-drawdown-${index}`),
                 percent_axis:option.yAxis.at(-1),
@@ -189,7 +195,8 @@ def assert_price_guides_follow_viewport(chart):
         });
         const difference = option.series.find(s=>s.id==='macro-peak-drawdown-difference');
         if (difference && values.length) {
-            const equal = new Map(option.series.find(s=>s.id==='macro-peak-drawdown-1').data);
+            const leftIndex = values.some(v=>v.name==='中证2000') ? 2 : 1;
+            const equal = new Map(option.series.find(s=>s.id===`macro-peak-drawdown-${leftIndex}`).data);
             const weighted = new Map(option.series.find(s=>s.id==='macro-peak-drawdown-0').data);
             values[0].difference = {
                 valid:difference.data.filter(p=>Number.isFinite(p[1])).length,
@@ -213,13 +220,13 @@ def assert_price_guides_follow_viewport(chart):
         assert abs(value['high'] - value['expected']['value']) < .00001, value
         assert value['expected']['date'] in value['label'], value
         assert abs(value['current'] - value['latest']) < .00001, value
-        percent = (value['high']-value['current'])/value['high']*100
-        label = '高于区间前高' if percent < 0 else '距区间前高回撤'
+        percent = -value['expected_path'][-1][1]
+        label = '距此前最高收盘回撤'
         assert f'{label} {abs(percent):.2f}%' in (value['ratio_text'] or ''), value
         assert value['footer_bottom'] < value['slider_bottom'], value
         assert value['path'] == value['expected_path'], value
         assert value['path'][0][1] == 0, value
-        assert observation_date(value['path'][0][0]) == value['expected']['date'], value
+        assert len(value['path']) == len(value['expected_path']), value
         assert abs(value['path'][-1][1] + percent) < .00001, value
         assert value['path'][-1][2] == value['latest'], value
     return values
