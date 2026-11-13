@@ -223,6 +223,25 @@ def yahoo(symbol):
                 best = (observed, url)
         except Exception as error:
             errors.append(f"{host}: {type(error).__name__}: {error}")
+            # Short-window/CDN transport may be throttled while the same
+            # verified history endpoint used by the collector remains live.
+            # This is a new source read, never a snapshot freshness assertion.
+            try:
+                response = requests.get(url, params={"range": "5y", "interval": "1d", "includePrePost": "false"},
+                    headers={"User-Agent": "Mozilla/5.0 MacroDashboard/1.0"}, timeout=(5, 25))
+                response.raise_for_status()
+                payload = response.json() or {}
+                nodes = ((payload.get("chart") or {}).get("result") or [])
+                if len(nodes) != 1 or (nodes[0].get("meta") or {}).get("symbol") != symbol:
+                    raise ValueError("Unexpected Yahoo history identity")
+                frame = parse_yahoo_yen(payload) if symbol == "JPY=X" else completed_daily_closes(nodes[0])
+                observed = latest(frame, "observation_date", "usd_jpy_close" if symbol == "JPY=X" else "close")
+                if observed is None:
+                    raise ValueError("No completed alternate-window observation")
+                if best is None or observed > best[0]:
+                    best = (observed, url)
+            except Exception as fallback_error:
+                errors.append(f"{host} history: {type(fallback_error).__name__}: {fallback_error}")
             if "429" in str(error):
                 time.sleep(1.0)
     if best is not None:
