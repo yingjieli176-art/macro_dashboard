@@ -16166,7 +16166,20 @@
         "RP 111026 25",
         "RP 111026 27"
       ]
+    },
+    {
+      "observation_date": "2026-11-12",
+      "accepted_usd": 1000000.0,
+      "treasury_usd": 1000000.0,
+      "agency_usd": 0.0,
+      "mbs_usd": 0.0,
+      "morning_accepted_usd": 1000000.0,
+      "afternoon_accepted_usd": 0.0,
+      "operation_ids": [
+        "RP 111226 25",
+        "RP 111226 27"
+      ]
     }
   ],
-  "retrieved_at": "2026-11-12T01:28:58.663951+00:00"
+  "retrieved_at": "2026-11-13T00:11:58.535585+00:00"
 }

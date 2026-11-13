@@ -14,7 +14,11 @@ class PeakDrawdownPathTests(unittest.TestCase):
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 const source = readFileSync(process.argv[1], 'utf8');
-const {peakDrawdown,dailyPriceTooltip} = await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const {peakDrawdown,dailyPriceTooltip,drawdownDifference} = await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+assert.deepEqual(drawdownDifference([['2026-10-01',-.30],['2026-10-02',-4],['2026-10-03',null]],
+  [['2026-10-01',-2.55],['2026-10-02',-1],['2026-10-04',-2]]).map(p=>p[1]),[2.25,-3,null,null]);
+assert.deepEqual(drawdownDifference([],[]),[]);
+assert.match(dailyPriceTooltip({seriesId:'macro-peak-drawdown-difference',value:['2026-10-01',2.25]},[]),/2.25个百分点/);
 const points = [['2026-10-01',999],['2026-10-02',100],['2026-10-05',120],
   ['2026-10-06',120],['2026-10-07',90],['2026-10-08',null],
   ['2026-10-09',110],['2026-10-12',130],['2026-10-13',117]];

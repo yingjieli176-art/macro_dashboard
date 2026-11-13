@@ -3,9 +3,29 @@ import re
 
 HINTS = {'IORB': '准备金利率', 'ON RRP': '隔夜逆回购利率', 'EFFR': '联邦基金实际利率', 'SOFR': '隔夜抵押融资利率', 'SRF': '常备回购利率', 'SRF 实际用量': '实际成交金额', '10年期名义收益率（DGS10）': '美国10年期普通国债收益率', '10年期实际收益率（TIPS · DFII10，右轴）': '美国10年期通胀保值国债实际收益率', '10年期盈亏平衡通胀率（BEI · T10YIE，右轴）': '10年期盈亏平衡通胀率', '10Y−2Y': '美国10年减2年国债利差', '30Y−10Y': '美国30年减10年国债利差', 'VIX': '30天预期波动', 'VIXEQ': '成分股预期波动', 'VIX3M': '3个月预期波动', 'VIXEQ/VIX': '个股与指数波动比', 'VIX/VIX3M': '近月与3个月波动比', 'COR3M': '3个月隐含相关性', 'SKEW': '尾部风险指数', 'VVIX': 'VIX自身预期波动', 'VVIX/VIX': '波动指数比', '9D/30D': '9天与30天波动比', 'SPX P/C': '看跌与看涨成交量比', 'S&P 500': '标普500', 'SPX（标普500市值加权）': '市值加权标普500', 'RSP（标普500等权ETF）': '标普500等权ETF', '比值：标普500 ÷ 日经225': '美日指数点位比', '分子：标普500（S&P 500）': '美国标普500', '分母：日经225（Nikkei 225）': '日本日经225', 'Nikkei 225': '日经225', 'US−Japan 10Y spread': '美日10年国债利差', 'USD/JPY': '美元兑日元', 'JPY 20-session appreciation': '日元20日升值幅度', 'CFTC JPY speculative net': '日元期货投机净仓', 'US 5Y Real · TIPS': '美国5年实际利率', '沪深300': 'A股大盘指数', '中证1000': 'A股小盘指数', '中证2000': 'A股小微盘指数', 'M2 YoY': '港元M2同比', 'M2 MoM': '港元M2环比', 'Monetary Base YoY': '香港货币基础同比', 'Tencent Price': '腾讯股价', 'HKEX Price': '港交所股价', 'HSTECH Index': '恒生科技指数', 'HSI Index': '恒生指数', 'Closing Aggregate Balance': '银行收市总结余', 'Outstanding EFBN': '未偿外汇基金票据债券', 'EFBN Held by Licensed Banks': '银行持有外汇基金票据债券', 'O/N HIBOR': '港元隔夜拆息', '3M HIBOR': '港元3个月拆息', 'HKMA Base Rate': '香港基本利率', 'O/N−3M Spread': '隔夜减3个月拆息', 'USD/HKD': '美元兑港元', 'Gold': '黄金期货', 'Silver': '白银期货', 'Gold/Silver Ratio': '金银比', 'Gold Volatility · GVZ': '黄金预期波动', 'COMEX 库存': '美国铜库存', 'LME 库存': '伦敦铜库存', 'LME 3M 铜价': '伦敦3个月铜价', 'COMEX HG 换算价': '美国铜价换算', 'COMEX−LME 3M 价差': '美国减伦敦铜价', 'WTI 原油': '美国原油期货', '铜油比': '铜价除以油价', 'TC 粗炼费 · 周度': '铜精矿粗炼费', 'RC 精炼费 · 按方法计算 · 周度': '精炼费，TC数值÷10', 'BTC · USD': '比特币', 'ETH · USD · R1': '以太币', 'ETH/BTC 强弱 · R2': '以太币与比特币价格比', 'BTC 30D 实际波动率 · R3': '比特币30日历史波动', 'Net Liquidity': '美元净流动性代理', 'Reserve Balances': '银行准备金余额', 'TGA': '美国财政账户余额'}
 
+HINTS.update({
+    "VIX": "标普500未来30天隐含波动率",
+    "VIX3M": "标普500未来3个月隐含波动率",
+    "VIXEQ": "标普500成分股篮子30天隐含波动率",
+    "VIX/VIX3M": "VIX÷VIX3M，30天相对3个月隐含波动率",
+    "VVIX": "VIX期权反映的VIX自身隐含波动率",
+    "VVIX/VIX": "VVIX÷VIX，波动率的波动相对VIX水平",
+    "9D/30D": "VIX9D÷VIX，标普500的9天相对30天隐含波动率",
+    "VIXEQ/VIX": "成分股篮子30天隐含波动率÷标普500指数VIX",
+    "MOVE/VIX": "债市MOVE指数÷股市VIX指数，同日指数点位比",
+    "HY OAS": "美国高收益公司债期权调整利差",
+    "IG OAS": "美国投资级公司债期权调整利差",
+    "SPX P/C 63D MA": "SPX与SPXW看跌÷看涨成交量比，63交易日均值",
+    "SKEW 5D MA": "标普500期权尾部风险指数，5交易日均值",
+    "COR3M": "标普500成分股3个月隐含相关性指数",
+    "ETH/BTC 强弱 · R2": "ETH价格÷BTC价格，相对强弱",
+    "BTC 30D 实际波动率 · R3": "比特币日收益率的30天年化历史波动率",
+})
+
+
 HINTS["VXN−VIX"] = "纳斯达克100 VXN减标普500 VIX，30天隐含波动率差（百分点，R6）"
 
-def short_parameter_label(name):
+def _short_parameter_label(name):
     name = str(name)
     key = re.sub(r"\s*\(R\d+\)$", "", name).strip()
     if name == "ON RRP (R2)":
@@ -19,13 +39,13 @@ def short_parameter_label(name):
         "10年期盈亏平衡通胀率（BEI · T10YIE，右轴）": "T10YIE（10年通胀补偿）",
         "分子：标普500（S&P 500）": "S&P 500（标普500）",
         "分母：日经225（Nikkei 225）": "Nikkei 225（日经225）",
-        "比值：标普500 ÷ 日经225": "SPX/Nikkei（美日点位比）",
+        "比值：标普500 ÷ 日经225": "SPX/Nikkei（标普500点位÷日经225点位）",
         "SPX（标普500市值加权）": "SPX（市值加权标普500）",
         "RSP（标普500等权ETF）": "RSP（标普500等权ETF）",
-        "SRF 实际用量": "SRF用量（实际成交金额）",
+        "SRF 实际用量": "SRF用量（美联储常备回购实际接受金额）",
         "BTC · USD": "BTC（比特币）", "ETH · USD · R1": "ETH（以太币）",
-        "ETH/BTC 强弱 · R2": "ETH/BTC（相对强弱）",
-        "BTC 30D 实际波动率 · R3": "BTC 30D（30日历史波动）",
+        "ETH/BTC 强弱 · R2": "ETH/BTC（以太币价格÷比特币价格）",
+        "BTC 30D 实际波动率 · R3": "BTC 30D（30天日收益率的年化历史波动率）",
     }
     if key in direct:
         return direct[key]
@@ -44,10 +64,32 @@ def short_parameter_label(name):
         return base + "（" + hint + "）"
     return name
 
+def short_parameter_label(name):
+    """Explanations must never discard an explicit source-axis marker."""
+    label = _short_parameter_label(name)
+    axes = re.findall(r"\bR\d+\b", str(name))
+    if axes and axes[-1] not in label:
+        label += "（" + axes[-1] + "）"
+    return label
+
+
 def compact_parameter_labels(option):
     names = [s["name"] for s in option.get("series", [])]
     names += ["SPX 回撤比例", "RSP 回撤比例", "沪深300 回撤比例", "中证1000 回撤比例", "中证2000 回撤比例"]
-    return {name: short_parameter_label(name) for name in names}
+    labels = {name: short_parameter_label(name) for name in names}
+    for series in option.get("series", []):
+        name = series["name"]
+        index = series.get("yAxisIndex", 0)
+        axes = option.get("yAxis", [])
+        title = axes[index].get("name", "") if index < len(axes) else ""
+        marker = re.search(r"\bR\d+\b", title)
+        axis = marker.group() if marker else ("左轴" if index == 0 else f"R{index}")
+        # Bind to the rendered axis, not a guessed name suffix. All display
+        # labels keep stable internal series keys for legend state and data.
+        label = re.sub(r"\s*\(R\d+\)$|（R\d+）$", "", labels[name])
+        unit = title.split(" · ")[-1] if " · " in title else ""
+        labels[name] = label + "〔" + axis + (" · " + unit if unit else "") + "〕"
+    return labels
 
 
 # Chart-specific definitions and calculation rules. Provider links are shown separately.
@@ -95,6 +137,7 @@ CHART_PARAMETER_GUIDES = {
         ("GEX 做市商伽马（R5）", "SqueezeMetrics发布的SPX美元伽马敞口÷10亿，单位为十亿美元；采用其每1点SPX变动口径。基于期权未平仓量与持仓方向假设估计，非实际成交资金。正值对应对冲抑制波动、负值对应对冲放大波动的模型机制，不代表涨跌预测。"),
     ),
     "us_equity_drawdown": (
+        ("等权回撤−加权回撤", "同日RSP负值回撤减SPX负值回撤，例如−0.30%−(−2.55%)=+2.25个百分点。两者各用所选区间的最高收盘作为基准，仅在两条回撤均有真实同日观测时计算；正值表示等权回撤较浅。随周期及缩放重算基准，与价格和回撤共用时间轴。"),
         ("SPX / RSP", "标普 500 市值加权指数（左轴，点）和标普 500 等权 ETF（右轴，美元）的日收盘。RSP 收盘价按拆股调整。"),
         ("区间高点 / 最新收盘", "点线标记所选区间的最高收盘价，虚线标记最新收盘价。"),
         ("回撤比例", "从所选区间的最高收盘日开始，按（当日收盘 ÷ 区间最高收盘 − 1）× 100% 计算。调整时间区间会重选高点。"),
