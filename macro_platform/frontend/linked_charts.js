@@ -16,8 +16,8 @@ export function barPixelWidth(points, lower, upper, plotWidth) {
   return Math.max(1, Math.min(16, plotWidth*gaps[Math.floor(gaps.length/2)]/(upper-lower)*0.65));
 }
 
-// One fixed peak inside the selection; only observations on/after it belong
-// to this path. The right selection handle never truncates the path to now.
+// Price guides use the selected window; drawdowns use only highs already
+// observed on each date across the supplied history, independently of zoom.
 export function peakDrawdown(points, lower, upper) {
   let peak = null, latest = -Infinity;
   for (const [day, value] of points) {
@@ -28,9 +28,24 @@ export function peakDrawdown(points, lower, upper) {
       peak = {day, time, value};
     }
   }
-  return {peak, data:peak ? points.filter(point => asTime(point[0]) >= peak.time && asTime(point[0]) <= latest)
-    .map(([day, value]) => [day, Number.isFinite(value) && value > 0 ?
-      (value / peak.value - 1) * 100 : null, value]) : []};
+  let runningHigh = 0;
+  const data = [...points].filter(point => Number.isFinite(asTime(point[0])) && asTime(point[0]) <= latest)
+    .sort((a,b) => asTime(a[0])-asTime(b[0])).map(([day,value]) => {
+      const valid = Number.isFinite(value) && value > 0;
+      if (valid) runningHigh = Math.max(runningHigh, value);
+      return [day, valid ? (value/runningHigh-1)*100 : null, value];
+    });
+  return {peak, data};
+}
+
+export function drawdownComparison(names) {
+  if (names.includes('RSP') && names.includes('SPX')) return {
+    left:names.indexOf('RSP'), right:names.indexOf('SPX'), name:'等权−加权 回撤比例',
+    label:'等权回撤−加权回撤（RSP−SPX）'};
+  if (names.includes('中证2000') && names.includes('沪深300')) return {
+    left:names.indexOf('中证2000'), right:names.indexOf('沪深300'), name:'中证2000−沪深300 回撤比例',
+    label:'中证2000回撤−沪深300回撤'};
+  return null;
 }
 
 export function drawdownDifference(equal, weighted) {
@@ -49,7 +64,7 @@ export function dailyPriceTooltip(params, labels) {
   return [day, ...rows.map(row => {
     if (row.seriesId === 'macro-peak-drawdown-difference') {
       const value = row.value[1];
-      return `等权回撤−加权回撤（RSP−SPX）：${Number.isFinite(value) ? value.toFixed(2)+'个百分点' : '暂无同日观测'}`;
+      return `${drawdownComparison(labels)?.label || '回撤差值'}：${Number.isFinite(value) ? value.toFixed(2)+'个百分点' : '暂无同日观测'}`;
     }
     const ratio = row.seriesId.startsWith('macro-peak-drawdown-');
     const index = Number(row.seriesId.split('-').at(-1));
@@ -177,9 +192,9 @@ export default function({data, parentElement}) {
   const shortNames = hasPriceGuides ? base.series.map(series => series.markLine.data.find(line =>
     / · 最高收盘$/.test(line.name)).label.formatter.split(' 高 ')[0]) : [];
   const ratioNames = shortNames.map(name => `${name} 回撤比例`);
-  const equalIndex = shortNames.indexOf('RSP'), weightedIndex = shortNames.indexOf('SPX');
-  const hasDifference = equalIndex >= 0 && weightedIndex >= 0;
-  const differenceName = '等权−加权 回撤比例';
+  const comparison = drawdownComparison(shortNames);
+  const hasDifference = !!comparison;
+  const differenceName = comparison?.name;
   const ratioColors = ['#9333ea', '#db2777', '#0891b2'];
   const footerSpace = hasPriceGuides ? data.price_footer_height || 0 : 0;
   let drawdowns = [];
@@ -228,8 +243,8 @@ export default function({data, parentElement}) {
   function withDrawdownOverlay(option) {
     if (!hasPriceGuides) return option;
     const axisIndex = option.yAxis.length;
-    const difference = hasDifference ? drawdownDifference(drawdowns[equalIndex].data, drawdowns[weightedIndex].data) : [];
-    const active = drawdowns.some((path, index) => selected[ratioNames[index]] !== false && path.peak) ||
+    const difference = hasDifference ? drawdownDifference(drawdowns[comparison.left].data, drawdowns[comparison.right].data) : [];
+    const active = drawdowns.some((path, index) => selected[ratioNames[index]] !== false && path.data.some(p=>Number.isFinite(p[1]))) ||
       (hasDifference && selected[differenceName] !== false && difference.some(p=>Number.isFinite(p[1])));
     const mobile = element.clientWidth <= 700;
     const spacing = mobile ? (element.clientWidth <= 360 ? 40 : element.clientWidth <= 480 ? 44 : 48) : 58;
@@ -255,14 +270,14 @@ export default function({data, parentElement}) {
         lineStyle:{color:'#94a3b8', type:'dashed', width:1}, data:[{yAxis:0}]}
     }))];
     const names = [...base.series.map(series => series.name), ...ratioNames];
-    for (const name of ratioNames) labels[name] = `${name}（相对区间最高收盘）〔回撤轴 · %〕`;
+    for (const name of ratioNames) labels[name] = `${name}（相对当时此前最高收盘）〔回撤轴 · %〕`;
     if (hasDifference) {
       option.series.push({id:'macro-peak-drawdown-difference', name:differenceName, type:'line',
         xAxisIndex:0, yAxisIndex:axisIndex, data:difference, connectNulls:false,
         showSymbol:false, animation:false, z:5,
         lineStyle:{color:'#0f766e',width:2.6,type:'solid'}, itemStyle:{color:'#0f766e'}});
       names.push(differenceName);
-      labels[differenceName] = '等权回撤−加权回撤（RSP−SPX，百分点）〔回撤轴 · %〕';
+      labels[differenceName] = `${comparison.label}（百分点）〔回撤轴 · %〕`;
     }
     option.legend.data = names;
     option.tooltip = {...option.tooltip, trigger:'axis', formatter:params => dailyPriceTooltip(params, shortNames)};
@@ -280,12 +295,10 @@ export default function({data, parentElement}) {
       const short = high.label.formatter.split(' 高 ')[0];
       let text = '';
       if (selected[series.name] !== false || selected[ratioNames[index]] !== false) {
-        if (high.label.show === false || !Number.isFinite(high.yAxis) || high.yAxis <= 0 ||
-            !Number.isFinite(current?.yAxis)) text = `${short} · 所选区间暂无有效观测`;
+        const latest = drawdowns[index]?.data.filter(p=>Number.isFinite(p[1])).at(-1);
+        if (!latest) text = `${short} · 暂无有效观测`;
         else {
-          const percent = (high.yAxis-current.yAxis)/high.yAxis*100;
-          const label = percent < 0 ? '高于区间前高' : '距区间前高回撤';
-          text = `${short} · ${label} ${Math.abs(percent).toFixed(2)}%`;
+          text = `${short} · 距此前最高收盘回撤 ${Math.abs(latest[1]).toFixed(2)}%`;
         }
       }
       return {id:`macro-price-ratio-${index}`, type:'text', left:12,
