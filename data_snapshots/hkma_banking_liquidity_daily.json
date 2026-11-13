@@ -9,7 +9,7 @@
     "https://www.hkab.org.hk/en/home"
   ],
   "transport_fallback": "r.jina.ai relay when direct api.hkma.gov.hk access is unavailable from CI",
-  "updated_at": "2026-11-13T12:22:58.555774+00:00",
+  "updated_at": "2026-11-13T19:55:07.207638+00:00",
   "source_errors": [],
   "coverage_start": "2025-05-12",
   "coverage_end": "2026-11-13",
