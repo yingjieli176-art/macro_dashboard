@@ -18,7 +18,7 @@ const {peakDrawdown,dailyPriceTooltip,drawdownDifference,drawdownComparison} = a
 assert.deepEqual(drawdownDifference([['2026-10-01',-.30],['2026-10-02',-4],['2026-10-03',null]],
   [['2026-10-01',-2.55],['2026-10-02',-1],['2026-10-04',-2]]).map(p=>p[1]),[2.25,-3,null,null]);
 assert.deepEqual(drawdownDifference([],[]),[]);
-assert.match(dailyPriceTooltip({seriesId:'macro-peak-drawdown-difference',value:['2026-10-01',2.25]},[]),/2.25个百分点/);
+assert.match(dailyPriceTooltip({seriesId:'macro-peak-drawdown-difference',value:['2026-10-01',2.25]},[]),/2.25%/);
 const points = [['2026-10-01',80],['2026-10-02',100],['2026-10-05',120],
   ['2026-10-06',120],['2026-10-07',90],['2026-10-08',null],
   ['2026-10-09',110],['2026-10-12',130],['2026-10-13',117]];
@@ -46,7 +46,7 @@ const chinaDifference=drawdownDifference(chinaSmall.data,chinaLarge.data);
 chinaDifference.forEach((point,index)=>assert.ok(Math.abs(point[1]-[0,-10,0,-10][index])<1e-8));
 const gaps=peakDrawdown([['2026-10-01',null],['2026-10-02',100],['2026-10-05',NaN],['2026-10-06',90]],0,Infinity);
 assert.deepEqual(gaps.data.map(p=>p[1]===null ? null : Number(p[1].toFixed(8))),[null,0,null,-10]);
-assert.match(dailyPriceTooltip({seriesId:'macro-peak-drawdown-difference',value:['2026-10-01',-5]},['沪深300','中证1000','中证2000']),/中证2000回撤−沪深300回撤：-5.00个百分点/);
+assert.match(dailyPriceTooltip({seriesId:'macro-peak-drawdown-difference',value:['2026-10-01',-5]},['沪深300','中证1000','中证2000']),/中证2000回撤−沪深300回撤：-5.00%/);
 const single = peakDrawdown(points,Date.parse('2026-10-13'),Date.parse('2026-10-13'));
 assert.deepEqual(single.data,path.data);
 const trailing = peakDrawdown([...points,['2026-10-14',null]],Date.parse('2026-10-12'),Date.parse('2026-10-13'));

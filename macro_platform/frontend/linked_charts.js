@@ -64,7 +64,7 @@ export function dailyPriceTooltip(params, labels) {
   return [day, ...rows.map(row => {
     if (row.seriesId === 'macro-peak-drawdown-difference') {
       const value = row.value[1];
-      return `${drawdownComparison(labels)?.label || '回撤差值'}：${Number.isFinite(value) ? value.toFixed(2)+'个百分点' : '暂无同日观测'}`;
+      return `${drawdownComparison(labels)?.label || '回撤差值'}：${Number.isFinite(value) ? value.toFixed(2)+'%' : '暂无同日观测'}`;
     }
     const ratio = row.seriesId.startsWith('macro-peak-drawdown-');
     const index = Number(row.seriesId.split('-').at(-1));
@@ -277,7 +277,7 @@ export default function({data, parentElement}) {
         showSymbol:false, animation:false, z:5,
         lineStyle:{color:'#0f766e',width:2.6,type:'solid'}, itemStyle:{color:'#0f766e'}});
       names.push(differenceName);
-      labels[differenceName] = `${comparison.label}（百分点）〔回撤轴 · %〕`;
+      labels[differenceName] = `${comparison.label}（%）〔回撤轴 · %〕`;
     }
     option.legend.data = names;
     option.tooltip = {...option.tooltip, trigger:'axis', formatter:params => dailyPriceTooltip(params, shortNames)};

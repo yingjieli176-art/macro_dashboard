@@ -796,9 +796,9 @@ def main():
             assert risk_ratio['axes'] == 7 and risk_ratio['axis'] == 5, risk_ratio
             assert risk_ratio['count'] > 100 and risk_ratio['matched'] and not risk_ratio['connect'], risk_ratio
             assert '年化波动率（%）' in risk_ratio['vix_label'], risk_ratio
-            assert 'R5·倍数' in risk_ratio['ratio_label'], risk_ratio
-            assert 'R1' in risk_ratio['axis_names'][1] and '指数点' in risk_ratio['axis_names'][1], risk_ratio
-            assert '百分点' in risk_ratio['axis_names'][6], risk_ratio
+            assert 'R5·×' in risk_ratio['ratio_label'], risk_ratio
+            assert 'R1' in risk_ratio['axis_names'][1] and 'pts' in risk_ratio['axis_names'][1], risk_ratio
+            assert '%' in risk_ratio['axis_names'][6], risk_ratio
             report['move_vix'] = risk_ratio
             report['move_vix_zoom'] = exercise_client_zoom(page, risk_chart, minimum_axes=6)
             page.screenshot(path='browser_ai_cds.png')

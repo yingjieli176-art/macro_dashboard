@@ -2695,7 +2695,7 @@ def _render_china_drawdown():
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[9]}. US Equity Risk & Volatility Structure</div>'
-        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3) · MOVE 债市波动率 (R4) · MOVE/VIX (R5) · VXN−VIX（R6 · 波动率差，百分点）</div>',
+        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3) · MOVE 债市波动率 (R4) · MOVE/VIX (R5) · VXN−VIX（R6 · 波动率差，%）</div>',
         unsafe_allow_html=True,
     )
     render_latest_vix_quote()
