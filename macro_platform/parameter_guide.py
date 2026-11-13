@@ -1,5 +1,55 @@
 """Short parenthetical display labels, without changing series identities or data."""
 import re
+from copy import deepcopy
+
+
+DISPLAY_UNITS = {
+    "pts": "指数点", "pp": "百分点", "bp": "基点", "bps": "基点",
+    "×": "倍数", "x": "倍数", "%": "百分比（%）", "value": "数值",
+    "USD": "美元", "HKD": "港元", "USD bn": "十亿美元", "USD tn": "万亿美元",
+    "HK$ bn": "十亿港元", "USD/t": "美元/公吨", "$/t": "美元/公吨",
+    "USD/dmt": "美元/干吨", "$/dmt": "美元/干吨", "US cents/lb": "美分/磅", "¢/lb": "美分/磅",
+    "USD/oz": "美元/金衡盎司", "USD/bbl": "美元/桶", "$/bbl": "美元/桶",
+    "bbl/t": "桶/公吨", "kt": "千公吨", "USD/JPY": "日元/美元", "USD/HKD": "港元/美元",
+}
+VOLATILITY_PERCENT_NAMES = {"VIX", "VIXEQ", "VIX3M", "Gold Volatility · GVZ"}
+
+
+def readable_display_text(text):
+    """Translate display text only; never use this on series identities."""
+    text = re.sub(r"\bR(\d+)\b", r"右轴\1", str(text))
+    text = text.replace("右轴右轴", "右轴")
+    for raw, label in sorted(DISPLAY_UNITS.items(), key=lambda item: -len(item[0])):
+        # Keep ticker/currency pairs and words intact; units occupy complete
+        # dot/newline/parenthesis-delimited fields in axis titles.
+        if raw in ("USD/JPY", "USD/HKD", "%"):
+            continue
+        text = re.sub(r"(?<![\w/])" + re.escape(raw) + r"(?![\w/])", lambda _: label, text)
+    text = re.sub(r"\b(?:L|Left)\b", "左轴", text)
+    return text
+
+
+def _series_display_unit(name, title):
+    key = re.sub(r"\s*\(R\d+\)$", "", str(name)).strip()
+    if key in VOLATILITY_PERCENT_NAMES:
+        return "年化波动率（%）"
+    unit = title.split(" · ")[-1].strip() if " · " in title else ""
+    return DISPLAY_UNITS.get(unit, readable_display_text(unit))
+
+
+def readable_chart_option(option):
+    """Isolated presentation copy: data, keys, scales and zoom stay untouched."""
+    result = deepcopy(option)
+    for layout in [result, *[item.get("option", {}) for item in result.get("media", [])]]:
+        for index, axis in enumerate(layout.get("yAxis", [])):
+            axis["name"] = readable_display_text(axis.get("name", ""))
+            names = [re.sub(r"\s*\(R\d+\)$", "", s["name"]).strip()
+                     for s in result.get("series", []) if s.get("yAxisIndex", 0) == index]
+            if names and all(name in VOLATILITY_PERCENT_NAMES for name in names):
+                marker = re.search(r"右轴\d+", axis["name"])
+                side = marker.group() if marker else ("左轴" if index == 0 else f"右轴{index}")
+                axis["name"] = side + ("\n年化%" if "\n" in axis["name"] else " · 年化波动率（%）")
+    return result
 
 HINTS = {'IORB': '准备金利率', 'ON RRP': '隔夜逆回购利率', 'EFFR': '联邦基金实际利率', 'SOFR': '隔夜抵押融资利率', 'SRF': '常备回购利率', 'SRF 实际用量': '实际成交金额', '10年期名义收益率（DGS10）': '美国10年期普通国债收益率', '10年期实际收益率（TIPS · DFII10，右轴）': '美国10年期通胀保值国债实际收益率', '10年期盈亏平衡通胀率（BEI · T10YIE，右轴）': '10年期盈亏平衡通胀率', '10Y−2Y': '美国10年减2年国债利差', '30Y−10Y': '美国30年减10年国债利差', 'VIX': '30天预期波动', 'VIXEQ': '成分股预期波动', 'VIX3M': '3个月预期波动', 'VIXEQ/VIX': '个股与指数波动比', 'VIX/VIX3M': '近月与3个月波动比', 'COR3M': '3个月隐含相关性', 'SKEW': '尾部风险指数', 'VVIX': 'VIX自身预期波动', 'VVIX/VIX': '波动指数比', '9D/30D': '9天与30天波动比', 'SPX P/C': '看跌与看涨成交量比', 'S&P 500': '标普500', 'SPX（标普500市值加权）': '市值加权标普500', 'RSP（标普500等权ETF）': '标普500等权ETF', '比值：标普500 ÷ 日经225': '美日指数点位比', '分子：标普500（S&P 500）': '美国标普500', '分母：日经225（Nikkei 225）': '日本日经225', 'Nikkei 225': '日经225', 'US−Japan 10Y spread': '美日10年国债利差', 'USD/JPY': '美元兑日元', 'JPY 20-session appreciation': '日元20日升值幅度', 'CFTC JPY speculative net': '日元期货投机净仓', 'US 5Y Real · TIPS': '美国5年实际利率', '沪深300': 'A股大盘指数', '中证1000': 'A股小盘指数', '中证2000': 'A股小微盘指数', 'M2 YoY': '港元M2同比', 'M2 MoM': '港元M2环比', 'Monetary Base YoY': '香港货币基础同比', 'Tencent Price': '腾讯股价', 'HKEX Price': '港交所股价', 'HSTECH Index': '恒生科技指数', 'HSI Index': '恒生指数', 'Closing Aggregate Balance': '银行收市总结余', 'Outstanding EFBN': '未偿外汇基金票据债券', 'EFBN Held by Licensed Banks': '银行持有外汇基金票据债券', 'O/N HIBOR': '港元隔夜拆息', '3M HIBOR': '港元3个月拆息', 'HKMA Base Rate': '香港基本利率', 'O/N−3M Spread': '隔夜减3个月拆息', 'USD/HKD': '美元兑港元', 'Gold': '黄金期货', 'Silver': '白银期货', 'Gold/Silver Ratio': '金银比', 'Gold Volatility · GVZ': '黄金预期波动', 'COMEX 库存': '美国铜库存', 'LME 库存': '伦敦铜库存', 'LME 3M 铜价': '伦敦3个月铜价', 'COMEX HG 换算价': '美国铜价换算', 'COMEX−LME 3M 价差': '美国减伦敦铜价', 'WTI 原油': '美国原油期货', '铜油比': '铜价除以油价', 'TC 粗炼费 · 周度': '铜精矿粗炼费', 'RC 精炼费 · 按方法计算 · 周度': '精炼费，TC数值÷10', 'BTC · USD': '比特币', 'ETH · USD · R1': '以太币', 'ETH/BTC 强弱 · R2': '以太币与比特币价格比', 'BTC 30D 实际波动率 · R3': '比特币30日历史波动', 'Net Liquidity': '美元净流动性代理', 'Reserve Balances': '银行准备金余额', 'TGA': '美国财政账户余额'}
 
@@ -23,7 +73,7 @@ HINTS.update({
 })
 
 
-HINTS["VXN−VIX"] = "纳斯达克100 VXN减标普500 VIX，30天隐含波动率差（百分点，R6）"
+HINTS["VXN−VIX"] = "纳斯达克100 VXN减标普500 VIX，30天隐含波动率差"
 
 def _short_parameter_label(name):
     name = str(name)
@@ -83,12 +133,12 @@ def compact_parameter_labels(option):
         axes = option.get("yAxis", [])
         title = axes[index].get("name", "") if index < len(axes) else ""
         marker = re.search(r"\bR\d+\b", title)
-        axis = marker.group() if marker else ("左轴" if index == 0 else f"R{index}")
+        axis = readable_display_text(marker.group()) if marker else ("左轴" if index == 0 else f"右轴{index}")
         # Bind to the rendered axis, not a guessed name suffix. All display
         # labels keep stable internal series keys for legend state and data.
         label = re.sub(r"\s*\(R\d+\)$|（R\d+）$", "", labels[name])
-        unit = title.split(" · ")[-1] if " · " in title else ""
-        labels[name] = label + "〔" + axis + (" · " + unit if unit else "") + "〕"
+        unit = _series_display_unit(name, title)
+        labels[name] = readable_display_text(label) + "〔" + axis + (" · " + unit if unit else "") + "〕"
     return labels
 
 
