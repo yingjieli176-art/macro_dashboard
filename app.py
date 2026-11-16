@@ -3015,7 +3015,7 @@ def _cache_safe_figure(figure):
             setattr(trace, field, None)
             setattr(trace, field, converted)
     from macro_platform.figure_cache import CachedFigure
-    return CachedFigure(figure.to_dict(), _validate=False)
+    return CachedFigure.adopt(figure)
 
 
 @st.cache_data(ttl=300, max_entries=32, show_spinner=False)

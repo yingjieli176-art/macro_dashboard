@@ -11,6 +11,14 @@ def _restore_figure(payload):
 class CachedFigure(go.Figure):
     """Keep normal Figure behavior without revalidating internal cache copies."""
 
+    @classmethod
+    def adopt(cls, figure):
+        # Builders hand ownership of this fresh, already validated Figure to
+        # the cache. Changing only its copy hooks avoids an extra full data/
+        # template copy on the first request; all trace parent links stay valid.
+        figure.__class__ = cls
+        return figure
+
     def __reduce__(self):
         return _restore_figure, (self.to_dict(),)
 
