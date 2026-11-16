@@ -403,6 +403,11 @@ def check_mobile_layout(page):
             assert state['zoom'] == original['zoom'], (width, 'zoom changed')
             assert len(state['axes']) == len(original['axes'])
             for index, axis in enumerate(state['axes']):
+                if not any(s['axis'] == index for s in state['series']):
+                    # Reserved R slots retain identity during a source outage;
+                    # the client hides their empty scale on every viewport.
+                    assert not axis['show'] and not axis['name'], (width, index, axis)
+                    continue
                 bars = any(s['type'] == 'bar' and s['axis'] == index for s in state['series'])
                 assert axis['show'] and axis['name'] and axis['scale'] == (not bars), state
             assert state['grid']['width'] > 80, (width, state)
