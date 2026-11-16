@@ -234,6 +234,7 @@ def assert_price_guides_follow_viewport(chart):
 
 
 def exercise_price_historical_window(page, chart):
+    """Moving the right handle changes span while retaining the latest date."""
     before = chart_state(chart)
     box = chart.bounding_box()
     handle = before['handles'][1]
@@ -244,7 +245,8 @@ def exercise_price_historical_window(page, chart):
     page.mouse.up()
     page.wait_for_timeout(200)
     after = chart_state(chart)
-    assert after['zoom'][1] < before['zoom'][1]-.1, (before, after)
+    assert abs(after['zoom'][1]-100) < 1e-6, (before, after)
+    assert after['zoom'][0] > before['zoom'][0]+.1, (before, after)
     assert_visible_axes(after, minimum_axes=1)
     return {'zoom':after['zoom'], 'guides':assert_price_guides_follow_viewport(chart)}
 

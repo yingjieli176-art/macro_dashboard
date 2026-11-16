@@ -359,7 +359,8 @@ export default function({data, parentElement}) {
       scale:true, show:active,
       axisLabel:{formatter:value => `${Number(value.toFixed(2))}%`, fontSize:10,
         showMinLabel:false, showMaxLabel:false}, splitLine:{show:false},
-      min:extent => Math.min(extent.min, 0), max:extent => Math.max(extent.max, 0)});
+      min:extent => Math.min(extent.min, 0)-Math.max((extent.max-extent.min)*.05,.05),
+      max:extent => Math.max(extent.max, 0)+Math.max((extent.max-extent.min)*.05,.05)});
     option.series = [...copyPresentation(base).series, ...drawdowns.map((path, index) => ({
       id:`macro-peak-drawdown-${index}`, name:ratioNames[index], type:'line',
       xAxisIndex:0, yAxisIndex:axisIndex, data:path.data, encode:{x:0, y:1, tooltip:[1]},
