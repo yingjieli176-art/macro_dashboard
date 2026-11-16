@@ -9,7 +9,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from macro_platform.dashboard_layout import MACRO_DISPLAY_NUMBER
 
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import sync_playwright, expect, Error as PlaywrightError
 
 
 def observation_date(value):
@@ -448,7 +448,17 @@ def exercise_legend_axes(page, chart):
         return chart.evaluate(state_js)
 
     def click(name):
-        chart.scroll_into_view_if_needed()
+        # A background source completion can remount the chart between lookup
+        # and scrolling. Retry only this pre-click action, never a toggle.
+        for attempt in range(3):
+            try:
+                chart.scroll_into_view_if_needed()
+                break
+            except PlaywrightError as error:
+                if 'not attached to the DOM' not in str(error) or attempt == 2:
+                    raise
+                page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'", timeout=30000)
+                chart.wait_for(state='visible', timeout=30000)
         point = chart.evaluate("""(element,name) => {
             const chart = (""" + INSTANCE_JS + """)(element);
             const model = chart.getModel().getComponent('legend');
