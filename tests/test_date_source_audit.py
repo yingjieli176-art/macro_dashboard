@@ -20,6 +20,12 @@ from scripts.audit_source_freshness import raw_record_issues
 
 
 class DateAndSourceAudit(unittest.TestCase):
+    def test_treasury_accounts_share_a_date_without_being_duplicate_records(self):
+        closing = {'record_date': '2026-11-12', 'account_type': 'Treasury General Account (TGA) Closing Balance', 'open_today_bal': '800000'}
+        total = {'record_date': '2026-11-12', 'account_type': 'Total Operating Balance', 'close_today_bal': '800000'}
+        self.assertEqual(raw_record_issues({'records': [closing, total]})['duplicate_date_rows'], 0)
+        self.assertEqual(raw_record_issues({'records': [closing, total, closing]})['duplicate_date_rows'], 1)
+
     def tearDown(self):
         probe.reset_probe_cache()
 

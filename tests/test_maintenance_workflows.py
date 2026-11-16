@@ -122,6 +122,17 @@ class WorkflowSafetyTests(unittest.TestCase):
         self.assertIn("parse_dts_tga_rows", data)
         self.assertIn("read_verified_tga_snapshot", data)
 
+    def test_initial_date_findings_do_not_skip_recovery_or_final_strict_checks(self):
+        content = (WORKFLOWS / 'viewport-axis-regression.yml').read_text()
+        initial = content.split('- name: Verify raw dates and compare all 17 charts with live sources', 1)[1].split('- name: Refresh confirmed lag', 1)[0]
+        self.assertIn('continue-on-error: true', initial)
+        self.assertIn('|| audit_status=$?', initial)
+        self.assertIn('--output all_source_freshness_before.json', initial)
+        final = content.split('- name: Verify dates again after source refreshes', 1)[1].split('- uses: actions/upload-artifact', 1)[0]
+        self.assertNotIn('continue-on-error', final)
+        self.assertIn('--output all_source_freshness.json --strict', final)
+        self.assertIn('test "$audit_status" -eq 0 && test "$probe_status" -eq 0', final)
+
 
 if __name__ == "__main__":
     unittest.main()

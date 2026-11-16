@@ -9,7 +9,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from macro_platform.dashboard_layout import MACRO_DISPLAY_NUMBER
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 
 def observation_date(value):
@@ -656,7 +656,8 @@ def main():
             page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
             page.get_by_text("5. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
             page.get_by_text(f"{MACRO_DISPLAY_NUMBER[11]}. Precious Metals", exact=True).wait_for(timeout=30000)
-            assert groups.count() == 22
+            # The first eight canvases can paint while later fragments still render.
+            expect(groups).to_have_count(22, timeout=60000)
             assert charts.count() >= 8
             assert page.get_by_test_id("stException").count() == 0
             assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
