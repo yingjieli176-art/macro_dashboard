@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-13T17:12:53.888860+00:00",
+  "updated_at": "2026-11-16T09:01:31.627246+00:00",
   "retention": "rolling 5 years plus one month buffer",
   "policy": "merge fresh observations into last-known-good history; never erase a usable series on fetch failure",
-  "coverage_start": "2021-10-15",
-  "coverage_end": "2026-11-13",
+  "coverage_start": "2021-10-18",
+  "coverage_end": "2026-11-16",
   "series": {
     "0700.HK": {
       "name": "Tencent Holdings",
@@ -12,16 +12,12 @@
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
       "record_count": 1250,
-      "coverage_start": "2021-10-15",
-      "coverage_end": "2026-11-13",
-      "last_successful_fetch": "2026-11-13T17:12:53.888860+00:00",
+      "coverage_start": "2021-10-18",
+      "coverage_end": "2026-11-16",
+      "last_successful_fetch": "2026-11-16T09:01:31.627246+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
-        {
-          "observation_date": "2021-10-15",
-          "close": 456.87207
-        },
         {
           "observation_date": "2021-10-18",
           "close": 458.162659
@@ -5017,6 +5013,10 @@
         {
           "observation_date": "2026-11-13",
           "close": 386.600006
+        },
+        {
+          "observation_date": "2026-11-16",
+          "close": 390.399994
         }
       ]
     },
@@ -5026,16 +5026,12 @@
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
       "record_count": 1250,
-      "coverage_start": "2021-10-15",
-      "coverage_end": "2026-11-13",
-      "last_successful_fetch": "2026-11-13T17:12:53.888860+00:00",
+      "coverage_start": "2021-10-18",
+      "coverage_end": "2026-11-16",
+      "last_successful_fetch": "2026-11-16T09:01:31.627246+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
-        {
-          "observation_date": "2021-10-15",
-          "close": 469.0
-        },
         {
           "observation_date": "2021-10-18",
           "close": 470.600006
@@ -10031,6 +10027,10 @@
         {
           "observation_date": "2026-11-13",
           "close": 378.399994
+        },
+        {
+          "observation_date": "2026-11-16",
+          "close": 377.799988
         }
       ]
     },
@@ -10040,16 +10040,12 @@
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
       "record_count": 1250,
-      "coverage_start": "2021-10-15",
-      "coverage_end": "2026-11-13",
-      "last_successful_fetch": "2026-11-13T17:12:53.888860+00:00",
+      "coverage_start": "2021-10-18",
+      "coverage_end": "2026-11-16",
+      "last_successful_fetch": "2026-11-16T09:01:31.627246+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
-        {
-          "observation_date": "2021-10-15",
-          "close": 25330.960938
-        },
         {
           "observation_date": "2021-10-18",
           "close": 25409.75
@@ -15045,6 +15041,10 @@
         {
           "observation_date": "2026-11-13",
           "close": 23637.599609
+        },
+        {
+          "observation_date": "2026-11-16",
+          "close": 23753.839844
         }
       ]
     },
@@ -15053,17 +15053,13 @@
       "unit": "points",
       "source": "Sina Finance via AKShare",
       "price_basis": "raw_close",
-      "record_count": 1250,
-      "coverage_start": "2021-10-15",
+      "record_count": 1249,
+      "coverage_start": "2021-10-18",
       "coverage_end": "2026-11-13",
       "last_successful_fetch": "2026-11-13T17:12:53.888860+00:00",
-      "fresh_fetch_ok": true,
-      "last_fetch_error": null,
+      "fresh_fetch_ok": false,
+      "last_fetch_error": "stock_hk_index_daily_sina 已在 1.20.44 更名为 index_hk_daily_sina，请改用 ak.index_hk_daily_sina；参数与返回的列也可能有调整，用 ak.interface_info(\"index_hk_daily_sina\") 查看。完整对照见 https://akshare.akfamily.xyz/changelog.html#changelog-rename",
       "records": [
-        {
-          "observation_date": "2021-10-15",
-          "close": 6318.91016
-        },
         {
           "observation_date": "2021-10-18",
           "close": 6324.27002
