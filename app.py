@@ -2188,8 +2188,7 @@ def _recoverable_echarts_option(fig, element_key, date_range, mode=None):
     with Plotly's fixed five-year Y axis. Cached data stays marked stale.
     """
     cache_key = f"_echarts_last_good_{element_key}_{mode or 'default'}"
-    builder = (getattr(_echarts_axes, "cached_adaptive_echarts_option", None)
-               or getattr(_echarts_axes, "build_adaptive_echarts_option", None))
+    builder = getattr(_echarts_axes, "build_adaptive_echarts_option", None)
     option = None
     if callable(builder):
         try:
@@ -3078,7 +3077,8 @@ def _safe_hk_bundle(snapshot_revision):
     return figures
 
 
-def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_complete=None, budget=8.0):
+def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_complete=None,
+                                 budget=8.0, prepared_futures=None, prepare_only=False):
     """Build concurrently and optionally publish completed charts immediately.
 
     Only data access and Plotly figure construction run in worker threads.
@@ -3096,7 +3096,10 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
         elif number not in HK_CHART_IDS:
             jobs[number] = lambda number=number: cached_chart(number)
     revision = (snapshot_revision, CHART_BUILD)
-    futures = submit_jobs(jobs, name="macro-chart", workers=6, budget=budget, revision=revision)
+    futures = (prepared_futures if prepared_futures is not None else
+               submit_jobs(jobs, name="macro-chart", workers=6, budget=budget, revision=revision))
+    if prepare_only:
+        return futures
     aux_futures = submit_jobs(auxiliary_jobs or {}, name="dashboard-aux", workers=2,
                               budget=budget, revision=(st.session_state.setdefault("_dashboard_session_token", uuid.uuid4().hex), _quote_refresh_key()))
     futures.update(aux_futures)
@@ -3203,6 +3206,9 @@ st.markdown(
 
 # Reserve the existing document order, then fill sections as workers finish.
 # Only the main Streamlit thread creates containers, fragments and widgets.
+# Start source/figure work before constructing standalone sections. Reuse these
+# exact futures below; slow early sections must not serialize the two phases.
+_prepared_macro_futures = _build_macro_figures_parallel(prepare_only=True)
 macro_slots = {}
 section_headers = {9: "US EQUITY RISK", "nvidia_cds": "US CREDIT RISK", 4: "US / JAPAN RELATIVE STRENGTH",
                    "japan_corridor": "JAPAN RATES & YEN", 14: "CHINA RATES & EQUITIES",
@@ -3258,7 +3264,7 @@ for _section in ("market",):
 with st.spinner("正在加载图表…"):
     macro_figures = _build_macro_figures_parallel(
         on_complete=_render_completed_macro_chart, auxiliary_jobs=_auxiliary,
-        on_aux_complete=_publish_quote_section)
+        on_aux_complete=_publish_quote_section, prepared_futures=_prepared_macro_futures)
 for _section in ("market",):
     _publish_quote_section(_section)
 

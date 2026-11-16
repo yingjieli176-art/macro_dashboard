@@ -11,28 +11,10 @@ from __future__ import annotations
 import math
 from copy import deepcopy
 import unicodedata
-from pathlib import Path
 
 import pandas as pd
-import streamlit as st
 
 from macro_platform.chart_axes import RANGE_OFFSETS, _visible_y_ranges, _figure_latest
-
-
-@st.cache_data(ttl=300, max_entries=48, show_spinner=False)
-def _cached_chart_option(figure_json, date_range, adapter_revision, _figure):
-    option = build_adaptive_echarts_option(_figure, date_range)
-    if not option or not option.get("series"):
-        raise ValueError("No observed chart series to cache")
-    return option
-
-
-def cached_adaptive_echarts_option(figure, date_range="1Y"):
-    """Reuse conversion by complete data/layout content; isolate each caller."""
-    # Dates, values, nulls, series, axes and annotations all enter the key.
-    # A changed source value must invalidate even with an unchanged end date.
-    return _cached_chart_option(figure.to_json(), date_range,
-                                Path(__file__).stat().st_mtime_ns, _figure=figure)
 
 
 

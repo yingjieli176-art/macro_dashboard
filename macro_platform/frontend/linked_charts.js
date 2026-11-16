@@ -473,11 +473,16 @@ export default function({data, parentElement}) {
     const width = Math.max(1, element.clientWidth-left-(Number(option.grid.right)||0));
     const y = (chart?.getHeight() || parseFloat(element.style.height))-Number(option.grid.bottom)+12;
     const ticks = evenDateTicks(lower, upper, width);
-    return {id:'macro-endpoint-date', type:'group', $action:'replace', silent:true,
-      children:ticks.map((tick,index) => ({type:'text', x:left+width*tick.fraction, y,
-        style:{text:tick.label,fill:'#475569',fontSize:width < 110 ? 8 : 9,
+    // Fixed, independent IDs avoid graphic-group child reuse dropping labels
+    // after resize. Unused slots are hidden when a narrow view needs fewer.
+    return Array.from({length:11}, (_,index) => {
+      const tick = ticks[index];
+      return {id:`macro-date-tick-${index}`,type:'text',$action:'replace',silent:true,
+        ignore:!tick,x:tick ? left+width*tick.fraction : left,y,
+        style:{text:tick?.label || '',fill:'#475569',fontSize:width < 110 ? 8 : 9,
           align:index === 0 ? 'left' : index === ticks.length-1 ? 'right' : 'center',
-          verticalAlign:'top'}}))};
+          verticalAlign:'top'}};
+    });
   }
 
   function updateLayout() {
@@ -499,7 +504,7 @@ export default function({data, parentElement}) {
       patch.series = option.series.map(series => ({name:series.name,
         ...(series.type === 'bar' ? {barWidth:series.barWidth} : {})}));
     }
-    patch.graphic = [...(patch.graphic || []), endpointDate(option, chart.getOption().dataZoom)];
+    patch.graphic = [...(patch.graphic || []), ...endpointDate(option, chart.getOption().dataZoom)];
     patch.xAxis = {...patch.xAxis,axisLabel:{...patch.xAxis.axisLabel,show:false},axisTick:{show:false}};
     chart.setOption(patch, {silent:true, replaceMerge:['yAxis']});
     parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom};
@@ -530,7 +535,7 @@ export default function({data, parentElement}) {
     // Replace the whole option when Streamlit reuses a mounted chart element.
     option.xAxis.axisLabel = {...option.xAxis.axisLabel,show:false};
     option.xAxis.axisTick = {show:false};
-    option.graphic = [endpointDate(option, option.dataZoom)];
+    option.graphic = endpointDate(option, option.dataZoom);
     chart.setOption(option, {notMerge:true});
     if (hasPriceGuides) updateLayout();
     element.setAttribute('aria-busy', 'false');

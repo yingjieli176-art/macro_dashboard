@@ -654,11 +654,12 @@ def exercise_range_legend_persistence(page, prefix, group_index):
 def check_even_date_axis(chart):
     state = chart.evaluate("""element => {
         const chart=element.__macroChart, option=chart.getOption();
-        const group=(option.graphic || []).flatMap(item=>item.elements || [])
-            .find(item=>item.id==='macro-endpoint-date');
-        const ticks=(group?.children || []).filter(item=>item.type==='text')
+        const ticks=(option.graphic || []).flatMap(item=>item.elements || [])
+            .filter(item=>item.id?.startsWith('macro-date-tick-') && !item.ignore && item.style?.text)
             .map(item=>({text:item.style.text,x:item.x,y:item.y,size:item.style.fontSize}));
-        const end=chart.getModel().getComponent('xAxis').axis.scale.getExtent()[1];
+        const dates=option.series.flatMap(s=>s.data.filter(p=>Number.isFinite(p[1])).map(p=>Number(p[0])));
+        const first=Math.min(...dates), last=Math.max(...dates), zoom=option.dataZoom[0];
+        const end=Math.min(last,Number.isFinite(zoom.endValue) ? zoom.endValue : first+(last-first)*(zoom.end??100)/100);
         const day=new Date(end).toISOString().slice(0,10);
         return {ticks,end:`Y${day.slice(2,4)}/${day.slice(5,7)}-${day.slice(8,10)}`,
             nativeLabels:option.xAxis[0].axisLabel.show};
