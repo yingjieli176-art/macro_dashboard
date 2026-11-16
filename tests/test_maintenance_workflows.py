@@ -131,6 +131,7 @@ class WorkflowSafetyTests(unittest.TestCase):
         final = content.split('- name: Verify dates again after source refreshes', 1)[1].split('- uses: actions/upload-artifact', 1)[0]
         self.assertNotIn('continue-on-error', final)
         self.assertIn('--output all_source_freshness.json --strict', final)
+        self.assertIn('--retry-from all_source_freshness_before.json', final)
         self.assertIn('test "$audit_status" -eq 0 && test "$probe_status" -eq 0', final)
 
 
