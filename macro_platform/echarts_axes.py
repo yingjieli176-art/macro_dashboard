@@ -169,7 +169,8 @@ def _responsive_chart_layout(option, fig, axis_map):
         # phone. Keep >80px for data at 360px screens without hiding any axis.
         compact_units = len(option["yAxis"]) > 5 and maximum <= 480
         if compact_units:
-            spacing = 30
+            # The risk chart's eighth axis must retain a usable phone plot.
+            spacing = 28 if len(option["yAxis"]) >= 8 else 30
         names, used, rows = [], 0, 1
         for series in option["series"]:
             name = series["name"]

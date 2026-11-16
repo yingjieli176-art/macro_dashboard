@@ -1724,7 +1724,6 @@ def build_fig9(date_range):
     fig = go.Figure()
     for column, name, width, dash, axis, unit in (
         ("VIXCLS", "VIX", 3.0, None, None, ""),
-        ("VIXEQ", "VIXEQ", 2.8, "dash", None, ""),
         ("SP500", "S&P 500 (R1)", 2.6, None, "y2", " pts"),
     ):
         source = sources.get(column, pd.DataFrame(columns=["observation_date"]))
@@ -1761,6 +1760,12 @@ def build_fig9(date_range):
              "VXN−VIX", "VXN−VIX (R6)", 2.4, yaxis="y7", unit=" pp")
     fig.update_traces(line_color="#b45309", connectgaps=False, selector=dict(name="VXN−VIX (R6)"))
 
+    # Append the independent axis so existing R1–R6 bindings remain stable.
+    vixeq_source = sources.get("VIXEQ", pd.DataFrame(columns=["observation_date"]))
+    add_line(fig, data.loc[data.observation_date.isin(vixeq_source.observation_date)],
+             "VIXEQ", "VIXEQ", 2.8, "dash", "y8", unit="%")
+    fig.update_traces(line_color="#00875a", selector=dict(name="VIXEQ"))
+
     fig.update_layout(
         yaxis2=dict(overlaying="y", side="right", anchor="free", position=0.85),
         yaxis3=dict(overlaying="y", side="right", anchor="free", position=0.92),
@@ -1772,7 +1777,7 @@ def build_fig9(date_range):
         legend=dict(y=1.095),
         xaxis=dict(domain=[0.0, 0.83]),
         yaxis=dict(
-            title="VIX / VIXEQ",
+            title="VIX · 年化波动率 (%)",
             showgrid=True, gridcolor="#e5e7eb", griddash="dot",
             zeroline=False, fixedrange=True,
         ),
@@ -1799,6 +1804,8 @@ def build_fig9(date_range):
                     position=1, showgrid=False, zeroline=False, fixedrange=True),
         yaxis7=dict(title="R6 · VXN−VIX · pp", overlaying="y", side="right", anchor="free",
                     position=1, showgrid=False, zeroline=True, fixedrange=True),
+        yaxis8=dict(title="R7 · VIXEQ · 年化波动率 (%)", overlaying="y", side="right", anchor="free",
+                    position=1, showgrid=False, zeroline=False, fixedrange=True),
     )
     fig.update_layout(margin_r=220, xaxis_domain=[0, 0.72])
     return fig
@@ -2699,7 +2706,7 @@ def _render_china_drawdown():
 def render_macro_chart_9(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[9]}. US Equity Risk & Volatility Structure</div>'
-        '<div class="section-description">VIX · VIXEQ · S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3) · MOVE 债市波动率 (R4) · MOVE/VIX (R5) · VXN−VIX（R6 · 波动率差，%）</div>',
+        '<div class="section-description">VIX（左轴）· VIXEQ（独立右轴 R7）· S&P 500 (R1) · VIXEQ/VIX (R2) · COR3M (R3) · MOVE 债市波动率 (R4) · MOVE/VIX (R5) · VXN−VIX（R6 · 波动率差，%）</div>',
         unsafe_allow_html=True,
     )
     render_latest_vix_quote()

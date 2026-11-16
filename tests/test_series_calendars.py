@@ -87,7 +87,10 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         self.assertEqual(trace.yaxis, "y4")
         for window in RANGE_OFFSETS:
             option = build_adaptive_echarts_option(fig, window)
-            self.assertEqual(len(option["yAxis"]), 5)
+            self.assertEqual(len(option["yAxis"]), 6)
+            axes = {series['name']: series['yAxisIndex'] for series in option['series']}
+            self.assertNotEqual(axes['VIX'], axes['VIXEQ'])
+            self.assertEqual(option['yAxis'][axes['VIXEQ']]['position'], 'right')
             for name, axis in (("VIXEQ/VIX (R2)", 2), ("COR3M (R3)", 3)):
                 series = next(s for s in option["series"] if s["name"] == name)
                 self.assertEqual(series["yAxisIndex"], axis)
