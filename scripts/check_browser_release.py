@@ -795,7 +795,8 @@ def main():
                         // Chart adapters serialize each value to 8 decimals.
                         Math.abs(value-move.get(day)/vix.get(day))<1e-8)};
             }""")
-            assert risk_ratio['axes'] == 7 and risk_ratio['axis'] == 5, risk_ratio
+            assert risk_ratio['axes'] == 8 and risk_ratio['axis'] == 5, risk_ratio
+            assert risk_chart.evaluate("e => {const s=e.__macroChart.getOption().series; return s.find(x=>x.name==='VIX').yAxisIndex !== s.find(x=>x.name==='VIXEQ').yAxisIndex;}")
             assert risk_ratio['count'] > 100 and risk_ratio['matched'] and not risk_ratio['connect'], risk_ratio
             assert '年化波动率（%）' in risk_ratio['vix_label'], risk_ratio
             assert 'R5·×' in risk_ratio['ratio_label'], risk_ratio
