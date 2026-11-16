@@ -971,10 +971,12 @@ def main():
                 raise
             page_b.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'", timeout=30000)
             expected_a.wait_for(timeout=30000)
-            page_b.get_by_test_id('stButtonGroup').nth(MACRO_DISPLAY_NUMBER[5]-1).get_by_text('3M', exact=True).click()
+            page_b.locator('[data-testid=macroPeriodControls], [data-testid=stButtonGroup]:visible').nth(MACRO_DISPLAY_NUMBER[5]-1).get_by_text('3M', exact=True).click()
             expected_b = page_b.locator('[class*=st-key-hk_5_range_adaptive_default_schema_]').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             expected_b.wait_for(timeout=30000)
             assert expected_a.count() == 1 and expected_b.count() == 1
+            assert expected_a.get_attribute('data-period') == '1M'
+            assert expected_b.get_attribute('data-period') == '3M'
             for current, expected in ((page, expected_a), (page_b, expected_b)):
                 current.locator('.st-key-refresh_market_overview').get_by_role('button').click()
                 assert current.locator('.st-key-refresh_watchlist_quotes').count() == 0
@@ -983,6 +985,8 @@ def main():
                 assert current.get_by_test_id('stException').count() == 0
                 assert current.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
             assert expected_a.count() == 1 and expected_b.count() == 1
+            assert expected_a.get_attribute('data-period') == '1M'
+            assert expected_b.get_attribute('data-period') == '3M'
             report['checks'].append({'isolated_browser_sessions': 2,
                                      'manual_market_refresh': True, 'watchlist_removed': True,
                                      'range_preserved': True})
