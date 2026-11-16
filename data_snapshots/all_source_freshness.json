@@ -420,12 +420,12 @@
         9
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-16",
+      "repository_latest": "2026-11-17",
       "checked_at": "2026-11-16T11:49:57.568843+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-16",
       "source_url": "https://www.boj.or.jp/en/",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "JP_CORRIDOR_LOAN",
@@ -433,12 +433,12 @@
         9
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-16",
+      "repository_latest": "2026-11-17",
       "checked_at": "2026-11-16T11:50:00.184284+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-16",
       "source_url": "https://www.boj.or.jp/en/",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "JP_CORRIDOR_REPO",
@@ -937,12 +937,12 @@
         17
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-13",
+      "repository_latest": "2026-11-16",
       "checked_at": "2026-11-16T11:49:51.490260+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-13",
       "source_url": "https://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics/2026/11/ms-20261113/",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "comex_stock_t",
@@ -963,12 +963,12 @@
         17
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-13",
+      "repository_latest": "2026-11-16",
       "checked_at": "2026-11-16T11:49:40.403059+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-13",
       "source_url": "https://www.hkma.gov.hk/eng/data-publications-and-research/data-and-statistics/daily-monetary-statistics/2026/11/ms-20261113/",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "hibor_3m",
@@ -1160,5 +1160,5 @@
   "elapsed_seconds": 0.244,
   "shared_http_requests": 0,
   "shared_http_reuses": 0,
-  "repository_reconciled_at": "2026-11-16T11:50:59.689513+00:00"
+  "repository_reconciled_at": "2026-11-16T17:11:29.226452+00:00"
 }
