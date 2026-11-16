@@ -37,6 +37,8 @@ SPECS = [
     ("move_daily.json", "observation_date", "", ["close"]),
     ("spx_gex_daily.json", "observation_date", "", ["gex_usd"]),
     ("jpy_3m_atm_saxo.json", "observation_date", "", ["value"]),
+    ("jpy_1m_25d_rr_saxo.json", "observation_date", "", ["value"]),
+    ("jpy_implied_qcam_monthly.json", "observation_date", "", ["value"]),
     ("srf_usage_daily.json", "observation_date", "", ["accepted_usd"]),
     ("cftc_jpy_weekly.json", "observation_date", "", ["noncommercial_long", "noncommercial_short", "net_contracts"]),
     ("japan_gov_yields.json", "observation_date", "", ["japan_2y", "japan_10y", "japan_30y"]),
@@ -88,6 +90,8 @@ def attach_live_source_evidence(reports, evidence, now=None):
         ('ai_cds_daily.json', 'Alphabet 5Y（谷歌）'): 'SN_ALPHABET_CDS_5Y',
         ('ai_cds_daily.json', 'Microsoft 5Y（微软）'): 'SN_MICROSOFT_CDS_5Y',
         ('ai_cds_daily.json', 'Oracle 5Y'): 'SN_ORACLE_CDS_5Y',
+        ('jpy_1m_25d_rr_saxo.json', 'value'): 'USDJPY_1M_25D_RR_SAXO',
+        ('jpy_implied_qcam_monthly.json', 'value'): 'USDJPY_3M_IV_QCAM',
         **{('cftc_jpy_weekly.json', field): 'CFTC_JPY_NONCOMM_NET'
            for field in ('noncommercial_long', 'noncommercial_short', 'net_contracts')},
     }
@@ -166,7 +170,10 @@ def audit(root=ROOT, now=None):
                     date = (pd.Timestamp(date + "-01") + pd.offsets.MonthEnd(0)).strftime("%Y-%m-%d")
                 points.append([date, row.get(field)])
             series.append({"name": field, "data": points,
-                           "observation_cadence": "weekly" if filename in {"jpy_neer_daily.json", "cftc_jpy_weekly.json", "copper_tcrc_weekly.json"} else "daily"})
+                           "observation_cadence": "monthly" if filename == 'jpy_implied_qcam_monthly.json' else
+                           "weekly" if filename in {"jpy_neer_daily.json", "cftc_jpy_weekly.json", "copper_tcrc_weekly.json"} else "daily"})
+        if filename == 'jpy_implied_qcam_monthly.json' and rows:
+            series[0].update(publication_schedule='qcam_monthly', publication_month=rows[-1].get('issue_month', ''))
         health = option_observation_health({"series": series}, chart_key=cadence, now=now)
         missing = [field for field in fields if field not in health["latest_by_name"]]
         reports.append({"file": filename, **health, "missing_names": missing})

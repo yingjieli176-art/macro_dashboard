@@ -1,0 +1,22 @@
+{
+  "symbol": "USDJPY_1M_25D_RR_SAXO",
+  "source": "Saxo Bank",
+  "pair": "USDJPY",
+  "tenor": "1M",
+  "delta": 25,
+  "quote_type": "risk_reversal",
+  "convention": "USD_call_minus_USD_put",
+  "unit": "volatility_percentage_points",
+  "source_url": "https://fxowebtools.saxobank.com/otc.html",
+  "records": [
+    {
+      "observation_date": "2026-11-16",
+      "observation_timestamp": "2026-11-16T07:00:00+00:00",
+      "value": -1.74
+    }
+  ],
+  "record_count": 1,
+  "coverage_start": "2026-11-16",
+  "coverage_end": "2026-11-16",
+  "updated_at": "2026-11-16T09:30:36.597356+00:00"
+}

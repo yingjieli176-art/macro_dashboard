@@ -44,7 +44,13 @@ def figure_rows(figures, now=None):
             monthly = number == MACRO_DISPLAY_NUMBER[6] or (number == MACRO_DISPLAY_NUMBER[5] and any(s in trace.name for s in ("M2 ", "M3 ", "Monetary Base")))
             weekly = any(name in trace.name for name in ("Reserve Balances", "Weekly fallback", "CFTC JPY", "TC（", "RC（"))
             cadence = "monthly" if monthly else "weekly" if weekly else "daily"
+            metadata = trace.meta if isinstance(trace.meta, dict) else {}
+            if metadata.get('observation_cadence') in ('daily', 'weekly', 'monthly'):
+                cadence = metadata['observation_cadence']
             item = {"name": trace.name, "data": [[last.isoformat(), 1]], "observation_cadence": cadence}
+            for key in ('publication_schedule', 'publication_month'):
+                if key in metadata:
+                    item[key] = metadata[key]
             health = option_observation_health({"series": [item]}, now=now) if option_observation_health else {}
             status = ("时效适配器暂不可用" if not health else
                       "超出频率窗口" if health["stale_names"] else "在频率窗口内")

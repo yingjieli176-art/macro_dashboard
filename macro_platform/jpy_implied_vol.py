@@ -22,7 +22,7 @@ def _now(now=None):
     return stamp.tz_localize('UTC') if stamp.tzinfo is None else stamp.tz_convert('UTC')
 
 
-def _validate_record(row, now=None):
+def _validate_record(row, now=None, *, allow_negative=False):
     timestamp = pd.Timestamp(row['observation_timestamp'])
     if timestamp.tzinfo is None:
         raise ValueError('Source timestamp must include its timezone')
@@ -32,17 +32,18 @@ def _validate_record(row, now=None):
     if isinstance(row['value'], bool):
         raise ValueError('Boolean is not an implied volatility quote')
     value = float(row['value'])
-    if not math.isfinite(value) or not 0 < value < 100:
+    valid = -100 < value < 100 if allow_negative else 0 < value < 100
+    if not math.isfinite(value) or not valid:
         raise ValueError('Invalid FX implied volatility percentage')
     return {'observation_date': row['observation_date'],
             'observation_timestamp': timestamp.isoformat(), 'value': value}
 
 
-def parse_quote(text, now=None):
+def parse_quote(text, now=None, *, section_label='ATM VOLATILITIES', tenor='3m', allow_negative=False):
     """Locate ATM/3m by labels, excluding spot, change and risk-reversal cells."""
     root = html.fromstring(text)
     headings = root.xpath('//*[contains(concat(" ",normalize-space(@class)," ")," mainTitle ")]')
-    section = next((h for h in headings if h.text_content().strip().upper() == 'ATM VOLATILITIES'), None)
+    section = next((h for h in headings if h.text_content().strip().upper() == section_label), None)
     if section is None:
         raise ValueError('ATM volatility section missing')
     tables = section.xpath('following-sibling::div[1]//table')
@@ -51,9 +52,9 @@ def parse_quote(text, now=None):
     table = tables[0]
     rows = table.xpath('.//tr')
     headers = [c.text_content().strip().lower() for c in rows[0].xpath('./th|./td')]
-    if headers.count('pair') != 1 or headers.count('3m') != 1:
+    if headers.count('pair') != 1 or headers.count(tenor) != 1:
         raise ValueError('Missing or ambiguous three-month tenor')
-    pair_index, value_index = headers.index('pair'), headers.index('3m')
+    pair_index, value_index = headers.index('pair'), headers.index(tenor)
     matches = []
     for row in rows[1:]:
         cells = [c.text_content().strip() for c in row.xpath('./th|./td')]
@@ -61,7 +62,7 @@ def parse_quote(text, now=None):
             matches.append(cells[value_index])
     if len(matches) != 1:
         raise ValueError('Missing or ambiguous USDJPY ATM row')
-    quote = re.fullmatch(r'\s*(\d+(?:\.\d+)?)\s*\([+-]?\d+(?:\.\d+)?\)\s*', matches[0])
+    quote = re.fullmatch(r'\s*([+-]?\d+(?:\.\d+)?)\s*\([+-]?\d+(?:\.\d+)?\)\s*', matches[0])
     if not quote:
         raise ValueError('Unexpected quote/change format')
     dates = root.xpath('//*[contains(concat(" ",normalize-space(@class)," ")," blogTitle ")]')
@@ -74,7 +75,7 @@ def parse_quote(text, now=None):
         raise ValueError('Header and ATM report timestamps disagree')
     return _validate_record({'observation_date': stamp.strftime('%Y-%m-%d'),
                             'observation_timestamp': stamp.isoformat(),
-                            'value': float(quote[1])}, now)
+                            'value': float(quote[1])}, now, allow_negative=allow_negative)
 
 
 def validated_records(payload, now=None):

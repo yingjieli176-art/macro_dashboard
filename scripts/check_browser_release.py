@@ -950,7 +950,14 @@ def main():
                 page, 'japan_holdings_adaptive_default', MACRO_DISPLAY_NUMBER["japan_holdings"]-1)
             report["yen_carry_zoom"] = exercise_client_zoom(page, carry, minimum_axes=4)
             carry_axes = carry.evaluate("element => element.__macroChart.getOption().yAxis.map(axis => axis.name)")
-            assert len(carry_axes) == 6, carry_axes
+            assert len(carry_axes) == 7, carry_axes
+            option_series = carry.evaluate("e=>e.__macroChart.getOption().series.map(s=>({name:s.name,axis:s.yAxisIndex,data:s.data}))")
+            iv_history = next(s for s in option_series if 'QCAM月度' in s['name'])
+            assert iv_history['axis'] == 5 and len(iv_history['data']) >= 36, iv_history['name']
+            rr = next(s for s in option_series if 'Risk Reversal' in s['name'])
+            assert rr['axis'] == 6 and rr['data'][-1][1] < 0, rr['name']
+            report['yen_options'] = {'monthly_history_points':len(iv_history['data']),
+                                     'risk_reversal_points':len(rr['data']), 'independent_rr_axis':True}
             assert not any('TIC' in name or '机构外债' in name for name in carry_axes), carry_axes
             report["cftc_columns"] = assert_bar_baseline(carry, 'CFTC JPY speculative net (R2)')
             report["yen_carry_ranges"] = exercise_range_legend_persistence(
