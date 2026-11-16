@@ -275,7 +275,7 @@ def _append_overlay_traces(fig, sources):
     return list(dict.fromkeys(missing))
 
 
-def combine_yen_carry_figures(base, *, volatility, implied=None):
+def combine_yen_carry_figures(base, *, volatility, implied=None, risk_reversal=None):
     """Keep funding and market prices; omit retired appreciation/realized vol."""
     fig = go.Figure(base)
     fig.data = tuple(t for t in fig.data if t.name != PRESSURE_NAME)
@@ -293,6 +293,8 @@ def combine_yen_carry_figures(base, *, volatility, implied=None):
     missing = _append_overlay_traces(fig, [(policy, {"y2": "y", "y": "y"})])
     if implied is not None:
         missing.extend(_append_overlay_traces(fig, [(implied, {"y": "y6"})]))
+    if risk_reversal is not None:
+        missing.extend(_append_overlay_traces(fig, [(risk_reversal, {"y": "y7"})]))
     missing = list(dict.fromkeys(name for name in missing if name != PRESSURE_NAME))
     # Cached pre-split layouts can still contain holdings axes y7 and above.
     # Rebuild every Y axis rather than carrying any retired layout fields.
@@ -304,7 +306,9 @@ def combine_yen_carry_figures(base, *, volatility, implied=None):
         "y3": "CFTC · 万张", "y4": "TOPIX · pts", "y5": "DXY · pts",
     }
     if implied is not None and implied.data:
-        titles["y6"] = "3M ATM 隐含波动率 · 年化%"
+        titles["y6"] = "隐含波动率 · 年化%"
+    if risk_reversal is not None and risk_reversal.data:
+        titles["y7"] = "1M 25Δ Risk Reversal · pp"
     for index, (ref, title) in enumerate(titles.items()):
         key = "yaxis" + (ref[1:] if ref != "y" else "")
         axis = dict(title=title, fixedrange=True, zeroline=True)

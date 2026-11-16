@@ -1,6 +1,7 @@
-name: Refresh Saxo JPY three-month ATM implied volatility
+name: Refresh JPY implied volatility and risk reversal
 on:
   schedule:
+    - cron: '17 8 * * 1-5'
     - cron: '17 13,16,20 * * 1-5'
   workflow_dispatch:
   push:
@@ -8,6 +9,10 @@ on:
     paths:
       - scripts/update_jpy_implied_vol.py
       - macro_platform/jpy_implied_vol.py
+      - scripts/update_jpy_risk_reversal.py
+      - scripts/update_jpy_option_history.py
+      - macro_platform/jpy_risk_reversal.py
+      - macro_platform/jpy_option_history.py
       - .github/workflows/update-jpy-implied-vol.yml
 
 permissions:
@@ -32,12 +37,18 @@ jobs:
       - name: Install source parser and snapshot validation dependencies
         run: python -m pip install pandas plotly requests lxml
       - name: Append verified Saxo report observation
+        id: atm
+        continue-on-error: true
         run: python scripts/update_jpy_implied_vol.py
+      - name: Append original signed one-month 25-delta risk reversal
+        id: rr
+        continue-on-error: true
+        run: python scripts/update_jpy_risk_reversal.py
       - name: Publish the data snapshot only
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data_snapshots/jpy_3m_atm_saxo.json
+          git add data_snapshots/jpy_3m_atm_saxo.json data_snapshots/jpy_1m_25d_rr_saxo.json
           if git diff --cached --quiet; then
             echo 'Saxo three-month ATM quote unchanged'
             exit 0
@@ -45,4 +56,34 @@ jobs:
           git commit -m 'data: refresh dated Saxo JPY three-month ATM implied volatility'
           bash scripts/push_snapshot.sh
       - name: Check actual observation date
-        run: python scripts/audit_source_freshness.py --only jpy_3m_atm_saxo.json
+        run: python scripts/audit_source_freshness.py --only jpy_3m_atm_saxo.json --only jpy_1m_25d_rr_saxo.json
+      - name: Keep individual source failures visible after publishing good observations
+        if: steps.atm.outcome == 'failure' || steps.rr.outcome == 'failure'
+        run: exit 1
+
+  qcam-history:
+    if: github.event_name != 'schedule' || github.event.schedule == '17 8 * * 1-5'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pandas plotly requests lxml pypdf==7.1.0 fonttools==4.68.0
+      - name: Check official monthly reports for new or corrected dated observations
+        run: python scripts/update_jpy_option_history.py
+      - name: Publish only the QCAM monthly snapshot
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data_snapshots/jpy_implied_qcam_monthly.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'data: refresh original QCAM monthly USDJPY implied volatility'
+          bash scripts/push_snapshot.sh
+      - run: python scripts/audit_source_freshness.py --only jpy_implied_qcam_monthly.json

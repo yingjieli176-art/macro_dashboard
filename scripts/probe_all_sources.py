@@ -564,6 +564,17 @@ def jobs():
     output.append(("USDJPY_3M_ATM_SAXO", [MACRO_DISPLAY_NUMBER[16]], "daily",
                    snapshot("jpy_3m_atm_saxo.json", "observation_date", "value"),
                    lambda: (parse_quote(get(SAXO_URL).text)["observation_date"], SAXO_URL)))
+    from macro_platform.jpy_risk_reversal import parse_quote as parse_rr
+    output.append(("USDJPY_1M_25D_RR_SAXO", [MACRO_DISPLAY_NUMBER[16]], "daily",
+                   snapshot("jpy_1m_25d_rr_saxo.json", "observation_date", "value"),
+                   lambda: (parse_rr(get(SAXO_URL).text)["observation_date"], SAXO_URL)))
+    def qcam_latest():
+        from macro_platform.jpy_option_history import discover_reports, parse_pdf
+        reports = discover_reports(get)
+        url = reports[max(reports)]
+        return parse_pdf(get(url).content, url)['observation_date'], url
+    output.append(("USDJPY_3M_IV_QCAM", [MACRO_DISPLAY_NUMBER[16]], "monthly",
+                   snapshot("jpy_implied_qcam_monthly.json", "observation_date", "value"), qcam_latest))
     from macro_platform.dealer_gamma import SOURCE_URL as GEX_URL, parse_csv as parse_gex
     output.append(("SPX_GEX", [MACRO_DISPLAY_NUMBER[10]], "daily",
                    snapshot("spx_gex_daily.json", "observation_date", "gex_usd"),

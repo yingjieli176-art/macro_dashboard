@@ -15,6 +15,8 @@ FAMILIES = {
     "update_dealer_gamma.py": {"SPX_GEX"},
     "update_dxy_snapshot.py": {"DX-Y.NYB"},
     "update_jpy_implied_vol.py": {"USDJPY_3M_ATM_SAXO"},
+    "update_jpy_risk_reversal.py": {"USDJPY_1M_25D_RR_SAXO"},
+    "update_jpy_option_history.py": {"USDJPY_3M_IV_QCAM"},
     "update_cftc_yen.py": {"CFTC_JPY_NONCOMM_NET"},
     "update_copper_tcrc.py": {"tc_usd_dmt", "rc_cents_lb"},
     "update_japan_corridor.py": {"JP_CORRIDOR_DEPOSIT", "JP_CORRIDOR_LOAN", "JP_CORRIDOR_TONA", "JP_CORRIDOR_REPO"},

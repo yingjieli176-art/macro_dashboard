@@ -326,6 +326,9 @@ def build_safe_echarts_option(fig, date_range="1Y"):
             series[-1]["itemStyle"] = {"color": color}
         if isinstance(getattr(trace, "meta", None), dict) and trace.meta.get("observation_cadence") in ("daily", "weekly", "monthly"):
             series[-1]["observation_cadence"] = trace.meta["observation_cadence"]
+            for key in ('publication_schedule', 'publication_month'):
+                if key in trace.meta:
+                    series[-1][key] = trace.meta[key]
         _trace_geometry(series[-1], trace)
     if latest is None or not series:
         return None
@@ -471,6 +474,9 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
             series[-1]["itemStyle"] = {"color": color}
         if isinstance(getattr(trace, "meta", None), dict) and trace.meta.get("observation_cadence") in ("daily", "weekly", "monthly"):
             series[-1]["observation_cadence"] = trace.meta["observation_cadence"]
+            for key in ('publication_schedule', 'publication_month'):
+                if key in trace.meta:
+                    series[-1][key] = trace.meta[key]
         _trace_geometry(series[-1], trace)
 
     if latest is None or not series:
@@ -663,6 +669,13 @@ def option_observation_health(option, *, chart_key="", now=None):
         due = (latest.normalize() + pd.offsets.MonthEnd(2) + pd.Timedelta(days=7)
                if monthly else latest.normalize() + pd.Timedelta(days=10)
                if weekly else latest.normalize() + pd.offsets.BDay(2))
+        if monthly and series.get('publication_schedule') == 'qcam_monthly':
+            try:
+                issue = pd.Timestamp(series['publication_month']+'-01')
+                if issue-pd.Timedelta(days=10) <= latest <= issue+pd.Timedelta(days=30):
+                    due = issue+pd.offsets.MonthBegin(1)+pd.Timedelta(days=14)
+            except (KeyError, TypeError, ValueError):
+                pass
         cadence = "月频" if monthly else "周频" if weekly else "日频"
         due_by_name[name] = due.strftime("%Y-%m-%d")
         cadence_by_name[name] = cadence

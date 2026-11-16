@@ -1,0 +1,488 @@
+{
+  "symbol": "USDJPY_3M_IV_QCAM",
+  "source": "QCAM Currency Asset Management",
+  "pair": "USDJPY",
+  "tenor": "3M",
+  "quote_type": "market_implied_unspecified_moneyness",
+  "unit": "percent",
+  "frequency": "monthly",
+  "source_url": "https://q-cam.com/news-publications/",
+  "records": [
+    {
+      "observation_date": "2022-01-05",
+      "value": 5.93,
+      "issue_month": "2022-01",
+      "source_url": "https://q-cam.com/wp-content/uploads/2022/01/QCAM-MONTHLY-January-2022.pdf",
+      "source_page": 9,
+      "source_sha256": "dd0117d362b7498197a9e2a6795b7f62ef60d05b3870ed6ae0ca927ea785e1d6"
+    },
+    {
+      "observation_date": "2022-02-02",
+      "value": 6.38,
+      "issue_month": "2022-02",
+      "source_url": "https://q-cam.com/wp-content/uploads/2022/02/QCAM-MONTHLY-February-2022.pdf",
+      "source_page": 9,
+      "source_sha256": "a7199f562193c7e2e9272bb123a8d209925ddf8e43e7e9376b6d207f4040e1da"
+    },
+    {
+      "observation_date": "2022-03-02",
+      "value": 7.28,
+      "issue_month": "2022-03",
+      "source_url": "https://q-cam.com/wp-content/uploads/2022/03/QCAM-MONTHLY-March-2022.pdf",
+      "source_page": 9,
+      "source_sha256": "d2b77600d9007b93c89ab348757b0bfd047a0373e1311a3bc7eaaadb6481cb71"
+    },
+    {
+      "observation_date": "2022-04-06",
+      "value": 8.98,
+      "issue_month": "2022-04",
+      "source_url": "https://q-cam.com/wp-content/uploads/2022/04/QCAM-MONTHLY-April-2022.pdf",
+      "source_page": 9,
+      "source_sha256": "a26e3e762fb6c29c92cf068db353ee89a733d8b60b92719b629e263d1fd2aa73"
+    },
+    {
+      "observation_date": "2022-05-04",
+      "value": 11.2,
+      "issue_month": "2022-05",
+      "source_url": "https://q-cam.com/wp-content/uploads/2022/05/QCAM-MONTHLY-May-2022.pdf",
+      "source_page": 9,
+      "source_sha256": "cd8e6271f3338d414aa64379df458ca4167d36099cbc1bfd00ece6cf213015ac"
+    },
+    {
+      "observation_date": "2022-06-01",
+      "value": 9.73,
+      "issue_month": "2022-06",
+      "source_url": "https://q-cam.com/wp-content/uploads/2022/06/QCAM-MONTHLY-June-2022.pdf",
+      "source_page": 9,
+      "source_sha256": "d68c3b543b0b635409b77daa0111ab302633d46ca85e24a809e5f905cfa0e7e8"
+    },
+    {
+      "observation_date": "2022-07-08",
+      "value": 11.43,
+      "issue_month": "2022-07",
+      "source_url": "https://q-cam.com/wp-content/uploads/2022/07/QCAM-MONTHLY-July-2022.pdf",
+      "source_page": 9,
+      "source_sha256": "95d9495034885caff7497cc3d22e4af69f001dd85c4767b290ee711909d20505"
+    },
+    {
+      "observation_date": "2022-08-03",
+      "value": 11.1,
+      "issue_month": "2022-08",
+      "source_url": "https://q-cam.com/wp-content/uploads/2022/08/QCAM-MONTHLY-August-2022.pdf",
+      "source_page": 13,
+      "source_sha256": "4cc7584775ac10a765a3b4a27dc1502ad63e2bff9ada65920efce7a54d84e3cb"
+    },
+    {
+      "observation_date": "2022-08-31",
+      "value": 11.18,
+      "issue_month": "2022-09",
+      "source_url": "https://q-cam.com/wp-content/uploads/2022/09/QCAM-MONTHLY-September-2022.pdf",
+      "source_page": 9,
+      "source_sha256": "ea290686bef493657d292aca1dcc1705267e23f9c7f7de461f870e48dfcffff0"
+    },
+    {
+      "observation_date": "2022-10-05",
+      "value": 11.43,
+      "issue_month": "2022-10",
+      "source_url": "https://q-cam.com/wp-content/uploads/2022/10/QCAM-MONTHLY-October-2022.pdf",
+      "source_page": 9,
+      "source_sha256": "1344562c4e8995c60469e4425bbaf36a1b13918e371bb3ba109f2cd4d19856ab"
+    },
+    {
+      "observation_date": "2022-11-02",
+      "value": 12.65,
+      "issue_month": "2022-11",
+      "source_url": "https://q-cam.com/wp-content/uploads/2022/11/QCAM-MONTHLY-November-2022.pdf",
+      "source_page": 9,
+      "source_sha256": "6c4f9aabf641d9d2d45d60ac9e3864bb9344b980af27c4b0623aaa1c64c9ec4f"
+    },
+    {
+      "observation_date": "2022-11-30",
+      "value": 12.55,
+      "issue_month": "2022-12",
+      "source_url": "https://q-cam.com/wp-content/uploads/2022/12/QCAM-MONTHLY-December-2022.pdf",
+      "source_page": 9,
+      "source_sha256": "9b97e7d2cb819e160ae72db1e54ec80c011cc9f786718a7db6a799e76f1d5927"
+    },
+    {
+      "observation_date": "2023-01-11",
+      "value": 12.61,
+      "issue_month": "2023-01",
+      "source_url": "https://q-cam.com/wp-content/uploads/2023/01/QCAM-MONTHLY-January-2023.pdf",
+      "source_page": 13,
+      "source_sha256": "c48772087327aa7178fee67cc5439191f1cb5cb9c296c3e4bea98c59c920dd94"
+    },
+    {
+      "observation_date": "2023-02-01",
+      "value": 13.25,
+      "issue_month": "2023-02",
+      "source_url": "https://q-cam.com/wp-content/uploads/2023/02/QCAM-MONTHLY-February-2023.pdf",
+      "source_page": 9,
+      "source_sha256": "a292e7e541c6ab86d25ee1f4b5e251eac886c20b1ea37a0fc5ada458e748fbb2"
+    },
+    {
+      "observation_date": "2023-03-01",
+      "value": 11.63,
+      "issue_month": "2023-03",
+      "source_url": "https://q-cam.com/wp-content/uploads/2023/03/QCAM-MONTHLY-March-2023.pdf",
+      "source_page": 9,
+      "source_sha256": "e40860eef0e8088aed336a8f18b06f25f2c24b7568c68156f87a21e4cff3e378"
+    },
+    {
+      "observation_date": "2023-04-05",
+      "value": 12.13,
+      "issue_month": "2023-04",
+      "source_url": "https://q-cam.com/wp-content/uploads/2023/04/QCAM-MONTHLY-April-2023.pdf",
+      "source_page": 13,
+      "source_sha256": "43a8c4cd5e1b28cbdbb816ff2e6bcb36d9608d6883935f6c1b02bbbbc56ffde0"
+    },
+    {
+      "observation_date": "2023-05-05",
+      "value": 11.0,
+      "issue_month": "2023-05",
+      "source_url": "https://q-cam.com/wp-content/uploads/2023/05/QCAM-MONTHLY-May-2023.pdf",
+      "source_page": 9,
+      "source_sha256": "ade7003a4c8fd3444abd5b26c1c7c4727453d5ebd64107125497ede70b150411"
+    },
+    {
+      "observation_date": "2023-06-02",
+      "value": 9.88,
+      "issue_month": "2023-06",
+      "source_url": "https://q-cam.com/wp-content/uploads/2023/06/QCAM-MONTHLY-June-2023.pdf",
+      "source_page": 9,
+      "source_sha256": "a6e3b53aed0cd22de3fa18a5b7288c1a1aa69245514d1b6d5f532bba2e26d054"
+    },
+    {
+      "observation_date": "2023-07-05",
+      "value": 9.9,
+      "issue_month": "2023-07",
+      "source_url": "https://q-cam.com/wp-content/uploads/2023/07/QCAM-MONTHLY-July-2023.pdf",
+      "source_page": 9,
+      "source_sha256": "4b1ba71407b3afbfc1c0e701b78bb102a2402dc78e45a6eb0300778d49120337"
+    },
+    {
+      "observation_date": "2023-07-31",
+      "value": 9.7,
+      "issue_month": "2023-08",
+      "source_url": "https://q-cam.com/wp-content/uploads/2023/08/QCAM-MONTHLY-August-2023.pdf",
+      "source_page": 9,
+      "source_sha256": "9e42a2c2c5bad2949b178b9029d64fb9fcdd471c3b6bb343a9aa9cd1f388d64b"
+    },
+    {
+      "observation_date": "2023-09-05",
+      "value": 9.03,
+      "issue_month": "2023-09",
+      "source_url": "https://q-cam.com/wp-content/uploads/2023/09/QCAM-MONTHLY-September-2023.pdf",
+      "source_page": 9,
+      "source_sha256": "95831b9c0bc322eb36f22f58b90efdb3cbe2d49e1d8a1b7fb51057eade0a8acc"
+    },
+    {
+      "observation_date": "2023-10-03",
+      "value": 9.48,
+      "issue_month": "2023-10",
+      "source_url": "https://q-cam.com/wp-content/uploads/2023/10/QCAM-MONTHLY-October-2023.pdf",
+      "source_page": 9,
+      "source_sha256": "5e995634fa13d4f733d2feda4787d87986c65fa0839941cf68b74ff3fa94fdfb"
+    },
+    {
+      "observation_date": "2023-10-31",
+      "value": 9.59,
+      "issue_month": "2023-11",
+      "source_url": "https://q-cam.com/wp-content/uploads/2023/11/QCAM-MONTHLY-November-2023.pdf",
+      "source_page": 9,
+      "source_sha256": "e24e2f95bce81af4f8ca6e33cfab36f2c151cb2b00817a9032d831ca62b4f560"
+    },
+    {
+      "observation_date": "2023-12-05",
+      "value": 8.78,
+      "issue_month": "2023-12",
+      "source_url": "https://q-cam.com/wp-content/uploads/2023/12/QCAM-MONTHLY-December-2023.pdf",
+      "source_page": 13,
+      "source_sha256": "efe777351f3e03a5a506eb03aa1702e706a91061840a276c359afd171dfcec11"
+    },
+    {
+      "observation_date": "2024-01-09",
+      "value": 9.95,
+      "issue_month": "2024-01",
+      "source_url": "https://q-cam.com/wp-content/uploads/2024/01/QCAM-MONTHLY-January-2024.pdf",
+      "source_page": 13,
+      "source_sha256": "963ac749014ff706e615221b119e3f333e337216c14aecd801043ec15da6139c"
+    },
+    {
+      "observation_date": "2024-02-06",
+      "value": 9.58,
+      "issue_month": "2024-02",
+      "source_url": "https://q-cam.com/wp-content/uploads/2024/02/QCAM-MONTHLY-February-2024.pdf",
+      "source_page": 9,
+      "source_sha256": "a7418d01aedbad318ae411a54cd69c62623ec9ce791285b48f68adadba86adcc"
+    },
+    {
+      "observation_date": "2024-03-05",
+      "value": 7.93,
+      "issue_month": "2024-03",
+      "source_url": "https://q-cam.com/wp-content/uploads/2024/03/QCAM-MONTHLY-March-2024.pdf",
+      "source_page": 9,
+      "source_sha256": "1fe414d1b31596535c145b21c8c21a1b1a6a2af560cc4da59a0c9edf774704a8"
+    },
+    {
+      "observation_date": "2024-04-02",
+      "value": 8.13,
+      "issue_month": "2024-04",
+      "source_url": "https://q-cam.com/wp-content/uploads/2024/04/QCAM-MONTHLY-April-2024.pdf",
+      "source_page": 9,
+      "source_sha256": "8c8c5d043e4e2a0b166f6560acba3df945e93e28f4f9ddc8475e02e0320e5592"
+    },
+    {
+      "observation_date": "2024-05-02",
+      "value": 10.2,
+      "issue_month": "2024-05",
+      "source_url": "https://q-cam.com/wp-content/uploads/2024/05/QCAM-MONTHLY-May-2024.pdf",
+      "source_page": 9,
+      "source_sha256": "8e39d53c7e83f4cee0693133e7633a0203b7f8419ecbb6c4b4808fde5e380f6d"
+    },
+    {
+      "observation_date": "2024-06-04",
+      "value": 8.95,
+      "issue_month": "2024-06",
+      "source_url": "https://q-cam.com/wp-content/uploads/2024/06/QCAM-MONTHLY-June-2024.pdf",
+      "source_page": 9,
+      "source_sha256": "8f7974cf6422ffa50fbbb58845b88cdaad8ab63b23bee2e77fc5972c167bc292"
+    },
+    {
+      "observation_date": "2024-07-02",
+      "value": 9.73,
+      "issue_month": "2024-07",
+      "source_url": "https://q-cam.com/wp-content/uploads/2024/07/QCAM-MONTHLY-July-2024.pdf",
+      "source_page": 13,
+      "source_sha256": "08cb7b1b348a262e15230fbce64bc80a9ea93bcfbe99ed544653233457bf1118"
+    },
+    {
+      "observation_date": "2024-08-06",
+      "value": 11.93,
+      "issue_month": "2024-08",
+      "source_url": "https://q-cam.com/wp-content/uploads/2024/08/QCAM-MONTHLY-August-2024.pdf",
+      "source_page": 9,
+      "source_sha256": "76cd45dc86fd8aa02909874e31fc818f44028ccc2fe74f448fef98db5ca10782"
+    },
+    {
+      "observation_date": "2024-09-03",
+      "value": 11.55,
+      "issue_month": "2024-09",
+      "source_url": "https://q-cam.com/wp-content/uploads/2024/09/QCAM-MONTHLY-September-2024.pdf",
+      "source_page": 9,
+      "source_sha256": "2969f0c17822800ab408c53a3f03110f3b23dc19659bd8cc6366a2ea2ce2d545"
+    },
+    {
+      "observation_date": "2024-10-01",
+      "value": 12.18,
+      "issue_month": "2024-10",
+      "source_url": "https://q-cam.com/wp-content/uploads/2024/10/QCAM-MONTHLY-October-2024.pdf",
+      "source_page": 9,
+      "source_sha256": "24a8d486cde898f14b6ad8c69eb73ce3998afad00262f3ed2e78b85635b019d8"
+    },
+    {
+      "observation_date": "2024-11-06",
+      "value": 11.05,
+      "issue_month": "2024-11",
+      "source_url": "https://q-cam.com/wp-content/uploads/2024/11/QCAM-MONTHLY-November-2024.pdf",
+      "source_page": 9,
+      "source_sha256": "8750762eca6742c483f9264b41dc782c43592ebbc5537f807ba3ea114879e512"
+    },
+    {
+      "observation_date": "2024-12-03",
+      "value": 11.4,
+      "issue_month": "2024-12",
+      "source_url": "https://q-cam.com/wp-content/uploads/2024/12/QCAM-MONTHLY-December-2024.pdf",
+      "source_page": 9,
+      "source_sha256": "8b463db26a9442ced3c65c62bebf7dc4456e18a3bc9560706a842b758d595b2a"
+    },
+    {
+      "observation_date": "2025-01-07",
+      "value": 10.2,
+      "issue_month": "2025-01",
+      "source_url": "https://q-cam.com/wp-content/uploads/2025/01/QCAM-MONTHLY-January-2025.pdf",
+      "source_page": 13,
+      "source_sha256": "c4aaf69d0bd939ea76aa2d07dc45ac9d2c4d998d7c58a405414d491d32252782"
+    },
+    {
+      "observation_date": "2025-02-05",
+      "value": 10.33,
+      "issue_month": "2025-02",
+      "source_url": "https://q-cam.com/wp-content/uploads/2025/02/QCAM-MONTHLY-February-2025.pdf",
+      "source_page": 9,
+      "source_sha256": "4c8fdc2396a9fa0bf723684ee02024dc9eed3ea0d54fd9c38288579487f26d7b"
+    },
+    {
+      "observation_date": "2025-03-04",
+      "value": 10.8,
+      "issue_month": "2025-03",
+      "source_url": "https://q-cam.com/wp-content/uploads/2025/03/QCAM-MONTHLY-March-2025.pdf",
+      "source_page": 9,
+      "source_sha256": "aacd3f92798d8c11187e3d4dfbba626c712eb6febb663060aaa2aaf85b907556"
+    },
+    {
+      "observation_date": "2025-04-01",
+      "value": 10.43,
+      "issue_month": "2025-04",
+      "source_url": "https://q-cam.com/wp-content/uploads/2025/04/QCAM-MONTHLY-April-2025.pdf",
+      "source_page": 9,
+      "source_sha256": "29c21d4e11f43f20fe53e6a407a299d5c4f4d525b1a29c0d95857c417054684d"
+    },
+    {
+      "observation_date": "2025-05-06",
+      "value": 12.33,
+      "issue_month": "2025-05",
+      "source_url": "https://q-cam.com/wp-content/uploads/2025/05/QCAM-MONTHLY-May-2025.pdf",
+      "source_page": 13,
+      "source_sha256": "414afb6bfa9bc02e38f78d381ffd712b8887ee3ec8e8b60eaef018640e76bd17"
+    },
+    {
+      "observation_date": "2025-06-03",
+      "value": 11.15,
+      "issue_month": "2025-06",
+      "source_url": "https://q-cam.com/wp-content/uploads/2025/06/QCAM-MONTHLY-June-2025.pdf",
+      "source_page": 9,
+      "source_sha256": "0555a13ee1696bafc60b691d6c075fde3daf43117e88d078282264ae1d6c1128"
+    },
+    {
+      "observation_date": "2025-07-02",
+      "value": 10.65,
+      "issue_month": "2025-07",
+      "source_url": "https://q-cam.com/wp-content/uploads/2025/07/QCAM-MONTHLY-July-2025.pdf",
+      "source_page": 9,
+      "source_sha256": "27a8a24133f96b3d096810c5dfd9ad4c83761aab16785540bc798efbd4146216"
+    },
+    {
+      "observation_date": "2025-08-06",
+      "value": 10.13,
+      "issue_month": "2025-08",
+      "source_url": "https://q-cam.com/wp-content/uploads/2025/08/QCAM-MONTHLY-August-2025.pdf",
+      "source_page": 9,
+      "source_sha256": "10794f7fc184ea6bb159d4b9ffdac4236539727592442a9fe39db7cef89c6678"
+    },
+    {
+      "observation_date": "2025-09-03",
+      "value": 9.73,
+      "issue_month": "2025-09",
+      "source_url": "https://q-cam.com/wp-content/uploads/2025/09/QCAM-MONTHLY-September-2025.pdf",
+      "source_page": 9,
+      "source_sha256": "140310329b252010d7545cb7705fbab58577b676d3811c41e80dbc89bc2a7696"
+    },
+    {
+      "observation_date": "2025-10-07",
+      "value": 9.18,
+      "issue_month": "2025-10",
+      "source_url": "https://q-cam.com/wp-content/uploads/2025/10/QCAM-MONTHLY-October-2025.pdf",
+      "source_page": 9,
+      "source_sha256": "eaf5e2018b82afa835adaac16508db93350cf6a8252a799b3186b378f2914ce0"
+    },
+    {
+      "observation_date": "2025-11-05",
+      "value": 8.78,
+      "issue_month": "2025-11",
+      "source_url": "https://q-cam.com/wp-content/uploads/2025/11/QCAM-MONTHLY-November-2025.pdf",
+      "source_page": 9,
+      "source_sha256": "1aec3a3ca143ac816069209c529320a17cbcc6941c72d52a434cf325adc35b47"
+    },
+    {
+      "observation_date": "2025-12-03",
+      "value": 9.1,
+      "issue_month": "2025-12",
+      "source_url": "https://q-cam.com/wp-content/uploads/2025/12/QCAM-MONTHLY-December-2025.pdf",
+      "source_page": 9,
+      "source_sha256": "2988e92f36ca7eeb37cf791eacb1e39d66e09669be18abb72d83351a09930ceb"
+    },
+    {
+      "observation_date": "2026-01-06",
+      "value": 8.38,
+      "issue_month": "2026-01",
+      "source_url": "https://q-cam.com/wp-content/uploads/2026/01/QCAM-MONTHLY-January-2026.pdf",
+      "source_page": 9,
+      "source_sha256": "d93d2545856d8e6a3e671e616f8c780b2dd393d89cc4d653605a5c3ac51f09e0"
+    },
+    {
+      "observation_date": "2026-02-10",
+      "value": 9.43,
+      "issue_month": "2026-02",
+      "source_url": "https://q-cam.com/wp-content/uploads/2026/02/QCAM-MONTHLY-February-2026.pdf",
+      "source_page": 9,
+      "source_sha256": "ef1d7d906479ac0e790b0a69ccff5ec401f50179f1dc34c01a0eaec9ee40a700"
+    },
+    {
+      "observation_date": "2026-03-03",
+      "value": 9.65,
+      "issue_month": "2026-03",
+      "source_url": "https://q-cam.com/wp-content/uploads/2026/03/QCAM-MONTHLY-March-2026.pdf",
+      "source_page": 9,
+      "source_sha256": "6e0b4c91984634c4da829a2a1996b6369d87ced73406fae8141ab3bf841ee26b"
+    },
+    {
+      "observation_date": "2026-03-31",
+      "value": 9.5,
+      "issue_month": "2026-04",
+      "source_url": "https://q-cam.com/wp-content/uploads/2026/04/QCAM-MONTHLY-April-2026.pdf",
+      "source_page": 9,
+      "source_sha256": "cf46ac82161383fa906631cfd5054cdf9007b35d6d3bd25105e5b88cd15c6d34"
+    },
+    {
+      "observation_date": "2026-05-05",
+      "value": 7.93,
+      "issue_month": "2026-05",
+      "source_url": "https://q-cam.com/wp-content/uploads/2026/05/QCAM-MONTHLY-May-2026.pdf",
+      "source_page": 9,
+      "source_sha256": "bbd27ad71bf271e68c47e1d096e987b241e39f663b24e4586ad1ec931d826378"
+    },
+    {
+      "observation_date": "2026-06-01",
+      "value": 7.08,
+      "issue_month": "2026-06",
+      "source_url": "https://q-cam.com/wp-content/uploads/2026/06/QCAM-MONTHLY-June-2026.pdf",
+      "source_page": 9,
+      "source_sha256": "de6762ac83623635bed8488f9836afa1f034b3a6394f3d8d42c172fe3fc68c8f"
+    },
+    {
+      "observation_date": "2026-06-30",
+      "value": 7.98,
+      "issue_month": "2026-07",
+      "source_url": "https://q-cam.com/wp-content/uploads/2026/07/QCAM-MONTHLY-July-2026-1.pdf",
+      "source_page": 9,
+      "source_sha256": "97e33369bdb45216ca27567cdab22cd6f4c43175d82cbfe7230fb92cd02093ef"
+    },
+    {
+      "observation_date": "2026-08-04",
+      "value": 8.38,
+      "issue_month": "2026-08",
+      "source_url": "https://q-cam.com/wp-content/uploads/2026/08/QCAM-MONTHLY-August-2026.pdf",
+      "source_page": 9,
+      "source_sha256": "ab4deb6ab90156e63d7bab3bc641401e4b916e7d73a9c1fc924bed086dd969ba"
+    },
+    {
+      "observation_date": "2026-09-01",
+      "value": 7.46,
+      "issue_month": "2026-09",
+      "source_url": "https://q-cam.com/wp-content/uploads/2026/09/QCAM-MONTHLY-September-2026.pdf",
+      "source_page": 9,
+      "source_sha256": "6d00f3033930840c92f7a5cb7fceae2bb847a5735f515d16a13cc37973d8a4dc"
+    },
+    {
+      "observation_date": "2026-10-06",
+      "value": 8.29,
+      "issue_month": "2026-10",
+      "source_url": "https://q-cam.com/wp-content/uploads/2026/10/QCAM-MONTHLY-October-2026.pdf",
+      "source_page": 9,
+      "source_sha256": "2d8e5d45d417cf2c3b5b5d82de4d208009063b5cf13ba5cc7beb9f14265fad59"
+    },
+    {
+      "observation_date": "2026-11-04",
+      "value": 7.42,
+      "issue_month": "2026-11",
+      "source_url": "https://q-cam.com/wp-content/uploads/2026/11/QCAM-MONTHLY-November-2026.pdf",
+      "source_page": 9,
+      "source_sha256": "d3e020e1a92b661433527be511162a3b7d0e4ba88dd1fbe88bedb153ada912ab"
+    }
+  ],
+  "coverage_start": "2022-01-05",
+  "coverage_end": "2026-11-04",
+  "record_count": 59,
+  "updated_at": "2026-11-16T09:38:45.955205+00:00"
+}
