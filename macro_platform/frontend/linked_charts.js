@@ -204,7 +204,7 @@ export default function({data, parentElement}) {
   let first = Infinity, last = -Infinity;
   for (const series of base.series) for (const point of series.data) {
     const time = asTime(point[0]);
-    if (Number.isFinite(time)) { first = Math.min(first, time); last = Math.max(last, time); }
+    if (Number.isFinite(time) && Number.isFinite(point[1])) { first = Math.min(first, time); last = Math.max(last, time); }
   }
   if (first < last) base.xAxis = {...base.xAxis, min:first, max:last};
   let chart, observer, disposed = false, frame = 0;
@@ -218,8 +218,8 @@ export default function({data, parentElement}) {
   };
   element.addEventListener('wheel', lockWheelAxes, {capture:true, passive:true});
   const saved = parentElement.__macroChartState;
-  // Period switches remount the component, so DOM-local state alone is lost.
-  // Keep only legend choices in this app window, isolated by logical chart.
+  // Keep legend choices across data updates and actual remounts, isolated
+  // by logical chart and schema.
   // Zoom remains local: a new period must use its newly requested X window.
   const legendStates = window.__macroLegendStates ||= new Map();
   const legendKey = data.legend_state_key;
@@ -422,6 +422,16 @@ export default function({data, parentElement}) {
     if (chart && chart.getHeight() !== height) chart.resize({height});
   }
 
+  function endpointDate(option, zooms) {
+    const zoom = (zooms || [])[0] || {};
+    const end = asTime(zoom.endValue);
+    const upper = Number.isFinite(end) ? end : first+(last-first)*(zoom.end ?? 100)/100;
+    return {id:'macro-endpoint-date', type:'text', right:option.grid.right,
+      bottom:Math.max(30,(Number(option.grid.bottom)||75)-28), silent:true,
+      style:{text:Number.isFinite(upper) ? new Date(upper).toISOString().slice(0,10) : '',
+        fill:'#475569',fontSize:11,align:'right'}};
+  }
+
   function updateLayout() {
     if (!chart || disposed) return;
     refreshPriceGuides(chart.getOption().dataZoom);
@@ -441,6 +451,8 @@ export default function({data, parentElement}) {
       patch.series = option.series.map(series => ({name:series.name,
         ...(series.type === 'bar' ? {barWidth:series.barWidth} : {})}));
     }
+    patch.graphic = [...(patch.graphic || []), endpointDate(option, chart.getOption().dataZoom)];
+    patch.xAxis = {...patch.xAxis,axisLabel:{...patch.xAxis.axisLabel,showMaxLabel:false}};
     chart.setOption(patch, {silent:true, replaceMerge:['yAxis']});
     parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom};
   }
@@ -463,6 +475,8 @@ export default function({data, parentElement}) {
     chart = reusedChart && !reusedChart.isDisposed() ? reusedChart : echarts.init(element, null, {renderer:'canvas'});
     element.__macroChart = chart;
     // Replace the whole option when Streamlit reuses a mounted chart element.
+    option.xAxis.axisLabel = {...option.xAxis.axisLabel,showMaxLabel:false};
+    option.graphic = [endpointDate(option, option.dataZoom)];
     chart.setOption(option, {notMerge:true});
     if (hasPriceGuides) updateLayout();
     element.setAttribute('aria-busy', 'false');

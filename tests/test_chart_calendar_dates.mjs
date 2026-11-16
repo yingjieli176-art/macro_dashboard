@@ -19,3 +19,5 @@ lockRightAxes(axes,new Map([[1,[7000,8000]],[2,[3,4]]]));
 assert.equal(axes.yAxis[0].min,undefined);
 assert.deepEqual([axes.yAxis[1].min,axes.yAxis[1].max],[7000,8000]);
 assert.deepEqual([axes.yAxis[2].min,axes.yAxis[2].max],[3,4]);
+
+assert.equal(latestObservation({series:[{data:[['bad-date',7],['2026-11-12',3]]}]}),'2026-11-12');

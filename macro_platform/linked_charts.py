@@ -33,8 +33,8 @@ def _component():
 
 
 def render_echarts_chart(option, *, height=465, width="stretch", key=None, theme=None):
-    # The component key still includes the period so a new month applies its
-    # own X window. Legend choices belong to the chart, independently of it.
+    # Keep component identity stable across periods. The requested period
+    # travels as data so the existing canvas can apply its new X window.
     logical_key, _, schema = str(key or "").partition("_schema_")
     parts = logical_key.rsplit("_", 1)
     legend_key = parts[0] if len(parts) == 2 and parts[1] in {"5Y", "1Y", "6M", "3M", "1M"} else logical_key
