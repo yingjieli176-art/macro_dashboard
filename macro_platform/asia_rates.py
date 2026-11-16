@@ -336,6 +336,7 @@ def build_china_rates_figure(date_range: str, us_real_yield: pd.DataFrame | None
         expected += ("沪深300 (R2)",)
     fig = _finish_rates_figure(fig, date_range, latest, expected)
     if csi300 is not None:
+        fig.update_layout(meta=dict(fig.layout.meta or {}, axis_order=["y", "y2", "y3"]))
         fig.update_layout(
             margin=dict(l=64, r=126, t=74, b=36, pad=2),
             xaxis=dict(domain=[0.0, 0.9]),
