@@ -3014,7 +3014,8 @@ def _cache_safe_figure(figure):
             # first so an equivalent list really replaces the binary vector.
             setattr(trace, field, None)
             setattr(trace, field, converted)
-    return figure
+    from macro_platform.figure_cache import CachedFigure
+    return CachedFigure.adopt(figure)
 
 
 @st.cache_data(ttl=300, max_entries=32, show_spinner=False)

@@ -55,20 +55,22 @@ def main():
     parser.add_argument("--warm", type=int, default=100)
     parser.add_argument("--interactions", type=int, default=100)
     parser.add_argument("--child-cold", action="store_true")
+    parser.add_argument("--app", default="app.py")
     parser.add_argument("--output", default="runtime_benchmark.json")
     args = parser.parse_args()
+    app_path = (ROOT / args.app).resolve()
     logging.getLogger("streamlit").setLevel(logging.ERROR)
     if args.child_cold:
         with patch.object(requests.sessions.Session, "request", new=offline_http), \
              patch("urllib.request.urlopen", new=offline_urlopen):
             started = time.perf_counter()
-            app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60).run()
+            app = AppTest.from_file(str(app_path), default_timeout=60).run()
             print(json.dumps({"seconds": time.perf_counter()-started,
                               "failed": bool(app.exception) or len(app.button_group) != 22}))
         return
     cold, cold_failed = [], 0
     for _ in range(args.cold):
-        child = subprocess.run([sys.executable, __file__, "--child-cold"], cwd=ROOT,
+        child = subprocess.run([sys.executable, __file__, "--child-cold", "--app", str(app_path)], cwd=ROOT,
                                capture_output=True, text=True, timeout=90, check=True)
         result = json.loads(child.stdout.splitlines()[-1])
         cold.append(result["seconds"]); cold_failed += result["failed"]
@@ -76,7 +78,7 @@ def main():
     warm_failed = interaction_failed = 0
     with patch.object(requests.sessions.Session, "request", new=offline_http), \
          patch("urllib.request.urlopen", new=offline_urlopen):
-        app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60).run()
+        app = AppTest.from_file(str(app_path), default_timeout=60).run()
         for index in range(args.warm):
             started = time.perf_counter(); app.run()
             warm.append(time.perf_counter()-started)
@@ -113,7 +115,7 @@ def main():
               "resources_after_cache_release": after_release,
               "thread_names_after_release": [thread.name for thread in threading.enumerate()],
               "source_fingerprints": {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
-                                      for path in [ROOT/'app.py', *sorted((ROOT/'data_snapshots').rglob('*.json'))]}}
+                                      for path in [app_path, *sorted((ROOT/'data_snapshots').rglob('*.json'))]}}
     Path(args.output).write_text(json.dumps(report, indent=2)+"\n")
     print(json.dumps(report, indent=2))
 
