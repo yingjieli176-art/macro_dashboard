@@ -378,7 +378,7 @@ export default function({data, parentElement}) {
     const right = axes.filter(axis => axis.position === 'right');
     const mobile = element.clientWidth <= 700;
     const compactAxes = mobile && axes.length > 5 && element.clientWidth <= 480;
-    const spacing = compactAxes ? 30 : mobile ? (element.clientWidth <= 360 ? 40 : element.clientWidth <= 480 ? 44 : 48) : 58;
+    const spacing = compactAxes ? (axes.length >= 8 ? 28 : 30) : mobile ? (element.clientWidth <= 360 ? 40 : element.clientWidth <= 480 ? 44 : 48) : 58;
     const lane = mobile ? spacing : 70;
     let visibleRight = 0, visibleLeft = 0;
     axes.forEach((axis, index) => {
