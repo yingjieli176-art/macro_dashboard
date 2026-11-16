@@ -11,12 +11,12 @@
   "records": [
     {
       "observation_date": "2026-11-16",
-      "observation_timestamp": "2026-11-16T07:00:00+00:00",
+      "observation_timestamp": "2026-11-16T12:30:00+00:00",
       "value": -1.74
     }
   ],
   "record_count": 1,
   "coverage_start": "2026-11-16",
   "coverage_end": "2026-11-16",
-  "updated_at": "2026-11-16T09:30:36.597356+00:00"
+  "updated_at": "2026-11-16T22:53:37.807180+00:00"
 }
