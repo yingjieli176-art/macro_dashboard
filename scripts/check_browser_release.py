@@ -395,6 +395,8 @@ def check_mobile_layout(page):
         page.set_viewport_size({"width": width, "height": height})
         page.wait_for_timeout(600)
         states = charts.evaluate_all("elements => elements.map(element => (" + probe + ")(element))")
+        for index in range(charts.count()):
+            check_even_date_axis(charts.nth(index))
         for original, state in zip(before, states):
             assert state['series'] == original['series'], (
                 width, 'observations changed',
@@ -647,6 +649,29 @@ def exercise_range_legend_persistence(page, prefix, group_index):
     return {'hidden_choices_preserved':True,'axis_visibility_preserved':True,
             'reselected_choices_preserved':True,'period_windows':windows,'observations_unchanged':True}
 
+
+
+def check_even_date_axis(chart):
+    state = chart.evaluate("""element => {
+        const chart=element.__macroChart, option=chart.getOption();
+        const group=(option.graphic || []).flatMap(item=>item.elements || [])
+            .find(item=>item.id==='macro-endpoint-date');
+        const ticks=(group?.children || []).filter(item=>item.type==='text')
+            .map(item=>({text:item.style.text,x:item.x,y:item.y,size:item.style.fontSize}));
+        const end=chart.getModel().getComponent('xAxis').axis.scale.getExtent()[1];
+        const day=new Date(end).toISOString().slice(0,10);
+        return {ticks,end:`Y${day.slice(2,4)}/${day.slice(5,7)}-${day.slice(8,10)}`,
+            nativeLabels:option.xAxis[0].axisLabel.show};
+    }""")
+    ticks = state['ticks']
+    assert len(ticks) >= 2 and state['nativeLabels'] is False, state
+    assert ticks[-1]['text'] == state['end'], state
+    for tick in ticks:
+        assert re.fullmatch(r'Y\d{2}/\d{2}-\d{2}', tick['text']), state
+        assert 8 <= tick['size'] <= 9 and abs(tick['y']-ticks[0]['y']) < .1, state
+    gaps = [right['x']-left['x'] for left,right in zip(ticks,ticks[1:])]
+    assert min(gaps) > 0 and max(gaps)-min(gaps) < .1, state
+    return state
 
 
 def main():
@@ -937,6 +962,8 @@ def main():
             assert not any('VIX3M−VIX' in s['name'] for s in sentiment), sentiment
             report['spx_sentiment'] = sentiment
             report["mobile_layout"] = check_mobile_layout(page)
+            report['even_date_axis'] = [check_even_date_axis(charts.nth(index))
+                                       for index in range(charts.count())]
             # The mobile-layout sweep resizes every chart and can trigger a
             # Streamlit fragment rerun. Wait for the app to settle, then resolve
             # the replacement DOM node rather than scrolling a detached chart.

@@ -1,5 +1,29 @@
 // App-owned component. Never reach into Streamlit's React internals.
 const copy = value => JSON.parse(JSON.stringify(value));
+// Observations are immutable; layout changes need copies of styles, not every
+// historical point. ECharts receives the same complete source arrays.
+export function copyPresentation(option) {
+  const {series = [], ...layout} = option;
+  return {...copy(layout), series:series.map(({data, ...style}) => ({...copy(style), data}))};
+}
+
+export function dateLabel(value) {
+  const time = asTime(value);
+  if (!Number.isFinite(time)) return '';
+  const day = new Date(time).toISOString().slice(0,10);
+  return `Y${day.slice(2,4)}/${day.slice(5,7)}-${day.slice(8,10)}`;
+}
+
+export function evenDateTicks(lower, upper, width) {
+  if (!(Number.isFinite(lower) && Number.isFinite(upper) && upper >= lower)) return [];
+  if (lower === upper) return [{time:upper, fraction:1, label:dateLabel(upper)}];
+  const days = Math.max(1, Math.floor((upper-lower)/86400000));
+  const intervals = Math.max(1, Math.min(10, days, Math.floor(width/86)));
+  return Array.from({length:intervals+1}, (_,index) => {
+    const time = lower+(upper-lower)*index/intervals;
+    return {time, fraction:index/intervals, label:dateLabel(time)};
+  });
+}
 export function presetStart(end, period) {
   const months = {'5Y':60,'1Y':12,'6M':6,'3M':3,'1M':1}[period] || 12;
   const value = new Date(end), day = value.getUTCDate();
@@ -285,7 +309,7 @@ export default function({data, parentElement}) {
 
   function presentation() {
     const width = element.clientWidth;
-    const result = copy(base);
+    const result = copyPresentation(base);
     const matching = (source.media || []).filter(item => item.query && width <= item.query.maxWidth);
     if (matching.length) matching.forEach(item => merge(result, item.option));
     else {
@@ -319,7 +343,7 @@ export default function({data, parentElement}) {
       axisLabel:{formatter:value => `${Number(value.toFixed(2))}%`, fontSize:10,
         showMinLabel:false, showMaxLabel:false}, splitLine:{show:false},
       min:extent => Math.min(extent.min, 0), max:extent => Math.max(extent.max, 0)});
-    option.series = [...base.series.map(series => copy(series)), ...drawdowns.map((path, index) => ({
+    option.series = [...copyPresentation(base).series, ...drawdowns.map((path, index) => ({
       id:`macro-peak-drawdown-${index}`, name:ratioNames[index], type:'line',
       xAxisIndex:0, yAxisIndex:axisIndex, data:path.data, encode:{x:0, y:1, tooltip:[1]},
       showSymbol:true, symbol:'circle', symbolSize:3, connectNulls:false, animation:false, z:4,
@@ -441,12 +465,19 @@ export default function({data, parentElement}) {
 
   function endpointDate(option, zooms) {
     const zoom = (zooms || [])[0] || {};
+    const start = asTime(zoom.startValue);
     const end = asTime(zoom.endValue);
-    const upper = Number.isFinite(end) ? end : first+(last-first)*(zoom.end ?? 100)/100;
-    return {id:'macro-endpoint-date', type:'text', right:option.grid.right,
-      bottom:Math.max(30,(Number(option.grid.bottom)||75)-28), silent:true,
-      style:{text:Number.isFinite(upper) ? new Date(upper).toISOString().slice(0,10) : '',
-        fill:'#475569',fontSize:11,align:'right'}};
+    const lower = Math.max(first, Number.isFinite(start) ? start : first+(last-first)*(zoom.start ?? 0)/100);
+    const upper = Math.min(last, Number.isFinite(end) ? end : first+(last-first)*(zoom.end ?? 100)/100);
+    const left = Number(option.grid.left) || 0;
+    const width = Math.max(1, element.clientWidth-left-(Number(option.grid.right)||0));
+    const y = (chart?.getHeight() || parseFloat(element.style.height))-Number(option.grid.bottom)+12;
+    const ticks = evenDateTicks(lower, upper, width);
+    return {id:'macro-endpoint-date', type:'group', $action:'replace', silent:true,
+      children:ticks.map((tick,index) => ({type:'text', x:left+width*tick.fraction, y,
+        style:{text:tick.label,fill:'#475569',fontSize:width < 110 ? 8 : 9,
+          align:index === 0 ? 'left' : index === ticks.length-1 ? 'right' : 'center',
+          verticalAlign:'top'}}))};
   }
 
   function updateLayout() {
@@ -469,7 +500,7 @@ export default function({data, parentElement}) {
         ...(series.type === 'bar' ? {barWidth:series.barWidth} : {})}));
     }
     patch.graphic = [...(patch.graphic || []), endpointDate(option, chart.getOption().dataZoom)];
-    patch.xAxis = {...patch.xAxis,axisLabel:{...patch.xAxis.axisLabel,showMaxLabel:false}};
+    patch.xAxis = {...patch.xAxis,axisLabel:{...patch.xAxis.axisLabel,show:false},axisTick:{show:false}};
     chart.setOption(patch, {silent:true, replaceMerge:['yAxis']});
     parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom};
   }
@@ -497,7 +528,8 @@ export default function({data, parentElement}) {
     chart = reusedChart && !reusedChart.isDisposed() ? reusedChart : echarts.init(element, null, {renderer:'canvas'});
     element.__macroChart = chart;
     // Replace the whole option when Streamlit reuses a mounted chart element.
-    option.xAxis.axisLabel = {...option.xAxis.axisLabel,showMaxLabel:false};
+    option.xAxis.axisLabel = {...option.xAxis.axisLabel,show:false};
+    option.xAxis.axisTick = {show:false};
     option.graphic = [endpointDate(option, option.dataZoom)];
     chart.setOption(option, {notMerge:true});
     if (hasPriceGuides) updateLayout();
@@ -508,7 +540,6 @@ export default function({data, parentElement}) {
         activePeriod = button.dataset.period;
         periodStates.set(legendKey,activePeriod); showPeriod();
         rightBounds.clear(); manualZoom = false; applyingPreset = true;
-        updateLayout();
         chart.dispatchAction({type:'dataZoom',startValue:presetStart(last,activePeriod),endValue:last});
         applyingPreset = false;
         updateLayout();
@@ -531,7 +562,8 @@ export default function({data, parentElement}) {
       rememberSelection(); updateLayout();
     });
     chart.on('datazoom', () => {
-      if (!applyingPreset) manualZoom = true;
+      if (applyingPreset) return;
+      manualZoom = true;
       updateLayout();
       parentElement.__macroChartState = {selected:copy(selected),zoom:chart.getOption().dataZoom,period:activePeriod,manualZoom};
     });

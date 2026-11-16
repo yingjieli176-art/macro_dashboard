@@ -2188,7 +2188,8 @@ def _recoverable_echarts_option(fig, element_key, date_range, mode=None):
     with Plotly's fixed five-year Y axis. Cached data stays marked stale.
     """
     cache_key = f"_echarts_last_good_{element_key}_{mode or 'default'}"
-    builder = getattr(_echarts_axes, "build_adaptive_echarts_option", None)
+    builder = (getattr(_echarts_axes, "cached_adaptive_echarts_option", None)
+               or getattr(_echarts_axes, "build_adaptive_echarts_option", None))
     option = None
     if callable(builder):
         try:
@@ -3014,7 +3015,8 @@ def _cache_safe_figure(figure):
             # first so an equivalent list really replaces the binary vector.
             setattr(trace, field, None)
             setattr(trace, field, converted)
-    return figure
+    from macro_platform.figure_cache import CachedFigure
+    return CachedFigure(figure.to_dict(), _validate=False)
 
 
 @st.cache_data(ttl=300, max_entries=32, show_spinner=False)
