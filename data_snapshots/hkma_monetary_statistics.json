@@ -2,7 +2,7 @@
   "source": "HKMA Monetary Statistics + Monetary Base end-of-period",
   "source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/financial/monetary-statistics",
   "monetary_base_source_url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod",
-  "updated_at": "2026-11-15T01:56:51.262396+00:00",
+  "updated_at": "2026-11-16T02:10:42.566206+00:00",
   "record_count": 78,
   "coverage_start": "2020-05",
   "coverage_end": "2026-10",
