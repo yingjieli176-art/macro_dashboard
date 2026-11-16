@@ -486,7 +486,10 @@ export default function({data, parentElement}) {
       ...(!hasPriceGuides ? {formatter:params => compactTooltip(params, labels)} : {})};
     // A new preset always applies its supplied window; manual zoom only
     // survives updates within that same preset.
-    option.dataZoom = initialZoom;
+    // Keep the presentation's reserved footer space when applying a time window.
+    // Raw base/saved zoom options contain the unadjusted slider position.
+    option.dataZoom = initialZoom.map((zoom, index) => ({...zoom,
+      ...(zoom.type === 'slider' ? {bottom:option.dataZoom[index].bottom} : {})}));
     sizeBars(option, option.dataZoom);
     // Keep toolbox clear of the download/fullscreen buttons.
     if (option.toolbox) option.toolbox.right = 54;
