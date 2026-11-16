@@ -11,7 +11,7 @@ export function dateLabel(value) {
   const time = asTime(value);
   if (!Number.isFinite(time)) return '';
   const day = new Date(time).toISOString().slice(0,10);
-  return `Y${day.slice(2,4)}/${day.slice(5,7)}-${day.slice(8,10)}`;
+  return `${day.slice(2,4)}/${day.slice(5,7)}-${day.slice(8,10)}`;
 }
 
 export function evenDateTicks(lower, upper, width) {
@@ -47,6 +47,23 @@ export function lockRightAxes(option, bounds) {
     }
   });
   return option;
+}
+
+export function latestAnchoredRange(start, end) {
+  const span = Math.max(0, Math.min(100, end-start));
+  return [100-span, 100];
+}
+
+export function containLockedAxes(option, bounds, lower, upper, selected) {
+  for (const [index, extent] of bounds) {
+    const values = option.series.filter(s => (s.yAxisIndex || 0) === index && selected[s.name] !== false)
+      .flatMap(s => s.data.filter(p => p[0] >= lower && p[0] <= upper && Number.isFinite(p[1])).map(p => p[1]));
+    if (!values.length) continue;
+    const low = Math.min(...values), high = Math.max(...values);
+    const pad = Math.max((high-low)*.05, Math.abs(high)*.002, .01);
+    bounds.set(index, [low < extent[0] ? low-pad : extent[0], high > extent[1] ? high+pad : extent[1]]);
+  }
+  return lockRightAxes(option, bounds);
 }
 // These are observation calendar dates, not the viewer's local midnight.
 // Explicit UTC keeps axis labels, tooltips and peaks on the same source day.
@@ -245,7 +262,7 @@ export default function({data, parentElement}) {
   const lockWheelAxes = () => {
     if (!chart || disposed || rightBounds.size) return;
     chart.getModel().eachComponent('yAxis', axis => {
-      if (axis.get('position') === 'right') rightBounds.set(axis.componentIndex, axis.axis.scale.getExtent().slice());
+      if (axis.get('position') === 'right' && axis.id !== 'macro-peak-drawdown-axis') rightBounds.set(axis.componentIndex, axis.axis.scale.getExtent().slice());
     });
     updateLayout();
   };
@@ -342,7 +359,8 @@ export default function({data, parentElement}) {
       scale:true, show:active,
       axisLabel:{formatter:value => `${Number(value.toFixed(2))}%`, fontSize:10,
         showMinLabel:false, showMaxLabel:false}, splitLine:{show:false},
-      min:extent => Math.min(extent.min, 0), max:extent => Math.max(extent.max, 0)});
+      min:extent => Math.min(extent.min, 0)-Math.max((extent.max-extent.min)*.05,.05),
+      max:extent => Math.max(extent.max, 0)+Math.max((extent.max-extent.min)*.05,.05)});
     option.series = [...copyPresentation(base).series, ...drawdowns.map((path, index) => ({
       id:`macro-peak-drawdown-${index}`, name:ratioNames[index], type:'line',
       xAxisIndex:0, yAxisIndex:axisIndex, data:path.data, encode:{x:0, y:1, tooltip:[1]},
@@ -431,6 +449,8 @@ export default function({data, parentElement}) {
       axis.axisLine = {...axis.axisLine, show: show && axis.axisLine?.show !== false};
       axis.axisTick = {...axis.axisTick, show: show && axis.axisTick?.show !== false};
       axis.axisLabel = {...axis.axisLabel, show};
+      if (!axis.axisLabel.formatter) axis.axisLabel.formatter = value =>
+        Number.isFinite(value) ? value.toLocaleString('en-US',{maximumFractionDigits:2}) : '';
       axis.axisPointer = {...axis.axisPointer, show};
       if (!show) axis.name = '';
       if (axis.position === 'right') axis.offset = show ? visibleRight++ * spacing : 0;
@@ -488,7 +508,11 @@ export default function({data, parentElement}) {
   function updateLayout() {
     if (!chart || disposed) return;
     refreshPriceGuides(chart.getOption().dataZoom);
-    const option = lockRightAxes(sizeBars(compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth), chart.getOption().dataZoom), rightBounds);
+    const zooms = chart.getOption().dataZoom;
+    const option = sizeBars(compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth), zooms);
+    const [leftPercent, rightPercent] = chart.getModel().getComponent('dataZoom').getPercentRange();
+    containLockedAxes(option, rightBounds, first+(last-first)*leftPercent/100,
+                      first+(last-first)*rightPercent/100, selected);
     fitChartHeight(option);
     if (option.toolbox) option.toolbox.right = 54;
     // Price observations stay intact. Only derived paths and annotations
@@ -498,7 +522,7 @@ export default function({data, parentElement}) {
       yAxis: option.yAxis, xAxis: option.xAxis, toolbox: option.toolbox, tooltip:option.tooltip};
     if (hasPriceGuides) {
       patch.series = option.series.map((series, index) => index < base.series.length ?
-        {id:series.id, name:series.name, markLine:copy(series.markLine)} : series);
+        {id:series.id, name:series.name, clip:true, markLine:copy(series.markLine)} : {...series,clip:true});
       patch.graphic = priceRatioFooter();
     } else if (hasBars) {
       patch.series = option.series.map(series => ({name:series.name,
@@ -512,11 +536,16 @@ export default function({data, parentElement}) {
 
   loadEngine().then(echarts => {
     if (disposed) return;
-    const initialZoom = manualZoom && saved?.period === activePeriod ? saved.zoom :
+    const initialZoom = manualZoom && saved?.period === activePeriod ? saved.zoom.map(zoom => {
+      const {startValue,endValue,...rest} = zoom;
+      const [start,end] = latestAnchoredRange(zoom.start ?? 0,zoom.end ?? 100);
+      return {...rest,start,end};
+    }) :
       base.dataZoom.map(zoom=>({...zoom,startValue:presetStart(last,activePeriod),endValue:last}));
     if (hasPriceGuides) refreshPriceGuides(initialZoom);
     const option = compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth);
     option.legend.selected = selected;
+    option.series.forEach(series => {series.clip = true;});
     option.aria = {enabled:true};
     option.tooltip = {...option.tooltip, renderMode:'richText',
       ...(!hasPriceGuides ? {formatter:params => compactTooltip(params, labels)} : {})};
@@ -569,6 +598,13 @@ export default function({data, parentElement}) {
     chart.on('datazoom', () => {
       if (applyingPreset) return;
       manualZoom = true;
+      const [start,end] = chart.getModel().getComponent('dataZoom').getPercentRange();
+      if (Math.abs(end-100) > .000001) {
+        const [anchoredStart,anchoredEnd] = latestAnchoredRange(start,end);
+        applyingPreset = true;
+        chart.dispatchAction({type:'dataZoom',start:anchoredStart,end:anchoredEnd});
+        applyingPreset = false;
+      }
       updateLayout();
       parentElement.__macroChartState = {selected:copy(selected),zoom:chart.getOption().dataZoom,period:activePeriod,manualZoom};
     });
