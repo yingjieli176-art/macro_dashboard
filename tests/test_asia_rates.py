@@ -10,6 +10,31 @@ from macro_platform.echarts_axes import build_adaptive_echarts_option
 
 
 class AsiaRatesTraceTests(unittest.TestCase):
+    def test_csi300_keeps_original_closes_calendar_and_independent_axis(self):
+        dates = pd.bdate_range("2021-10-01", "2026-10-20")
+        china = pd.DataFrame({"observation_date": dates, "china_2y": 1.4,
+                              "china_10y": 2., "china_10y_2y_pct": .6})
+        index = pd.DataFrame({"observation_date": dates[::3],
+                              "close": [3500. + i for i in range(len(dates[::3]))]})
+        with patch("macro_platform.asia_rates.load_china_gov_yields", return_value=china):
+            for window, offset in RANGE_OFFSETS.items():
+                with self.subTest(window=window):
+                    fig = build_china_rates_figure(window, csi300=index)
+                    trace = fig.data[-1]
+                    expected = index.loc[index.observation_date >= dates.max() - offset]
+                    self.assertEqual(trace.name, "沪深300 (R2)")
+                    self.assertEqual(trace.yaxis, "y3")
+                    self.assertEqual(list(trace.x), list(expected.observation_date))
+                    self.assertEqual(list(trace.y), list(expected.close))
+                    option = build_adaptive_echarts_option(fig, window)
+                    self.assertEqual(option["series"][-1]["yAxisIndex"], 2)
+                    self.assertEqual(len(option["yAxis"]), 3)
+                    self.assertIn("pts", option["yAxis"][2]["name"])
+                    self.assertIn("pp", option["yAxis"][1]["name"])
+            empty = build_china_rates_figure("1Y", csi300=index.iloc[:0])
+            self.assertEqual(len(empty.data), 3)
+            self.assertIn("沪深300 (R2)", empty.layout.meta["missing_series"])
+
     def test_yen_index_has_independent_axis_and_original_calendar_in_all_windows(self):
         dates = pd.bdate_range("2021-10-01", "2026-10-20")
         japan = pd.DataFrame({"observation_date": dates, "japan_2y": 1.,

@@ -59,7 +59,7 @@ class DateAndSourceAudit(unittest.TestCase):
         expected = {
             'SP500': (9,4), '^N225': (4,15), 'SPX': ('us_drawdown',), 'RSP': ('us_drawdown',),
             'NVIDIA_CDS_5Y': ('nvidia_cds',), 'SN_ORACLE_CDS_5Y': ('nvidia_cds',),
-            '000300': ('cn_drawdown',), '000852': ('cn_drawdown',), '932000': ('cn_drawdown',),
+            '000300': ('cn_drawdown',14), '000852': ('cn_drawdown',), '932000': ('cn_drawdown',),
             'china_2y': (14,), 'japan_2y': (15,), 'japan_10y': (15,16), 'japan_30y': (15,),
             'DGS2': (3,), 'DGS10': (2,3,16), 'JPY=X': (15,16), 'SRFTSYD': (1,),
             'GC=F': (11,), 'HG=F': (13,), 'tc_usd_dmt': ('copper_tcrc',), 'BTC-USD': (12,),
