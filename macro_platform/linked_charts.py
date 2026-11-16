@@ -22,7 +22,8 @@ def _component():
              'aria-label="Download as PNG" title="下载图片">↓</button>'
              '<button type="button" aria-label="Fullscreen" title="全屏">⛶</button>'
              '</div><p role="alert" class="macro-chart-error" hidden></p></div>',
-        css='.macro-chart-shell{position:relative;width:100%;min-width:0}'
+        # A newline keeps attribute selectors from being mistaken for file globs.
+        css='.macro-chart-shell{position:relative;width:100%;min-width:0}\n'
             '.macro-chart-periods{display:flex;gap:0;padding-bottom:8px}'
             '.macro-chart-periods button{background:#fff;border:1px solid #d1d5db;color:#334155;padding:7px 15px;cursor:pointer}'
             '.macro-chart-periods button[aria-pressed=true]{color:#ef4444;background:#fff1f2;border-color:#ef4444}'
