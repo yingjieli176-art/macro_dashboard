@@ -147,6 +147,7 @@ def exercise_client_zoom(page, chart, minimum_axes=2):
     page.wait_for_timeout(200)
     slider = chart_state(chart)
     assert slider["zoom"][0] > start+.1, (before, slider)
+    assert abs(slider['zoom'][1]-100) < 1e-6, slider['zoom']
     assert_visible_axes(slider, minimum_axes=minimum_axes)
     return {"before": before, "slider": slider, "download_and_fullscreen_only": True}
 
@@ -661,14 +662,14 @@ def check_even_date_axis(chart):
         const first=Math.min(...dates), last=Math.max(...dates), zoom=option.dataZoom[0];
         const end=Math.min(last,Number.isFinite(zoom.endValue) ? zoom.endValue : first+(last-first)*(zoom.end??100)/100);
         const day=new Date(end).toISOString().slice(0,10);
-        return {ticks,end:`Y${day.slice(2,4)}/${day.slice(5,7)}-${day.slice(8,10)}`,
+        return {ticks,end:`${day.slice(2,4)}/${day.slice(5,7)}-${day.slice(8,10)}`,
             nativeLabels:option.xAxis[0].axisLabel.show};
     }""")
     ticks = state['ticks']
     assert len(ticks) >= 2 and state['nativeLabels'] is False, state
     assert ticks[-1]['text'] == state['end'], state
     for tick in ticks:
-        assert re.fullmatch(r'Y\d{2}/\d{2}-\d{2}', tick['text']), state
+        assert re.fullmatch(r'\d{2}/\d{2}-\d{2}', tick['text']), state
         assert 8 <= tick['size'] <= 9 and abs(tick['y']-ticks[0]['y']) < .1, state
     gaps = [right['x']-left['x'] for left,right in zip(ticks,ticks[1:])]
     assert min(gaps) > 0 and max(gaps)-min(gaps) < .1, state
@@ -857,6 +858,17 @@ def main():
             after = risk_chart.evaluate("e => e.__macroChart.getModel().findComponents({mainType:'yAxis'}).map(a=>a.axis.scale.getExtent())")
             assert before[1:] == after[1:], {'before':before,'after':after}
             assert risk_chart.evaluate("e => typeof e.__macroChart.getOption().yAxis[0].min !== 'number'")
+            for position, delta in ((.15,-250),(.8,350),(.5,-180)):
+                page.mouse.move(box['x']+box['width']*position,box['y']+box['height']*.6)
+                page.mouse.wheel(0,delta)
+                page.wait_for_timeout(250)
+                state = chart_state(risk_chart)
+                assert abs(state['zoom'][1]-100) < 1e-6, state['zoom']
+                for axis in state['axes']:
+                    if axis['observed']:
+                        assert axis['extent'][0] <= axis['observed'][0]+1e-7, axis
+                        assert axis['extent'][1] >= axis['observed'][1]-1e-7, axis
+                check_even_date_axis(risk_chart)
             time_label = page.locator('[class*=st-key-us_equity_risk_adaptive_default_schema_] [data-testid=macroChartTime]')
             first_clock = time_label.inner_text()
             assert '最新数据：' in first_clock and '北京时间：' in first_clock
