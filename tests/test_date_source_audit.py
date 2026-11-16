@@ -16,10 +16,34 @@ from macro_platform.echarts_axes import option_observation_health, summarize_ser
 from macro_platform.request_runtime import observed_cache
 from scripts import probe_all_sources as probe
 from macro_platform.dashboard_layout import MACRO_DISPLAY_NUMBER
-from scripts.audit_source_freshness import raw_record_issues
+from scripts.audit_source_freshness import raw_record_issues, attach_live_source_evidence
 
 
 class DateAndSourceAudit(unittest.TestCase):
+    def test_only_recent_live_same_observation_proves_upstream_delay(self):
+        from copy import deepcopy
+        report = [{'file': 'ai_cds_daily.json', 'stale_names': ['Microsoft 5Y（微软）'],
+                   'latest_by_name': {'Microsoft 5Y（微软）': '2026-11-04'}}]
+        stamp = '2026-11-16T01:00:00+00:00'
+        source = {'id': 'SN_MICROSOFT_CDS_5Y', 'checked_at': stamp,
+                  'status': 'at_source_latest', 'verification_method': 'live',
+                  'repository_latest': '2026-11-04', 'source_latest': '2026-11-04'}
+        evidence = {'checked_at': stamp, 'sources': [source]}
+        got = attach_live_source_evidence(deepcopy(report), evidence, now='2026-11-16T01:30Z')
+        self.assertIn('Microsoft 5Y（微软）', got[0]['upstream_delayed'])
+        # Keep the actual old observation and the cadence warning in the report.
+        self.assertEqual(got[0]['stale_names'], ['Microsoft 5Y（微软）'])
+        cases = [{'verification_method': 'snapshot'}, {'source_latest': '2026-11-13'},
+                 {'repository_latest': '2026-11-03'}, {'status': 'unverified'},
+                 {'checked_at': '2026-11-15T01:00Z'}, {'checked_at': '2026-11-17T01:00Z'}]
+        for change in cases:
+            with self.subTest(change=change):
+                proof = dict(evidence, sources=[dict(source, **change)])
+                got = attach_live_source_evidence(deepcopy(report), proof, now='2026-11-16T01:30Z')
+                self.assertFalse(got[0].get('upstream_delayed'))
+        self.assertFalse(attach_live_source_evidence(deepcopy(report), evidence,
+            now='2026-11-16T04:00Z')[0].get('upstream_delayed'))
+
     def test_treasury_accounts_share_a_date_without_being_duplicate_records(self):
         closing = {'record_date': '2026-11-12', 'account_type': 'Treasury General Account (TGA) Closing Balance', 'open_today_bal': '800000'}
         total = {'record_date': '2026-11-12', 'account_type': 'Total Operating Balance', 'close_today_bal': '800000'}

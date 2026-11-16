@@ -230,8 +230,8 @@ jobs:
           # Preserve both reports even when the cadence audit finds an issue.
           audit_status=0
           probe_status=0
-          python scripts/audit_source_freshness.py --output source_health.json || audit_status=$?
           python scripts/probe_all_sources.py --output all_source_freshness.json --strict || probe_status=$?
+          python scripts/audit_source_freshness.py --output source_health.json --source-report all_source_freshness.json || audit_status=$?
           test "$audit_status" -eq 0 && test "$probe_status" -eq 0
       - uses: actions/upload-artifact@v4
         if: always()
