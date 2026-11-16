@@ -19,6 +19,21 @@ def row(day="2026-10-30", tc=-245.33):
 
 
 class CopperTcrcTests(unittest.TestCase):
+    def test_weekly_fixing_uses_same_day_friday_report_range_and_ignores_ai_summary(self):
+        url = 'https://youse.mysteel.com/a/26111317/FE4C661E547A35F7.html'
+        title = '<title>Mysteel周报：铜精矿现货TC回调（11.9-11.13）-我的钢铁网</title>'
+        summary = '<div id="articleAiSummary"><div>本周Mysteel标准干净铜精矿TC周指数为-999美元/干吨</div></div>'
+        body = '<p>本周Mysteel标准干净铜精矿TC周指数为-244.63美元/干吨，较上周上涨1.61。</p>'
+        got = parse_article(title + summary + body, url)
+        self.assertEqual([(r['observation_date'], r['tc_usd_dmt'], r['rc_cents_lb']) for r in got],
+                         [('2026-11-13', -244.63, -24.463)])
+        self.assertEqual(parse_article(title + summary, url), [])
+        self.assertEqual(parse_article(body, url), [])
+        self.assertEqual(parse_article(title.replace('11.13', '11.6') + body, url), [])
+        self.assertEqual(parse_article(title + body, url.replace('26111317', '26111608')), [])
+        self.assertEqual(parse_article(title.replace('11.9-11.13', '9.21-9.24') + body,
+                                       url.replace('26111317', '26092417')), [])
+
     def test_signed_zero_values_and_future_nonfinite_wrong_pair(self):
         for tc in (-245.33, 0, 80):
             self.assertEqual(copper_tcrc.validate_record(row(tc=tc), today="2026-11-05")["tc_usd_dmt"], tc)
