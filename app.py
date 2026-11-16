@@ -86,6 +86,7 @@ from macro_platform import dashboard_layout as _dashboard_layout
 if _dashboard_layout.CHART_NUMBERING != "display_us_credit_jp_cn_20":
     _dashboard_layout = importlib.reload(_dashboard_layout)
 from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
+from macro_platform.china_equity import load_china_history
 from macro_platform.yen_index import load_yen_market_index
 from macro_platform.sp500_nikkei_ratio import build_sp500_nikkei_ratio_figure
 try:
@@ -2098,7 +2099,8 @@ def build_fig14(date_range):
         real = get_dfii5()
     except Exception:
         real = pd.DataFrame(columns=["observation_date", "DFII5"])
-    return build_china_rates_figure(date_range, us_real_yield=real)
+    return build_china_rates_figure(date_range, us_real_yield=real,
+                                    csi300=load_china_history("000300"))
 
 
 def build_fig15(date_range):
@@ -2837,7 +2839,7 @@ def render_copper_tcrc():
 def render_macro_chart_14(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[14]}. China Government Yields & US 5Y Real Yield</div>'
-        '<div class="section-description">China 2Y / 10Y · US 5Y Real · TIPS · China 10Y−2Y (R1)</div>',
+        '<div class="section-description">China 2Y / 10Y · US 5Y Real · TIPS · China 10Y−2Y (R1) · 沪深300（R2 · pts）</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2846,6 +2848,7 @@ def render_macro_chart_14(prebuilt_fig=None):
     add_sources([
         ("Eastmoney · China Treasury Yield History", "https://data.eastmoney.com/cjsj/zmgzsyl.html"),
         ("FRED · US 5Y TIPS Real Yield (DFII5)", "https://fred.stlouisfed.org/series/DFII5"),
+        ("中证指数 · 沪深300历史收盘", "https://www.csindex.com.cn/#/indices/family/detail?indexCode=000300"),
     ], "china_rates")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 

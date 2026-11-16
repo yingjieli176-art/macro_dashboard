@@ -268,7 +268,9 @@ def build_safe_echarts_option(fig, date_range="1Y"):
     or interpolate a missing observation in the process.
     """
     date_range = date_range if date_range in RANGE_OFFSETS else "1Y"
-    series, axis_map = [], {}
+    series = []
+    # Opt-in stable slots keep explicit R labels valid when a source is absent.
+    axis_map = {ref: index for index, ref in enumerate((fig.layout.meta or {}).get("axis_order", []))}
     latest = None
     for trace in fig.data:
         if getattr(trace, "visible", True) in (False, "legendonly"):
@@ -382,8 +384,9 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
     """Convert a Plotly chart to a native ECharts time-series option object."""
     date_range = date_range if date_range in RANGE_OFFSETS else "1Y"
     series = []
-    y_axis_map = {}
-    original_axis_refs = {}
+    y_axis_map = {ref: index for index, ref in enumerate((fig.layout.meta or {}).get("axis_order", []))}
+    original_axis_refs = {ref: "yaxis" if ref == "y" else "yaxis" + ref[1:]
+                          for ref in y_axis_map}
     latest = None
     # The HKD convertibility guide lines are chart annotations, not
     # observations. Keeping them as data would pin the Y axis near 7.75-7.85.

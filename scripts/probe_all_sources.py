@@ -524,7 +524,7 @@ def jobs():
         add(key, [11], "daily", snapshot("us_equity_daily.json", "date", "close", key),
             lambda key=key: us_equity(key))
     for code in ("000300", "000852", "932000"):
-        add(code, [12], "daily", snapshot("china_equity_daily.json", "date", "close", code),
+        add(code, [12, 13] if code == "000300" else [12], "daily", snapshot("china_equity_daily.json", "date", "close", code),
             lambda code=code: csindex(code))
     from macro_platform.treasury_cash import read_verified_tga_snapshot
     saved_tga = read_verified_tga_snapshot(ROOT / "data_snapshots/treasury_tga_daily.json")

@@ -403,6 +403,11 @@ def check_mobile_layout(page):
             assert state['zoom'] == original['zoom'], (width, 'zoom changed')
             assert len(state['axes']) == len(original['axes'])
             for index, axis in enumerate(state['axes']):
+                if not any(s['axis'] == index for s in state['series']):
+                    # Reserved R slots retain identity during a source outage;
+                    # the client hides their empty scale on every viewport.
+                    assert not axis['show'] and not axis['name'], (width, index, axis)
+                    continue
                 bars = any(s['type'] == 'bar' and s['axis'] == index for s in state['series'])
                 assert axis['show'] and axis['name'] and axis['scale'] == (not bars), state
             assert state['grid']['width'] > 80, (width, state)
@@ -854,6 +859,21 @@ def main():
             groups.nth(MACRO_DISPLAY_NUMBER[14]-1).get_by_text("3M", exact=True).click()
             china_selected = page.locator("[class*=st-key-china_rates_adaptive_default_schema_]").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             china_selected.wait_for(timeout=30000)
+            page.wait_for_function("""() => {
+                const element = document.querySelector('[class*=st-key-china_rates_adaptive_default_schema_] [aria-busy=false]');
+                if (!element) return false;
+                try { return Boolean((""" + INSTANCE_JS + """)(element).getModel()); }
+                catch (_) { return false; }
+            }""", timeout=30000)
+            china_index = china_selected.evaluate("""element => {
+                const option = (""" + INSTANCE_JS + """)(element).getOption();
+                const series = option.series.find(s => s.name === '沪深300 (R2)');
+                return {axis:series.yAxisIndex, points:series.data.filter(p=>Number.isFinite(p[1])).length,
+                        unit:option.yAxis[series.yAxisIndex].name, axes:option.yAxis.length};
+            }""")
+            assert china_index['axis'] == 2 and china_index['axes'] == 3, china_index
+            assert china_index['points'] > 30 and 'pts' in china_index['unit'], china_index
+            report['china_rates_csi300'] = china_index
             groups.nth(MACRO_DISPLAY_NUMBER[15]-1).get_by_text("1M", exact=True).click()
             china_selected.wait_for(timeout=30000)
             groups.nth(MACRO_DISPLAY_NUMBER[14]-1).get_by_text("1Y", exact=True).click()

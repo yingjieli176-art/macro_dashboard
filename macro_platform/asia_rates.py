@@ -310,25 +310,42 @@ def _add_trace(
     fig.add_trace(trace)
 
 
-def build_china_rates_figure(date_range: str, us_real_yield: pd.DataFrame | None = None) -> go.Figure:
-    """China yields plus observed FRED DFII5, on independent source dates."""
+def build_china_rates_figure(date_range: str, us_real_yield: pd.DataFrame | None = None,
+                           csi300: pd.DataFrame | None = None) -> go.Figure:
+    """China yields, FRED DFII5 and CSI 300 on independent source dates."""
     try:
         china = load_china_gov_yields()
     except Exception:
         china = _empty_frame("china")
     real = us_real_yield if us_real_yield is not None else pd.DataFrame()
-    latest = _latest_date((china, real))
+    index = csi300 if csi300 is not None else pd.DataFrame()
+    latest = _latest_date((china, real, index))
     fig = go.Figure()
     if latest is not None:
         start = latest - RANGE_OFFSETS.get(date_range, RANGE_OFFSETS["1Y"])
-        china, real = _slice(china, start), _slice(real, start)
+        china, real, index = _slice(china, start), _slice(real, start), _slice(index, start)
         _add_trace(fig, china, "china_2y", "China 2Y", width=2.1)
         _add_trace(fig, china, "china_10y", "China 10Y", width=2.8)
         _add_trace(fig, real, "DFII5", "US 5Y Real · TIPS", width=2.5, dash="dash")
         _add_trace(fig, china, "china_10y_2y_pct", "China 10Y−2Y (R1)",
                    width=2.0, dash="dot", yaxis="y2", suffix=" pp")
-    return _finish_rates_figure(fig, date_range, latest,
-                               ("China 2Y", "China 10Y", "US 5Y Real · TIPS", "China 10Y−2Y (R1)"))
+        _add_trace(fig, index, "close", "沪深300 (R2)", width=2.5,
+                   yaxis="y3", suffix=" pts")
+    expected = ("China 2Y", "China 10Y", "US 5Y Real · TIPS", "China 10Y−2Y (R1)")
+    if csi300 is not None:
+        expected += ("沪深300 (R2)",)
+    fig = _finish_rates_figure(fig, date_range, latest, expected)
+    if csi300 is not None:
+        fig.update_layout(meta=dict(fig.layout.meta or {}, axis_order=["y", "y2", "y3"]))
+        fig.update_layout(
+            margin=dict(l=64, r=126, t=74, b=36, pad=2),
+            xaxis=dict(domain=[0.0, 0.9]),
+            yaxis2=dict(anchor="free", position=0.92),
+            yaxis3=dict(title="沪深300 (pts)", overlaying="y", side="right",
+                        anchor="free", position=0.995, showgrid=False, fixedrange=True,
+                        tickformat=",.0f"),
+        )
+    return fig
 
 
 def build_japan_rates_figure(date_range: str, nikkei: pd.DataFrame | None = None,
