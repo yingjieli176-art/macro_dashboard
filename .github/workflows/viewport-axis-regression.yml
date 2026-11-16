@@ -26,6 +26,43 @@ on:
   workflow_dispatch:
 
 jobs:
+  paired-runtime:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - name: Compare base and candidate with identical snapshots and runtime
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --depth=1 origin "$BASE_SHA"
+          git show "${BASE_SHA}:app.py" > baseline_app.py
+          python scripts/benchmark_runtime.py --app baseline_app.py --cold 1 --warm 3 --interactions 3 --output paired-before.json
+          python scripts/benchmark_runtime.py --cold 1 --warm 3 --interactions 3 --output paired-after.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          before = json.loads(Path('paired-before.json').read_text())
+          after = json.loads(Path('paired-after.json').read_text())
+          for phase in ('cold_script', 'warm_script', 'range_input_script'):
+              assert not before[phase]['failures'] and not after[phase]['failures']
+              print(phase, 'before', before[phase]['median_seconds'],
+                    'after', after[phase]['median_seconds'], flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: paired-runtime-comparison
+          path: paired-*.json
+          if-no-files-found: error
+
   regression:
     runs-on: ubuntu-latest
     timeout-minutes: 10
