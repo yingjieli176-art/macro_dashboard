@@ -2,15 +2,71 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import unittest
+import json
+from pathlib import Path
+from unittest.mock import Mock, patch
 
 import pandas as pd
 
-from macro_platform.spx_options import PRODUCT, parse_daily
+from macro_platform.spx_options import PRODUCT, EXPANDED_PRODUCT, parse_daily, parse_expanded_daily
 from macro_platform.echarts_axes import build_adaptive_echarts_option, build_safe_echarts_option
 from app_test_helpers import builders, frame
 
 
 class SpxSentimentTests(unittest.TestCase):
+    def official_fixture(self, day):
+        root = Path(__file__).with_name('fixtures')
+        return (json.loads((root / f'cboe_spx_{day}.json').read_text()),
+                (root / f'occ_spx_{day}.csv').read_text())
+
+    def test_expanded_cboe_report_retains_original_basket_using_reconciled_occ_sides(self):
+        payload, occ = self.official_fixture('2026-11-13')
+        with self.assertRaises(ValueError):
+            parse_daily(payload, '2026-11-13')
+        row = parse_expanded_daily(payload, '2026-11-13', occ)
+        self.assertEqual((row['call_volume'], row['put_volume'], row['total_volume']),
+                         (2715281, 3230695, 5945976))
+        self.assertEqual(row['ratio'], 1.19)
+        proof = row['reconciliation']
+        self.assertEqual(proof['excluded_spxo_call_volume'], 5565)
+        self.assertEqual(proof['excluded_spxo_put_volume'], 2872)
+        # FLEX classes returned by the underlying query are excluded as well.
+        self.assertIn('2SPX', occ)
+        self.assertEqual(row['call_volume'] + 5565, proof['expanded_call_volume'])
+        self.assertEqual(row['put_volume'] + 2872, proof['expanded_put_volume'])
+
+    def test_occ_reconciliation_matches_original_pre_spxo_published_counts(self):
+        original, occ = self.official_fixture('2026-11-06')
+        expanded = {EXPANDED_PRODUCT: original[PRODUCT], 'ratios': [
+            dict(original['ratios'][0], name=EXPANDED_PRODUCT + ' PUT/CALL RATIO')]}
+        got = parse_expanded_daily(expanded, '2026-11-06', occ)
+        expected = parse_daily(original, '2026-11-06')
+        for field in ('ratio', 'call_volume', 'put_volume', 'total_volume'):
+            self.assertEqual(got[field], expected[field])
+
+    def test_rejects_wrong_date_duplicate_incomplete_or_unreconciled_occ_data(self):
+        payload, occ = self.official_fixture('2026-11-13')
+        data_row = next(line for line in occ.splitlines() if ',SPXO,' in line)
+        cases = [occ.replace('11/13/2026', '11/12/2026'), occ + '\n' + data_row,
+                 occ.replace('5460,SPX,SPXO', '5462,SPX,SPXO'),
+                 '\n'.join(line for line in occ.splitlines() if ',SPXW,' not in line),
+                 occ.replace('5460,SPX,SPXO', '5461,SPX,SPXO'), '<html>Unavailable</html>']
+        for bad in cases:
+            with self.subTest(occ=bad[:100]), self.assertRaises(ValueError):
+                parse_expanded_daily(payload, '2026-11-13', bad)
+
+    def test_collector_uses_occ_only_for_the_expanded_product(self):
+        from scripts.update_spx_put_call_snapshot import fetch_daily
+        payload, occ = self.official_fixture('2026-11-13')
+        with patch('scripts.update_spx_put_call_snapshot.requests.get', side_effect=[
+                Mock(status_code=200, json=lambda: payload), Mock(text=occ)]) as get:
+            self.assertEqual(fetch_daily('2026-11-13')['call_volume'], 2715281)
+            self.assertEqual(get.call_count, 2)
+        original, _ = self.official_fixture('2026-11-06')
+        with patch('scripts.update_spx_put_call_snapshot.requests.get', return_value=Mock(status_code=200, json=lambda: original)) as get:
+            self.assertEqual(fetch_daily('2026-11-06')['call_volume'], 2643738)
+            self.assertEqual(get.call_count, 1)
+
     def payload(self):
         return {"ratios": [{"name": PRODUCT + " PUT/CALL RATIO", "value": "1.13"}],
                 PRODUCT: [{"name": "VOLUME", "call": 2296438, "put": 2597825, "total": 4894263},
