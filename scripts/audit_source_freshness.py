@@ -67,6 +67,49 @@ def read_payload(path):
         return {}
 
 
+def attach_live_source_evidence(reports, evidence, now=None):
+    """Distinguish upstream silence from pipeline lag without hiding old dates.
+
+    Only a recent, successful LIVE comparison of the same saved observation
+    qualifies. Snapshot fallbacks and mismatched/stale reports cannot excuse it.
+    """
+    current = pd.Timestamp.now(tz='UTC') if now is None else pd.Timestamp(now)
+    current = current.tz_localize('UTC') if current.tzinfo is None else current.tz_convert('UTC')
+    try:
+        checked = pd.Timestamp(evidence['checked_at'])
+        if checked.tzinfo is None or not pd.Timedelta(0) <= current - checked <= pd.Timedelta(minutes=90):
+            return reports
+    except (KeyError, ValueError, TypeError):
+        return reports
+    ids = {row.get('id'): row for row in evidence.get('sources', [])}
+    aliases = {
+        ('ai_cds_daily.json', 'NVIDIA 5Y'): 'NVIDIA_CDS_5Y',
+        ('ai_cds_daily.json', 'AMD 5Y'): 'SN_AMD_CDS_5Y',
+        ('ai_cds_daily.json', 'Alphabet 5Y（谷歌）'): 'SN_ALPHABET_CDS_5Y',
+        ('ai_cds_daily.json', 'Microsoft 5Y（微软）'): 'SN_MICROSOFT_CDS_5Y',
+        ('ai_cds_daily.json', 'Oracle 5Y'): 'SN_ORACLE_CDS_5Y',
+        **{('cftc_jpy_weekly.json', field): 'CFTC_JPY_NONCOMM_NET'
+           for field in ('noncommercial_long', 'noncommercial_short', 'net_contracts')},
+    }
+    for report in reports:
+        confirmed = {}
+        for name in report['stale_names']:
+            row = ids.get(aliases.get((report['file'], name), name), {})
+            observed = report['latest_by_name'].get(name)
+            try:
+                row_checked = pd.Timestamp(row['checked_at'])
+                if row_checked.tzinfo is None or not pd.Timedelta(0) <= current - row_checked <= pd.Timedelta(minutes=90):
+                    continue
+            except (KeyError, ValueError, TypeError):
+                continue
+            if (row.get('status') == 'at_source_latest' and row.get('verification_method') == 'live'
+                    and row.get('repository_latest') == observed == row.get('source_latest')):
+                confirmed[name] = {'observation_date': observed, 'verified_at': row_checked.isoformat(),
+                                   'source_url': row.get('source_url')}
+        report['upstream_delayed'] = confirmed
+    return reports
+
+
 def raw_record_issues(payload, now=None):
     """Catch malformed/interior rows that a max-date-only check would omit."""
     today = pd.Timestamp.now(tz="Asia/Hong_Kong") if now is None else pd.Timestamp(now)
@@ -196,8 +239,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", default="source_health.json")
     parser.add_argument("--only", action="append", help="Audit only these snapshot files (repeatable)")
+    parser.add_argument("--source-report", type=Path, help="Recent live source comparison; raw dates are still validated")
     args = parser.parse_args()
     reports = audit()
+    evidence_path = args.source_report or ROOT / 'data_snapshots/all_source_freshness.json'
+    attach_live_source_evidence(reports, read_payload(evidence_path))
     if args.only:
         reports = [report for report in reports if report["file"] in args.only]
         if not reports:
@@ -212,9 +258,12 @@ def main():
             failed = True
             summary.append(f"| {report['file']} | raw records | — | — | INVALID: {issues or 'missing/corrupt snapshot'} |")
         for name, day in report["latest_by_name"].items():
-            bad = name in report["stale_names"] or name in report["future_names"]
+            upstream = report.get('upstream_delayed', {}).get(name)
+            bad = name in report["future_names"] or (name in report["stale_names"] and not upstream)
             failed |= bad
-            status = "OVERDUE / invalid future date" if bad else "within cadence limit (not source-latest verification)"
+            status = ("UPSTREAM DELAY: same latest published observation; verified " + upstream['verified_at']
+                      if upstream and name not in report['future_names'] else
+                      "OVERDUE / invalid future date" if bad else "within cadence limit (not source-latest verification)")
             summary.append(f"| {report['file']} | {name} | {day} | {report['due_by_name'][name]} | {status} |")
         failed |= bool(report["missing_names"])
         for name in report["missing_names"]:
