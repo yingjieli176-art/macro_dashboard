@@ -15,6 +15,16 @@ def history(values):
 
 
 class PriceReferenceTests(unittest.TestCase):
+    def test_native_component_styles_are_registered_as_inline_content(self):
+        from macro_platform.linked_charts import _component
+        from streamlit.components.v2.component_path_utils import ComponentPathUtils
+        with patch('macro_platform.linked_charts.components.component') as register:
+            _component()
+        definition = register.call_args.kwargs
+        self.assertTrue(ComponentPathUtils.looks_like_inline_content(definition['css']))
+        self.assertTrue(ComponentPathUtils.looks_like_inline_content(definition['js']))
+        self.assertIn('data-period="1M"', definition['html'])
+
     def test_schema_keys_keep_legends_across_periods_but_isolate_new_axes(self):
         from macro_platform.linked_charts import render_echarts_chart
         option = {'series': [], 'yAxis': []}
@@ -22,8 +32,11 @@ class PriceReferenceTests(unittest.TestCase):
         with patch('macro_platform.linked_charts._component', return_value=component):
             render_echarts_chart(option, key='yen_carry_adaptive_default_1Y_schema_abc')
             first = component.call_args.kwargs['data']['legend_state_key']
+            first_key = component.call_args.kwargs['key']
             render_echarts_chart(option, key='yen_carry_adaptive_default_1M_schema_abc')
             self.assertEqual(component.call_args.kwargs['data']['legend_state_key'], first)
+            self.assertEqual(component.call_args.kwargs['key'], first_key)
+            self.assertEqual(component.call_args.kwargs['data']['period'], '1M')
             render_echarts_chart(option, key='yen_carry_adaptive_default_1Y_schema_def')
             self.assertNotEqual(component.call_args.kwargs['data']['legend_state_key'], first)
 

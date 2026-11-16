@@ -27,13 +27,14 @@ TGA_LABEL = "Treasury General Account (TGA) Closing Balance"
 FIELDS = "record_date,account_type,close_today_bal,open_today_bal"
 
 
-def fetch_latest_official(session):
+def fetch_latest_official(session, *, full_history=True):
     now = pd.Timestamp.now().normalize()
     # First request 5+ years of *named* TGA closing-balance rows, so
     # a single page contains actual daily observations across the period.
     # If Treasury rejects the label filter, use a short unfiltered sample.
+    start = now - (pd.DateOffset(years=5, months=1) if full_history else pd.DateOffset(months=4))
     windows = [
-        f"account_type:eq:{TGA_LABEL},record_date:gte:{(now - pd.DateOffset(years=5, months=1)):%Y-%m-%d}",
+        f"account_type:eq:{TGA_LABEL},record_date:gte:{start:%Y-%m-%d}",
         f"record_date:gte:{(now - pd.DateOffset(months=4)):%Y-%m-%d}",
     ]
     problems = []
@@ -78,9 +79,35 @@ def fetch_latest_official(session):
     raise RuntimeError("Official FiscalData DTS unavailable: " + " | ".join(problems))
 
 
+def merge_official_history(previous, incoming):
+    """A short fallback response cannot replace already verified history."""
+    today = pd.Timestamp.now(tz='America/New_York').strftime('%Y-%m-%d')
+    for row in [*previous, *incoming]:
+        stamp = pd.Timestamp(row.get('record_date'))
+        if pd.isna(stamp) or stamp.strftime('%Y-%m-%d') > today:
+            raise ValueError('Invalid or future official DTS observation date')
+    old = parse_dts_tga_rows(previous)
+    fresh = parse_dts_tga_rows(incoming)
+    if fresh.empty or (not old.empty and fresh.observation_date.max() < old.observation_date.max()):
+        raise ValueError("New official DTS download is empty or older than saved observations")
+    merged = {(str(r.get('record_date')), str(r.get('account_type'))): r for r in previous}
+    merged.update({(str(r.get('record_date')), str(r.get('account_type'))): r for r in incoming})
+    rows = [merged[k] for k in sorted(merged)]
+    parsed = parse_dts_tga_rows(rows)
+    if not set(old.observation_date).issubset(set(parsed.observation_date)):
+        raise ValueError("Official DTS refresh would discard verified observation dates")
+    return rows, parsed
+
+
 def main() -> int:
     session = requests.Session()
-    rows, parsed = fetch_latest_official(session)
+    saved_records = []
+    try:
+        saved_records = json.loads(SNAPSHOT.read_text(encoding='utf-8')).get('records') or []
+    except (OSError, ValueError, TypeError):
+        pass
+    need_history = '--verify-only' not in sys.argv and len(parse_dts_tga_rows(saved_records)) < 500
+    rows, parsed = fetch_latest_official(session, full_history=need_history)
     new_end = parsed["observation_date"].max().strftime("%Y-%m-%d")
     old_records = []
     if SNAPSHOT.exists():
@@ -94,6 +121,7 @@ def main() -> int:
                 return 0
         except (ValueError, OSError, TypeError, json.JSONDecodeError):
             pass
+    rows, parsed = merge_official_history(old_records, rows)
     payload = {
         "source": "U.S. Treasury Daily Treasury Statement",
         "source_url": ENDPOINT,
@@ -107,8 +135,9 @@ def main() -> int:
     }
     if "--verify-only" not in sys.argv:
         SNAPSHOT.parent.mkdir(parents=True, exist_ok=True)
-        SNAPSHOT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
-                            encoding="utf-8")
+        temporary = SNAPSHOT.with_suffix('.json.tmp')
+        temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        os.replace(temporary, SNAPSHOT)
     print(f"Official Treasury DTS TGA verified: {len(parsed)} published daily "
           f"closings from {payload['coverage_start']} to {new_end}; "
           f"latest {parsed['TGA_DAILY'].iloc[-1]:.6f} USD trillion")

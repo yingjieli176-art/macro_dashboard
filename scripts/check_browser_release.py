@@ -9,7 +9,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from macro_platform.dashboard_layout import MACRO_DISPLAY_NUMBER
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 
 def observation_date(value):
@@ -296,12 +296,12 @@ def exercise_equity_drawdown(page):
     ranges = []
     for period in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
         page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'", timeout=30000)
-        page.get_by_test_id("stButtonGroup").nth(MACRO_DISPLAY_NUMBER["us_drawdown"]-1).get_by_text(period, exact=True).click()
-        chart = page.locator(f'[class*=st-key-us_equity_drawdown_echarts_{period}_schema_]').get_by_test_id(
+        page.locator('[data-testid=macroPeriodControls], [data-testid=stButtonGroup]:visible').nth(MACRO_DISPLAY_NUMBER["us_drawdown"]-1).get_by_text(period, exact=True).click()
+        chart = page.locator(f'[class*=st-key-us_equity_drawdown_echarts_schema_]').get_by_test_id(
             re.compile(r"^(macro|st)EChartsChart$"))
         chart.wait_for(timeout=30000)
         page.wait_for_function("selector => document.querySelector(selector)?.getAttribute('aria-busy') === 'false'",
-                               arg=f'[class*=st-key-us_equity_drawdown_echarts_{period}_schema_] [data-testid$="EChartsChart"]',
+                               arg=f'[class*=st-key-us_equity_drawdown_echarts_schema_] [data-testid$="EChartsChart"]',
                                timeout=30000)
         points = chart.evaluate("""element => {
             const chart = (""" + INSTANCE_JS + """)(element);
@@ -318,7 +318,7 @@ def exercise_equity_drawdown(page):
         ranges.append(period)
     assert page.get_by_text('SPX 最新收盘：', exact=False).count() == 1
     assert page.get_by_text('RSP 最新收盘：', exact=False).count() == 1
-    chart = page.locator('[class*=st-key-us_equity_drawdown_echarts_1Y_schema_]').get_by_test_id(
+    chart = page.locator('[class*=st-key-us_equity_drawdown_echarts_schema_]').get_by_test_id(
         re.compile(r"^(macro|st)EChartsChart$"))
     assert len(chart_state(chart)['axes']) == 3
     zoom = exercise_client_zoom(page, chart, minimum_axes=2)
@@ -335,8 +335,8 @@ def exercise_china_drawdown(page):
     baseline = None
     for period in ('5Y', '1Y', '6M', '3M', '1M', '1Y'):
         page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'", timeout=30000)
-        page.get_by_test_id('stButtonGroup').nth(MACRO_DISPLAY_NUMBER["cn_drawdown"]-1).get_by_text(period, exact=True).click()
-        selector = f'[class*=st-key-china_equity_drawdown_echarts_{period}_schema_]'
+        page.locator('[data-testid=macroPeriodControls], [data-testid=stButtonGroup]:visible').nth(MACRO_DISPLAY_NUMBER["cn_drawdown"]-1).get_by_text(period, exact=True).click()
+        selector = f'[class*=st-key-china_equity_drawdown_echarts_schema_]'
         chart = page.locator(selector).get_by_test_id(re.compile(r'^(macro|st)EChartsChart$'))
         chart.wait_for(timeout=30000)
         page.wait_for_function("selector => document.querySelector(selector)?.getAttribute('aria-busy') === 'false'",
@@ -363,7 +363,7 @@ def exercise_china_drawdown(page):
 
 def wait_for_page(page, url):
     page.goto(url, wait_until="domcontentloaded", timeout=60000)
-    page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 22", timeout=60000)
+    page.wait_for_function("document.querySelectorAll('[data-testid=macroPeriodControls]').length >= 8", timeout=60000)
     page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8 || document.querySelector('[data-testid=macroEChartsChartError]')", timeout=60000)
     failures = page.locator('.macro-chart-error:not([hidden])').all_text_contents()
     assert not failures, failures
@@ -536,7 +536,7 @@ def exercise_legend_axes(page, chart):
 
 
 def exercise_yen_legend(page):
-    chart = page.locator('[class*=st-key-japan_rates_adaptive_default_1Y_schema_]').get_by_test_id(
+    chart = page.locator('[class*=st-key-japan_rates_adaptive_default_schema_]').get_by_test_id(
         re.compile(r"^(macro|st)EChartsChart$"))
     chart.scroll_into_view_if_needed()
     inspect = """element => {
@@ -573,8 +573,9 @@ def exercise_range_legend_persistence(page, prefix, group_index):
             zoom:chart.getModel().getComponent('dataZoom').getPercentRange()};
     }"""
     def chart_for(period):
-        chart=page.locator(f'[class*=st-key-{prefix}_{period}_schema_] [data-testid=macroEChartsChart][aria-busy=false]')
+        chart=page.locator(f'[class*=st-key-{prefix}_schema_] [data-testid=macroEChartsChart][aria-busy=false]')
         chart.wait_for(timeout=30000)
+        page.wait_for_function("args => document.querySelector(args[0])?.dataset.period === args[1]", arg=[f"[class*=st-key-{prefix}_schema_] [data-testid=macroEChartsChart]",period])
         return chart
 
     def toggle(chart, name):
@@ -612,7 +613,7 @@ def exercise_range_legend_persistence(page, prefix, group_index):
     if len(shared)>1:assert expected['axes'][1]['show'] is True
     windows={}
     for period in ('1M','6M','1Y'):
-        page.get_by_test_id('stButtonGroup').nth(group_index).get_by_text(period,exact=True).click()
+        page.locator('[data-testid=macroPeriodControls], [data-testid=stButtonGroup]:visible').nth(group_index).get_by_text(period,exact=True).click()
         chart=chart_for(period)
         state=chart.evaluate(inspect)
         assert all(state['selected'].get(name) is False for name in hidden), (prefix,period,state['selected'])
@@ -622,11 +623,11 @@ def exercise_range_legend_persistence(page, prefix, group_index):
     assert windows['1M'] < windows['6M'] < windows['1Y'], windows
     # A later re-selection is also carried into a different month.
     for name in hidden:toggle(chart,name)
-    page.get_by_test_id('stButtonGroup').nth(group_index).get_by_text('3M',exact=True).click()
+    page.locator('[data-testid=macroPeriodControls], [data-testid=stButtonGroup]:visible').nth(group_index).get_by_text('3M',exact=True).click()
     state=chart_for('3M').evaluate(inspect)
     assert all(state['selected'].get(name,True) for name in hidden)
     assert all(axis['show'] for axis in state['axes'])
-    page.get_by_test_id('stButtonGroup').nth(group_index).get_by_text('1Y',exact=True).click()
+    page.locator('[data-testid=macroPeriodControls], [data-testid=stButtonGroup]:visible').nth(group_index).get_by_text('1Y',exact=True).click()
     assert all(axis['show'] for axis in chart_for('1Y').evaluate(inspect)['axes'])
     return {'hidden_choices_preserved':True,'axis_visibility_preserved':True,
             'reselected_choices_preserved':True,'period_windows':windows,'observations_unchanged':True}
@@ -648,14 +649,15 @@ def main():
             page = browser.new_page(viewport={"width": 1440, "height": 1000})
             page.on("pageerror", lambda error: errors.append({"message": str(error), "stack": error.stack}))
             wait_for_page(page, args.url)
-            groups = page.get_by_test_id("stButtonGroup")
-            page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 22", timeout=60000)
+            groups = page.locator('[data-testid=macroPeriodControls], [data-testid=stButtonGroup]:visible')
+            page.wait_for_function("document.querySelectorAll('[data-testid=macroPeriodControls]').length >= 8", timeout=60000)
             page.get_by_text(f"{MACRO_DISPLAY_NUMBER[15]}. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
             charts = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
             page.get_by_text("5. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
             page.get_by_text(f"{MACRO_DISPLAY_NUMBER[11]}. Precious Metals", exact=True).wait_for(timeout=30000)
-            assert groups.count() == 22
+            # The first eight canvases can paint while later fragments still render.
+            expect(groups).to_have_count(22, timeout=60000)
             assert charts.count() >= 8
             assert page.get_by_test_id("stException").count() == 0
             assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
@@ -673,7 +675,7 @@ def main():
             assert page.get_by_text("该图表目前没有可验证的有效观测数据", exact=False).count() > 0
             report["checks"].append({"chart_positions": 22, "painted_native_charts": len(paints),
                                       "missing_positions_are_explicit": True})
-            policy = page.locator('[class*=st-key-normal_corridor_range_echarts_1Y_schema_]').get_by_test_id(
+            policy = page.locator('[class*=st-key-normal_corridor_range_echarts_schema_]').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             policy.wait_for(timeout=30000)
             policy_state = policy.evaluate("""element => {
@@ -689,7 +691,7 @@ def main():
             policy.scroll_into_view_if_needed()
             page.screenshot(path='browser_srf_usage.png')
             report['srf_usage'] = policy_state
-            yield_chart = page.locator('[class*=st-key-normal_yield10_range_echarts_1Y_schema_]').get_by_test_id(
+            yield_chart = page.locator('[class*=st-key-normal_yield10_range_echarts_schema_]').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             yield_chart.wait_for(timeout=30000)
             yield_names = yield_chart.evaluate("""element => (""" + INSTANCE_JS + """)(element)
@@ -698,7 +700,7 @@ def main():
             page.get_by_text('2. US Treasury Yield Structure · 10Y', exact=True).scroll_into_view_if_needed()
             page.screenshot(path='browser_ten_year_tips.png')
             report['ten_year_tips'] = yield_names
-            copper_tcrc = page.locator('[class*=st-key-copper_tcrc_adaptive_default_1Y_schema_]').get_by_test_id(
+            copper_tcrc = page.locator('[class*=st-key-copper_tcrc_adaptive_default_schema_]').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             copper_tcrc.wait_for(timeout=30000)
             tcrc_state = copper_tcrc.evaluate("""element => {
@@ -719,7 +721,7 @@ def main():
                 assert [observation_date(point[0]) for point in series['data']] == history.observation_date.dt.strftime('%Y-%m-%d').tolist(), series
             assert page.get_by_text(re.compile(r'^动态Y轴：|^数据观测日：|^实际观测日：')).count() == 0
             assert page.get_by_text('TC / RC（近半年已核实报价）', exact=True).count() == 0
-            copper_names = page.locator('[class*=st-key-copper_flow_adaptive_default_1Y_schema_]').get_by_test_id(
+            copper_names = page.locator('[class*=st-key-copper_flow_adaptive_default_schema_]').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$")).evaluate("""element => (""" + INSTANCE_JS + """)(element)
                     .getOption().series.map(s=>s.name)""")
             assert len(copper_names) == 7 and not any(name.startswith(('TC（', 'RC（')) for name in copper_names), copper_names
@@ -753,7 +755,7 @@ def main():
             report['readable_axis_legends'] = legend_labels
             cds_title = f'{MACRO_DISPLAY_NUMBER["nvidia_cds"]}. AI Credit · 公司CDS信用风险'
             page.get_by_text(cds_title, exact=True).wait_for()
-            cds_chart = page.locator('[class*=st-key-nvidia_cds_adaptive_default_1Y_schema_]').get_by_test_id(
+            cds_chart = page.locator('[class*=st-key-nvidia_cds_adaptive_default_schema_]').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             cds_chart.wait_for(timeout=30000)
             cds_state = cds_chart.evaluate("""element => {
@@ -774,7 +776,7 @@ def main():
             assert page.get_by_text('IG OAS（R2）暂未取得 FRED 观测，稍后自动重试。', exact=True).count() == 1
             report['ai_cds'] = cds_state
             report['ai_cds_zoom'] = exercise_client_zoom(page, cds_chart, minimum_axes=1)
-            risk_chart = page.locator('[class*=st-key-us_equity_risk_adaptive_default_1Y_schema_]').get_by_test_id(
+            risk_chart = page.locator('[class*=st-key-us_equity_risk_adaptive_default_schema_]').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             risk_chart.wait_for(timeout=30000)
             risk_ratio = risk_chart.evaluate("""element => {
@@ -801,11 +803,36 @@ def main():
             assert '%' in risk_ratio['axis_names'][6], risk_ratio
             report['move_vix'] = risk_ratio
             report['move_vix_zoom'] = exercise_client_zoom(page, risk_chart, minimum_axes=6)
+            risk_chart.scroll_into_view_if_needed()
+            before = risk_chart.evaluate("""e => {
+                e.__macroChart.__reuseEvidence = 'period-test';
+                return e.__macroChart.getModel().findComponents({mainType:'yAxis'}).map(a=>a.axis.scale.getExtent());
+            }""")
+            box = risk_chart.bounding_box()
+            page.mouse.move(box['x']+box['width']*.4, box['y']+box['height']*.6)
+            page.mouse.wheel(0,-250)
+            page.wait_for_timeout(300)
+            after = risk_chart.evaluate("e => e.__macroChart.getModel().findComponents({mainType:'yAxis'}).map(a=>a.axis.scale.getExtent())")
+            assert before[1:] == after[1:], {'before':before,'after':after}
+            assert risk_chart.evaluate("e => typeof e.__macroChart.getOption().yAxis[0].min !== 'number'")
+            time_label = page.locator('[class*=st-key-us_equity_risk_adaptive_default_schema_] [data-testid=macroChartTime]')
+            first_clock = time_label.inner_text()
+            assert '最新数据：' in first_clock and '北京时间：' in first_clock
+            page.wait_for_timeout(1100)
+            assert time_label.inner_text() != first_clock
+            period_started = time.perf_counter()
+            groups.nth(MACRO_DISPLAY_NUMBER[9]-1).get_by_text('1M',exact=True).click()
+            page.wait_for_function("document.querySelector('[class*=st-key-us_equity_risk_adaptive_default_schema_] [data-testid=macroEChartsChart]')?.dataset.period === '1M'")
+            assert risk_chart.evaluate("e => e.__macroChart.__reuseEvidence") == 'period-test'
+            report['native_period_latency_ms'] = round((time.perf_counter()-period_started)*1000,2)
+            groups.nth(MACRO_DISPLAY_NUMBER[9]-1).get_by_text('1Y',exact=True).click()
+            page.wait_for_function("document.querySelector('[class*=st-key-us_equity_risk_adaptive_default_schema_] [data-testid=macroEChartsChart]')?.dataset.period === '1Y'")
+            report['wheel_and_period'] = {'right_axes_locked':True,'left_axis_rescaled':True,'instance_reused':True,'clock_ticks':True}
             page.screenshot(path='browser_ai_cds.png')
             # Use a real HK chart to exercise every server range with raw prices.
             for label in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
                 groups.nth(MACRO_DISPLAY_NUMBER[5]-1).get_by_text(label, exact=True).click()
-                page.locator(f"[class*=st-key-hk_5_range_adaptive_default_{label}_schema_]").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$")).wait_for(timeout=30000)
+                page.locator(f"[class*=st-key-hk_5_range_adaptive_default_schema_]").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$")).wait_for(timeout=30000)
                 page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'",
                                        timeout=30000)
                 assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
@@ -814,7 +841,7 @@ def main():
             page.get_by_text(f"{MACRO_DISPLAY_NUMBER[14]}. China Government Yields & US 5Y Real Yield", exact=False).wait_for()
             assert page.get_by_text("China & Japan Government Yield Curves", exact=False).count() == 0
             groups.nth(MACRO_DISPLAY_NUMBER[14]-1).get_by_text("3M", exact=True).click()
-            china_selected = page.locator("[class*=st-key-china_rates_adaptive_default_3M_schema_]").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
+            china_selected = page.locator("[class*=st-key-china_rates_adaptive_default_schema_]").get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             china_selected.wait_for(timeout=30000)
             groups.nth(MACRO_DISPLAY_NUMBER[15]-1).get_by_text("1M", exact=True).click()
             china_selected.wait_for(timeout=30000)
@@ -822,14 +849,14 @@ def main():
             groups.nth(MACRO_DISPLAY_NUMBER[15]-1).get_by_text("1Y", exact=True).click()
             report["checks"].append({"china_japan_separate": True, "country_ranges_independent": True})
             page.get_by_text(f"{MACRO_DISPLAY_NUMBER[16]}. 日元套息分析", exact=False).wait_for()
-            carry = page.locator('[class*=st-key-yen_carry_adaptive_default_1Y_schema_]').get_by_test_id(
+            carry = page.locator('[class*=st-key-yen_carry_adaptive_default_schema_]').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
-            japan_chart = page.locator('[class*=st-key-japan_rates_adaptive_default_1Y_schema_]').get_by_test_id(
+            japan_chart = page.locator('[class*=st-key-japan_rates_adaptive_default_schema_]').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             # A range rerun mounts the component before its ECharts instance.
             # Wait for actual readiness; a persistent failure still times out.
             page.wait_for_function("""() => {
-                const element = document.querySelector('[class*=st-key-japan_rates_adaptive_default_1Y_schema_] [aria-busy=false]');
+                const element = document.querySelector('[class*=st-key-japan_rates_adaptive_default_schema_] [aria-busy=false]');
                 if (!element) return false;
                 try { return Boolean((""" + INSTANCE_JS + """)(element).getModel()); }
                 catch (_) { return false; }
@@ -844,7 +871,7 @@ def main():
                 found = next(s for s in japan_series if s["name"] == name)
                 assert found["axis"] == axis and found["valid"] > 200, found
             report["japan_thirty_year"] = japan_series
-            holdings_chart = page.locator('[class*=st-key-japan_holdings_adaptive_default_1Y_schema_]').get_by_test_id(
+            holdings_chart = page.locator('[class*=st-key-japan_holdings_adaptive_default_schema_]').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             holdings_chart.wait_for(timeout=30000)
             report["japan_holdings_zoom"] = exercise_client_zoom(page, holdings_chart, minimum_axes=4)
@@ -857,17 +884,17 @@ def main():
             report["cftc_columns"] = assert_bar_baseline(carry, 'CFTC JPY speculative net (R2)')
             report["yen_carry_ranges"] = exercise_range_legend_persistence(
                 page, 'yen_carry_adaptive_default', MACRO_DISPLAY_NUMBER[16]-1)
-            chart = page.locator('[class*=st-key-hk_5_range_adaptive_default_1Y_schema_]').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
+            chart = page.locator('[class*=st-key-hk_5_range_adaptive_default_schema_]').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             report["client_zoom"] = exercise_client_zoom(page, chart)
             report["monthly_growth_columns"] = assert_bar_baseline(chart, 'M2 MoM')
-            copper = page.locator('[class*=st-key-copper_flow_adaptive_default_1Y_schema_]').get_by_test_id(
+            copper = page.locator('[class*=st-key-copper_flow_adaptive_default_schema_]').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             report["copper_context_zoom"] = exercise_client_zoom(page, copper, minimum_axes=5)
             copper_names = copper.evaluate("element => element.__macroChart.getOption().series.map(s => s.name)")
             assert not any("VVIX" in name for name in copper_names), copper_names
             assert any("WTI" in name for name in copper_names), copper_names
             report["copper_without_vvix"] = copper_names
-            tail = page.locator('[class*=st-key-vix_term_structure_adaptive_default_1Y_schema_]').get_by_test_id(
+            tail = page.locator('[class*=st-key-vix_term_structure_adaptive_default_schema_]').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             report["tail_risk_zoom"] = exercise_client_zoom(page, tail, minimum_axes=5)
             sentiment = tail.evaluate("element => element.__macroChart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,valid:s.data.filter(p=>Number.isFinite(p[1])).length}))")
@@ -886,7 +913,7 @@ def main():
                 "document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'",
                 timeout=30000,
             )
-            liquidity = page.locator('[class*=st-key-sp500_nikkei_ratio_adaptive_default_1Y_schema_]').get_by_test_id(
+            liquidity = page.locator('[class*=st-key-sp500_nikkei_ratio_adaptive_default_schema_]').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             liquidity.wait_for(state="visible", timeout=30000)
             report['legend_axes_desktop'] = exercise_legend_axes(page, liquidity)
@@ -926,7 +953,7 @@ def main():
             # A's old fragment during that rerun tests a stale event race,
             # rather than whether B preserves A's already selected period.
             groups.nth(MACRO_DISPLAY_NUMBER[5]-1).get_by_text('1M', exact=True).click()
-            expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_default"][class*="_1M"]').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
+            expected_a = page.locator('[class*="st-key-hk_5_range_adaptive_default"]').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             expected_a.wait_for(timeout=30000)
             context_b = browser.new_context(viewport={"width": 1440, "height": 1000})
             page_b = context_b.new_page()
@@ -944,10 +971,12 @@ def main():
                 raise
             page_b.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'", timeout=30000)
             expected_a.wait_for(timeout=30000)
-            page_b.get_by_test_id('stButtonGroup').nth(MACRO_DISPLAY_NUMBER[5]-1).get_by_text('3M', exact=True).click()
-            expected_b = page_b.locator('[class*=st-key-hk_5_range_adaptive_default_3M_schema_]').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
+            page_b.locator('[data-testid=macroPeriodControls], [data-testid=stButtonGroup]:visible').nth(MACRO_DISPLAY_NUMBER[5]-1).get_by_text('3M', exact=True).click()
+            expected_b = page_b.locator('[class*=st-key-hk_5_range_adaptive_default_schema_]').get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             expected_b.wait_for(timeout=30000)
             assert expected_a.count() == 1 and expected_b.count() == 1
+            assert expected_a.get_attribute('data-period') == '1M'
+            assert expected_b.get_attribute('data-period') == '3M'
             for current, expected in ((page, expected_a), (page_b, expected_b)):
                 current.locator('.st-key-refresh_market_overview').get_by_role('button').click()
                 assert current.locator('.st-key-refresh_watchlist_quotes').count() == 0
@@ -956,6 +985,8 @@ def main():
                 assert current.get_by_test_id('stException').count() == 0
                 assert current.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
             assert expected_a.count() == 1 and expected_b.count() == 1
+            assert expected_a.get_attribute('data-period') == '1M'
+            assert expected_b.get_attribute('data-period') == '3M'
             report['checks'].append({'isolated_browser_sessions': 2,
                                      'manual_market_refresh': True, 'watchlist_removed': True,
                                      'range_preserved': True})

@@ -14,6 +14,23 @@ from scripts.sync_tga_daily_snapshot import fetch_latest_official
 
 
 class Treasury2022SchemaTests(unittest.TestCase):
+    def test_short_fallback_preserves_prior_history_and_applies_source_corrections(self):
+        from scripts.sync_tga_daily_snapshot import merge_official_history
+        def row(day, value):
+            return {'record_date':day,'account_type':'Treasury General Account (TGA) Closing Balance',
+                    'open_today_bal':str(value),'close_today_bal':None}
+        previous = [row('2022-05-02',700000),row('2026-11-10',750000)]
+        incoming = [row('2026-11-10',751000),row('2026-11-12',760000)]
+        rows, parsed = merge_official_history(previous,incoming)
+        self.assertEqual(parsed.observation_date.dt.strftime('%Y-%m-%d').tolist(),
+                         ['2022-05-02','2026-11-10','2026-11-12'])
+        self.assertEqual(parsed.TGA_DAILY.tolist(),[.7,.751,.76])
+        self.assertEqual(len(rows),3)
+        with self.assertRaises(ValueError):
+            merge_official_history(previous,[row('2022-05-02',700001)])
+        with self.assertRaises(ValueError):
+            merge_official_history(previous,[row('2099-01-01',700001)])
+
     def test_named_tga_close_uses_different_field_across_2022_change(self):
         rows = [
             {"record_date": "2022-04-15",
@@ -128,6 +145,9 @@ class Treasury2022SchemaTests(unittest.TestCase):
         self.assertEqual(len(parsed), 35)
         self.assertTrue(all("Closing Balance" in r["account_type"] for r in raw))
         self.assertEqual(raw[-1]["record_date"], now.strftime("%Y-%m-%d"))
+        fetch_latest_official(session,full_history=False)
+        cutoff = (pd.Timestamp.now().normalize()-pd.DateOffset(months=4)).strftime('%Y-%m-%d')
+        self.assertTrue(session.get.call_args.kwargs['params']['filter'].endswith(cutoff))
 
 
 if __name__ == "__main__":

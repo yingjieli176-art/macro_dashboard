@@ -89,8 +89,11 @@ def raw_record_issues(payload, now=None):
                 if date.tzinfo:
                     date = date.tz_localize(None)
                 issues["future_date_rows"] += int(date.normalize() > today)
-                issues["duplicate_date_rows"] += int(date in seen)
-                seen.add(date)
+                # DTS publishes multiple account rows per date. Only repeated
+                # dates for the same account are duplicate source records.
+                identity = (date, str(row['account_type'])) if key == 'record_date' and 'account_type' in row else date
+                issues["duplicate_date_rows"] += int(identity in seen)
+                seen.add(identity)
             except (ValueError, TypeError, OverflowError):
                 issues["invalid_date_rows"] += 1
             for key in numeric.intersection(row):
