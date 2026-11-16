@@ -1,0 +1,22 @@
+{
+  "ratios": [
+    {
+      "name": "SPX + SPXW + SPXO PUT/CALL RATIO",
+      "value": "1.19"
+    }
+  ],
+  "SPX + SPXW + SPXO": [
+    {
+      "name": "VOLUME",
+      "call": 2720846,
+      "put": 3233567,
+      "total": 5954413
+    },
+    {
+      "name": "OPEN INTEREST",
+      "call": 10673147,
+      "put": 15124831,
+      "total": 25797978
+    }
+  ]
+}

@@ -11,7 +11,8 @@ import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from macro_platform.spx_options import PRODUCT, SOURCE_TEMPLATE, parse_daily
+from macro_platform.spx_options import (PRODUCT, EXPANDED_PRODUCT, SOURCE_TEMPLATE,
+    OCC_VOLUME_URL, occ_volume_params, parse_daily, parse_expanded_daily)
 
 OUT = ROOT / "data_snapshots/spx_put_call_daily.json"
 
@@ -21,7 +22,15 @@ def fetch_daily(day, now=None):
     if response.status_code in (403, 404):
         return None  # No report on holidays or before publication; never write a zero.
     response.raise_for_status()
-    return parse_daily(response.json(), day, now=now)
+    payload = response.json()
+    if PRODUCT in payload:
+        return parse_daily(payload, day, now=now)
+    if EXPANDED_PRODUCT in payload:
+        occ = requests.get(OCC_VOLUME_URL, params=occ_volume_params(day),
+                           headers={"User-Agent": "MacroDashboard/1.0"}, timeout=25)
+        occ.raise_for_status()
+        return parse_expanded_daily(payload, day, occ.text, now=now)
+    return parse_daily(payload, day, now=now)
 
 
 def refresh(previous, now, fetch=fetch_daily, backfill=False):
