@@ -1,5 +1,21 @@
 // App-owned component. Never reach into Streamlit's React internals.
 const copy = value => JSON.parse(JSON.stringify(value));
+export function latestObservation(option) {
+  let last = -Infinity;
+  for (const series of option.series || []) for (const point of series.data || []) {
+    if (Array.isArray(point) && Number.isFinite(point[1]) && Number.isFinite(asTime(point[0]))) last = Math.max(last, asTime(point[0]));
+  }
+  return Number.isFinite(last) ? new Date(last).toISOString().slice(0,10) : '暂无有效观测';
+}
+
+export function lockRightAxes(option, bounds) {
+  option.yAxis.forEach((axis, index) => {
+    if (axis.position === 'right' && bounds.has(index)) {
+      [axis.min, axis.max] = bounds.get(index);
+    }
+  });
+  return option;
+}
 // These are observation calendar dates, not the viewer's local midnight.
 // Explicit UTC keeps axis labels, tooltips and peaks on the same source day.
 export const asTime = value => typeof value === 'number' ? value : Date.parse(
@@ -153,6 +169,26 @@ export default function({data, parentElement}) {
   const shell = parentElement.querySelector('.macro-chart-shell');
   const error = parentElement.querySelector('.macro-chart-error');
   const buttons = parentElement.querySelectorAll('button');
+  clearTimeout(element.__macroDisposeTimer);
+  const reusedChart = element.__macroChart;
+  if (reusedChart && !reusedChart.isDisposed()) {
+    for (const event of ['legendselectchanged','legendselected','legendunselected',
+      'legendselectall','legendinverseselect','restore','datazoom']) reusedChart.off(event);
+  }
+  element.dataset.period = data.period || '';
+  element.setAttribute('aria-busy', 'true');
+  let clockLine = shell.querySelector('.macro-chart-time');
+  if (!clockLine) {
+    clockLine = document.createElement('p'); clockLine.className = 'macro-chart-time';
+    clockLine.dataset.testid = 'macroChartTime'; shell.append(clockLine);
+  }
+  const latestDay = latestObservation(data.option);
+  const updateClock = () => {
+    const now = new Intl.DateTimeFormat('zh-CN', {timeZone:'Asia/Shanghai',
+      year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());
+    clockLine.textContent = `最新数据：${latestDay} ｜ 北京时间：${now}`;
+  };
+  updateClock(); const clockTimer = setInterval(updateClock, 1000);
   const labels = data.parameter_labels || {};
   const source = copy(data.option);
   source.useUTC = true;
@@ -172,6 +208,15 @@ export default function({data, parentElement}) {
   }
   if (first < last) base.xAxis = {...base.xAxis, min:first, max:last};
   let chart, observer, disposed = false, frame = 0;
+  const rightBounds = new Map();
+  const lockWheelAxes = () => {
+    if (!chart || disposed || rightBounds.size) return;
+    chart.getModel().eachComponent('yAxis', axis => {
+      if (axis.get('position') === 'right') rightBounds.set(axis.componentIndex, axis.axis.scale.getExtent().slice());
+    });
+    updateLayout();
+  };
+  element.addEventListener('wheel', lockWheelAxes, {capture:true, passive:true});
   const saved = parentElement.__macroChartState;
   // Period switches remount the component, so DOM-local state alone is lost.
   // Keep only legend choices in this app window, isolated by logical chart.
@@ -380,7 +425,7 @@ export default function({data, parentElement}) {
   function updateLayout() {
     if (!chart || disposed) return;
     refreshPriceGuides(chart.getOption().dataZoom);
-    const option = sizeBars(compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth), chart.getOption().dataZoom);
+    const option = lockRightAxes(sizeBars(compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth), chart.getOption().dataZoom), rightBounds);
     fitChartHeight(option);
     if (option.toolbox) option.toolbox.right = 54;
     // Price observations stay intact. Only derived paths and annotations
@@ -402,18 +447,20 @@ export default function({data, parentElement}) {
 
   loadEngine().then(echarts => {
     if (disposed) return;
-    if (hasPriceGuides) refreshPriceGuides(saved?.zoom || base.dataZoom);
+    if (hasPriceGuides) refreshPriceGuides(saved?.period === data.period ? saved.zoom : base.dataZoom);
     const option = compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth);
     option.legend.selected = selected;
     option.aria = {enabled:true};
     option.tooltip = {...option.tooltip, renderMode:'richText',
       ...(!hasPriceGuides ? {formatter:params => compactTooltip(params, labels)} : {})};
-    if (saved?.zoom) option.dataZoom = saved.zoom;
+    // A new preset always applies its supplied window; manual zoom only
+    // survives updates within that same preset.
+    if (saved?.zoom && saved.period === data.period) option.dataZoom = saved.zoom;
     sizeBars(option, option.dataZoom);
     // Keep toolbox clear of the download/fullscreen buttons.
     if (option.toolbox) option.toolbox.right = 54;
     fitChartHeight(option);
-    chart = echarts.init(element, null, {renderer:'canvas'});
+    chart = reusedChart && !reusedChart.isDisposed() ? reusedChart : echarts.init(element, null, {renderer:'canvas'});
     element.__macroChart = chart;
     // Replace the whole option when Streamlit reuses a mounted chart element.
     chart.setOption(option, {notMerge:true});
@@ -427,6 +474,7 @@ export default function({data, parentElement}) {
       });
     }
     chart.on('restore', () => {
+      rightBounds.clear();
       selected = Object.fromEntries(base.series.map(series =>
         [series.name, base.legend?.selected?.[series.name] !== false]));
       for (const name of ratioNames) selected[name] = true;
@@ -434,7 +482,7 @@ export default function({data, parentElement}) {
       rememberSelection(); updateLayout();
     });
     chart.on('datazoom', () => {
-      if (hasPriceGuides || hasBars) updateLayout();
+      if (hasPriceGuides || hasBars || rightBounds.size) updateLayout();
       else parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom};
     });
     observer = new ResizeObserver(() => {
@@ -464,10 +512,13 @@ export default function({data, parentElement}) {
   });
 
   return () => {
-    disposed = true; cancelAnimationFrame(frame); observer?.disconnect();
+    disposed = true; cancelAnimationFrame(frame); observer?.disconnect(); clearInterval(clockTimer);
+    element.removeEventListener('wheel', lockWheelAxes, {capture:true});
     if (chart) {
-      parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom};
-      chart.dispose(); delete element.__macroChart;
+      parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom, period:data.period};
+      element.__macroDisposeTimer = setTimeout(() => {
+        chart.dispose(); delete element.__macroChart;
+      }, 50);
     }
     buttons.forEach(button => { button.onclick = null; });
   };

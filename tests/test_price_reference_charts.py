@@ -22,8 +22,11 @@ class PriceReferenceTests(unittest.TestCase):
         with patch('macro_platform.linked_charts._component', return_value=component):
             render_echarts_chart(option, key='yen_carry_adaptive_default_1Y_schema_abc')
             first = component.call_args.kwargs['data']['legend_state_key']
+            first_key = component.call_args.kwargs['key']
             render_echarts_chart(option, key='yen_carry_adaptive_default_1M_schema_abc')
             self.assertEqual(component.call_args.kwargs['data']['legend_state_key'], first)
+            self.assertEqual(component.call_args.kwargs['key'], first_key)
+            self.assertEqual(component.call_args.kwargs['data']['period'], '1M')
             render_echarts_chart(option, key='yen_carry_adaptive_default_1Y_schema_def')
             self.assertNotEqual(component.call_args.kwargs['data']['legend_state_key'], first)
 

@@ -21,6 +21,7 @@ def _component():
              '<button type="button" aria-label="Fullscreen" title="全屏">⛶</button>'
              '</div><p role="alert" class="macro-chart-error" hidden></p></div>',
         css='.macro-chart-shell{position:relative;width:100%;min-width:0}'
+            '.macro-chart-time{font-size:11px;color:#64748b;text-align:right;margin:3px 0 0}'
             '.macro-chart-tools{position:absolute;right:0;top:0;display:flex;gap:4px}'
             '.macro-chart-tools button{border:0;background:#fff;color:#64748b;'
             'cursor:pointer;font-size:15px;padding:0 5px}'
@@ -48,5 +49,6 @@ def render_echarts_chart(option, *, height=465, width="stretch", key=None, theme
     return _component()(data={"option": readable_chart_option(option), "height": component_height,
                               "parameter_labels": compact_parameter_labels(option),
                               "price_footer_height": footer_height,
+                              "period": parts[1] if len(parts) == 2 else None,
                               "legend_state_key": legend_key},
-                        key=key, height="content", width=width)
+                        key=legend_key or key, height="content", width=width)
