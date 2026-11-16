@@ -374,7 +374,7 @@ def hibor(field):
 
 def tga():
     from scripts.sync_tga_daily_snapshot import fetch_latest_official, ENDPOINT
-    _, frame = fetch_latest_official(requests.Session())
+    _, frame = fetch_latest_official(requests.Session(), full_history=False)
     return latest(frame, "observation_date", "TGA_DAILY"), ENDPOINT
 
 

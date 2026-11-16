@@ -145,6 +145,9 @@ class Treasury2022SchemaTests(unittest.TestCase):
         self.assertEqual(len(parsed), 35)
         self.assertTrue(all("Closing Balance" in r["account_type"] for r in raw))
         self.assertEqual(raw[-1]["record_date"], now.strftime("%Y-%m-%d"))
+        fetch_latest_official(session,full_history=False)
+        cutoff = (pd.Timestamp.now().normalize()-pd.DateOffset(months=4)).strftime('%Y-%m-%d')
+        self.assertTrue(session.get.call_args.kwargs['params']['filter'].endswith(cutoff))
 
 
 if __name__ == "__main__":

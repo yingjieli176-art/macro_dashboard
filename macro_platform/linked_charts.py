@@ -14,13 +14,18 @@ def _component():
     frontend = Path(__file__).with_name("frontend")
     return components.component(
         "macro_linked_chart",
-        html='<div class="macro-chart-shell"><div data-testid="macroEChartsChart" '
+        html='<div class="macro-chart-shell"><div class="macro-chart-periods" data-testid="macroPeriodControls" role="group" aria-label="时间范围">'
+             + ''.join(f'<button type="button" data-period="{period}" disabled>{period}</button>' for period in ('5Y','1Y','6M','3M','1M'))
+             + '</div><div data-testid="macroEChartsChart" '
              'aria-busy="true" style="height:465px;width:100%;min-width:0"></div>'
              '<div class="macro-chart-tools"><button type="button" '
              'aria-label="Download as PNG" title="下载图片">↓</button>'
              '<button type="button" aria-label="Fullscreen" title="全屏">⛶</button>'
              '</div><p role="alert" class="macro-chart-error" hidden></p></div>',
         css='.macro-chart-shell{position:relative;width:100%;min-width:0}'
+            '.macro-chart-periods{display:flex;gap:0;padding-bottom:8px}'
+            '.macro-chart-periods button{background:#fff;border:1px solid #d1d5db;color:#334155;padding:7px 15px;cursor:pointer}'
+            '.macro-chart-periods button[aria-pressed=true]{color:#ef4444;background:#fff1f2;border-color:#ef4444}'
             '.macro-chart-time{font-size:11px;color:#64748b;text-align:right;margin:3px 0 0}'
             '.macro-chart-tools{position:absolute;right:0;top:0;display:flex;gap:4px}'
             '.macro-chart-tools button{border:0;background:#fff;color:#64748b;'

@@ -296,7 +296,7 @@ def exercise_equity_drawdown(page):
     ranges = []
     for period in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
         page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'", timeout=30000)
-        page.get_by_test_id("stButtonGroup").nth(MACRO_DISPLAY_NUMBER["us_drawdown"]-1).get_by_text(period, exact=True).click()
+        page.locator('[data-testid=macroPeriodControls], [data-testid=stButtonGroup]:visible').nth(MACRO_DISPLAY_NUMBER["us_drawdown"]-1).get_by_text(period, exact=True).click()
         chart = page.locator(f'[class*=st-key-us_equity_drawdown_echarts_schema_]').get_by_test_id(
             re.compile(r"^(macro|st)EChartsChart$"))
         chart.wait_for(timeout=30000)
@@ -335,7 +335,7 @@ def exercise_china_drawdown(page):
     baseline = None
     for period in ('5Y', '1Y', '6M', '3M', '1M', '1Y'):
         page.wait_for_function("document.querySelector('[data-testid=stApp]')?.getAttribute('data-test-script-state') === 'notRunning'", timeout=30000)
-        page.get_by_test_id('stButtonGroup').nth(MACRO_DISPLAY_NUMBER["cn_drawdown"]-1).get_by_text(period, exact=True).click()
+        page.locator('[data-testid=macroPeriodControls], [data-testid=stButtonGroup]:visible').nth(MACRO_DISPLAY_NUMBER["cn_drawdown"]-1).get_by_text(period, exact=True).click()
         selector = f'[class*=st-key-china_equity_drawdown_echarts_schema_]'
         chart = page.locator(selector).get_by_test_id(re.compile(r'^(macro|st)EChartsChart$'))
         chart.wait_for(timeout=30000)
@@ -363,7 +363,7 @@ def exercise_china_drawdown(page):
 
 def wait_for_page(page, url):
     page.goto(url, wait_until="domcontentloaded", timeout=60000)
-    page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 22", timeout=60000)
+    page.wait_for_function("document.querySelectorAll('[data-testid=macroPeriodControls]').length >= 8", timeout=60000)
     page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8 || document.querySelector('[data-testid=macroEChartsChartError]')", timeout=60000)
     failures = page.locator('.macro-chart-error:not([hidden])').all_text_contents()
     assert not failures, failures
@@ -613,7 +613,7 @@ def exercise_range_legend_persistence(page, prefix, group_index):
     if len(shared)>1:assert expected['axes'][1]['show'] is True
     windows={}
     for period in ('1M','6M','1Y'):
-        page.get_by_test_id('stButtonGroup').nth(group_index).get_by_text(period,exact=True).click()
+        page.locator('[data-testid=macroPeriodControls], [data-testid=stButtonGroup]:visible').nth(group_index).get_by_text(period,exact=True).click()
         chart=chart_for(period)
         state=chart.evaluate(inspect)
         assert all(state['selected'].get(name) is False for name in hidden), (prefix,period,state['selected'])
@@ -623,11 +623,11 @@ def exercise_range_legend_persistence(page, prefix, group_index):
     assert windows['1M'] < windows['6M'] < windows['1Y'], windows
     # A later re-selection is also carried into a different month.
     for name in hidden:toggle(chart,name)
-    page.get_by_test_id('stButtonGroup').nth(group_index).get_by_text('3M',exact=True).click()
+    page.locator('[data-testid=macroPeriodControls], [data-testid=stButtonGroup]:visible').nth(group_index).get_by_text('3M',exact=True).click()
     state=chart_for('3M').evaluate(inspect)
     assert all(state['selected'].get(name,True) for name in hidden)
     assert all(axis['show'] for axis in state['axes'])
-    page.get_by_test_id('stButtonGroup').nth(group_index).get_by_text('1Y',exact=True).click()
+    page.locator('[data-testid=macroPeriodControls], [data-testid=stButtonGroup]:visible').nth(group_index).get_by_text('1Y',exact=True).click()
     assert all(axis['show'] for axis in chart_for('1Y').evaluate(inspect)['axes'])
     return {'hidden_choices_preserved':True,'axis_visibility_preserved':True,
             'reselected_choices_preserved':True,'period_windows':windows,'observations_unchanged':True}
@@ -649,8 +649,8 @@ def main():
             page = browser.new_page(viewport={"width": 1440, "height": 1000})
             page.on("pageerror", lambda error: errors.append({"message": str(error), "stack": error.stack}))
             wait_for_page(page, args.url)
-            groups = page.get_by_test_id("stButtonGroup")
-            page.wait_for_function("document.querySelectorAll('[data-testid=stButtonGroup]').length === 22", timeout=60000)
+            groups = page.locator('[data-testid=macroPeriodControls], [data-testid=stButtonGroup]:visible')
+            page.wait_for_function("document.querySelectorAll('[data-testid=macroPeriodControls]').length >= 8", timeout=60000)
             page.get_by_text(f"{MACRO_DISPLAY_NUMBER[15]}. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
             charts = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
@@ -819,9 +819,11 @@ def main():
             assert '最新数据：' in first_clock and '北京时间：' in first_clock
             page.wait_for_timeout(1100)
             assert time_label.inner_text() != first_clock
+            period_started = time.perf_counter()
             groups.nth(MACRO_DISPLAY_NUMBER[9]-1).get_by_text('1M',exact=True).click()
             page.wait_for_function("document.querySelector('[class*=st-key-us_equity_risk_adaptive_default_schema_] [data-testid=macroEChartsChart]')?.dataset.period === '1M'")
             assert risk_chart.evaluate("e => e.__macroChart.__reuseEvidence") == 'period-test'
+            report['native_period_latency_ms'] = round((time.perf_counter()-period_started)*1000,2)
             groups.nth(MACRO_DISPLAY_NUMBER[9]-1).get_by_text('1Y',exact=True).click()
             page.wait_for_function("document.querySelector('[class*=st-key-us_equity_risk_adaptive_default_schema_] [data-testid=macroEChartsChart]')?.dataset.period === '1Y'")
             report['wheel_and_period'] = {'right_axes_locked':True,'left_axis_rescaled':True,'instance_reused':True,'clock_ticks':True}

@@ -27,13 +27,14 @@ TGA_LABEL = "Treasury General Account (TGA) Closing Balance"
 FIELDS = "record_date,account_type,close_today_bal,open_today_bal"
 
 
-def fetch_latest_official(session):
+def fetch_latest_official(session, *, full_history=True):
     now = pd.Timestamp.now().normalize()
     # First request 5+ years of *named* TGA closing-balance rows, so
     # a single page contains actual daily observations across the period.
     # If Treasury rejects the label filter, use a short unfiltered sample.
+    start = now - (pd.DateOffset(years=5, months=1) if full_history else pd.DateOffset(months=4))
     windows = [
-        f"account_type:eq:{TGA_LABEL},record_date:gte:{(now - pd.DateOffset(years=5, months=1)):%Y-%m-%d}",
+        f"account_type:eq:{TGA_LABEL},record_date:gte:{start:%Y-%m-%d}",
         f"record_date:gte:{(now - pd.DateOffset(months=4)):%Y-%m-%d}",
     ]
     problems = []
@@ -100,7 +101,13 @@ def merge_official_history(previous, incoming):
 
 def main() -> int:
     session = requests.Session()
-    rows, parsed = fetch_latest_official(session)
+    saved_records = []
+    try:
+        saved_records = json.loads(SNAPSHOT.read_text(encoding='utf-8')).get('records') or []
+    except (OSError, ValueError, TypeError):
+        pass
+    need_history = '--verify-only' not in sys.argv and len(parse_dts_tga_rows(saved_records)) < 500
+    rows, parsed = fetch_latest_official(session, full_history=need_history)
     new_end = parsed["observation_date"].max().strftime("%Y-%m-%d")
     old_records = []
     if SNAPSHOT.exists():

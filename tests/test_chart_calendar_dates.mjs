@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
 const source=await fs.readFile(new URL('../macro_platform/frontend/linked_charts.js',import.meta.url),'utf8');
-const {asTime,peakDrawdown,compactTooltip,latestObservation,lockRightAxes}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const {asTime,peakDrawdown,compactTooltip,latestObservation,lockRightAxes,presetStart}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 const midnight=Date.UTC(2026,10,5);
 assert.equal(asTime('2026-11-05'),midnight);
 assert.equal(asTime('2026-11-05T00:00:00'),midnight);
@@ -21,3 +21,6 @@ assert.deepEqual([axes.yAxis[1].min,axes.yAxis[1].max],[7000,8000]);
 assert.deepEqual([axes.yAxis[2].min,axes.yAxis[2].max],[3,4]);
 
 assert.equal(latestObservation({series:[{data:[['bad-date',7],['2026-11-12',3]]}]}),'2026-11-12');
+
+assert.equal(new Date(presetStart(Date.UTC(2024,2,31),"1M")).toISOString().slice(0,10),"2024-02-29");
+assert.equal(new Date(presetStart(Date.UTC(2024,1,29),"1Y")).toISOString().slice(0,10),"2023-02-28");

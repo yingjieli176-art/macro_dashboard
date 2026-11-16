@@ -2355,6 +2355,8 @@ def _try_minimal_adaptive_chart(base_fig, element_key, selected_range, mode=None
             key=f"{element_key}_native_safe_{mode or 'default'}_{selected_range}",
             theme=None,
         )
+        if callable(getattr(globals().get("_linked_charts"), "render_echarts_chart", None)):
+            st.markdown(f'<style>.st-key-{element_key}_time_window {{display:none}}</style>', unsafe_allow_html=True)
         st.caption("已启用轻量动态 X/Y 视图：时间切换及滑块仍按可见样本自适应。")
         _show_macro_plot_health(base_fig, option, element_key)
         return True
@@ -2401,6 +2403,8 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=Fal
                          f"{element_key}_adaptive_{mode or 'default'}_{selected_range}"),
                     theme=None,
                 )
+                if callable(getattr(globals().get("_linked_charts"), "render_echarts_chart", None)):
+                    st.markdown(f'<style>.st-key-{element_key}_time_window {{display:none}}</style>', unsafe_allow_html=True)
                 if not standard:
                     if reused:
                         st.caption("沿用上次有效数据，更新暂不可用。")
