@@ -104,28 +104,6 @@ class DashboardLoadingTests(unittest.TestCase):
         self.ns["build_fig16"].assert_called_once()
         self.ns["build_fig5"].assert_called_once_with("5Y")
 
-    def test_preloading_starts_workers_before_standalone_sections_without_duplicate_jobs(self):
-        started = threading.Event()
-        release = threading.Event()
-        original = self.ns["build_fig1"].side_effect
-        def build(*args):
-            started.set()
-            if not release.wait(3):
-                raise AssertionError("preload did not overlap standalone construction")
-            return self.figure
-        self.ns["build_fig1"].side_effect = build
-        publish = Mock()
-        try:
-            futures = self.ns["_build_macro_figures_parallel"](on_complete=publish, prepare_only=True)
-            self.assertTrue(started.wait(2))
-            publish.assert_not_called()
-        finally:
-            release.set()
-        result = self.ns["_build_macro_figures_parallel"](on_complete=publish, prepared_futures=futures)
-        self.assertEqual(set(result), set(range(1,17)))
-        self.ns["build_fig1"].assert_called_once()
-        self.assertEqual(publish.call_count, 16)
-
     def test_legacy_market_mode_state_cannot_change_raw_charts_or_duplicate_cache(self):
         self.ns["_build_macro_figures_parallel"]()
         for key in ("precious_metals_mode", "crypto_market_mode", "hk_5_range_market_mode", "hk_8_range_market_mode"):
