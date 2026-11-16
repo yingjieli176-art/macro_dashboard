@@ -445,12 +445,12 @@
         9
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-13",
+      "repository_latest": "2026-11-16",
       "checked_at": "2026-11-16T02:54:51.905501+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-13",
       "source_url": "https://www.jsda.or.jp/shiryoshitsu/toukei/trr/files/trrts.xls",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "JP_CORRIDOR_TONA",
@@ -1133,5 +1133,5 @@
   "elapsed_seconds": 0.382,
   "shared_http_requests": 0,
   "shared_http_reuses": 0,
-  "repository_reconciled_at": "2026-11-16T02:55:47.936060+00:00"
+  "repository_reconciled_at": "2026-11-16T06:49:40.940778+00:00"
 }
