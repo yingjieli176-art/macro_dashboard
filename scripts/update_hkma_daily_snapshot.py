@@ -53,8 +53,12 @@ def parse_hkab_latest(html: str, today: date | None = None) -> dict:
     if day > (today or datetime.now(timezone.utc).date()):
         raise ValueError("HKAB future publication date")
     row = {"end_of_date": day.isoformat(), "hibor_source": HKAB_URL}
-    for label, field in (("Overnight", "hibor_overnight"), ("3 Months", "hibor_3m")):
+    for label, field in (("Overnight", "hibor_overnight"), ("1 Month", "hibor_1m"), ("3 Months", "hibor_3m")):
         rate = re.search(re.escape(label) + r"\s+(-?\d+(?:\.\d+)?)", section)
+        if label == "1 Month" and not rate:
+            # Keep the independently valid O/N and 3M fixes if this tenor is
+            # absent; its own audit will expose the missing 1M observation.
+            continue
         if not rate or not 0 <= float(rate[1]) <= 30:
             raise ValueError(f"HKAB {label} fixing missing or invalid")
         row[field] = float(rate[1])
@@ -219,7 +223,12 @@ def main() -> None:
     source_errors = []
     def recent(url, extra=None):
         try:
-            return _fetch_recent_pages(url, "end_of_day", start_day, extra)
+            # One-time tenor migration: backfill genuine 1M fixings before
+            # returning to the cheap 30-day overlap on subsequent runs.
+            fetch_start = start_day
+            if url == HIBOR_URL and OUT.exists() and sum(r.get("hibor_1m") is not None for r in saved) < 200:
+                fetch_start = history_start
+            return _fetch_recent_pages(url, "end_of_day", fetch_start, extra)
         except Exception as exc:
             source_errors.append(url.rsplit("/", 1)[-1] + ": " + str(exc))
             print("::warning::Source failed; preserving its history:", source_errors[-1], flush=True)
@@ -286,6 +295,8 @@ def main() -> None:
             target = target_for(key)
             if row.get("ir_overnight") is not None:
                 target["hibor_overnight"] = row.get("ir_overnight")
+            if row.get("ir_1m") is not None:
+                target["hibor_1m"] = row.get("ir_1m")
             if row.get("ir_3m") is not None:
                 target["hibor_3m"] = row.get("ir_3m")
 
@@ -311,9 +322,10 @@ def main() -> None:
                 "cu_weakside",
                 "cu_strongside",
                 "hibor_overnight",
+                "hibor_fixing_1m",
             ):
                 if row.get(field) is not None:
-                    target[field] = row.get(field)
+                    target["hibor_1m" if field == "hibor_fixing_1m" else field] = row.get(field)
 
     try:
         hkab = parse_hkab_latest(_fetch_bytes(HKAB_URL, 20).decode("utf-8"))

@@ -180,7 +180,11 @@ class SourceFreshnessTests(unittest.TestCase):
             self.assertEqual(payload["records"][-1]["hibor_3m"], 3.2)
             self.assertEqual(len(payload["records"]), 351)
             self.assertEqual(len(payload["source_errors"]), 3)
-            self.assertEqual((today - fetch.call_args.args[2]).days, 30)
+            for call in fetch.call_args_list:
+                # The newly introduced 1M tenor needs a one-time historical
+                # migration; other durable feeds retain the cheap overlap.
+                expected = updater.ROLLING_DAYS if call.args[0] == updater.HIBOR_URL else 30
+                self.assertEqual((today - call.args[2]).days, expected)
 
     def test_market_audit_does_not_silently_accept_a_missing_required_symbol(self):
         from scripts import audit_source_freshness as checker

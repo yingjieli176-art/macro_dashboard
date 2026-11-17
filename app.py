@@ -2593,11 +2593,15 @@ HK_CHART_CONFIGS = [
     ),
     (
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[7]}. HKD Funding</div>',
-        '<div class="section-description">O/N HIBOR · 3M HIBOR · HKMA Base Rate · O/N−3M Spread (R1)</div>',
+        '<div class="section-description">1M HIBOR · 3M HIBOR · HKMA Base Rate · 1M−3M Spread (R1) · 农行/工行/建行 AH溢价率 (R2)</div>',
         "hk_7_range",
         [
             ("HKMA · HIBOR 日线", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/er-ir/hk-interbank-ir-daily/"),
             ("HKAB 当日 HIBOR 定盘", "https://www.hkab.org.hk/en/home"),
+            ("Yahoo Finance · 农行A/H股", "https://finance.yahoo.com/quote/1288.HK/history/"),
+            ("Yahoo Finance · 工行A/H股", "https://finance.yahoo.com/quote/1398.HK/history/"),
+            ("Yahoo Finance · 建行A/H股", "https://finance.yahoo.com/quote/0939.HK/history/"),
+            ("Yahoo Finance · 港元兑人民币", "https://finance.yahoo.com/quote/HKDCNY%3DX/history/"),
             ("HKMA Base Rate", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/monetary-operation/disc-win-liquid-adj-win-rates-endperiod/"),
         ],
     ),

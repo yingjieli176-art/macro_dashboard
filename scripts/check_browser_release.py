@@ -719,6 +719,19 @@ def main():
             assert page.get_by_text("该图表目前没有可验证的有效观测数据", exact=False).count() > 0
             report["checks"].append({"chart_positions": 22, "painted_native_charts": len(paints),
                                       "missing_positions_are_explicit": True})
+            bank_chart = page.locator('[class*=st-key-hk_7_range_adaptive_default_schema_]').get_by_test_id(
+                re.compile(r"^(macro|st)EChartsChart$"))
+            bank_chart.wait_for(timeout=30000)
+            bank_state = bank_chart.evaluate("""element => {
+                const option = element.__macroChart.getOption();
+                return {axes: option.yAxis.length,
+                    series: option.series.map(s => ({name:s.name, axis:s.yAxisIndex, points:s.data.length}))};
+            }""")
+            assert bank_state['axes'] == 3, bank_state
+            assert len(bank_state['series']) == 7, bank_state
+            assert '1M HIBOR' in bank_state['series'][0]['name'], bank_state
+            assert all(s['axis'] == 2 and s['points'] >= 1000 for s in bank_state['series'][-3:]), bank_state
+            report['bank_ah_premiums'] = bank_state
             policy = page.locator('[class*=st-key-normal_corridor_range_echarts_schema_]').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
             policy.wait_for(timeout=30000)

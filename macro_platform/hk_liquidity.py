@@ -52,9 +52,11 @@ OUTPUT_COLUMNS = [
     "Outstanding EFBN",
     "EFBN Held by Licensed Banks",
     "HIBOR O/N",
+    "HIBOR 1M",
     "HIBOR 3M",
     "HKMA Base Rate",
     "O/N-3M Spread",
+    "1M-3M Spread",
     "USD/HKD",
     "Strong-side CU",
     "Weak-side CU",
@@ -147,6 +149,7 @@ def load_hk_liquidity() -> pd.DataFrame:
         "outstanding_efbn",
         "ow_lb_bf_disc_win",
         "hibor_fixing_overnight",
+        "hibor_fixing_1m",
         "hibor_fixing_3m",
         "discount_window_base_rate",
         "exrate_hkd_usd",
@@ -185,9 +188,11 @@ def load_hk_liquidity() -> pd.DataFrame:
     ) / 1000.0
     monthly["EFBN Held by Licensed Banks"] = monthly["ow_lb_bf_disc_win"] / 1000.0
     monthly["HIBOR O/N"] = monthly["hibor_fixing_overnight"]
+    monthly["HIBOR 1M"] = monthly["hibor_fixing_1m"]
     monthly["HIBOR 3M"] = monthly["hibor_fixing_3m"]
     monthly["HKMA Base Rate"] = monthly["discount_window_base_rate"]
     monthly["O/N-3M Spread"] = (monthly["HIBOR O/N"] - monthly["HIBOR 3M"])
+    monthly["1M-3M Spread"] = monthly["HIBOR 1M"] - monthly["HIBOR 3M"]
     monthly["USD/HKD"] = monthly["exrate_hkd_usd"]
     monthly["Strong-side CU"] = 7.75
     monthly["Weak-side CU"] = 7.85
@@ -271,12 +276,12 @@ def load_hk_funding_monthly() -> pd.DataFrame:
     Discount Window end-of-period snapshot. Recent values in the core HKMA
     monetary snapshot remain a fallback for months not yet present upstream.
     """
-    columns = ["observation_date", "HIBOR O/N", "HIBOR 3M", "HKMA Base Rate", "O/N-3M Spread"]
+    columns = ["observation_date", "HIBOR O/N", "HIBOR 1M", "HIBOR 3M", "HKMA Base Rate", "O/N-3M Spread", "1M-3M Spread"]
     core = load_hk_liquidity()
     if core.empty:
         funding = pd.DataFrame(columns=columns[:-1]).set_index("observation_date")
     else:
-        funding = core[["observation_date", "HIBOR O/N", "HIBOR 3M", "HKMA Base Rate"]].copy()
+        funding = core[["observation_date", "HIBOR O/N", "HIBOR 1M", "HIBOR 3M", "HKMA Base Rate"]].copy()
         funding = funding.set_index("observation_date").sort_index()
 
     try:
@@ -288,11 +293,12 @@ def load_hk_funding_monthly() -> pd.DataFrame:
     if not hibor.empty and "end_of_month" in hibor.columns:
         hibor["observation_date"] = pd.to_datetime(hibor["end_of_month"], format="%Y-%m", errors="coerce") + pd.offsets.MonthEnd(0)
         hibor["HIBOR O/N"] = pd.to_numeric(hibor.get("hibor_overnight"), errors="coerce")
+        hibor["HIBOR 1M"] = pd.to_numeric(hibor.get("hibor_1m"), errors="coerce")
         hibor["HIBOR 3M"] = pd.to_numeric(hibor.get("hibor_3m"), errors="coerce")
-        hibor = hibor.dropna(subset=["observation_date"]).set_index("observation_date")[["HIBOR O/N", "HIBOR 3M"]]
+        hibor = hibor.dropna(subset=["observation_date"]).set_index("observation_date")[["HIBOR O/N", "HIBOR 1M", "HIBOR 3M"]]
         union = funding.index.union(hibor.index)
         funding = funding.reindex(union)
-        for col in ("HIBOR O/N", "HIBOR 3M"):
+        for col in ("HIBOR O/N", "HIBOR 1M", "HIBOR 3M"):
             funding[col] = hibor[col].reindex(union).combine_first(funding[col])
 
     try:
@@ -311,6 +317,7 @@ def load_hk_funding_monthly() -> pd.DataFrame:
 
     funding = funding.sort_index()
     funding["O/N-3M Spread"] = (funding["HIBOR O/N"] - funding["HIBOR 3M"])
+    funding["1M-3M Spread"] = funding["HIBOR 1M"] - funding["HIBOR 3M"]
     funding.index.name = "observation_date"
     return funding.reset_index()[columns]
 
@@ -323,7 +330,7 @@ def load_hk_funding_daily() -> pd.DataFrame:
     chart title separately labels this as a monthly fallback so freshness is
     never overstated.
     """
-    columns = ["observation_date", "HIBOR O/N", "HIBOR 3M", "HKMA Base Rate", "O/N-3M Spread"]
+    columns = ["observation_date", "HIBOR O/N", "HIBOR 1M", "HIBOR 3M", "HKMA Base Rate", "O/N-3M Spread", "1M-3M Spread"]
     try:
         payload = json.loads(DAILY_BANKING_SNAPSHOT_PATH.read_text(encoding="utf-8"))
         rows = payload.get("records") if isinstance(payload, dict) else payload
@@ -335,8 +342,10 @@ def load_hk_funding_daily() -> pd.DataFrame:
         today = pd.Timestamp.now(tz="Asia/Hong_Kong").tz_localize(None).normalize()
         frame = frame.loc[frame.observation_date.le(today)].copy()
         frame["HIBOR O/N"] = pd.to_numeric(frame.get("hibor_overnight"), errors="coerce")
+        frame["HIBOR 1M"] = pd.to_numeric(frame.get("hibor_1m"), errors="coerce")
         frame["HIBOR 3M"] = pd.to_numeric(frame.get("hibor_3m"), errors="coerce")
         frame["HKMA Base Rate"] = pd.to_numeric(frame.get("disc_win_base_rate"), errors="coerce")
+        frame["1M-3M Spread"] = frame["HIBOR 1M"] - frame["HIBOR 3M"]
         frame["O/N-3M Spread"] = (frame["HIBOR O/N"] - frame["HIBOR 3M"])
         frame = frame.dropna(subset=["observation_date"]).sort_values("observation_date").drop_duplicates("observation_date", keep="last")
         if frame[["HIBOR O/N", "HIBOR 3M", "HKMA Base Rate"]].notna().any(axis=1).sum() >= 10:
@@ -810,13 +819,13 @@ def build_hk_core_snapshot_figures(date_range: str = "5Y") -> tuple[go.Figure, g
     )
 
     funding_fig = go.Figure()
-    observed_line(funding_fig, funding, "HIBOR O/N", "O/N HIBOR", color="#286bd1")
+    observed_line(funding_fig, funding, "HIBOR 1M", "1M HIBOR", color="#286bd1")
     observed_line(funding_fig, funding, "HIBOR 3M", "3M HIBOR",
                   color="#d97706", dash="dash")
     observed_line(funding_fig, funding, "HKMA Base Rate", "HKMA Base Rate",
                   color="#7839c9", dash="dot")
-    observed_line(funding_fig, funding, "O/N-3M Spread",
-                  "O/N−3M Spread (R1)", axis="y2", color="#db2777")
+    observed_line(funding_fig, funding, "1M-3M Spread",
+                  "1M−3M Spread (R1)", axis="y2", color="#db2777")
     funding_fig.update_layout(
         yaxis=dict(title="Rate (%)"),
         yaxis2=dict(title="Spread (pp)", overlaying="y", side="right"),
@@ -825,6 +834,8 @@ def build_hk_core_snapshot_figures(date_range: str = "5Y") -> tuple[go.Figure, g
             "港元资金利率：已从 HKMA/HKAB 历史快照独立恢复；不补造缺失报价。"
         ]},
     )
+    from macro_platform.bank_ah import add_bank_premiums
+    add_bank_premiums(funding_fig, date_range)
     return apply_time_axis(balance, date_range), apply_time_axis(funding_fig, date_range)
 
 
@@ -1006,14 +1017,14 @@ def build_hk_liquidity_figures(
 
     # 5-3 · HKD funding.
     funding = make_subplots(specs=[[{"secondary_y": True}]])
-    add_line(funding, funding_data, "HIBOR O/N", "O/N HIBOR", COLORS["on"], 2.0, secondary_y=False)
+    add_line(funding, funding_data, "HIBOR 1M", "1M HIBOR", COLORS["on"], 2.0, secondary_y=False)
     add_line(funding, funding_data, "HIBOR 3M", "3M HIBOR", COLORS["h3m"], 2.3, "dash", secondary_y=False)
     # Nulls introduced by the union with daily HIBOR are not missing monthly
     # Base Rate observations. Plot this series on its own observed dates so
     # those unrelated daily rows do not break every historical monthly segment.
     base_rate_data = funding_data.dropna(subset=["HKMA Base Rate"])
     add_line(funding, base_rate_data, "HKMA Base Rate", "HKMA Base Rate", COLORS["policy"], 2.0, "dot", secondary_y=False)
-    add_line(funding, funding_data, "O/N-3M Spread", "O/N−3M Spread (R1)", COLORS["spread"], 1.7, "dashdot", "%", secondary_y=True)
+    add_line(funding, funding_data, "1M-3M Spread", "1M−3M Spread (R1)", COLORS["spread"], 1.7, "dashdot", "%", secondary_y=True)
     funding.update_yaxes(
         title_text="Rate (%)", secondary_y=False,
         showgrid=True, gridcolor="#e5e7eb", griddash="dot",
@@ -1027,6 +1038,8 @@ def build_hk_liquidity_figures(
         "Monthly history + recent daily" if funding_is_daily else "Monthly fallback"
     )
     style(funding, f"7. HKD Funding · {funding_frequency_label}", right_axis=True)
+    from macro_platform.bank_ah import add_bank_premiums
+    add_bank_premiums(funding, date_range)
     if date_range != "5Y" and not funding_is_daily:
         funding.add_annotation(
             text="⚠ 日频 HIBOR 暂缺，显示月末数据",
