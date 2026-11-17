@@ -62,6 +62,18 @@ class BankAHTests(unittest.TestCase):
                     updater.main()
             self.assertEqual(target.read_bytes(), original)
 
+    def test_live_audit_shares_fx_and_never_substitutes_saved_premiums(self):
+        from scripts import probe_all_sources as probe
+        probe.reset_probe_cache()
+        raw = pd.DataFrame({'observation_date': pd.to_datetime(['2026-11-10']), 'close': [5.]})
+        with patch('scripts.update_bank_ah.fetch', return_value=raw) as fetch:
+            jobs = [j for j in probe.jobs() if j[0].startswith('BANK_AH_')]
+            self.assertEqual(len(jobs), 3)
+            for job in jobs:
+                self.assertEqual(job[4]()[0], '2026-11-10')
+            self.assertEqual(fetch.call_count, 7)
+        probe.reset_probe_cache()
+
 
 if __name__ == "__main__":
     unittest.main()

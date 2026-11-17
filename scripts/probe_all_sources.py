@@ -571,11 +571,11 @@ def jobs():
     from macro_platform.bank_ah import BANKS, calculate_premium
     @shared_fetch
     def bank_quote(symbol):
-        url = "https://query1.finance.yahoo.com/v8/finance/chart/" + quote(symbol, safe="")
-        node = get(url, params={"range": "1mo", "interval": "1d"}).json()["chart"]["result"][0]
-        if node["meta"].get("symbol") != symbol:
-            raise ValueError("Wrong bank/FX instrument")
-        return completed_daily_closes(node)
+        # Use the collector's verified public transport and instrument/currency
+        # validation. A second request shape must not falsely fail this audit
+        # while the live collector itself succeeds. This reads LIVE data only.
+        from scripts.update_bank_ah import fetch
+        return fetch(symbol)
     def bank_latest(key):
         _, a, h, _ = BANKS[key]
         frame = calculate_premium(bank_quote(a), bank_quote(h), bank_quote("HKDCNY=X"))
