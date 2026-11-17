@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-17T11:53:37.265126+00:00",
+  "updated_at": "2026-11-17T18:34:21.398248+00:00",
   "retention": "rolling 5 years plus one month buffer",
   "policy": "merge fresh observations into last-known-good history; never erase a usable series on fetch failure",
   "coverage_start": "2021-10-18",
@@ -14,7 +14,7 @@
       "record_count": 1251,
       "coverage_start": "2021-10-18",
       "coverage_end": "2026-11-17",
-      "last_successful_fetch": "2026-11-17T11:53:37.265126+00:00",
+      "last_successful_fetch": "2026-11-17T18:34:21.398248+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -5032,7 +5032,7 @@
       "record_count": 1251,
       "coverage_start": "2021-10-18",
       "coverage_end": "2026-11-17",
-      "last_successful_fetch": "2026-11-17T11:53:37.265126+00:00",
+      "last_successful_fetch": "2026-11-17T18:34:21.398248+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -10050,7 +10050,7 @@
       "record_count": 1251,
       "coverage_start": "2021-10-18",
       "coverage_end": "2026-11-17",
-      "last_successful_fetch": "2026-11-17T11:53:37.265126+00:00",
+      "last_successful_fetch": "2026-11-17T18:34:21.398248+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
