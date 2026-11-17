@@ -6,7 +6,7 @@ import uuid
 from macro_platform.request_runtime import submit_jobs, completed_jobs, observed_cache, IncompleteObservedBundle
 import logging
 import math
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 import tempfile
 import threading
@@ -47,6 +47,40 @@ def load_helpers():
 
 
 class DashboardLoadingTests(unittest.TestCase):
+    def test_result_finishing_at_settlement_deadline_is_not_lost(self):
+        ns = load_helpers()
+        future = Future()
+        future.set_result(go.Figure(go.Scatter(x=['2026-11-16'], y=[1])))
+        ns['submit_jobs'] = Mock(side_effect=[{future:14}, {}])
+        # The worker completed just after the iterator's final deadline check.
+        ns['completed_jobs'] = lambda *args, **kwargs: iter(())
+        ns['_build_macro_figures_parallel'](completion_budget=0)
+        self.assertEqual(st.session_state['_late_dashboard_jobs'], {future:14})
+
+    def test_server_streams_late_chart_without_a_browser_completion_poll(self):
+        ns = load_helpers()
+        frame = go.Figure(go.Scatter(x=['2026-11-16'], y=[1]))
+        released = threading.Event()
+        fast_published = threading.Event()
+        published = {}
+        def build(number, *_):
+            if number == 14:
+                self.assertTrue(fast_published.wait(2))
+                time.sleep(.12)  # Outlast the HTTP request budget.
+                released.set()
+            return frame
+        ns['_cached_macro_figure'] = build
+        ns['_safe_hk_bundle'] = lambda *_: [frame] * 4
+        def publish(number, value):
+            published[number] = value
+            if number != 14:
+                fast_published.set()
+        result = ns['_build_macro_figures_parallel'](publish, budget=.02, completion_budget=2)
+        self.assertTrue(released.is_set())
+        self.assertIs(result[14], frame)
+        self.assertIs(published[14], frame)
+        self.assertFalse(st.session_state['_late_dashboard_jobs'])
+
     def setUp(self):
         self.ns = load_helpers()
         self.ns["_cached_macro_figure"].clear()

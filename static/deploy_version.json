@@ -81,6 +81,7 @@
     "same_date_move_vix_ratio_on_independent_axis",
     "investment_grade_oas_with_high_yield_oas_shared_percent_axis",
     "chart17_currency_adjusted_bank_ah_premiums_independent_r2",
-    "chart17_one_month_hibor_and_one_minus_three_month_spread"
+    "chart17_one_month_hibor_and_one_minus_three_month_spread",
+    "server_side_initial_chart_settlement_and_immediate_background_tab_resume"
   ]
 }

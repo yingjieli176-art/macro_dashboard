@@ -1,5 +1,16 @@
 // App-owned component. Never reach into Streamlit's React internals.
 const copy = value => JSON.parse(JSON.stringify(value));
+
+// Resuming a tab must not wait for a previously suspended animation frame.
+export function observePageResume(resume, doc = document, win = window) {
+  const visible = () => { if (!doc.hidden) resume(); };
+  doc.addEventListener('visibilitychange', visible);
+  win.addEventListener('pageshow', visible);
+  return () => {
+    doc.removeEventListener('visibilitychange', visible);
+    win.removeEventListener('pageshow', visible);
+  };
+}
 // Observations are immutable; layout changes need copies of styles, not every
 // historical point. ECharts receives the same complete source arrays.
 export function copyPresentation(option) {
@@ -258,6 +269,12 @@ export default function({data, parentElement}) {
   }
   if (first < last) base.xAxis = {...base.xAxis, min:first, max:last};
   let chart, observer, disposed = false, frame = 0;
+  const stopResume = observePageResume(() => {
+    if (disposed || !chart) return;
+    cancelAnimationFrame(frame); frame = 0;
+    updateClock(); chart.resize(); updateLayout();
+    chart.getZr().flush();
+  });
   const rightBounds = new Map();
   const lockWheelAxes = () => {
     if (!chart || disposed || rightBounds.size) return;
@@ -567,6 +584,7 @@ export default function({data, parentElement}) {
     option.graphic = endpointDate(option, option.dataZoom);
     chart.setOption(option, {notMerge:true});
     if (hasPriceGuides) updateLayout();
+    chart.getZr().flush();
     element.setAttribute('aria-busy', 'false');
     for (const button of periodButtons) {
       button.disabled = false;
@@ -635,7 +653,7 @@ export default function({data, parentElement}) {
   });
 
   return () => {
-    disposed = true; cancelAnimationFrame(frame); observer?.disconnect(); clearInterval(clockTimer);
+    disposed = true; stopResume(); cancelAnimationFrame(frame); observer?.disconnect(); clearInterval(clockTimer);
     element.removeEventListener('wheel', lockWheelAxes, {capture:true});
     if (chart) {
       parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom, period:activePeriod,manualZoom};

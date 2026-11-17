@@ -3101,7 +3101,8 @@ def _safe_hk_bundle(snapshot_revision):
     return figures
 
 
-def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_complete=None, budget=8.0):
+def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_complete=None,
+                                 budget=8.0, completion_budget=30.0):
     """Build concurrently and optionally publish completed charts immediately.
 
     Only data access and Plotly figure construction run in worker threads.
@@ -3125,7 +3126,14 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
     futures.update(aux_futures)
     results = {}
     published = set()
-    for key, future in completed_jobs(futures, budget=budget):
+    consumed = set()
+    # Keep streaming ready figures on the server while the bounded worker queue
+    # settles. Browser timers can be throttled in a background tab, so handing
+    # off at the HTTP budget made already-completed charts depend on returning
+    # to the tab and waiting for the completion fragment to run.
+    # This does not increase worker HTTP budgets or delay the first ready chart.
+    for key, future in completed_jobs(futures, budget=completion_budget):
+        consumed.add(future)
         try:
             value = future.result()
         except Exception:
@@ -3144,7 +3152,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
                 on_complete(key, value); published.add(key)
     # Running tasks remain bounded in shared pools and can warm caches for recovery.
     st.session_state["_late_dashboard_jobs"] = {future: key for future, key in futures.items()
-                                                if not future.done()}
+                                                if future not in consumed}
     for key in jobs:
         if key not in results:
             results[key] = ([_macro_error_figure(f"Chart {n}") for n in range(5, 9)]

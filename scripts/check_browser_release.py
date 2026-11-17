@@ -716,6 +716,20 @@ def main():
                 });
             })""")
             assert all(paints), paints
+            # Freeze/resume the actual test page like a discarded background
+            # tab, then verify immediate recovery preserves every observation
+            # and saved legend/period choice. No production dashboard is opened.
+            before_resume = charts.evaluate_all("elements => elements.map(e => {const o=e.__macroChart.getOption(); return [o.series.map(s=>s.data.length),o.legend[0].selected,e.dataset.period];})")
+            lifecycle = page.context.new_cdp_session(page)
+            lifecycle.send('Page.setWebLifecycleState', {'state':'frozen'})
+            page.wait_for_timeout(1200)
+            lifecycle.send('Page.setWebLifecycleState', {'state':'active'})
+            page.evaluate("window.dispatchEvent(new Event('pageshow')); document.dispatchEvent(new Event('visibilitychange'))")
+            after_resume = charts.evaluate_all("elements => elements.map(e => {const o=e.__macroChart.getOption(); return [o.series.map(s=>s.data.length),o.legend[0].selected,e.dataset.period];})")
+            assert after_resume == before_resume, {'before':before_resume,'after':after_resume}
+            assert charts.evaluate_all("elements => elements.every(e => e.getAttribute('aria-busy') === 'false')")
+            report['background_resume'] = {'frozen_page_resumed':True,'observations_and_choices_preserved':True}
+            lifecycle.detach()
             assert page.get_by_text("该图表目前没有可验证的有效观测数据", exact=False).count() > 0
             report["checks"].append({"chart_positions": 22, "painted_native_charts": len(paints),
                                       "missing_positions_are_explicit": True})
