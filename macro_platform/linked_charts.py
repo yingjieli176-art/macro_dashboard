@@ -25,7 +25,9 @@ def _component():
         # A newline keeps attribute selectors from being mistaken for file globs.
         css='.macro-chart-shell{position:relative;width:100%;min-width:0}\n'
             '.macro-chart-periods{display:flex;gap:0;padding-bottom:8px}'
-            '.macro-chart-periods button{background:#fff;border:1px solid #d1d5db;color:#334155;padding:7px 15px;cursor:pointer}'
+            '.macro-chart-periods button{background:#fff;border:1px solid #d1d5db;color:#334155;'
+            'font-family:inherit;font-size:.80rem;font-weight:400;line-height:1.25;'
+            'min-height:0;min-width:0;height:auto;padding:3px 10px;cursor:pointer}'
             '.macro-chart-periods button[aria-pressed=true]{color:#ef4444;background:#fff1f2;border-color:#ef4444}'
             '.macro-chart-time{font-size:11px;color:#64748b;text-align:right;margin:3px 0 0}'
             '.macro-chart-tools{position:absolute;right:0;top:0;display:flex;gap:4px}'
