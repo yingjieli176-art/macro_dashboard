@@ -5,16 +5,8 @@
   "source": "Cboe Daily Market Statistics",
   "source_url": "https://www.cboe.com/markets/us/options/market-statistics/daily",
   "source_template": "https://cdn.cboe.com/data/us/options/market_statistics/daily/{}_daily_options",
-  "updated_at": "2026-11-16T01:49:45.910820+00:00",
+  "updated_at": "2026-11-17T04:12:15.780786+00:00",
   "records": [
-    {
-      "observation_date": "2021-11-16",
-      "ratio": 1.71,
-      "call_volume": 458492,
-      "put_volume": 783424,
-      "total_volume": 1241916,
-      "source_url": "https://cdn.cboe.com/data/us/options/market_statistics/daily/2021-11-16_daily_options"
-    },
     {
       "observation_date": "2021-11-17",
       "ratio": 1.71,
@@ -10093,8 +10085,13 @@
       }
     }
   ],
-  "record_count": 1255,
-  "coverage_start": "2021-11-16",
+  "record_count": 1254,
+  "coverage_start": "2021-11-17",
   "coverage_end": "2026-11-13",
-  "fetch_errors": []
+  "fetch_errors": [
+    {
+      "date": "2026-11-16",
+      "error": "ValueError: Missing OCC cleared-volume fields"
+    }
+  ]
 }
