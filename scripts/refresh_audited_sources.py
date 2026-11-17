@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 ROOT = Path(__file__).resolve().parents[1]
 FAMILIES = {
+    "update_bank_ah.py": {"BANK_AH_ABC", "BANK_AH_ICBC", "BANK_AH_CCB"},
     "update_move_index.py": {"MOVE"},
     "update_dealer_gamma.py": {"SPX_GEX"},
     "update_dxy_snapshot.py": {"DX-Y.NYB"},
@@ -31,7 +32,7 @@ FAMILIES = {
     "update_us_equity_snapshot.py": {"SPX", "RSP"},
     "update_china_equity_snapshot.py": {"000300", "000852", "932000"},
     "update_hk_market_daily.py": {"0700.HK", "0388.HK", "^HSI", "HSTECH"},
-    "update_hkma_daily_snapshot.py": {"hibor_overnight", "hibor_3m", "disc_win_base_rate", "closing_balance"},
+    "update_hkma_daily_snapshot.py": {"hibor_overnight", "hibor_1m", "hibor_3m", "disc_win_base_rate", "closing_balance"},
     "update_hkma_snapshot.py": {"m2_hkd", "m3_hkd", "aggr_balance_bf_disc_win", "outstanding_efbn",
         "ow_lb_bf_disc_win", "mb_bf_disc_win_total"},
     "sync_tga_daily_snapshot.py": {"TGA_DAILY"},

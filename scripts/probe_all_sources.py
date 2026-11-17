@@ -504,7 +504,7 @@ def jobs():
         saved = {"aggr_balance_bf_disc_win": "aggr_balance", "mb_bf_disc_win_total": "monetary_base_total"}.get(field, field)
         add(field, [5,6], "monthly", snapshot("hkma_monetary_statistics.json", "end_of_month", saved),
             lambda field=field: hkma("monthly-statistical-bulletin/monetary-operation/monetary-base-endperiod", field, "end_of_month"))
-    for field in ("hibor_overnight", "hibor_3m", "disc_win_base_rate", "closing_balance"):
+    for field in ("hibor_overnight", "hibor_1m", "hibor_3m", "disc_win_base_rate", "closing_balance"):
         add(field, [7], "daily", snapshot("hkma_banking_liquidity_daily.json", "end_of_date", field),
             (lambda field=field: hibor(field)) if field.startswith("hibor_") else
             (lambda field=field: hkma_daily_value(field)))
@@ -568,6 +568,25 @@ def jobs():
     output.append(("USDJPY_1M_25D_RR_SAXO", [MACRO_DISPLAY_NUMBER[16]], "daily",
                    snapshot("jpy_1m_25d_rr_saxo.json", "observation_date", "value"),
                    lambda: (parse_rr(get(SAXO_URL).text)["observation_date"], SAXO_URL)))
+    from macro_platform.bank_ah import BANKS, calculate_premium
+    @shared_fetch
+    def bank_quote(symbol):
+        url = "https://query1.finance.yahoo.com/v8/finance/chart/" + quote(symbol, safe="")
+        node = get(url, params={"range": "1mo", "interval": "1d"}).json()["chart"]["result"][0]
+        if node["meta"].get("symbol") != symbol:
+            raise ValueError("Wrong bank/FX instrument")
+        return completed_daily_closes(node)
+    def bank_latest(key):
+        _, a, h, _ = BANKS[key]
+        frame = calculate_premium(bank_quote(a), bank_quote(h), bank_quote("HKDCNY=X"))
+        day = latest(frame, "observation_date", "premium_pct")
+        if not day:
+            raise ValueError("No common completed bank/FX date")
+        return day, f"https://finance.yahoo.com/quote/{h}/history/"
+    for key in BANKS:
+        output.append(("BANK_AH_" + key, [MACRO_DISPLAY_NUMBER[7]], "daily",
+            snapshot("bank_ah_daily.json", "observation_date", "premium_pct", key),
+            lambda key=key: bank_latest(key)))
     def qcam_latest():
         from macro_platform.jpy_option_history import discover_reports, parse_pdf
         reports = discover_reports(get)

@@ -1,0 +1,40 @@
+name: Refresh bank AH premiums
+on:
+  schedule:
+    # FX daily close completes after the HK/Shanghai cash sessions.
+    - cron: '37 1,9,13,22 * * 1-5'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/update_bank_ah.py
+      - macro_platform/bank_ah.py
+      - .github/workflows/update-bank-ah.yml
+permissions:
+  contents: write
+concurrency:
+  group: bank-ah-daily
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pandas plotly requests
+      - run: python scripts/update_bank_ah.py
+      - name: Publish validated history
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data_snapshots/bank_ah_daily.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Refresh bank A/H premium history"
+          bash scripts/push_snapshot.sh
+      - name: Check actual observation dates
+        run: python scripts/audit_source_freshness.py --only bank_ah_daily.json

@@ -79,6 +79,8 @@
     "chart_five_squeezemetrics_gex_dollar_billions",
     "schema_isolated_chart_axes_and_legend_state",
     "same_date_move_vix_ratio_on_independent_axis",
-    "investment_grade_oas_with_high_yield_oas_shared_percent_axis"
+    "investment_grade_oas_with_high_yield_oas_shared_percent_axis",
+    "chart17_currency_adjusted_bank_ah_premiums_independent_r2",
+    "chart17_one_month_hibor_and_one_minus_three_month_spread"
   ]
 }

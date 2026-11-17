@@ -9,7 +9,7 @@
     "https://www.hkab.org.hk/en/home"
   ],
   "transport_fallback": "r.jina.ai relay when direct api.hkma.gov.hk access is unavailable from CI",
-  "updated_at": "2026-11-17T04:12:20.304670+00:00",
+  "updated_at": "2026-11-17T07:00:39.611081+00:00",
   "source_errors": [],
   "coverage_start": "2025-05-16",
   "coverage_end": "2026-11-17",
@@ -28,7 +28,8 @@
       "hibor_3m": 2.19619,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.29798
     },
     {
       "end_of_date": "2025-05-19",
@@ -42,7 +43,8 @@
       "hibor_3m": 2.145,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.19048
     },
     {
       "end_of_date": "2025-05-20",
@@ -56,7 +58,8 @@
       "hibor_3m": 1.98726,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.96036
     },
     {
       "end_of_date": "2025-05-21",
@@ -70,7 +73,8 @@
       "hibor_3m": 1.80845,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.7578
     },
     {
       "end_of_date": "2025-05-22",
@@ -84,7 +88,8 @@
       "hibor_3m": 1.70976,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.66613
     },
     {
       "end_of_date": "2025-05-23",
@@ -98,7 +103,8 @@
       "hibor_3m": 1.55286,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.58964
     },
     {
       "end_of_date": "2025-05-26",
@@ -112,7 +118,8 @@
       "hibor_3m": 1.36952,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.56917
     },
     {
       "end_of_date": "2025-05-27",
@@ -126,7 +133,8 @@
       "hibor_3m": 1.36714,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.60119
     },
     {
       "end_of_date": "2025-05-28",
@@ -140,7 +148,8 @@
       "hibor_3m": 1.37774,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.59589
     },
     {
       "end_of_date": "2025-05-29",
@@ -154,7 +163,8 @@
       "hibor_3m": 1.32286,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.58857
     },
     {
       "end_of_date": "2025-05-30",
@@ -168,7 +178,8 @@
       "hibor_3m": 1.32286,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.58762
     },
     {
       "end_of_date": "2025-06-02",
@@ -182,7 +193,8 @@
       "hibor_3m": 1.70786,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.88893
     },
     {
       "end_of_date": "2025-06-03",
@@ -196,7 +208,8 @@
       "hibor_3m": 1.76048,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.87423
     },
     {
       "end_of_date": "2025-06-04",
@@ -210,7 +223,8 @@
       "hibor_3m": 1.7528,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.76952
     },
     {
       "end_of_date": "2025-06-05",
@@ -224,7 +238,8 @@
       "hibor_3m": 1.77226,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.7
     },
     {
       "end_of_date": "2025-06-06",
@@ -238,7 +253,8 @@
       "hibor_3m": 1.73881,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.63952
     },
     {
       "end_of_date": "2025-06-09",
@@ -252,7 +268,8 @@
       "hibor_3m": 1.71964,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.55982
     },
     {
       "end_of_date": "2025-06-10",
@@ -266,7 +283,8 @@
       "hibor_3m": 1.69714,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.54524
     },
     {
       "end_of_date": "2025-06-11",
@@ -280,7 +298,8 @@
       "hibor_3m": 1.72226,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.62119
     },
     {
       "end_of_date": "2025-06-12",
@@ -294,7 +313,8 @@
       "hibor_3m": 1.72857,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.63185
     },
     {
       "end_of_date": "2025-06-13",
@@ -308,7 +328,8 @@
       "hibor_3m": 1.7,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.5981
     },
     {
       "end_of_date": "2025-06-16",
@@ -322,7 +343,8 @@
       "hibor_3m": 1.62393,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.53952
     },
     {
       "end_of_date": "2025-06-17",
@@ -336,7 +358,8 @@
       "hibor_3m": 1.55566,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.52452
     },
     {
       "end_of_date": "2025-06-18",
@@ -350,7 +373,8 @@
       "hibor_3m": 1.54095,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.5403
     },
     {
       "end_of_date": "2025-06-19",
@@ -364,7 +388,8 @@
       "hibor_3m": 1.52958,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.53506
     },
     {
       "end_of_date": "2025-06-20",
@@ -378,7 +403,8 @@
       "hibor_3m": 1.51464,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.52845
     },
     {
       "end_of_date": "2025-06-23",
@@ -392,7 +418,8 @@
       "hibor_3m": 1.5175,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.68363
     },
     {
       "end_of_date": "2025-06-24",
@@ -406,7 +433,8 @@
       "hibor_3m": 1.55071,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.74714
     },
     {
       "end_of_date": "2025-06-25",
@@ -420,7 +448,8 @@
       "hibor_3m": 1.71179,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.90964
     },
     {
       "end_of_date": "2025-06-26",
@@ -434,7 +463,8 @@
       "hibor_3m": 1.76339,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.96554
     },
     {
       "end_of_date": "2025-06-27",
@@ -448,7 +478,8 @@
       "hibor_3m": 1.71179,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.83036
     },
     {
       "end_of_date": "2025-06-30",
@@ -462,7 +493,8 @@
       "hibor_3m": 1.67958,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.72744
     },
     {
       "end_of_date": "2025-07-02",
@@ -476,7 +508,8 @@
       "hibor_3m": 1.70589,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.72958
     },
     {
       "end_of_date": "2025-07-03",
@@ -490,7 +523,8 @@
       "hibor_3m": 1.7,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.7125
     },
     {
       "end_of_date": "2025-07-04",
@@ -504,7 +538,8 @@
       "hibor_3m": 1.78435,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.85875
     },
     {
       "end_of_date": "2025-07-07",
@@ -518,7 +553,8 @@
       "hibor_3m": 1.81488,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.05446
     },
     {
       "end_of_date": "2025-07-08",
@@ -532,7 +568,8 @@
       "hibor_3m": 1.81464,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.07488
     },
     {
       "end_of_date": "2025-07-09",
@@ -546,7 +583,8 @@
       "hibor_3m": 1.80393,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.10143
     },
     {
       "end_of_date": "2025-07-10",
@@ -560,7 +598,8 @@
       "hibor_3m": 1.8,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.03304
     },
     {
       "end_of_date": "2025-07-11",
@@ -574,7 +613,8 @@
       "hibor_3m": 1.84857,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.08191
     },
     {
       "end_of_date": "2025-07-14",
@@ -588,7 +628,8 @@
       "hibor_3m": 1.90214,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.14857
     },
     {
       "end_of_date": "2025-07-15",
@@ -602,7 +643,8 @@
       "hibor_3m": 1.9128,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.13905
     },
     {
       "end_of_date": "2025-07-16",
@@ -616,7 +658,8 @@
       "hibor_3m": 2.00536,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.17482
     },
     {
       "end_of_date": "2025-07-17",
@@ -630,7 +673,8 @@
       "hibor_3m": 2.03976,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.17726
     },
     {
       "end_of_date": "2025-07-18",
@@ -644,7 +688,8 @@
       "hibor_3m": 1.93256,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.07321
     },
     {
       "end_of_date": "2025-07-21",
@@ -658,7 +703,8 @@
       "hibor_3m": 1.8322,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.91036
     },
     {
       "end_of_date": "2025-07-22",
@@ -672,7 +718,8 @@
       "hibor_3m": 1.79238,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.92958
     },
     {
       "end_of_date": "2025-07-23",
@@ -686,7 +733,8 @@
       "hibor_3m": 1.78101,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.93817
     },
     {
       "end_of_date": "2025-07-24",
@@ -700,7 +748,8 @@
       "hibor_3m": 1.7628,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.89857
     },
     {
       "end_of_date": "2025-07-25",
@@ -714,7 +763,8 @@
       "hibor_3m": 1.75,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.91679
     },
     {
       "end_of_date": "2025-07-28",
@@ -728,7 +778,8 @@
       "hibor_3m": 1.70262,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.02321
     },
     {
       "end_of_date": "2025-07-29",
@@ -742,7 +793,8 @@
       "hibor_3m": 1.70214,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.02143
     },
     {
       "end_of_date": "2025-07-30",
@@ -756,7 +808,8 @@
       "hibor_3m": 1.62179,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.03244
     },
     {
       "end_of_date": "2025-07-31",
@@ -770,7 +823,8 @@
       "hibor_3m": 1.6175,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.03363
     },
     {
       "end_of_date": "2025-08-01",
@@ -784,7 +838,8 @@
       "hibor_3m": 1.61821,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.9931
     },
     {
       "end_of_date": "2025-08-04",
@@ -798,7 +853,8 @@
       "hibor_3m": 1.58244,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.93762
     },
     {
       "end_of_date": "2025-08-05",
@@ -826,7 +882,8 @@
       "hibor_3m": 1.61607,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.87774
     },
     {
       "end_of_date": "2025-08-07",
@@ -840,7 +897,8 @@
       "hibor_3m": 1.64702,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.96494
     },
     {
       "end_of_date": "2025-08-08",
@@ -854,7 +912,8 @@
       "hibor_3m": 1.62679,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.95893
     },
     {
       "end_of_date": "2025-08-11",
@@ -868,7 +927,8 @@
       "hibor_3m": 1.62893,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.95202
     },
     {
       "end_of_date": "2025-08-12",
@@ -882,7 +942,8 @@
       "hibor_3m": 1.6,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.90893
     },
     {
       "end_of_date": "2025-08-13",
@@ -896,7 +957,8 @@
       "hibor_3m": 1.60637,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 0.91036
     },
     {
       "end_of_date": "2025-08-14",
@@ -910,7 +972,8 @@
       "hibor_3m": 1.72488,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.04524
     },
     {
       "end_of_date": "2025-08-15",
@@ -924,7 +987,8 @@
       "hibor_3m": 1.8606,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.45095
     },
     {
       "end_of_date": "2025-08-18",
@@ -938,7 +1002,8 @@
       "hibor_3m": 2.18333,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.01393
     },
     {
       "end_of_date": "2025-08-19",
@@ -952,7 +1017,8 @@
       "hibor_3m": 2.57488,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.57417
     },
     {
       "end_of_date": "2025-08-20",
@@ -966,7 +1032,8 @@
       "hibor_3m": 2.92595,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.85774
     },
     {
       "end_of_date": "2025-08-21",
@@ -980,7 +1047,8 @@
       "hibor_3m": 2.87548,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.84191
     },
     {
       "end_of_date": "2025-08-22",
@@ -994,7 +1062,8 @@
       "hibor_3m": 2.83738,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.7706
     },
     {
       "end_of_date": "2025-08-25",
@@ -1008,7 +1077,8 @@
       "hibor_3m": 2.78952,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.7272
     },
     {
       "end_of_date": "2025-08-26",
@@ -1022,7 +1092,8 @@
       "hibor_3m": 2.91393,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.81464
     },
     {
       "end_of_date": "2025-08-27",
@@ -1036,7 +1107,8 @@
       "hibor_3m": 3.2731,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.2331
     },
     {
       "end_of_date": "2025-08-28",
@@ -1050,7 +1122,8 @@
       "hibor_3m": 3.3072,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.30649
     },
     {
       "end_of_date": "2025-08-29",
@@ -1064,7 +1137,8 @@
       "hibor_3m": 3.29583,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.29655
     },
     {
       "end_of_date": "2025-09-01",
@@ -1078,7 +1152,8 @@
       "hibor_3m": 3.19226,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.15345
     },
     {
       "end_of_date": "2025-09-02",
@@ -1092,7 +1167,8 @@
       "hibor_3m": 3.21107,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.14816
     },
     {
       "end_of_date": "2025-09-03",
@@ -1106,7 +1182,8 @@
       "hibor_3m": 3.01179,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.84964
     },
     {
       "end_of_date": "2025-09-04",
@@ -1120,7 +1197,8 @@
       "hibor_3m": 3.07946,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.96702
     },
     {
       "end_of_date": "2025-09-05",
@@ -1134,7 +1212,8 @@
       "hibor_3m": 3.10863,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.00018
     },
     {
       "end_of_date": "2025-09-08",
@@ -1162,7 +1241,8 @@
       "hibor_3m": 3.10869,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.04369
     },
     {
       "end_of_date": "2025-09-10",
@@ -1176,7 +1256,8 @@
       "hibor_3m": 3.16631,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.08625
     },
     {
       "end_of_date": "2025-09-11",
@@ -1190,7 +1271,8 @@
       "hibor_3m": 3.14875,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.0372
     },
     {
       "end_of_date": "2025-09-12",
@@ -1204,7 +1286,8 @@
       "hibor_3m": 3.22173,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.16196
     },
     {
       "end_of_date": "2025-09-15",
@@ -1218,7 +1301,8 @@
       "hibor_3m": 3.3,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.19036
     },
     {
       "end_of_date": "2025-09-16",
@@ -1232,7 +1316,8 @@
       "hibor_3m": 3.3431,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.2175
     },
     {
       "end_of_date": "2025-09-17",
@@ -1246,7 +1331,8 @@
       "hibor_3m": 3.29756,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.21107
     },
     {
       "end_of_date": "2025-09-18",
@@ -1260,7 +1346,8 @@
       "hibor_3m": 3.39827,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.36089
     },
     {
       "end_of_date": "2025-09-19",
@@ -1274,7 +1361,8 @@
       "hibor_3m": 3.42673,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.41607
     },
     {
       "end_of_date": "2025-09-22",
@@ -1288,7 +1376,8 @@
       "hibor_3m": 3.55774,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.6131
     },
     {
       "end_of_date": "2025-09-23",
@@ -1302,7 +1391,8 @@
       "hibor_3m": 3.73881,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.91107
     },
     {
       "end_of_date": "2025-09-24",
@@ -1330,7 +1420,8 @@
       "hibor_3m": 3.53458,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.62202
     },
     {
       "end_of_date": "2025-09-26",
@@ -1344,7 +1435,8 @@
       "hibor_3m": 3.52036,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.60661
     },
     {
       "end_of_date": "2025-09-29",
@@ -1358,7 +1450,8 @@
       "hibor_3m": 3.52714,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.59804
     },
     {
       "end_of_date": "2025-09-30",
@@ -1372,7 +1465,8 @@
       "hibor_3m": 3.52571,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.53762
     },
     {
       "end_of_date": "2025-10-02",
@@ -1386,7 +1480,8 @@
       "hibor_3m": 3.54024,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.49685
     },
     {
       "end_of_date": "2025-10-03",
@@ -1400,7 +1495,8 @@
       "hibor_3m": 3.58905,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.51464
     },
     {
       "end_of_date": "2025-10-06",
@@ -1414,7 +1510,8 @@
       "hibor_3m": 3.60232,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.58667
     },
     {
       "end_of_date": "2025-10-08",
@@ -1428,7 +1525,8 @@
       "hibor_3m": 3.61714,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.55417
     },
     {
       "end_of_date": "2025-10-09",
@@ -1442,7 +1540,8 @@
       "hibor_3m": 3.5931,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.52036
     },
     {
       "end_of_date": "2025-10-10",
@@ -1456,7 +1555,8 @@
       "hibor_3m": 3.58577,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.48435
     },
     {
       "end_of_date": "2025-10-13",
@@ -1470,7 +1570,8 @@
       "hibor_3m": 3.52321,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.44024
     },
     {
       "end_of_date": "2025-10-14",
@@ -1484,7 +1585,8 @@
       "hibor_3m": 3.57226,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.50423
     },
     {
       "end_of_date": "2025-10-15",
@@ -1498,7 +1600,8 @@
       "hibor_3m": 3.53066,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.42417
     },
     {
       "end_of_date": "2025-10-16",
@@ -1512,7 +1615,8 @@
       "hibor_3m": 3.53155,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.46494
     },
     {
       "end_of_date": "2025-10-17",
@@ -1526,7 +1630,8 @@
       "hibor_3m": 3.59173,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.53167
     },
     {
       "end_of_date": "2025-10-20",
@@ -1540,7 +1645,8 @@
       "hibor_3m": 3.60613,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.57857
     },
     {
       "end_of_date": "2025-10-21",
@@ -1554,7 +1660,8 @@
       "hibor_3m": 3.68679,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.66411
     },
     {
       "end_of_date": "2025-10-22",
@@ -1568,7 +1675,8 @@
       "hibor_3m": 3.61768,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.53185
     },
     {
       "end_of_date": "2025-10-23",
@@ -1582,7 +1690,8 @@
       "hibor_3m": 3.61393,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.54095
     },
     {
       "end_of_date": "2025-10-24",
@@ -1596,7 +1705,8 @@
       "hibor_3m": 3.57268,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.47292
     },
     {
       "end_of_date": "2025-10-27",
@@ -1610,7 +1720,8 @@
       "hibor_3m": 3.59262,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.5
     },
     {
       "end_of_date": "2025-10-28",
@@ -1624,7 +1735,8 @@
       "hibor_3m": 3.55637,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.43738
     },
     {
       "end_of_date": "2025-10-30",
@@ -1638,7 +1750,8 @@
       "hibor_3m": 3.541,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.41536
     },
     {
       "end_of_date": "2025-10-31",
@@ -1652,7 +1765,8 @@
       "hibor_3m": 3.54899,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.42911
     },
     {
       "end_of_date": "2025-11-03",
@@ -1666,7 +1780,8 @@
       "hibor_3m": 3.54095,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.38173
     },
     {
       "end_of_date": "2025-11-04",
@@ -1680,7 +1795,8 @@
       "hibor_3m": 3.52816,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.315
     },
     {
       "end_of_date": "2025-11-05",
@@ -1694,7 +1810,8 @@
       "hibor_3m": 3.45286,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.16131
     },
     {
       "end_of_date": "2025-11-06",
@@ -1708,7 +1825,8 @@
       "hibor_3m": 3.46982,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.11845
     },
     {
       "end_of_date": "2025-11-07",
@@ -1722,7 +1840,8 @@
       "hibor_3m": 3.44137,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.04637
     },
     {
       "end_of_date": "2025-11-10",
@@ -1736,7 +1855,8 @@
       "hibor_3m": 3.41506,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.02268
     },
     {
       "end_of_date": "2025-11-11",
@@ -1750,7 +1870,8 @@
       "hibor_3m": 3.43357,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.01982
     },
     {
       "end_of_date": "2025-11-12",
@@ -1764,7 +1885,8 @@
       "hibor_3m": 3.45774,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.11661
     },
     {
       "end_of_date": "2025-11-13",
@@ -1778,7 +1900,8 @@
       "hibor_3m": 3.49048,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.09756
     },
     {
       "end_of_date": "2025-11-14",
@@ -1792,7 +1915,8 @@
       "hibor_3m": 3.46982,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.06351
     },
     {
       "end_of_date": "2025-11-17",
@@ -1806,7 +1930,8 @@
       "hibor_3m": 3.43476,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.00429
     },
     {
       "end_of_date": "2025-11-18",
@@ -1820,7 +1945,8 @@
       "hibor_3m": 3.41571,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.87762
     },
     {
       "end_of_date": "2025-11-19",
@@ -1834,7 +1960,8 @@
       "hibor_3m": 3.05774,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.28369
     },
     {
       "end_of_date": "2025-11-20",
@@ -1848,7 +1975,8 @@
       "hibor_3m": 3.0809,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.41036
     },
     {
       "end_of_date": "2025-11-21",
@@ -1862,7 +1990,8 @@
       "hibor_3m": 3.08435,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.495
     },
     {
       "end_of_date": "2025-11-24",
@@ -1876,7 +2005,8 @@
       "hibor_3m": 3.08363,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.6256
     },
     {
       "end_of_date": "2025-11-25",
@@ -1890,7 +2020,8 @@
       "hibor_3m": 3.1431,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.81369
     },
     {
       "end_of_date": "2025-11-26",
@@ -1904,7 +2035,8 @@
       "hibor_3m": 3.2,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.97768
     },
     {
       "end_of_date": "2025-11-27",
@@ -1918,7 +2050,8 @@
       "hibor_3m": 3.22643,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.2428
     },
     {
       "end_of_date": "2025-11-28",
@@ -1932,7 +2065,8 @@
       "hibor_3m": 3.17167,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.18286
     },
     {
       "end_of_date": "2025-12-01",
@@ -1946,7 +2080,8 @@
       "hibor_3m": 2.94107,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.93488
     },
     {
       "end_of_date": "2025-12-02",
@@ -1960,7 +2095,8 @@
       "hibor_3m": 2.86607,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.80232
     },
     {
       "end_of_date": "2025-12-03",
@@ -1974,7 +2110,8 @@
       "hibor_3m": 3.00827,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.88458
     },
     {
       "end_of_date": "2025-12-04",
@@ -1988,7 +2125,8 @@
       "hibor_3m": 3.03458,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.03482
     },
     {
       "end_of_date": "2025-12-05",
@@ -2002,7 +2140,8 @@
       "hibor_3m": 3.07191,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.07512
     },
     {
       "end_of_date": "2025-12-08",
@@ -2016,7 +2155,8 @@
       "hibor_3m": 3.05661,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.09571
     },
     {
       "end_of_date": "2025-12-09",
@@ -2030,7 +2170,8 @@
       "hibor_3m": 3.07417,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.13316
     },
     {
       "end_of_date": "2025-12-10",
@@ -2044,7 +2185,8 @@
       "hibor_3m": 3.07155,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.11435
     },
     {
       "end_of_date": "2025-12-11",
@@ -2058,7 +2200,8 @@
       "hibor_3m": 3.05494,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.13387
     },
     {
       "end_of_date": "2025-12-12",
@@ -2072,7 +2215,8 @@
       "hibor_3m": 3.02696,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.03952
     },
     {
       "end_of_date": "2025-12-15",
@@ -2086,7 +2230,8 @@
       "hibor_3m": 2.98821,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.97554
     },
     {
       "end_of_date": "2025-12-16",
@@ -2100,7 +2245,8 @@
       "hibor_3m": 3.08958,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.12756
     },
     {
       "end_of_date": "2025-12-17",
@@ -2114,7 +2260,8 @@
       "hibor_3m": 3.12655,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.25381
     },
     {
       "end_of_date": "2025-12-18",
@@ -2128,7 +2275,8 @@
       "hibor_3m": 3.10494,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.18363
     },
     {
       "end_of_date": "2025-12-19",
@@ -2142,7 +2290,8 @@
       "hibor_3m": 3.0881,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.16798
     },
     {
       "end_of_date": "2025-12-22",
@@ -2156,7 +2305,8 @@
       "hibor_3m": 3.01542,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.1175
     },
     {
       "end_of_date": "2025-12-23",
@@ -2170,7 +2320,8 @@
       "hibor_3m": 3.02958,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.10637
     },
     {
       "end_of_date": "2025-12-24",
@@ -2184,7 +2335,8 @@
       "hibor_3m": 3.09494,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.28911
     },
     {
       "end_of_date": "2025-12-29",
@@ -2198,7 +2350,8 @@
       "hibor_3m": 3.08435,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.3506
     },
     {
       "end_of_date": "2025-12-30",
@@ -2212,7 +2365,8 @@
       "hibor_3m": 3.03607,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.21107
     },
     {
       "end_of_date": "2025-12-31",
@@ -2226,7 +2380,8 @@
       "hibor_3m": 2.93244,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.07548
     },
     {
       "end_of_date": "2026-01-02",
@@ -2240,7 +2395,8 @@
       "hibor_3m": 2.81179,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.6225
     },
     {
       "end_of_date": "2026-01-05",
@@ -2254,7 +2410,8 @@
       "hibor_3m": 2.81607,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.67226
     },
     {
       "end_of_date": "2026-01-06",
@@ -2268,7 +2425,8 @@
       "hibor_3m": 2.99071,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.97869
     },
     {
       "end_of_date": "2026-01-07",
@@ -2282,7 +2440,8 @@
       "hibor_3m": 2.97262,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.95518
     },
     {
       "end_of_date": "2026-01-08",
@@ -2296,7 +2455,8 @@
       "hibor_3m": 2.99524,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 3.00798
     },
     {
       "end_of_date": "2026-01-09",
@@ -2310,7 +2470,8 @@
       "hibor_3m": 2.9125,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.86369
     },
     {
       "end_of_date": "2026-01-12",
@@ -2324,7 +2485,8 @@
       "hibor_3m": 2.89,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.83881
     },
     {
       "end_of_date": "2026-01-13",
@@ -2338,7 +2500,8 @@
       "hibor_3m": 2.83411,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.69
     },
     {
       "end_of_date": "2026-01-14",
@@ -2352,7 +2515,8 @@
       "hibor_3m": 2.80071,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.64786
     },
     {
       "end_of_date": "2026-01-15",
@@ -2366,7 +2530,8 @@
       "hibor_3m": 2.90423,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.84857
     },
     {
       "end_of_date": "2026-01-16",
@@ -2380,7 +2545,8 @@
       "hibor_3m": 2.86244,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.84095
     },
     {
       "end_of_date": "2026-01-19",
@@ -2394,7 +2560,8 @@
       "hibor_3m": 2.84286,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.77673
     },
     {
       "end_of_date": "2026-01-20",
@@ -2408,7 +2575,8 @@
       "hibor_3m": 2.85589,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.75923
     },
     {
       "end_of_date": "2026-01-21",
@@ -2422,7 +2590,8 @@
       "hibor_3m": 2.83273,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.72893
     },
     {
       "end_of_date": "2026-01-22",
@@ -2436,7 +2605,8 @@
       "hibor_3m": 2.90566,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.80405
     },
     {
       "end_of_date": "2026-01-23",
@@ -2450,7 +2620,8 @@
       "hibor_3m": 2.88506,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.79292
     },
     {
       "end_of_date": "2026-01-26",
@@ -2464,7 +2635,8 @@
       "hibor_3m": 2.85637,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.78167
     },
     {
       "end_of_date": "2026-01-27",
@@ -2478,7 +2650,8 @@
       "hibor_3m": 2.84786,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.74571
     },
     {
       "end_of_date": "2026-01-28",
@@ -2492,7 +2665,8 @@
       "hibor_3m": 2.83917,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.66321
     },
     {
       "end_of_date": "2026-01-29",
@@ -2506,7 +2680,8 @@
       "hibor_3m": 2.82298,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.65
     },
     {
       "end_of_date": "2026-01-30",
@@ -2520,7 +2695,8 @@
       "hibor_3m": 2.82595,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.61357
     },
     {
       "end_of_date": "2026-02-02",
@@ -2534,7 +2710,8 @@
       "hibor_3m": 2.77441,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.53363
     },
     {
       "end_of_date": "2026-02-03",
@@ -2548,7 +2725,8 @@
       "hibor_3m": 2.74839,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.51994
     },
     {
       "end_of_date": "2026-02-04",
@@ -2562,7 +2740,8 @@
       "hibor_3m": 2.74179,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.49435
     },
     {
       "end_of_date": "2026-02-05",
@@ -2576,7 +2755,8 @@
       "hibor_3m": 2.7775,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.59452
     },
     {
       "end_of_date": "2026-02-06",
@@ -2590,7 +2770,8 @@
       "hibor_3m": 2.78363,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.58815
     },
     {
       "end_of_date": "2026-02-09",
@@ -2604,7 +2785,8 @@
       "hibor_3m": 2.75625,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.55
     },
     {
       "end_of_date": "2026-02-10",
@@ -2618,7 +2800,8 @@
       "hibor_3m": 2.73363,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.50446
     },
     {
       "end_of_date": "2026-02-11",
@@ -2632,7 +2815,8 @@
       "hibor_3m": 2.70375,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.48268
     },
     {
       "end_of_date": "2026-02-12",
@@ -2646,7 +2830,8 @@
       "hibor_3m": 2.68577,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.5
     },
     {
       "end_of_date": "2026-02-13",
@@ -2660,7 +2845,8 @@
       "hibor_3m": 2.68649,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.51464
     },
     {
       "end_of_date": "2026-02-16",
@@ -2674,7 +2860,8 @@
       "hibor_3m": 2.67887,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.45792
     },
     {
       "end_of_date": "2026-02-20",
@@ -2688,7 +2875,8 @@
       "hibor_3m": 2.67512,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.47673
     },
     {
       "end_of_date": "2026-02-23",
@@ -2702,7 +2890,8 @@
       "hibor_3m": 2.63887,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.43952
     },
     {
       "end_of_date": "2026-02-24",
@@ -2716,7 +2905,8 @@
       "hibor_3m": 2.58887,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.34238
     },
     {
       "end_of_date": "2026-02-25",
@@ -2730,7 +2920,8 @@
       "hibor_3m": 2.57679,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.35375
     },
     {
       "end_of_date": "2026-02-26",
@@ -2744,7 +2935,8 @@
       "hibor_3m": 2.6,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.4322
     },
     {
       "end_of_date": "2026-02-27",
@@ -2758,7 +2950,8 @@
       "hibor_3m": 2.58363,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.41321
     },
     {
       "end_of_date": "2026-03-02",
@@ -2772,7 +2965,8 @@
       "hibor_3m": 2.52887,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.35518
     },
     {
       "end_of_date": "2026-03-03",
@@ -2786,7 +2980,8 @@
       "hibor_3m": 2.48577,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.30446
     },
     {
       "end_of_date": "2026-03-04",
@@ -2800,7 +2995,8 @@
       "hibor_3m": 2.59202,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.41399
     },
     {
       "end_of_date": "2026-03-05",
@@ -2814,7 +3010,8 @@
       "hibor_3m": 2.58435,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.31179
     },
     {
       "end_of_date": "2026-03-06",
@@ -2828,7 +3025,8 @@
       "hibor_3m": 2.46589,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.19613
     },
     {
       "end_of_date": "2026-03-09",
@@ -2842,7 +3040,8 @@
       "hibor_3m": 2.4303,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.04524
     },
     {
       "end_of_date": "2026-03-10",
@@ -2856,7 +3055,8 @@
       "hibor_3m": 2.38917,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.02083
     },
     {
       "end_of_date": "2026-03-11",
@@ -2870,7 +3070,8 @@
       "hibor_3m": 2.36185,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.02982
     },
     {
       "end_of_date": "2026-03-12",
@@ -2884,7 +3085,8 @@
       "hibor_3m": 2.37226,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.02982
     },
     {
       "end_of_date": "2026-03-13",
@@ -2898,7 +3100,8 @@
       "hibor_3m": 2.37744,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.07583
     },
     {
       "end_of_date": "2026-03-16",
@@ -2912,7 +3115,8 @@
       "hibor_3m": 2.36464,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.05637
     },
     {
       "end_of_date": "2026-03-17",
@@ -2926,7 +3130,8 @@
       "hibor_3m": 2.35446,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.08173
     },
     {
       "end_of_date": "2026-03-18",
@@ -2940,7 +3145,8 @@
       "hibor_3m": 2.34,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.07298
     },
     {
       "end_of_date": "2026-03-19",
@@ -2954,7 +3160,8 @@
       "hibor_3m": 2.3506,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.05446
     },
     {
       "end_of_date": "2026-03-20",
@@ -2968,7 +3175,8 @@
       "hibor_3m": 2.34238,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.02375
     },
     {
       "end_of_date": "2026-03-23",
@@ -2982,7 +3190,8 @@
       "hibor_3m": 2.32911,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.95107
     },
     {
       "end_of_date": "2026-03-24",
@@ -2996,7 +3205,8 @@
       "hibor_3m": 2.30113,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.95
     },
     {
       "end_of_date": "2026-03-25",
@@ -3010,7 +3220,8 @@
       "hibor_3m": 2.3431,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.12548
     },
     {
       "end_of_date": "2026-03-26",
@@ -3024,7 +3235,8 @@
       "hibor_3m": 2.51679,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.41316
     },
     {
       "end_of_date": "2026-03-27",
@@ -3038,7 +3250,8 @@
       "hibor_3m": 2.53119,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.44786
     },
     {
       "end_of_date": "2026-03-30",
@@ -3052,7 +3265,8 @@
       "hibor_3m": 2.41179,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.28292
     },
     {
       "end_of_date": "2026-03-31",
@@ -3066,7 +3280,8 @@
       "hibor_3m": 2.35661,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.23506
     },
     {
       "end_of_date": "2026-04-01",
@@ -3080,7 +3295,8 @@
       "hibor_3m": 2.26214,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.97655
     },
     {
       "end_of_date": "2026-04-02",
@@ -3094,7 +3310,8 @@
       "hibor_3m": 2.28268,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 1.98601
     },
     {
       "end_of_date": "2026-04-08",
@@ -3108,7 +3325,8 @@
       "hibor_3m": 2.34595,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.07798
     },
     {
       "end_of_date": "2026-04-09",
@@ -3122,7 +3340,8 @@
       "hibor_3m": 2.42798,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.32321
     },
     {
       "end_of_date": "2026-04-10",
@@ -3136,7 +3355,8 @@
       "hibor_3m": 2.4,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.24024
     },
     {
       "end_of_date": "2026-04-13",
@@ -3150,7 +3370,8 @@
       "hibor_3m": 2.4303,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.23244
     },
     {
       "end_of_date": "2026-04-14",
@@ -3164,7 +3385,8 @@
       "hibor_3m": 2.45494,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.30976
     },
     {
       "end_of_date": "2026-04-15",
@@ -3178,7 +3400,8 @@
       "hibor_3m": 2.44792,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.29649
     },
     {
       "end_of_date": "2026-04-16",
@@ -3192,7 +3415,8 @@
       "hibor_3m": 2.47583,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.34571
     },
     {
       "end_of_date": "2026-04-17",
@@ -3206,7 +3430,8 @@
       "hibor_3m": 2.60411,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.55143
     },
     {
       "end_of_date": "2026-04-20",
@@ -3220,7 +3445,8 @@
       "hibor_3m": 2.58506,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.43577
     },
     {
       "end_of_date": "2026-04-21",
@@ -3234,7 +3460,8 @@
       "hibor_3m": 2.57155,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.44286
     },
     {
       "end_of_date": "2026-04-22",
@@ -3248,7 +3475,8 @@
       "hibor_3m": 2.56923,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.47631
     },
     {
       "end_of_date": "2026-04-23",
@@ -3262,7 +3490,8 @@
       "hibor_3m": 2.60429,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.48577
     },
     {
       "end_of_date": "2026-04-24",
@@ -3276,7 +3505,8 @@
       "hibor_3m": 2.60661,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.48815
     },
     {
       "end_of_date": "2026-04-27",
@@ -3290,7 +3520,8 @@
       "hibor_3m": 2.60411,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.45732
     },
     {
       "end_of_date": "2026-04-28",
@@ -3304,7 +3535,8 @@
       "hibor_3m": 2.61054,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.43667
     },
     {
       "end_of_date": "2026-04-29",
@@ -3318,7 +3550,8 @@
       "hibor_3m": 2.60566,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.43387
     },
     {
       "end_of_date": "2026-04-30",
@@ -3332,7 +3565,8 @@
       "hibor_3m": 2.60494,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.44238
     },
     {
       "end_of_date": "2026-05-04",
@@ -3346,7 +3580,8 @@
       "hibor_3m": 2.60708,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.4431
     },
     {
       "end_of_date": "2026-05-05",
@@ -3360,7 +3595,8 @@
       "hibor_3m": 2.62024,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.48887
     },
     {
       "end_of_date": "2026-05-06",
@@ -3374,7 +3610,8 @@
       "hibor_3m": 2.6431,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.47845
     },
     {
       "end_of_date": "2026-05-07",
@@ -3388,7 +3625,8 @@
       "hibor_3m": 2.70982,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.5147
     },
     {
       "end_of_date": "2026-05-08",
@@ -3402,7 +3640,8 @@
       "hibor_3m": 2.8,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.61613
     },
     {
       "end_of_date": "2026-05-11",
@@ -3416,7 +3655,8 @@
       "hibor_3m": 2.85637,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.68387
     },
     {
       "end_of_date": "2026-05-12",
@@ -3430,7 +3670,8 @@
       "hibor_3m": 2.87536,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.7
     },
     {
       "end_of_date": "2026-05-13",
@@ -3444,7 +3685,8 @@
       "hibor_3m": 2.90018,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.7
     },
     {
       "end_of_date": "2026-05-14",
@@ -3458,7 +3700,8 @@
       "hibor_3m": 2.88458,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.65518
     },
     {
       "end_of_date": "2026-05-15",
@@ -3472,7 +3715,8 @@
       "hibor_3m": 2.88315,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.63881
     },
     {
       "end_of_date": "2026-05-18",
@@ -3486,7 +3730,8 @@
       "hibor_3m": 2.88458,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.62619
     },
     {
       "end_of_date": "2026-05-19",
@@ -3500,7 +3745,8 @@
       "hibor_3m": 2.84857,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.6
     },
     {
       "end_of_date": "2026-05-20",
@@ -3514,7 +3760,8 @@
       "hibor_3m": 2.80994,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.57262
     },
     {
       "end_of_date": "2026-05-21",
@@ -3528,7 +3775,8 @@
       "hibor_3m": 2.82964,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.59268
     },
     {
       "end_of_date": "2026-05-22",
@@ -3542,7 +3790,8 @@
       "hibor_3m": 2.8431,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.6
     },
     {
       "end_of_date": "2026-05-26",
@@ -3556,7 +3805,8 @@
       "hibor_3m": 2.85375,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.57298
     },
     {
       "end_of_date": "2026-05-27",
@@ -3570,7 +3820,8 @@
       "hibor_3m": 2.83387,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.6
     },
     {
       "end_of_date": "2026-05-28",
@@ -3584,7 +3835,8 @@
       "hibor_3m": 2.87083,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.65143
     },
     {
       "end_of_date": "2026-05-29",
@@ -3598,7 +3850,8 @@
       "hibor_3m": 2.82708,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.60923
     },
     {
       "end_of_date": "2026-06-01",
@@ -3612,7 +3865,8 @@
       "hibor_3m": 2.8,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.57155
     },
     {
       "end_of_date": "2026-06-02",
@@ -3626,7 +3880,8 @@
       "hibor_3m": 2.77042,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.58387
     },
     {
       "end_of_date": "2026-06-03",
@@ -3640,7 +3895,8 @@
       "hibor_3m": 2.75494,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.6
     },
     {
       "end_of_date": "2026-06-04",
@@ -3654,7 +3910,8 @@
       "hibor_3m": 2.82405,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.6403
     },
     {
       "end_of_date": "2026-06-05",
@@ -3668,7 +3925,8 @@
       "hibor_3m": 2.84524,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.71518
     },
     {
       "end_of_date": "2026-06-08",
@@ -3682,7 +3940,8 @@
       "hibor_3m": 2.85494,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.73673
     },
     {
       "end_of_date": "2026-06-09",
@@ -3696,7 +3955,8 @@
       "hibor_3m": 2.84238,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.73435
     },
     {
       "end_of_date": "2026-06-10",
@@ -3710,7 +3970,8 @@
       "hibor_3m": 2.81185,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.67964
     },
     {
       "end_of_date": "2026-06-11",
@@ -3724,7 +3985,8 @@
       "hibor_3m": 2.82155,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.66208
     },
     {
       "end_of_date": "2026-06-12",
@@ -3738,7 +4000,8 @@
       "hibor_3m": 2.83387,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.7
     },
     {
       "end_of_date": "2026-06-15",
@@ -3752,7 +4015,8 @@
       "hibor_3m": 2.85,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.74857
     },
     {
       "end_of_date": "2026-06-16",
@@ -3766,7 +4030,8 @@
       "hibor_3m": 2.90161,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.85143
     },
     {
       "end_of_date": "2026-06-17",
@@ -3780,7 +4045,8 @@
       "hibor_3m": 2.98815,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.95905
     },
     {
       "end_of_date": "2026-06-18",
@@ -3794,7 +4060,8 @@
       "hibor_3m": 2.97333,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.94452
     },
     {
       "end_of_date": "2026-06-22",
@@ -3808,7 +4075,8 @@
       "hibor_3m": 2.97369,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.94381
     },
     {
       "end_of_date": "2026-06-23",
@@ -3822,7 +4090,8 @@
       "hibor_3m": 2.97298,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.96018
     },
     {
       "end_of_date": "2026-06-24",
@@ -3836,7 +4105,8 @@
       "hibor_3m": 2.97369,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.9775
     },
     {
       "end_of_date": "2026-06-25",
@@ -3850,7 +4120,8 @@
       "hibor_3m": 2.97321,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.96113
     },
     {
       "end_of_date": "2026-06-26",
@@ -3864,7 +4135,8 @@
       "hibor_3m": 2.98577,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.95929
     },
     {
       "end_of_date": "2026-06-29",
@@ -3878,7 +4150,8 @@
       "hibor_3m": 2.97369,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.94839
     },
     {
       "end_of_date": "2026-06-30",
@@ -3892,7 +4165,8 @@
       "hibor_3m": 2.96679,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.93976
     },
     {
       "end_of_date": "2026-07-02",
@@ -3906,7 +4180,8 @@
       "hibor_3m": 2.91536,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.7853
     },
     {
       "end_of_date": "2026-07-03",
@@ -3920,7 +4195,8 @@
       "hibor_3m": 2.91536,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.76137
     },
     {
       "end_of_date": "2026-07-06",
@@ -3934,7 +4210,8 @@
       "hibor_3m": 2.95286,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.7628
     },
     {
       "end_of_date": "2026-07-07",
@@ -3948,7 +4225,8 @@
       "hibor_3m": 2.9372,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.71679
     },
     {
       "end_of_date": "2026-07-08",
@@ -3962,7 +4240,8 @@
       "hibor_3m": 2.93649,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.69435
     },
     {
       "end_of_date": "2026-07-09",
@@ -3976,7 +4255,8 @@
       "hibor_3m": 2.93792,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.71899
     },
     {
       "end_of_date": "2026-07-10",
@@ -3990,7 +4270,8 @@
       "hibor_3m": 2.9372,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.66113
     },
     {
       "end_of_date": "2026-07-13",
@@ -4004,7 +4285,8 @@
       "hibor_3m": 2.93649,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.66042
     },
     {
       "end_of_date": "2026-07-14",
@@ -4018,7 +4300,8 @@
       "hibor_3m": 2.95732,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.73792
     },
     {
       "end_of_date": "2026-07-15",
@@ -4032,7 +4315,8 @@
       "hibor_3m": 3,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.83
     },
     {
       "end_of_date": "2026-07-16",
@@ -4046,7 +4330,8 @@
       "hibor_3m": 3,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.82821
     },
     {
       "end_of_date": "2026-07-17",
@@ -4060,7 +4345,8 @@
       "hibor_3m": 2.97536,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.75
     },
     {
       "end_of_date": "2026-07-20",
@@ -4074,7 +4360,8 @@
       "hibor_3m": 2.97536,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.75
     },
     {
       "end_of_date": "2026-07-21",
@@ -4088,7 +4375,8 @@
       "hibor_3m": 2.94595,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.71548
     },
     {
       "end_of_date": "2026-07-22",
@@ -4102,7 +4390,8 @@
       "hibor_3m": 2.93411,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.67988
     },
     {
       "end_of_date": "2026-07-23",
@@ -4116,7 +4405,8 @@
       "hibor_3m": 2.93625,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.7147
     },
     {
       "end_of_date": "2026-07-24",
@@ -4130,7 +4420,8 @@
       "hibor_3m": 2.91327,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.70619
     },
     {
       "end_of_date": "2026-07-27",
@@ -4144,7 +4435,8 @@
       "hibor_3m": 2.93024,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.72333
     },
     {
       "end_of_date": "2026-07-28",
@@ -4158,7 +4450,8 @@
       "hibor_3m": 2.95,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.71875
     },
     {
       "end_of_date": "2026-07-29",
@@ -4172,7 +4465,8 @@
       "hibor_3m": 2.95071,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.69268
     },
     {
       "end_of_date": "2026-07-30",
@@ -4186,7 +4480,8 @@
       "hibor_3m": 2.93506,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.67536
     },
     {
       "end_of_date": "2026-07-31",
@@ -4200,7 +4495,8 @@
       "hibor_3m": 2.92964,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.67536
     },
     {
       "end_of_date": "2026-08-03",
@@ -4214,7 +4510,8 @@
       "hibor_3m": 2.91399,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.65589
     },
     {
       "end_of_date": "2026-08-04",
@@ -4228,7 +4525,8 @@
       "hibor_3m": 2.9,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.62679
     },
     {
       "end_of_date": "2026-08-05",
@@ -4242,7 +4540,8 @@
       "hibor_3m": 2.9,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.6275
     },
     {
       "end_of_date": "2026-08-06",
@@ -4256,7 +4555,8 @@
       "hibor_3m": 2.9,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.62702
     },
     {
       "end_of_date": "2026-08-07",
@@ -4270,7 +4570,8 @@
       "hibor_3m": 2.9,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.61327
     },
     {
       "end_of_date": "2026-08-10",
@@ -4284,7 +4585,8 @@
       "hibor_3m": 2.9,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.61327
     },
     {
       "end_of_date": "2026-08-11",
@@ -4298,7 +4600,8 @@
       "hibor_3m": 2.9,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.61399
     },
     {
       "end_of_date": "2026-08-12",
@@ -4312,7 +4615,8 @@
       "hibor_3m": 2.9,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.60619
     },
     {
       "end_of_date": "2026-08-13",
@@ -4326,7 +4630,8 @@
       "hibor_3m": 2.9,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.59292
     },
     {
       "end_of_date": "2026-08-14",
@@ -4340,7 +4645,8 @@
       "hibor_3m": 2.90566,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.55476
     },
     {
       "end_of_date": "2026-08-17",
@@ -4354,7 +4660,8 @@
       "hibor_3m": 2.88577,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.55476
     },
     {
       "end_of_date": "2026-08-18",
@@ -4368,7 +4675,8 @@
       "hibor_3m": 2.88792,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.57655
     },
     {
       "end_of_date": "2026-08-19",
@@ -4382,7 +4690,8 @@
       "hibor_3m": 2.93649,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.62655
     },
     {
       "end_of_date": "2026-08-20",
@@ -4396,7 +4705,8 @@
       "hibor_3m": 2.94452,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.68
     },
     {
       "end_of_date": "2026-08-21",
@@ -4410,7 +4720,8 @@
       "hibor_3m": 2.93506,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.68577
     },
     {
       "end_of_date": "2026-08-24",
@@ -4424,7 +4735,8 @@
       "hibor_3m": 2.94452,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.69452
     },
     {
       "end_of_date": "2026-08-25",
@@ -4438,7 +4750,8 @@
       "hibor_3m": 2.98482,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.78256
     },
     {
       "end_of_date": "2026-08-26",
@@ -4452,7 +4765,8 @@
       "hibor_3m": 2.9872,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.79411
     },
     {
       "end_of_date": "2026-08-27",
@@ -4466,7 +4780,8 @@
       "hibor_3m": 2.97869,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.78821
     },
     {
       "end_of_date": "2026-08-28",
@@ -4480,7 +4795,8 @@
       "hibor_3m": 3.00875,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.85
     },
     {
       "end_of_date": "2026-08-31",
@@ -4494,7 +4810,8 @@
       "hibor_3m": 3.01964,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.85
     },
     {
       "end_of_date": "2026-09-01",
@@ -4508,7 +4825,8 @@
       "hibor_3m": 3.02679,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.86399
     },
     {
       "end_of_date": "2026-09-02",
@@ -4522,7 +4840,8 @@
       "hibor_3m": 3.02821,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.86256
     },
     {
       "end_of_date": "2026-09-03",
@@ -4536,7 +4855,8 @@
       "hibor_3m": 3.02988,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.84339
     },
     {
       "end_of_date": "2026-09-04",
@@ -4550,7 +4870,8 @@
       "hibor_3m": 3.03024,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.84268
     },
     {
       "end_of_date": "2026-09-07",
@@ -4564,7 +4885,8 @@
       "hibor_3m": 3.0647,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.85476
     },
     {
       "end_of_date": "2026-09-08",
@@ -4578,7 +4900,8 @@
       "hibor_3m": 3.07964,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.8922
     },
     {
       "end_of_date": "2026-09-09",
@@ -4592,7 +4915,8 @@
       "hibor_3m": 3.05,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.88387
     },
     {
       "end_of_date": "2026-09-10",
@@ -4606,7 +4930,8 @@
       "hibor_3m": 3.05,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.8775
     },
     {
       "end_of_date": "2026-09-11",
@@ -4620,7 +4945,8 @@
       "hibor_3m": 3.06137,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.87964
     },
     {
       "end_of_date": "2026-09-14",
@@ -4634,7 +4960,8 @@
       "hibor_3m": 3.07476,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.88887
     },
     {
       "end_of_date": "2026-09-15",
@@ -4648,7 +4975,8 @@
       "hibor_3m": 3.10256,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.91256
     },
     {
       "end_of_date": "2026-09-16",
@@ -4662,7 +4990,8 @@
       "hibor_3m": 3.12488,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.95
     },
     {
       "end_of_date": "2026-09-17",
@@ -4676,7 +5005,8 @@
       "hibor_3m": 3.10161,
       "disc_win_base_rate": null,
       "cu_weakside": null,
-      "cu_strongside": null
+      "cu_strongside": null,
+      "hibor_1m": 2.9
     },
     {
       "end_of_date": "2026-09-18",
@@ -4690,7 +5020,8 @@
       "hibor_3m": 3.09381,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.86887
     },
     {
       "end_of_date": "2026-09-21",
@@ -4704,7 +5035,8 @@
       "hibor_3m": 3.07679,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.86923
     },
     {
       "end_of_date": "2026-09-22",
@@ -4718,7 +5050,8 @@
       "hibor_3m": 3.06018,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.84339
     },
     {
       "end_of_date": "2026-09-23",
@@ -4732,7 +5065,8 @@
       "hibor_3m": 3.11566,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.88571
     },
     {
       "end_of_date": "2026-09-24",
@@ -4742,11 +5076,12 @@
       "outstanding_efbn": 1358763,
       "ow_lb_bf_disc_win": 1176855,
       "aggr_balance_bf_disc_win": 54156,
-      "hibor_overnight": 2.54,
+      "hibor_overnight": 2.71667,
       "hibor_3m": 3.20429,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.95691
     },
     {
       "end_of_date": "2026-09-25",
@@ -4756,11 +5091,12 @@
       "outstanding_efbn": 1358762,
       "ow_lb_bf_disc_win": 1177688,
       "aggr_balance_bf_disc_win": 54156,
-      "hibor_overnight": 2.6,
+      "hibor_overnight": 2.72786,
       "hibor_3m": 3.23339,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.99048
     },
     {
       "end_of_date": "2026-09-28",
@@ -4774,7 +5110,8 @@
       "hibor_3m": 3.23435,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 3.0175
     },
     {
       "end_of_date": "2026-09-29",
@@ -4788,7 +5125,8 @@
       "hibor_3m": 3.24238,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 3.01607
     },
     {
       "end_of_date": "2026-09-30",
@@ -4802,7 +5140,8 @@
       "hibor_3m": 3.24167,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 3.00518
     },
     {
       "end_of_date": "2026-10-02",
@@ -4812,11 +5151,12 @@
       "outstanding_efbn": 1359750,
       "ow_lb_bf_disc_win": 1175845,
       "aggr_balance_bf_disc_win": 54108,
-      "hibor_overnight": 2.63,
-      "hibor_3m": null,
+      "hibor_overnight": 2.80929,
+      "hibor_3m": 3.24482,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.96839
     },
     {
       "end_of_date": "2026-10-05",
@@ -4830,7 +5170,8 @@
       "hibor_3m": 3.26875,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.9422
     },
     {
       "end_of_date": "2026-10-06",
@@ -4844,7 +5185,8 @@
       "hibor_3m": 3.29143,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.9
     },
     {
       "end_of_date": "2026-10-07",
@@ -4858,7 +5200,8 @@
       "hibor_3m": 3.27018,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.83905
     },
     {
       "end_of_date": "2026-10-08",
@@ -4872,7 +5215,8 @@
       "hibor_3m": 3.29816,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.76494
     },
     {
       "end_of_date": "2026-10-09",
@@ -4882,11 +5226,12 @@
       "outstanding_efbn": 1360441,
       "ow_lb_bf_disc_win": 1174277,
       "aggr_balance_bf_disc_win": 54111,
-      "hibor_overnight": 1.75,
+      "hibor_overnight": 2.21762,
       "hibor_3m": 3.28571,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.75
     },
     {
       "end_of_date": "2026-10-12",
@@ -4900,7 +5245,8 @@
       "hibor_3m": 3.28857,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.7581
     },
     {
       "end_of_date": "2026-10-13",
@@ -4914,7 +5260,8 @@
       "hibor_3m": 3.30929,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.76327
     },
     {
       "end_of_date": "2026-10-14",
@@ -4928,7 +5275,8 @@
       "hibor_3m": 3.30786,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.75
     },
     {
       "end_of_date": "2026-10-15",
@@ -4942,7 +5290,8 @@
       "hibor_3m": 3.30857,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.73792
     },
     {
       "end_of_date": "2026-10-16",
@@ -4952,11 +5301,12 @@
       "outstanding_efbn": 1361315,
       "ow_lb_bf_disc_win": 1153434,
       "aggr_balance_bf_disc_win": 54103,
-      "hibor_overnight": 2.13,
+      "hibor_overnight": 2.27107,
       "hibor_3m": 3.28571,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.7078
     },
     {
       "end_of_date": "2026-10-20",
@@ -4971,7 +5321,8 @@
       "forecast_aggregate_bal_t1": 54125,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
-      "cu_strongside": 7.75
+      "cu_strongside": 7.75,
+      "hibor_1m": 2.70446
     },
     {
       "end_of_date": "2026-10-21",
@@ -4986,7 +5337,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor"
+      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor",
+      "hibor_1m": 2.67917
     },
     {
       "end_of_date": "2026-10-22",
@@ -5001,7 +5353,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor"
+      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor",
+      "hibor_1m": 2.745
     },
     {
       "end_of_date": "2026-10-23",
@@ -5016,7 +5369,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor"
+      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor",
+      "hibor_1m": 2.77893
     },
     {
       "end_of_date": "2026-10-26",
@@ -5031,7 +5385,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor"
+      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor",
+      "hibor_1m": 2.75
     },
     {
       "end_of_date": "2026-10-27",
@@ -5046,7 +5401,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor"
+      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor",
+      "hibor_1m": 2.7
     },
     {
       "end_of_date": "2026-10-28",
@@ -5061,7 +5417,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor"
+      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor",
+      "hibor_1m": 2.71351
     },
     {
       "end_of_date": "2026-10-29",
@@ -5076,7 +5433,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor"
+      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor",
+      "hibor_1m": 2.71494
     },
     {
       "end_of_date": "2026-10-30",
@@ -5091,7 +5449,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor"
+      "hibor_source": "https://www.hkab.org.hk/en/rates/hibor",
+      "hibor_1m": 2.70923
     },
     {
       "end_of_date": "2026-11-02",
@@ -5106,7 +5465,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/home"
+      "hibor_source": "https://www.hkab.org.hk/en/home",
+      "hibor_1m": 2.6775
     },
     {
       "end_of_date": "2026-11-03",
@@ -5121,7 +5481,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/home"
+      "hibor_source": "https://www.hkab.org.hk/en/home",
+      "hibor_1m": 2.68
     },
     {
       "end_of_date": "2026-11-04",
@@ -5136,7 +5497,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/home"
+      "hibor_source": "https://www.hkab.org.hk/en/home",
+      "hibor_1m": 2.63982
     },
     {
       "end_of_date": "2026-11-05",
@@ -5151,7 +5513,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/home"
+      "hibor_source": "https://www.hkab.org.hk/en/home",
+      "hibor_1m": 2.57893
     },
     {
       "end_of_date": "2026-11-06",
@@ -5166,7 +5529,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/home"
+      "hibor_source": "https://www.hkab.org.hk/en/home",
+      "hibor_1m": 2.56113
     },
     {
       "end_of_date": "2026-11-07",
@@ -5196,7 +5560,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/home"
+      "hibor_source": "https://www.hkab.org.hk/en/home",
+      "hibor_1m": 2.59268
     },
     {
       "end_of_date": "2026-11-10",
@@ -5211,7 +5576,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/home"
+      "hibor_source": "https://www.hkab.org.hk/en/home",
+      "hibor_1m": 2.5872
     },
     {
       "end_of_date": "2026-11-11",
@@ -5226,7 +5592,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/home"
+      "hibor_source": "https://www.hkab.org.hk/en/home",
+      "hibor_1m": 2.59452
     },
     {
       "end_of_date": "2026-11-12",
@@ -5241,7 +5608,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/home"
+      "hibor_source": "https://www.hkab.org.hk/en/home",
+      "hibor_1m": 2.63863
     },
     {
       "end_of_date": "2026-11-13",
@@ -5256,7 +5624,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/home"
+      "hibor_source": "https://www.hkab.org.hk/en/home",
+      "hibor_1m": 2.67714
     },
     {
       "end_of_date": "2026-11-16",
@@ -5271,7 +5640,8 @@
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
-      "hibor_source": "https://www.hkab.org.hk/en/home"
+      "hibor_source": "https://www.hkab.org.hk/en/home",
+      "hibor_1m": 2.66327
     },
     {
       "end_of_date": "2026-11-17",
@@ -5286,7 +5656,8 @@
       "disc_win_base_rate": null,
       "cu_weakside": null,
       "cu_strongside": null,
-      "hibor_source": "https://www.hkab.org.hk/en/home"
+      "hibor_source": "https://www.hkab.org.hk/en/home",
+      "hibor_1m": 2.68024
     }
   ]
 }

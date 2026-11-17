@@ -57,7 +57,7 @@ SPECS = [
     ("cor3m_daily.json", "observation_date", "", ["close"]),
     ("hkma_monetary_statistics.json", "end_of_month", "hk_6_range",
      ["m2_hkd", "m3_hkd", "monetary_base_total", "aggr_balance", "outstanding_efbn", "ow_lb_bf_disc_win"]),
-    ("hkma_banking_liquidity_daily.json", "end_of_date", "", ["hibor_overnight", "hibor_3m", "disc_win_base_rate", "closing_balance"]),
+    ("hkma_banking_liquidity_daily.json", "end_of_date", "", ["hibor_overnight", "hibor_1m", "hibor_3m", "disc_win_base_rate", "closing_balance"]),
 ]
 
 
@@ -186,6 +186,13 @@ def audit(root=ROOT, now=None):
     reports.append({"file": "ai_cds_daily.json", **cds_health,
         "missing_names": [label for label, _ in CDS_SERIES.values() if label not in cds_health["latest_by_name"]]})
     market = read_payload(root / "data_snapshots" / "hk_market_daily.json")
+    banks = read_payload(root / "data_snapshots" / "bank_ah_daily.json")
+    bank_series = [{"name": key, "data": [[r["observation_date"], r.get("premium_pct")]
+        for r in banks.get("series", {}).get(key, {}).get("records", [])]}
+        for key in ("ABC", "ICBC", "CCB")]
+    bank_health = option_observation_health({"series": bank_series}, now=now)
+    reports.append({"file": "bank_ah_daily.json", **bank_health,
+        "missing_names": [key for key in ("ABC", "ICBC", "CCB") if key not in bank_health["latest_by_name"]]})
     series = [{"name": symbol, "data": [[r["observation_date"], r.get("close")]
                                           for r in node.get("records", [])]}
               for symbol, node in market.get("series", {}).items()]

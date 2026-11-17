@@ -43,7 +43,7 @@ class FinancialChartIntegrity(unittest.TestCase):
         figures = build_hk_liquidity_figures("5Y")
         self.assertEqual(len(figures), 4)
         funding = figures[2]
-        overnight = next(trace for trace in funding.data if trace.name == "O/N HIBOR")
+        overnight = next(trace for trace in funding.data if trace.name == "1M HIBOR")
         dates = pd.to_datetime(overnight.x)
         nonnull = pd.DataFrame({"date": dates, "value": overnight.y}).dropna()
         latest = nonnull["date"].max()
