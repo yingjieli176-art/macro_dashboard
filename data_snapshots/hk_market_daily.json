@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-17T18:34:21.398248+00:00",
+  "updated_at": "2026-11-18T07:04:48.903257+00:00",
   "retention": "rolling 5 years plus one month buffer",
   "policy": "merge fresh observations into last-known-good history; never erase a usable series on fetch failure",
   "coverage_start": "2021-10-18",
@@ -14,7 +14,7 @@
       "record_count": 1251,
       "coverage_start": "2021-10-18",
       "coverage_end": "2026-11-17",
-      "last_successful_fetch": "2026-11-17T18:34:21.398248+00:00",
+      "last_successful_fetch": "2026-11-18T07:04:48.903257+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -5032,7 +5032,7 @@
       "record_count": 1251,
       "coverage_start": "2021-10-18",
       "coverage_end": "2026-11-17",
-      "last_successful_fetch": "2026-11-17T18:34:21.398248+00:00",
+      "last_successful_fetch": "2026-11-18T07:04:48.903257+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -10050,7 +10050,7 @@
       "record_count": 1251,
       "coverage_start": "2021-10-18",
       "coverage_end": "2026-11-17",
-      "last_successful_fetch": "2026-11-17T18:34:21.398248+00:00",
+      "last_successful_fetch": "2026-11-18T07:04:48.903257+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -15065,12 +15065,12 @@
       "unit": "points",
       "source": "Sina Finance via AKShare",
       "price_basis": "raw_close",
-      "record_count": 1249,
+      "record_count": 1251,
       "coverage_start": "2021-10-18",
-      "coverage_end": "2026-11-13",
-      "last_successful_fetch": "2026-11-13T17:12:53.888860+00:00",
-      "fresh_fetch_ok": false,
-      "last_fetch_error": "stock_hk_index_daily_sina 已在 1.20.44 更名为 index_hk_daily_sina，请改用 ak.index_hk_daily_sina；参数与返回的列也可能有调整，用 ak.interface_info(\"index_hk_daily_sina\") 查看。完整对照见 https://akshare.akfamily.xyz/changelog.html#changelog-rename",
+      "coverage_end": "2026-11-17",
+      "last_successful_fetch": "2026-11-18T07:04:48.903257+00:00",
+      "fresh_fetch_ok": true,
+      "last_fetch_error": null,
       "records": [
         {
           "observation_date": "2021-10-18",
@@ -20067,6 +20067,14 @@
         {
           "observation_date": "2026-11-13",
           "close": 3813.18994
+        },
+        {
+          "observation_date": "2026-11-16",
+          "close": 3801.63989
+        },
+        {
+          "observation_date": "2026-11-17",
+          "close": 3758.16992
         }
       ]
     }
