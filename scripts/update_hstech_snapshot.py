@@ -12,7 +12,7 @@ OUT = ROOT / "data_snapshots" / "hstech_monthly.json"
 
 
 def main() -> None:
-    daily = ak.stock_hk_index_daily_sina(symbol="HSTECH").copy()
+    daily = ak.index_hk_daily_sina(symbol="HSTECH").copy()
     if daily.empty or "date" not in daily.columns or "close" not in daily.columns:
         raise RuntimeError("Sina HSTECH history returned no usable data")
     daily["date"] = pd.to_datetime(daily["date"], errors="coerce")

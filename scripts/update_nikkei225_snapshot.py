@@ -80,12 +80,19 @@ def save_snapshot(frame, path=OUTPUT):
     ]
     old_dates = {row["date"] for row in old.get("records", [])}
     new_dates = {row["date"] for row in records}
-    # A rolling six-year request naturally omits the oldest stored dates.
-    # Preserve those verified observations; reject holes inside the new span.
-    first_new = min(new_dates) if new_dates else None
-    missing = old_dates - new_dates
-    if missing and (first_new is None or any(day >= first_new for day in missing)):
-        raise ValueError("Nikkei 225 response lost previously verified observations")
+    if not new_dates:
+        raise ValueError("No completed daily Nikkei 225 closes to save")
+    first_new, latest_new = min(new_dates), max(new_dates)
+    if old_dates and latest_new < max(old_dates):
+        raise ValueError(
+            f"Nikkei 225 response ends at {latest_new}; snapshot already reaches {max(old_dates)}"
+        )
+    # Keep previously verified closes when the rolling window moves or the
+    # provider omits historical sessions inside an otherwise valid response.
+    gaps = sorted(day for day in old_dates - new_dates if day >= first_new)
+    if gaps:
+        print(f"warning: retaining {len(gaps)} verified Nikkei 225 closes "
+              f"missing from Yahoo ({gaps[0]} through {gaps[-1]})")
     records = sorted([row for row in old.get("records", []) if row["date"] not in new_dates]
                      + records, key=lambda row: row["date"])
     if old.get("records") == records:
