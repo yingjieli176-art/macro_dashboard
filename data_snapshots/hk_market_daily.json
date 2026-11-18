@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-18T07:04:48.903257+00:00",
+  "updated_at": "2026-11-18T18:04:13.794530+00:00",
   "retention": "rolling 5 years plus one month buffer",
   "policy": "merge fresh observations into last-known-good history; never erase a usable series on fetch failure",
   "coverage_start": "2021-10-18",
-  "coverage_end": "2026-11-17",
+  "coverage_end": "2026-11-18",
   "series": {
     "0700.HK": {
       "name": "Tencent Holdings",
@@ -14,7 +14,7 @@
       "record_count": 1251,
       "coverage_start": "2021-10-18",
       "coverage_end": "2026-11-17",
-      "last_successful_fetch": "2026-11-18T07:04:48.903257+00:00",
+      "last_successful_fetch": "2026-11-18T18:04:13.794530+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -5032,7 +5032,7 @@
       "record_count": 1251,
       "coverage_start": "2021-10-18",
       "coverage_end": "2026-11-17",
-      "last_successful_fetch": "2026-11-18T07:04:48.903257+00:00",
+      "last_successful_fetch": "2026-11-18T18:04:13.794530+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -10050,7 +10050,7 @@
       "record_count": 1251,
       "coverage_start": "2021-10-18",
       "coverage_end": "2026-11-17",
-      "last_successful_fetch": "2026-11-18T07:04:48.903257+00:00",
+      "last_successful_fetch": "2026-11-18T18:04:13.794530+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -15065,10 +15065,10 @@
       "unit": "points",
       "source": "Sina Finance via AKShare",
       "price_basis": "raw_close",
-      "record_count": 1251,
+      "record_count": 1252,
       "coverage_start": "2021-10-18",
-      "coverage_end": "2026-11-17",
-      "last_successful_fetch": "2026-11-18T07:04:48.903257+00:00",
+      "coverage_end": "2026-11-18",
+      "last_successful_fetch": "2026-11-18T18:04:13.794530+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -20075,6 +20075,10 @@
         {
           "observation_date": "2026-11-17",
           "close": 3758.16992
+        },
+        {
+          "observation_date": "2026-11-18",
+          "close": 3736.33008
         }
       ]
     }
