@@ -459,12 +459,12 @@
         9
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-18",
+      "repository_latest": "2026-11-19",
       "checked_at": "2026-11-18T04:37:17.970774+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-18",
       "source_url": "https://www.boj.or.jp/en/",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "JP_CORRIDOR_LOAN",
@@ -472,12 +472,12 @@
         9
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-18",
+      "repository_latest": "2026-11-19",
       "checked_at": "2026-11-18T04:37:20.563726+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-18",
       "source_url": "https://www.boj.or.jp/en/",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "JP_CORRIDOR_REPO",
@@ -498,12 +498,12 @@
         9
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-17",
+      "repository_latest": "2026-11-18",
       "checked_at": "2026-11-18T04:37:20.563834+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-17",
       "source_url": "https://www.boj.or.jp/en/statistics/market/short/mutan/d_release/md/2026/md20261117.xlsx",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "MOVE",
@@ -1212,5 +1212,5 @@
   "elapsed_seconds": 0.444,
   "shared_http_requests": 0,
   "shared_http_reuses": 0,
-  "repository_reconciled_at": "2026-11-18T15:57:33.793940+00:00"
+  "repository_reconciled_at": "2026-11-18T16:44:40.319537+00:00"
 }
