@@ -9,12 +9,12 @@
         14
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-17",
+      "repository_latest": "2026-11-18",
       "checked_at": "2026-11-18T04:37:14.654289+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-17",
       "source_url": "https://www.csindex.com.cn/csindex-home/perf/index-perf",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "000852",
@@ -22,12 +22,12 @@
         14
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-17",
+      "repository_latest": "2026-11-18",
       "checked_at": "2026-11-18T04:37:14.849942+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-17",
       "source_url": "https://www.csindex.com.cn/csindex-home/perf/index-perf",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "0388.HK",
@@ -63,12 +63,12 @@
         14
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-17",
+      "repository_latest": "2026-11-18",
       "checked_at": "2026-11-18T04:37:14.975325+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-17",
       "source_url": "https://www.csindex.com.cn/csindex-home/perf/index-perf",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "BAMLC0A0CM",
@@ -418,7 +418,7 @@
         18
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-17",
+      "repository_latest": "2026-11-18",
       "checked_at": "2026-11-18T04:36:51.544739+00:00",
       "verification_method": "snapshot",
       "live_probe_note": "stock_hk_index_daily_sina 已在 1.20.44 更名为 index_hk_daily_sina，请改用 ak.index_hk_daily_sina；参数与返回的列也可能有调整，用 ak.interface_info(\"index_hk_daily_sina\") 查看。完整对照见 https://akshare.akfamily.xyz/changelog.html#changelog-rename",
@@ -768,12 +768,12 @@
         11
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-17",
+      "repository_latest": "2026-11-18",
       "checked_at": "2026-11-18T04:37:55.085563+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-17",
       "source_url": "https://fxowebtools.saxobank.com/otc.html",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "USDJPY_3M_ATM_SAXO",
@@ -781,12 +781,12 @@
         11
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-17",
+      "repository_latest": "2026-11-18",
       "checked_at": "2026-11-18T04:37:54.737250+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-17",
       "source_url": "https://fxowebtools.saxobank.com/otc.html",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "USDJPY_3M_IV_QCAM",
@@ -1212,5 +1212,5 @@
   "elapsed_seconds": 0.444,
   "shared_http_requests": 0,
   "shared_http_reuses": 0,
-  "repository_reconciled_at": "2026-11-18T16:44:40.319537+00:00"
+  "repository_reconciled_at": "2026-11-18T20:32:03.027983+00:00"
 }
