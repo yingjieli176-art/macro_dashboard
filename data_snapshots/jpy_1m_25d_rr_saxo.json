@@ -18,10 +18,15 @@
       "observation_date": "2026-11-17",
       "observation_timestamp": "2026-11-17T12:30:00+00:00",
       "value": -1.71
+    },
+    {
+      "observation_date": "2026-11-18",
+      "observation_timestamp": "2026-11-18T12:30:00+00:00",
+      "value": -1.63
     }
   ],
-  "record_count": 2,
+  "record_count": 3,
   "coverage_start": "2026-11-16",
-  "coverage_end": "2026-11-17",
-  "updated_at": "2026-11-17T17:39:32.306641+00:00"
+  "coverage_end": "2026-11-18",
+  "updated_at": "2026-11-18T17:16:15.154443+00:00"
 }
