@@ -287,12 +287,12 @@
         1
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-16",
+      "repository_latest": "2026-11-17",
       "checked_at": "2026-11-18T04:36:48.656481+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-16",
       "source_url": "https://www.newyorkfed.org/markets/reference-rates/effr",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "ETH-USD",
@@ -537,23 +537,23 @@
         1
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-17",
+      "repository_latest": "2026-11-18",
       "checked_at": "2026-11-18T04:36:48.656282+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-17",
       "source_url": "https://markets.newyorkfed.org/api/rp/results/search.json",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "RRPONTSYD",
       "charts": [],
       "cadence": "daily",
-      "repository_latest": "2026-11-17",
+      "repository_latest": "2026-11-18",
       "checked_at": "2026-11-18T04:36:49.990626+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-17",
       "source_url": "https://markets.newyorkfed.org/api/rp/results/search.json",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "RSP",
@@ -652,12 +652,12 @@
         1
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-16",
+      "repository_latest": "2026-11-17",
       "checked_at": "2026-11-18T04:36:48.832213+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-16",
       "source_url": "https://www.newyorkfed.org/markets/reference-rates/sofr",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "SP500",
@@ -718,12 +718,12 @@
         1
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-17",
+      "repository_latest": "2026-11-18",
       "checked_at": "2026-11-18T04:36:49.022180+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-17",
       "source_url": "https://fred.stlouisfed.org/series/SRFTSYD",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "SRF_USAGE",
@@ -1212,5 +1212,5 @@
   "elapsed_seconds": 0.444,
   "shared_http_requests": 0,
   "shared_http_reuses": 0,
-  "repository_reconciled_at": "2026-11-18T20:32:03.027983+00:00"
+  "repository_reconciled_at": "2026-11-18T20:41:14.638871+00:00"
 }
