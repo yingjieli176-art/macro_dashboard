@@ -10,23 +10,23 @@
     "lme_price_stock": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
     "cochilco_inventory": "https://boletin.cochilco.cl/productos/boletin.asp?tabla=tabla4_2"
   },
-  "updated_at": "2026-11-17T23:04:16.158794+00:00",
-  "coverage_start": "2021-11-17",
+  "updated_at": "2026-11-18T01:04:47.185753+00:00",
+  "coverage_start": "2021-11-18",
   "coverage_end": "2026-11-17",
   "counts": {
-    "comex_price": 1258,
-    "comex_stock": 1293,
+    "comex_price": 1257,
+    "comex_stock": 1292,
     "lme_price": 1262,
     "lme_stock": 1295,
-    "wti": 1257,
-    "vvix": 1255
+    "wti": 1256,
+    "vvix": 1254
   },
   "latest_by_field": {
     "comex_price_usd_lb": "2026-11-17",
     "comex_stock_t": "2026-11-16",
-    "lme_cash_usd_t": "2026-11-16",
-    "lme_3m_usd_t": "2026-11-16",
-    "lme_stock_t": "2026-11-16",
+    "lme_cash_usd_t": "2026-11-17",
+    "lme_3m_usd_t": "2026-11-17",
+    "lme_stock_t": "2026-11-17",
     "cochilco_lme_stock_t": "2026-10-30",
     "comex_stock_short_tons": "2026-11-16",
     "wti_usd_bbl": "2026-11-17",
@@ -42,19 +42,6 @@
     "vvix": "index points"
   },
   "records": [
-    {
-      "date": "2021-11-17",
-      "comex_price_usd_lb": 4.2729997634887695,
-      "comex_stock_t": 52360.0,
-      "lme_cash_usd_t": 9495.0,
-      "lme_3m_usd_t": 9495.0,
-      "lme_stock_t": 99450.0,
-      "cochilco_lme_stock_t": 99450.0,
-      "comex_stock_source": null,
-      "comex_stock_short_tons": null,
-      "wti_usd_bbl": 78.36000061035156,
-      "vvix": 111.53
-    },
     {
       "date": "2021-11-18",
       "comex_price_usd_lb": 4.309999942779541,
@@ -16905,15 +16892,15 @@
     },
     {
       "date": "2026-11-17",
-      "comex_price_usd_lb": 5.994999885559082,
+      "comex_price_usd_lb": 5.9710001945495605,
       "comex_stock_t": null,
-      "lme_cash_usd_t": null,
-      "lme_3m_usd_t": null,
-      "lme_stock_t": null,
+      "lme_cash_usd_t": 13225.5,
+      "lme_3m_usd_t": 13211.0,
+      "lme_stock_t": 327600.0,
       "cochilco_lme_stock_t": null,
       "comex_stock_source": null,
       "comex_stock_short_tons": null,
-      "wti_usd_bbl": 85.61000061035156,
+      "wti_usd_bbl": 85.55999755859375,
       "vvix": 121.28
     }
   ]
