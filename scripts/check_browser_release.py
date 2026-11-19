@@ -899,10 +899,8 @@ def main():
                         assert axis['extent'][1] >= axis['observed'][1]-1e-7, axis
                 check_even_date_axis(risk_chart)
             time_label = page.locator('[class*=st-key-us_equity_risk_adaptive_default_schema_] [data-testid=macroChartTime]')
-            first_clock = time_label.inner_text()
-            assert '最新数据：' in first_clock and '北京时间：' in first_clock
-            page.wait_for_timeout(1100)
-            assert time_label.inner_text() != first_clock
+            observation_label = time_label.inner_text()
+            assert re.fullmatch(r'最新数据：(?:\d{4}-\d{2}-\d{2}|暂无有效观测)', observation_label), observation_label
             period_started = time.perf_counter()
             groups.nth(MACRO_DISPLAY_NUMBER[9]-1).get_by_text('1M',exact=True).click()
             page.wait_for_function("document.querySelector('[class*=st-key-us_equity_risk_adaptive_default_schema_] [data-testid=macroEChartsChart]')?.dataset.period === '1M'")
@@ -910,7 +908,7 @@ def main():
             report['native_period_latency_ms'] = round((time.perf_counter()-period_started)*1000,2)
             groups.nth(MACRO_DISPLAY_NUMBER[9]-1).get_by_text('1Y',exact=True).click()
             page.wait_for_function("document.querySelector('[class*=st-key-us_equity_risk_adaptive_default_schema_] [data-testid=macroEChartsChart]')?.dataset.period === '1Y'")
-            report['wheel_and_period'] = {'right_axes_locked':True,'left_axis_rescaled':True,'instance_reused':True,'clock_ticks':True}
+            report['wheel_and_period'] = {'right_axes_locked':True,'left_axis_rescaled':True,'instance_reused':True,'observation_date_only':True}
             page.screenshot(path='browser_ai_cds.png')
             # Use a real HK chart to exercise every server range with raw prices.
             for label in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):

@@ -243,13 +243,7 @@ export default function({data, parentElement}) {
     clockLine = document.createElement('p'); clockLine.className = 'macro-chart-time';
     clockLine.dataset.testid = 'macroChartTime'; shell.append(clockLine);
   }
-  const latestDay = latestObservation(data.option);
-  const updateClock = () => {
-    const now = new Intl.DateTimeFormat('zh-CN', {timeZone:'Asia/Shanghai',
-      year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());
-    clockLine.textContent = `最新数据：${latestDay} ｜ 北京时间：${now}`;
-  };
-  updateClock(); const clockTimer = setInterval(updateClock, 1000);
+  clockLine.textContent = `最新数据：${latestObservation(data.option)}`;
   const labels = data.parameter_labels || {};
   const source = copy(data.option);
   source.useUTC = true;
@@ -272,7 +266,7 @@ export default function({data, parentElement}) {
   const stopResume = observePageResume(() => {
     if (disposed || !chart) return;
     cancelAnimationFrame(frame); frame = 0;
-    updateClock(); chart.resize(); updateLayout();
+    chart.resize(); updateLayout();
     chart.getZr().flush();
   });
   const rightBounds = new Map();
@@ -653,7 +647,7 @@ export default function({data, parentElement}) {
   });
 
   return () => {
-    disposed = true; stopResume(); cancelAnimationFrame(frame); observer?.disconnect(); clearInterval(clockTimer);
+    disposed = true; stopResume(); cancelAnimationFrame(frame); observer?.disconnect();
     element.removeEventListener('wheel', lockWheelAxes, {capture:true});
     if (chart) {
       parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom, period:activePeriod,manualZoom};
