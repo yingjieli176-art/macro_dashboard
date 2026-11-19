@@ -157,10 +157,23 @@ class DailyObservationDates(unittest.TestCase):
             save_snapshot(frame, path)
             self.assertEqual([row["date"] for row in json.loads(path.read_text())["records"]],
                              ["2020-11-04", "2026-11-04", "2026-11-05"])
-            broken = pd.DataFrame({"observation_date":pd.to_datetime(["2026-11-03", "2026-11-05"]),
-                                   "close":[49000,49000]})
+            with_gap = pd.DataFrame({
+                "observation_date": pd.to_datetime(["2026-11-03", "2026-11-06"]),
+                "close": [49000, 48000],
+            })
+            self.assertTrue(save_snapshot(with_gap, path))
+            updated = path.read_bytes()
+            self.assertEqual(json.loads(updated)["records"], [
+                {"date": "2020-11-04", "close": 24000},
+                {"date": "2026-11-03", "close": 49000},
+                {"date": "2026-11-04", "close": 50000},
+                {"date": "2026-11-05", "close": 49000},
+                {"date": "2026-11-06", "close": 48000},
+            ])
             with self.assertRaises(ValueError):
-                save_snapshot(broken, path)
+                save_snapshot(frame, path)
+            self.assertEqual(path.read_bytes(), updated)
+
 
 
 if __name__ == "__main__":
