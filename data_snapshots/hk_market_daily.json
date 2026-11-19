@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-19T00:33:09.739044+00:00",
+  "updated_at": "2026-11-19T02:36:22.157585+00:00",
   "retention": "rolling 5 years plus one month buffer",
   "policy": "merge fresh observations into last-known-good history; never erase a usable series on fetch failure",
   "coverage_start": "2021-10-19",
@@ -14,7 +14,7 @@
       "record_count": 1251,
       "coverage_start": "2021-10-19",
       "coverage_end": "2026-11-18",
-      "last_successful_fetch": "2026-11-19T00:33:09.739044+00:00",
+      "last_successful_fetch": "2026-11-19T02:36:22.157585+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -5032,7 +5032,7 @@
       "record_count": 1251,
       "coverage_start": "2021-10-19",
       "coverage_end": "2026-11-18",
-      "last_successful_fetch": "2026-11-19T00:33:09.739044+00:00",
+      "last_successful_fetch": "2026-11-19T02:36:22.157585+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -10047,10 +10047,10 @@
       "unit": "points",
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
-      "record_count": 1250,
+      "record_count": 1251,
       "coverage_start": "2021-10-19",
-      "coverage_end": "2026-11-17",
-      "last_successful_fetch": "2026-11-19T00:33:09.739044+00:00",
+      "coverage_end": "2026-11-18",
+      "last_successful_fetch": "2026-11-19T02:36:22.157585+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -15053,6 +15053,10 @@
         {
           "observation_date": "2026-11-17",
           "close": 23508.169922
+        },
+        {
+          "observation_date": "2026-11-18",
+          "close": 23294.75
         }
       ]
     },
@@ -15064,7 +15068,7 @@
       "record_count": 1251,
       "coverage_start": "2021-10-19",
       "coverage_end": "2026-11-18",
-      "last_successful_fetch": "2026-11-19T00:33:09.739044+00:00",
+      "last_successful_fetch": "2026-11-19T02:36:22.157585+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
