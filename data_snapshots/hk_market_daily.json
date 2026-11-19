@@ -1,20 +1,20 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-19T02:36:22.157585+00:00",
+  "updated_at": "2026-11-19T11:42:04.626992+00:00",
   "retention": "rolling 5 years plus one month buffer",
   "policy": "merge fresh observations into last-known-good history; never erase a usable series on fetch failure",
   "coverage_start": "2021-10-19",
-  "coverage_end": "2026-11-18",
+  "coverage_end": "2026-11-19",
   "series": {
     "0700.HK": {
       "name": "Tencent Holdings",
       "unit": "HKD",
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
-      "record_count": 1251,
+      "record_count": 1252,
       "coverage_start": "2021-10-19",
-      "coverage_end": "2026-11-18",
-      "last_successful_fetch": "2026-11-19T02:36:22.157585+00:00",
+      "coverage_end": "2026-11-19",
+      "last_successful_fetch": "2026-11-19T11:42:04.626992+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -5021,6 +5021,10 @@
         {
           "observation_date": "2026-11-18",
           "close": 372.799988
+        },
+        {
+          "observation_date": "2026-11-19",
+          "close": 348.399994
         }
       ]
     },
@@ -5029,10 +5033,10 @@
       "unit": "HKD",
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
-      "record_count": 1251,
+      "record_count": 1252,
       "coverage_start": "2021-10-19",
-      "coverage_end": "2026-11-18",
-      "last_successful_fetch": "2026-11-19T02:36:22.157585+00:00",
+      "coverage_end": "2026-11-19",
+      "last_successful_fetch": "2026-11-19T11:42:04.626992+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -10039,6 +10043,10 @@
         {
           "observation_date": "2026-11-18",
           "close": 375.600006
+        },
+        {
+          "observation_date": "2026-11-19",
+          "close": 370.799988
         }
       ]
     },
@@ -10047,10 +10055,10 @@
       "unit": "points",
       "source": "Yahoo Finance",
       "price_basis": "raw_close",
-      "record_count": 1251,
+      "record_count": 1252,
       "coverage_start": "2021-10-19",
-      "coverage_end": "2026-11-18",
-      "last_successful_fetch": "2026-11-19T02:36:22.157585+00:00",
+      "coverage_end": "2026-11-19",
+      "last_successful_fetch": "2026-11-19T11:42:04.626992+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
@@ -15057,6 +15065,10 @@
         {
           "observation_date": "2026-11-18",
           "close": 23294.75
+        },
+        {
+          "observation_date": "2026-11-19",
+          "close": 22841.619141
         }
       ]
     },
@@ -15068,7 +15080,7 @@
       "record_count": 1251,
       "coverage_start": "2021-10-19",
       "coverage_end": "2026-11-18",
-      "last_successful_fetch": "2026-11-19T02:36:22.157585+00:00",
+      "last_successful_fetch": "2026-11-19T11:42:04.626992+00:00",
       "fresh_fetch_ok": true,
       "last_fetch_error": null,
       "records": [
