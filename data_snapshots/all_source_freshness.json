@@ -820,12 +820,12 @@
         5
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-18",
+      "repository_latest": "2026-11-19",
       "checked_at": "2026-11-19T20:38:00.410599+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-18",
       "source_url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "VIXEQ",
@@ -1211,5 +1211,5 @@
   "elapsed_seconds": 0.567,
   "shared_http_requests": 0,
   "shared_http_reuses": 0,
-  "repository_reconciled_at": "2026-11-19T20:43:32.353400+00:00"
+  "repository_reconciled_at": "2026-11-19T22:20:03.403339+00:00"
 }
