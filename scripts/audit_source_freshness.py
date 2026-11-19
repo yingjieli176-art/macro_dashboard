@@ -21,8 +21,10 @@ def federal_publication_health(health, now=None):
     This remains an offline cadence warning, never proof of source freshness.
     Equity, Cboe and non-US calendars are deliberately unaffected.
     """
-    today = pd.Timestamp.now(tz="Asia/Hong_Kong") if now is None else pd.Timestamp(now)
-    today = today.tz_localize(None).normalize() if today.tzinfo else today.normalize()
+    today = pd.Timestamp.now(tz="America/New_York") if now is None else pd.Timestamp(now)
+    if today.tzinfo is not None:
+        today = today.tz_convert("America/New_York").tz_localize(None)
+    today = today.normalize()
     business_day = pd.offsets.CustomBusinessDay(calendar=USFederalHolidayCalendar())
     for name, observed in health["latest_by_name"].items():
         due = pd.Timestamp(observed) + 2 * business_day

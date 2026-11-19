@@ -84,9 +84,9 @@ def save_snapshot(frame, path=OUTPUT):
         raise ValueError("No completed daily Nikkei 225 closes to save")
     first_new, latest_new = min(new_dates), max(new_dates)
     if old_dates and latest_new < max(old_dates):
-        raise ValueError(
-            f"Nikkei 225 response ends at {latest_new}; snapshot already reaches {max(old_dates)}"
-        )
+        print(f"Nikkei 225 response ends at {latest_new}; retaining newer verified snapshot "
+              f"through {max(old_dates)}")
+        return False
     # Keep previously verified closes when the rolling window moves or the
     # provider omits historical sessions inside an otherwise valid response.
     gaps = sorted(day for day in old_dates - new_dates if day >= first_new)

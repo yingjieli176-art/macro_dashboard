@@ -28,6 +28,16 @@ class ActionsAuditRegressions(unittest.TestCase):
         # publication exceptions must not alter all chart calendars globally.
         self.assertEqual(option_observation_health(option, now="2026-11-12")["stale_names"], ["TGA_DAILY"])
 
+    def test_tga_due_date_uses_new_york_midnight(self):
+        option = {"series": [{"name": "TGA_DAILY", "data": [["2026-11-16", .9]]}]}
+        for now, expected in (
+            ("2026-11-19T04:59:59Z", []),
+            ("2026-11-19T05:00:00Z", ["TGA_DAILY"]),
+        ):
+            with self.subTest(now=now):
+                health = option_observation_health(option, now=now)
+                self.assertEqual(federal_publication_health(health, now)["stale_names"], expected)
+
     def test_federal_cadence_cannot_hide_future_date(self):
         option = {"series": [{"name": "SOFR", "data": [["2026-11-13", 3.9]]}]}
         health = federal_publication_health(option_observation_health(option, now="2026-11-12"), "2026-11-12")

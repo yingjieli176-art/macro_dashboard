@@ -170,8 +170,10 @@ class DailyObservationDates(unittest.TestCase):
                 {"date": "2026-11-05", "close": 49000},
                 {"date": "2026-11-06", "close": 48000},
             ])
-            with self.assertRaises(ValueError):
-                save_snapshot(frame, path)
+            self.assertFalse(save_snapshot(frame, path))
+            self.assertEqual(path.read_bytes(), updated)
+            with self.assertRaisesRegex(ValueError, "No completed"):
+                save_snapshot(frame.iloc[:0], path)
             self.assertEqual(path.read_bytes(), updated)
 
 
