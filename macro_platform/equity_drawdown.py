@@ -178,6 +178,40 @@ def build_price_figure(histories, years=5, series=None, split_axes=False):
         fig.update_layout(**{("yaxis" if axis_ref == "y" else "yaxis" + axis_ref[1:]): {
             "title": title, "side": "left" if axis_index == 0 else "right",
             **({"overlaying": "y"} if axis_index else {})}})
+    # Compare drawdown MAGNITUDES, not the signed drawdown percentages.
+    # calculate_drawdown() returns negative percentages: |RSP| - |SPX|
+    # therefore equals signed_SPX - signed_RSP.
+    if {"SPX", "RSP"}.issubset(histories):
+        spx = calculate_drawdown(histories["SPX"])[["observation_date", "drawdown_pct"]]
+        rsp = calculate_drawdown(histories["RSP"])[["observation_date", "drawdown_pct"]]
+        paired = spx.rename(columns={"drawdown_pct": "spx_dd"}).merge(
+            rsp.rename(columns={"drawdown_pct": "rsp_dd"}),
+            on="observation_date", how="inner",
+        ).dropna(subset=["spx_dd", "rsp_dd"]).sort_values("observation_date")
+        if not paired.empty:
+            gap = paired["spx_dd"] - paired["rsp_dd"]
+            for values, label, color, dash, default_visibility in (
+                (paired["spx_dd"], "SPX 回撤比例（相对当时此前最高收盘）",
+                 "#9ca3af", "dot", "legendonly"),
+                (paired["rsp_dd"], "RSP 回撤比例（相对当时此前最高收盘）",
+                 "#cbd5e1", "dot", "legendonly"),
+                (gap, "等权回撤-加权回撤（RSP-SPX） （%）",
+                 "#0f766e", "solid", True),
+            ):
+                fig.add_trace(go.Scatter(
+                    x=paired["observation_date"], y=values, name=label,
+                    mode="lines", yaxis="y3", visible=default_visibility,
+                    connectgaps=False,
+                    line={"color": color, "dash": dash, "width": 2.6},
+                    hovertemplate=label + ": %{y:+.2f} 个百分点<extra></extra>",
+                ))
+            fig.update_layout(
+                yaxis3={"title": "回撤幅度差 (百分点)", "overlaying": "y",
+                        "side": "right", "anchor": "free", "position": 0.98,
+                        "zeroline": True, "zerolinecolor": "#94a3b8",
+                        "ticksuffix": "%"},
+                xaxis={"domain": [0, 0.84]},
+            )
     fig.update_layout(meta={"price_summary": summaries, "price_reference_lines": references,
                             "price_reference_scope": "visible_window",
                             "missing_series": missing, "price_basis": PRICE_BASIS})
