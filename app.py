@@ -1877,8 +1877,8 @@ def build_fig10(date_range):
         pc = filter_range(daily_mean(load_spx_put_call_snapshot(), "SPX_PCR", 63), date_range)
     except Exception:
         pc = pd.DataFrame(columns=["observation_date", "SPX_PCR"])
-    add_line(fig, pc, "SPX_PCR", "SPX P/C 63D MA (R1)", 2.1, yaxis="y2", unit=" x")
-    fig.update_traces(line_color="#15803d", selector=dict(name="SPX P/C 63D MA (R1)"))
+    add_line(fig, pc, "SPX_PCR", "SPX P/C 63D MA (R6)", 2.1, yaxis="y7", unit=" x")
+    fig.update_traces(line_color="#15803d", selector=dict(name="SPX P/C 63D MA (R6)"))
     gex = filter_range(_dealer_gamma.load_gex_snapshot(), date_range)
     add_line(fig, gex, "GEX_BN", _dealer_gamma.SERIES_NAME, 2.2, yaxis="y6", unit=" 十亿美元")
     fig.update_traces(line_color="#0f766e", connectgaps=False,
@@ -1888,13 +1888,15 @@ def build_fig10(date_range):
         yaxis2=dict(title="R1 · Ratios · x", overlaying="y", side="right", anchor="free",
                     position=0.65, showgrid=False, zeroline=False, fixedrange=True),
         yaxis3=dict(title="R2 · SKEW · pts", overlaying="y", side="right", anchor="free",
-                    position=0.75, showgrid=False, zeroline=False, fixedrange=True),
+                    position=0.72, showgrid=False, zeroline=False, fixedrange=True),
         yaxis4=dict(title="R3 · VVIX · pts", overlaying="y", side="right", anchor="free",
-                    position=0.85, showgrid=False, zeroline=False, fixedrange=True),
+                    position=0.79, showgrid=False, zeroline=False, fixedrange=True),
         yaxis5=dict(title="R4 · VVIX/VIX · x", overlaying="y", side="right", anchor="free",
-                    position=0.94, showgrid=False, zeroline=False, fixedrange=True),
+                    position=0.86, showgrid=False, zeroline=False, fixedrange=True),
         yaxis6=dict(title="R5 · GEX · 十亿美元", overlaying="y", side="right", anchor="free",
-                    position=0.995, showgrid=False, zeroline=True, fixedrange=True),
+                    position=0.93, showgrid=False, zeroline=True, fixedrange=True),
+        yaxis7=dict(title="R6 · SPX P/C · x", overlaying="y", side="right", anchor="free",
+                    position=0.995, showgrid=False, zeroline=False, fixedrange=True),
     )
     fig = apply_chart_style(fig, chart_height(310, 420), date_range)
     # Join observed values for display; source values and ratio dates stay intact.
@@ -1910,14 +1912,14 @@ def build_fig10(date_range):
         ("VVIX (R3)", "#dc2626", "solid", 2.2),
         ("VVIX/VIX (R4)", "#be185d", "dashdot", 2.2),
         ("9D/30D (R1)", "#0891b2", "dot", 2.2),
-        ("SPX P/C 63D MA (R1)", "#15803d", "solid", 2.4),
+        ("SPX P/C 63D MA (R6)", "#15803d", "solid", 2.4),
         (_dealer_gamma.SERIES_NAME, "#334155", "solid", 2.8),
     ):
         fig.update_traces(line_color=color, line_dash=dash, line_width=width,
                           selector=dict(name=name))
-    fig.update_layout(xaxis_domain=[0, 0.60], margin_r=250)
+    fig.update_layout(xaxis_domain=[0, 0.60], margin_r=290)
     meta = dict(fig.layout.meta or {})
-    meta["preserve_axis_titles"] = list(dict.fromkeys([*meta.get("preserve_axis_titles", []), "y6"]))
+    meta["preserve_axis_titles"] = list(dict.fromkeys([*meta.get("preserve_axis_titles", []), "y6", "y7"]))
     fig.update_layout(meta=meta)
     return fig
 
@@ -2744,7 +2746,7 @@ def render_macro_chart_9(prebuilt_fig=None):
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure</div>'
-        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX/VIX3M · 9D/30D · SPX P/C 63日均（共用 R1） · SKEW 5日均 (R2) · VVIX (R3) · VVIX/VIX (R4) · GEX 做市商伽马（十亿美元，R5）</div>',
+        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX/VIX3M · 9D/30D · SPX P/C 63日均（独立 R6） · SKEW 5日均 (R2) · VVIX (R3) · VVIX/VIX (R4) · GEX 做市商伽马（十亿美元，R5）</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
