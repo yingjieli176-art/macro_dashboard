@@ -1776,41 +1776,41 @@ def build_fig9(date_range):
     )
     fig = apply_chart_style(fig, chart_height(320, 440), date_range)
     fig.update_layout(
-        margin=dict(l=62, r=140, t=100, b=36, pad=2),
+        margin=dict(l=62, r=310, t=100, b=36, pad=2),
         legend=dict(y=1.095),
-        xaxis=dict(domain=[0.0, 0.83]),
+        xaxis=dict(domain=[0.0, 0.62]),
         yaxis=dict(
             title="VIX · 年化波动率 (%)",
             showgrid=True, gridcolor="#e5e7eb", griddash="dot",
             zeroline=False, fixedrange=True,
         ),
         yaxis2=dict(
-            title="",
-            overlaying="y", side="right", anchor="free", position=0.85,
+            title="R1 · S&P500 · pts",
+            overlaying="y", side="right", anchor="free", position=0.66,
             showgrid=False, zeroline=False, fixedrange=True, tickfont=dict(size=9), ticks="outside", ticklen=3,
         ),
         yaxis3=dict(
             title="R2 · VIXEQ/VIX (倍)",
-            overlaying="y", side="right", anchor="free", position=0.92,
+            overlaying="y", side="right", anchor="free", position=0.71,
             showgrid=False, zeroline=False, fixedrange=True, tickformat=".2f",
             tickfont=dict(size=9), ticks="outside", ticklen=3,
         ),
         yaxis4=dict(
             title="R3 · COR3M (pts)",
-            overlaying="y", side="right", anchor="free", position=0.99,
+            overlaying="y", side="right", anchor="free", position=0.76,
             showgrid=False, zeroline=False, fixedrange=True, tickformat=".1f",
             tickfont=dict(size=9), ticks="outside", ticklen=3,
         ),
         yaxis5=dict(title="R4 · MOVE · pts", overlaying="y", side="right", anchor="free",
-                    position=0.995, showgrid=False, zeroline=False, fixedrange=True),
+                    position=0.81, showgrid=False, zeroline=False, fixedrange=True),
         yaxis6=dict(title="R5 · MOVE/VIX (倍)", overlaying="y", side="right", anchor="free",
-                    position=1, showgrid=False, zeroline=False, fixedrange=True),
+                    position=0.86, showgrid=False, zeroline=False, fixedrange=True),
         yaxis7=dict(title="R6 · VXN−VIX · pp", overlaying="y", side="right", anchor="free",
-                    position=1, showgrid=False, zeroline=True, fixedrange=True),
+                    position=0.91, showgrid=False, zeroline=True, fixedrange=True),
         yaxis8=dict(title="R7 · VIXEQ · 年化波动率 (%)", overlaying="y", side="right", anchor="free",
-                    position=1, showgrid=False, zeroline=False, fixedrange=True),
+                    position=0.98, showgrid=False, zeroline=False, fixedrange=True),
     )
-    fig.update_layout(margin_r=220, xaxis_domain=[0, 0.72])
+    fig.update_layout(margin_r=310, xaxis_domain=[0, 0.62])
     return fig
 
 
