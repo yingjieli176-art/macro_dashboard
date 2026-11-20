@@ -152,6 +152,7 @@ def build_price_figure(histories, years=5, series=None, split_axes=False):
         fig.add_trace(go.Scatter(
             x=visible.observation_date.tolist(), y=visible.close.tolist(), name=config["name"],
             yaxis=axis_ref, mode="lines", connectgaps=False,
+            visible="legendonly" if split_axes else True,
             line={"color": config["color"], "width": 2.5},
             hovertemplate=config["name"] + ": %{y:,.2f}<extra></extra>"))
         # Shapes support the Plotly recovery path. The native adapter uses
