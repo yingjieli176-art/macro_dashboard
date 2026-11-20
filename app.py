@@ -1810,7 +1810,9 @@ def build_fig9(date_range):
         yaxis8=dict(title="R7 · VIXEQ · 年化波动率 (%)", overlaying="y", side="right", anchor="free",
                     position=0.98, showgrid=False, zeroline=False, fixedrange=True),
     )
-    fig.update_layout(margin_r=310, xaxis_domain=[0, 0.62])
+    fig.update_layout(margin_r=310, xaxis_domain=[0, 0.62],
+                      meta={**(fig.layout.meta or {}),
+                            "axis_order": ["y", "y2", "y3", "y4", "y5", "y6", "y7", "y8"]})
     return fig
 
 
@@ -1919,6 +1921,7 @@ def build_fig10(date_range):
                           selector=dict(name=name))
     fig.update_layout(xaxis_domain=[0, 0.60], margin_r=290)
     meta = dict(fig.layout.meta or {})
+    meta["axis_order"] = ["y", "y2", "y3", "y4", "y5", "y6", "y7"]
     meta["preserve_axis_titles"] = list(dict.fromkeys([*meta.get("preserve_axis_titles", []), "y6", "y7"]))
     fig.update_layout(meta=meta)
     return fig

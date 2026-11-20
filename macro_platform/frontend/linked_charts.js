@@ -51,31 +51,11 @@ export function latestObservation(option) {
   return Number.isFinite(last) ? new Date(last).toISOString().slice(0,10) : '暂无有效观测';
 }
 
-export function lockRightAxes(option, bounds) {
-  option.yAxis.forEach((axis, index) => {
-    if (axis.position === 'right' && bounds.has(index)) {
-      [axis.min, axis.max] = bounds.get(index);
-    }
-  });
-  return option;
-}
-
 export function latestAnchoredRange(start, end) {
   const span = Math.max(0, Math.min(100, end-start));
   return [100-span, 100];
 }
 
-export function containLockedAxes(option, bounds, lower, upper, selected) {
-  for (const [index, extent] of bounds) {
-    const values = option.series.filter(s => (s.yAxisIndex || 0) === index && selected[s.name] !== false)
-      .flatMap(s => s.data.filter(p => p[0] >= lower && p[0] <= upper && Number.isFinite(p[1])).map(p => p[1]));
-    if (!values.length) continue;
-    const low = Math.min(...values), high = Math.max(...values);
-    const pad = Math.max((high-low)*.05, Math.abs(high)*.002, .01);
-    bounds.set(index, [low < extent[0] ? low-pad : extent[0], high > extent[1] ? high+pad : extent[1]]);
-  }
-  return lockRightAxes(option, bounds);
-}
 // These are observation calendar dates, not the viewer's local midnight.
 // Explicit UTC keeps axis labels, tooltips and peaks on the same source day.
 export const asTime = value => typeof value === 'number' ? value : Date.parse(
@@ -129,7 +109,7 @@ export function drawdownDifference(equal, weighted) {
   const right = new Map(weighted.map(p => [asTime(p[0]), p[1]]));
   return [...new Set([...left.keys(), ...right.keys()])].sort((a,b)=>a-b)
     .map(day => [day, Number.isFinite(left.get(day)) && Number.isFinite(right.get(day))
-      ? left.get(day)-right.get(day) : null]);
+      ? Math.abs(left.get(day))-Math.abs(right.get(day)) : null]);
 }
 
 export function dailyPriceTooltip(params, labels) {
@@ -269,15 +249,6 @@ export default function({data, parentElement}) {
     chart.resize(); updateLayout();
     chart.getZr().flush();
   });
-  const rightBounds = new Map();
-  const lockWheelAxes = () => {
-    if (!chart || disposed || rightBounds.size) return;
-    chart.getModel().eachComponent('yAxis', axis => {
-      if (axis.get('position') === 'right' && axis.id !== 'macro-peak-drawdown-axis') rightBounds.set(axis.componentIndex, axis.axis.scale.getExtent().slice());
-    });
-    updateLayout();
-  };
-  element.addEventListener('wheel', lockWheelAxes, {capture:true, passive:true});
   const saved = parentElement.__macroChartState;
   // Keep legend choices across data updates and actual remounts, isolated
   // by logical chart and schema.
@@ -521,9 +492,6 @@ export default function({data, parentElement}) {
     refreshPriceGuides(chart.getOption().dataZoom);
     const zooms = chart.getOption().dataZoom;
     const option = sizeBars(compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth), zooms);
-    const [leftPercent, rightPercent] = chart.getModel().getComponent('dataZoom').getPercentRange();
-    containLockedAxes(option, rightBounds, first+(last-first)*leftPercent/100,
-                      first+(last-first)*rightPercent/100, selected);
     fitChartHeight(option);
     if (option.toolbox) option.toolbox.right = 54;
     // Price observations stay intact. Only derived paths and annotations
@@ -585,7 +553,7 @@ export default function({data, parentElement}) {
       button.onclick = () => {
         activePeriod = button.dataset.period;
         periodStates.set(legendKey,activePeriod); showPeriod();
-        rightBounds.clear(); manualZoom = false; applyingPreset = true;
+        manualZoom = false; applyingPreset = true;
         chart.dispatchAction({type:'dataZoom',startValue:presetStart(last,activePeriod),endValue:last});
         applyingPreset = false;
         updateLayout();
@@ -600,7 +568,6 @@ export default function({data, parentElement}) {
       });
     }
     chart.on('restore', () => {
-      rightBounds.clear();
       selected = Object.fromEntries(base.series.map(series =>
         [series.name, base.legend?.selected?.[series.name] !== false]));
       for (const name of ratioNames) selected[name] = true;
@@ -648,7 +615,6 @@ export default function({data, parentElement}) {
 
   return () => {
     disposed = true; stopResume(); cancelAnimationFrame(frame); observer?.disconnect();
-    element.removeEventListener('wheel', lockWheelAxes, {capture:true});
     if (chart) {
       parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom, period:activePeriod,manualZoom};
       element.__macroDisposeTimer = setTimeout(() => {

@@ -179,9 +179,7 @@ def build_price_figure(histories, years=5, series=None, split_axes=False):
         fig.update_layout(**{("yaxis" if axis_ref == "y" else "yaxis" + axis_ref[1:]): {
             "title": title, "side": "left" if axis_index == 0 else "right",
             **({"overlaying": "y"} if axis_index else {})}})
-    # Compare drawdown MAGNITUDES, not the signed drawdown percentages.
-    # calculate_drawdown() returns negative percentages: |RSP| - |SPX|
-    # therefore equals signed_SPX - signed_RSP.
+    # The native chart derives these overlays from its original price series.
     if {"SPX", "RSP"}.issubset(histories):
         spx = calculate_drawdown(histories["SPX"])[["observation_date", "drawdown_pct"]]
         rsp = calculate_drawdown(histories["RSP"])[["observation_date", "drawdown_pct"]]
@@ -190,7 +188,7 @@ def build_price_figure(histories, years=5, series=None, split_axes=False):
             on="observation_date", how="inner",
         ).dropna(subset=["spx_dd", "rsp_dd"]).sort_values("observation_date")
         if not paired.empty:
-            gap = paired["spx_dd"] - paired["rsp_dd"]
+            gap = paired["rsp_dd"].abs() - paired["spx_dd"].abs()
             for values, label, color, dash, default_visibility in (
                 (paired["spx_dd"], "SPX 回撤比例（相对当时此前最高收盘）",
                  "#9ca3af", "dot", "legendonly"),
@@ -202,6 +200,7 @@ def build_price_figure(histories, years=5, series=None, split_axes=False):
                 fig.add_trace(go.Scatter(
                     x=paired["observation_date"], y=values, name=label,
                     mode="lines", yaxis="y3", visible=default_visibility,
+                    meta={"plotly_only": True},
                     connectgaps=False,
                     line={"color": color, "dash": dash, "width": 2.6},
                     hovertemplate=label + ": %{y:+.2f} 个百分点<extra></extra>",

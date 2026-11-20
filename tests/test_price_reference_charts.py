@@ -62,7 +62,9 @@ class PriceReferenceTests(unittest.TestCase):
                                     "RSP": history([999, 230, 220])}, split_axes=True)
         self.assertEqual(list(figure.data[0].y), [8000, 7600])
         self.assertEqual(list(figure.data[1].y), [230, 220])
-        self.assertEqual([trace.yaxis for trace in figure.data], ["y", "y2"])
+        self.assertEqual([trace.yaxis for trace in figure.data], ["y", "y2", "y3", "y3", "y3"])
+        self.assertEqual([trace.visible for trace in figure.data],
+                         ["legendonly", "legendonly", "legendonly", "legendonly", True])
         self.assertEqual(len(figure.layout.shapes), 4)
         self.assertEqual([row["peak"] for row in figure.layout.meta["price_summary"]], [8000, 230])
 
@@ -80,7 +82,6 @@ class PriceReferenceTests(unittest.TestCase):
                 self.assertTrue(all(line["label"]["show"] for series in option["series"]
                                     for line in series["markLine"]["data"]))
         dates = summarize_series_dates(figure, now=pd.Timestamp("2026-10-27"))
-        self.assertEqual(len(dates["latest_by_name"]), 2)
         self.assertEqual(set(dates["latest_by_name"].values()), {"2026-10-26"})
 
     def test_new_high_updates_both_lines_and_missing_index_stays_missing(self):

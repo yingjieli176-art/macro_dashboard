@@ -45,7 +45,7 @@ class ReadableLabels(unittest.TestCase):
             '9D/30D (R1)': ['VIX9D÷VIX', '9天', '30天', 'R1'],
             'VVIX/VIX (R4)': ['VVIX÷VIX', 'VIX水平', 'R4'],
             'VIX/VIX3M (R1)': ['VIX÷VIX3M', '30天', '3个月'],
-            'SPX P/C 63D MA (R1)': ['看跌÷看涨', '63交易日'],
+            'SPX P/C 63D MA (R6)': ['看跌÷看涨', '63交易日'],
             'SKEW 5D MA (R2)': ['尾部风险', '5交易日'],
         }.items():
             for term in terms:

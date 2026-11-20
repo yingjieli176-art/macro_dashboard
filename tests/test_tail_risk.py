@@ -36,7 +36,7 @@ class TailRiskTests(unittest.TestCase):
             for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
                 option = adapter(fig, period)
                 self.assertEqual([s["yAxisIndex"] for s in option["series"]], [0, 0, 1, 2, 3, 4])
-                self.assertEqual(len(option["yAxis"]), 5)
+                self.assertEqual(len(option["yAxis"]), 7)
                 self.assertTrue(all(a["scale"] for a in option["yAxis"]))
                 self.assertTrue(all(s["connectNulls"] for s in option["series"]))
                 json.dumps(option, allow_nan=False)
@@ -47,7 +47,7 @@ class TailRiskTests(unittest.TestCase):
         ns["load_tail_risk_snapshot"] = lambda s: (_ for _ in ()).throw(OSError("outage"))
         fig = ns["build_fig10"]("1M")
         self.assertEqual([t.name for t in fig.data], ["VIX", "VIX3M", "VIX/VIX3M (R1)"])
-        self.assertEqual(set(fig.layout.meta["missing_series"]), {"SKEW 5D MA (R2)", "VVIX (R3)", "VVIX/VIX (R4)", "9D/30D (R1)", "SPX P/C 63D MA (R1)", "GEX 做市商伽马（十亿美元，R5）"})
+        self.assertEqual(set(fig.layout.meta["missing_series"]), {"SKEW 5D MA (R2)", "VVIX (R3)", "VVIX/VIX (R4)", "9D/30D (R1)", "SPX P/C 63D MA (R6)", "GEX 做市商伽马（十亿美元，R5）"})
 
     def history(self, symbol="SKEW", stop="2026-11-03", value=150):
         dates = pd.bdate_range("2022-01-03", stop)

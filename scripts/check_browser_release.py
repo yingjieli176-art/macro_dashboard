@@ -202,7 +202,7 @@ def assert_price_guides_follow_viewport(chart):
             values[0].difference = {
                 valid:difference.data.filter(p=>Number.isFinite(p[1])).length,
                 correct:difference.data.every(([day,value])=>Number.isFinite(equal.get(day)) && Number.isFinite(weighted.get(day))
-                    ? Math.abs(value-(equal.get(day)-weighted.get(day)))<1e-8 : value===null)};
+                    ? Math.abs(value-(Math.abs(equal.get(day))-Math.abs(weighted.get(day))))<1e-8 : value===null)};
         }
         return values;
     }""")
@@ -306,6 +306,15 @@ def exercise_equity_drawdown(page):
         page.wait_for_function("selector => document.querySelector(selector)?.getAttribute('aria-busy') === 'false'",
                                arg=f'[class*=st-key-us_equity_drawdown_echarts_schema_] [data-testid$="EChartsChart"]',
                                timeout=30000)
+        if baseline is None:
+            chart.evaluate("""element => {
+                const chart = element.__macroChart;
+                for (const series of chart.getOption().series.slice(0, 2)) {
+                    if (chart.getOption().legend[0].selected[series.name] !== false)
+                        throw new Error('SPX/RSP prices must start hidden');
+                    chart.dispatchAction({type:'legendSelect', name:series.name});
+                }
+            }""")
         points = chart.evaluate("""element => {
             const chart = (""" + INSTANCE_JS + """)(element);
             return chart.getOption().series.filter(series => !series.id.startsWith('macro-peak-drawdown-')).map(series => ({name: series.name,
@@ -867,36 +876,37 @@ def main():
                         Math.abs(value-move.get(day)/vix.get(day))<1e-8)};
             }""")
             assert risk_ratio['axes'] == 8 and risk_ratio['axis'] == 5, risk_ratio
-            assert risk_chart.evaluate("e => {const s=e.__macroChart.getOption().series; return s.find(x=>x.name==='VIX').yAxisIndex !== s.find(x=>x.name==='VIXEQ').yAxisIndex;}")
+            assert risk_chart.evaluate("""e => {
+                const axes = new Map(e.__macroChart.getOption().series.map(s => [s.name, s.yAxisIndex]));
+                return axes.get('VIX') === 0 && axes.get('VIXEQ') === 7 && axes.get('VIXEQ/VIX (R2)') === 2;
+            }""")
             assert risk_ratio['count'] > 100 and risk_ratio['matched'] and not risk_ratio['connect'], risk_ratio
             assert '年化波动率（%）' in risk_ratio['vix_label'], risk_ratio
             assert 'R5·×' in risk_ratio['ratio_label'], risk_ratio
             assert 'R1' in risk_ratio['axis_names'][1] and 'pts' in risk_ratio['axis_names'][1], risk_ratio
-            assert '%' in risk_ratio['axis_names'][6], risk_ratio
+            assert all('%' in risk_ratio['axis_names'][i] for i in (6, 7)), risk_ratio
             report['move_vix'] = risk_ratio
             report['move_vix_zoom'] = exercise_client_zoom(page, risk_chart, minimum_axes=6)
             risk_chart.scroll_into_view_if_needed()
             before = risk_chart.evaluate("""e => {
                 e.__macroChart.__reuseEvidence = 'period-test';
-                return e.__macroChart.getModel().findComponents({mainType:'yAxis'}).map(a=>a.axis.scale.getExtent());
+                return e.__macroChart.getModel().getComponent('dataZoom').getPercentRange()[0];
             }""")
             box = risk_chart.bounding_box()
             page.mouse.move(box['x']+box['width']*.4, box['y']+box['height']*.6)
             page.mouse.wheel(0,-250)
             page.wait_for_timeout(300)
-            after = risk_chart.evaluate("e => e.__macroChart.getModel().findComponents({mainType:'yAxis'}).map(a=>a.axis.scale.getExtent())")
-            assert before[1:] == after[1:], {'before':before,'after':after}
-            assert risk_chart.evaluate("e => typeof e.__macroChart.getOption().yAxis[0].min !== 'number'")
+            state = chart_state(risk_chart)
+            assert state['zoom'][0] > before, state['zoom']
+            assert_visible_axes(state, minimum_axes=8)
+            assert risk_chart.evaluate("e => e.__macroChart.getOption().yAxis.every(a => typeof a.min !== 'number' && typeof a.max !== 'number')")
             for position, delta in ((.15,-250),(.8,350),(.5,-180)):
                 page.mouse.move(box['x']+box['width']*position,box['y']+box['height']*.6)
                 page.mouse.wheel(0,delta)
                 page.wait_for_timeout(250)
                 state = chart_state(risk_chart)
                 assert abs(state['zoom'][1]-100) < 1e-6, state['zoom']
-                for axis in state['axes']:
-                    if axis['observed']:
-                        assert axis['extent'][0] <= axis['observed'][0]+1e-7, axis
-                        assert axis['extent'][1] >= axis['observed'][1]-1e-7, axis
+                assert_visible_axes(state, minimum_axes=8)
                 check_even_date_axis(risk_chart)
             time_label = page.locator('[class*=st-key-us_equity_risk_adaptive_default_schema_] [data-testid=macroChartTime]')
             observation_label = time_label.inner_text()
@@ -908,7 +918,7 @@ def main():
             report['native_period_latency_ms'] = round((time.perf_counter()-period_started)*1000,2)
             groups.nth(MACRO_DISPLAY_NUMBER[9]-1).get_by_text('1Y',exact=True).click()
             page.wait_for_function("document.querySelector('[class*=st-key-us_equity_risk_adaptive_default_schema_] [data-testid=macroEChartsChart]')?.dataset.period === '1Y'")
-            report['wheel_and_period'] = {'right_axes_locked':True,'left_axis_rescaled':True,'instance_reused':True,'observation_date_only':True}
+            report['wheel_and_period'] = {'left_and_right_axes_rescaled':True,'instance_reused':True,'observation_date_only':True}
             page.screenshot(path='browser_ai_cds.png')
             # Use a real HK chart to exercise every server range with raw prices.
             for label in ("5Y", "1Y", "6M", "3M", "1M", "1Y"):
@@ -1002,7 +1012,7 @@ def main():
             report["tail_risk_zoom"] = exercise_client_zoom(page, tail, minimum_axes=5)
             sentiment = tail.evaluate("element => element.__macroChart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,valid:s.data.filter(p=>Number.isFinite(p[1])).length}))")
             for name, axis in (("VIX/VIX3M (R1)", 1), ("VVIX/VIX (R4)", 4),
-                               ("9D/30D (R1)", 1), ("SPX P/C 63D MA (R1)", 1)):
+                               ("9D/30D (R1)", 1), ("SPX P/C 63D MA (R6)", 6)):
                 series = next(s for s in sentiment if s['name'] == name)
                 assert series['axis'] == axis and series['valid'] > 150, series
             assert any('VVIX' in s['name'] for s in sentiment), sentiment

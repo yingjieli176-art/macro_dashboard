@@ -91,7 +91,7 @@ class SpxSentimentTests(unittest.TestCase):
         for day in ("2026-11-04", "2026-11-07", "2099-01-01"):
             with self.assertRaises(ValueError): parse_daily(self.payload(), day, now)
 
-    def test_ratios_keep_direction_gaps_and_shared_sentiment_axis(self):
+    def test_ratios_keep_direction_gaps_and_independent_pc_axis(self):
         ns = builders()
         dates = ["2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06"]
         sources = {"VIXCLS": frame(dates, "VIXCLS", [20., 0., 24., None]),
@@ -107,15 +107,15 @@ class SpxSentimentTests(unittest.TestCase):
         self.assertEqual(list(pd.Series(traces["VIX/VIX3M (R1)"].y).dropna()), [.8, 0.])
         self.assertEqual(list(pd.Series(traces["9D/30D (R1)"].y).dropna()), [.9])
         self.assertEqual(list(pd.Series(traces["VVIX/VIX (R4)"].y).dropna()), [5.])
-        self.assertEqual(list(pd.Series(traces["SPX P/C 63D MA (R1)"].y).dropna()), [1.13])
+        self.assertEqual(list(pd.Series(traces["SPX P/C 63D MA (R6)"].y).dropna()), [1.13])
         for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
             option = adapter(fig, "1M")
-            self.assertEqual(len(option["yAxis"]), 5)
+            self.assertEqual(len(option["yAxis"]), 7)
             axes = {series["name"]: series["yAxisIndex"] for series in option["series"]}
             self.assertEqual(axes["VIX/VIX3M (R1)"], 1)
             self.assertEqual(axes["VVIX/VIX (R4)"], 4)
             self.assertEqual(axes["9D/30D (R1)"], 1)
-            self.assertEqual(axes["SPX P/C 63D MA (R1)"], 1)
+            self.assertEqual(axes["SPX P/C 63D MA (R6)"], 6)
             self.assertTrue(all(axis["scale"] for axis in option["yAxis"]))
             self.assertFalse(any("VIX3M−VIX" in name for name in axes))
 
@@ -127,7 +127,7 @@ class SpxSentimentTests(unittest.TestCase):
         ns["load_tail_risk_snapshot"] = lambda key: frame(dates, key, list(range(100, 190)))
         full = ns["build_fig10"]("5Y")
         traces = {t.name: t for t in full.data}
-        pc = traces["SPX P/C 63D MA (R1)"]
+        pc = traces["SPX P/C 63D MA (R6)"]
         skew = traces["SKEW 5D MA (R2)"]
         self.assertTrue(pd.Series(pc.y).iloc[:62].isna().all())
         self.assertEqual(pc.y[62], 32.)

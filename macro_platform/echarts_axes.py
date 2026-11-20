@@ -269,11 +269,12 @@ def build_safe_echarts_option(fig, date_range="1Y"):
     """
     date_range = date_range if date_range in RANGE_OFFSETS else "1Y"
     series = []
+    hidden_by_default = {}
     # Opt-in stable slots keep explicit R labels valid when a source is absent.
     axis_map = {ref: index for index, ref in enumerate((fig.layout.meta or {}).get("axis_order", []))}
     latest = None
     for trace in fig.data:
-        if getattr(trace, "visible", True) in (False, "legendonly"):
+        if trace.visible is False or (isinstance(trace.meta, dict) and trace.meta.get("plotly_only")):
             continue
         xs, ys = getattr(trace, "x", None), getattr(trace, "y", None)
         if xs is None or ys is None:
@@ -320,6 +321,8 @@ def build_safe_echarts_option(fig, date_range="1Y"):
             "yAxisIndex": axis_map[ref],
             "animation": False,
         })
+        if trace.visible == "legendonly":
+            hidden_by_default[series[-1]["name"]] = False
         color = getattr(getattr(trace, "line", None), "color", None)
         if isinstance(color, str) and color:
             series[-1]["lineStyle"] = {"color": color}
@@ -356,7 +359,7 @@ def build_safe_echarts_option(fig, date_range="1Y"):
     window_start = (latest - RANGE_OFFSETS[date_range]).isoformat()
     return _responsive_chart_layout({
         "animation": False,
-        "legend": {"type": "plain", "top": 14},
+        "legend": {"type": "plain", "top": 14, "selected": hidden_by_default},
         "grid": {
             "left": 80, "right": 55 + max(0, len(axes)-1)*70,
             "top": 68, "bottom": 72,
@@ -402,7 +405,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
     reference_lines = []
 
     for trace in fig.data:
-        if getattr(trace, "visible", True) is False:
+        if trace.visible is False or (isinstance(trace.meta, dict) and trace.meta.get("plotly_only")):
             continue
         xs, ys = getattr(trace, "x", None), getattr(trace, "y", None)
         if xs is None or ys is None:

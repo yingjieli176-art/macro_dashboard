@@ -156,7 +156,9 @@ class DashboardBootSmoke(unittest.TestCase):
                           if any(s["name"].startswith("GEX 做市商伽马") for s in json.loads(spec)["series"]))
         gex = next(s for s in gex_option["series"] if s["name"].startswith("GEX 做市商伽马"))
         self.assertEqual(gex["yAxisIndex"], 5)
-        self.assertEqual(len(gex_option["yAxis"]), 6)
+        self.assertEqual(len(gex_option["yAxis"]), 7)
+        pc = next(s for s in gex_option["series"] if s["name"] == "SPX P/C 63D MA (R6)")
+        self.assertEqual(pc["yAxisIndex"], 6)
         self.assertIn("十亿美元", gex_option["yAxis"][5]["name"])
         self.assertFalse(any("COR1M" in name or "VIXEQ−VIX" in name for name in risk_series))
         for name in ("COR3M (R3)", "VIXEQ/VIX (R2)"):

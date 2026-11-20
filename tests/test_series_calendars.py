@@ -65,7 +65,7 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         ns["get_fred_series"] = load
         figure = ns["build_fig10"]("1M")
         self.assertEqual([t.name for t in figure.data], ["VIX"])
-        self.assertEqual(set(figure.layout.meta["missing_series"]), {"VIX3M", "VIX/VIX3M (R1)", "SKEW 5D MA (R2)", "VVIX (R3)", "VVIX/VIX (R4)", "9D/30D (R1)", "SPX P/C 63D MA (R1)", "GEX 做市商伽马（十亿美元，R5）"})
+        self.assertEqual(set(figure.layout.meta["missing_series"]), {"VIX3M", "VIX/VIX3M (R1)", "SKEW 5D MA (R2)", "VVIX (R3)", "VVIX/VIX (R4)", "9D/30D (R1)", "SPX P/C 63D MA (R6)", "GEX 做市商伽马（十亿美元，R5）"})
 
     def test_equity_correlation_calendar_and_removed_series(self):
         ns = builders()
@@ -87,9 +87,10 @@ class SeriesCalendarIntegrity(unittest.TestCase):
         self.assertEqual(trace.yaxis, "y4")
         for window in RANGE_OFFSETS:
             option = build_adaptive_echarts_option(fig, window)
-            self.assertEqual(len(option["yAxis"]), 6)
+            self.assertEqual(len(option["yAxis"]), 8)
             axes = {series['name']: series['yAxisIndex'] for series in option['series']}
-            self.assertNotEqual(axes['VIX'], axes['VIXEQ'])
+            self.assertEqual(axes['VIX'], 0)
+            self.assertEqual(axes['VIXEQ'], 7)
             self.assertEqual(option['yAxis'][axes['VIXEQ']]['position'], 'right')
             for name, axis in (("VIXEQ/VIX (R2)", 2), ("COR3M (R3)", 3)):
                 series = next(s for s in option["series"] if s["name"] == name)

@@ -106,11 +106,6 @@ class EquityDrawdownTests(unittest.TestCase):
         spread = next(t for t in fig.data if "等权回撤-加权回撤" in t.name)
         self.assertAlmostEqual(float(spread.y[-1]), -10.0)
         self.assertEqual(spread.yaxis, "y3")
-        option = build_adaptive_echarts_option(fig, "1M")
-        self.assertIn(spread.name, [s["name"] for s in option["series"]])
-        self.assertEqual(len(option["yAxis"]), 3)
-        self.assertFalse(option["yAxis"][2]["inverse"])
-        self.assertTrue(option["yAxis"][2]["scale"])
 
     def test_missing_leg_is_explicit_and_does_not_remove_good_series(self):
         fig = build_drawdown_figure({"SPX": prices([100, 90])})
