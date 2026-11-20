@@ -146,9 +146,15 @@
       "tc_usd_dmt": -244.63,
       "rc_cents_lb": -24.463,
       "source_url": "https://youse.mysteel.com/a/26111317/FE4C661E547A35F7.html"
+    },
+    {
+      "observation_date": "2026-11-20",
+      "tc_usd_dmt": -239.17,
+      "rc_cents_lb": -23.917,
+      "source_url": "https://youse.mysteel.com/a/26112019/7B150598B106C01D.html"
     }
   ],
-  "retrieved_at": "2026-11-20T09:13:45.373033+00:00",
+  "retrieved_at": "2026-11-20T11:41:17.661714+00:00",
   "historical_backfill": {
     "verified_on": "2026-11-06",
     "first_observation": "2026-05-08",
