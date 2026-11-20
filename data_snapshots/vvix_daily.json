@@ -3,15 +3,11 @@
   "source": "Cboe Global Indices",
   "source_url": "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv",
   "unit": "index points",
-  "updated_at": "2026-11-19T00:33:11.205178+00:00",
-  "coverage_start": "2021-11-19",
-  "coverage_end": "2026-11-18",
+  "updated_at": "2026-11-20T00:46:37.426125+00:00",
+  "coverage_start": "2021-11-22",
+  "coverage_end": "2026-11-19",
   "record_count": 1254,
   "records": [
-    {
-      "observation_date": "2021-11-19",
-      "close": 113.74
-    },
     {
       "observation_date": "2021-11-22",
       "close": 118.62
@@ -5023,6 +5019,10 @@
     {
       "observation_date": "2026-11-18",
       "close": 118.37
+    },
+    {
+      "observation_date": "2026-11-19",
+      "close": 127.1
     }
   ]
 }
