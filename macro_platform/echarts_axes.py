@@ -387,6 +387,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
     """Convert a Plotly chart to a native ECharts time-series option object."""
     date_range = date_range if date_range in RANGE_OFFSETS else "1Y"
     series = []
+    hidden_by_default = {}
     y_axis_map = {ref: index for index, ref in enumerate((fig.layout.meta or {}).get("axis_order", []))}
     original_axis_refs = {ref: "yaxis" if ref == "y" else "yaxis" + ref[1:]
                           for ref in y_axis_map}
@@ -401,7 +402,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
     reference_lines = []
 
     for trace in fig.data:
-        if getattr(trace, "visible", True) in (False, "legendonly"):
+        if getattr(trace, "visible", True) is False:
             continue
         xs, ys = getattr(trace, "x", None), getattr(trace, "y", None)
         if xs is None or ys is None:
@@ -443,6 +444,8 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
         elif dash == "dot":
             line_style["type"] = "dotted"
         trace_name = str(getattr(trace, "name", None) or "Series")
+        if getattr(trace, "visible", True) == "legendonly":
+            hidden_by_default[trace_name] = False
         finite_values = [value for _, value in points if value is not None]
         if (
             axis_ref == "y" and trace_name in reference_names
@@ -558,6 +561,7 @@ def build_adaptive_echarts_option(fig, date_range="1Y"):
         "animation": False,
         "legend": {
             "type": "plain",
+            "selected": hidden_by_default,
             "top": 31, "left": 12,
             "textStyle": {"color": "#475569", "fontSize": 11},
         },
