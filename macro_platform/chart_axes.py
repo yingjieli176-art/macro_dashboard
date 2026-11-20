@@ -317,10 +317,19 @@ DASHBOARD_MARGIN_BOTTOM = 38
 DASHBOARD_MARGIN_TOP = 88
 
 
+def _all_yaxis_names(fig: go.Figure) -> list[str]:
+    """Include every present Plotly Y axis, including R6/R7 and beyond."""
+    names = [name for name in fig.layout.to_plotly_json()
+             if name == "yaxis" or (name.startswith("yaxis") and name[5:].isdigit())]
+    return sorted(names, key=lambda name: 1 if name == "yaxis" else int(name[5:]))
+
+
 def _visible_right_axis_count(fig: go.Figure) -> int:
     """Count visible overlay Y axes placed on the right side."""
     count = 0
-    for axis_name in ("yaxis2", "yaxis3", "yaxis4", "yaxis5"):
+    for axis_name in _all_yaxis_names(fig):
+        if axis_name == "yaxis":
+            continue
         axis = getattr(fig.layout, axis_name, None)
         if axis is None:
             continue
@@ -422,7 +431,9 @@ def apply_dashboard_chart_standard(fig: go.Figure) -> go.Figure:
         primary.title.font = dict(size=11, color="#64748b")
         primary.title.standoff = 8
 
-    for axis_name in ("yaxis2", "yaxis3", "yaxis4", "yaxis5"):
+    for axis_name in _all_yaxis_names(fig):
+        if axis_name == "yaxis":
+            continue
         axis = getattr(fig.layout, axis_name, None)
         if axis is None:
             continue
@@ -528,7 +539,7 @@ def apply_client_time_controls(
         axis = getattr(fig.layout, axis_name, None)
         if axis is not None:
             axis.update(range=bounds, autorange=False, rangemode="normal")
-    for axis_name in ("yaxis", "yaxis2", "yaxis3", "yaxis4", "yaxis5"):
+    for axis_name in _all_yaxis_names(fig):
         axis = getattr(fig.layout, axis_name, None)
         if axis is not None:
             axis.fixedrange = False
