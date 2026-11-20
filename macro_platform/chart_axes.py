@@ -345,7 +345,7 @@ def _visible_right_axis_count(fig: go.Figure) -> int:
 
 def _right_margin_for_axes(fig: go.Figure) -> int:
     count = _visible_right_axis_count(fig)
-    return {0: 34, 1: 70, 2: 98, 3: 124}.get(count, 136)
+    return {0: 34, 1: 70, 2: 98, 3: 124}.get(count, 124 + max(0, count - 3) * 30)
 
 
 def apply_dashboard_chart_standard(fig: go.Figure) -> go.Figure:
