@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 import pandas as pd
 
 from macro_platform.equity_drawdown import (
-    PRICE_BASIS, SERIES, build_drawdown_figure, calculate_drawdown,
+    PRICE_BASIS, SERIES, build_drawdown_figure, build_price_figure, calculate_drawdown,
     load_equity_history, parse_yahoo_history,
 )
 from macro_platform.echarts_axes import build_adaptive_echarts_option
@@ -95,6 +95,22 @@ class EquityDrawdownTests(unittest.TestCase):
             self.assertAlmostEqual(option["series"][0]["data"][-1][1], -20)
             self.assertTrue(all(zoom["filterMode"] == "filter" for zoom in option["dataZoom"]))
             self.assertTrue(option["yAxis"][0]["scale"])
+
+    def test_rsp_minus_spx_uses_absolute_drawdown_magnitudes(self):
+        # SPX falls 20% and RSP falls 10%: |RSP| - |SPX| must be -10 pp.
+        histories = {
+            "SPX": prices([100.0, 80.0], ["2026-11-18", "2026-11-19"]),
+            "RSP": prices([100.0, 90.0], ["2026-11-18", "2026-11-19"]),
+        }
+        fig = build_price_figure(histories, split_axes=True)
+        spread = next(t for t in fig.data if "等权回撤-加权回撤" in t.name)
+        self.assertAlmostEqual(float(spread.y[-1]), -10.0)
+        self.assertEqual(spread.yaxis, "y3")
+        option = build_adaptive_echarts_option(fig, "1M")
+        self.assertIn(spread.name, [s["name"] for s in option["series"]])
+        self.assertEqual(len(option["yAxis"]), 3)
+        self.assertFalse(option["yAxis"][2]["inverse"])
+        self.assertTrue(option["yAxis"][2]["scale"])
 
     def test_missing_leg_is_explicit_and_does_not_remove_good_series(self):
         fig = build_drawdown_figure({"SPX": prices([100, 90])})
