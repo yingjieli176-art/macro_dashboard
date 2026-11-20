@@ -6,7 +6,7 @@
   "date_basis": "as-of position date, not release date",
   "formula": "noncommercial_long - noncommercial_short",
   "frequency": "weekly",
-  "fetched_at": "2026-11-16T22:15:51.977570+00:00",
+  "fetched_at": "2026-11-20T21:23:31.454265+00:00",
   "records": [
     {
       "observation_date": "2020-01-07",
@@ -2513,6 +2513,13 @@
       "noncommercial_short": 126646,
       "net_contracts": 123113,
       "open_interest": 388875
+    },
+    {
+      "observation_date": "2026-11-17",
+      "noncommercial_long": 258756,
+      "noncommercial_short": 142439,
+      "net_contracts": 116317,
+      "open_interest": 390361
     }
   ]
 }
