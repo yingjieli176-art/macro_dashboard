@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "built": "2026-11-20",
-  "source_asof": "2026-11-19",
-  "source_calendar_count": 651,
+  "built": "2026-11-21",
+  "source_asof": "2026-11-20",
+  "source_calendar_count": 652,
   "source": "Open-Sourced Rates Observatory, irates.today",
   "source_url": "https://irates.today/chart_data.json",
   "methodology_url": "https://irates.today/capex.html#method",
@@ -2618,6 +2618,10 @@
         {
           "observation_date": "2026-11-19",
           "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-20",
+          "spread_bps": 130.6
         }
       ]
     },
@@ -5230,6 +5234,10 @@
         },
         {
           "observation_date": "2026-11-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-20",
           "spread_bps": null
         }
       ]
@@ -7844,6 +7852,10 @@
         {
           "observation_date": "2026-11-19",
           "spread_bps": 91.0
+        },
+        {
+          "observation_date": "2026-11-20",
+          "spread_bps": 95.0
         }
       ]
     },
@@ -10456,6 +10468,10 @@
         },
         {
           "observation_date": "2026-11-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-20",
           "spread_bps": null
         }
       ]
@@ -13070,9 +13086,13 @@
         {
           "observation_date": "2026-11-19",
           "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-20",
+          "spread_bps": null
         }
       ]
     }
   },
-  "retrieved_at": "2026-11-21T04:00:12.190757+00:00"
+  "retrieved_at": "2026-11-21T14:56:39.900052+00:00"
 }
