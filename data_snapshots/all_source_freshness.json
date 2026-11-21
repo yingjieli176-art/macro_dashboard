@@ -458,12 +458,12 @@
         9
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-21",
+      "repository_latest": "2026-11-22",
       "checked_at": "2026-11-21T14:55:45.179909+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-21",
       "source_url": "https://www.boj.or.jp/en/",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "JP_CORRIDOR_LOAN",
@@ -471,12 +471,12 @@
         9
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-21",
+      "repository_latest": "2026-11-22",
       "checked_at": "2026-11-21T14:55:48.328160+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-21",
       "source_url": "https://www.boj.or.jp/en/",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "JP_CORRIDOR_REPO",
@@ -1211,5 +1211,5 @@
   "elapsed_seconds": 0.464,
   "shared_http_requests": 0,
   "shared_http_reuses": 0,
-  "repository_reconciled_at": "2026-11-21T14:56:45.344884+00:00"
+  "repository_reconciled_at": "2026-11-21T15:40:41.380338+00:00"
 }
