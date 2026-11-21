@@ -4,10 +4,10 @@
   "source": "Cboe Global Indices",
   "source_url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/COR1M_History.csv",
   "unit": "index points",
-  "updated_at": "2026-11-20T00:46:36.572707+00:00",
-  "record_count": 5254,
+  "updated_at": "2026-11-21T02:16:05.908536+00:00",
+  "record_count": 5255,
   "coverage_start": "2006-01-03",
-  "coverage_end": "2026-11-19",
+  "coverage_end": "2026-11-20",
   "records": [
     {
       "observation_date": "2006-01-03",
@@ -21024,6 +21024,10 @@
     {
       "observation_date": "2026-11-19",
       "close": 30.22
+    },
+    {
+      "observation_date": "2026-11-20",
+      "close": 36.05
     }
   ]
 }
