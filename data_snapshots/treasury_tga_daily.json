@@ -3,7 +3,7 @@
   "source_url": "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/dts/operating_cash_balance",
   "series_id": "TGA_DAILY",
   "unit": "USD millions in source; dashboard USD trillions",
-  "fetched_at": 1795209812,
+  "fetched_at": 1795231435,
   "coverage_start": "2022-04-18",
   "coverage_end": "2026-11-19",
   "observation_count": 1151,
