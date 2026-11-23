@@ -6,10 +6,18 @@ from pathlib import Path
 import pandas as pd
 
 from macro_platform import cross_asset_volatility as cross
+from macro_platform.cboe_history import parse_ovx_closes
 from macro_platform.echarts_axes import build_adaptive_echarts_option
 
 
 class CrossAssetVolatilityTests(unittest.TestCase):
+    def test_ovx_uses_completed_cboe_daily_closes(self):
+        csv = "DATE,OVX\n11/19/2026,50.67\n11/20/2026,54.12\n11/23/2026,55.00\n"
+        ovx = parse_ovx_closes(csv, now=pd.Timestamp("2026-11-23T15:00Z"))
+        figure = cross.build_figure(ovx=ovx, eurusd_records=[], usdjpy_records=[])
+        self.assertEqual(list(figure.data[0].y), [50.67, 54.12])
+        self.assertEqual(pd.Timestamp(figure.data[0].x[-1]), pd.Timestamp("2026-11-20"))
+
     def test_three_sources_get_independent_axes_and_correct_units(self):
         days = ["2026-10-12", "2026-10-13", "2026-10-14"]
         ovx = pd.DataFrame({"observation_date":days, "OVXCLS":[42., 41., 45.]})
@@ -25,9 +33,9 @@ class CrossAssetVolatilityTests(unittest.TestCase):
         assert float(figure.data[3].y[0]) == 9.25
         option = build_adaptive_echarts_option(figure, "1M")
         assert [line["yAxisIndex"] for line in option["series"]] == [0,1,2,3]
-        assert len(option["yAxis"]) == 4
+        assert len(option["yAxis"]) == 6
         assert all(axis["scale"] for axis in option["yAxis"])
-        assert not figure.layout.meta["missing_series"]
+        assert len(figure.layout.meta["missing_series"]) == 3
 
     def test_unavailable_eurusd_not_faked_from_spot_or_evz(self):
         days = ["2026-10-12", "2026-10-13"]
@@ -131,7 +139,7 @@ class CrossAssetVolatilityTests(unittest.TestCase):
             "5Y", ovx=ovx, move=move, treasury10y=treasury, brent=brent,
             wti=wti, eurusd_records=[], usdjpy_records=[])
         names = [item.name for item in figure.data]
-        assert any("US10Y 20D" in name for name in names)
+        assert any("DGS10变动" in name for name in names)
         assert any("Brent 20D" in name for name in names)
         assert any("WTI 20D" in name for name in names)
         assert [item.yaxis for item in figure.data[-3:]] == ["y5","y6","y6"]

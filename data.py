@@ -10,6 +10,7 @@ import pandas as pd
 import requests
 import streamlit as st
 from macro_platform.background_refresh import BackgroundRefresh
+from macro_platform.cboe_history import OVX_HISTORY_URL, parse_ovx_closes
 from macro_platform.request_runtime import http_get, request_budget, observed_cache
 from macro_platform.fred_observations import validate_observations
 
@@ -120,6 +121,15 @@ def _fetch_fred_graph(series_id, *, timeout=(2.5, 5.0)):
     return frame
 
 
+def _fetch_cboe_ovx(_series_id):
+    response = http_get(OVX_HISTORY_URL, headers={"User-Agent": "MacroDashboard/1.0"},
+                        timeout=(3, 8))
+    response.raise_for_status()
+    frame = parse_ovx_closes(response.text)
+    frame.attrs.update({"source": "Cboe OVX daily closes", "is_stale": False, "is_fallback": False})
+    return frame
+
+
 def _fetch_fred_api(series_id):
     if not FRED_API_KEY:
         raise RuntimeError("FRED_API_KEY 未设置")
@@ -227,7 +237,10 @@ def _refresh_fred_series(series_id):
     """Fetch genuine observations; workers never write widgets/session state."""
 
     errors = []
-    for fetcher in (_fetch_fred_graph, _fetch_fred_api):
+    fetchers = (_fetch_fred_graph, _fetch_fred_api)
+    if series_id == "OVXCLS":
+        fetchers = (_fetch_cboe_ovx, *fetchers)
+    for fetcher in fetchers:
         try:
             frame = fetcher(series_id)
             if not frame.empty:

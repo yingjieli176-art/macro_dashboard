@@ -20,7 +20,7 @@ from pandas.tseries.holiday import USFederalHolidayCalendar
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from macro_platform.cboe_history import supplement_closes
+from macro_platform.cboe_history import OVX_HISTORY_URL, parse_ovx_closes, supplement_closes
 from macro_platform.fred_observations import TIC_JAPAN_SERIES, validate_observations
 from macro_platform.tail_risk import completed_date
 
@@ -39,7 +39,7 @@ SERIES = (
     "DGS3MO", "DGS2", "DGS10", "DGS30", "DFII5", "DFII10", "T10YIE",
     "SOFR", "IORB", "EFFR", "RRPONTSYAWARD", "SRFTSYD", "WALCL",
     "WRESBAL", "WTREGEN", "RRPONTSYD", "VIXCLS", "VXVCLS",
-    "SP500", "VXNCLS", "GVZCLS", "GFDEBTN", "FYGFDPUN",
+    "SP500", "VXNCLS", "GVZCLS", "OVXCLS", "GFDEBTN", "FYGFDPUN",
     "FDHBFRBN", "FDHBFIN", "FDHBPIN",
 ) + TIC_JAPAN_SERIES
 CRITICAL = ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR", "SRFTSYD")
@@ -231,6 +231,12 @@ def _fetch_primary(session, series_id: str) -> pd.DataFrame:
         return _merge_verified_history(series_id, best)
     if series_id in TREASURY_FIELDS:
         return _fetch_treasury(session, series_id)
+    if series_id == "OVXCLS":
+        response = session.get(OVX_HISTORY_URL, timeout=FETCH_TIMEOUT, headers={"User-Agent": "MacroDashboard/1.0"})
+        response.raise_for_status()
+        frame = parse_ovx_closes(response.text)
+        return frame.loc[frame.observation_date.ge(START)].rename(
+            columns={"observation_date": "date", "OVXCLS": "value"})
     if series_id in CBOE_FILES:
         response = session.get(
             "https://cdn.cboe.com/api/global/us_indices/daily_prices/" + CBOE_FILES[series_id],
@@ -345,6 +351,7 @@ def refresh_one(series_id: str):
                                   "https://markets.newyorkfed.org/api/rp/results/search.json"),
                     "SP500": ("S&P 500 unadjusted completed closes via Yahoo Finance",
                               "https://finance.yahoo.com/quote/%5EGSPC/history/"),
+                    "OVXCLS": ("Cboe original daily index close", OVX_HISTORY_URL),
                     "IORB": ("Board of Governors of the Federal Reserve System",
                              "https://www.federalreserve.gov/datadownload/Choose.aspx?rel=PRATES"),
                     "EFFR": ("Federal Reserve Bank of New York",

@@ -1,6 +1,6 @@
 """Cross-asset option-implied volatility, with independently sourced observations.
 
-OVX: FRED OVXCLS (30-day oil ETF option volatility).
+OVX: Cboe daily closes, with FRED OVXCLS as fallback.
 MOVE: existing validated ICE BofA ^MOVE daily-close snapshot.
 EUR/USD and USD/JPY: independently recorded Saxo Bank one-month ATM option
 implied-volatility quotes. Missing quotes stay missing, not estimated.
@@ -19,6 +19,7 @@ import plotly.graph_objects as go
 from macro_platform import jpy_implied_vol as saxobank
 from macro_platform import move_index
 from macro_platform.chart_axes import apply_time_axis
+from macro_platform.cboe_history import OVX_HISTORY_URL
 
 SAXO_URL = saxobank.SOURCE_URL
 FRED_URL = "https://fred.stlouisfed.org/series/OVXCLS"
