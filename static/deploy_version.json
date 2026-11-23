@@ -1,5 +1,5 @@
 {
-  "release": "V1.4_nvidia_cds_1y",
+  "release": "V1.5_infrastructure_cds",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",

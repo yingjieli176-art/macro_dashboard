@@ -91,7 +91,9 @@ def attach_live_source_evidence(reports, evidence, now=None):
         ('ai_cds_daily.json', 'AMD 5Y'): 'SN_AMD_CDS_5Y',
         ('ai_cds_daily.json', 'Alphabet 5Y（谷歌）'): 'SN_ALPHABET_CDS_5Y',
         ('ai_cds_daily.json', 'Microsoft 5Y（微软）'): 'SN_MICROSOFT_CDS_5Y',
-        ('ai_cds_daily.json', 'Oracle 5Y'): 'SN_ORACLE_CDS_5Y',
+        ('ai_cds_daily.json', 'Oracle 5Y（甲骨文）'): 'SN_ORACLE_CDS_5Y',
+        ('ai_cds_daily.json', 'Broadcom 5Y（博通）'): 'SN_BROADCOM_CDS_5Y',
+        ('ai_cds_daily.json', 'CoreWeave 5Y（预付款推算）'): 'SN_COREWEAVE_CDS_5Y',
         ('jpy_1m_25d_rr_saxo.json', 'value'): 'USDJPY_1M_25D_RR_SAXO',
         ('jpy_implied_qcam_monthly.json', 'value'): 'USDJPY_3M_IV_QCAM',
         **{('cftc_jpy_weekly.json', field): 'CFTC_JPY_NONCOMM_NET'
