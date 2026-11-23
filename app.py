@@ -37,6 +37,7 @@ except ImportError:
 from macro_platform import chart_axes as _chart_axes
 from macro_platform import dealer_gamma as _dealer_gamma
 from macro_platform import move_index as _move_index
+from macro_platform import cross_asset_volatility as _cross_asset_vol
 RANGE_OFFSETS = _chart_axes.RANGE_OFFSETS
 apply_time_axis = _chart_axes.apply_time_axis
 # Extra chart helpers were added across multiple commits. Treat them as
@@ -83,7 +84,7 @@ build_copper_flow_spread_figure = _copper_module.build_copper_flow_spread_figure
 build_copper_tcrc_figure = _copper_module.build_copper_tcrc_figure
 from macro_platform.copper_tcrc import METHOD_URL as COPPER_TCRC_METHOD_URL
 from macro_platform import dashboard_layout as _dashboard_layout
-if _dashboard_layout.CHART_NUMBERING != "display_us_credit_jp_cn_20":
+if _dashboard_layout.CHART_NUMBERING != "display_us_crossasset_vol_credit_jp_holdings_cn_23":
     _dashboard_layout = importlib.reload(_dashboard_layout)
 from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
 from macro_platform.china_equity import load_china_history
@@ -150,7 +151,7 @@ from macro_platform import jpy_implied_vol as _jpy_iv
 from macro_platform import jpy_option_history as _jpy_history
 from macro_platform import jpy_risk_reversal as _jpy_rr
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.0"
+CHART_BUILD = "V1.1_cross_asset_vol"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2568,6 +2569,48 @@ def render_macro_chart_4(prebuilt_fig=None):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
+def build_cross_asset_vol_figure(date_range="5Y"):
+    """Load real, independently dated commodity, Treasury and FX option vols."""
+    ovx = get_fred_series("OVXCLS")
+    move = _move_index.load_move_snapshot()
+    # Saxo reports timestamped ATM quotes; fetch at most once per 5-minute
+    # chart revision. Never replace a valid observation with an estimate.
+    try:
+        response = http_get(_cross_asset_vol.SAXO_URL, timeout=8)
+        response.raise_for_status()
+        _cross_asset_vol.accept_saxo_report(response.text)
+    except Exception:
+        logging.info("EURUSD 1M ATM refresh unavailable; retaining verified history",
+                     exc_info=True)
+    return _cross_asset_vol.build_figure(date_range, ovx=ovx, move=move)
+
+
+@st.fragment(key="cross_asset_vol_viewport")
+def render_cross_asset_vol(prebuilt_fig=None):
+    st.markdown(
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER["cross_asset_vol"]}. '
+        '跨资产隐含波动率 · 原油 / 美债 / 欧元兑美元</div>'
+        '<div class="section-description">OVX（Cboe原油30天隐含波动率）'
+        ' / MOVE（ICE美银美债波动率） / EUR/USD 1M ATM（Saxo外汇期权隐含波动率）'
+        ' · 三条独立动态Y轴</div>',
+        unsafe_allow_html=True,
+    )
+    fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
+        "Cross-asset volatility", lambda: _cached_macro_figure(
+            "cross_asset_vol", _macro_snapshot_revision(), CHART_BUILD))
+    _render_adaptive_macro_figure(fig, "cross_asset_vol", standard=True)
+    if "EUR/USD 1M ATM 隐含波动率（Saxo）" in (fig.layout.meta or {}).get("missing_series", []):
+        st.caption("EUR/USD 1M：尚未取得带来源时间戳的Saxo ATM报价；"
+                   "不使用已停编的EVZ替代，也不使用历史实现波动率冒充隐含波动率。")
+    add_sources([
+        ("FRED · Cboe OVX (OVXCLS)", _cross_asset_vol.FRED_URL),
+        ("ICE BofA MOVE · Yahoo ^MOVE", _cross_asset_vol.MOVE_URL),
+        ("Saxo Bank · EUR/USD 1M ATM options", _cross_asset_vol.SAXO_URL),
+        ("CME EUR/USD 30-day CVOL · 交叉参考", _cross_asset_vol.CME_REFERENCE_URL),
+    ], "cross_asset_vol")
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+
 HK_EQUITY_SOURCES = [
     ("Yahoo Finance · 腾讯 (0700.HK)", "https://hk.finance.yahoo.com/quote/0700.HK/history/"),
     ("Yahoo Finance · 港交所 (0388.HK)", "https://hk.finance.yahoo.com/quote/0388.HK/history/"),
@@ -3055,6 +3098,7 @@ def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
             'yen_iv_history': _jpy_history.build_figure,
             'yen_rr': _jpy_rr.build_figure,
             'japan_holdings': build_japan_holdings,
+            'cross_asset_vol': build_cross_asset_vol_figure,
         }
         builder = builders[chart_number]
     elif chart_number != 4:
@@ -3118,7 +3162,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
     def cached_chart(number):
         return _safe_macro_build(f"Chart {number}", lambda: _cached_macro_figure(number, snapshot_revision, CHART_BUILD))
 
-    jobs = {}
+    jobs = {"cross_asset_vol": lambda: cached_chart("cross_asset_vol")}
     for number in NUMERIC_CHART_IDS:
         if number == HK_CHART_IDS[0]:
             jobs['hk5'] = lambda: _safe_hk_bundle(snapshot_revision)
@@ -3163,7 +3207,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
             results[key] = ([_macro_error_figure(f"Chart {n}") for n in range(5, 9)]
                             if isinstance(key, str) else _macro_error_figure(f"Chart {key}"))
     if on_complete is not None:
-        for number in NUMERIC_CHART_IDS:
+        for number in (*NUMERIC_CHART_IDS, "cross_asset_vol"):
             if number not in published:
                 if number in HK_CHART_IDS:
                     value = results["hk5"][number-HK_CHART_IDS[0]]
@@ -3173,7 +3217,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
 
     return {number: (results['hk5'][number-HK_CHART_IDS[0]]
                      if number in HK_CHART_IDS else results[number])
-            for number in NUMERIC_CHART_IDS}
+            for number in (*NUMERIC_CHART_IDS, "cross_asset_vol")}
 
 
 @st.fragment(run_every=60, key="japan_corridor_viewport")
@@ -3264,7 +3308,8 @@ for number in MACRO_DISPLAY_ORDER:
 
 def _render_completed_macro_chart(number, figure):
     with macro_slots[number]:
-        globals()[f"render_macro_chart_{number}"](figure)
+        (render_cross_asset_vol if number == "cross_asset_vol" else
+         globals()[f"render_macro_chart_{number}"])(figure)
 
 
 _auxiliary = {}
