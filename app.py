@@ -3205,7 +3205,7 @@ def _build_macro_figures_parallel(on_complete=None, auxiliary_jobs=None, on_aux_
     for key in jobs:
         if key not in results:
             results[key] = ([_macro_error_figure(f"Chart {n}") for n in range(5, 9)]
-                            if isinstance(key, str) else _macro_error_figure(f"Chart {key}"))
+                            if key == "hk5" else _macro_error_figure(f"Chart {key}"))
     if on_complete is not None:
         for number in (*NUMERIC_CHART_IDS, "cross_asset_vol"):
             if number not in published:
