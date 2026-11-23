@@ -845,8 +845,8 @@ def main():
                     valid:s.data.filter(p=>Number.isFinite(p[1])).length,
                     gaps:s.data.filter(p=>p[1]===null).length}));
             }""")
-            assert [s['name'] for s in cds_state] == ['NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）', 'Oracle 5Y'], cds_state
-            for name in ('NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）', 'Oracle 5Y'):
+            assert [s['name'] for s in cds_state if s['name'] != 'NVIDIA 1Y'] == ['NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）'], cds_state
+            for name in ('NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）'):
                 found = next(s for s in cds_state if s['name'] == name)
                 assert found['valid'] > 10 and found['markers'] and not found['connect'], found
                 assert found['axis'] == 0, found

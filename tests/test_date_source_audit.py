@@ -58,7 +58,8 @@ class DateAndSourceAudit(unittest.TestCase):
         self.assertEqual({c for charts in inventory.values() for c in charts}, set(MACRO_DISPLAY_NUMBER.values()))
         expected = {
             'SP500': (9,4), '^N225': (4,15), 'SPX': ('us_drawdown',), 'RSP': ('us_drawdown',),
-            'NVIDIA_CDS_5Y': ('nvidia_cds',), 'SN_ORACLE_CDS_5Y': ('nvidia_cds',),
+            'NVIDIA_CDS_5Y': ('nvidia_cds',), 'SN_ORACLE_CDS_5Y': ('infrastructure_cds',),
+            'SN_BROADCOM_CDS_5Y': ('infrastructure_cds',), 'SN_COREWEAVE_CDS_5Y': ('infrastructure_cds',),
             '000300': ('cn_drawdown',14), '000852': ('cn_drawdown',), '932000': ('cn_drawdown',),
             'china_2y': (14,), 'japan_2y': (15,), 'japan_10y': (15,16), 'japan_30y': (15,),
             'DGS2': (3,), 'DGS10': (2,3,16), 'JPY=X': (15,16), 'SRFTSYD': (1,),

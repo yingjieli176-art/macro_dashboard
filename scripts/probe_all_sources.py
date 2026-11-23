@@ -534,7 +534,9 @@ def jobs():
         add(field, [16], "daily", snapshot("copper_market_daily.json", "date", field), lambda field=field: lme(field))
     for field in ("tc_usd_dmt", "rc_cents_lb"):
         output.append((field, [MACRO_DISPLAY_NUMBER["copper_tcrc"]], "weekly", snapshot("copper_tcrc_weekly.json", "observation_date", field), copper_tcrc_source))
-    from macro_platform.ai_credit import SOURCE_URL as CDS_URL, SERIES as CDS_SERIES, load_cds_snapshot, parse_source
+    from macro_platform.ai_credit import (
+        SOURCE_URL as CDS_URL, SERIES as CDS_SERIES, INFRASTRUCTURE_SERIES, load_cds_snapshot, parse_source,
+    )
     saved_cds = load_cds_snapshot()
     def public_cds(key):
         public = parse_source(get(CDS_URL).json())
@@ -546,7 +548,10 @@ def jobs():
         points = saved_cds.get("series", {}).get(key, {}).get("records", [])
         stored = max((r["observation_date"] for r in points if r["spread_bps"] is not None), default=None)
         identifier = "NVIDIA_CDS_5Y" if key == "sn_nvidia" else key.upper() + "_CDS_5Y"
-        output.append((identifier, [MACRO_DISPLAY_NUMBER["nvidia_cds"]], "daily", stored, lambda key=key: public_cds(key)))
+        chart = "infrastructure_cds" if key in INFRASTRUCTURE_SERIES else "nvidia_cds"
+        output.append((identifier, [MACRO_DISPLAY_NUMBER[chart]], "daily", stored, lambda key=key: public_cds(key)))
+    output.append(("OVXCLS", [MACRO_DISPLAY_NUMBER["cross_asset_vol"]], "daily",
+                   snapshot("fred_cache/OVXCLS.json", "date", "value"), lambda: cboe("OVX")))
     output.append(("SRF_USAGE", [1], "daily", snapshot("srf_usage_daily.json", "observation_date", "accepted_usd"), srf_usage_source))
     from macro_platform.japan_corridor import load_payload
     corridor = load_payload()

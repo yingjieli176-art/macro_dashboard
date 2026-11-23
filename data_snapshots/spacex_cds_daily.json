@@ -1,0 +1,47 @@
+{
+  "series": "sn_spacex",
+  "source_url": "https://pddata.dtcc.com/ppd/secdashboard",
+  "source_asof": "2026-11-20",
+  "records": [
+    {
+      "observation_date": "2026-10-27",
+      "spread_bps": 241.0,
+      "trade_count": 2
+    },
+    {
+      "observation_date": "2026-10-30",
+      "spread_bps": 290.0,
+      "trade_count": 1
+    },
+    {
+      "observation_date": "2026-11-03",
+      "spread_bps": 270.0,
+      "trade_count": 1
+    },
+    {
+      "observation_date": "2026-11-04",
+      "spread_bps": 266.0,
+      "trade_count": 4
+    },
+    {
+      "observation_date": "2026-11-05",
+      "spread_bps": 291.5,
+      "trade_count": 2
+    },
+    {
+      "observation_date": "2026-11-10",
+      "spread_bps": 274.0,
+      "trade_count": 1
+    },
+    {
+      "observation_date": "2026-11-16",
+      "spread_bps": 265.0,
+      "trade_count": 4
+    },
+    {
+      "observation_date": "2026-11-17",
+      "spread_bps": 268.0,
+      "trade_count": 5
+    }
+  ]
+}
