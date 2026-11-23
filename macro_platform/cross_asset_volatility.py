@@ -115,8 +115,9 @@ TRADING_DAYS_YEAR = 252
 def twenty_day_realized_volatility(frame, column, *, yield_basis_points=False):
     """Rolling 20 observed daily changes, annualized by sqrt(252).
 
-    Treasury yields are quoted in percent: multiply daily first differences
-    by 100 to obtain bp. Oil uses log price returns and reports annualized %.
+    US10Y is the DGS10 yield level (not bond price or bond total return).
+    DGS10 is quoted in percent: first-difference in percentage points and
+    multiply by 100 for bp. Oil uses log price returns, annualized in %.
     Always require 20 valid consecutive returns (21 closes); do not fill gaps
     or mistake 20 calendar days for 20 observed trading sessions.
     """
@@ -131,6 +132,7 @@ def twenty_day_realized_volatility(frame, column, *, yield_basis_points=False):
               .sort_values("observation_date"))
     values = series[column].where(series[column].gt(0) & series[column].lt(float("inf")))
     if yield_basis_points:
+        # Yield-change volatility: ΔDGS10 in bp, NOT bond-price returns.
         returns = values.diff() * 100.0
     else:
         # Invalid/zero/negative observations remain gaps and cannot be used
@@ -181,7 +183,7 @@ def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, u
             meta={"observation_cadence":"daily"},
             hovertemplate=pair+" 1M ATM: %{y:.2f}%<br>Saxo: %{customdata}<extra></extra>"))
     realized_inputs = (
-        (treasury10y, "DGS10", "US10Y 20D 实际波动率（收益率变动）",
+        (treasury10y, "DGS10", "美国10Y国债收益率 · 20D实现波动率（DGS10变动）",
          "#be123c", "y5", "年化bp", True),
         (brent, "DCOILBRENTEU", "Brent 20D 历史波动率",
          "#c2410c", "y6", "年化%", False),
@@ -209,7 +211,7 @@ def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, u
                 "side":"right","anchor":"free","position":0.88,"showgrid":False},
         yaxis4={"title":"R3 · USD/JPY 1M ATM · 年化%", "overlaying":"y",
                 "side":"right","anchor":"free","position":0.80,"showgrid":False},
-        yaxis5={"title":"R4 · 美债10Y 20D实际波动率 · 年化bp",
+        yaxis5={"title":"R4 · 美国10Y国债收益率20D实现波动率 · 年化bp",
                 "overlaying":"y","side":"right","anchor":"free",
                 "position":0.88,"showgrid":False},
         yaxis6={"title":"R5 · Brent / WTI 20D历史波动率 · 年化%",
