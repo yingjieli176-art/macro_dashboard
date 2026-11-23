@@ -2600,7 +2600,7 @@ def render_cross_asset_vol(prebuilt_fig=None):
         '跨资产波动率 · 原油 / 美债 / 欧元 / 日元</div>'
         '<div class="section-description">OVX（Cboe原油30天隐含波动率）'
         ' / MOVE（ICE美银美债波动率） / EUR/USD 1M ATM / USD/JPY 1M ATM（Saxo）'
-        ' / 美债10Y收益率20D实际波动率（bp） / Brent、WTI 20D历史波动率（%） · 六条动态Y轴</div>',
+        ' / 美国10年期国债收益率（DGS10）20D实现波动率（年化bp） / Brent、WTI 20D历史波动率（%） · 六条动态Y轴</div>',
         unsafe_allow_html=True,
     )
     fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2613,9 +2613,9 @@ def render_cross_asset_vol(prebuilt_fig=None):
     if "USD/JPY 1M ATM 隐含波动率（Saxo）" in (fig.layout.meta or {}).get("missing_series", []):
         st.caption("USD/JPY 1M：尚未取得带来源时间戳的Saxo ATM报价；"
                    "不以USD/JPY 3M期权或历史实现波动率替代。")
-    st.caption("20D历史/实际波动率：美债10Y按日收益率变动的基点(bp)计算，"
+    st.caption("20D历史/实现波动率：美国10年期国债收益率直接使用DGS10的每日收益率变化（bp），"
                "Brent/WTI按日对数价格收益率计算；均使用20个有效交易日变化，"
-               "样本标准差×√252年化。油价采用FRED现货基准价格，并非期货连续合约。")
+               "样本标准差×√252年化。DGS10不是债券价格或债券投资回报率；油价采用FRED现货基准价格，并非期货连续合约。")
     add_sources([
         ("FRED · Cboe OVX (OVXCLS)", _cross_asset_vol.FRED_URL),
         ("ICE BofA MOVE · Yahoo ^MOVE", _cross_asset_vol.MOVE_URL),
