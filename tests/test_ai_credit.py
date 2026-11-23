@@ -10,6 +10,7 @@ import pandas as pd
 import requests
 
 from macro_platform import ai_credit as cds
+from macro_platform.dashboard_layout import MACRO_DISPLAY_NUMBER
 from macro_platform.echarts_axes import build_adaptive_echarts_option, build_safe_echarts_option
 from scripts.update_ai_cds_snapshot import refresh
 
@@ -84,7 +85,7 @@ class AiCreditTests(unittest.TestCase):
         self.assertEqual(row['source_latest'], '2026-10-28')
         self.assertEqual(row['status'], 'live_only')
         self.assertEqual(row['source_url'], cds.IG_OAS_URL)
-        self.assertEqual(row['charts'], [7])
+        self.assertEqual(row['charts'], [MACRO_DISPLAY_NUMBER["nvidia_cds"]])
 
     def test_selected_five_exclude_retired_names_equity_prices_and_one_year(self):
         raw = source()
@@ -93,11 +94,33 @@ class AiCreditTests(unittest.TestCase):
         raw["catalogue"].append({"id": "sn_nebius", "label": "Nebius 5y CDS", "unit": "bp"})
         payload = cds.parse_source(raw)
         expected = ["NVIDIA 5Y", "AMD 5Y", "Alphabet 5Y（谷歌）", "Microsoft 5Y（微软）", "Oracle 5Y"]
-        self.assertEqual(cds.cds_summary(payload)["公司 / 指数"].tolist(), expected)
+        self.assertEqual(cds.cds_summary(payload)["公司 / 指数"].tolist(), [*expected, cds.NVIDIA_1Y_NAME])
         fig = cds.build_cds_figure(payload=payload)
         self.assertEqual([trace.name for trace in fig.data], expected)
-        self.assertFalse(fig.layout.meta["missing_series"])
+        self.assertEqual(fig.layout.meta["missing_series"], [cds.NVIDIA_1Y_NAME])
         self.assertEqual(set(payload["series"]), set(cds.SERIES))
+
+    def test_nvidia_1y_uses_its_own_quotes_and_left_bp_axis(self):
+        quotes = pd.DataFrame({
+            "observation_date": pd.to_datetime(["2026-10-25", "2026-10-27", "2026-10-29"]),
+            "tenor": ["1Y", "5Y", "1Y"],
+            "spread_bps": [19., 95., 21.],
+        })
+        payload = cds.parse_source(source())
+        with patch.object(cds, "load_nvidia_cds", return_value=quotes):
+            summary = cds.cds_summary(payload).set_index("公司 / 指数")
+            fig = cds.build_cds_figure(payload=payload)
+        row = summary.loc[cds.NVIDIA_1Y_NAME]
+        self.assertEqual(row["实际观测日"], "2026-10-29")
+        self.assertEqual(row["最新CDS（bp）"], 21.)
+        self.assertEqual(row["观测数"], 2)
+        self.assertTrue(pd.isna(row["源日历覆盖率（%）"]))
+        self.assertNotIn(cds.NVIDIA_1Y_NAME, fig.layout.meta["missing_series"])
+        for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
+            option = adapter(fig, "5Y")
+            series = next(item for item in option["series"] if item["name"] == cds.NVIDIA_1Y_NAME)
+            self.assertEqual(series["yAxisIndex"], 0)
+            self.assertEqual(series["data"], [["2026-10-25T00:00:00", 19.], ["2026-10-29T00:00:00", 21.]])
 
     def test_coverage_uses_actual_priced_days_and_each_companys_date(self):
         table = cds.cds_summary(cds.parse_source(source())).set_index("公司 / 指数")
@@ -150,7 +173,7 @@ class AiCreditTests(unittest.TestCase):
                 self.assertEqual([p[1] for p in oracle["data"]], [100., None, 110.])
                 self.assertTrue(oracle["showSymbol"])
                 self.assertFalse(oracle["connectNulls"])
-            self.assertNotIn("NVIDIA 1Y · 待数据源", fig.layout.meta["missing_series"])
+            self.assertIn(cds.NVIDIA_1Y_NAME, fig.layout.meta["missing_series"])
 
     def test_hy_oas_retains_percent_values_and_its_own_calendar_and_axis(self):
         payload = cds.parse_source(source())
@@ -170,7 +193,7 @@ class AiCreditTests(unittest.TestCase):
                 self.assertEqual(option["dataZoom"][0]["endValue"], "2026-10-29T00:00:00")
         missing = cds.build_cds_figure(payload=payload, hy_oas=hy_oas.iloc[:0])
         self.assertEqual(len(missing.data), 5)
-        self.assertEqual(missing.layout.meta["missing_series"], [cds.HY_OAS_NAME])
+        self.assertEqual(missing.layout.meta["missing_series"], [cds.NVIDIA_1Y_NAME, cds.HY_OAS_NAME])
 
     def test_hy_oas_reads_validated_fred_observations_without_persisting(self):
         import data

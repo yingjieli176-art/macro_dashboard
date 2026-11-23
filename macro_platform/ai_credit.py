@@ -1,4 +1,4 @@
-"""Public, attributed five-year CDS aggregates; never equity swap prices/coupons."""
+"""Public five-year CDS aggregates and source-identified NVIDIA 1Y quotes."""
 from __future__ import annotations
 
 import json
@@ -10,12 +10,14 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from macro_platform.chart_axes import RANGE_OFFSETS, apply_time_axis
+from macro_platform.nvidia_cds import load_nvidia_cds
 
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT = ROOT / "data_snapshots/ai_cds_daily.json"
 SOURCE_URL = "https://irates.today/chart_data.json"
 METHOD_URL = "https://irates.today/capex.html#method"
 ATTRIBUTION = "Open-Sourced Rates Observatory, irates.today"
+NVIDIA_1Y_NAME = "NVIDIA 1Y"
 HY_OAS_NAME = "HY OAS (R1)"
 HY_OAS_URL = "https://fred.stlouisfed.org/series/BAMLH0A0HYM2"
 IG_OAS_NAME = "IG OAS (R2)"
@@ -110,8 +112,14 @@ def load_cds_snapshot(path=None):
         return {}
 
 
-def cds_summary(payload=None):
+def load_nvidia_1y():
+    quotes = load_nvidia_cds()
+    return quotes.loc[quotes.tenor.eq("1Y")]
+
+
+def cds_summary(payload=None, *, nvidia_1y=None):
     payload = load_cds_snapshot() if payload is None else payload
+    nvidia_1y = load_nvidia_1y() if nvidia_1y is None else nvidia_1y
     rows = []
     for key, (label, _) in SERIES.items():
         node = payload.get("series", {}).get(key, {})
@@ -132,11 +140,22 @@ def cds_summary(payload=None):
                      "源日历覆盖率（%）": round(len(points) / calendar * 100, 1) if calendar else None,
                      "距源截止日（天）": lag, "数据状态": status,
                      "口径": "日度成交汇总" if points else "暂无可计价CDS观测"})
+    latest = nvidia_1y.iloc[-1] if not nvidia_1y.empty else None
+    rows.append({
+        "公司 / 指数": NVIDIA_1Y_NAME,
+        "最新CDS（bp）": latest.spread_bps if latest is not None else None,
+        "实际观测日": latest.observation_date.date().isoformat() if latest is not None else "缺失",
+        "观测数": len(nvidia_1y),
+        "首个观测日": nvidia_1y.observation_date.iloc[0].date().isoformat() if latest is not None else "缺失",
+        "数据状态": "最新已导入报价" if latest is not None else "暂无 1Y 报价",
+        "口径": "美元优先无担保 CDS 平价利差",
+    })
     return pd.DataFrame(rows)
 
 
-def build_cds_figure(date_range="5Y", payload=None, *, hy_oas=None, ig_oas=None):
+def build_cds_figure(date_range="5Y", payload=None, *, hy_oas=None, ig_oas=None, nvidia_1y=None):
     payload = load_cds_snapshot() if payload is None else payload
+    nvidia_1y = load_nvidia_1y() if nvidia_1y is None else nvidia_1y
     fig = go.Figure()
     missing = []
     asof = payload.get("source_asof")
@@ -152,6 +171,16 @@ def build_cds_figure(date_range="5Y", payload=None, *, hy_oas=None, ig_oas=None)
             line=dict(color=color, width=2.1, dash="solid"),
             marker=dict(size=3.5), connectgaps=False,
             hovertemplate=label + ": %{y:.2f} bp<extra></extra>"))
+    if nvidia_1y.empty:
+        missing.append(NVIDIA_1Y_NAME)
+    else:
+        start = nvidia_1y.observation_date.max() - RANGE_OFFSETS.get(date_range, RANGE_OFFSETS["1Y"])
+        view = nvidia_1y.loc[nvidia_1y.observation_date.ge(start)]
+        fig.add_trace(go.Scatter(
+            x=view.observation_date, y=view.spread_bps, mode="lines+markers", name=NVIDIA_1Y_NAME,
+            line=dict(color="#0f766e", width=2.2, dash="dash"), marker=dict(size=3.5),
+            connectgaps=False, hovertemplate=NVIDIA_1Y_NAME + ": %{y:.2f} bp<extra></extra>",
+        ))
     oas_axes = []
     for oas, name, color, label, axis in (
         (hy_oas, HY_OAS_NAME, "#be123c", "HY OAS", 1),
