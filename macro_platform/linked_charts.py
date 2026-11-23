@@ -18,8 +18,9 @@ def _component():
              + ''.join(f'<button type="button" data-period="{period}" disabled>{period}</button>' for period in ('5Y','1Y','6M','3M','1M'))
              + '</div><div data-testid="macroEChartsChart" '
              'aria-busy="true" style="height:465px;width:100%;min-width:0"></div>'
-             '<div class="macro-chart-tools"><button type="button" '
-             'aria-label="Download as PNG" title="下载图片">↓</button>'
+             '<div class="macro-chart-tools"><button type="button" class="macro-chart-lock" '
+             'aria-label="锁定最新日期" title="锁定最新日期（默认关闭）" aria-pressed="false">锁定最新日期</button>'
+             '<button type="button" aria-label="Download as PNG" title="下载图片">↓</button>'
              '<button type="button" aria-label="Fullscreen" title="全屏">⛶</button>'
              '</div><p role="alert" class="macro-chart-error" hidden></p></div>',
         # A newline keeps attribute selectors from being mistaken for file globs.
@@ -33,6 +34,10 @@ def _component():
             '.macro-chart-tools{position:absolute;right:0;top:0;display:flex;gap:4px}'
             '.macro-chart-tools button{border:0;background:#fff;color:#64748b;'
             'cursor:pointer;font-size:15px;padding:0 5px}'
+            '.macro-chart-tools .macro-chart-lock{font-size:12px;border:1px solid #cbd5e1;'
+            'border-radius:4px;padding:3px 8px;margin-right:4px;white-space:nowrap}'
+            '.macro-chart-tools .macro-chart-lock[aria-pressed=true]{background:#e0f2fe;'
+            'color:#075985;border-color:#0284c7}'
             '.macro-chart-shell:fullscreen{background:#fff;width:100vw;height:100vh}'
             '.macro-chart-error{color:#b91c1c;font-size:12px}',
         js=(frontend / "linked_charts.js").read_text(encoding="utf-8"),
