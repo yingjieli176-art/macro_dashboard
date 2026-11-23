@@ -2614,7 +2614,7 @@ def render_cross_asset_vol(prebuilt_fig=None):
     if "EUR/USD 1M ATM 隐含波动率（Saxo）" in (fig.layout.meta or {}).get("missing_series", []):
         st.caption("EUR/USD 1M：尚未取得带来源时间戳的Saxo ATM报价；"
                    "不使用已停编的EVZ替代，也不使用历史实现波动率冒充隐含波动率。")
-    if "USD/JPY 1M ATM 隐含波动率（Saxo）" in (fig.layout.meta or {}).get("missing_series", []):
+    if _cross_asset_vol.USDJPY_ATM_NAME in (fig.layout.meta or {}).get("missing_series", []):
         st.caption("USD/JPY 1M：尚未取得带来源时间戳的Saxo ATM报价；"
                    "不以USD/JPY 3M期权或历史实现波动率替代。")
     st.caption("20D历史/实现波动率：美国10年期国债收益率直接使用DGS10的每日收益率变化（bp），"
@@ -2948,25 +2948,35 @@ def render_macro_chart_15(prebuilt_fig=None):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
+def _yen_carry_implied_volatility():
+    revision = _macro_snapshot_revision()
+    implied = _safe_macro_build("JPY 3M ATM", lambda: _cached_macro_figure(
+        "yen_implied", revision, CHART_BUILD))
+    history = _safe_macro_build("JPY implied history", lambda: _cached_macro_figure(
+        "yen_iv_history", revision, CHART_BUILD))
+    one_month = _cross_asset_vol.build_usdjpy_1m_figure()
+    implied.add_traces(history.data)
+    implied.add_traces(one_month.data)
+    meta = dict(implied.layout.meta or {})
+    meta["missing_series"] = [*meta.get("missing_series", []), *one_month.layout.meta["missing_series"]]
+    implied.update_layout(meta=meta)
+    return implied
+
+
 @st.fragment(key="yen_carry_viewport")
 def render_macro_chart_16(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[16]}. 日元套息分析 · Yen Carry Trade</div>'
         '<div class="section-description">美日10Y利差 · USD/JPY（R1 阳轴，向上＝日元走弱） · '
         'CFTC日元投机净仓位 (R2) · TOPIX（东证指数，R3） · 美元指数 DXY (R4) · '
-        'JPY 3M · JPY 10Y · JPY 10Y - JPY 3M · 隐含波动率（QCAM月度 / Saxo日度，R5） · 1M 25Δ Risk Reversal（R6）</div>',
+        'JPY 3M · JPY 10Y · JPY 10Y - JPY 3M · USD/JPY 1M、3M 隐含波动率（R5） · 1M 25Δ Risk Reversal（R6）</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
         "Chart 10", lambda: _cached_macro_figure(16, _macro_snapshot_revision(), CHART_BUILD))
     volatility = _safe_macro_build("yen_volatility", lambda: _cached_macro_figure(
         "yen_volatility", _macro_snapshot_revision(), CHART_BUILD))
-    implied = _safe_macro_build("JPY 3M ATM", lambda: _cached_macro_figure(
-        "yen_implied", _macro_snapshot_revision(), CHART_BUILD))
-    history = _safe_macro_build("JPY implied history", lambda: _cached_macro_figure(
-        "yen_iv_history", _macro_snapshot_revision(), CHART_BUILD))
-    for trace in history.data:
-        implied.add_trace(trace)
+    implied = _yen_carry_implied_volatility()
     rr = _safe_macro_build("JPY risk reversal", lambda: _cached_macro_figure(
         "yen_rr", _macro_snapshot_revision(), CHART_BUILD))
     combined = _yen_carry.combine_yen_carry_figures(base_fig, volatility=volatility, implied=implied, risk_reversal=rr)
@@ -2988,7 +2998,8 @@ def render_macro_chart_16(prebuilt_fig=None):
                "负值表示日元看涨保护更贵，正值表示美元看涨更贵。差值为波动率百分点，R6以%显示。"
                "Saxo RR历史从已核实报价起累计，较短历史不补造。")
     add_sources([
-        ("Saxo Bank · USDJPY 3M ATM implied volatility", _jpy_iv.SOURCE_URL),
+        ("Saxo Bank · USD/JPY 1M / 3M ATM", _jpy_iv.SOURCE_URL),
+        ("MINKABU PRESS · USD/JPY 1M 历史参考", _cross_asset_vol.USDJPY_REFERENCE_URL),
         ("QCAM · 月报原始隐含波动率表", _jpy_history.SOURCE_URL),
         ("Saxo Bank · 1M 25-delta risk reversal", _jpy_rr.SOURCE_URL),
         ("FRED · US 10Y Treasury (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
@@ -3439,12 +3450,7 @@ def _render_all_source_freshness(figures):
         add("市场概览", symbol, st.session_state.get("_market_quotes_snapshot", {}).get(label, {}))
     display_figures = {MACRO_DISPLAY_NUMBER[number]: figure
                        for number, figure in figures.items()}
-    implied = _safe_macro_build("JPY 3M ATM", lambda: _cached_macro_figure(
-        "yen_implied", _macro_snapshot_revision(), CHART_BUILD))
-    historical_iv = _safe_macro_build("JPY implied history", lambda: _cached_macro_figure(
-        "yen_iv_history", _macro_snapshot_revision(), CHART_BUILD))
-    for trace in historical_iv.data:
-        implied.add_trace(trace)
+    implied = _yen_carry_implied_volatility()
     display_figures[MACRO_DISPLAY_NUMBER[16]] = _yen_carry.combine_yen_carry_figures(
         figures[16], volatility=_safe_macro_build("yen_volatility", lambda: _cached_macro_figure(
             "yen_volatility", _macro_snapshot_revision(), CHART_BUILD)),

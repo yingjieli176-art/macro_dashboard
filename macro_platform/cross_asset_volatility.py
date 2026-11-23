@@ -33,6 +33,7 @@ USDJPY_IDENTITY = {**IDENTITY, "symbol": "USDJPY_1M_ATM_SAXO", "pair": "USDJPY"}
 USDJPY_REFERENCE_SNAPSHOT = SNAPSHOT.with_name("usdjpy_1m_minkabu.json")
 USDJPY_REFERENCE_IDENTITY = {**USDJPY_IDENTITY, "symbol": "USDJPY_1M_MINKABU",
                             "source": "MINKABU PRESS", "quote_type": "implied_volatility_reference"}
+USDJPY_ATM_NAME = "USD/JPY 1M ATM 隐含波动率（Saxo）"
 USDJPY_REFERENCE_NAME = "USD/JPY 1M 隐含波动率（MINKABU 参考）"
 USDJPY_REFERENCE_URL = "https://fx.minkabu.jp/news/385094"
 LOCK = threading.RLock()
@@ -154,6 +155,50 @@ def twenty_day_realized_volatility(frame, column, *, yield_basis_points=False):
     return series[["observation_date", "rv20"]].dropna().reset_index(drop=True)
 
 
+def _saxo_atm_trace(name, rows, identity, axis, color):
+    try:
+        validated = _validate_records(dict(identity, records=rows), identity=identity)
+    except (ValueError, KeyError, TypeError, OverflowError):
+        return None
+    validated = [row for row in validated if row["observation_date"] >= HISTORY_START.date().isoformat()]
+    if not validated:
+        return None
+    return go.Scatter(
+        x=[row["observation_date"] for row in validated],
+        y=[row["value"] for row in validated],
+        customdata=[row["observation_timestamp"] for row in validated],
+        name=name, yaxis=axis, mode="lines+markers", connectgaps=False,
+        marker={"size": 5}, line={"color": color, "width": 2.6},
+        meta={"observation_cadence": "daily"},
+        hovertemplate=name + ": %{y:.2f}%<br>Saxo: %{customdata}<extra></extra>",
+    )
+
+
+def build_usdjpy_1m_figure(saxo_records=None, reference_records=None, *, axis="y"):
+    """Share the same dated Saxo and MINKABU traces across dashboard charts."""
+    rows = load_usdjpy_snapshot() if saxo_records is None else saxo_records
+    saxo = _saxo_atm_trace(USDJPY_ATM_NAME, rows, USDJPY_IDENTITY, axis, "#16a34a")
+    fig = go.Figure()
+    missing = []
+    if saxo is None:
+        missing.append(USDJPY_ATM_NAME)
+    else:
+        fig.add_trace(saxo)
+    rows = load_usdjpy_reference() if reference_records is None else reference_records
+    reference = _valid_series(pd.DataFrame(rows), "value", maximum=100)
+    reference = reference.loc[reference.observation_date.ge(HISTORY_START)]
+    if not reference.empty:
+        fig.add_trace(go.Scatter(
+            x=reference.observation_date, y=reference.value, name=USDJPY_REFERENCE_NAME,
+            yaxis=axis, mode="lines+markers", connectgaps=False,
+            line={"color": "#047857", "dash": "dash", "width": 2.1}, marker={"size": 4},
+            meta={"observation_cadence": "daily"},
+            hovertemplate="%{x|%Y-%m-%d}<br>MINKABU 1M 参考: %{y:.2f}%<extra></extra>",
+        ))
+    fig.update_layout(meta={"missing_series": missing})
+    return fig
+
+
 def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, usdjpy_records=None,
                  usdjpy_reference=None, treasury10y=None, brent=None, wti=None):
     fig = go.Figure()
@@ -173,40 +218,17 @@ def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, u
             line={"color":color,"width":2.8},
             meta={"observation_cadence":"daily"},
             hovertemplate="%{x|%Y-%m-%d}<br>"+label+": %{y:.2f} "+unit+"<extra></extra>"))
-    fx_series = (
-        ("EUR/USD", eurusd_records, load_eurusd_snapshot, IDENTITY, "y3", "#7c3aed"),
-        ("USD/JPY", usdjpy_records, load_usdjpy_snapshot, USDJPY_IDENTITY, "y4", "#16a34a"),
-    )
-    for pair, given, loader, identity, axis, color in fx_series:
-        name = f"{pair} 1M ATM 隐含波动率（Saxo）"
-        rows = given if given is not None else loader()
-        try:
-            validated = _validate_records(dict(identity, records=rows), identity=identity)
-        except (ValueError, KeyError, TypeError, OverflowError):
-            validated = []
-        validated = [row for row in validated if row["observation_date"] >= HISTORY_START.date().isoformat()]
-        if not validated:
-            missing.append(name)
-            continue
-        fig.add_trace(go.Scatter(
-            x=[row["observation_date"] for row in validated],
-            y=[row["value"] for row in validated],
-            customdata=[row["observation_timestamp"] for row in validated],
-            name=name, yaxis=axis, mode="lines+markers", connectgaps=False,
-            marker={"size":5}, line={"color":color,"width":2.6},
-            meta={"observation_cadence":"daily"},
-            hovertemplate=pair+" 1M ATM: %{y:.2f}%<br>Saxo: %{customdata}<extra></extra>"))
-    reference = pd.DataFrame(usdjpy_reference or [])
-    reference = _valid_series(reference, "value", maximum=100)
-    reference = reference.loc[reference.observation_date.ge(HISTORY_START)]
-    if not reference.empty:
-        fig.add_trace(go.Scatter(
-            x=reference.observation_date, y=reference.value, name=USDJPY_REFERENCE_NAME,
-            yaxis="y4", mode="lines+markers", connectgaps=False,
-            line={"color": "#047857", "dash": "dash", "width": 2.1}, marker={"size": 4},
-            meta={"observation_cadence": "daily"},
-            hovertemplate="%{x|%Y-%m-%d}<br>MINKABU 1M 参考: %{y:.2f}%<extra></extra>",
-        ))
+    eurusd_name = "EUR/USD 1M ATM 隐含波动率（Saxo）"
+    eurusd = _saxo_atm_trace(eurusd_name,
+                            load_eurusd_snapshot() if eurusd_records is None else eurusd_records,
+                            IDENTITY, "y3", "#7c3aed")
+    if eurusd is None:
+        missing.append(eurusd_name)
+    else:
+        fig.add_trace(eurusd)
+    yen = build_usdjpy_1m_figure(usdjpy_records, usdjpy_reference or [], axis="y4")
+    fig.add_traces(yen.data)
+    missing.extend(yen.layout.meta["missing_series"])
     realized_inputs = (
         (treasury10y, "DGS10", "美国10Y国债收益率 · 20D实现波动率（DGS10变动）",
          "#be123c", "y5", "年化bp", True),
