@@ -105,7 +105,43 @@ def _valid_series(frame, column, minimum=0, maximum=10000):
     return data.drop_duplicates("observation_date", keep="last").sort_values("observation_date")
 
 
-def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, usdjpy_records=None):
+TEN_YEAR_YIELD_URL = "https://fred.stlouisfed.org/series/DGS10"
+BRENT_URL = "https://fred.stlouisfed.org/series/DCOILBRENTEU"
+WTI_URL = "https://fred.stlouisfed.org/series/DCOILWTICO"
+REALIZED_WINDOW = 20
+TRADING_DAYS_YEAR = 252
+
+
+def twenty_day_realized_volatility(frame, column, *, yield_basis_points=False):
+    """Rolling 20 observed daily changes, annualized by sqrt(252).
+
+    Treasury yields are quoted in percent: multiply daily first differences
+    by 100 to obtain bp. Oil uses log price returns and reports annualized %.
+    Always require 20 valid consecutive returns (21 closes); do not fill gaps
+    or mistake 20 calendar days for 20 observed trading sessions.
+    """
+    empty = pd.DataFrame(columns=["observation_date", "rv20"])
+    if frame is None or frame.empty or not {"observation_date", column}.issubset(frame.columns):
+        return empty
+    series = frame[["observation_date", column]].copy()
+    series["observation_date"] = pd.to_datetime(series["observation_date"], errors="coerce")
+    series[column] = pd.to_numeric(series[column], errors="coerce")
+    series = (series.dropna(subset=["observation_date"])
+              .drop_duplicates("observation_date", keep="last")
+              .sort_values("observation_date"))
+    values = series[column].where(series[column].gt(0) & series[column].lt(float("inf")))
+    if yield_basis_points:
+        returns = values.diff() * 100.0
+    else:
+        # Invalid/zero/negative observations remain gaps and cannot be used
+        # as the base of the following day's return.
+        import numpy as np
+        returns = np.log(values / values.shift(1)) * 100.0
+    series["rv20"] = returns.rolling(REALIZED_WINDOW, min_periods=REALIZED_WINDOW).std(ddof=1) * math.sqrt(TRADING_DAYS_YEAR)
+    return series[["observation_date", "rv20"]].dropna().reset_index(drop=True)
+
+
+def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, usdjpy_records=None, treasury10y=None, brent=None, wti=None):
     fig = go.Figure()
     sources = (
         ("OVXCLS", ovx, "OVX · 原油30天隐含波动率", "#ea580c", "y", "%"),
@@ -144,6 +180,27 @@ def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, u
             marker={"size":5}, line={"color":color,"width":2.6},
             meta={"observation_cadence":"daily"},
             hovertemplate=pair+" 1M ATM: %{y:.2f}%<br>Saxo: %{customdata}<extra></extra>"))
+    realized_inputs = (
+        (treasury10y, "DGS10", "US10Y 20D 实际波动率（收益率变动）",
+         "#be123c", "y5", "年化bp", True),
+        (brent, "DCOILBRENTEU", "Brent 20D 历史波动率",
+         "#c2410c", "y6", "年化%", False),
+        (wti, "DCOILWTICO", "WTI 20D 历史波动率",
+         "#2563eb", "y6", "年化%", False),
+    )
+    for frame, column, label, color, axis, unit, yield_bp in realized_inputs:
+        realized = twenty_day_realized_volatility(
+            frame, column, yield_basis_points=yield_bp)
+        if realized.empty:
+            missing.append(label)
+            continue
+        fig.add_trace(go.Scatter(
+            x=realized["observation_date"], y=realized["rv20"],
+            name=label, yaxis=axis, mode="lines", connectgaps=False,
+            line={"color":color, "width":2.5},
+            meta={"observation_cadence":"daily"},
+            hovertemplate="%{x|%Y-%m-%d}<br>"+label+": %{y:.2f} "+unit+
+                          "<extra></extra>"))
     fig.update_layout(
         yaxis={"title":"L · OVX · 年化%", "showgrid":True},
         yaxis2={"title":"R1 · MOVE · 指数点", "overlaying":"y","side":"right",
@@ -151,11 +208,21 @@ def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, u
         yaxis3={"title":"R2 · EUR/USD 1M ATM · 年化%", "overlaying":"y",
                 "side":"right","anchor":"free","position":0.88,"showgrid":False},
         yaxis4={"title":"R3 · USD/JPY 1M ATM · 年化%", "overlaying":"y",
-                "side":"right","anchor":"free","position":0.98,"showgrid":False},
-        xaxis={"domain":[0.0,0.76]},
-        margin={"l":66,"r":210,"t":95,"b":45},
+                "side":"right","anchor":"free","position":0.80,"showgrid":False},
+        yaxis5={"title":"R4 · 美债10Y 20D实际波动率 · 年化bp",
+                "overlaying":"y","side":"right","anchor":"free",
+                "position":0.88,"showgrid":False},
+        yaxis6={"title":"R5 · Brent / WTI 20D历史波动率 · 年化%",
+                "overlaying":"y","side":"right","anchor":"free",
+                "position":0.98,"showgrid":False},
+        xaxis={"domain":[0.0,0.68]},
+        margin={"l":66,"r":290,"t":105,"b":45},
         legend={"orientation":"h","x":0,"y":1.13},
-        meta={"missing_series":missing, "axis_order":["y","y2","y3","y4"],
-              "preserve_axis_titles":["y","y2","y3","y4"]},
+        meta={"missing_series":missing,
+              "axis_order":["y","y2","y3","y4","y5","y6"],
+              "preserve_axis_titles":["y","y2","y3","y4","y5","y6"],
+              "realized_volatility_method":
+              "20 consecutive observed daily changes; sample std × sqrt(252); "
+              "US10Y daily yield changes × 100 (bp); oil daily log returns × 100 (%)"},
     )
     return apply_time_axis(fig, date_range) if fig.data else fig
