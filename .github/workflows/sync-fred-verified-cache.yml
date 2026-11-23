@@ -2,6 +2,9 @@ name: Sync verified FRED market observations
 on:
   schedule:
     - cron: '19 0-6,12,18,22 * * *'
+    # NY Fed publishes SOFR at 08:00 and EFFR at 09:00 New York time.
+    # Cover both DST offsets and retry after publication on US weekdays.
+    - cron: '19 13-16 * * 1-5'
   workflow_dispatch:
   push:
     branches: [main]
