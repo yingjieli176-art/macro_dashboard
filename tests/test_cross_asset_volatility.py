@@ -82,6 +82,64 @@ class CrossAssetVolatilityTests(unittest.TestCase):
             path.write_text('{"symbol":"EVZ","records":[]}', encoding="utf-8")
             assert cross.load_eurusd_snapshot(path) == []
 
+    def test_realized_20_sessions_and_annualization(self):
+        dates = pd.bdate_range("2026-09-01", periods=26)
+        # Daily 10Y yield changes alternate +1bp/-1bp.
+        yields = [4.0]
+        for index in range(1, 26):
+            yields.append(yields[-1] + (0.01 if index % 2 else -0.01))
+        frame = pd.DataFrame({"observation_date":dates, "DGS10":yields})
+        result = cross.twenty_day_realized_volatility(
+            frame, "DGS10", yield_basis_points=True)
+        assert len(result) == 6  # 21 first observations make 20 returns
+        import math
+        expected = math.sqrt(20/19) * math.sqrt(252)
+        assert abs(result.rv20.iloc[0]-expected) < 1e-10
+
+        # Oil annualization is on log returns rather than raw price deltas.
+        from numpy import exp
+        log_changes = [0.01 if i % 2 else -0.01 for i in range(1,26)]
+        prices = [80.0]
+        for change in log_changes:
+            prices.append(prices[-1] * exp(change))
+        oil = pd.DataFrame({"observation_date":dates, "DCOILWTICO":prices})
+        oil_result = cross.twenty_day_realized_volatility(oil, "DCOILWTICO")
+        assert len(oil_result) == 6
+        assert abs(oil_result.rv20.iloc[0] - expected) < 1e-9
+
+    def test_invalid_oil_price_breaks_return_window_without_filling(self):
+        dates = pd.bdate_range("2026-09-01", periods=42)
+        values = [80.0+i*.1 for i in range(42)]
+        values[20] = -37.0
+        frame = pd.DataFrame({"observation_date":dates, "DCOILWTICO":values})
+        result = cross.twenty_day_realized_volatility(frame, "DCOILWTICO")
+        # The outlier must invalidate both crossing returns and the 20D window.
+        assert not result.observation_date.isin([dates[20], dates[21]]).any()
+        assert result.observation_date.max() == dates[-1]
+
+    def test_new_realized_vol_traces_share_commodity_percent_axis(self):
+        dates = pd.bdate_range("2026-09-01", periods=30)
+        bases = {"DGS10":[4.0+i*.01 for i in range(30)],
+                 "DCOILBRENTEU":[70.0+(i%4)*2+i*.2 for i in range(30)],
+                 "DCOILWTICO":[65.0+(i%5)*2+i*.3 for i in range(30)]}
+        treasury = pd.DataFrame({"observation_date":dates, "DGS10":bases["DGS10"]})
+        brent = pd.DataFrame({"observation_date":dates, "DCOILBRENTEU":bases["DCOILBRENTEU"]})
+        wti = pd.DataFrame({"observation_date":dates, "DCOILWTICO":bases["DCOILWTICO"]})
+        ovx = pd.DataFrame({"observation_date":dates, "OVXCLS":[35.0]*30})
+        move = pd.DataFrame({"observation_date":dates, "MOVE":[90.0]*30})
+        figure = cross.build_figure(
+            "5Y", ovx=ovx, move=move, treasury10y=treasury, brent=brent,
+            wti=wti, eurusd_records=[], usdjpy_records=[])
+        names = [item.name for item in figure.data]
+        assert any("US10Y 20D" in name for name in names)
+        assert any("Brent 20D" in name for name in names)
+        assert any("WTI 20D" in name for name in names)
+        assert [item.yaxis for item in figure.data[-3:]] == ["y5","y6","y6"]
+        option = build_adaptive_echarts_option(figure, "1M")
+        assert len(option["yAxis"]) == 6
+        assert [item["yAxisIndex"] for item in option["series"][-3:]] == [4,5,5]
+        assert all(axis["scale"] for axis in option["yAxis"])
+
     def test_source_daily_series_not_forward_filled(self):
         ovx = pd.DataFrame({"observation_date":["2026-10-12","2026-10-14"],
                             "OVXCLS":[42.,45.]})
