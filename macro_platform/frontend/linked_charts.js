@@ -600,7 +600,7 @@ export default function({data, parentElement}) {
         applyingPreset = false;
       }
       updateLayout();
-      parentElement.__macroChartState = {selected:copy(selected),zoom:chart.getOption().dataZoom,period:activePeriod,manualZoom};
+      parentElement.__macroChartState = {selected:copy(selected),zoom:chart.getOption().dataZoom,period:activePeriod,manualZoom,lockLatest};
     });
     observer = new ResizeObserver(() => {
       cancelAnimationFrame(frame);
