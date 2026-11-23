@@ -1,4 +1,4 @@
-name: Update EURUSD 1M ATM volatility
+name: Update EURUSD and USDJPY 1M ATM volatility
 on:
   schedule:
     - cron: "45 14 * * 1-5"
@@ -20,14 +20,14 @@ jobs:
         with:
           python-version: "3.11"
       - run: python -m pip install pandas plotly lxml requests numpy
-      - name: Collect dated EURUSD 1M ATM quote
+      - name: Collect dated EURUSD and USDJPY 1M ATM quotes
         run: python -m scripts.update_eurusd_1m_atm
       - name: Commit new verified quote if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data_snapshots/eurusd_1m_atm_saxo.json
+          git add -A data_snapshots/eurusd_1m_atm_saxo.json data_snapshots/usdjpy_1m_atm_saxo.json
           if ! git diff --cached --quiet; then
-            git commit -m "data: update EURUSD 1M ATM Saxo observations"
+            git commit -m "data: update EURUSD and USDJPY 1M ATM Saxo observations"
             git push
           fi
