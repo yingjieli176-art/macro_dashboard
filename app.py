@@ -151,7 +151,7 @@ from macro_platform import jpy_implied_vol as _jpy_iv
 from macro_platform import jpy_option_history as _jpy_history
 from macro_platform import jpy_risk_reversal as _jpy_rr
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.3_cross_asset_realized_20d"
+CHART_BUILD = "V1.4_nvidia_cds_1y"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -3257,11 +3257,13 @@ def render_japan_corridor():
 @st.fragment(run_every=60, key="nvidia_cds_viewport")
 def render_nvidia_cds():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["nvidia_cds"]}. AI Credit · 公司CDS信用风险</div>'
-                '<div class="section-description">英伟达 NVIDIA · AMD · 谷歌 Alphabet · 微软 Microsoft · 甲骨文 Oracle · 5Y CDS（bp） / HY OAS（R1 · %） · IG OAS（R2 · %）</div>', unsafe_allow_html=True)
+                '<div class="section-description">英伟达 NVIDIA 1Y / 5Y · AMD、谷歌 Alphabet、微软 Microsoft、甲骨文 Oracle 5Y CDS（bp） / HY OAS（R1 · %） · IG OAS（R2 · %）</div>', unsafe_allow_html=True)
     payload = _ai_credit.load_cds_snapshot()
+    nvidia_1y = _ai_credit.load_nvidia_1y()
     hy_oas = get_hy_oas()
     ig_oas = get_ig_oas()
-    figure = _ai_credit.build_cds_figure("5Y", payload=payload, hy_oas=hy_oas, ig_oas=ig_oas)
+    figure = _ai_credit.build_cds_figure("5Y", payload=payload, hy_oas=hy_oas, ig_oas=ig_oas,
+                                        nvidia_1y=nvidia_1y)
     _render_adaptive_macro_figure(figure, "nvidia_cds")
     if not figure.data:
         st.info("暂未取得可绘制的CDS观测，请查看数据源更新状态。")
@@ -3272,7 +3274,7 @@ def render_nvidia_cds():
         status = " · 最近一次成功获取的观测" if hy_oas.attrs.get("is_stale") else ""
         st.caption(f"HY OAS（R1）{latest_oas.oas_pct:.2f}% · "
                    f"实际观测日 {latest_oas.observation_date:%Y-%m-%d}{status}")
-    summary = _ai_credit.cds_summary(payload)
+    summary = _ai_credit.cds_summary(payload, nvidia_1y=nvidia_1y)
     if ig_oas.empty:
         st.caption("IG OAS（R2）暂未取得 FRED 观测，稍后自动重试。")
     else:
@@ -3282,11 +3284,16 @@ def render_nvidia_cds():
     st.dataframe(summary, hide_index=True, width="stretch",
                  column_config={"最新CDS（bp）": st.column_config.NumberColumn(format="%.2f"),
                                 "源日历覆盖率（%）": st.column_config.NumberColumn(format="%.1f%%")})
+    nvidia_1y_sources = [] if nvidia_1y.empty else [
+        (f"NVIDIA 1Y · {row.source}", row.source_url)
+        for row in nvidia_1y.drop_duplicates(["source", "source_url"]).itertuples()
+    ]
     add_sources([
         ("Open-Sourced Rates Observatory · CDS 历史数据", _ai_credit.SOURCE_URL),
         ("CDS 统计方法", _ai_credit.METHOD_URL),
         ("ICE Data Indices via FRED · HY OAS (BAMLH0A0HYM2)", _ai_credit.HY_OAS_URL),
         ("ICE Data Indices via FRED · IG OAS (BAMLC0A0CM)", _ai_credit.IG_OAS_URL),
+        *nvidia_1y_sources,
     ], "nvidia_cds")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
