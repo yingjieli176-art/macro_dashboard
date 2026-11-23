@@ -5,16 +5,8 @@
   "source": "Cboe Daily Market Statistics",
   "source_url": "https://www.cboe.com/markets/us/options/market-statistics/daily",
   "source_template": "https://cdn.cboe.com/data/us/options/market_statistics/daily/{}_daily_options",
-  "updated_at": "2026-11-21T09:56:05.198861+00:00",
+  "updated_at": "2026-11-23T03:14:33.288316+00:00",
   "records": [
-    {
-      "observation_date": "2021-11-22",
-      "ratio": 1.61,
-      "call_volume": 784566,
-      "put_volume": 1265338,
-      "total_volume": 2049904,
-      "source_url": "https://cdn.cboe.com/data/us/options/market_statistics/daily/2021-11-22_daily_options"
-    },
     {
       "observation_date": "2021-11-23",
       "ratio": 1.89,
@@ -10146,8 +10138,8 @@
       }
     }
   ],
-  "record_count": 1256,
-  "coverage_start": "2021-11-22",
+  "record_count": 1255,
+  "coverage_start": "2021-11-23",
   "coverage_end": "2026-11-20",
   "fetch_errors": []
 }
