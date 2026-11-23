@@ -6,7 +6,7 @@
   "source": "Open-Sourced Rates Observatory, irates.today",
   "source_url": "https://irates.today/chart_data.json",
   "methodology_url": "https://irates.today/capex.html#method",
-  "methodology": "Daily SEC SBS traded-spread medians; five-year bucket 4.4–5.6 years. Five selected corporate reference entities only. No bid/ask or real-time closing quotes.",
+  "methodology": "Daily SEC SBS traded-spread medians; five-year bucket 4.4–5.6 years. CoreWeave is upfront-implied, using the source's flat hazard and 40% recovery. No bid/ask or real-time closing quotes.",
   "series": {
     "sn_nvidia": {
       "label": "NVIDIA 5Y",
@@ -10477,7 +10477,7 @@
       ]
     },
     "sn_oracle": {
-      "label": "Oracle 5Y",
+      "label": "Oracle 5Y（甲骨文）",
       "source_label": "Oracle 5y CDS",
       "unit": "bp",
       "tenor": "5Y",
@@ -13092,7 +13092,5241 @@
           "spread_bps": null
         }
       ]
+    },
+    "sn_broadcom": {
+      "label": "Broadcom 5Y（博通）",
+      "source_label": "Broadcom 5y CDS",
+      "unit": "bp",
+      "tenor": "5Y",
+      "quote_basis": "source_aggregate",
+      "records": [
+        {
+          "observation_date": "2024-07-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-25",
+          "spread_bps": 46.0
+        },
+        {
+          "observation_date": "2025-03-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-28",
+          "spread_bps": 49.5
+        },
+        {
+          "observation_date": "2025-03-31",
+          "spread_bps": 51.0
+        },
+        {
+          "observation_date": "2025-04-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-22",
+          "spread_bps": 39.5
+        },
+        {
+          "observation_date": "2025-05-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-06",
+          "spread_bps": 36.5
+        },
+        {
+          "observation_date": "2025-06-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-18",
+          "spread_bps": 31.0
+        },
+        {
+          "observation_date": "2025-09-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-30",
+          "spread_bps": 50.1
+        },
+        {
+          "observation_date": "2025-10-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-06",
+          "spread_bps": 53.7
+        },
+        {
+          "observation_date": "2025-10-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-14",
+          "spread_bps": 35.5
+        },
+        {
+          "observation_date": "2025-10-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-22",
+          "spread_bps": 35.0
+        },
+        {
+          "observation_date": "2025-10-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-01",
+          "spread_bps": 35.5
+        },
+        {
+          "observation_date": "2025-12-02",
+          "spread_bps": 35.5
+        },
+        {
+          "observation_date": "2025-12-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-04",
+          "spread_bps": 35.5
+        },
+        {
+          "observation_date": "2025-12-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-12",
+          "spread_bps": 38.0
+        },
+        {
+          "observation_date": "2026-01-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-16",
+          "spread_bps": 37.0
+        },
+        {
+          "observation_date": "2026-01-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-22",
+          "spread_bps": 36.0
+        },
+        {
+          "observation_date": "2026-01-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-02",
+          "spread_bps": 40.0
+        },
+        {
+          "observation_date": "2026-03-03",
+          "spread_bps": 41.5
+        },
+        {
+          "observation_date": "2026-03-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-05",
+          "spread_bps": 39.0
+        },
+        {
+          "observation_date": "2026-03-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-30",
+          "spread_bps": 43.5
+        },
+        {
+          "observation_date": "2026-05-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-04",
+          "spread_bps": 44.0
+        },
+        {
+          "observation_date": "2026-05-05",
+          "spread_bps": 42.5
+        },
+        {
+          "observation_date": "2026-05-06",
+          "spread_bps": 40.0
+        },
+        {
+          "observation_date": "2026-05-07",
+          "spread_bps": 42.5
+        },
+        {
+          "observation_date": "2026-05-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-12",
+          "spread_bps": 42.5
+        },
+        {
+          "observation_date": "2026-05-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-27",
+          "spread_bps": 41.0
+        },
+        {
+          "observation_date": "2026-05-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-03",
+          "spread_bps": 50.0
+        },
+        {
+          "observation_date": "2026-06-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-08",
+          "spread_bps": 51.5
+        },
+        {
+          "observation_date": "2026-06-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-15",
+          "spread_bps": 52.5
+        },
+        {
+          "observation_date": "2026-06-16",
+          "spread_bps": 55.0
+        },
+        {
+          "observation_date": "2026-06-17",
+          "spread_bps": 55.5
+        },
+        {
+          "observation_date": "2026-06-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-24",
+          "spread_bps": 59.0
+        },
+        {
+          "observation_date": "2026-06-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-26",
+          "spread_bps": 65.0
+        },
+        {
+          "observation_date": "2026-06-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-07",
+          "spread_bps": 61.0
+        },
+        {
+          "observation_date": "2026-07-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-09",
+          "spread_bps": 75.0
+        },
+        {
+          "observation_date": "2026-07-10",
+          "spread_bps": 82.0
+        },
+        {
+          "observation_date": "2026-07-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-13",
+          "spread_bps": 81.5
+        },
+        {
+          "observation_date": "2026-07-14",
+          "spread_bps": 81.5
+        },
+        {
+          "observation_date": "2026-07-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-16",
+          "spread_bps": 76.5
+        },
+        {
+          "observation_date": "2026-07-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-20",
+          "spread_bps": 77.5
+        },
+        {
+          "observation_date": "2026-07-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-23",
+          "spread_bps": 85.5
+        },
+        {
+          "observation_date": "2026-07-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-27",
+          "spread_bps": 91.0
+        },
+        {
+          "observation_date": "2026-07-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-29",
+          "spread_bps": 99.0
+        },
+        {
+          "observation_date": "2026-07-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-03",
+          "spread_bps": 90.0
+        },
+        {
+          "observation_date": "2026-08-04",
+          "spread_bps": 87.0
+        },
+        {
+          "observation_date": "2026-08-05",
+          "spread_bps": 92.0
+        },
+        {
+          "observation_date": "2026-08-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-07",
+          "spread_bps": 92.0
+        },
+        {
+          "observation_date": "2026-08-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-13",
+          "spread_bps": 93.0
+        },
+        {
+          "observation_date": "2026-08-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-18",
+          "spread_bps": 107.5
+        },
+        {
+          "observation_date": "2026-08-19",
+          "spread_bps": 107.0
+        },
+        {
+          "observation_date": "2026-08-20",
+          "spread_bps": 114.0
+        },
+        {
+          "observation_date": "2026-08-21",
+          "spread_bps": 123.0
+        },
+        {
+          "observation_date": "2026-08-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-25",
+          "spread_bps": 130.5
+        },
+        {
+          "observation_date": "2026-08-26",
+          "spread_bps": 128.0
+        },
+        {
+          "observation_date": "2026-08-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-31",
+          "spread_bps": 124.8
+        },
+        {
+          "observation_date": "2026-09-01",
+          "spread_bps": 126.0
+        },
+        {
+          "observation_date": "2026-09-02",
+          "spread_bps": 126.0
+        },
+        {
+          "observation_date": "2026-09-03",
+          "spread_bps": 129.6
+        },
+        {
+          "observation_date": "2026-09-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-10",
+          "spread_bps": 112.0
+        },
+        {
+          "observation_date": "2026-09-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-14",
+          "spread_bps": 111.0
+        },
+        {
+          "observation_date": "2026-09-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-17",
+          "spread_bps": 100.8
+        },
+        {
+          "observation_date": "2026-09-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-21",
+          "spread_bps": 110.5
+        },
+        {
+          "observation_date": "2026-09-22",
+          "spread_bps": 110.6
+        },
+        {
+          "observation_date": "2026-09-23",
+          "spread_bps": 117.0
+        },
+        {
+          "observation_date": "2026-09-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-25",
+          "spread_bps": 127.0
+        },
+        {
+          "observation_date": "2026-09-28",
+          "spread_bps": 131.0
+        },
+        {
+          "observation_date": "2026-09-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-01",
+          "spread_bps": 130.0
+        },
+        {
+          "observation_date": "2026-10-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-06",
+          "spread_bps": 120.0
+        },
+        {
+          "observation_date": "2026-10-07",
+          "spread_bps": 133.0
+        },
+        {
+          "observation_date": "2026-10-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-09",
+          "spread_bps": 134.5
+        },
+        {
+          "observation_date": "2026-10-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-13",
+          "spread_bps": 137.0
+        },
+        {
+          "observation_date": "2026-10-14",
+          "spread_bps": 144.0
+        },
+        {
+          "observation_date": "2026-10-15",
+          "spread_bps": 142.0
+        },
+        {
+          "observation_date": "2026-10-16",
+          "spread_bps": 142.0
+        },
+        {
+          "observation_date": "2026-10-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-20",
+          "spread_bps": 156.0
+        },
+        {
+          "observation_date": "2026-10-21",
+          "spread_bps": 156.0
+        },
+        {
+          "observation_date": "2026-10-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-26",
+          "spread_bps": 170.0
+        },
+        {
+          "observation_date": "2026-10-27",
+          "spread_bps": 160.0
+        },
+        {
+          "observation_date": "2026-10-28",
+          "spread_bps": 166.5
+        },
+        {
+          "observation_date": "2026-10-29",
+          "spread_bps": 175.0
+        },
+        {
+          "observation_date": "2026-10-30",
+          "spread_bps": 190.0
+        },
+        {
+          "observation_date": "2026-10-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-02",
+          "spread_bps": 191.5
+        },
+        {
+          "observation_date": "2026-11-03",
+          "spread_bps": 196.0
+        },
+        {
+          "observation_date": "2026-11-04",
+          "spread_bps": 185.0
+        },
+        {
+          "observation_date": "2026-11-05",
+          "spread_bps": 182.0
+        },
+        {
+          "observation_date": "2026-11-06",
+          "spread_bps": 191.5
+        },
+        {
+          "observation_date": "2026-11-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-18",
+          "spread_bps": 180.5
+        },
+        {
+          "observation_date": "2026-11-19",
+          "spread_bps": 180.0
+        },
+        {
+          "observation_date": "2026-11-20",
+          "spread_bps": null
+        }
+      ]
+    },
+    "sn_coreweave": {
+      "label": "CoreWeave 5Y（预付款推算）",
+      "source_label": "CoreWeave 5y CDS (upfront-implied)",
+      "unit": "bp",
+      "tenor": "5Y",
+      "quote_basis": "upfront_implied",
+      "records": [
+        {
+          "observation_date": "2024-07-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-07-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-08-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-09-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-10-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-11-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2024-12-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-01-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-02-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-03-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-04-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-05-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-06-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-07-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-08-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-09-30",
+          "spread_bps": 359.0
+        },
+        {
+          "observation_date": "2025-10-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-02",
+          "spread_bps": 365.0
+        },
+        {
+          "observation_date": "2025-10-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-15",
+          "spread_bps": 718.6
+        },
+        {
+          "observation_date": "2025-10-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-24",
+          "spread_bps": 569.3
+        },
+        {
+          "observation_date": "2025-10-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-10-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-03",
+          "spread_bps": 716.8
+        },
+        {
+          "observation_date": "2025-11-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-05",
+          "spread_bps": 718.6
+        },
+        {
+          "observation_date": "2025-11-06",
+          "spread_bps": 506.7
+        },
+        {
+          "observation_date": "2025-11-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-12",
+          "spread_bps": 544.1
+        },
+        {
+          "observation_date": "2025-11-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-14",
+          "spread_bps": 599.7
+        },
+        {
+          "observation_date": "2025-11-17",
+          "spread_bps": 630.1
+        },
+        {
+          "observation_date": "2025-11-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-19",
+          "spread_bps": 627.4
+        },
+        {
+          "observation_date": "2025-11-20",
+          "spread_bps": 579.7
+        },
+        {
+          "observation_date": "2025-11-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-11-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-01",
+          "spread_bps": 720.5
+        },
+        {
+          "observation_date": "2025-12-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-04",
+          "spread_bps": 618.4
+        },
+        {
+          "observation_date": "2025-12-05",
+          "spread_bps": 597.8
+        },
+        {
+          "observation_date": "2025-12-08",
+          "spread_bps": 671.4
+        },
+        {
+          "observation_date": "2025-12-09",
+          "spread_bps": 640.9
+        },
+        {
+          "observation_date": "2025-12-10",
+          "spread_bps": 660.3
+        },
+        {
+          "observation_date": "2025-12-11",
+          "spread_bps": 680.1
+        },
+        {
+          "observation_date": "2025-12-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2025-12-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-02",
+          "spread_bps": 729.4
+        },
+        {
+          "observation_date": "2026-01-05",
+          "spread_bps": 714.5
+        },
+        {
+          "observation_date": "2026-01-06",
+          "spread_bps": 720.1
+        },
+        {
+          "observation_date": "2026-01-07",
+          "spread_bps": 735.7
+        },
+        {
+          "observation_date": "2026-01-08",
+          "spread_bps": 727.3
+        },
+        {
+          "observation_date": "2026-01-09",
+          "spread_bps": 719.0
+        },
+        {
+          "observation_date": "2026-01-12",
+          "spread_bps": 710.0
+        },
+        {
+          "observation_date": "2026-01-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-15",
+          "spread_bps": 670.1
+        },
+        {
+          "observation_date": "2026-01-16",
+          "spread_bps": 662.1
+        },
+        {
+          "observation_date": "2026-01-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-26",
+          "spread_bps": 628.2
+        },
+        {
+          "observation_date": "2026-01-27",
+          "spread_bps": 609.3
+        },
+        {
+          "observation_date": "2026-01-28",
+          "spread_bps": 583.4
+        },
+        {
+          "observation_date": "2026-01-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-01-30",
+          "spread_bps": 580.9
+        },
+        {
+          "observation_date": "2026-02-02",
+          "spread_bps": 581.6
+        },
+        {
+          "observation_date": "2026-02-03",
+          "spread_bps": 581.2
+        },
+        {
+          "observation_date": "2026-02-04",
+          "spread_bps": 611.9
+        },
+        {
+          "observation_date": "2026-02-05",
+          "spread_bps": 643.4
+        },
+        {
+          "observation_date": "2026-02-06",
+          "spread_bps": 993.0
+        },
+        {
+          "observation_date": "2026-02-09",
+          "spread_bps": 593.5
+        },
+        {
+          "observation_date": "2026-02-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-12",
+          "spread_bps": 592.4
+        },
+        {
+          "observation_date": "2026-02-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-17",
+          "spread_bps": 605.3
+        },
+        {
+          "observation_date": "2026-02-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-24",
+          "spread_bps": 595.3
+        },
+        {
+          "observation_date": "2026-02-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-02-26",
+          "spread_bps": 602.0
+        },
+        {
+          "observation_date": "2026-02-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-04",
+          "spread_bps": 577.7
+        },
+        {
+          "observation_date": "2026-03-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-06",
+          "spread_bps": 627.1
+        },
+        {
+          "observation_date": "2026-03-09",
+          "spread_bps": 616.6
+        },
+        {
+          "observation_date": "2026-03-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-11",
+          "spread_bps": 597.2
+        },
+        {
+          "observation_date": "2026-03-12",
+          "spread_bps": 665.3
+        },
+        {
+          "observation_date": "2026-03-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-18",
+          "spread_bps": 626.5
+        },
+        {
+          "observation_date": "2026-03-19",
+          "spread_bps": 677.5
+        },
+        {
+          "observation_date": "2026-03-20",
+          "spread_bps": 649.9
+        },
+        {
+          "observation_date": "2026-03-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-27",
+          "spread_bps": 686.5
+        },
+        {
+          "observation_date": "2026-03-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-03-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-02",
+          "spread_bps": 641.2
+        },
+        {
+          "observation_date": "2026-04-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-08",
+          "spread_bps": 567.4
+        },
+        {
+          "observation_date": "2026-04-09",
+          "spread_bps": 580.9
+        },
+        {
+          "observation_date": "2026-04-10",
+          "spread_bps": 530.3
+        },
+        {
+          "observation_date": "2026-04-13",
+          "spread_bps": 514.9
+        },
+        {
+          "observation_date": "2026-04-14",
+          "spread_bps": 1.2
+        },
+        {
+          "observation_date": "2026-04-15",
+          "spread_bps": 516.4
+        },
+        {
+          "observation_date": "2026-04-16",
+          "spread_bps": 522.7
+        },
+        {
+          "observation_date": "2026-04-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-20",
+          "spread_bps": 514.6
+        },
+        {
+          "observation_date": "2026-04-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-24",
+          "spread_bps": 533.2
+        },
+        {
+          "observation_date": "2026-04-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-04-30",
+          "spread_bps": 544.5
+        },
+        {
+          "observation_date": "2026-05-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-04",
+          "spread_bps": 521.8
+        },
+        {
+          "observation_date": "2026-05-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-08",
+          "spread_bps": 530.7
+        },
+        {
+          "observation_date": "2026-05-11",
+          "spread_bps": 130.0
+        },
+        {
+          "observation_date": "2026-05-12",
+          "spread_bps": 513.3
+        },
+        {
+          "observation_date": "2026-05-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-20",
+          "spread_bps": 510.3
+        },
+        {
+          "observation_date": "2026-05-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-27",
+          "spread_bps": 539.3
+        },
+        {
+          "observation_date": "2026-05-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-05-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-01",
+          "spread_bps": 562.6
+        },
+        {
+          "observation_date": "2026-06-02",
+          "spread_bps": 575.0
+        },
+        {
+          "observation_date": "2026-06-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-04",
+          "spread_bps": 565.9
+        },
+        {
+          "observation_date": "2026-06-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-08",
+          "spread_bps": 549.2
+        },
+        {
+          "observation_date": "2026-06-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-12",
+          "spread_bps": 516.5
+        },
+        {
+          "observation_date": "2026-06-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-16",
+          "spread_bps": 570.1
+        },
+        {
+          "observation_date": "2026-06-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-22",
+          "spread_bps": 531.3
+        },
+        {
+          "observation_date": "2026-06-23",
+          "spread_bps": 519.4
+        },
+        {
+          "observation_date": "2026-06-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-06-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-01",
+          "spread_bps": 581.9
+        },
+        {
+          "observation_date": "2026-07-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-06",
+          "spread_bps": 579.8
+        },
+        {
+          "observation_date": "2026-07-07",
+          "spread_bps": 602.6
+        },
+        {
+          "observation_date": "2026-07-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-13",
+          "spread_bps": 609.4
+        },
+        {
+          "observation_date": "2026-07-14",
+          "spread_bps": 617.1
+        },
+        {
+          "observation_date": "2026-07-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-16",
+          "spread_bps": 610.1
+        },
+        {
+          "observation_date": "2026-07-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-21",
+          "spread_bps": 637.7
+        },
+        {
+          "observation_date": "2026-07-22",
+          "spread_bps": 637.1
+        },
+        {
+          "observation_date": "2026-07-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-07-30",
+          "spread_bps": 983.9
+        },
+        {
+          "observation_date": "2026-07-31",
+          "spread_bps": 854.3
+        },
+        {
+          "observation_date": "2026-08-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-11",
+          "spread_bps": 735.7
+        },
+        {
+          "observation_date": "2026-08-12",
+          "spread_bps": 633.6
+        },
+        {
+          "observation_date": "2026-08-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-14",
+          "spread_bps": 694.7
+        },
+        {
+          "observation_date": "2026-08-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-18",
+          "spread_bps": 725.1
+        },
+        {
+          "observation_date": "2026-08-19",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-20",
+          "spread_bps": 757.1
+        },
+        {
+          "observation_date": "2026-08-21",
+          "spread_bps": 769.7
+        },
+        {
+          "observation_date": "2026-08-23",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-24",
+          "spread_bps": 770.0
+        },
+        {
+          "observation_date": "2026-08-25",
+          "spread_bps": 763.6
+        },
+        {
+          "observation_date": "2026-08-26",
+          "spread_bps": 776.7
+        },
+        {
+          "observation_date": "2026-08-27",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-08-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-02",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-03",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-13",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-14",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-16",
+          "spread_bps": 729.0
+        },
+        {
+          "observation_date": "2026-09-17",
+          "spread_bps": 759.6
+        },
+        {
+          "observation_date": "2026-09-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-21",
+          "spread_bps": 809.8
+        },
+        {
+          "observation_date": "2026-09-22",
+          "spread_bps": 821.1
+        },
+        {
+          "observation_date": "2026-09-23",
+          "spread_bps": 812.9
+        },
+        {
+          "observation_date": "2026-09-24",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-28",
+          "spread_bps": 695.7
+        },
+        {
+          "observation_date": "2026-09-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-09-30",
+          "spread_bps": 694.1
+        },
+        {
+          "observation_date": "2026-10-01",
+          "spread_bps": 823.7
+        },
+        {
+          "observation_date": "2026-10-02",
+          "spread_bps": 851.2
+        },
+        {
+          "observation_date": "2026-10-04",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-05",
+          "spread_bps": 830.8
+        },
+        {
+          "observation_date": "2026-10-06",
+          "spread_bps": 816.9
+        },
+        {
+          "observation_date": "2026-10-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-09",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-10",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-13",
+          "spread_bps": 963.1
+        },
+        {
+          "observation_date": "2026-10-14",
+          "spread_bps": 1110.4
+        },
+        {
+          "observation_date": "2026-10-15",
+          "spread_bps": 1029.1
+        },
+        {
+          "observation_date": "2026-10-16",
+          "spread_bps": 935.0
+        },
+        {
+          "observation_date": "2026-10-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-18",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-19",
+          "spread_bps": 1082.6
+        },
+        {
+          "observation_date": "2026-10-20",
+          "spread_bps": 1150.1
+        },
+        {
+          "observation_date": "2026-10-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-22",
+          "spread_bps": 1129.3
+        },
+        {
+          "observation_date": "2026-10-23",
+          "spread_bps": 1117.7
+        },
+        {
+          "observation_date": "2026-10-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-26",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-27",
+          "spread_bps": 991.1
+        },
+        {
+          "observation_date": "2026-10-28",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-29",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-30",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-10-31",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-01",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-02",
+          "spread_bps": 1105.0
+        },
+        {
+          "observation_date": "2026-11-03",
+          "spread_bps": 1092.6
+        },
+        {
+          "observation_date": "2026-11-04",
+          "spread_bps": 1107.7
+        },
+        {
+          "observation_date": "2026-11-05",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-06",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-07",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-08",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-09",
+          "spread_bps": 1123.7
+        },
+        {
+          "observation_date": "2026-11-10",
+          "spread_bps": 1126.5
+        },
+        {
+          "observation_date": "2026-11-11",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-12",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-13",
+          "spread_bps": 947.0
+        },
+        {
+          "observation_date": "2026-11-15",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-16",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-17",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-18",
+          "spread_bps": 1082.0
+        },
+        {
+          "observation_date": "2026-11-19",
+          "spread_bps": 1128.6
+        },
+        {
+          "observation_date": "2026-11-20",
+          "spread_bps": null
+        }
+      ]
     }
   },
-  "retrieved_at": "2026-11-21T14:56:39.900052+00:00"
+  "retrieved_at": "2026-11-23T07:36:12.545567+00:00"
 }

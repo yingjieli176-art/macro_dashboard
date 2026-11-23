@@ -42,7 +42,7 @@ FAMILIES = {
     "update_nikkei225_snapshot.py": {"^N225"},
     "update_srf_usage.py": {"SRF_USAGE"},
     "update_ai_cds_snapshot.py": {"NVIDIA_CDS_5Y", "SN_AMD_CDS_5Y", "SN_ALPHABET_CDS_5Y",
-                                  "SN_MICROSOFT_CDS_5Y", "SN_ORACLE_CDS_5Y"},
+                                  "SN_MICROSOFT_CDS_5Y", "SN_ORACLE_CDS_5Y", "SN_BROADCOM_CDS_5Y", "SN_COREWEAVE_CDS_5Y"},
 }
 
 

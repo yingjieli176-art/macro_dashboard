@@ -188,9 +188,10 @@ class AccuracyPerformanceTests(unittest.TestCase):
             result = ns["_build_macro_figures_parallel"](render)
         finally:
             release.set()
-        self.assertEqual(set(completed), set(range(1, 17)))
-        self.assertEqual(len(completed), 16)
-        self.assertEqual(set(result), set(range(1, 17)))
+        expected = {*range(1, 17), "cross_asset_vol"}
+        self.assertEqual(set(completed), expected)
+        self.assertEqual(len(completed), len(expected))
+        self.assertEqual(set(result), expected)
 
 
 if __name__ == "__main__":

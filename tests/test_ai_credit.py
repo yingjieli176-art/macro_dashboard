@@ -1,5 +1,6 @@
 """Credit history must retain actual dates, units, gaps and source distinctions."""
 import copy
+from datetime import date
 import json
 from pathlib import Path
 import tempfile
@@ -10,6 +11,8 @@ import pandas as pd
 import requests
 
 from macro_platform import ai_credit as cds
+from macro_platform import spacex_cds
+from macro_platform.dashboard_layout import MACRO_DISPLAY_NUMBER
 from macro_platform.echarts_axes import build_adaptive_echarts_option, build_safe_echarts_option
 from scripts.update_ai_cds_snapshot import refresh
 
@@ -17,12 +20,64 @@ from scripts.update_ai_cds_snapshot import refresh
 def source():
     return {"built": "2026-10-28", "dates": ["2026-10-26", "2026-10-27", "2026-10-28"],
         "catalogue": [{"id": key, "unit": "bp", "label": "CDX IG 5y" if key == "cdx_ig5" else
-                       label.replace("5Y", "5y CDS")} for key, (label, _) in cds.SERIES.items()],
+                       ("CoreWeave 5y CDS (upfront-implied)" if key == "sn_coreweave" else label.replace("5Y", "5y CDS"))} for key, (label, _) in cds.SERIES.items()],
         "series": {**{key: [100., None, 110.] for key in cds.SERIES}, "sn_nvidia": [100., 105., None],
                    "eq_px_nvidia": [200., 300., 400.]}}
 
 
 class AiCreditTests(unittest.TestCase):
+    def test_oas_uses_newer_same_series_vintage_even_if_fred_csv_succeeds(self):
+        import data
+        sid = "BAMLH0A0HYM2"
+        old = pd.DataFrame({"observation_date": pd.to_datetime(["2026-11-19"]), sid: [3.52]})
+        new = pd.DataFrame({"observation_date": pd.to_datetime(["2026-11-20"]), sid: [3.68]})
+        with patch.object(data, "completed_date", return_value=date(2026, 11, 20)), \
+             patch.object(data, "_fetch_fred_graph", return_value=old), \
+             patch.object(data, "_fetch_fred_api", side_effect=RuntimeError), \
+             patch.object(data, "_fetch_alfred_graph", return_value=new):
+            result = data._get_credit_oas(sid)
+        self.assertEqual(result.oas_pct.tolist(), [3.68])
+
+    def test_cdx_keeps_newer_actual_dates_without_filling_oas(self):
+        raw = source()
+        for key, (source_label, _, _, _) in cds.CDX_SERIES.items():
+            raw["catalogue"].append({"id": key, "unit": "bp", "label": source_label})
+            raw["series"][key] = [None, 100, 110]
+        cdx = cds.parse_cdx_source(raw)
+        less_recent = {key: rows[:-1] for key, rows in cdx.items()}
+        self.assertEqual(cds.merge_cdx_history(cdx, less_recent), cdx)
+        oas = pd.DataFrame({"observation_date": pd.to_datetime(["2026-10-27"]), "oas_pct": [3.5]})
+        fig = cds.build_cds_figure(payload=cds.parse_source(raw), hy_oas=oas, cdx=cdx)
+        option = build_adaptive_echarts_option(fig, "1M")
+        curves = {series["name"]: series for series in option["series"]}
+        self.assertEqual(curves[cds.HY_OAS_NAME]["data"][-1], ["2026-10-27T00:00:00", 3.5])
+        for _, label, axis, _ in cds.CDX_SERIES.values():
+            self.assertEqual(curves[label]["data"][-1], ["2026-10-28T00:00:00", 1.1])
+            self.assertEqual(curves[label]["yAxisIndex"], axis)
+        raw["catalogue"][-1]["unit"] = "price"
+        with self.assertRaises(ValueError):
+            cds.parse_cdx_source(raw)
+
+    def test_spacex_uses_only_direct_spreads_on_five_year_new_trades(self):
+        base = {
+            "Action type": "NEWT", "Event type": "TRAD", "Original Dissemination Identifier": "",
+            "Underlier ID-Leg 1": "8CA76V", "UPI FISN": "NA/CDS Corp SN Sr",
+            "Notional currency-Leg 1": "USD", "Package indicator": "FALSE",
+            "Execution Timestamp": "2026-11-17T18:00:00Z", "Expiration Date": "2031-12-20",
+            "Spread-Leg 1": "0.0268", "Spread notation-Leg 1": "3",
+        }
+        variants = [
+            {}, {"Spread-Leg 1": "264", "Spread notation-Leg 1": "4"},
+            {"Expiration Date": "2029-12-20"}, {"Underlier ID-Leg 1": "other"},
+            {"Spread-Leg 1": "", "Other payment amount": "365584"},
+            {"Action type": "EROR", "Original Dissemination Identifier": "6"}, {},
+        ]
+        rows = [dict(base, **variant, **{"Dissemination Identifier": str(i)})
+                for i, variant in enumerate(variants)]
+        self.assertEqual(spacex_cds.daily_medians(rows, date(2026, 11, 20)), [
+            {"observation_date": "2026-11-17", "spread_bps": 266., "trade_count": 2},
+        ])
+
     def test_ig_and_hy_have_independent_percent_axes_and_observation_dates(self):
         hy = pd.DataFrame({'observation_date': pd.to_datetime(['2026-10-26', '2026-10-28']),
                            'oas_pct': [3.12, 3.48]})
@@ -64,7 +119,7 @@ class AiCreditTests(unittest.TestCase):
         with patch.object(data, 'http_get', return_value=response) as fetch, \
              patch.object(data, '_save_fred_success') as save:
             result = data.get_ig_oas.__wrapped__()
-        self.assertEqual(fetch.call_args.kwargs['params'], {'id': 'BAMLC0A0CM'})
+        self.assertEqual(fetch.call_args_list[0].kwargs['params'], {'id': 'BAMLC0A0CM'})
         self.assertEqual(result.oas_pct.tolist(), [.82, .91])
         self.assertEqual(result.observation_date.dt.strftime('%Y-%m-%d').tolist(), ['2026-10-26', '2026-10-28'])
         save.assert_not_called()
@@ -84,20 +139,42 @@ class AiCreditTests(unittest.TestCase):
         self.assertEqual(row['source_latest'], '2026-10-28')
         self.assertEqual(row['status'], 'live_only')
         self.assertEqual(row['source_url'], cds.IG_OAS_URL)
-        self.assertEqual(row['charts'], [7])
+        self.assertEqual(row['charts'], [MACRO_DISPLAY_NUMBER["nvidia_cds"]])
 
-    def test_selected_five_exclude_retired_names_equity_prices_and_one_year(self):
+    def test_chart_eight_excludes_other_issuers_and_equity_prices(self):
         raw = source()
         raw["series"]["eq_px_nebius"] = [150., 160., 170.]
         raw["series"]["sn_nebius"] = [200., 210., 220.]
         raw["catalogue"].append({"id": "sn_nebius", "label": "Nebius 5y CDS", "unit": "bp"})
         payload = cds.parse_source(raw)
-        expected = ["NVIDIA 5Y", "AMD 5Y", "Alphabet 5Y（谷歌）", "Microsoft 5Y（微软）", "Oracle 5Y"]
-        self.assertEqual(cds.cds_summary(payload)["公司 / 指数"].tolist(), expected)
+        expected = ["NVIDIA 5Y", "AMD 5Y", "Alphabet 5Y（谷歌）", "Microsoft 5Y（微软）"]
+        self.assertEqual(cds.cds_summary(payload)["公司 / 指数"].tolist(), [*expected, cds.NVIDIA_1Y_NAME])
         fig = cds.build_cds_figure(payload=payload)
         self.assertEqual([trace.name for trace in fig.data], expected)
-        self.assertFalse(fig.layout.meta["missing_series"])
+        self.assertEqual(fig.layout.meta["missing_series"], [cds.NVIDIA_1Y_NAME])
         self.assertEqual(set(payload["series"]), set(cds.SERIES))
+
+    def test_nvidia_1y_uses_its_own_quotes_and_left_bp_axis(self):
+        quotes = pd.DataFrame({
+            "observation_date": pd.to_datetime(["2026-10-25", "2026-10-27", "2026-10-29"]),
+            "tenor": ["1Y", "5Y", "1Y"],
+            "spread_bps": [19., 95., 21.],
+        })
+        payload = cds.parse_source(source())
+        with patch.object(cds, "load_nvidia_cds", return_value=quotes):
+            summary = cds.cds_summary(payload).set_index("公司 / 指数")
+            fig = cds.build_cds_figure(payload=payload)
+        row = summary.loc[cds.NVIDIA_1Y_NAME]
+        self.assertEqual(row["实际观测日"], "2026-10-29")
+        self.assertEqual(row["最新CDS（bp）"], 21.)
+        self.assertEqual(row["观测数"], 2)
+        self.assertTrue(pd.isna(row["源日历覆盖率（%）"]))
+        self.assertNotIn(cds.NVIDIA_1Y_NAME, fig.layout.meta["missing_series"])
+        for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
+            option = adapter(fig, "5Y")
+            series = next(item for item in option["series"] if item["name"] == cds.NVIDIA_1Y_NAME)
+            self.assertEqual(series["yAxisIndex"], 0)
+            self.assertEqual(series["data"], [["2026-10-25T00:00:00", 19.], ["2026-10-29T00:00:00", 21.]])
 
     def test_coverage_uses_actual_priced_days_and_each_companys_date(self):
         table = cds.cds_summary(cds.parse_source(source())).set_index("公司 / 指数")
@@ -118,7 +195,7 @@ class AiCreditTests(unittest.TestCase):
         self.assertEqual(set(payload["series"]), set(cds.SERIES))
         self.assertEqual(payload["series"]["sn_microsoft"]["quote_basis"], "source_aggregate")
         self.assertNotIn("eq_px_nvidia", payload["series"])
-        self.assertIn("Five selected corporate", payload["methodology"])
+        self.assertEqual(payload["series"]["sn_coreweave"]["quote_basis"], "upfront_implied")
 
     def test_rejects_wrong_measures_dates_nonfinite_and_truncated_calendars(self):
         for mutation in (lambda p: p["catalogue"][0].update(unit="usd"),
@@ -137,20 +214,20 @@ class AiCreditTests(unittest.TestCase):
         table = cds.cds_summary(cds.parse_source(source())).set_index("公司 / 指数")
         self.assertEqual(table.loc["NVIDIA 5Y", "实际观测日"], "2026-10-27")
         self.assertEqual(table.loc["NVIDIA 5Y", "最新CDS（bp）"], 105.)
-        self.assertEqual(table.loc["Oracle 5Y", "实际观测日"], "2026-10-28")
+        self.assertEqual(table.loc["AMD 5Y", "实际观测日"], "2026-10-28")
 
     def test_native_and_rescue_charts_keep_null_gaps_and_visible_isolated_observations(self):
         for window in ("5Y", "1Y", "6M", "3M", "1M"):
             fig = cds.build_cds_figure(window, cds.parse_source(source()))
-            self.assertEqual(len(fig.data), len(cds.SERIES))
+            self.assertEqual(len(fig.data), len(cds.CREDIT_SERIES))
             self.assertTrue(all(t.connectgaps is False for t in fig.data))
             for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
                 option = adapter(fig, window)
-                oracle = next(s for s in option["series"] if s["name"] == "Oracle 5Y")
-                self.assertEqual([p[1] for p in oracle["data"]], [100., None, 110.])
-                self.assertTrue(oracle["showSymbol"])
-                self.assertFalse(oracle["connectNulls"])
-            self.assertNotIn("NVIDIA 1Y · 待数据源", fig.layout.meta["missing_series"])
+                amd = next(s for s in option["series"] if s["name"] == "AMD 5Y")
+                self.assertEqual([p[1] for p in amd["data"]], [100., None, 110.])
+                self.assertTrue(amd["showSymbol"])
+                self.assertFalse(amd["connectNulls"])
+            self.assertIn(cds.NVIDIA_1Y_NAME, fig.layout.meta["missing_series"])
 
     def test_hy_oas_retains_percent_values_and_its_own_calendar_and_axis(self):
         payload = cds.parse_source(source())
@@ -160,7 +237,7 @@ class AiCreditTests(unittest.TestCase):
             fig = cds.build_cds_figure(window, payload, hy_oas=hy_oas)
             for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
                 option = adapter(fig, window)
-                self.assertEqual(len(option["series"]), 6)
+                self.assertEqual(len(option["series"]), 5)
                 *companies, oas = option["series"]
                 self.assertTrue(all(series["yAxisIndex"] == 0 for series in companies))
                 self.assertEqual(oas["name"], cds.HY_OAS_NAME)
@@ -169,8 +246,8 @@ class AiCreditTests(unittest.TestCase):
                 self.assertEqual(option["yAxis"][1]["name"], "R1 · %")
                 self.assertEqual(option["dataZoom"][0]["endValue"], "2026-10-29T00:00:00")
         missing = cds.build_cds_figure(payload=payload, hy_oas=hy_oas.iloc[:0])
-        self.assertEqual(len(missing.data), 5)
-        self.assertEqual(missing.layout.meta["missing_series"], [cds.HY_OAS_NAME])
+        self.assertEqual(len(missing.data), len(cds.CREDIT_SERIES))
+        self.assertEqual(missing.layout.meta["missing_series"], [cds.NVIDIA_1Y_NAME, cds.HY_OAS_NAME])
 
     def test_hy_oas_reads_validated_fred_observations_without_persisting(self):
         import data
@@ -180,7 +257,7 @@ class AiCreditTests(unittest.TestCase):
         with patch.object(data, "http_get", return_value=response) as fetch, \
              patch.object(data, "_save_fred_success") as save:
             frame = data.get_hy_oas.__wrapped__()
-        self.assertEqual(fetch.call_args.kwargs["params"], {"id": "BAMLH0A0HYM2"})
+        self.assertEqual(fetch.call_args_list[0].kwargs["params"], {"id": "BAMLH0A0HYM2"})
         self.assertEqual(frame.observation_date.dt.strftime("%Y-%m-%d").tolist(), ["2026-10-26", "2026-10-28"])
         self.assertEqual(frame.oas_pct.tolist(), [3.12, 3.48])
         save.assert_not_called()
@@ -226,7 +303,7 @@ class AiCreditTests(unittest.TestCase):
         payload = cds.load_cds_snapshot()
         self.assertTrue(payload)
         table = cds.cds_summary().set_index("公司 / 指数")
-        for key, (label, _) in cds.SERIES.items():
+        for key, (label, _) in cds.CREDIT_SERIES.items():
             actual = [r for r in payload["series"][key]["records"] if r["spread_bps"] is not None]
             self.assertTrue(actual)
             self.assertEqual(table.loc[label, "最新CDS（bp）"], actual[-1]["spread_bps"])

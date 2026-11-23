@@ -6,7 +6,8 @@ from pathlib import Path
 
 import pandas as pd
 from macro_platform.dashboard_layout import (
-    DISPLAY_US_CREDIT_JP_CORRIDOR_CN_21_ORDER, CHART_NUMBERING, DISPLAY_US_JP_CN_20_ORDER, MACRO_DISPLAY_NUMBER, PREVIOUS_DISPLAY_ORDER, legacy_chart_numbers,
+    CHART_NUMBERING, DISPLAY_US_CROSSASSET_23_ORDER, DISPLAY_US_CREDIT_JP_CORRIDOR_CN_21_ORDER,
+    DISPLAY_US_JP_CN_20_ORDER, MACRO_DISPLAY_NUMBER, PREVIOUS_DISPLAY_ORDER, legacy_chart_numbers,
 )
 
 SOURCE_REPORT = Path(__file__).resolve().parents[1] / "data_snapshots/all_source_freshness.json"
@@ -76,6 +77,11 @@ def source_rows(path=SOURCE_REPORT):
         report = json.loads(path.read_text())
     except (OSError, ValueError, TypeError):
         return None, []
+    if report.get("chart_numbering") == "display_us_crossasset_vol_credit_jp_holdings_cn_23":
+        report["sources"] = [dict(row, charts=sorted(
+            MACRO_DISPLAY_NUMBER[DISPLAY_US_CROSSASSET_23_ORDER[number - 1]] for number in row["charts"]
+        )) for row in report.get("sources", [])]
+        report["chart_numbering"] = CHART_NUMBERING
     if report.get("chart_numbering") == "display_us_credit_jp_corridor_cn_21":
         report["sources"] = [dict(row, charts=sorted(
             MACRO_DISPLAY_NUMBER[DISPLAY_US_CREDIT_JP_CORRIDOR_CN_21_ORDER[number - 1]] for number in row["charts"]
@@ -100,6 +106,9 @@ def source_rows(path=SOURCE_REPORT):
     if report.get("chart_numbering") in {"display_17", "display_18"}:
         report["sources"] = [dict(row, charts=legacy_chart_numbers(row["charts"])) for row in report.get("sources", [])]
         report["chart_numbering"] = CHART_NUMBERING
+    for row in report.get("sources", []):
+        if row["id"] in {"SN_ORACLE_CDS_5Y", "SN_BROADCOM_CDS_5Y", "SN_COREWEAVE_CDS_5Y"}:
+            row["charts"] = [MACRO_DISPLAY_NUMBER["infrastructure_cds"]]
     labels = {"at_source_latest": "与本次源站返回一致",
               "snapshot_verified": "使用最近一次已验快照（实时接口限流）",
               "pipeline_lag": "本地落后源站",
@@ -111,7 +120,7 @@ def source_rows(path=SOURCE_REPORT):
         "源站数据日期": row.get("source_latest") or "未取得", "核对结果": labels.get(row["status"],row["status"]),
         "本次核对时间": _local_time(row.get("checked_at")), "说明": row.get("error") or row.get("live_probe_note", "")}
         for row in report.get("sources", [])
-        if row.get("id") not in {"NVIDIA_CDS_1Y", "SN_INTEL_CDS_5Y", "SN_COREWEAVE_CDS_5Y",
+        if row.get("id") not in {"NVIDIA_CDS_1Y", "SN_INTEL_CDS_5Y",
                                  "SN_NEBIUS_CDS_5Y", "CDX_IG5_CDS_5Y"}]
 
 

@@ -84,7 +84,7 @@ build_copper_flow_spread_figure = _copper_module.build_copper_flow_spread_figure
 build_copper_tcrc_figure = _copper_module.build_copper_tcrc_figure
 from macro_platform.copper_tcrc import METHOD_URL as COPPER_TCRC_METHOD_URL
 from macro_platform import dashboard_layout as _dashboard_layout
-if _dashboard_layout.CHART_NUMBERING != "display_us_crossasset_vol_credit_jp_holdings_cn_23":
+if _dashboard_layout.CHART_NUMBERING != "display_us_crossasset_vol_two_credit_jp_holdings_cn_24":
     _dashboard_layout = importlib.reload(_dashboard_layout)
 from macro_platform.asia_rates import build_china_rates_figure, build_japan_rates_figure
 from macro_platform.china_equity import load_china_history
@@ -151,7 +151,7 @@ from macro_platform import jpy_implied_vol as _jpy_iv
 from macro_platform import jpy_option_history as _jpy_history
 from macro_platform import jpy_risk_reversal as _jpy_rr
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.3_cross_asset_realized_20d"
+CHART_BUILD = "V1.6_credit_freshness"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2983,7 +2983,7 @@ def render_macro_chart_16(prebuilt_fig=None):
     _render_adaptive_macro_figure(combined, "yen_carry")
     st.caption("全部曲线共用时间轴，可点击图例隐藏或显示。JPY 3M 为财务省周度拍卖收益率，"
                "10Y−3M 只按同日观测计算。BOJ利率按生效日阶梯显示。"
-               "收益率为%，利差为百分点；美债持仓、机构外债及对冲率另见图12。")
+               f"收益率为%，利差为百分点；美债持仓、机构外债及对冲率另见图 {MACRO_DISPLAY_NUMBER['japan_holdings']}。")
     iv_rows = _jpy_iv.load_snapshot().get("records", [])
     if iv_rows:
         st.caption(f"3个月ATM隐含波动率（Saxo）：{iv_rows[-1]['value']:.2f}% · "
@@ -3271,14 +3271,33 @@ def render_japan_corridor():
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def _fetch_live_cdx():
+    try:
+        response = http_get(_ai_credit.SOURCE_URL, timeout=(3, 5))
+        response.raise_for_status()
+        return _ai_credit.parse_cdx_source(response.json())
+    except (requests.RequestException, KeyError, TypeError, ValueError):
+        return {}
+
+
+def _get_cdx_reference():
+    live = _fetch_live_cdx()
+    saved = _ai_credit.load_cdx_snapshot()
+    return _ai_credit.merge_cdx_history(saved, live) if live else saved
+
+
 @st.fragment(run_every=60, key="nvidia_cds_viewport")
 def render_nvidia_cds():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["nvidia_cds"]}. AI Credit · 公司CDS信用风险</div>'
-                '<div class="section-description">英伟达 NVIDIA · AMD · 谷歌 Alphabet · 微软 Microsoft · 甲骨文 Oracle · 5Y CDS（bp） / HY OAS（R1 · %） · IG OAS（R2 · %）</div>', unsafe_allow_html=True)
+                '<div class="section-description">英伟达 NVIDIA 1Y / 5Y · AMD、谷歌 Alphabet、微软 Microsoft 5Y CDS（bp） / HY OAS（R1 · %） · IG OAS（R2 · %）</div>', unsafe_allow_html=True)
     payload = _ai_credit.load_cds_snapshot()
+    nvidia_1y = _ai_credit.load_nvidia_1y()
     hy_oas = get_hy_oas()
     ig_oas = get_ig_oas()
-    figure = _ai_credit.build_cds_figure("5Y", payload=payload, hy_oas=hy_oas, ig_oas=ig_oas)
+    cdx = _get_cdx_reference()
+    figure = _ai_credit.build_cds_figure("5Y", payload=payload, hy_oas=hy_oas, ig_oas=ig_oas,
+                                        nvidia_1y=nvidia_1y, cdx=cdx)
     _render_adaptive_macro_figure(figure, "nvidia_cds")
     if not figure.data:
         st.info("暂未取得可绘制的CDS观测，请查看数据源更新状态。")
@@ -3289,22 +3308,54 @@ def render_nvidia_cds():
         status = " · 最近一次成功获取的观测" if hy_oas.attrs.get("is_stale") else ""
         st.caption(f"HY OAS（R1）{latest_oas.oas_pct:.2f}% · "
                    f"实际观测日 {latest_oas.observation_date:%Y-%m-%d}{status}")
-    summary = _ai_credit.cds_summary(payload)
+    summary = _ai_credit.cds_summary(payload, nvidia_1y=nvidia_1y)
     if ig_oas.empty:
         st.caption("IG OAS（R2）暂未取得 FRED 观测，稍后自动重试。")
     else:
         latest_ig = ig_oas.iloc[-1]
         status = " · 最近一次成功获取的观测" if ig_oas.attrs.get("is_stale") else ""
         st.caption(f"IG OAS（R2）{latest_ig.oas_pct:.2f}% · 实际观测日 {latest_ig.observation_date:%Y-%m-%d}{status}")
+    for key, (_, label, _, _) in _ai_credit.CDX_SERIES.items():
+        if records := cdx.get(key):
+            day, level = records[-1]
+            st.caption(f"{label} {level:.1f} bp · 实际观测日 {day}")
     st.dataframe(summary, hide_index=True, width="stretch",
                  column_config={"最新CDS（bp）": st.column_config.NumberColumn(format="%.2f"),
                                 "源日历覆盖率（%）": st.column_config.NumberColumn(format="%.1f%%")})
+    nvidia_1y_sources = [] if nvidia_1y.empty else [
+        (f"NVIDIA 1Y · {row.source}", row.source_url)
+        for row in nvidia_1y.drop_duplicates(["source", "source_url"]).itertuples()
+    ]
     add_sources([
         ("Open-Sourced Rates Observatory · CDS 历史数据", _ai_credit.SOURCE_URL),
         ("CDS 统计方法", _ai_credit.METHOD_URL),
         ("ICE Data Indices via FRED · HY OAS (BAMLH0A0HYM2)", _ai_credit.HY_OAS_URL),
         ("ICE Data Indices via FRED · IG OAS (BAMLC0A0CM)", _ai_credit.IG_OAS_URL),
+        ("Open-Sourced Rates Observatory · CDX 5Y 数据与方法", _ai_credit.CDX_METHOD_URL),
+        *nvidia_1y_sources,
     ], "nvidia_cds")
+    st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
+
+
+@st.fragment(run_every=60, key="infrastructure_cds_viewport")
+def render_infrastructure_cds():
+    st.markdown(
+        f'<div class="section-title">{MACRO_DISPLAY_NUMBER["infrastructure_cds"]}. 公司 5Y CDS · 信用利差</div>'
+        '<div class="section-description">甲骨文 Oracle · 博通 Broadcom · CoreWeave · SpaceX（bp）</div>',
+        unsafe_allow_html=True,
+    )
+    payload = _ai_credit.load_infrastructure_cds()
+    series = _ai_credit.INFRASTRUCTURE_SERIES
+    figure = _ai_credit.build_cds_figure(payload=payload, series=series)
+    _render_adaptive_macro_figure(figure, "infrastructure_cds")
+    st.dataframe(_ai_credit.cds_summary(payload, series=series), hide_index=True, width="stretch",
+                 column_config={"最新CDS（bp）": st.column_config.NumberColumn(format="%.2f"),
+                                "源日历覆盖率（%）": st.column_config.NumberColumn(format="%.1f%%")})
+    add_sources([
+        ("Open-Sourced Rates Observatory · Oracle、Broadcom、CoreWeave", _ai_credit.SOURCE_URL),
+        ("CDS 统计方法", _ai_credit.METHOD_URL),
+        ("DTCC SEC · SpaceX 公开成交", _ai_credit.SPACEX_SOURCE_URL),
+    ], "infrastructure_cds")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
@@ -3332,6 +3383,8 @@ for number in MACRO_DISPLAY_ORDER:
         render_copper_tcrc()
     elif number == "nvidia_cds":
         render_nvidia_cds()
+    elif number == "infrastructure_cds":
+        render_infrastructure_cds()
     elif number == "japan_holdings":
         render_japan_holdings()
     elif number == "japan_corridor":
@@ -3462,7 +3515,10 @@ def _render_all_source_freshness(figures):
     display_figures[MACRO_DISPLAY_NUMBER["us_drawdown"]] = _build_equity_drawdown()
     display_figures[MACRO_DISPLAY_NUMBER["cn_drawdown"]] = _build_china_drawdown()
     display_figures[MACRO_DISPLAY_NUMBER["copper_tcrc"]] = build_copper_tcrc_figure("5Y")
-    display_figures[MACRO_DISPLAY_NUMBER["nvidia_cds"]] = _ai_credit.build_cds_figure("5Y", hy_oas=get_hy_oas(), ig_oas=get_ig_oas())
+    display_figures[MACRO_DISPLAY_NUMBER["nvidia_cds"]] = _ai_credit.build_cds_figure(
+        "5Y", hy_oas=get_hy_oas(), ig_oas=get_ig_oas(), cdx=_get_cdx_reference())
+    display_figures[MACRO_DISPLAY_NUMBER["infrastructure_cds"]] = _ai_credit.build_cds_figure(
+        payload=_ai_credit.load_infrastructure_cds(), series=_ai_credit.INFRASTRUCTURE_SERIES)
     render_freshness_overview(display_figures, quote_rows=rows, news=_read_existing_news_snapshot())
 
 _render_all_source_freshness(macro_figures)
