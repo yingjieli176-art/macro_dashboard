@@ -8,6 +8,360 @@
   "source_url": "https://fx.minkabu.jp/news/385094",
   "records": [
     {
+      "observation_date": "2025-07-23",
+      "observation_timestamp": "2025-07-23T16:34:00+09:00",
+      "value": 10.35,
+      "source_url": "https://fx.minkabu.jp/news/339937"
+    },
+    {
+      "observation_date": "2025-07-31",
+      "observation_timestamp": "2025-07-31T16:06:00+09:00",
+      "value": 8.93,
+      "source_url": "https://fx.minkabu.jp/news/340714"
+    },
+    {
+      "observation_date": "2025-08-08",
+      "observation_timestamp": "2025-08-08T16:42:00+09:00",
+      "value": 9.7,
+      "source_url": "https://fx.minkabu.jp/news/341480"
+    },
+    {
+      "observation_date": "2025-08-15",
+      "observation_timestamp": "2025-08-15T16:32:00+09:00",
+      "value": 8.95,
+      "source_url": "https://fx.minkabu.jp/news/342035"
+    },
+    {
+      "observation_date": "2025-08-20",
+      "observation_timestamp": "2025-08-20T16:37:00+09:00",
+      "value": 8.67,
+      "source_url": "https://fx.minkabu.jp/news/342422"
+    },
+    {
+      "observation_date": "2025-08-28",
+      "observation_timestamp": "2025-08-28T16:35:00+09:00",
+      "value": 9.38,
+      "source_url": "https://fx.minkabu.jp/news/343143"
+    },
+    {
+      "observation_date": "2025-09-05",
+      "observation_timestamp": "2025-09-05T16:38:00+09:00",
+      "value": 9.95,
+      "source_url": "https://fx.minkabu.jp/news/343943"
+    },
+    {
+      "observation_date": "2025-09-10",
+      "observation_timestamp": "2025-09-10T16:23:00+09:00",
+      "value": 9.8,
+      "source_url": "https://fx.minkabu.jp/news/344315"
+    },
+    {
+      "observation_date": "2025-09-18",
+      "observation_timestamp": "2025-09-18T16:35:00+09:00",
+      "value": 8.97,
+      "source_url": "https://fx.minkabu.jp/news/345070"
+    },
+    {
+      "observation_date": "2025-09-25",
+      "observation_timestamp": "2025-09-25T16:12:00+09:00",
+      "value": 8.25,
+      "source_url": "https://fx.minkabu.jp/news/345639"
+    },
+    {
+      "observation_date": "2025-10-02",
+      "observation_timestamp": "2025-10-02T10:04:00+09:00",
+      "value": 9.45,
+      "source_url": "https://fx.minkabu.jp/news/346289"
+    },
+    {
+      "observation_date": "2025-10-10",
+      "observation_timestamp": "2025-10-10T16:30:00+09:00",
+      "value": 9.75,
+      "source_url": "https://fx.minkabu.jp/news/347080"
+    },
+    {
+      "observation_date": "2025-10-17",
+      "observation_timestamp": "2025-10-17T10:11:00+09:00",
+      "value": 9.81,
+      "source_url": "https://fx.minkabu.jp/news/347644"
+    },
+    {
+      "observation_date": "2025-10-22",
+      "observation_timestamp": "2025-10-22T16:30:00+09:00",
+      "value": 9.14,
+      "source_url": "https://fx.minkabu.jp/news/348066"
+    },
+    {
+      "observation_date": "2025-11-06",
+      "observation_timestamp": "2025-11-06T16:30:00+09:00",
+      "value": 7.62,
+      "source_url": "https://fx.minkabu.jp/news/349534"
+    },
+    {
+      "observation_date": "2025-11-14",
+      "observation_timestamp": "2025-11-14T10:05:00+09:00",
+      "value": 8.85,
+      "source_url": "https://fx.minkabu.jp/news/350240"
+    },
+    {
+      "observation_date": "2025-11-21",
+      "observation_timestamp": "2025-11-21T16:00:00+09:00",
+      "value": 10.28,
+      "source_url": "https://fx.minkabu.jp/news/350925"
+    },
+    {
+      "observation_date": "2025-11-28",
+      "observation_timestamp": "2025-11-28T10:12:00+09:00",
+      "value": 9.16,
+      "source_url": "https://fx.minkabu.jp/news/351492"
+    },
+    {
+      "observation_date": "2025-12-11",
+      "observation_timestamp": "2025-12-11T10:12:00+09:00",
+      "value": 8.33,
+      "source_url": "https://fx.minkabu.jp/news/352703"
+    },
+    {
+      "observation_date": "2025-12-19",
+      "observation_timestamp": "2025-12-19T16:33:00+09:00",
+      "value": 7.37,
+      "source_url": "https://fx.minkabu.jp/news/353534"
+    },
+    {
+      "observation_date": "2025-12-26",
+      "observation_timestamp": "2025-12-26T10:26:00+09:00",
+      "value": 8.62,
+      "source_url": "https://fx.minkabu.jp/news/354024"
+    },
+    {
+      "observation_date": "2026-01-07",
+      "observation_timestamp": "2026-01-07T16:33:00+09:00",
+      "value": 7.78,
+      "source_url": "https://fx.minkabu.jp/news/354778"
+    },
+    {
+      "observation_date": "2026-01-16",
+      "observation_timestamp": "2026-01-16T16:31:00+09:00",
+      "value": 8.44,
+      "source_url": "https://fx.minkabu.jp/news/355644"
+    },
+    {
+      "observation_date": "2026-01-21",
+      "observation_timestamp": "2026-01-21T16:34:00+09:00",
+      "value": 9.03,
+      "source_url": "https://fx.minkabu.jp/news/356063"
+    },
+    {
+      "observation_date": "2026-01-30",
+      "observation_timestamp": "2026-01-30T16:32:00+09:00",
+      "value": 10.37,
+      "source_url": "https://fx.minkabu.jp/news/357036"
+    },
+    {
+      "observation_date": "2026-02-06",
+      "observation_timestamp": "2026-02-06T10:50:00+09:00",
+      "value": 10.2,
+      "source_url": "https://fx.minkabu.jp/news/357698"
+    },
+    {
+      "observation_date": "2026-02-11",
+      "observation_timestamp": "2026-02-11T17:15:00+09:00",
+      "value": 9.87,
+      "source_url": "https://fx.minkabu.jp/news/358070"
+    },
+    {
+      "observation_date": "2026-02-18",
+      "observation_timestamp": "2026-02-18T16:33:00+09:00",
+      "value": 9.16,
+      "source_url": "https://fx.minkabu.jp/news/358668"
+    },
+    {
+      "observation_date": "2026-02-26",
+      "observation_timestamp": "2026-02-26T16:31:00+09:00",
+      "value": 9.0,
+      "source_url": "https://fx.minkabu.jp/news/359428"
+    },
+    {
+      "observation_date": "2026-03-05",
+      "observation_timestamp": "2026-03-05T16:30:00+09:00",
+      "value": 9.52,
+      "source_url": "https://fx.minkabu.jp/news/360224"
+    },
+    {
+      "observation_date": "2026-03-12",
+      "observation_timestamp": "2026-03-12T10:49:00+09:00",
+      "value": 9.64,
+      "source_url": "https://fx.minkabu.jp/news/360935"
+    },
+    {
+      "observation_date": "2026-03-19",
+      "observation_timestamp": "2026-03-19T16:32:00+09:00",
+      "value": 9.93,
+      "source_url": "https://fx.minkabu.jp/news/361733"
+    },
+    {
+      "observation_date": "2026-03-27",
+      "observation_timestamp": "2026-03-27T16:38:00+09:00",
+      "value": 9.37,
+      "source_url": "https://fx.minkabu.jp/news/362546"
+    },
+    {
+      "observation_date": "2026-04-03",
+      "observation_timestamp": "2026-04-03T10:30:00+09:00",
+      "value": 9.06,
+      "source_url": "https://fx.minkabu.jp/news/363323"
+    },
+    {
+      "observation_date": "2026-04-08",
+      "observation_timestamp": "2026-04-08T16:36:00+09:00",
+      "value": 8.55,
+      "source_url": "https://fx.minkabu.jp/news/363741"
+    },
+    {
+      "observation_date": "2026-04-17",
+      "observation_timestamp": "2026-04-17T16:32:00+09:00",
+      "value": 7.72,
+      "source_url": "https://fx.minkabu.jp/news/364691"
+    },
+    {
+      "observation_date": "2026-04-23",
+      "observation_timestamp": "2026-04-23T16:32:00+09:00",
+      "value": 7.29,
+      "source_url": "https://fx.minkabu.jp/news/365257"
+    },
+    {
+      "observation_date": "2026-05-01",
+      "observation_timestamp": "2026-05-01T16:47:00+09:00",
+      "value": 8.4,
+      "source_url": "https://fx.minkabu.jp/news/366072"
+    },
+    {
+      "observation_date": "2026-05-08",
+      "observation_timestamp": "2026-05-08T16:36:00+09:00",
+      "value": 7.86,
+      "source_url": "https://fx.minkabu.jp/news/366605"
+    },
+    {
+      "observation_date": "2026-05-13",
+      "observation_timestamp": "2026-05-13T16:32:00+09:00",
+      "value": 7.17,
+      "source_url": "https://fx.minkabu.jp/news/367009"
+    },
+    {
+      "observation_date": "2026-05-21",
+      "observation_timestamp": "2026-05-21T16:29:00+09:00",
+      "value": 6.87,
+      "source_url": "https://fx.minkabu.jp/news/367809"
+    },
+    {
+      "observation_date": "2026-05-29",
+      "observation_timestamp": "2026-05-29T16:31:00+09:00",
+      "value": 6.24,
+      "source_url": "https://fx.minkabu.jp/news/368601"
+    },
+    {
+      "observation_date": "2026-06-04",
+      "observation_timestamp": "2026-06-04T16:38:00+09:00",
+      "value": 7.21,
+      "source_url": "https://fx.minkabu.jp/news/369209"
+    },
+    {
+      "observation_date": "2026-06-12",
+      "observation_timestamp": "2026-06-12T16:30:00+09:00",
+      "value": 6.59,
+      "source_url": "https://fx.minkabu.jp/news/370081"
+    },
+    {
+      "observation_date": "2026-06-19",
+      "observation_timestamp": "2026-06-19T21:12:00+09:00",
+      "value": 7.62,
+      "source_url": "https://fx.minkabu.jp/news/370873"
+    },
+    {
+      "observation_date": "2026-06-26",
+      "observation_timestamp": "2026-06-26T16:32:00+09:00",
+      "value": 7.09,
+      "source_url": "https://fx.minkabu.jp/news/371513"
+    },
+    {
+      "observation_date": "2026-07-03",
+      "observation_timestamp": "2026-07-03T16:33:00+09:00",
+      "value": 7.49,
+      "source_url": "https://fx.minkabu.jp/news/372203"
+    },
+    {
+      "observation_date": "2026-07-10",
+      "observation_timestamp": "2026-07-10T16:45:00+09:00",
+      "value": 6.89,
+      "source_url": "https://fx.minkabu.jp/news/372845"
+    },
+    {
+      "observation_date": "2026-07-17",
+      "observation_timestamp": "2026-07-17T17:08:00+09:00",
+      "value": 6.02,
+      "source_url": "https://fx.minkabu.jp/news/373518"
+    },
+    {
+      "observation_date": "2026-07-24",
+      "observation_timestamp": "2026-07-24T16:34:00+09:00",
+      "value": 6.43,
+      "source_url": "https://fx.minkabu.jp/news/374146"
+    },
+    {
+      "observation_date": "2026-07-31",
+      "observation_timestamp": "2026-07-31T16:40:00+09:00",
+      "value": 7.42,
+      "source_url": "https://fx.minkabu.jp/news/374924"
+    },
+    {
+      "observation_date": "2026-08-07",
+      "observation_timestamp": "2026-08-07T16:32:00+09:00",
+      "value": 8.62,
+      "source_url": "https://fx.minkabu.jp/news/375596"
+    },
+    {
+      "observation_date": "2026-08-14",
+      "observation_timestamp": "2026-08-14T16:32:00+09:00",
+      "value": 6.84,
+      "source_url": "https://fx.minkabu.jp/news/376145"
+    },
+    {
+      "observation_date": "2026-08-21",
+      "observation_timestamp": "2026-08-21T16:30:00+09:00",
+      "value": 7.37,
+      "source_url": "https://fx.minkabu.jp/news/376787"
+    },
+    {
+      "observation_date": "2026-08-28",
+      "observation_timestamp": "2026-08-28T16:33:00+09:00",
+      "value": 6.95,
+      "source_url": "https://fx.minkabu.jp/news/377434"
+    },
+    {
+      "observation_date": "2026-09-04",
+      "observation_timestamp": "2026-09-04T16:36:00+09:00",
+      "value": 10.23,
+      "source_url": "https://fx.minkabu.jp/news/378183"
+    },
+    {
+      "observation_date": "2026-09-10",
+      "observation_timestamp": "2026-09-10T16:30:00+09:00",
+      "value": 10.05,
+      "source_url": "https://fx.minkabu.jp/news/378654"
+    },
+    {
+      "observation_date": "2026-09-17",
+      "observation_timestamp": "2026-09-17T16:33:00+09:00",
+      "value": 9.28,
+      "source_url": "https://fx.minkabu.jp/news/379324"
+    },
+    {
+      "observation_date": "2026-09-25",
+      "observation_timestamp": "2026-09-25T16:35:00+09:00",
+      "value": 8.09,
+      "source_url": "https://fx.minkabu.jp/news/379955"
+    },
+    {
       "observation_date": "2026-09-28",
       "observation_timestamp": "2026-09-28T15:46:00+09:00",
       "value": 8.73,
