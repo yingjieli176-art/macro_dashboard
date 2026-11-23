@@ -1,7 +1,7 @@
 {
   "series": "sn_spacex",
   "source_url": "https://pddata.dtcc.com/ppd/secdashboard",
-  "source_asof": "2026-11-20",
+  "source_asof": "2026-11-22",
   "records": [
     {
       "observation_date": "2026-10-27",
