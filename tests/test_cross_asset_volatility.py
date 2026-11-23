@@ -11,6 +11,23 @@ from macro_platform.echarts_axes import build_adaptive_echarts_option
 
 
 class CrossAssetVolatilityTests(unittest.TestCase):
+    def test_chart_history_starts_in_2020_for_every_series(self):
+        days = pd.bdate_range("2019-11-25", "2020-01-10")
+        prices = pd.DataFrame({
+            "observation_date": days, "OVXCLS": 42., "MOVE": 90., "DGS10": 4.,
+            "DCOILBRENTEU": 75., "DCOILWTICO": 70.,
+        })
+        fx = [{"observation_date": day, "observation_timestamp": day + "T12:00:00+00:00", "value": 7.5}
+              for day in ("2019-12-31", "2020-01-02")]
+        figure = cross.build_figure(ovx=prices, move=prices, eurusd_records=fx, usdjpy_records=fx,
+                                    treasury10y=prices, brent=prices, wti=prices)
+        option = build_adaptive_echarts_option(figure, "5Y")
+        self.assertEqual(len(option["series"]), 7)
+        for series in option["series"]:
+            self.assertGreaterEqual(pd.Timestamp(series["data"][0][0]), pd.Timestamp("2020-01-01"))
+        self.assertEqual(pd.Timestamp(figure.data[4].x[0]), pd.Timestamp("2020-01-01"))
+        self.assertEqual(len(figure.data[2].customdata), 1)
+
     def test_ovx_uses_completed_cboe_daily_closes(self):
         csv = "DATE,OVX\n11/19/2026,50.67\n11/20/2026,54.12\n11/23/2026,55.00\n"
         ovx = parse_ovx_closes(csv, now=pd.Timestamp("2026-11-23T15:00Z"))

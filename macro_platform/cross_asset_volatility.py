@@ -111,6 +111,7 @@ BRENT_URL = "https://fred.stlouisfed.org/series/DCOILBRENTEU"
 WTI_URL = "https://fred.stlouisfed.org/series/DCOILWTICO"
 REALIZED_WINDOW = 20
 TRADING_DAYS_YEAR = 252
+HISTORY_START = pd.Timestamp("2020-01-01")
 
 
 def twenty_day_realized_volatility(frame, column, *, yield_basis_points=False):
@@ -153,6 +154,7 @@ def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, u
     missing = []
     for column, frame, label, color, axis, unit in sources:
         valid = _valid_series(frame, column)
+        valid = valid.loc[valid.observation_date.ge(HISTORY_START)]
         if valid.empty:
             missing.append(label)
             continue
@@ -172,6 +174,7 @@ def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, u
             validated = _validate_records(dict(identity, records=rows), identity=identity)
         except (ValueError, KeyError, TypeError, OverflowError):
             validated = []
+        validated = [row for row in validated if row["observation_date"] >= HISTORY_START.date().isoformat()]
         if not validated:
             missing.append(name)
             continue
@@ -194,6 +197,7 @@ def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, u
     for frame, column, label, color, axis, unit, yield_bp in realized_inputs:
         realized = twenty_day_realized_volatility(
             frame, column, yield_basis_points=yield_bp)
+        realized = realized.loc[realized.observation_date.ge(HISTORY_START)]
         if realized.empty:
             missing.append(label)
             continue
