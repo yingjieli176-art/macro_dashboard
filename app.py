@@ -2583,14 +2583,18 @@ def build_cross_asset_vol_figure(date_range="5Y"):
     try:
         response = http_get(_cross_asset_vol.SAXO_URL, timeout=8)
         response.raise_for_status()
-        _cross_asset_vol.accept_saxo_report(response.text)
-        _cross_asset_vol.accept_usdjpy_report(response.text)
     except Exception:
         logging.info("FX 1M ATM refresh unavailable; retaining verified history",
                      exc_info=True)
+    else:
+        for accept in (_cross_asset_vol.accept_saxo_report, _cross_asset_vol.accept_usdjpy_report):
+            try:
+                accept(response.text)
+            except (ValueError, TypeError, KeyError, OSError):
+                logging.info("Saxo 1M ATM quote unavailable for %s", accept.__name__, exc_info=True)
     return _cross_asset_vol.build_figure(
         date_range, ovx=ovx, move=move, treasury10y=treasury10y,
-        brent=brent, wti=wti)
+        brent=brent, wti=wti, usdjpy_reference=_cross_asset_vol.load_usdjpy_reference())
 
 
 @st.fragment(key="cross_asset_vol_viewport")
@@ -2624,6 +2628,7 @@ def render_cross_asset_vol(prebuilt_fig=None):
         ("FRED · Brent Europe现货油价 (DCOILBRENTEU)", _cross_asset_vol.BRENT_URL),
         ("FRED · WTI Cushing现货油价 (DCOILWTICO)", _cross_asset_vol.WTI_URL),
         ("Saxo Bank · EUR/USD 与 USD/JPY 1M ATM options", _cross_asset_vol.SAXO_URL),
+        ("MINKABU PRESS · USD/JPY 1M 历史参考", _cross_asset_vol.USDJPY_REFERENCE_URL),
         ("CME EUR/USD 30-day CVOL · 交叉参考", _cross_asset_vol.CME_REFERENCE_URL),
     ], "cross_asset_vol")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)

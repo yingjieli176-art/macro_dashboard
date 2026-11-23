@@ -30,6 +30,11 @@ IDENTITY = {"symbol": "EURUSD_1M_ATM_SAXO", "source": "Saxo Bank", "pair": "EURU
             "tenor": "1M", "quote_type": "ATM", "unit": "percent"}
 USDJPY_SNAPSHOT = SNAPSHOT.with_name("usdjpy_1m_atm_saxo.json")
 USDJPY_IDENTITY = {**IDENTITY, "symbol": "USDJPY_1M_ATM_SAXO", "pair": "USDJPY"}
+USDJPY_REFERENCE_SNAPSHOT = SNAPSHOT.with_name("usdjpy_1m_minkabu.json")
+USDJPY_REFERENCE_IDENTITY = {**USDJPY_IDENTITY, "symbol": "USDJPY_1M_MINKABU",
+                            "source": "MINKABU PRESS", "quote_type": "implied_volatility_reference"}
+USDJPY_REFERENCE_NAME = "USD/JPY 1M 隐含波动率（MINKABU 参考）"
+USDJPY_REFERENCE_URL = "https://fx.minkabu.jp/news/385094"
 LOCK = threading.RLock()
 
 
@@ -57,6 +62,10 @@ def load_eurusd_snapshot(path=SNAPSHOT):
 
 def load_usdjpy_snapshot(path=USDJPY_SNAPSHOT):
     return _load_snapshot(path, USDJPY_IDENTITY)
+
+
+def load_usdjpy_reference(path=USDJPY_REFERENCE_SNAPSHOT):
+    return _load_snapshot(path, USDJPY_REFERENCE_IDENTITY)
 
 
 def _accept_pair_quote(document, pair, path, identity, now=None):
@@ -145,7 +154,8 @@ def twenty_day_realized_volatility(frame, column, *, yield_basis_points=False):
     return series[["observation_date", "rv20"]].dropna().reset_index(drop=True)
 
 
-def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, usdjpy_records=None, treasury10y=None, brent=None, wti=None):
+def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, usdjpy_records=None,
+                 usdjpy_reference=None, treasury10y=None, brent=None, wti=None):
     fig = go.Figure()
     sources = (
         ("OVXCLS", ovx, "OVX · 原油30天隐含波动率", "#ea580c", "y", "%"),
@@ -186,6 +196,17 @@ def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, u
             marker={"size":5}, line={"color":color,"width":2.6},
             meta={"observation_cadence":"daily"},
             hovertemplate=pair+" 1M ATM: %{y:.2f}%<br>Saxo: %{customdata}<extra></extra>"))
+    reference = pd.DataFrame(usdjpy_reference or [])
+    reference = _valid_series(reference, "value", maximum=100)
+    reference = reference.loc[reference.observation_date.ge(HISTORY_START)]
+    if not reference.empty:
+        fig.add_trace(go.Scatter(
+            x=reference.observation_date, y=reference.value, name=USDJPY_REFERENCE_NAME,
+            yaxis="y4", mode="lines+markers", connectgaps=False,
+            line={"color": "#047857", "dash": "dash", "width": 2.1}, marker={"size": 4},
+            meta={"observation_cadence": "daily"},
+            hovertemplate="%{x|%Y-%m-%d}<br>MINKABU 1M 参考: %{y:.2f}%<extra></extra>",
+        ))
     realized_inputs = (
         (treasury10y, "DGS10", "美国10Y国债收益率 · 20D实现波动率（DGS10变动）",
          "#be123c", "y5", "年化bp", True),
@@ -214,7 +235,7 @@ def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, u
                 "anchor":"free","position":0.84,"showgrid":False},
         yaxis3={"title":"R2 · EUR/USD 1M ATM · 年化%", "overlaying":"y",
                 "side":"right","anchor":"free","position":0.88,"showgrid":False},
-        yaxis4={"title":"R3 · USD/JPY 1M ATM · 年化%", "overlaying":"y",
+        yaxis4={"title":"R3 · USD/JPY 1M · 年化%", "overlaying":"y",
                 "side":"right","anchor":"free","position":0.80,"showgrid":False},
         yaxis5={"title":"R4 · 美国10Y国债收益率20D实现波动率 · 年化bp",
                 "overlaying":"y","side":"right","anchor":"free",
