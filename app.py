@@ -151,7 +151,7 @@ from macro_platform import jpy_implied_vol as _jpy_iv
 from macro_platform import jpy_option_history as _jpy_history
 from macro_platform import jpy_risk_reversal as _jpy_rr
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.1_cross_asset_vol"
+CHART_BUILD = "V1.2_cross_asset_usdjpy_1m"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2579,8 +2579,9 @@ def build_cross_asset_vol_figure(date_range="5Y"):
         response = http_get(_cross_asset_vol.SAXO_URL, timeout=8)
         response.raise_for_status()
         _cross_asset_vol.accept_saxo_report(response.text)
+        _cross_asset_vol.accept_usdjpy_report(response.text)
     except Exception:
-        logging.info("EURUSD 1M ATM refresh unavailable; retaining verified history",
+        logging.info("FX 1M ATM refresh unavailable; retaining verified history",
                      exc_info=True)
     return _cross_asset_vol.build_figure(date_range, ovx=ovx, move=move)
 
@@ -2589,10 +2590,10 @@ def build_cross_asset_vol_figure(date_range="5Y"):
 def render_cross_asset_vol(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER["cross_asset_vol"]}. '
-        '跨资产隐含波动率 · 原油 / 美债 / 欧元兑美元</div>'
+        '跨资产隐含波动率 · 原油 / 美债 / 欧元 / 日元</div>'
         '<div class="section-description">OVX（Cboe原油30天隐含波动率）'
-        ' / MOVE（ICE美银美债波动率） / EUR/USD 1M ATM（Saxo外汇期权隐含波动率）'
-        ' · 三条独立动态Y轴</div>',
+        ' / MOVE（ICE美银美债波动率） / EUR/USD 1M ATM / USD/JPY 1M ATM（Saxo外汇期权隐含波动率）'
+        ' · 四条独立动态Y轴</div>',
         unsafe_allow_html=True,
     )
     fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2602,10 +2603,13 @@ def render_cross_asset_vol(prebuilt_fig=None):
     if "EUR/USD 1M ATM 隐含波动率（Saxo）" in (fig.layout.meta or {}).get("missing_series", []):
         st.caption("EUR/USD 1M：尚未取得带来源时间戳的Saxo ATM报价；"
                    "不使用已停编的EVZ替代，也不使用历史实现波动率冒充隐含波动率。")
+    if "USD/JPY 1M ATM 隐含波动率（Saxo）" in (fig.layout.meta or {}).get("missing_series", []):
+        st.caption("USD/JPY 1M：尚未取得带来源时间戳的Saxo ATM报价；"
+                   "不以USD/JPY 3M期权或历史实现波动率替代。")
     add_sources([
         ("FRED · Cboe OVX (OVXCLS)", _cross_asset_vol.FRED_URL),
         ("ICE BofA MOVE · Yahoo ^MOVE", _cross_asset_vol.MOVE_URL),
-        ("Saxo Bank · EUR/USD 1M ATM options", _cross_asset_vol.SAXO_URL),
+        ("Saxo Bank · EUR/USD 与 USD/JPY 1M ATM options", _cross_asset_vol.SAXO_URL),
         ("CME EUR/USD 30-day CVOL · 交叉参考", _cross_asset_vol.CME_REFERENCE_URL),
     ], "cross_asset_vol")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
