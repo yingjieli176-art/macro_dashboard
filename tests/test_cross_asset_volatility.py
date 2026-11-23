@@ -11,6 +11,20 @@ from macro_platform.echarts_axes import build_adaptive_echarts_option
 
 
 class CrossAssetVolatilityTests(unittest.TestCase):
+    def test_usdjpy_reference_and_saxo_are_independent_curves_on_r3(self):
+        reference = cross.load_usdjpy_reference()
+        saxo = cross.load_usdjpy_snapshot()
+        option = build_adaptive_echarts_option(cross.build_figure(
+            eurusd_records=[], usdjpy_records=saxo, usdjpy_reference=reference,
+        ), "3M")
+        actual, historical = option["series"]
+        self.assertEqual(actual["name"], "USD/JPY 1M ATM 隐含波动率（Saxo）")
+        self.assertEqual(historical["name"], cross.USDJPY_REFERENCE_NAME)
+        self.assertEqual(actual["yAxisIndex"], historical["yAxisIndex"])
+        self.assertGreaterEqual(len(actual["data"]), 2)
+        self.assertGreaterEqual(len(historical["data"]), 30)
+        self.assertEqual(historical["lineStyle"]["type"], "dashed")
+
     def test_chart_history_starts_in_2020_for_every_series(self):
         days = pd.bdate_range("2019-11-25", "2020-01-10")
         prices = pd.DataFrame({

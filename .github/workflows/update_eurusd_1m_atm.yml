@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -29,5 +31,5 @@ jobs:
           git add -A data_snapshots/eurusd_1m_atm_saxo.json data_snapshots/usdjpy_1m_atm_saxo.json
           if ! git diff --cached --quiet; then
             git commit -m "data: update EURUSD and USDJPY 1M ATM Saxo observations"
-            git push
+            bash scripts/push_snapshot.sh
           fi

@@ -1,0 +1,22 @@
+{
+  "symbol": "USDJPY_1M_ATM_SAXO",
+  "source": "Saxo Bank",
+  "pair": "USDJPY",
+  "tenor": "1M",
+  "quote_type": "ATM",
+  "unit": "percent",
+  "source_url": "https://fxowebtools.saxobank.com/otc.html",
+  "updated_at": "2026-11-23T08:12:37.352407+00:00",
+  "records": [
+    {
+      "observation_date": "2026-11-20",
+      "observation_timestamp": "2026-11-20T07:00:00+00:00",
+      "value": 7.43
+    },
+    {
+      "observation_date": "2026-11-23",
+      "observation_timestamp": "2026-11-23T07:00:00+00:00",
+      "value": 7.89
+    }
+  ]
+}
