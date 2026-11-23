@@ -36,12 +36,12 @@
     },
     {
       "observation_date": "2026-11-23",
-      "observation_timestamp": "2026-11-23T07:00:00+00:00",
-      "value": -1.92
+      "observation_timestamp": "2026-11-23T12:30:00+00:00",
+      "value": -1.87
     }
   ],
   "record_count": 6,
   "coverage_start": "2026-11-16",
   "coverage_end": "2026-11-23",
-  "updated_at": "2026-11-23T08:09:35.664625+00:00"
+  "updated_at": "2026-11-23T20:14:54.828447+00:00"
 }
