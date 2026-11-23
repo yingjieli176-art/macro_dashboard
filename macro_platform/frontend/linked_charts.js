@@ -209,6 +209,7 @@ export default function({data, parentElement}) {
   const shell = parentElement.querySelector('.macro-chart-shell');
   const error = parentElement.querySelector('.macro-chart-error');
   const buttons = parentElement.querySelectorAll('.macro-chart-tools button');
+  const lockButton = parentElement.querySelector('.macro-chart-lock');
   const periodButtons = parentElement.querySelectorAll('.macro-chart-periods button');
   clearTimeout(element.__macroDisposeTimer);
   const reusedChart = element.__macroChart;
@@ -258,6 +259,13 @@ export default function({data, parentElement}) {
   const periodStates = window.__macroPeriodStates ||= new Map();
   let activePeriod = periodStates.get(legendKey) || data.period || '1Y';
   let manualZoom = saved?.manualZoom === true, applyingPreset = false;
+  // Start unlocked. Retain the toggle only while this chart stays mounted.
+  let lockLatest = saved?.lockLatest === true;
+  function showLock() {
+    lockButton.setAttribute('aria-pressed', String(lockLatest));
+    lockButton.title = lockLatest ? '已锁定最新日期（点击解除）' : '锁定最新日期（当前可自由拖动）';
+  }
+  showLock();
   function showPeriod() {
     element.dataset.period = activePeriod;
     periodButtons.forEach(button => button.setAttribute('aria-pressed',String(button.dataset.period === activePeriod)));
@@ -510,17 +518,24 @@ export default function({data, parentElement}) {
     patch.graphic = [...(patch.graphic || []), ...endpointDate(option, chart.getOption().dataZoom)];
     patch.xAxis = {...patch.xAxis,axisLabel:{...patch.xAxis.axisLabel,show:false},axisTick:{show:false}};
     chart.setOption(patch, {silent:true, replaceMerge:['yAxis']});
-    parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom};
+    parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom,
+      period:activePeriod, manualZoom, lockLatest};
   }
 
   loadEngine().then(echarts => {
     if (disposed) return;
-    const initialZoom = manualZoom && saved?.period === activePeriod ? saved.zoom.map(zoom => {
-      const {startValue,endValue,...rest} = zoom;
-      const [start,end] = latestAnchoredRange(zoom.start ?? 0,zoom.end ?? 100);
-      return {...rest,start,end};
-    }) :
-      base.dataZoom.map(zoom=>({...zoom,startValue:presetStart(last,activePeriod),endValue:last}));
+    const initialZoom = manualZoom && saved?.period === activePeriod && Array.isArray(saved?.zoom)
+      ? saved.zoom.map(zoom => {
+          // Reapply both boundaries. Do not silently jump back to the latest date.
+          const {startValue,endValue,...rest} = zoom;
+          const start = Number(zoom.start), end = Number(zoom.end);
+          if (!(Number.isFinite(start) && Number.isFinite(end))) {
+            return {...rest, startValue, endValue};
+          }
+          const [lower,upper] = lockLatest ? latestAnchoredRange(start,end) : [start,end];
+          return {...rest,start:lower,end:upper};
+        })
+      : base.dataZoom.map(zoom=>({...zoom,startValue:presetStart(last,activePeriod),endValue:last}));
     if (hasPriceGuides) refreshPriceGuides(initialZoom);
     const option = compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth);
     option.legend.selected = selected;
@@ -557,7 +572,7 @@ export default function({data, parentElement}) {
         chart.dispatchAction({type:'dataZoom',startValue:presetStart(last,activePeriod),endValue:last});
         applyingPreset = false;
         updateLayout();
-        parentElement.__macroChartState = {selected:copy(selected),zoom:chart.getOption().dataZoom,period:activePeriod,manualZoom};
+        parentElement.__macroChartState = {selected:copy(selected),zoom:chart.getOption().dataZoom,period:activePeriod,manualZoom,lockLatest};
       };
     }
     for (const event of ['legendselectchanged','legendselected','legendunselected',
@@ -578,7 +593,7 @@ export default function({data, parentElement}) {
       if (applyingPreset) return;
       manualZoom = true;
       const [start,end] = chart.getModel().getComponent('dataZoom').getPercentRange();
-      if (Math.abs(end-100) > .000001) {
+      if (lockLatest && Math.abs(end-100) > .000001) {
         const [anchoredStart,anchoredEnd] = latestAnchoredRange(start,end);
         applyingPreset = true;
         chart.dispatchAction({type:'dataZoom',start:anchoredStart,end:anchoredEnd});
@@ -596,12 +611,26 @@ export default function({data, parentElement}) {
     });
     observer.observe(shell);
     buttons[0].onclick = () => {
+      lockLatest = !lockLatest;
+      showLock();
+      if (lockLatest) {
+        const [start,end] = chart.getModel().getComponent('dataZoom').getPercentRange();
+        const [lower,upper] = latestAnchoredRange(start,end);
+        applyingPreset = true;
+        chart.dispatchAction({type:'dataZoom',start:lower,end:upper});
+        applyingPreset = false;
+      }
+      updateLayout();
+      parentElement.__macroChartState = {selected:copy(selected),zoom:chart.getOption().dataZoom,
+        period:activePeriod,manualZoom,lockLatest};
+    };
+    buttons[1].onclick = () => {
       const link = document.createElement('a');
       link.download = 'macro-chart.png';
       link.href = chart.getDataURL({pixelRatio:2, backgroundColor:'#fff'});
       link.click();
     };
-    buttons[1].onclick = () => {
+    buttons[2].onclick = () => {
       const result = document.fullscreenElement ? document.exitFullscreen() : shell.requestFullscreen?.();
       result?.catch(() => {});
     };
@@ -616,7 +645,8 @@ export default function({data, parentElement}) {
   return () => {
     disposed = true; stopResume(); cancelAnimationFrame(frame); observer?.disconnect();
     if (chart) {
-      parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom, period:activePeriod,manualZoom};
+      parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom,
+        period:activePeriod,manualZoom,lockLatest};
       element.__macroDisposeTimer = setTimeout(() => {
         chart.dispose(); delete element.__macroChart;
       }, 50);
