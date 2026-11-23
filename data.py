@@ -13,6 +13,7 @@ from macro_platform.background_refresh import BackgroundRefresh
 from macro_platform.cboe_history import OVX_HISTORY_URL, parse_ovx_closes
 from macro_platform.request_runtime import http_get, request_budget, observed_cache
 from macro_platform.fred_observations import validate_observations
+from macro_platform.tail_risk import completed_date
 
 from macro_platform.treasury_cash import parse_dts_tga_rows, read_verified_tga_snapshot
 
@@ -172,14 +173,21 @@ def _fetch_alfred_graph(series_id):
 
 
 def _get_credit_oas(series_id):
-    """Read validated ICE observations without persisting the licensed feed."""
-    for fetcher in (lambda sid: _fetch_fred_graph(sid, timeout=(8, 8)),
-                    _fetch_fred_api, _fetch_alfred_graph):
-        try:
-            frame = validate_observations(fetcher(series_id), series_id)
-            return frame.rename(columns={series_id: "oas_pct"})
-        except (requests.RequestException, RuntimeError, ValueError):
-            continue
+    """Use the newest validated observation across available ICE/FRED transports."""
+    expected = pd.offsets.BDay().rollback(pd.Timestamp(completed_date()))
+    best = None
+    with request_budget(8):
+        for fetcher in (_fetch_fred_graph, _fetch_fred_api, _fetch_alfred_graph):
+            try:
+                frame = validate_observations(fetcher(series_id), series_id)
+            except (requests.RequestException, RuntimeError, ValueError):
+                continue
+            if best is None or frame.observation_date.iloc[-1] > best.observation_date.iloc[-1]:
+                best = frame
+            if best.observation_date.iloc[-1] >= expected:
+                break
+    if best is not None:
+        return best.rename(columns={series_id: "oas_pct"})
     return pd.DataFrame(columns=["observation_date", "oas_pct"])
 
 
