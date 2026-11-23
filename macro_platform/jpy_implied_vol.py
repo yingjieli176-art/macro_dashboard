@@ -39,7 +39,7 @@ def _validate_record(row, now=None, *, allow_negative=False):
             'observation_timestamp': timestamp.isoformat(), 'value': value}
 
 
-def parse_quote(text, now=None, *, section_label='ATM VOLATILITIES', tenor='3m', allow_negative=False):
+def parse_quote(text, now=None, *, section_label='ATM VOLATILITIES', tenor='3m', pair='USDJPY', allow_negative=False):
     """Locate ATM/3m by labels, excluding spot, change and risk-reversal cells."""
     root = html.fromstring(text)
     headings = root.xpath('//*[contains(concat(" ",normalize-space(@class)," ")," mainTitle ")]')
@@ -58,7 +58,7 @@ def parse_quote(text, now=None, *, section_label='ATM VOLATILITIES', tenor='3m',
     matches = []
     for row in rows[1:]:
         cells = [c.text_content().strip() for c in row.xpath('./th|./td')]
-        if len(cells) > max(pair_index, value_index) and cells[pair_index] == 'USDJPY':
+        if len(cells) > max(pair_index, value_index) and cells[pair_index] == pair:
             matches.append(cells[value_index])
     if len(matches) != 1:
         raise ValueError('Missing or ambiguous USDJPY ATM row')
