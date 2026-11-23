@@ -3,12 +3,8 @@
   "source": "https://finance.yahoo.com/quote/JPY%3DX/history/",
   "formula": "10000 / USDJPY",
   "frequency": "completed daily close",
-  "fetched_at": "2026-11-21T02:19:08.250215+00:00",
+  "fetched_at": "2026-11-23T02:48:03.829165+00:00",
   "records": [
-    {
-      "date": "2021-11-22",
-      "usd_jpy_close": 114.13800048828125
-    },
     {
       "date": "2021-11-23",
       "usd_jpy_close": 114.79000091552734
