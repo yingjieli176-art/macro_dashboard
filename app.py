@@ -151,7 +151,7 @@ from macro_platform import jpy_implied_vol as _jpy_iv
 from macro_platform import jpy_option_history as _jpy_history
 from macro_platform import jpy_risk_reversal as _jpy_rr
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.2_cross_asset_usdjpy_1m"
+CHART_BUILD = "V1.3_cross_asset_realized_20d"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2573,6 +2573,11 @@ def build_cross_asset_vol_figure(date_range="5Y"):
     """Load real, independently dated commodity, Treasury and FX option vols."""
     ovx = get_fred_series("OVXCLS")
     move = _move_index.load_move_snapshot()
+    # Source dates are retained, and each 20-day sample uses 20 actual
+    # observed daily yield changes or oil returns rather than calendar days.
+    treasury10y = get_fred_series("DGS10")
+    brent = get_fred_series("DCOILBRENTEU")
+    wti = get_fred_series("DCOILWTICO")
     # Saxo reports timestamped ATM quotes; fetch at most once per 5-minute
     # chart revision. Never replace a valid observation with an estimate.
     try:
@@ -2583,17 +2588,19 @@ def build_cross_asset_vol_figure(date_range="5Y"):
     except Exception:
         logging.info("FX 1M ATM refresh unavailable; retaining verified history",
                      exc_info=True)
-    return _cross_asset_vol.build_figure(date_range, ovx=ovx, move=move)
+    return _cross_asset_vol.build_figure(
+        date_range, ovx=ovx, move=move, treasury10y=treasury10y,
+        brent=brent, wti=wti)
 
 
 @st.fragment(key="cross_asset_vol_viewport")
 def render_cross_asset_vol(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER["cross_asset_vol"]}. '
-        '跨资产隐含波动率 · 原油 / 美债 / 欧元 / 日元</div>'
+        '跨资产波动率 · 原油 / 美债 / 欧元 / 日元</div>'
         '<div class="section-description">OVX（Cboe原油30天隐含波动率）'
-        ' / MOVE（ICE美银美债波动率） / EUR/USD 1M ATM / USD/JPY 1M ATM（Saxo外汇期权隐含波动率）'
-        ' · 四条独立动态Y轴</div>',
+        ' / MOVE（ICE美银美债波动率） / EUR/USD 1M ATM / USD/JPY 1M ATM（Saxo）'
+        ' / 美债10Y收益率20D实际波动率（bp） / Brent、WTI 20D历史波动率（%） · 六条动态Y轴</div>',
         unsafe_allow_html=True,
     )
     fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2606,9 +2613,15 @@ def render_cross_asset_vol(prebuilt_fig=None):
     if "USD/JPY 1M ATM 隐含波动率（Saxo）" in (fig.layout.meta or {}).get("missing_series", []):
         st.caption("USD/JPY 1M：尚未取得带来源时间戳的Saxo ATM报价；"
                    "不以USD/JPY 3M期权或历史实现波动率替代。")
+    st.caption("20D历史/实际波动率：美债10Y按日收益率变动的基点(bp)计算，"
+               "Brent/WTI按日对数价格收益率计算；均使用20个有效交易日变化，"
+               "样本标准差×√252年化。油价采用FRED现货基准价格，并非期货连续合约。")
     add_sources([
         ("FRED · Cboe OVX (OVXCLS)", _cross_asset_vol.FRED_URL),
         ("ICE BofA MOVE · Yahoo ^MOVE", _cross_asset_vol.MOVE_URL),
+        ("FRED · 美国10年国债收益率 (DGS10)", _cross_asset_vol.TEN_YEAR_YIELD_URL),
+        ("FRED · Brent Europe现货油价 (DCOILBRENTEU)", _cross_asset_vol.BRENT_URL),
+        ("FRED · WTI Cushing现货油价 (DCOILWTICO)", _cross_asset_vol.WTI_URL),
         ("Saxo Bank · EUR/USD 与 USD/JPY 1M ATM options", _cross_asset_vol.SAXO_URL),
         ("CME EUR/USD 30-day CVOL · 交叉参考", _cross_asset_vol.CME_REFERENCE_URL),
     ], "cross_asset_vol")
