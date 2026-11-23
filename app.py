@@ -2617,7 +2617,8 @@ def render_cross_asset_vol(prebuilt_fig=None):
                "Brent/WTI按日对数价格收益率计算；均使用20个有效交易日变化，"
                "样本标准差×√252年化。DGS10不是债券价格或债券投资回报率；油价采用FRED现货基准价格，并非期货连续合约。")
     add_sources([
-        ("FRED · Cboe OVX (OVXCLS)", _cross_asset_vol.FRED_URL),
+        ("Cboe · OVX 官方日收盘", _cross_asset_vol.OVX_HISTORY_URL),
+        ("FRED · OVXCLS 备用源", _cross_asset_vol.FRED_URL),
         ("ICE BofA MOVE · Yahoo ^MOVE", _cross_asset_vol.MOVE_URL),
         ("FRED · 美国10年国债收益率 (DGS10)", _cross_asset_vol.TEN_YEAR_YIELD_URL),
         ("FRED · Brent Europe现货油价 (DCOILBRENTEU)", _cross_asset_vol.BRENT_URL),

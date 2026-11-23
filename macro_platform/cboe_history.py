@@ -1,15 +1,34 @@
 """Supplement a lagging Cboe CSV with Cboe's dated daily chart closes."""
 from datetime import date, datetime, time, timedelta, timezone
+from io import StringIO
 from zoneinfo import ZoneInfo
 import math
 
+import pandas as pd
 import requests
 
+from macro_platform.fred_observations import validate_observations
 from macro_platform.tail_risk import completed_date
 from macro_platform.vix_market import confirmed_close, parse_cboe_quote
 
 QUOTE = "https://cdn-api.cboe.com/api/global/delayed_quotes/quotes/_{}.json"
 CHART_HISTORY = "https://cdn-api.cboe.com/api/global/delayed_quotes/charts/historical/_{}.json"
+OVX_HISTORY_URL = "https://cdn.cboe.com/api/global/us_indices/daily_prices/OVX_History.csv"
+
+
+def parse_ovx_closes(text, now=None):
+    """Parse Cboe's original OVX daily close file."""
+    rows = pd.read_csv(StringIO(text))
+    if not {"DATE", "OVX"}.issubset(rows.columns):
+        raise ValueError("Cboe OVX daily close schema changed")
+    days = pd.to_datetime(rows["DATE"], format="%m/%d/%Y")
+    values = pd.to_numeric(rows["OVX"])
+    frame = pd.DataFrame({"observation_date": days, "OVXCLS": values})
+    frame = frame.loc[days.le(pd.Timestamp(completed_date(now))) & days.dt.dayofweek.lt(5)]
+    frame = frame.sort_values("observation_date")
+    if not frame.OVXCLS.gt(0).all():
+        raise ValueError("Cboe OVX daily closes must be positive")
+    return validate_observations(frame, "OVXCLS", now=now)
 
 
 def supplement_closes(records, symbol, now, get, *, bounds=(0, math.inf)):
