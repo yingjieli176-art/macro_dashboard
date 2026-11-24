@@ -1,4 +1,4 @@
-"""Original Cboe SKEW and VVIX daily closes; render without network calls."""
+"""Original Cboe volatility and risk index daily closes; render without network calls."""
 from datetime import datetime, time, timedelta
 import json
 from pathlib import Path
@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
-SYMBOLS = ("SKEW", "VVIX", "VIX9D")
+SYMBOLS = ("SKEW", "VVIX", "VIX9D", "DSPX")
 SOURCE_TEMPLATE = "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/{}_History.csv"
 
 

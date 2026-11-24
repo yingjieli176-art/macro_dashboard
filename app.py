@@ -1858,7 +1858,8 @@ def build_fig10(date_range):
         fig.update_traces(line_color=color, selector=dict(name=name))
     tail_sources = {}
     for symbol, name, axis, color in (("SKEW", "SKEW 5D MA (R2)", "y3", "#b45309"),
-                                       ("VVIX", "VVIX (R3)", "y4", "#dc2626")):
+                                       ("VVIX", "VVIX (R3)", "y4", "#dc2626"),
+                                       ("DSPX", "DSPX", "y", "#0f766e")):
         try:
             observed = load_tail_risk_snapshot(symbol)
             if symbol == "SKEW":
@@ -1892,7 +1893,7 @@ def build_fig10(date_range):
     fig.update_traces(line_color="#0f766e", connectgaps=False,
                       selector=dict(name=_dealer_gamma.SERIES_NAME))
     fig.update_layout(
-        yaxis_title="VIX / VIX3M · pts",
+        yaxis_title="VIX / VIX3M / DSPX · pts",
         yaxis2=dict(title="R1 · Ratios · x", overlaying="y", side="right", anchor="free",
                     position=0.65, showgrid=False, zeroline=False, fixedrange=True),
         yaxis3=dict(title="R2 · SKEW · pts", overlaying="y", side="right", anchor="free",
@@ -1915,6 +1916,7 @@ def build_fig10(date_range):
     for name, color, dash, width in (
         ("VIX", "#2563eb", "solid", 2.6),
         ("VIX3M", "#7c3aed", "dash", 2.6),
+        ("DSPX", "#0f766e", "solid", 2.4),
         ("VIX/VIX3M (R1)", "#ea580c", "dash", 2.3),
         ("SKEW 5D MA (R2)", "#92400e", "solid", 2.4),
         ("VVIX (R3)", "#dc2626", "solid", 2.2),
@@ -2820,7 +2822,7 @@ def render_macro_chart_9(prebuilt_fig=None):
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure</div>'
-        '<div class="section-description">VIX（30天≈1M） · VIX3M（VXV，约3个月） · VIX/VXV · 9D/30D · SPX P/C 63日均（独立 R6） · SKEW 5日均 (R2) · VVIX (R3) · VVIX/VIX (R4) · GEX 做市商伽马（十亿美元，R5）</div>',
+        '<div class="section-description">VIX（30天≈1M） · VIX3M（VXV，约3个月） · DSPX（标普500离散度） · VIX/VXV · 9D/30D · SPX P/C 63日均（独立 R6） · SKEW 5日均 (R2) · VVIX (R3) · VVIX/VIX (R4) · GEX 做市商伽马（十亿美元，R5）</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2833,6 +2835,7 @@ def render_macro_chart_10(prebuilt_fig=None):
         ("SqueezeMetrics · SPX GEX daily history", _dealer_gamma.SOURCE_URL),
         ("FRED · VIX (VIXCLS)", "https://fred.stlouisfed.org/series/VIXCLS"),
         ("FRED · VIX3M / VXV (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),
+        ("Cboe · DSPX Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/DSPX_History.csv"),
         ("Cboe · SKEW Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/SKEW_History.csv"),
         ("Cboe · VVIX Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv"),
         ("Cboe · VIX9D Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VIX9D_History.csv"),
