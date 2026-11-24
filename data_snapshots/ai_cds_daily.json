@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "built": "2026-11-23",
-  "source_asof": "2026-11-22",
-  "source_calendar_count": 654,
+  "built": "2026-11-24",
+  "source_asof": "2026-11-23",
+  "source_calendar_count": 655,
   "source": "Open-Sourced Rates Observatory, irates.today",
   "source_url": "https://irates.today/chart_data.json",
   "methodology_url": "https://irates.today/capex.html#method",
@@ -2630,6 +2630,10 @@
         {
           "observation_date": "2026-11-22",
           "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-23",
+          "spread_bps": 136.0
         }
       ]
     },
@@ -5254,6 +5258,10 @@
         },
         {
           "observation_date": "2026-11-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-23",
           "spread_bps": null
         }
       ]
@@ -7880,6 +7888,10 @@
         {
           "observation_date": "2026-11-22",
           "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-23",
+          "spread_bps": null
         }
       ]
     },
@@ -10504,6 +10516,10 @@
         },
         {
           "observation_date": "2026-11-22",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-23",
           "spread_bps": null
         }
       ]
@@ -13130,6 +13146,10 @@
         {
           "observation_date": "2026-11-22",
           "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-23",
+          "spread_bps": 317.0
         }
       ]
     },
@@ -15755,6 +15775,10 @@
         {
           "observation_date": "2026-11-22",
           "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-23",
+          "spread_bps": 183.0
         }
       ]
     },
@@ -18380,9 +18404,13 @@
         {
           "observation_date": "2026-11-22",
           "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-23",
+          "spread_bps": 1095.7
         }
       ]
     }
   },
-  "retrieved_at": "2026-11-24T00:57:07.137838+00:00"
+  "retrieved_at": "2026-11-24T13:44:59.734036+00:00"
 }
