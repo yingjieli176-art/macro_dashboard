@@ -10,26 +10,26 @@
     "lme_price_stock": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash",
     "cochilco_inventory": "https://boletin.cochilco.cl/productos/boletin.asp?tabla=tabla4_2"
   },
-  "updated_at": "2026-11-24T15:03:49.241407+00:00",
+  "updated_at": "2026-11-24T22:46:33.030642+00:00",
   "coverage_start": "2021-11-24",
-  "coverage_end": "2026-11-23",
+  "coverage_end": "2026-11-24",
   "counts": {
-    "comex_price": 1257,
-    "comex_stock": 1292,
+    "comex_price": 1258,
+    "comex_stock": 1293,
     "lme_price": 1262,
     "lme_stock": 1295,
-    "wti": 1256,
+    "wti": 1257,
     "vvix": 1254
   },
   "latest_by_field": {
-    "comex_price_usd_lb": "2026-11-23",
-    "comex_stock_t": "2026-11-20",
+    "comex_price_usd_lb": "2026-11-24",
+    "comex_stock_t": "2026-11-23",
     "lme_cash_usd_t": "2026-11-23",
     "lme_3m_usd_t": "2026-11-23",
     "lme_stock_t": "2026-11-23",
     "cochilco_lme_stock_t": "2026-10-30",
-    "comex_stock_short_tons": "2026-11-20",
-    "wti_usd_bbl": "2026-11-23",
+    "comex_stock_short_tons": "2026-11-23",
+    "wti_usd_bbl": "2026-11-24",
     "vvix": "2026-11-23"
   },
   "units": {
@@ -16893,15 +16893,28 @@
     {
       "date": "2026-11-23",
       "comex_price_usd_lb": 5.626999855041504,
-      "comex_stock_t": null,
+      "comex_stock_t": 731924.81289466,
       "lme_cash_usd_t": 12165.0,
       "lme_3m_usd_t": 12170.0,
       "lme_stock_t": 330975.0,
       "cochilco_lme_stock_t": null,
-      "comex_stock_source": null,
-      "comex_stock_short_tons": null,
+      "comex_stock_source": "https://www.cmegroup.com/delivery_reports/Copper_Stocks.xls",
+      "comex_stock_short_tons": 806809.0,
       "wti_usd_bbl": 80.16999816894531,
       "vvix": 117.36
+    },
+    {
+      "date": "2026-11-24",
+      "comex_price_usd_lb": 5.484499931335449,
+      "comex_stock_t": null,
+      "lme_cash_usd_t": null,
+      "lme_3m_usd_t": null,
+      "lme_stock_t": null,
+      "cochilco_lme_stock_t": null,
+      "comex_stock_source": null,
+      "comex_stock_short_tons": null,
+      "wti_usd_bbl": 81.69000244140625,
+      "vvix": null
     }
   ]
 }
