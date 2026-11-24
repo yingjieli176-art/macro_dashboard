@@ -3,10 +3,10 @@
   "source_url": "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/dts/operating_cash_balance",
   "series_id": "TGA_DAILY",
   "unit": "USD millions in source; dashboard USD trillions",
-  "fetched_at": 1795459194,
+  "fetched_at": 1795479635,
   "coverage_start": "2022-04-18",
-  "coverage_end": "2026-11-19",
-  "observation_count": 1151,
+  "coverage_end": "2026-11-20",
+  "observation_count": 1152,
   "records": [
     {
       "record_date": "2022-04-18",
@@ -7417,6 +7417,12 @@
       "account_type": "Treasury General Account (TGA) Closing Balance",
       "close_today_bal": "null",
       "open_today_bal": "891223"
+    },
+    {
+      "record_date": "2026-11-20",
+      "account_type": "Treasury General Account (TGA) Closing Balance",
+      "close_today_bal": "null",
+      "open_today_bal": "880764"
     }
   ]
 }
