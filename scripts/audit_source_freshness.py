@@ -54,6 +54,7 @@ SPECS = [
     ("skew_daily.json", "observation_date", "", ["close"]),
     ("vvix_daily.json", "observation_date", "", ["close"]),
     ("vix9d_daily.json", "observation_date", "", ["close"]),
+    ("dspx_daily.json", "observation_date", "", ["close"]),
     ("spx_put_call_daily.json", "observation_date", "", ["ratio"]),
     ("cor1m_daily.json", "observation_date", "", ["close"]),
     ("cor3m_daily.json", "observation_date", "", ["close"]),

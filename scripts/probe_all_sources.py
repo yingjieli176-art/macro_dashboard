@@ -486,6 +486,7 @@ def jobs():
     add("SKEW", [10], "daily", snapshot("skew_daily.json", "observation_date", "close"), lambda: cboe("SKEW"))
     add("VVIX_TERM", [10], "daily", snapshot("vvix_daily.json", "observation_date", "close"), lambda: cboe("VVIX"))
     add("VIX9D", [10], "daily", snapshot("vix9d_daily.json", "observation_date", "close"), lambda: cboe("VIX9D"))
+    add("DSPX", [10], "daily", snapshot("dspx_daily.json", "observation_date", "close"), lambda: cboe("DSPX"))
     def spx_pc():
         from scripts.update_spx_put_call_snapshot import fetch_daily
         from macro_platform.spx_options import SOURCE_TEMPLATE, completed_report_date

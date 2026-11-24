@@ -1,4 +1,4 @@
-"""Publish five years of verified Cboe SKEW/VVIX closes atomically per file."""
+"""Publish five years of verified Cboe index closes atomically per file."""
 from datetime import datetime, timezone
 import io
 import json
@@ -74,7 +74,7 @@ def main():
         payload = prepare_snapshot(response.text, symbol, previous, now, get=requests.get)
         if payload is not None:
             pending.append((path, payload))
-    # Validate both sources before replacing either last-good file.
+    # Validate all sources before replacing the last-good files.
     for path, payload in pending:
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(".json.tmp")

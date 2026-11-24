@@ -37,7 +37,7 @@ FAMILIES = {
         "ow_lb_bf_disc_win", "mb_bf_disc_win_total"},
     "sync_tga_daily_snapshot.py": {"TGA_DAILY"},
     "update_vixeq_snapshot.py": {"VIXEQ"},
-    "update_tail_risk_snapshot.py": {"SKEW", "VVIX", "VVIX_TERM", "VIX9D"},
+    "update_tail_risk_snapshot.py": {"SKEW", "VVIX", "VVIX_TERM", "VIX9D", "DSPX"},
     "update_spx_put_call_snapshot.py": {"SPX_PCR"},
     "update_nikkei225_snapshot.py": {"^N225"},
     "update_srf_usage.py": {"SRF_USAGE"},

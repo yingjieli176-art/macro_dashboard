@@ -12,7 +12,7 @@ DISPLAY_UNITS = {
     "USD/oz": "美元/金衡盎司", "USD/bbl": "美元/桶", "$/bbl": "美元/桶",
     "bbl/t": "桶/公吨", "kt": "千公吨", "USD/JPY": "日元/美元", "USD/HKD": "港元/美元",
 }
-VOLATILITY_PERCENT_NAMES = {"VIX", "VIXEQ", "VIX3M", "Gold Volatility · GVZ"}
+VOLATILITY_PERCENT_NAMES = {"VIX", "VIXEQ", "VIX3M", "DSPX", "Gold Volatility · GVZ"}
 
 
 def readable_display_text(text):
@@ -55,6 +55,7 @@ HINTS = {'IORB': '准备金利率', 'ON RRP': '隔夜逆回购利率', 'EFFR': '
 HINTS.update({
     "VIX": "标普500未来30天隐含波动率",
     "VIX3M": "标普500未来3个月隐含波动率",
+    "DSPX": "标普500成分股隐含离散度",
     "VIXEQ": "标普500成分股篮子30天隐含波动率",
     "VIX/VIX3M": "VIX÷VXV，30天相对3个月隐含波动率",
     "VVIX": "VIX期权反映的VIX自身隐含波动率",
@@ -175,6 +176,7 @@ CHART_PARAMETER_GUIDES = {
     ),
     "vix_term_structure": (
         ("VIX / VIX3M", "标普 500 指数约未来 30 天和 3 个月的年化隐含波动率。VXV 是 VIX3M 的旧代码。"),
+        ("DSPX", "Cboe 根据标普500指数和成分股期权定价，衡量未来30天成分股表现的预期离散程度，按年化百分比表示。"),
         ("VIX/VXV（R1）", "同日 VIX 除以 VXV（VIX3M）。大于 1 表示近端隐含波动率更高。"),
         ("9D/30D（R1）", "同日 VIX9D 除以 VIX，比较约 9 天和 30 天的隐含波动率。"),
         ("SPX P/C 63D MA（R6）", "SPX 与 SPXW 每日看跌/看涨成交量比的63个有效交易日简单均值，包含周度期权；满63个日值后显示。"),
