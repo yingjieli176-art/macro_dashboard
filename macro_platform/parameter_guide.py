@@ -56,7 +56,7 @@ HINTS.update({
     "VIX": "标普500未来30天隐含波动率",
     "VIX3M": "标普500未来3个月隐含波动率",
     "VIXEQ": "标普500成分股篮子30天隐含波动率",
-    "VIX/VIX3M": "VIX÷VIX3M，30天相对3个月隐含波动率",
+    "VIX/VIX3M": "VIX÷VXV，30天相对3个月隐含波动率",
     "VVIX": "VIX期权反映的VIX自身隐含波动率",
     "VVIX/VIX": "VVIX÷VIX，波动率的波动相对VIX水平",
     "9D/30D": "VIX9D÷VIX，标普500的9天相对30天隐含波动率",
@@ -80,6 +80,7 @@ def _short_parameter_label(name):
     if name == "ON RRP (R2)":
         return "ON RRP（隔夜逆回购余额）"
     direct = {
+        "VIX/VIX3M": "VIX/VXV（" + HINTS["VIX/VIX3M"] + "）",
         "NASDAQ-100": "NASDAQ-100（纳斯达克100）",
         "US 10Y - Japan 10Y": "US 10Y - Japan 10Y（美日10年国债利差）",
         "HY OAS": "HY OAS（美国高收益债利差，%）",
@@ -173,8 +174,8 @@ CHART_PARAMETER_GUIDES = {
         ("COR3M（R3）", "3 个月期隐含相关性指数，衡量成分股预期共同波动程度，单位为指数点。"),
     ),
     "vix_term_structure": (
-        ("VIX / VIX3M", "标普 500 指数约未来 30 天和 3 个月的年化隐含波动率。"),
-        ("VIX/VIX3M（R1）", "同日 VIX 除以 VIX3M。大于 1 表示近端隐含波动率更高。"),
+        ("VIX / VIX3M", "标普 500 指数约未来 30 天和 3 个月的年化隐含波动率。VXV 是 VIX3M 的旧代码。"),
+        ("VIX/VXV（R1）", "同日 VIX 除以 VXV（VIX3M）。大于 1 表示近端隐含波动率更高。"),
         ("9D/30D（R1）", "同日 VIX9D 除以 VIX，比较约 9 天和 30 天的隐含波动率。"),
         ("SPX P/C 63D MA（R6）", "SPX 与 SPXW 每日看跌/看涨成交量比的63个有效交易日简单均值，包含周度期权；满63个日值后显示。"),
         ("SKEW 5D MA（R2）", "图中为最近5个有效交易日的简单均值，满5个日值后显示。Cboe 根据标普 500 指数期权价格衡量未来约 30 天的尾部风险定价，单位为指数点。读数越高，下行尾部风险定价越突出。"),

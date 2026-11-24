@@ -2820,7 +2820,7 @@ def render_macro_chart_9(prebuilt_fig=None):
 def render_macro_chart_10(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure</div>'
-        '<div class="section-description">VIX（30天≈1M） · VIX3M（约3M） · VIX/VIX3M · 9D/30D · SPX P/C 63日均（独立 R6） · SKEW 5日均 (R2) · VVIX (R3) · VVIX/VIX (R4) · GEX 做市商伽马（十亿美元，R5）</div>',
+        '<div class="section-description">VIX（30天≈1M） · VIX3M（VXV，约3个月） · VIX/VXV · 9D/30D · SPX P/C 63日均（独立 R6） · SKEW 5日均 (R2) · VVIX (R3) · VVIX/VIX (R4) · GEX 做市商伽马（十亿美元，R5）</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2832,7 +2832,7 @@ def render_macro_chart_10(prebuilt_fig=None):
     add_sources([
         ("SqueezeMetrics · SPX GEX daily history", _dealer_gamma.SOURCE_URL),
         ("FRED · VIX (VIXCLS)", "https://fred.stlouisfed.org/series/VIXCLS"),
-        ("FRED · VIX3M (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),
+        ("FRED · VIX3M / VXV (VXVCLS)", "https://fred.stlouisfed.org/series/VXVCLS"),
         ("Cboe · SKEW Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/SKEW_History.csv"),
         ("Cboe · VVIX Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv"),
         ("Cboe · VIX9D Official Daily History", "https://cdn-api.cboe.com/api/global/us_indices/daily_prices/VIX9D_History.csv"),
