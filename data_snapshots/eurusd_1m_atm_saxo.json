@@ -1,17 +1,1 @@
-{
-  "symbol": "EURUSD_1M_ATM_SAXO",
-  "source": "Saxo Bank",
-  "pair": "EURUSD",
-  "tenor": "1M",
-  "quote_type": "ATM",
-  "unit": "percent",
-  "source_url": "https://fxowebtools.saxobank.com/otc.html",
-  "updated_at": "2026-11-23T00:00:00+00:00",
-  "records": [
-    {
-      "observation_date": "2026-11-20",
-      "observation_timestamp": "2026-11-20T12:30:00+00:00",
-      "value": 6.17
-    }
-  ]
-}
+{"symbol": "EURUSD_1M_ATM_SAXO", "source": "Saxo Bank", "pair": "EURUSD", "tenor": "1M", "quote_type": "ATM", "unit": "percent", "source_url": "https://fxowebtools.saxobank.com/otc.html", "updated_at": "2026-11-24T01:54:22.600571+00:00", "records": [{"observation_date": "2026-11-20", "observation_timestamp": "2026-11-20T12:30:00+00:00", "value": 6.17}, {"observation_date": "2026-11-23", "observation_timestamp": "2026-11-23T12:30:00+00:00", "value": 6.2}]}
