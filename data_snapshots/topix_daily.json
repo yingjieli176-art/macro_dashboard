@@ -3,10 +3,6 @@
   "source_url": "https://finance.yahoo.co.jp/quote/998405.T/history",
   "records": [
     {
-      "observation_date": "2021-11-17",
-      "close": 2038.34
-    },
-    {
       "observation_date": "2021-11-18",
       "close": 2035.52
     },
@@ -4897,6 +4893,10 @@
     {
       "observation_date": "2026-11-20",
       "close": 3674.22
+    },
+    {
+      "observation_date": "2026-11-24",
+      "close": 3764.88
     }
   ]
 }
