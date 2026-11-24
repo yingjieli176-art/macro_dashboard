@@ -230,6 +230,11 @@ def render_latest_vix_quote():
 
 st.markdown("""
 <style>
+/* Keep the displayed dashboard readable while Streamlit replaces stale elements. */
+[data-testid="stMain"] [data-testid="stElementContainer"][data-stale="true"] {
+    opacity: 1;
+    transition: none;
+}
 .block-container { padding-top: 0.70rem; padding-bottom: 2rem; max-width: 1760px; }
 html, body, [class*="css"] { font-family: "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "PingFang TC", "Segoe UI", sans-serif; }
 .dashboard-title { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.1rem; }
@@ -3390,7 +3395,7 @@ for number in MACRO_DISPLAY_ORDER:
     elif number == "japan_corridor":
         render_japan_corridor()
     else:
-        macro_slots[number] = st.container()
+        macro_slots[number] = st.container(key=f"macro_slot_{number}")
 
 
 def _render_completed_macro_chart(number, figure):
