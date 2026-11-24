@@ -9,28 +9,13 @@
     "https://www.hkab.org.hk/en/home"
   ],
   "transport_fallback": "r.jina.ai relay when direct api.hkma.gov.hk access is unavailable from CI",
-  "updated_at": "2026-11-23T14:57:42.702180+00:00",
+  "updated_at": "2026-11-24T04:04:35.819954+00:00",
   "source_errors": [],
-  "coverage_start": "2025-05-22",
-  "coverage_end": "2026-11-23",
+  "coverage_start": "2025-05-23",
+  "coverage_end": "2026-11-24",
   "record_count": 375,
   "fetch_strategy": "30-day incremental overlap over retained history; parallel independent endpoints; direct/relay fallback; HKAB current fixing",
   "records": [
-    {
-      "end_of_date": "2025-05-22",
-      "opening_balance": null,
-      "closing_balance": 174089,
-      "forecast_aggregate_bal_t1": null,
-      "outstanding_efbn": 1322180,
-      "ow_lb_bf_disc_win": 1214663,
-      "aggr_balance_bf_disc_win": 173593,
-      "hibor_overnight": 0.02833,
-      "hibor_3m": 1.70976,
-      "disc_win_base_rate": null,
-      "cu_weakside": null,
-      "cu_strongside": null,
-      "hibor_1m": 0.66613
-    },
     {
       "end_of_date": "2025-05-23",
       "opening_balance": null,
@@ -5655,13 +5640,29 @@
       "outstanding_efbn": 1365102,
       "ow_lb_bf_disc_win": 1165939,
       "aggr_balance_bf_disc_win": 54187,
-      "hibor_overnight": 2.61714,
+      "hibor_overnight": 2.51,
       "hibor_3m": 3.38863,
       "disc_win_base_rate": 4.25,
       "cu_weakside": 7.85,
       "cu_strongside": 7.75,
       "hibor_source": "https://www.hkab.org.hk/en/home",
       "hibor_1m": 2.77089
+    },
+    {
+      "end_of_date": "2026-11-24",
+      "opening_balance": null,
+      "closing_balance": null,
+      "forecast_aggregate_bal_t1": null,
+      "outstanding_efbn": null,
+      "ow_lb_bf_disc_win": null,
+      "aggr_balance_bf_disc_win": null,
+      "hibor_overnight": 2.74,
+      "hibor_3m": 3.38863,
+      "disc_win_base_rate": null,
+      "cu_weakside": null,
+      "cu_strongside": null,
+      "hibor_source": "https://www.hkab.org.hk/en/home",
+      "hibor_1m": 2.81566
     }
   ]
 }
