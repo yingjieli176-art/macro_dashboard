@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "built": "2026-11-21",
-  "source_asof": "2026-11-20",
-  "source_calendar_count": 652,
+  "built": "2026-11-23",
+  "source_asof": "2026-11-22",
+  "source_calendar_count": 654,
   "source": "Open-Sourced Rates Observatory, irates.today",
   "source_url": "https://irates.today/chart_data.json",
   "methodology_url": "https://irates.today/capex.html#method",
@@ -2622,6 +2622,14 @@
         {
           "observation_date": "2026-11-20",
           "spread_bps": 130.6
+        },
+        {
+          "observation_date": "2026-11-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-22",
+          "spread_bps": null
         }
       ]
     },
@@ -5238,6 +5246,14 @@
         },
         {
           "observation_date": "2026-11-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-22",
           "spread_bps": null
         }
       ]
@@ -7856,6 +7872,14 @@
         {
           "observation_date": "2026-11-20",
           "spread_bps": 95.0
+        },
+        {
+          "observation_date": "2026-11-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-22",
+          "spread_bps": null
         }
       ]
     },
@@ -10472,6 +10496,14 @@
         },
         {
           "observation_date": "2026-11-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-22",
           "spread_bps": null
         }
       ]
@@ -13090,6 +13122,14 @@
         {
           "observation_date": "2026-11-20",
           "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-22",
+          "spread_bps": null
         }
       ]
     },
@@ -15706,6 +15746,14 @@
         },
         {
           "observation_date": "2026-11-20",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-22",
           "spread_bps": null
         }
       ]
@@ -18324,9 +18372,17 @@
         {
           "observation_date": "2026-11-20",
           "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-21",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-22",
+          "spread_bps": null
         }
       ]
     }
   },
-  "retrieved_at": "2026-11-23T09:02:05.812726+00:00"
+  "retrieved_at": "2026-11-24T00:57:07.137838+00:00"
 }

@@ -1,7 +1,7 @@
 {
   "series": "sn_spacex",
   "source_url": "https://pddata.dtcc.com/ppd/secdashboard",
-  "source_asof": "2026-11-22",
+  "source_asof": "2026-11-23",
   "records": [
     {
       "observation_date": "2026-10-27",
@@ -42,6 +42,11 @@
       "observation_date": "2026-11-17",
       "spread_bps": 268.0,
       "trade_count": 5
+    },
+    {
+      "observation_date": "2026-11-23",
+      "spread_bps": 285.0,
+      "trade_count": 1
     }
   ]
 }
