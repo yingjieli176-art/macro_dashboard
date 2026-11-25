@@ -37,11 +37,34 @@ def add_bank_premiums(fig, date_range="5Y"):
         frame = frame.loc[frame.observation_date.le(today)]
         if date_range in RANGE_OFFSETS and not frame.empty:
             frame = frame.loc[frame.observation_date >= frame.observation_date.max() - RANGE_OFFSETS[date_range]]
+        # Two valid denominators must not be conflated:
+        # A premium over H = A / (H * HKDCNY) - 1;
+        # H discount to A = 1 - (H * HKDCNY) / A.
+        # Use exactly the same synchronized raw closes for both metrics.
+        required = {"a_cny", "h_hkd", "cny_per_hkd"}
+        if required.issubset(frame.columns):
+            for col in required:
+                frame[col] = pd.to_numeric(frame[col], errors="coerce")
+            converted_h = frame["h_hkd"] * frame["cny_per_hkd"]
+            frame["h_discount_pct"] = (
+                1 - converted_h / frame["a_cny"]) * 100
+            customdata = frame[[
+                "h_discount_pct", "a_cny", "h_hkd", "cny_per_hkd"]].to_numpy()
+            hover = (
+                "%{x|%Y-%m-%d}<br>A对H溢价（以H为基准）：%{y:.2f}%"
+                "<br>H对A折价（以A为基准）：%{customdata[0]:.2f}%"
+                "<br>A收盘：%{customdata[1]:.3f} CNY"
+                "<br>H收盘：%{customdata[2]:.3f} HKD"
+                "<br>1 HKD = %{customdata[3]:.5f} CNY"
+                "<extra></extra>")
+        else:
+            customdata = None
+            hover = "%{x|%Y-%m-%d}<br>A对H溢价（以H为基准）：%{y:.2f}%<extra></extra>"
         fig.add_trace(go.Scatter(x=frame.observation_date, y=frame.premium_pct,
-            name=f"{name} AH溢价率（R2）", yaxis="y3", mode="lines",
+            name=f"{name} A对H溢价率（R2）", yaxis="y3", mode="lines",
             line=dict(color=color, width=2), connectgaps=False,
-            hovertemplate="%{x|%Y-%m-%d}<br>AH溢价率：%{y:.2f}%<extra></extra>"))
-    fig.update_layout(yaxis3=dict(title="R2 · AH溢价率 (%)", overlaying="y", side="right",
+            customdata=customdata, hovertemplate=hover))
+    fig.update_layout(yaxis3=dict(title="R2 · A对H溢价率（以H为分母，%）", overlaying="y", side="right",
         anchor="free", position=1, autoshift=True, showgrid=False, zeroline=True),
         margin=dict(r=125))
     return fig
