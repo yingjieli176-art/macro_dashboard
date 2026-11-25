@@ -644,13 +644,13 @@ def jobs():
     def bank_latest(key):
         _, a, h, _ = BANKS[key]
         frame = calculate_premium(bank_quote(a), bank_quote(h), bank_quote("HKDCNY=X"))
-        day = latest(frame, "observation_date", "premium_pct")
+        day = latest(frame, "observation_date", "h_discount_pct")
         if not day:
             raise ValueError("No common completed bank/FX date")
         return day, f"https://finance.yahoo.com/quote/{h}/history/"
     for key in BANKS:
         output.append(("BANK_AH_" + key, [MACRO_DISPLAY_NUMBER[7]], "daily",
-            snapshot("bank_ah_daily.json", "observation_date", "premium_pct", key),
+            snapshot("bank_ah_daily.json", "observation_date", "h_discount_pct", key),
             lambda key=key: bank_latest(key)))
     def qcam_latest():
         from macro_platform.jpy_option_history import discover_reports, parse_pdf
