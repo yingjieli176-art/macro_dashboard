@@ -161,7 +161,7 @@ from macro_platform import parameter_guide as _parameter_guide
 if not getattr(_parameter_guide, "EXPLICIT_TREASURY_YIELD_LABELS", False):
     _parameter_guide = importlib.reload(_parameter_guide)
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.7.2_primary_data_channels"
+CHART_BUILD = "V1.7.3_ah_h_discount"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2709,7 +2709,7 @@ HK_CHART_CONFIGS = [
     ),
     (
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[7]}. HKD Funding</div>',
-        '<div class="section-description">1M HIBOR · 3M HIBOR · HKMA Base Rate · 1M−3M Spread (R1) · 农行/工行/建行 A对H溢价率（以H股为分母，R2）</div>',
+        '<div class="section-description">1M HIBOR · 3M HIBOR · HKMA Base Rate · 1M−3M Spread (R1) · 农行/工行/建行 H股相对A股折价率（以A股为分母，R2）</div>',
         "hk_7_range",
         [
             ("HKMA · HIBOR 日线", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/er-ir/hk-interbank-ir-daily/"),
@@ -2741,30 +2741,26 @@ def _render_hk_macro_chart(hk_index, prebuilt_fig=None):
     fig = prebuilt_fig if prebuilt_fig is not None else _safe_hk_bundle(_macro_snapshot_revision())[hk_index]
     _render_adaptive_macro_figure(fig, range_key)
     if hk_index == 2:
-        # The complementary H-to-A discount has a different denominator.
-        # Show both on the page even when ECharts omits Plotly customdata.
         try:
-            from macro_platform.bank_ah import SNAPSHOT as _ah_snapshot
+            from macro_platform.bank_ah import SNAPSHOT as _ah_snapshot, _discount_rows
             ah_payload = json.loads(_ah_snapshot.read_text(encoding="utf-8"))
             details = []
             for key in ("ABC", "ICBC", "CCB"):
                 series_data = ah_payload.get("series", {}).get(key, {})
-                rows = series_data.get("records") or []
-                if not rows:
+                frame = _discount_rows(series_data.get("records", []))
+                if frame.empty:
                     continue
-                row = rows[-1]
-                premium = float(row["premium_pct"])
-                discount = premium / (100.0 + premium) * 100.0
+                row = frame.iloc[-1]
                 details.append(
-                    f'{series_data.get("name", key)}（{row["observation_date"]}）：'
-                    f'A对H溢价 {premium:.2f}% / H对A折价 {discount:.2f}%')
+                    f'{series_data.get("name", key)}（{row["observation_date"]:%Y-%m-%d}）：'
+                    f'H股相对A股折价 {row["h_discount_pct"]:.2f}%')
             if details:
-                st.caption("口径：A对H溢价=(A人民币价÷H股折人民币价−1)×100%；"
-                           "H对A折价=(1−H股折人民币价÷A人民币价)×100%。"
-                           "分母不同，不能直接比较；均使用同日未复权收盘价及HKD/CNY。")
+                st.caption("统一口径：H股相对A股折价率 = "
+                           "(1 − H股港元收盘价×HKD/CNY汇率÷A股人民币收盘价)×100%；"
+                           "使用同日未复权收盘价和汇率。")
                 st.caption("；".join(details))
         except (OSError, ValueError, KeyError, TypeError, OverflowError):
-            logging.info("AH premium comparison details temporarily unavailable", exc_info=True)
+            logging.info("AH discount details temporarily unavailable", exc_info=True)
     add_sources(sources, range_key)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
