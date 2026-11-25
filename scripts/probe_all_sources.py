@@ -187,6 +187,15 @@ def yahoo_with_snapshot(symbol, filename, field):
 
 
 def yahoo(symbol):
+    # Use the exact live request window and validation of the update job.
+    if symbol == "^N225":
+        from scripts.update_nikkei225_snapshot import collect_history
+        frame = collect_history()
+        return latest(frame, "observation_date", "close"), frame.attrs["source_url"]
+    if symbol == "^HSI":
+        from scripts.update_hk_market_daily import _fetch_yahoo
+        frame = _fetch_yahoo(symbol)
+        return latest(frame, "observation_date", "close"), frame.attrs["source_url"]
     if symbol == "HSTECH":
         from scripts.update_hk_market_daily import _fetch_hstech
         frame = _fetch_hstech()
@@ -463,7 +472,7 @@ def jobs():
         output.append((key, legacy_chart_numbers(charts), cadence, stored, fetch))
     for symbol, charts in {
         "IORB": [1], "RRPONTSYAWARD": [1], "EFFR": [1], "SOFR": [1], "SRFTSYD": [1],
-        "DGS3MO": [3], "DGS2": [3], "DGS10": [2,3,18], "DGS30": [3], "DFII5": [2,13], "DFII10": [2], "T10YIE": [2],
+        "DGS3MO": [3], "DGS2": [3], "DGS10": [2,3,18], "DGS30": [3], "DFII5": [13], "DFII10": [2], "T10YIE": [2],
         "WALCL": [], "WRESBAL": [], "RRPONTSYD": [], "VIXCLS": [9,10], "VXNCLS": [9], "VXVCLS": [10], "SP500": [4,9], "GVZCLS": [15],
     }.items():
         add(symbol, charts, "weekly" if symbol in ("WALCL", "WRESBAL") else "daily",
@@ -481,6 +490,7 @@ def jobs():
         key = "date" if filename in ("jpy_market_daily.json", "copper_market_daily.json", "nikkei225_daily.json") else "observation_date"
         stored = snapshot(filename, key, field, symbol if filename == "hk_market_daily.json" else None) if filename else None
         add(symbol, charts, "daily", stored, lambda symbol=symbol, filename=filename, field=field: yahoo_with_snapshot(symbol, filename, field) if filename else yahoo(symbol))
+    add("^NDX", [3], "daily", None, lambda: yahoo("^NDX"))
     for symbol in ("VIXEQ", "COR3M"):
         add(symbol, [9], "daily", snapshot(f"{symbol.lower()}_daily.json", "observation_date", "close"), lambda symbol=symbol: cboe(symbol))
     add("SKEW", [10], "daily", snapshot("skew_daily.json", "observation_date", "close"), lambda: cboe("SKEW"))
@@ -551,6 +561,16 @@ def jobs():
         identifier = "NVIDIA_CDS_5Y" if key == "sn_nvidia" else key.upper() + "_CDS_5Y"
         chart = "infrastructure_cds" if key in INFRASTRUCTURE_SERIES else "nvidia_cds"
         output.append((identifier, [MACRO_DISPLAY_NUMBER[chart]], "daily", stored, lambda key=key: public_cds(key)))
+    from macro_platform.ai_credit import CDX_SERIES, load_cdx_snapshot, parse_cdx_source
+    saved_cdx = load_cdx_snapshot()
+    @shared_fetch
+    def live_cdx():
+        return parse_cdx_source(get(CDS_URL).json())
+    for key in CDX_SERIES:
+        records = saved_cdx.get(key) or ()
+        output.append((key.upper(), [MACRO_DISPLAY_NUMBER["nvidia_cds"]], "daily",
+                       records[-1][0] if records else None,
+                       lambda key=key: (live_cdx()[key][-1][0], CDS_URL)))
     output.append(("OVXCLS", [MACRO_DISPLAY_NUMBER["cross_asset_vol"]], "daily",
                    snapshot("fred_cache/OVXCLS.json", "date", "value"), lambda: cboe("OVX")))
     output.append(("SRF_USAGE", [1], "daily", snapshot("srf_usage_daily.json", "observation_date", "accepted_usd"), srf_usage_source))
@@ -567,6 +587,50 @@ def jobs():
                        snapshot(f"fred_cache/{symbol}.json", "date", "value"),
                        lambda symbol=symbol: fred(symbol)))
     from macro_platform.jpy_implied_vol import SOURCE_URL as SAXO_URL, parse_quote
+    volatility_chart = MACRO_DISPLAY_NUMBER["cross_asset_vol"]
+    yen_carry = MACRO_DISPLAY_NUMBER[16]
+    for pair, filename, charts in (
+        ("EURUSD", "eurusd_1m_atm_saxo.json", [volatility_chart]),
+        ("USDJPY", "usdjpy_1m_atm_saxo.json", [volatility_chart, yen_carry]),
+    ):
+        output.append((pair + "_1M_ATM_SAXO", charts, "daily",
+            snapshot(filename, "observation_date", "value"),
+            lambda pair=pair: (parse_quote(get(SAXO_URL).text, tenor="1m", pair=pair)["observation_date"],
+                               SAXO_URL)))
+    for symbol in ("DCOILBRENTEU", "DCOILWTICO"):
+        output.append((symbol, [volatility_chart], "daily",
+                       snapshot(f"fred_cache/{symbol}.json", "date", "value"),
+                       lambda symbol=symbol: fred(symbol)))
+    from macro_platform.japan_short_rates import CALENDAR_URL, COLUMN, auction_result_urls, parse_auction_result
+    def japan_3m_latest():
+        now = pd.Timestamp.now(tz="Asia/Tokyo").tz_localize(None)
+        months = [now, now - pd.offsets.MonthBegin(1)]
+        for month in months:
+            calendar = CALENDAR_URL.format(month=month.strftime("%y%m"))
+            dates = auction_result_urls(get(calendar).text)
+            dates = [url for url in dates if url[-12:-4] <= now.strftime("%Y%m%d")]
+            for url in sorted(dates, reverse=True):
+                try:
+                    return parse_auction_result(get(url).text, url)["observation_date"], url
+                except (requests.RequestException, ValueError):
+                    continue
+        raise ValueError("No published MOF 3-month auction result")
+    output.append(("MOF_TBILL_3M_AVERAGE_AUCTION", [yen_carry], "weekly",
+                   snapshot("japan_3m_auctions.json", "observation_date", COLUMN), japan_3m_latest))
+    from macro_platform.topix import SOURCE_URL as TOPIX_URL
+    from scripts.update_topix_snapshot import read_history_page
+    def topix_latest():
+        from datetime import time as clock_time
+        now = pd.Timestamp.now(tz="Asia/Tokyo")
+        today = now.tz_localize(None).normalize()
+        cutoff = today if now.time() >= clock_time(16) else today - pd.Timedelta(days=1)
+        response = get(TOPIX_URL, params={
+            "styl": "stock", "from": (today - pd.Timedelta(days=45)).strftime("%Y%m%d"),
+            "to": today.strftime("%Y%m%d"), "timeFrame": "d", "page": 1,
+        })
+        return latest(read_history_page(response, cutoff), "observation_date", "topix_close"), TOPIX_URL
+    output.append(("TOPIX", [yen_carry], "daily",
+                   snapshot("topix_daily.json", "observation_date", "close"), topix_latest))
     output.append(("USDJPY_3M_ATM_SAXO", [MACRO_DISPLAY_NUMBER[16]], "daily",
                    snapshot("jpy_3m_atm_saxo.json", "observation_date", "value"),
                    lambda: (parse_quote(get(SAXO_URL).text)["observation_date"], SAXO_URL)))
@@ -604,8 +668,10 @@ def jobs():
     output.append(("SPX_GEX", [MACRO_DISPLAY_NUMBER[10]], "daily",
                    snapshot("spx_gex_daily.json", "observation_date", "gex_usd"),
                    lambda: (parse_gex(get(GEX_URL).text)[-1]["observation_date"], GEX_URL)))
-    output.append(("MOVE", [MACRO_DISPLAY_NUMBER[9]], "daily",
+    output.append(("MOVE", sorted({MACRO_DISPLAY_NUMBER[9], volatility_chart}), "daily",
                    snapshot("move_daily.json", "observation_date", "close"), lambda: yahoo("^MOVE")))
+    output = [(key, sorted({*charts, volatility_chart}) if key == "DGS10" else charts,
+               cadence, stored, fetch) for key, charts, cadence, stored, fetch in output]
     for symbol in ("BAMLH0A0HYM2", "BAMLC0A0CM"):
         output.append((symbol, [MACRO_DISPLAY_NUMBER["nvidia_cds"]], "daily", None,
                        lambda symbol=symbol: credit_oas(symbol)))

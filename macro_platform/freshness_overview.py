@@ -10,6 +10,7 @@ from macro_platform.dashboard_layout import (
     DISPLAY_US_JP_CN_20_ORDER, MACRO_DISPLAY_NUMBER, PREVIOUS_DISPLAY_ORDER, legacy_chart_numbers,
 )
 
+SHOW_SOURCE_ENDPOINT = True
 SOURCE_REPORT = Path(__file__).resolve().parents[1] / "data_snapshots/all_source_freshness.json"
 
 
@@ -117,6 +118,7 @@ def source_rows(path=SOURCE_REPORT):
     return _local_time(report.get("checked_at")), [{"源指标": row["id"], "图表": (",".join(map(str,row["charts"]))
         if report.get("chart_numbering") == CHART_NUMBERING else "待按新图号复核"),
         "本地数据日期": row.get("repository_latest") or "实时构建",
+        "数据渠道": row.get("source_url") or "待核实",
         "源站数据日期": row.get("source_latest") or "未取得", "核对结果": labels.get(row["status"],row["status"]),
         "本次核对时间": _local_time(row.get("checked_at")), "说明": row.get("error") or row.get("live_probe_note", "")}
         for row in report.get("sources", [])

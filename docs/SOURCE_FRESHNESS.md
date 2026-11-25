@@ -24,3 +24,7 @@ An old daily value cannot be made current by a new download timestamp or null ob
 Validation: full production regression suite and browser checks run on the pull request.
 
 Daily Treasury nominal/real constant-maturity yields and Cboe VIX/VIX3M/GVZ closes now try the original publisher before FRED's mirror, preserving the same series definition and source date. FRED remains a fallback.
+
+The dashboard uses one primary publisher or data channel per series. Its release schedule defines the expected observation date. The chart view, scheduled collectors and source check prefer the same primary path when the publisher exposes an original feed. A same-definition mirror or a previously verified snapshot can keep a chart accessible during an outage. Separately defined references retain their own source labels.
+
+The source check records the actual endpoint that returned the observation. Schedules and fallback copies never advance the observation date. Multiple hostnames of one provider are alternate transports. A newer date from a differently defined instrument does not replace the original series.

@@ -17,6 +17,16 @@ from macro_platform.tail_risk import completed_date
 
 from macro_platform.treasury_cash import parse_dts_tga_rows, read_verified_tga_snapshot
 
+PRIMARY_PUBLISHER_FEEDS = {
+    "DGS3MO": "U.S. Treasury", "DGS2": "U.S. Treasury", "DGS10": "U.S. Treasury",
+    "DGS30": "U.S. Treasury", "DFII5": "U.S. Treasury", "DFII10": "U.S. Treasury",
+    "IORB": "Federal Reserve", "WALCL": "Federal Reserve H.4.1",
+    "WRESBAL": "Federal Reserve H.4.1",
+    "EFFR": "New York Fed", "SOFR": "New York Fed",
+    "RRPONTSYAWARD": "New York Fed", "RRPONTSYD": "New York Fed",
+    "VIXCLS": "Cboe", "VXNCLS": "Cboe", "VXVCLS": "Cboe", "GVZCLS": "Cboe",
+}
+
 TGA_SNAPSHOT_PATH = Path(__file__).resolve().parent / 'data_snapshots' / 'treasury_tga_daily.json'
 
 FRED_API_URL = "https://api.stlouisfed.org/fred/series/observations"
@@ -105,6 +115,14 @@ def _normalize_fred_frame(frame, series_id):
 
 
 def _fetch_fred_graph(series_id, *, timeout=(2.5, 5.0)):
+    """Read the configured original channel, with FRED as same-series transport."""
+    if series_id in PRIMARY_PUBLISHER_FEEDS:
+        try:
+            original = _fetch_original_publisher(series_id)
+            if not original.empty:
+                return original
+        except (requests.RequestException, OSError, RuntimeError, ValueError, KeyError, TypeError):
+            pass
     response = http_get(
         FRED_GRAPH_URL,
         params={"id": series_id},
@@ -128,6 +146,20 @@ def _fetch_cboe_ovx(_series_id):
     response.raise_for_status()
     frame = parse_ovx_closes(response.text)
     frame.attrs.update({"source": "Cboe OVX daily closes", "is_stale": False, "is_fallback": False})
+    return frame
+
+
+def _fetch_original_publisher(series_id):
+    from types import SimpleNamespace
+    from scripts.sync_fred_verified_cache import _fetch_primary
+
+    # Use the same parser and publication calendar as scheduled collection.
+    with request_budget(10):
+        observed = _fetch_primary(SimpleNamespace(get=http_get), series_id)
+    frame = _normalize_fred_frame(
+        observed.rename(columns={"date": "observation_date", "value": series_id}), series_id)
+    frame.attrs.update({"source": PRIMARY_PUBLISHER_FEEDS[series_id],
+                        "is_stale": False, "is_fallback": False})
     return frame
 
 

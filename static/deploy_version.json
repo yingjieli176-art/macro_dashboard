@@ -1,5 +1,5 @@
 {
-  "release": "V1.7.1_cloud_chart_compat",
+  "release": "V1.7.2_primary_data_channels",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -86,6 +86,8 @@
     "server_side_initial_chart_settlement_and_immediate_background_tab_resume",
     "explicit_treasury_yield_labels",
     "independent_all_series_visibility_controls",
-    "fx_one_month_historical_reference_curves"
+    "fx_one_month_historical_reference_curves",
+    "same_primary_publisher_for_live_and_scheduled_feed",
+    "actual_source_endpoint_and_expanded_freshness_audit"
   ]
 }

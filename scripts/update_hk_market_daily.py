@@ -86,7 +86,8 @@ def _fetch_yahoo(symbol: str) -> pd.DataFrame:
             if len(frame) < MIN_POINTS:
                 raise RuntimeError(f"Yahoo history too short for {symbol}: {len(frame)}")
             if best is None or frame.observation_date.max() > best.observation_date.max():
-                best = frame[["observation_date", "close"]]
+                best = frame[["observation_date", "close"]].copy()
+                best.attrs["source_url"] = host + encoded
         except Exception as exc:
             last_error = exc
             time.sleep(1)

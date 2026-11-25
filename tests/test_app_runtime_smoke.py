@@ -16,7 +16,7 @@ from streamlit.testing.v1 import AppTest
 def chart_specs(app):
     return [json.dumps(json.loads(chart.proto.json)["option"], sort_keys=True)
             for chart in app.get("bidi_component")
-            if chart.proto.component_name.endswith("macro_linked_chart")]
+            if re.search(r"macro_linked_chart(?:_v\d+)?$", chart.proto.component_name)]
 
 
 class DashboardBootSmoke(unittest.TestCase):
