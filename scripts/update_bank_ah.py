@@ -1,4 +1,4 @@
-"""Refresh all three bank premiums atomically from public raw closing prices."""
+"""Refresh H-share discounts to A shares from synchronized raw closes."""
 import concurrent.futures
 import json
 import sys
@@ -55,7 +55,8 @@ def main():
         print(name, len(frame), frame.observation_date.iloc[0], latest, flush=True)
     payload = {"source": "Yahoo Finance public daily history", "price_basis": "raw_close",
         "fx_basis": "HKDCNY=X: CNY per HKD; daily FX close, not synchronized equity auction fixing",
-        "formula": "(A_CNY / (H_HKD * CNY_per_HKD) - 1) * 100",
+        "formula": "(1 - H_HKD * CNY_per_HKD / A_CNY) * 100",
+        "metric": "H_share_discount_to_A_pct",
         "alignment": "same-date completed bars only; no forward fill or interpolation",
         "updated_at": datetime.now(timezone.utc).isoformat(), "series": series}
     temporary = SNAPSHOT.with_suffix(".tmp")
