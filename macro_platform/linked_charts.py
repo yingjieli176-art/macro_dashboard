@@ -8,12 +8,15 @@ from pathlib import Path
 import streamlit.components.v2 as components
 
 
+COMPONENT_NAME = "macro_linked_chart_v2"
+
+
 def _component():
     # Re-register the identical definition for the current Streamlit runtime.
     # A process-level cached callable can outlive its registry after restart.
     frontend = Path(__file__).with_name("frontend")
     return components.component(
-        "macro_linked_chart",
+        COMPONENT_NAME,
         html='<div class="macro-chart-shell"><div class="macro-chart-header"><div class="macro-chart-periods" data-testid="macroPeriodControls" role="group" aria-label="时间范围">'
              + ''.join(f'<button type="button" data-period="{period}" disabled>{period}</button>' for period in ('5Y','1Y','6M','3M','1M'))
              + '</div><div class="macro-chart-tools"><button type="button" class="macro-chart-lock" '

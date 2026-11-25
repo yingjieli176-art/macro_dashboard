@@ -12,6 +12,7 @@ DISPLAY_UNITS = {
     "USD/oz": "美元/金衡盎司", "USD/bbl": "美元/桶", "$/bbl": "美元/桶",
     "bbl/t": "桶/公吨", "kt": "千公吨", "USD/JPY": "日元/美元", "USD/HKD": "港元/美元",
 }
+EXPLICIT_TREASURY_YIELD_LABELS = True
 VOLATILITY_PERCENT_NAMES = {"VIX", "VIXEQ", "VIX3M", "DSPX", "Gold Volatility · GVZ"}
 
 

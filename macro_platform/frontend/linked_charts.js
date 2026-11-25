@@ -208,9 +208,17 @@ export default function({data, parentElement}) {
   const element = parentElement.querySelector('[data-testid="macroEChartsChart"]');
   const shell = parentElement.querySelector('.macro-chart-shell');
   const error = parentElement.querySelector('.macro-chart-error');
+  // A Cloud update can load this script against the previous component HTML.
+  const tools = shell.querySelector('.macro-chart-tools');
+  let seriesToggle = parentElement.querySelector('.macro-chart-series-toggle');
+  if (!seriesToggle && tools) {
+    seriesToggle = document.createElement('button');
+    seriesToggle.type = 'button';
+    seriesToggle.className = 'macro-chart-series-toggle';
+    tools.append(seriesToggle);
+  }
   const buttons = parentElement.querySelectorAll('.macro-chart-tools button');
   const lockButton = parentElement.querySelector('.macro-chart-lock');
-  const seriesToggle = parentElement.querySelector('.macro-chart-series-toggle');
   const periodButtons = parentElement.querySelectorAll('.macro-chart-periods button');
   clearTimeout(element.__macroDisposeTimer);
   const reusedChart = element.__macroChart;
@@ -294,10 +302,11 @@ export default function({data, parentElement}) {
     ...(hasDifference ? [differenceName] : []),
   ])];
   function updateSeriesToggle() {
+    if (!seriesToggle) return;
     const anyVisible = seriesNames.some(name => selected[name] !== false);
     seriesToggle.textContent = anyVisible ? '隐藏全部参数' : '显示全部参数';
   }
-  seriesToggle.disabled = true;
+  if (seriesToggle) seriesToggle.disabled = true;
   updateSeriesToggle();
   const ratioColors = ['#9333ea', '#db2777', '#0891b2'];
   const footerSpace = hasPriceGuides ? data.price_footer_height || 0 : 0;
@@ -575,13 +584,15 @@ export default function({data, parentElement}) {
     if (hasPriceGuides) updateLayout();
     chart.getZr().flush();
     element.setAttribute('aria-busy', 'false');
-    seriesToggle.disabled = false;
-    seriesToggle.onclick = () => {
-      const showAll = seriesNames.every(name => selected[name] === false);
-      selected = Object.fromEntries(seriesNames.map(name => [name, showAll]));
-      rememberSelection();
-      updateLayout();
-    };
+    if (seriesToggle) {
+      seriesToggle.disabled = false;
+      seriesToggle.onclick = () => {
+        const showAll = seriesNames.every(name => selected[name] === false);
+        selected = Object.fromEntries(seriesNames.map(name => [name, showAll]));
+        rememberSelection();
+        updateLayout();
+      };
+    }
     for (const button of periodButtons) {
       button.disabled = false;
       button.onclick = () => {

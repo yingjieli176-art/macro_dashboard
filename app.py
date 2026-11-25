@@ -32,12 +32,16 @@ if _echarts_axes is not None and getattr(_echarts_axes, "SRF_JPY_BAR_WIDTH", Non
     _echarts_axes = importlib.reload(_echarts_axes)
 try:
     from macro_platform import linked_charts as _linked_charts
+    if getattr(_linked_charts, "COMPONENT_NAME", None) != "macro_linked_chart_v2":
+        _linked_charts = importlib.reload(_linked_charts)
 except ImportError:
     _linked_charts = None
 from macro_platform import chart_axes as _chart_axes
 from macro_platform import dealer_gamma as _dealer_gamma
 from macro_platform import move_index as _move_index
 from macro_platform import cross_asset_volatility as _cross_asset_vol
+if not hasattr(_cross_asset_vol, "load_eurusd_reference"):
+    _cross_asset_vol = importlib.reload(_cross_asset_vol)
 RANGE_OFFSETS = _chart_axes.RANGE_OFFSETS
 apply_time_axis = _chart_axes.apply_time_axis
 # Extra chart helpers were added across multiple commits. Treat them as
@@ -150,8 +154,11 @@ from macro_platform import japan_corridor as _japan_corridor
 from macro_platform import jpy_implied_vol as _jpy_iv
 from macro_platform import jpy_option_history as _jpy_history
 from macro_platform import jpy_risk_reversal as _jpy_rr
+from macro_platform import parameter_guide as _parameter_guide
+if not getattr(_parameter_guide, "EXPLICIT_TREASURY_YIELD_LABELS", False):
+    _parameter_guide = importlib.reload(_parameter_guide)
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.7_yield_labels_fx_iv"
+CHART_BUILD = "V1.7.1_cloud_chart_compat"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2603,12 +2610,16 @@ def _load_fx_1m_atm():
 def build_cross_asset_vol_figure(date_range="5Y"):
     """Load independently dated commodity, Treasury and FX option vols."""
     eurusd, usdjpy = _load_fx_1m_atm()
+    load_eur_reference = getattr(_cross_asset_vol, "load_eurusd_reference", None)
+    # The previous module can still be available while Cloud updates files.
+    eur_reference = ({"eurusd_reference": load_eur_reference()}
+                     if callable(load_eur_reference) else {})
     return _cross_asset_vol.build_figure(
         date_range, ovx=get_fred_series("OVXCLS"), move=_move_index.load_move_snapshot(),
         treasury10y=get_fred_series("DGS10"), brent=get_fred_series("DCOILBRENTEU"),
         wti=get_fred_series("DCOILWTICO"), eurusd_records=eurusd, usdjpy_records=usdjpy,
-        eurusd_reference=_cross_asset_vol.load_eurusd_reference(),
         usdjpy_reference=_cross_asset_vol.load_usdjpy_reference(),
+        **eur_reference,
     )
 
 
@@ -2643,7 +2654,9 @@ def render_cross_asset_vol(prebuilt_fig=None):
             "cross_asset_vol", _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(fig, "cross_asset_vol", standard=True)
     _show_fx_1m_coverage(fig, (
-        _cross_asset_vol.EURUSD_ATM_NAME, _cross_asset_vol.EURUSD_REFERENCE_NAME,
+        getattr(_cross_asset_vol, "EURUSD_ATM_NAME", "EUR/USD 1M ATM 隐含波动率（Saxo）"),
+        getattr(_cross_asset_vol, "EURUSD_REFERENCE_NAME",
+                "EUR/USD 1M 隐含波动率（MINKABU 参考）"),
         _cross_asset_vol.USDJPY_ATM_NAME, _cross_asset_vol.USDJPY_REFERENCE_NAME,
     ))
     st.caption("20D历史/实现波动率：美国10年期国债收益率直接使用DGS10的每日收益率变化（bp），"

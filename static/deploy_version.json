@@ -1,5 +1,5 @@
 {
-  "release": "V1.7_yield_labels_fx_iv",
+  "release": "V1.7.1_cloud_chart_compat",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
