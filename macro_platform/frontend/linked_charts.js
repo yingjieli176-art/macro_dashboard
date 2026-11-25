@@ -210,6 +210,7 @@ export default function({data, parentElement}) {
   const error = parentElement.querySelector('.macro-chart-error');
   const buttons = parentElement.querySelectorAll('.macro-chart-tools button');
   const lockButton = parentElement.querySelector('.macro-chart-lock');
+  const seriesToggle = parentElement.querySelector('.macro-chart-series-toggle');
   const periodButtons = parentElement.querySelectorAll('.macro-chart-periods button');
   clearTimeout(element.__macroDisposeTimer);
   const reusedChart = element.__macroChart;
@@ -288,6 +289,16 @@ export default function({data, parentElement}) {
   const comparison = drawdownComparison(shortNames);
   const hasDifference = !!comparison;
   const differenceName = comparison?.name;
+  const seriesNames = [...new Set([
+    ...base.series.map(series => series.name), ...ratioNames,
+    ...(hasDifference ? [differenceName] : []),
+  ])];
+  function updateSeriesToggle() {
+    const anyVisible = seriesNames.some(name => selected[name] !== false);
+    seriesToggle.textContent = anyVisible ? '隐藏全部参数' : '显示全部参数';
+  }
+  seriesToggle.disabled = true;
+  updateSeriesToggle();
   const ratioColors = ['#9333ea', '#db2777', '#0891b2'];
   const footerSpace = hasPriceGuides ? data.price_footer_height || 0 : 0;
   let drawdowns = [];
@@ -497,6 +508,7 @@ export default function({data, parentElement}) {
 
   function updateLayout() {
     if (!chart || disposed) return;
+    updateSeriesToggle();
     refreshPriceGuides(chart.getOption().dataZoom);
     const zooms = chart.getOption().dataZoom;
     const option = sizeBars(compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth), zooms);
@@ -563,6 +575,13 @@ export default function({data, parentElement}) {
     if (hasPriceGuides) updateLayout();
     chart.getZr().flush();
     element.setAttribute('aria-busy', 'false');
+    seriesToggle.disabled = false;
+    seriesToggle.onclick = () => {
+      const showAll = seriesNames.every(name => selected[name] === false);
+      selected = Object.fromEntries(seriesNames.map(name => [name, showAll]));
+      rememberSelection();
+      updateLayout();
+    };
     for (const button of periodButtons) {
       button.disabled = false;
       button.onclick = () => {

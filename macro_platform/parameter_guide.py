@@ -83,12 +83,16 @@ def _short_parameter_label(name):
     direct = {
         "VIX/VIX3M": "VIX/VXV（" + HINTS["VIX/VIX3M"] + "）",
         "NASDAQ-100": "NASDAQ-100（纳斯达克100）",
-        "US 10Y - Japan 10Y": "US 10Y - Japan 10Y（美日10年国债利差）",
+        "US 10Y - Japan 10Y": "US 10Y - Japan 10Y（美日10年期国债收益率利差）",
+        "JPY 3M": "JPY 3M（日本3个月国库短期证券拍卖收益率）",
+        "JPY 10Y": "JPY 10Y（日本10年期国债收益率）",
+        "JPY 10Y - JPY 3M": "JPY 10Y−3M（日本国债收益率利差）",
+        "US 5Y Real · TIPS": "TIPS（美国5年期通胀保值国债实际收益率）",
         "HY OAS": "HY OAS（美国高收益债利差，%）",
         "NVIDIA 1Y": "NVIDIA 1Y（英伟达违约利差）",
-        "10年期名义收益率（DGS10）": "DGS10（10年名义美债）",
-        "10年期实际收益率（TIPS · DFII10，右轴）": "DFII10（10年实际利率）",
-        "10年期盈亏平衡通胀率（BEI · T10YIE，右轴）": "T10YIE（10年通胀补偿）",
+        "10年期名义收益率（DGS10）": "DGS10（美国10年期名义国债收益率）",
+        "10年期实际收益率（TIPS · DFII10，右轴）": "DFII10（美国10年期通胀保值国债实际收益率）",
+        "10年期盈亏平衡通胀率（BEI · T10YIE，右轴）": "T10YIE（美国10年期盈亏平衡通胀率）",
         "分子：标普500（S&P 500）": "S&P 500（标普500）",
         "分母：日经225（Nikkei 225）": "Nikkei 225（日经225）",
         "比值：标普500 ÷ 日经225": "SPX/Nikkei（标普500点位÷日经225点位）",
@@ -102,9 +106,10 @@ def _short_parameter_label(name):
     if key in direct:
         return direct[key]
     if key in ("3M", "2Y", "10Y", "30Y"):
-        return key + "（" + {"3M":"3个月美债", "2Y":"2年美债", "10Y":"10年美债", "30Y":"30年美债"}[key] + "）"
+        maturity = {"3M": "3个月", "2Y": "2年期", "10Y": "10年期", "30Y": "30年期"}[key]
+        return f"{key}（美国{maturity}国债收益率）"
     if match := re.fullmatch(r"(Japan|China) (2Y|10Y|30Y|10Y−2Y|30Y−10Y)", key):
-        return match[1] + " " + match[2] + "（" + {"Japan":"日本", "China":"中国"}[match[1]] + ("国债利差" if "−" in match[2] else "国债利率") + "）"
+        return match[1] + " " + match[2] + "（" + {"Japan":"日本", "China":"中国"}[match[1]] + ("国债收益率利差" if "−" in match[2] else "国债收益率") + "）"
     if match := re.fullmatch(r"(NVIDIA|AMD|Alphabet|Microsoft|Oracle) 5Y.*", key):
         company={"NVIDIA":"英伟达", "AMD":"超威半导体", "Alphabet":"谷歌", "Microsoft":"微软", "Oracle":"甲骨文"}[match[1]]
         return match[1] + " 5Y（" + company + "违约利差）"
