@@ -38,12 +38,11 @@ def read_archive(content, cutoff):
     return clean_observations(pd.concat(frames, ignore_index=True))
 
 
-def main():
-    today = pd.Timestamp.now(tz="Asia/Tokyo").tz_localize(None).normalize()
+def collect_observations(today):
+    """Read published MOF values independently of the repository snapshot."""
     cutoff = today - pd.DateOffset(years=5, days=14)
-    previous = load_japan_3m()
     archive = read_archive(get(ARCHIVE_URL).content, cutoff)
-    frames = [previous, archive]
+    frames = [archive]
     # Bridge the lag between the monthly archive and today's auction calendar.
     start = archive.observation_date.max().replace(day=1)
     urls = []
@@ -54,7 +53,16 @@ def main():
     records = [parse_auction_result(get(url).text, url) for url in dict.fromkeys(urls)]
     if records:
         frames.append(pd.DataFrame(records))
-    combined = clean_observations(pd.concat(frames, ignore_index=True))
+    observed = clean_observations(pd.concat(frames, ignore_index=True))
+    return observed, [ARCHIVE_URL, *dict.fromkeys(urls)]
+
+
+def main():
+    today = pd.Timestamp.now(tz="Asia/Tokyo").tz_localize(None).normalize()
+    cutoff = today - pd.DateOffset(years=5, days=14)
+    observed, source_urls = collect_observations(today)
+    previous = load_japan_3m()
+    combined = clean_observations(pd.concat([previous, observed], ignore_index=True))
     combined = combined.loc[combined.observation_date.ge(cutoff)]
     if len(combined) < 240 or (today - combined.observation_date.max()).days > 14:
         raise ValueError("MOF 3M history is incomplete or stale")
@@ -63,7 +71,7 @@ def main():
     combined["observation_date"] = combined.observation_date.dt.strftime("%Y-%m-%d")
     payload = dict(series_id="MOF_TBILL_3M_AVERAGE_AUCTION", unit="percent",
                    source="Japan MOF 3-month Treasury discount bills, average auction yield",
-                   source_urls=[ARCHIVE_URL, *dict.fromkeys(urls)],
+                   source_urls=source_urls,
                    updated_at=datetime.now(timezone.utc).isoformat(),
                    records=combined.to_dict("records"))
     SNAPSHOT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")

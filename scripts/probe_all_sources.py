@@ -601,20 +601,15 @@ def jobs():
         output.append((symbol, [volatility_chart], "daily",
                        snapshot(f"fred_cache/{symbol}.json", "date", "value"),
                        lambda symbol=symbol: fred(symbol)))
-    from macro_platform.japan_short_rates import CALENDAR_URL, COLUMN, auction_result_urls, parse_auction_result
+    from macro_platform.japan_short_rates import ARCHIVE_URL, COLUMN
+    from scripts.update_japan_3m import collect_observations
     def japan_3m_latest():
-        now = pd.Timestamp.now(tz="Asia/Tokyo").tz_localize(None)
-        months = [now, now - pd.offsets.MonthBegin(1)]
-        for month in months:
-            calendar = CALENDAR_URL.format(month=month.strftime("%y%m"))
-            dates = auction_result_urls(get(calendar).text)
-            dates = [url for url in dates if url[-12:-4] <= now.strftime("%Y%m%d")]
-            for url in sorted(dates, reverse=True):
-                try:
-                    return parse_auction_result(get(url).text, url)["observation_date"], url
-                except (requests.RequestException, ValueError):
-                    continue
-        raise ValueError("No published MOF 3-month auction result")
+        today = pd.Timestamp.now(tz="Asia/Tokyo").tz_localize(None).normalize()
+        observations, sources = collect_observations(today)
+        day = latest(observations, "observation_date", COLUMN)
+        key = day.replace("-", "") if day else ""
+        endpoint = next((url for url in sources[1:] if url[-12:-4] == key), ARCHIVE_URL)
+        return day, endpoint
     output.append(("MOF_TBILL_3M_AVERAGE_AUCTION", [yen_carry], "weekly",
                    snapshot("japan_3m_auctions.json", "observation_date", COLUMN), japan_3m_latest))
     from macro_platform.topix import SOURCE_URL as TOPIX_URL
