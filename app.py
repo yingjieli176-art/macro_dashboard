@@ -102,7 +102,8 @@ except ImportError:
     _yen_carry = None
 from macro_platform.security_search import search_securities
 from macro_platform import freshness_overview as _freshness_overview
-if _freshness_overview.CHART_NUMBERING != _dashboard_layout.CHART_NUMBERING:
+if (_freshness_overview.CHART_NUMBERING != _dashboard_layout.CHART_NUMBERING
+        or not getattr(_freshness_overview, "SHOW_SOURCE_ENDPOINT", False)):
     _freshness_overview = importlib.reload(_freshness_overview)
 render_freshness_overview = _freshness_overview.render_freshness_overview
 from macro_platform.watchlist_state import WATCHLIST_KEYS, decode_watchlists, encode_watchlists, merge_default_watchlists, watchlist_needs_default_migration
@@ -110,6 +111,8 @@ from macro_platform.market_history import completed_daily_closes
 # Keep startup-compatible with older data.py during Streamlit Cloud rolling
 # deployments: optional/newer market getters must never crash the whole page.
 import data as _market_data_module
+if not hasattr(_market_data_module, "PRIMARY_PUBLISHER_FEEDS"):
+    _market_data_module = importlib.reload(_market_data_module)
 try:
     from macro_platform import vix_market as _vix_market
 except ImportError:
@@ -158,7 +161,7 @@ from macro_platform import parameter_guide as _parameter_guide
 if not getattr(_parameter_guide, "EXPLICIT_TREASURY_YIELD_LABELS", False):
     _parameter_guide = importlib.reload(_parameter_guide)
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.7.1_cloud_chart_compat"
+CHART_BUILD = "V1.7.2_primary_data_channels"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"

@@ -1,9 +1,11 @@
 """Append separately validated EUR/USD and USD/JPY 1M ATM Saxo quotes."""
 import argparse
 from pathlib import Path
+import sys
 
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from macro_platform.cross_asset_volatility import (
     SAXO_URL, SNAPSHOT, USDJPY_SNAPSHOT, accept_saxo_report, accept_usdjpy_report,
 )
