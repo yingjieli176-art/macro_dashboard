@@ -707,7 +707,30 @@ def main():
             page.get_by_text(f"{MACRO_DISPLAY_NUMBER[15]}. Japan Government Yields & Nikkei 225", exact=False).wait_for(timeout=60000)
             charts = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
-            page.get_by_text("5. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
+            treasury_scope = page.locator('[class*=st-key-normal_yield10_range_echarts_schema_]').filter(
+                has=page.get_by_role('button', name='隐藏全部参数'))
+            treasury_chart = treasury_scope.get_by_test_id('macroEChartsChart')
+            toggle = treasury_scope.locator('.macro-chart-series-toggle')
+            expect(toggle).to_be_enabled(timeout=30000)
+            get_selection = """element => {
+                const option = (""" + INSTANCE_JS + """)(element).getOption();
+                return {names:option.series.map(s=>s.name),
+                    selected:option.legend[0].selected,
+                    zoom:option.dataZoom[0]};
+            }"""
+            original = treasury_chart.evaluate(get_selection)
+            toggle.click()
+            expect(toggle).to_have_text('显示全部参数')
+            hidden = treasury_chart.evaluate(get_selection)
+            assert all(hidden['selected'][name] is False for name in original['names']), hidden
+            assert hidden['zoom'] == original['zoom'], hidden
+            toggle.click()
+            expect(toggle).to_have_text('隐藏全部参数')
+            restored = treasury_chart.evaluate(get_selection)
+            assert all(restored['selected'][name] is True for name in original['names']), restored
+            report['treasury_series_toggle'] = 'hide and restore all with the same zoom'
+            print('PASS chart series toggle in Chromium', flush=True)
+            page.get_by_text(f"{MACRO_DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
             page.get_by_text(f"{MACRO_DISPLAY_NUMBER[11]}. Precious Metals", exact=True).wait_for(timeout=30000)
             # The first eight canvases can paint while later fragments still render.
             expect(groups).to_have_count(22, timeout=60000)

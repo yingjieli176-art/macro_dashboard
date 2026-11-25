@@ -1,5 +1,5 @@
 {
-  "release": "V1.6_credit_freshness",
+  "release": "V1.7_yield_labels_fx_iv",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -83,6 +83,9 @@
     "investment_grade_oas_with_high_yield_oas_shared_percent_axis",
     "chart17_currency_adjusted_bank_ah_premiums_independent_r2",
     "chart17_one_month_hibor_and_one_minus_three_month_spread",
-    "server_side_initial_chart_settlement_and_immediate_background_tab_resume"
+    "server_side_initial_chart_settlement_and_immediate_background_tab_resume",
+    "explicit_treasury_yield_labels",
+    "independent_all_series_visibility_controls",
+    "fx_one_month_historical_reference_curves"
   ]
 }
