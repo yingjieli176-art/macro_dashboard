@@ -39,9 +39,10 @@ SERIES = (
     "DGS3MO", "DGS2", "DGS10", "DGS30", "DFII5", "DFII10", "T10YIE",
     "SOFR", "IORB", "EFFR", "RRPONTSYAWARD", "SRFTSYD", "WALCL",
     "WRESBAL", "WTREGEN", "RRPONTSYD", "VIXCLS", "VXVCLS",
-    "SP500", "VXNCLS", "GVZCLS", "OVXCLS", "DCOILBRENTEU", "DCOILWTICO", "GFDEBTN", "FYGFDPUN",
+    "SP500", "VXNCLS", "GVZCLS", "OVXCLS", "GFDEBTN", "FYGFDPUN",
     "FDHBFRBN", "FDHBFIN", "FDHBPIN",
 ) + TIC_JAPAN_SERIES
+ON_DEMAND_HISTORY = ("DCOILBRENTEU", "DCOILWTICO")
 CRITICAL = ("IORB", "RRPONTSYAWARD", "EFFR", "SOFR", "SRFTSYD")
 START = "2020-01-01"
 
@@ -469,7 +470,7 @@ def write_health_report(series_ids, errors):
 
 def main():
     updated, retained, errors = [], [], []
-    target_series = CRITICAL if "--core-only" in sys.argv else SERIES
+    target_series = CRITICAL if "--core-only" in sys.argv else SERIES + ON_DEMAND_HISTORY
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
         results = pool.map(refresh_one, target_series)
         for sid, payload, error in results:

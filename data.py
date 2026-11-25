@@ -115,6 +115,14 @@ def _normalize_fred_frame(frame, series_id):
 
 
 def _fetch_fred_graph(series_id, *, timeout=(2.5, 5.0)):
+    """Read the configured original channel, with FRED as same-series transport."""
+    if series_id in PRIMARY_PUBLISHER_FEEDS:
+        try:
+            original = _fetch_original_publisher(series_id)
+            if not original.empty:
+                return original
+        except (requests.RequestException, OSError, RuntimeError, ValueError, KeyError, TypeError):
+            pass
     response = http_get(
         FRED_GRAPH_URL,
         params={"id": series_id},
@@ -272,8 +280,6 @@ def _refresh_fred_series(series_id):
     fetchers = (_fetch_fred_graph, _fetch_fred_api)
     if series_id == "OVXCLS":
         fetchers = (_fetch_cboe_ovx, *fetchers)
-    elif series_id in PRIMARY_PUBLISHER_FEEDS:
-        fetchers = (_fetch_original_publisher, *fetchers)
     for fetcher in fetchers:
         try:
             frame = fetcher(series_id)
