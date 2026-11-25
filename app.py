@@ -151,7 +151,7 @@ from macro_platform import jpy_implied_vol as _jpy_iv
 from macro_platform import jpy_option_history as _jpy_history
 from macro_platform import jpy_risk_reversal as _jpy_rr
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.6_credit_freshness"
+CHART_BUILD = "V1.7_yield_labels_fx_iv"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2447,11 +2447,17 @@ def _render_adaptive_macro_figure(base_fig, element_key, mode=None, standard=Fal
     st.warning(f"原生动态图表暂不可用（{failure_kind}），显示可切换时间范围的兼容图表。")
     try:
         fallback = _viewport_scaled_plotly_fallback(base_fig, selected_range)
-        # The unified selector above already handles relayout of X and Y.
-        # Hide the second, renderer-specific row of time buttons.
-        # Plotly update_layout(updatemenus=[]) merges with existing menus,
-        # so set the tuple directly to actually remove duplicate buttons.
-        fallback.layout.updatemenus = ()
+        # The Streamlit selector handles time ranges in the compatibility view.
+        fallback.layout.updatemenus = (dict(
+            type="buttons", direction="right", x=1, xanchor="right", y=1.25,
+            showactive=False,
+            buttons=[
+                dict(label="隐藏全部参数", method="restyle",
+                     args=[{"visible": ["legendonly"] * len(fallback.data)}]),
+                dict(label="显示全部参数", method="restyle",
+                     args=[{"visible": [True] * len(fallback.data)}]),
+            ],
+        ),)
         st.plotly_chart(
             fallback,
             key=f"{element_key}_plotly_fallback_{mode or 'default'}_{selected_range}",
@@ -2527,7 +2533,7 @@ def render_macro_chart_1(prebuilt_fig=None):
 def render_macro_chart_2(prebuilt_fig=None):
     _render_standard_macro_chart(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[2]}. US Treasury Yield Structure · 10Y</div>',
-        '<div class="section-description">10年期名义收益率（DGS10） / 10年期实际收益率（TIPS · DFII10，右轴） / 10年期盈亏平衡通胀率（BEI · T10YIE，右轴）</div>',
+        '<div class="section-description">美国10年期名义国债收益率（DGS10） / 美国10年期通胀保值国债实际收益率（TIPS · DFII10，右轴） / 10年期盈亏平衡通胀率（BEI · T10YIE，右轴）</div>',
         "normal_yield10_range",
         build_fig2,
         [
@@ -2543,14 +2549,14 @@ def render_macro_chart_2(prebuilt_fig=None):
 def render_macro_chart_3(prebuilt_fig=None):
     _render_standard_macro_chart(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[3]}. Treasury Yield & Curve Spread</div>',
-        '<div class="section-description">3M / 2Y / 10Y / 30Y / 10Y−2Y (R1) / 30Y−10Y (R1) / NASDAQ-100 (R2)</div>',
+        '<div class="section-description">美国国债收益率（3M、2Y、10Y、30Y） / 收益率利差（10Y−2Y、30Y−10Y，R1） / NASDAQ-100 (R2)</div>',
         "normal_treasury_range",
         build_fig3,
         [
-            ("3M Treasury (DGS3MO)", "https://fred.stlouisfed.org/series/DGS3MO"),
-            ("2Y Treasury (DGS2)", "https://fred.stlouisfed.org/series/DGS2"),
+            ("美国3个月国债收益率（DGS3MO）", "https://fred.stlouisfed.org/series/DGS3MO"),
+            ("美国2年期国债收益率（DGS2）", "https://fred.stlouisfed.org/series/DGS2"),
             ("10年期名义收益率（DGS10）", "https://fred.stlouisfed.org/series/DGS10"),
-            ("30Y Treasury (DGS30)", "https://fred.stlouisfed.org/series/DGS30"),
+            ("美国30年期国债收益率（DGS30）", "https://fred.stlouisfed.org/series/DGS30"),
             ("NASDAQ-100 (^NDX)", "https://finance.yahoo.com/quote/%5ENDX/history/"),
         ],
         prebuilt_fig=prebuilt_fig,
@@ -2576,17 +2582,9 @@ def render_macro_chart_4(prebuilt_fig=None):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-def build_cross_asset_vol_figure(date_range="5Y"):
-    """Load real, independently dated commodity, Treasury and FX option vols."""
-    ovx = get_fred_series("OVXCLS")
-    move = _move_index.load_move_snapshot()
-    # Source dates are retained, and each 20-day sample uses 20 actual
-    # observed daily yield changes or oil returns rather than calendar days.
-    treasury10y = get_fred_series("DGS10")
-    brent = get_fred_series("DCOILBRENTEU")
-    wti = get_fred_series("DCOILWTICO")
-    # Saxo reports timestamped ATM quotes; fetch at most once per 5-minute
-    # chart revision. Never replace a valid observation with an estimate.
+@st.cache_data(ttl=300, show_spinner=False)
+def _load_fx_1m_atm():
+    """Return one shared snapshot of dated Saxo quotes for both FX charts."""
     try:
         response = http_get(_cross_asset_vol.SAXO_URL, timeout=8)
         response.raise_for_status()
@@ -2599,9 +2597,35 @@ def build_cross_asset_vol_figure(date_range="5Y"):
                 accept(response.text)
             except (ValueError, TypeError, KeyError, OSError):
                 logging.info("Saxo 1M ATM quote unavailable for %s", accept.__name__, exc_info=True)
+    return _cross_asset_vol.load_eurusd_snapshot(), _cross_asset_vol.load_usdjpy_snapshot()
+
+
+def build_cross_asset_vol_figure(date_range="5Y"):
+    """Load independently dated commodity, Treasury and FX option vols."""
+    eurusd, usdjpy = _load_fx_1m_atm()
     return _cross_asset_vol.build_figure(
-        date_range, ovx=ovx, move=move, treasury10y=treasury10y,
-        brent=brent, wti=wti, usdjpy_reference=_cross_asset_vol.load_usdjpy_reference())
+        date_range, ovx=get_fred_series("OVXCLS"), move=_move_index.load_move_snapshot(),
+        treasury10y=get_fred_series("DGS10"), brent=get_fred_series("DCOILBRENTEU"),
+        wti=get_fred_series("DCOILWTICO"), eurusd_records=eurusd, usdjpy_records=usdjpy,
+        eurusd_reference=_cross_asset_vol.load_eurusd_reference(),
+        usdjpy_reference=_cross_asset_vol.load_usdjpy_reference(),
+    )
+
+
+def _show_fx_1m_coverage(fig, names):
+    summaries = []
+    for name in names:
+        trace = next((series for series in fig.data if series.name == name), None)
+        if trace is None:
+            continue
+        dates = [pd.Timestamp(day).date().isoformat()
+                 for day, value in zip(trace.x, trace.y) if pd.notna(value)]
+        if dates:
+            summaries.append(f"{name} {dates[0]} 至 {dates[-1]}（{len(dates)} 个报价）")
+    if summaries:
+        st.caption("；".join(summaries))
+        st.caption("Saxo 实线为平值期权报价。MINKABU 虚线为不定期发布的同期限市场参考，"
+                   "每个圆点对应一笔原始观测，超过 45 天的空档断线。")
 
 
 @st.fragment(key="cross_asset_vol_viewport")
@@ -2618,12 +2642,10 @@ def render_cross_asset_vol(prebuilt_fig=None):
         "Cross-asset volatility", lambda: _cached_macro_figure(
             "cross_asset_vol", _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(fig, "cross_asset_vol", standard=True)
-    if "EUR/USD 1M ATM 隐含波动率（Saxo）" in (fig.layout.meta or {}).get("missing_series", []):
-        st.caption("EUR/USD 1M：尚未取得带来源时间戳的Saxo ATM报价；"
-                   "不使用已停编的EVZ替代，也不使用历史实现波动率冒充隐含波动率。")
-    if _cross_asset_vol.USDJPY_ATM_NAME in (fig.layout.meta or {}).get("missing_series", []):
-        st.caption("USD/JPY 1M：尚未取得带来源时间戳的Saxo ATM报价；"
-                   "不以USD/JPY 3M期权或历史实现波动率替代。")
+    _show_fx_1m_coverage(fig, (
+        _cross_asset_vol.EURUSD_ATM_NAME, _cross_asset_vol.EURUSD_REFERENCE_NAME,
+        _cross_asset_vol.USDJPY_ATM_NAME, _cross_asset_vol.USDJPY_REFERENCE_NAME,
+    ))
     st.caption("20D历史/实现波动率：美国10年期国债收益率直接使用DGS10的每日收益率变化（bp），"
                "Brent/WTI按日对数价格收益率计算；均使用20个有效交易日变化，"
                "样本标准差×√252年化。DGS10不是债券价格或债券投资回报率；油价采用FRED现货基准价格，并非期货连续合约。")
@@ -2635,7 +2657,7 @@ def render_cross_asset_vol(prebuilt_fig=None):
         ("FRED · Brent Europe现货油价 (DCOILBRENTEU)", _cross_asset_vol.BRENT_URL),
         ("FRED · WTI Cushing现货油价 (DCOILWTICO)", _cross_asset_vol.WTI_URL),
         ("Saxo Bank · EUR/USD 与 USD/JPY 1M ATM options", _cross_asset_vol.SAXO_URL),
-        ("MINKABU PRESS · USD/JPY 1M 历史参考", _cross_asset_vol.USDJPY_REFERENCE_URL),
+        ("MINKABU PRESS · EUR/USD 与 USD/JPY 1M 历史参考", _cross_asset_vol.USDJPY_REFERENCE_URL),
         ("CME EUR/USD 30-day CVOL · 交叉参考", _cross_asset_vol.CME_REFERENCE_URL),
     ], "cross_asset_vol")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
@@ -2924,7 +2946,7 @@ def render_copper_tcrc():
 def render_macro_chart_14(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[14]}. China Government Yields & US 5Y Real Yield</div>'
-        '<div class="section-description">China 2Y / 10Y · US 5Y Real · TIPS · China 10Y−2Y (R1) · 沪深300（R2 · pts）</div>',
+        '<div class="section-description">中国2年期与10年期国债收益率 · 美国5年期通胀保值国债实际收益率（TIPS） · 中国10Y−2Y国债收益率利差（R1） · 沪深300（R2 · pts）</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2942,7 +2964,7 @@ def render_macro_chart_14(prebuilt_fig=None):
 def render_macro_chart_15(prebuilt_fig=None):
     st.markdown(
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[15]}. Japan Government Yields & Nikkei 225 & USD/JPY</div>'
-        '<div class="section-description">Japan 2Y / 10Y / 30Y · Japan 10Y−2Y / 30Y−10Y (R1) · Nikkei 225 (R2) · USD/JPY (R3)</div>',
+        '<div class="section-description">日本2年期、10年期与30年期国债收益率 · 日本国债收益率利差（10Y−2Y、30Y−10Y，R1） · Nikkei 225 (R2) · USD/JPY (R3)</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2962,7 +2984,8 @@ def _yen_carry_implied_volatility():
         "yen_implied", revision, CHART_BUILD))
     history = _safe_macro_build("JPY implied history", lambda: _cached_macro_figure(
         "yen_iv_history", revision, CHART_BUILD))
-    one_month = _cross_asset_vol.build_usdjpy_1m_figure()
+    _, usdjpy = _load_fx_1m_atm()
+    one_month = _cross_asset_vol.build_usdjpy_1m_figure(saxo_records=usdjpy)
     implied.add_traces(history.data)
     implied.add_traces(one_month.data)
     meta = dict(implied.layout.meta or {})
@@ -2977,7 +3000,7 @@ def render_macro_chart_16(prebuilt_fig=None):
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[16]}. 日元套息分析 · Yen Carry Trade</div>'
         '<div class="section-description">美日10Y利差 · USD/JPY（R1 阳轴，向上＝日元走弱） · '
         'CFTC日元投机净仓位 (R2) · TOPIX（东证指数，R3） · 美元指数 DXY (R4) · '
-        'JPY 3M · JPY 10Y · JPY 10Y - JPY 3M · USD/JPY 1M、3M 隐含波动率（R5） · 1M 25Δ Risk Reversal（R6）</div>',
+        '日本3个月国库短期证券拍卖收益率 · 日本10年期国债收益率 · 日本10Y−3M收益率利差 · USD/JPY 1M、3M 隐含波动率（R5） · 1M 25Δ Risk Reversal（R6）</div>',
         unsafe_allow_html=True,
     )
     base_fig = prebuilt_fig if prebuilt_fig is not None else _safe_macro_build(
@@ -2989,6 +3012,9 @@ def render_macro_chart_16(prebuilt_fig=None):
         "yen_rr", _macro_snapshot_revision(), CHART_BUILD))
     combined = _yen_carry.combine_yen_carry_figures(base_fig, volatility=volatility, implied=implied, risk_reversal=rr)
     _render_adaptive_macro_figure(combined, "yen_carry")
+    _show_fx_1m_coverage(combined, (
+        _cross_asset_vol.USDJPY_ATM_NAME, _cross_asset_vol.USDJPY_REFERENCE_NAME,
+    ))
     st.caption("全部曲线共用时间轴，可点击图例隐藏或显示。JPY 3M 为财务省周度拍卖收益率，"
                "10Y−3M 只按同日观测计算。BOJ利率按生效日阶梯显示。"
                f"收益率为%，利差为百分点；美债持仓、机构外债及对冲率另见图 {MACRO_DISPLAY_NUMBER['japan_holdings']}。")
@@ -3010,7 +3036,7 @@ def render_macro_chart_16(prebuilt_fig=None):
         ("MINKABU PRESS · USD/JPY 1M 历史参考", _cross_asset_vol.USDJPY_REFERENCE_URL),
         ("QCAM · 月报原始隐含波动率表", _jpy_history.SOURCE_URL),
         ("Saxo Bank · 1M 25-delta risk reversal", _jpy_rr.SOURCE_URL),
-        ("FRED · US 10Y Treasury (DGS10)", "https://fred.stlouisfed.org/series/DGS10"),
+        ("FRED · 美国10年期国债收益率（DGS10）", "https://fred.stlouisfed.org/series/DGS10"),
         ("CFTC · Commitments of Traders", "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm"),
         ("Japan MOF · JGB Interest Rates", "https://www.mof.go.jp/jgbs/reference/interest_rate/index.htm"),
         ("Japan MOF · 3M Treasury Bill Auction History", "https://www.mof.go.jp/jgbs/reference/appendix/index.htm"),

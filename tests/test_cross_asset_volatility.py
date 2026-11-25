@@ -25,6 +25,27 @@ class CrossAssetVolatilityTests(unittest.TestCase):
         self.assertGreaterEqual(len(historical["data"]), 30)
         self.assertEqual(historical["lineStyle"]["type"], "dashed")
 
+    def test_euro_history_and_shared_yen_curve_preserve_observed_quotes(self):
+        euro_reference = cross.load_eurusd_reference()
+        yen_reference = cross.load_usdjpy_reference()
+        yen_saxo = cross.load_usdjpy_snapshot()
+        chart = cross.build_figure(eurusd_reference=euro_reference,
+                                   usdjpy_reference=yen_reference, usdjpy_records=yen_saxo)
+        combined_option = build_adaptive_echarts_option(chart, "5Y")
+        standalone_yen = build_adaptive_echarts_option(
+            cross.build_usdjpy_1m_figure(yen_saxo, yen_reference), "5Y")
+        combined = {line["name"]: line for line in combined_option["series"]}
+        for line in standalone_yen["series"]:
+            self.assertEqual(combined[line["name"]]["data"], line["data"])
+        euro = combined[cross.EURUSD_REFERENCE_NAME]
+        self.assertEqual(euro["lineStyle"]["type"], "dashed")
+        self.assertEqual(euro["yAxisIndex"], combined[cross.EURUSD_ATM_NAME]["yAxisIndex"])
+        self.assertTrue(any(value is None for _, value in euro["data"]))
+        self.assertEqual([(day[:10], value) for day, value in euro["data"] if value is not None],
+                         [(row["observation_date"], row["value"]) for row in euro_reference])
+        self.assertLess(euro_reference[0]["observation_date"], "2023-01-01")
+        self.assertGreaterEqual(len(euro_reference), 150)
+
     def test_chart_history_starts_in_2020_for_every_series(self):
         days = pd.bdate_range("2019-11-25", "2020-01-10")
         prices = pd.DataFrame({

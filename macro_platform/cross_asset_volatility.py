@@ -3,7 +3,7 @@
 OVX: Cboe daily closes, with FRED OVXCLS as fallback.
 MOVE: existing validated ICE BofA ^MOVE daily-close snapshot.
 EUR/USD and USD/JPY: independently recorded Saxo Bank one-month ATM option
-implied-volatility quotes. Missing quotes stay missing, not estimated.
+implied-volatility quotes, alongside independently labelled MINKABU references.
 """
 from datetime import datetime, timezone
 import json
@@ -35,7 +35,12 @@ USDJPY_REFERENCE_IDENTITY = {**USDJPY_IDENTITY, "symbol": "USDJPY_1M_MINKABU",
                             "source": "MINKABU PRESS", "quote_type": "implied_volatility_reference"}
 USDJPY_ATM_NAME = "USD/JPY 1M ATM 隐含波动率（Saxo）"
 USDJPY_REFERENCE_NAME = "USD/JPY 1M 隐含波动率（MINKABU 参考）"
-USDJPY_REFERENCE_URL = "https://fx.minkabu.jp/news/385094"
+EURUSD_REFERENCE_SNAPSHOT = SNAPSHOT.with_name("eurusd_1m_minkabu.json")
+EURUSD_REFERENCE_IDENTITY = {**USDJPY_REFERENCE_IDENTITY, "symbol": "EURUSD_1M_MINKABU",
+                            "pair": "EURUSD"}
+EURUSD_ATM_NAME = "EUR/USD 1M ATM 隐含波动率（Saxo）"
+EURUSD_REFERENCE_NAME = "EUR/USD 1M 隐含波动率（MINKABU 参考）"
+USDJPY_REFERENCE_URL = "https://fx.minkabu.jp/news/385284"
 LOCK = threading.RLock()
 
 
@@ -67,6 +72,10 @@ def load_usdjpy_snapshot(path=USDJPY_SNAPSHOT):
 
 def load_usdjpy_reference(path=USDJPY_REFERENCE_SNAPSHOT):
     return _load_snapshot(path, USDJPY_REFERENCE_IDENTITY)
+
+
+def load_eurusd_reference(path=EURUSD_REFERENCE_SNAPSHOT):
+    return _load_snapshot(path, EURUSD_REFERENCE_IDENTITY)
 
 
 def _accept_pair_quote(document, pair, path, identity, now=None):
@@ -174,6 +183,26 @@ def _saxo_atm_trace(name, rows, identity, axis, color):
     )
 
 
+def _historical_iv_trace(name, rows, axis, color):
+    reference = _valid_series(pd.DataFrame(rows), "value", maximum=100)
+    reference = reference.loc[reference.observation_date.ge(HISTORY_START)]
+    if reference.empty:
+        return None
+    dates, values = [], []
+    for row in reference.itertuples(index=False):
+        if dates and row.observation_date - dates[-1] > pd.Timedelta(days=45):
+            dates.append(dates[-1] + pd.Timedelta(days=1))
+            values.append(math.nan)
+        dates.append(row.observation_date)
+        values.append(row.value)
+    return go.Scatter(
+        x=dates, y=values, name=name, yaxis=axis, mode="lines+markers",
+        connectgaps=False, line={"color": color, "dash": "dash", "width": 2.1},
+        marker={"size": 4},
+        hovertemplate="%{x|%Y-%m-%d}<br>" + name + ": %{y:.2f}%<extra></extra>",
+    )
+
+
 def build_usdjpy_1m_figure(saxo_records=None, reference_records=None, *, axis="y"):
     """Share the same dated Saxo and MINKABU traces across dashboard charts."""
     rows = load_usdjpy_snapshot() if saxo_records is None else saxo_records
@@ -185,22 +214,15 @@ def build_usdjpy_1m_figure(saxo_records=None, reference_records=None, *, axis="y
     else:
         fig.add_trace(saxo)
     rows = load_usdjpy_reference() if reference_records is None else reference_records
-    reference = _valid_series(pd.DataFrame(rows), "value", maximum=100)
-    reference = reference.loc[reference.observation_date.ge(HISTORY_START)]
-    if not reference.empty:
-        fig.add_trace(go.Scatter(
-            x=reference.observation_date, y=reference.value, name=USDJPY_REFERENCE_NAME,
-            yaxis=axis, mode="lines+markers", connectgaps=False,
-            line={"color": "#047857", "dash": "dash", "width": 2.1}, marker={"size": 4},
-            meta={"observation_cadence": "daily"},
-            hovertemplate="%{x|%Y-%m-%d}<br>MINKABU 1M 参考: %{y:.2f}%<extra></extra>",
-        ))
+    reference = _historical_iv_trace(USDJPY_REFERENCE_NAME, rows, axis, "#047857")
+    if reference is not None:
+        fig.add_trace(reference)
     fig.update_layout(meta={"missing_series": missing})
     return fig
 
 
 def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, usdjpy_records=None,
-                 usdjpy_reference=None, treasury10y=None, brent=None, wti=None):
+                 usdjpy_reference=None, eurusd_reference=None, treasury10y=None, brent=None, wti=None):
     fig = go.Figure()
     sources = (
         ("OVXCLS", ovx, "OVX · 原油30天隐含波动率", "#ea580c", "y", "%"),
@@ -218,14 +240,17 @@ def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, u
             line={"color":color,"width":2.8},
             meta={"observation_cadence":"daily"},
             hovertemplate="%{x|%Y-%m-%d}<br>"+label+": %{y:.2f} "+unit+"<extra></extra>"))
-    eurusd_name = "EUR/USD 1M ATM 隐含波动率（Saxo）"
-    eurusd = _saxo_atm_trace(eurusd_name,
+    eurusd = _saxo_atm_trace(EURUSD_ATM_NAME,
                             load_eurusd_snapshot() if eurusd_records is None else eurusd_records,
                             IDENTITY, "y3", "#7c3aed")
     if eurusd is None:
-        missing.append(eurusd_name)
+        missing.append(EURUSD_ATM_NAME)
     else:
         fig.add_trace(eurusd)
+    euro_history = _historical_iv_trace(
+        EURUSD_REFERENCE_NAME, eurusd_reference or [], "y3", "#6d28d9")
+    if euro_history is not None:
+        fig.add_trace(euro_history)
     yen = build_usdjpy_1m_figure(usdjpy_records, usdjpy_reference or [], axis="y4")
     fig.add_traces(yen.data)
     missing.extend(yen.layout.meta["missing_series"])
@@ -255,7 +280,7 @@ def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, u
         yaxis={"title":"L · OVX · 年化%", "showgrid":True},
         yaxis2={"title":"R1 · MOVE · 指数点", "overlaying":"y","side":"right",
                 "anchor":"free","position":0.84,"showgrid":False},
-        yaxis3={"title":"R2 · EUR/USD 1M ATM · 年化%", "overlaying":"y",
+        yaxis3={"title":"R2 · EUR/USD 1M · 年化%", "overlaying":"y",
                 "side":"right","anchor":"free","position":0.88,"showgrid":False},
         yaxis4={"title":"R3 · USD/JPY 1M · 年化%", "overlaying":"y",
                 "side":"right","anchor":"free","position":0.80,"showgrid":False},

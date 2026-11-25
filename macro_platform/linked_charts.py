@@ -14,27 +14,31 @@ def _component():
     frontend = Path(__file__).with_name("frontend")
     return components.component(
         "macro_linked_chart",
-        html='<div class="macro-chart-shell"><div class="macro-chart-periods" data-testid="macroPeriodControls" role="group" aria-label="时间范围">'
+        html='<div class="macro-chart-shell"><div class="macro-chart-header"><div class="macro-chart-periods" data-testid="macroPeriodControls" role="group" aria-label="时间范围">'
              + ''.join(f'<button type="button" data-period="{period}" disabled>{period}</button>' for period in ('5Y','1Y','6M','3M','1M'))
-             + '</div><div data-testid="macroEChartsChart" '
-             'aria-busy="true" style="height:465px;width:100%;min-width:0"></div>'
-             '<div class="macro-chart-tools"><button type="button" class="macro-chart-lock" '
+             + '</div><div class="macro-chart-tools"><button type="button" class="macro-chart-lock" '
              'aria-label="锁定最新日期" title="锁定最新日期（默认关闭）" aria-pressed="false">锁定最新日期</button>'
              '<button type="button" aria-label="Download as PNG" title="下载图片">↓</button>'
              '<button type="button" aria-label="Fullscreen" title="全屏">⛶</button>'
-             '</div><p role="alert" class="macro-chart-error" hidden></p></div>',
+             '<button type="button" class="macro-chart-series-toggle" disabled>隐藏全部参数</button>'
+             '</div></div><div data-testid="macroEChartsChart" '
+             'aria-busy="true" style="height:465px;width:100%;min-width:0"></div>'
+             '<p role="alert" class="macro-chart-error" hidden></p></div>',
         # A newline keeps attribute selectors from being mistaken for file globs.
         css='.macro-chart-shell{position:relative;width:100%;min-width:0}\n'
-            '.macro-chart-periods{display:flex;gap:0;padding-bottom:8px}'
+            '.macro-chart-header{display:flex;flex-wrap:wrap;align-items:center;'
+            'justify-content:space-between;gap:6px;padding-bottom:8px}'
+            '.macro-chart-periods{display:flex;gap:0}'
             '.macro-chart-periods button{background:#fff;border:1px solid #d1d5db;color:#334155;'
             'font-family:inherit;font-size:.80rem;font-weight:400;line-height:1.25;'
             'min-height:0;min-width:0;height:auto;padding:3px 10px;cursor:pointer}'
             '.macro-chart-periods button[aria-pressed=true]{color:#ef4444;background:#fff1f2;border-color:#ef4444}'
             '.macro-chart-time{font-size:11px;color:#64748b;text-align:right;margin:3px 0 0}'
-            '.macro-chart-tools{position:absolute;right:0;top:0;display:flex;gap:4px}'
+            '.macro-chart-tools{display:flex;align-items:center;flex-wrap:wrap;gap:4px}'
             '.macro-chart-tools button{border:0;background:#fff;color:#64748b;'
             'cursor:pointer;font-size:15px;padding:0 5px}'
-            '.macro-chart-tools .macro-chart-lock{font-size:12px;border:1px solid #cbd5e1;'
+            '.macro-chart-tools .macro-chart-lock,.macro-chart-tools .macro-chart-series-toggle{'
+            'font-size:12px;border:1px solid #cbd5e1;'
             'border-radius:4px;padding:3px 8px;margin-right:4px;white-space:nowrap}'
             '.macro-chart-tools .macro-chart-lock[aria-pressed=true]{background:#e0f2fe;'
             'color:#075985;border-color:#0284c7}'

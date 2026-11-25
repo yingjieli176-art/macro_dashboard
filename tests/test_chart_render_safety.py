@@ -216,8 +216,13 @@ class ChartRendererRecoveryTests(unittest.TestCase):
         self.st.plotly_chart.assert_called_once()
         fallback = self.st.plotly_chart.call_args.args[0]
         self.assertEqual(fallback.layout.xaxis.tickformat, "%m-%d")
-        # The common external selector replaces the duplicate Plotly buttons.
-        self.assertFalse(fallback.layout.updatemenus)
+        # The external selector still owns zoom. The fallback menu controls visibility.
+        menu, = fallback.layout.updatemenus
+        self.assertEqual([button.label for button in menu.buttons],
+                         ["隐藏全部参数", "显示全部参数"])
+        for button, expected in zip(menu.buttons, ("legendonly", True)):
+            self.assertEqual(button.method, "restyle")
+            self.assertEqual(list(button.args[0]["visible"]), [expected] * len(fallback.data))
 
     def test_hk_cached_recovery_updates_month_window(self):
         from macro_platform.echarts_axes import build_adaptive_echarts_option
