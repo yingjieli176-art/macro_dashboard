@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 import pandas as pd
-from macro_platform.bank_ah import BANKS, SNAPSHOT, calculate_premium, add_bank_premiums
+from macro_platform.bank_ah import BANKS, SNAPSHOT, calculate_premium, add_bank_premiums, _discount_rows
 from macro_platform.hk_liquidity import build_hk_core_snapshot_figures, load_hk_funding_daily
 from macro_platform.echarts_axes import build_adaptive_echarts_option
 
@@ -18,7 +18,7 @@ class BankAHTests(unittest.TestCase):
         fx = frame(["2026-11-10", "2026-11-11"], [.9, .9])
         result = calculate_premium(a, h, fx)
         self.assertEqual(len(result), 1)
-        self.assertAlmostEqual(result.premium_pct.iloc[0], (6 / (5 * .9) - 1) * 100)
+        self.assertAlmostEqual(result.h_discount_pct.iloc[0], (1 - (5 * .9) / 6) * 100)
 
     def test_real_snapshots_keep_auditable_inputs(self):
         payload = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
@@ -27,8 +27,15 @@ class BankAHTests(unittest.TestCase):
             rows = payload["series"][key]["records"]
             self.assertGreater(len(rows), 1000)
             self.assertEqual(len({r['observation_date'] for r in rows}), len(rows))
-            for r in rows:
-                self.assertAlmostEqual(r["premium_pct"], (r["a_cny"] / (r["h_hkd"] * r["cny_per_hkd"]) - 1) * 100)
+            # Legacy snapshots may still include the old premium_pct column;
+            # the chart must ignore it and derive the H discount from raw data.
+            derived = _discount_rows(rows)
+            self.assertEqual(len(derived), len(rows))
+            for r in derived.itertuples():
+                self.assertAlmostEqual(r.h_discount_pct,
+                    (1 - r.h_hkd * r.cny_per_hkd / r.a_cny) * 100)
+            self.assertAlmostEqual(derived.iloc[-1].h_discount_pct,
+                (1 - rows[-1]["h_hkd"] * rows[-1]["cny_per_hkd"] / rows[-1]["a_cny"]) * 100)
 
     def test_recovered_chart_has_independent_ah_axis_and_one_month_funding(self):
         _, fig = build_hk_core_snapshot_figures("5Y")
@@ -36,6 +43,7 @@ class BankAHTests(unittest.TestCase):
         self.assertEqual([t.name for t in fig.data[:4]],
             ["1M HIBOR", "3M HIBOR", "HKMA Base Rate", "1M−3M Spread (R1)"])
         self.assertTrue(all(t.yaxis == "y3" for t in fig.data[-3:]))
+        self.assertTrue(all("H股相对A股折价率" in t.name for t in fig.data[-3:]))
         option = build_adaptive_echarts_option(fig, "1Y")
         self.assertEqual(len(option["yAxis"]), 3)
         self.assertTrue(all(t["yAxisIndex"] == 2 for t in option["series"][-3:]))
