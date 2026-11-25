@@ -2709,7 +2709,7 @@ HK_CHART_CONFIGS = [
     ),
     (
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER[7]}. HKD Funding</div>',
-        '<div class="section-description">1M HIBOR · 3M HIBOR · HKMA Base Rate · 1M−3M Spread (R1) · 农行/工行/建行 AH溢价率 (R2)</div>',
+        '<div class="section-description">1M HIBOR · 3M HIBOR · HKMA Base Rate · 1M−3M Spread (R1) · 农行/工行/建行 A对H溢价率（以H股为分母，R2）</div>',
         "hk_7_range",
         [
             ("HKMA · HIBOR 日线", "https://apidocs.hkma.gov.hk/documentation/market-data-and-statistics/monthly-statistical-bulletin/er-ir/hk-interbank-ir-daily/"),
@@ -2740,6 +2740,31 @@ def _render_hk_macro_chart(hk_index, prebuilt_fig=None):
     st.markdown(description, unsafe_allow_html=True)
     fig = prebuilt_fig if prebuilt_fig is not None else _safe_hk_bundle(_macro_snapshot_revision())[hk_index]
     _render_adaptive_macro_figure(fig, range_key)
+    if hk_index == 2:
+        # The complementary H-to-A discount has a different denominator.
+        # Show both on the page even when ECharts omits Plotly customdata.
+        try:
+            from macro_platform.bank_ah import SNAPSHOT as _ah_snapshot
+            ah_payload = json.loads(_ah_snapshot.read_text(encoding="utf-8"))
+            details = []
+            for key in ("ABC", "ICBC", "CCB"):
+                series_data = ah_payload.get("series", {}).get(key, {})
+                rows = series_data.get("records") or []
+                if not rows:
+                    continue
+                row = rows[-1]
+                premium = float(row["premium_pct"])
+                discount = premium / (100.0 + premium) * 100.0
+                details.append(
+                    f'{series_data.get("name", key)}（{row["observation_date"]}）：'
+                    f'A对H溢价 {premium:.2f}% / H对A折价 {discount:.2f}%')
+            if details:
+                st.caption("口径：A对H溢价=(A人民币价÷H股折人民币价−1)×100%；"
+                           "H对A折价=(1−H股折人民币价÷A人民币价)×100%。"
+                           "分母不同，不能直接比较；均使用同日未复权收盘价及HKD/CNY。")
+                st.caption("；".join(details))
+        except (OSError, ValueError, KeyError, TypeError, OverflowError):
+            logging.info("AH premium comparison details temporarily unavailable", exc_info=True)
     add_sources(sources, range_key)
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
