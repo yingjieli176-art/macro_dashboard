@@ -708,7 +708,7 @@ def main():
             charts = page.get_by_test_id(re.compile(r"^(macro|st)EChartsChart$"))
             page.wait_for_function("document.querySelectorAll('[data-testid=macroEChartsChart][aria-busy=false], [data-testid=stEChartsChart][aria-busy=false]').length >= 8", timeout=60000)
             treasury_scope = page.locator('[class*=st-key-normal_yield10_range_echarts_schema_]').filter(
-                has=page.get_by_role('button', name='隐藏全部参数'))
+                has=page.locator('.macro-chart-series-toggle'))
             treasury_chart = treasury_scope.get_by_test_id('macroEChartsChart')
             toggle = treasury_scope.locator('.macro-chart-series-toggle')
             expect(toggle).to_be_enabled(timeout=30000)
