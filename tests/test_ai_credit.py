@@ -14,7 +14,7 @@ from macro_platform import ai_credit as cds
 from macro_platform import spacex_cds
 from macro_platform.dashboard_layout import MACRO_DISPLAY_NUMBER
 from macro_platform.echarts_axes import build_adaptive_echarts_option, build_safe_echarts_option
-from scripts.update_ai_cds_snapshot import refresh
+from scripts.update_ai_cds_snapshot import refresh, refresh_nvidia_issuer
 
 
 def source():
@@ -25,7 +25,50 @@ def source():
                    "eq_px_nvidia": [200., 300., 400.]}}
 
 
+ISSUER_HTML = ("<p>Nvidia&#39;s five-year credit default swap last traded at "
+               "<b>148 basis points</b> on 25 November 2026, on 5 five-year prints (12 in all tenors).</p>")
+
+
 class AiCreditTests(unittest.TestCase):
+    def test_newer_issuer_trade_has_separate_marker_and_summary(self):
+        payload = cds.parse_source(source())
+        payload["nvidia_issuer_observation"] = cds.parse_nvidia_issuer_reference(ISSUER_HTML)
+        self.assertEqual(payload["source_asof"], "2026-10-28")
+        fig = cds.build_cds_figure(payload=payload, nvidia_1y=pd.DataFrame())
+        traces = {trace.name: trace for trace in fig.data}
+        self.assertEqual(list(traces[cds.NVIDIA_ISSUER_LABEL].x), ["2026-11-25"])
+        self.assertEqual(list(traces[cds.NVIDIA_ISSUER_LABEL].y), [148])
+        self.assertNotIn("2026-11-25", traces["NVIDIA 5Y"].x)
+        summary = cds.cds_summary(payload, nvidia_1y=pd.DataFrame()).iloc[0]
+        self.assertEqual(summary["实际观测日"], "2026-11-25")
+        self.assertEqual(summary["最新CDS（bp）"], 148)
+        self.assertEqual(summary["观测数"], 2)
+
+    def test_issuer_refresh_survives_lagging_aggregate_and_deduplicates_when_it_catches_up(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "cds.json"
+            original = source()
+            refresh(original, path)
+            reference = refresh_nvidia_issuer(ISSUER_HTML, path)
+            self.assertEqual(reference["reported_trade_count"], 5)
+            self.assertEqual(refresh(original, path)["nvidia_issuer_observation"], reference)
+            self.assertEqual(refresh_nvidia_issuer(ISSUER_HTML.replace("25 November", "24 November"), path), reference)
+            before = path.read_bytes()
+            with self.assertRaises(ValueError):
+                refresh_nvidia_issuer(ISSUER_HTML.replace("5 five-year", "0 five-year"), path)
+            self.assertEqual(path.read_bytes(), before)
+
+            updated = copy.deepcopy(original)
+            updated["built"] = "2026-11-25"
+            updated["dates"].append("2026-11-25")
+            for values in updated["series"].values():
+                values.append(None)
+            updated["series"]["sn_nvidia"][-1] = 149
+            result = refresh(updated, path)
+            self.assertIsNone(cds.nvidia_issuer_reference(result))
+            self.assertNotIn("nvidia_issuer_observation", result)
+            self.assertIsNone(refresh_nvidia_issuer(ISSUER_HTML, path))
+
     def test_nvidia_backfill_preserves_primary_values_and_marks_intraday_separately(self):
         payload = cds.parse_source(source())
         payload["source_asof"] = "2026-11-19"
@@ -330,18 +373,26 @@ class AiCreditTests(unittest.TestCase):
         for key, (label, _) in cds.CREDIT_SERIES.items():
             actual = [r for r in payload["series"][key]["records"] if r["spread_bps"] is not None]
             self.assertTrue(actual)
-            self.assertEqual(table.loc[label, "最新CDS（bp）"], actual[-1]["spread_bps"])
-            self.assertEqual(table.loc[label, "实际观测日"], actual[-1]["observation_date"])
+            reference = cds.nvidia_issuer_reference(payload) if key == "sn_nvidia" else None
+            latest = reference or actual[-1]
+            self.assertEqual(table.loc[label, "最新CDS（bp）"], latest["spread_bps"])
+            self.assertEqual(table.loc[label, "实际观测日"], latest["observation_date"])
             self.assertLessEqual(actual[-1]["observation_date"], payload["source_asof"])
 
     def test_freshness_probe_uses_independent_source_and_omits_retired_tenors(self):
         from scripts import probe_all_sources as probe
         jobs = {j[0]: j for j in probe.jobs()}
         self.assertNotIn("NVIDIA_CDS_1Y", jobs)
-        with patch.object(probe, "get", return_value=type("Response", (), {"json": lambda self: source()})()):
+        aggregate = type("Response", (), {"text": "", "json": lambda self: source()})()
+        with patch.object(probe, "get", return_value=aggregate):
             row = probe.check(jobs["NVIDIA_CDS_5Y"])
         self.assertEqual(row["source_latest"], "2026-10-27")
         self.assertEqual(row["status"], "source_behind_repository")
+        issuer = type("Response", (), {"text": ISSUER_HTML})()
+        with patch.object(probe, "get", side_effect=lambda url: issuer if url == cds.NVIDIA_ISSUER_URL else aggregate):
+            row = probe.check(jobs["NVIDIA_CDS_5Y"])
+        self.assertEqual(row["source_latest"], "2026-11-25")
+        self.assertEqual(row["source_url"], cds.NVIDIA_ISSUER_URL)
 
 
 if __name__ == "__main__":

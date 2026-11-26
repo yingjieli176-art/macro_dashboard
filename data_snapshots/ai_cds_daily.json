@@ -1,5 +1,10 @@
 {
   "schema_version": 1,
+  "nvidia_issuer_observation": {
+    "observation_date": "2026-11-25",
+    "spread_bps": 148,
+    "reported_trade_count": 5
+  },
   "built": "2026-11-25",
   "source_asof": "2026-11-24",
   "source_calendar_count": 656,

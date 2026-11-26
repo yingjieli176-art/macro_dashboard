@@ -546,18 +546,33 @@ def jobs():
     for field in ("tc_usd_dmt", "rc_cents_lb"):
         output.append((field, [MACRO_DISPLAY_NUMBER["copper_tcrc"]], "weekly", snapshot("copper_tcrc_weekly.json", "observation_date", field), copper_tcrc_source))
     from macro_platform.ai_credit import (
-        SOURCE_URL as CDS_URL, SERIES as CDS_SERIES, INFRASTRUCTURE_SERIES, load_cds_snapshot, parse_source,
+        SOURCE_URL as CDS_URL, SERIES as CDS_SERIES, INFRASTRUCTURE_SERIES, NVIDIA_ISSUER_URL,
+        load_cds_snapshot, nvidia_issuer_reference, parse_nvidia_issuer_reference, parse_source,
     )
     saved_cds = load_cds_snapshot()
     def public_cds(key):
-        public = parse_source(get(CDS_URL).json())
-        points = [r for r in public["series"][key]["records"] if r["spread_bps"] is not None]
-        if not points:
-            raise ValueError("Public source has no priced 5Y CDS observations for " + key + "; equity swap prices are excluded")
-        return max(r["observation_date"] for r in points), CDS_URL
+        issuer_date = ""
+        if key == "sn_nvidia":
+            try:
+                issuer_date = parse_nvidia_issuer_reference(get(NVIDIA_ISSUER_URL).text)["observation_date"]
+            except (requests.RequestException, ValueError):
+                pass
+        try:
+            public = parse_source(get(CDS_URL).json())
+        except (requests.RequestException, KeyError, TypeError, ValueError):
+            if issuer_date:
+                return issuer_date, NVIDIA_ISSUER_URL
+            raise
+        aggregate_date = max(row["observation_date"] for row in public["series"][key]["records"]
+                             if row["spread_bps"] is not None)
+        if issuer_date > aggregate_date:
+            return issuer_date, NVIDIA_ISSUER_URL
+        return aggregate_date, CDS_URL
     for key in CDS_SERIES:
         points = saved_cds.get("series", {}).get(key, {}).get("records", [])
         stored = max((r["observation_date"] for r in points if r["spread_bps"] is not None), default=None)
+        if key == "sn_nvidia" and (reference := nvidia_issuer_reference(saved_cds)):
+            stored = reference["observation_date"]
         identifier = "NVIDIA_CDS_5Y" if key == "sn_nvidia" else key.upper() + "_CDS_5Y"
         chart = "infrastructure_cds" if key in INFRASTRUCTURE_SERIES else "nvidia_cds"
         output.append((identifier, [MACRO_DISPLAY_NUMBER[chart]], "daily", stored, lambda key=key: public_cds(key)))

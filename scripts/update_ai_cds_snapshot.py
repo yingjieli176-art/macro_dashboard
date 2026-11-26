@@ -12,8 +12,9 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from macro_platform.ai_credit import (
-    CDX_SNAPSHOT, SERIES, SNAPSHOT, SOURCE_URL, load_cds_snapshot, load_cdx_snapshot,
-    merge_cdx_history, parse_cdx_source, parse_source,
+    CDX_SNAPSHOT, NVIDIA_ISSUER_URL, SERIES, SNAPSHOT, SOURCE_URL, load_cds_snapshot,
+    load_cdx_snapshot, merge_cdx_history, nvidia_issuer_reference, parse_cdx_source,
+    parse_nvidia_issuer_reference, parse_source,
 )
 
 
@@ -35,6 +36,11 @@ def refresh(payload, path=SNAPSHOT):
                 if day not in current or current[day]["spread_bps"] is None:
                     current[day] = row
             candidate["series"][key]["records"] = [current[d] for d in sorted(current)]
+    reference = nvidia_issuer_reference(old)
+    if reference:
+        candidate["nvidia_issuer_observation"] = reference
+        if not nvidia_issuer_reference(candidate):
+            del candidate["nvidia_issuer_observation"]
     candidate["retrieved_at"] = datetime.now(timezone.utc).isoformat()
     write_snapshot(path, candidate, indent=2)
     return candidate
@@ -63,6 +69,34 @@ def refresh_cdx(payload, path=CDX_SNAPSHOT):
     return combined
 
 
+def refresh_nvidia_issuer(html, path=SNAPSHOT):
+    reference = parse_nvidia_issuer_reference(html)
+    snapshot = load_cds_snapshot(path)
+    if not snapshot:
+        raise ValueError("Missing valid aggregate snapshot for NVIDIA issuer reference")
+    saved = nvidia_issuer_reference(snapshot)
+    if saved and saved["observation_date"] > reference["observation_date"]:
+        return saved
+    if saved != reference:
+        snapshot["nvidia_issuer_observation"] = reference
+        if not nvidia_issuer_reference(snapshot):
+            return None
+        write_snapshot(path, snapshot, indent=2)
+    return reference
+
+
+def refresh_live_nvidia_issuer():
+    import requests
+    try:
+        response = requests.get(NVIDIA_ISSUER_URL, timeout=(10, 25))
+        response.raise_for_status()
+        reference = refresh_nvidia_issuer(response.text)
+        if reference:
+            print("NVIDIA issuer trade reference:", reference)
+    except (requests.RequestException, ValueError) as exc:
+        print(f"NVIDIA issuer refresh failed; retained last-good observation ({exc})", file=sys.stderr)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-json", type=Path, help="Saved, unmodified public chart_data.json")
@@ -72,9 +106,14 @@ def main():
         payload = json.loads(args.source_json.read_text(encoding="utf-8"))
     else:
         import requests
-        response = requests.get(SOURCE_URL, timeout=(10, 45))
-        response.raise_for_status()
-        payload = response.json()
+        try:
+            response = requests.get(SOURCE_URL, timeout=(10, 45))
+            response.raise_for_status()
+            payload = response.json()
+        except requests.RequestException:
+            if not args.cdx_only:
+                refresh_live_nvidia_issuer()
+            raise
     try:
         print("CDX:", {key: rows[-1] for key, rows in refresh_cdx(payload).items()})
     except (ValueError, TypeError, KeyError) as exc:
@@ -82,7 +121,11 @@ def main():
             raise
         print(f"CDX refresh failed; retained last-good snapshot ({exc})", file=sys.stderr)
     if not args.cdx_only:
-        result = refresh(payload)
+        try:
+            result = refresh(payload)
+        finally:
+            if not args.source_json:
+                refresh_live_nvidia_issuer()
         print(json.dumps({"source_asof": result["source_asof"], "series": {
             key: {"observations": sum(r["spread_bps"] is not None for r in node["records"]),
                   "latest": max((r["observation_date"] for r in node["records"] if r["spread_bps"] is not None), default=None)}

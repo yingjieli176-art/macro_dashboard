@@ -4,7 +4,9 @@ from __future__ import annotations
 import csv
 import json
 import math
-from datetime import date
+import re
+from datetime import date, datetime
+from html import unescape
 from pathlib import Path
 
 import pandas as pd
@@ -19,6 +21,8 @@ SNAPSHOT = ROOT / "data_snapshots/ai_cds_daily.json"
 NVIDIA_5Y_BACKFILL = SNAPSHOT.with_name("nvidia_5y_cds_backfill.csv")
 SOURCE_URL = "https://irates.today/chart_data.json"
 METHOD_URL = "https://irates.today/capex.html#method"
+NVIDIA_ISSUER_URL = "https://irates.today/name/nvidia.html"
+NVIDIA_ISSUER_LABEL = "NVIDIA 5Y（发行人页面成交参考）"
 SPACEX_SOURCE_URL = spacex_cds.SOURCE_URL
 ATTRIBUTION = "Open-Sourced Rates Observatory, irates.today"
 NVIDIA_1Y_NAME = "NVIDIA 1Y"
@@ -54,6 +58,46 @@ def checked_day(value, today=None):
     if day.isoformat() != value or day > (today or date.today()):
         raise ValueError("Invalid/future observation date")
     return value
+
+
+def parse_nvidia_issuer_reference(html):
+    """Read the dated 5Y trade observation in the publisher's issuer-page headline."""
+    text = " ".join(unescape(re.sub(r"<[^>]*>", " ", html)).split())
+    match = re.search(
+        r"Nvidia['’]s five-year credit default swap last traded at "
+        r"([0-9]+(?:\.[0-9]+)?) basis points on (\d{1,2} [A-Za-z]+ \d{4}), "
+        r"on ([1-9]\d*) five-year prints?\b",
+        text,
+    )
+    if match is None:
+        raise ValueError("Missing dated NVIDIA five-year trade observation")
+    spread, day, count = match.groups()
+    day = datetime.strptime(day, "%d %B %Y").date().isoformat()
+    spread = float(spread)
+    if not math.isfinite(spread) or spread <= 0:
+        raise ValueError("Invalid NVIDIA issuer spread")
+    return {"observation_date": checked_day(day), "spread_bps": spread,
+            "reported_trade_count": int(count)}
+
+
+def nvidia_issuer_reference(payload):
+    """Expose a supplemental observation only while it leads the aggregate."""
+    reference = payload.get("nvidia_issuer_observation")
+    if not isinstance(reference, dict):
+        return None
+    try:
+        day = checked_day(reference["observation_date"])
+        spread = reference["spread_bps"]
+        count = reference["reported_trade_count"]
+    except (KeyError, ValueError):
+        return None
+    if (type(spread) not in (int, float) or not math.isfinite(spread) or spread <= 0
+            or type(count) is not int or count <= 0):
+        return None
+    records = payload.get("series", {}).get("sn_nvidia", {}).get("records", [])
+    last = next((row["observation_date"] for row in reversed(records)
+                 if row["spread_bps"] is not None), "")
+    return reference if day > last else None
 
 
 def _validate_cdx_series(series):
@@ -234,14 +278,16 @@ def cds_summary(payload=None, *, nvidia_1y=None, series=CREDIT_SERIES):
     for key, (label, _) in series.items():
         node = payload.get("series", {}).get(key, {})
         points = [row for row in node.get("records", []) if row.get("spread_bps") is not None]
-        last = points[-1] if points else {}
+        reference = nvidia_issuer_reference(payload) if key == "sn_nvidia" else None
+        last = reference or (points[-1] if points else {})
         first = points[0] if points else {}
         calendar = None if key == spacex_cds.KEY else payload.get("source_calendar_count") or max(
             (len(n.get("records", [])) for n in payload.get("series", {}).values()), default=0)
         asof = node.get("source_asof", payload.get("source_asof"))
         lag = ((date.fromisoformat(asof) - date.fromisoformat(last["observation_date"])).days
-               if last and asof else None)
-        status = ("公开源未提供5Y CDS" if node.get("availability") == "not_published" else
+               if last and asof and reference is None else None)
+        status = ("发行人页面成交参考" if reference else
+                  "公开源未提供5Y CDS" if node.get("availability") == "not_published" else
                   "未取得可计价观测" if not points else
                   "最新观测落后源截止日" if lag else "与源截止日一致")
         basis = {"upfront_implied": "预付款推算利差（源站）",
@@ -252,7 +298,8 @@ def cds_summary(payload=None, *, nvidia_1y=None, series=CREDIT_SERIES):
                      "源日历天数": calendar,
                      "源日历覆盖率（%）": round(len(points) / calendar * 100, 1) if calendar else None,
                      "距源截止日（天）": lag, "数据状态": status,
-                     "口径": basis.get(node.get("quote_basis"), "日度成交汇总") if points else "暂无可计价CDS观测"})
+                     "口径": (f"公开成交参考 · {reference['reported_trade_count']} 笔 5Y 成交" if reference else
+                            basis.get(node.get("quote_basis"), "日度成交汇总") if points else "暂无可计价CDS观测")})
     if "sn_nvidia" not in series:
         return pd.DataFrame(rows)
     nvidia_1y = load_nvidia_1y() if nvidia_1y is None else nvidia_1y
@@ -304,6 +351,15 @@ def build_cds_figure(date_range="5Y", payload=None, *, hy_oas=None, ig_oas=None,
                     line=dict(width=0), marker=dict(size=7, color=reference_color, symbol="diamond"),
                     hovertemplate=name + ": %{y:.2f} bp · %{customdata}<extra></extra>",
                 ))
+    reference = nvidia_issuer_reference(payload) if "sn_nvidia" in series else None
+    if reference:
+        count = reference["reported_trade_count"]
+        fig.add_trace(go.Scatter(
+            x=[reference["observation_date"]], y=[reference["spread_bps"]],
+            mode="markers", name=NVIDIA_ISSUER_LABEL, customdata=[f"irates.today · {count} 笔 5Y 成交"],
+            marker=dict(size=8, color="#15803d", symbol="diamond-open"),
+            hovertemplate=NVIDIA_ISSUER_LABEL + ": %{y:.2f} bp · %{customdata}<extra></extra>",
+        ))
     if "sn_nvidia" in series and nvidia_1y is None:
         nvidia_1y = load_nvidia_1y()
     if nvidia_1y is not None and nvidia_1y.empty:

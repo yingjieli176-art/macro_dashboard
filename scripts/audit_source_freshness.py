@@ -182,11 +182,14 @@ def audit(root=ROOT, now=None):
         health = option_observation_health({"series": series}, chart_key=cadence, now=now)
         missing = [field for field in fields if field not in health["latest_by_name"]]
         reports.append({"file": filename, **health, "missing_names": missing})
-    from macro_platform.ai_credit import SERIES as CDS_SERIES
+    from macro_platform.ai_credit import SERIES as CDS_SERIES, nvidia_issuer_reference
     cds = read_payload(root / "data_snapshots" / "ai_cds_daily.json")
     cds_series = [{"name": label, "data": [[row.get("observation_date"), row.get("spread_bps")]
         for row in cds.get("series", {}).get(key, {}).get("records", [])]}
         for key, (label, _) in CDS_SERIES.items()]
+    if reference := nvidia_issuer_reference(cds):
+        nvidia = next(item for item in cds_series if item["name"] == CDS_SERIES["sn_nvidia"][0])
+        nvidia["data"].append([reference["observation_date"], reference["spread_bps"]])
     cds_health = option_observation_health({"series": cds_series}, now=now)
     reports.append({"file": "ai_cds_daily.json", **cds_health,
         "missing_names": [label for label, _ in CDS_SERIES.values() if label not in cds_health["latest_by_name"]]})

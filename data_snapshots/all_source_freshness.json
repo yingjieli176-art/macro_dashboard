@@ -615,11 +615,11 @@
         8
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-24",
-      "checked_at": "2026-11-26T04:21:20.715246+00:00",
+      "repository_latest": "2026-11-25",
+      "checked_at": "2026-11-26T06:35:22.645+00:00",
       "verification_method": "live",
-      "source_latest": "2026-11-24",
-      "source_url": "https://irates.today/chart_data.json",
+      "source_latest": "2026-11-25",
+      "source_url": "https://irates.today/name/nvidia.html",
       "status": "at_source_latest"
     },
     {
