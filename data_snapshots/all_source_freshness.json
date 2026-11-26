@@ -575,12 +575,12 @@
         11
       ],
       "cadence": "daily",
-      "repository_latest": "2026-11-25",
+      "repository_latest": "2026-11-26",
       "checked_at": "2026-11-26T06:38:23.701468+00:00",
       "verification_method": "live",
       "source_latest": "2026-11-25",
       "source_url": "https://www.boj.or.jp/en/statistics/market/short/mutan/d_release/md/2026/md20261125.xlsx",
-      "status": "at_source_latest"
+      "status": "source_behind_repository"
     },
     {
       "id": "MOF_TBILL_3M_AVERAGE_AUCTION",
@@ -1382,5 +1382,5 @@
   "elapsed_seconds": 0.372,
   "shared_http_requests": 0,
   "shared_http_reuses": 0,
-  "repository_reconciled_at": "2026-11-26T06:39:38.363184+00:00"
+  "repository_reconciled_at": "2026-11-26T08:38:19.187218+00:00"
 }
