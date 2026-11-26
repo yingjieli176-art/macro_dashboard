@@ -5,7 +5,7 @@
   "source": "Cboe Daily Market Statistics",
   "source_url": "https://www.cboe.com/markets/us/options/market-statistics/daily",
   "source_template": "https://cdn.cboe.com/data/us/options/market_statistics/daily/{}_daily_options",
-  "updated_at": "2026-11-25T04:36:32.401240+00:00",
+  "updated_at": "2026-11-26T04:22:36.399881+00:00",
   "records": [
     {
       "observation_date": "2021-11-26",
@@ -10154,10 +10154,27 @@
         "excluded_spxo_put_volume": 217,
         "method": "OCC cleared sides / 2; matched to Cboe calls and puts; SPXO excluded"
       }
+    },
+    {
+      "observation_date": "2026-11-25",
+      "ratio": 0.99,
+      "call_volume": 3262517,
+      "put_volume": 3229044,
+      "total_volume": 6491561,
+      "source_url": "https://cdn.cboe.com/data/us/options/market_statistics/daily/2026-11-25_daily_options",
+      "occ_source_url": "https://marketdata.theocc.com/volume-query?reportDate=20261125&format=csv&volumeQueryType=O&symbolType=U&symbol=SPX&reportType=D&accountType=ALL&productKind=OIND&porc=BOTH",
+      "reconciliation": {
+        "expanded_product": "SPX + SPXW + SPXO",
+        "expanded_call_volume": 3262624,
+        "expanded_put_volume": 3229237,
+        "excluded_spxo_call_volume": 107,
+        "excluded_spxo_put_volume": 193,
+        "method": "OCC cleared sides / 2; matched to Cboe calls and puts; SPXO excluded"
+      }
     }
   ],
-  "record_count": 1255,
+  "record_count": 1256,
   "coverage_start": "2021-11-26",
-  "coverage_end": "2026-11-24",
+  "coverage_end": "2026-11-25",
   "fetch_errors": []
 }
