@@ -131,9 +131,11 @@ def exercise_client_zoom(page, chart, minimum_axes=2):
     before = chart_state(chart)
     assert before['toolbox'] is False, 'Removed zoom/back/reset toolbar is still present'
     tools = chart.locator('xpath=..').locator('.macro-chart-tools button')
-    assert tools.count() == 2
-    assert tools.nth(0).get_attribute('aria-label') == 'Download as PNG'
-    assert tools.nth(1).get_attribute('aria-label') == 'Fullscreen'
+    expect(tools).to_have_count(4)
+    expect(tools.nth(0)).to_have_attribute('aria-label', '锁定最新日期')
+    expect(tools.nth(1)).to_have_attribute('aria-label', 'Download as PNG')
+    expect(tools.nth(2)).to_have_attribute('aria-label', 'Fullscreen')
+    expect(tools.nth(3)).to_have_class('macro-chart-series-toggle')
     box = chart.bounding_box()
     grid = before["grid"]
     start, end = before["zoom"]
