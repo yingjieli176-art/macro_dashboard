@@ -236,21 +236,37 @@ def assert_price_guides_follow_viewport(chart):
 
 
 def exercise_price_historical_window(page, chart):
-    """Moving the right handle changes span while retaining the latest date."""
+    """Verify both free historical zoom and the explicit latest-date lock."""
+    def drag_right_edge(state):
+        box = chart.bounding_box()
+        handle = state['handles'][1]
+        distance = state['grid']['width'] * (state['zoom'][1]-state['zoom'][0])/100 * .55
+        page.mouse.move(box['x']+handle['x'], box['y']+handle['y'])
+        page.mouse.down()
+        page.mouse.move(box['x']+handle['x']-distance, box['y']+handle['y'], steps=12)
+        page.mouse.up()
+        return chart_state(chart)
+
+    lock = chart.locator('xpath=..').get_by_role('button', name='锁定最新日期')
+    expect(lock).to_have_attribute('aria-pressed', 'false')
     before = chart_state(chart)
-    box = chart.bounding_box()
-    handle = before['handles'][1]
-    distance = before['grid']['width'] * (before['zoom'][1]-before['zoom'][0])/100 * .55
-    page.mouse.move(box['x']+handle['x'], box['y']+handle['y'])
-    page.mouse.down()
-    page.mouse.move(box['x']+handle['x']-distance, box['y']+handle['y'], steps=12)
-    page.mouse.up()
-    page.wait_for_timeout(200)
-    after = chart_state(chart)
-    assert abs(after['zoom'][1]-100) < 1e-6, (before, after)
-    assert after['zoom'][0] > before['zoom'][0]+.1, (before, after)
+    historical = drag_right_edge(before)
+    assert historical['zoom'][1] < before['zoom'][1]-.1, (before, historical)
+    assert abs(historical['zoom'][0]-before['zoom'][0]) < .1, (before, historical)
+    assert_visible_axes(historical, minimum_axes=1)
+
+    lock.click()
+    expect(lock).to_have_attribute('aria-pressed', 'true')
+    anchored = chart_state(chart)
+    assert abs(anchored['zoom'][1]-100) < 1e-6, anchored
+    after = drag_right_edge(anchored)
+    assert abs(after['zoom'][1]-100) < 1e-6, (anchored, after)
+    assert after['zoom'][0] > anchored['zoom'][0]+.1, (anchored, after)
     assert_visible_axes(after, minimum_axes=1)
-    return {'zoom':after['zoom'], 'guides':assert_price_guides_follow_viewport(chart)}
+    guides = assert_price_guides_follow_viewport(chart)
+    lock.click()
+    expect(lock).to_have_attribute('aria-pressed', 'false')
+    return {'unlocked_zoom': historical['zoom'], 'zoom': after['zoom'], 'guides': guides}
 
 
 def exercise_price_path_legend(page, chart):
