@@ -961,6 +961,12 @@ def main():
             assert state['zoom'][0] > before, state['zoom']
             assert_visible_axes(state, minimum_axes=8)
             assert risk_chart.evaluate("e => e.__macroChart.getOption().yAxis.every(a => typeof a.min !== 'number' && typeof a.max !== 'number')")
+            lock = risk_chart.locator('xpath=..').get_by_role('button', name='锁定最新日期')
+            expect(lock).to_have_attribute('aria-pressed', 'false')
+            lock.click()
+            expect(lock).to_have_attribute('aria-pressed', 'true')
+            risk_chart.scroll_into_view_if_needed()
+            box = risk_chart.bounding_box()
             for position, delta in ((.15,-250),(.8,350),(.5,-180)):
                 page.mouse.move(box['x']+box['width']*position,box['y']+box['height']*.6)
                 page.mouse.wheel(0,delta)
@@ -969,6 +975,8 @@ def main():
                 assert abs(state['zoom'][1]-100) < 1e-6, state['zoom']
                 assert_visible_axes(state, minimum_axes=8)
                 check_even_date_axis(risk_chart)
+            lock.click()
+            expect(lock).to_have_attribute('aria-pressed', 'false')
             time_label = page.locator('[class*=st-key-us_equity_risk_adaptive_default_schema_] [data-testid=macroChartTime]')
             observation_label = time_label.inner_text()
             assert re.fullmatch(r'最新数据：(?:\d{4}-\d{2}-\d{2}|暂无有效观测)', observation_label), observation_label
