@@ -26,6 +26,30 @@ def source():
 
 
 class AiCreditTests(unittest.TestCase):
+    def test_nvidia_backfill_preserves_primary_values_and_marks_intraday_separately(self):
+        payload = cds.parse_source(source())
+        payload["source_asof"] = "2026-11-19"
+        payload["series"]["sn_nvidia"]["records"] = [
+            {"observation_date": day, "spread_bps": bp} for day, bp in (
+                ("2026-11-02", 135.), ("2026-11-03", None), ("2026-11-09", None),
+                ("2026-11-12", None), ("2026-11-19", None),
+            )
+        ]
+        original = copy.deepcopy(payload)
+        fig = cds.build_cds_figure("1M", payload, nvidia_1y=pd.DataFrame())
+        self.assertEqual(payload, original)
+        for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
+            traces = {trace["name"]: trace for trace in adapter(fig, "1M")["series"]}
+            main = traces["NVIDIA 5Y"]
+            self.assertEqual([point[1] for point in main["data"]], [135., None, 134., None, 121., 124.])
+            self.assertFalse(main["connectNulls"])
+            trades = traces["NVIDIA 5Y（补充成交）"]
+            self.assertEqual(trades["type"], "scatter")
+            self.assertEqual([point[1] for point in trades["data"]], [134., 121., 124.])
+            intraday = traces["NVIDIA 5Y（盘中参考）"]
+            self.assertEqual(intraday["type"], "scatter")
+            self.assertEqual(intraday["data"], [["2026-11-12T00:00:00", 139.]])
+
     def test_oas_uses_newer_same_series_vintage_even_if_fred_csv_succeeds(self):
         import data
         sid = "BAMLH0A0HYM2"

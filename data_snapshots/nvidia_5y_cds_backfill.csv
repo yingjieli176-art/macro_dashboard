@@ -1,0 +1,14 @@
+observation_date,spread_bps,quote_basis,source,source_url
+2026-10-05,76,trade_reference,All of These Words / DTCC,https://charts.allofthesewords.com/nvda-cds-data.csv
+2026-10-07,84,trade_reference,Sikuli Research / DTCC,https://www.sikulicapital.com/feed
+2026-10-13,88,trade_reference,Sikuli Research / DTCC,https://www.sikulicapital.com/feed
+2026-10-19,96,trade_reference,Sikuli Research / DTCC,https://www.sikulicapital.com/feed
+2026-10-21,93,trade_reference,Sikuli Research / DTCC,https://www.sikulicapital.com/feed
+2026-10-26,73,trade_reference,Sikuli Research / DTCC,https://www.sikulicapital.com/feed
+2026-10-27,82,trade_reference,Sikuli Research / DTCC,https://www.sikulicapital.com/feed
+2026-10-30,130,trade_reference,Sikuli Research / DTCC,https://www.sikulicapital.com/feed
+2026-11-02,134,trade_reference,Sikuli Research / DTCC,https://www.sikulicapital.com/feed
+2026-11-09,134,trade_reference,Sikuli Research / DTCC,https://www.sikulicapital.com/feed
+2026-11-12,139,intraday_reference,Bloomberg / ICE Data Services (13:30 New York),https://bloomberg.com/news/articles/2026-11-12/nvidia-default-risk-nears-record-high-as-board-weighs-ceo-s-fate
+2026-11-16,121,trade_reference,Sikuli Research / DTCC,https://www.sikulicapital.com/feed
+2026-11-19,124,trade_reference,Sikuli Research / DTCC,https://www.sikulicapital.com/feed

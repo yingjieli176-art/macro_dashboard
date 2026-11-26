@@ -238,6 +238,10 @@ def _trace_geometry(series, trace):
     shape = getattr(getattr(trace, "line", None), "shape", None)
     if shape == "hv":
         series["step"] = "end"
+    if getattr(trace, "mode", None) == "markers" and getattr(trace.line, "width", None) == 0:
+        series.update(type="scatter", symbol="diamond", symbolSize=trace.marker.size,
+                      itemStyle={"color": trace.marker.color}, z=5)
+        return
     if getattr(trace, "type", "") != "bar":
         return
     marker = getattr(trace, "marker", None)

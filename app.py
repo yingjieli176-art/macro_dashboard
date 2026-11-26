@@ -3400,6 +3400,9 @@ def render_nvidia_cds():
     add_sources([
         ("Open-Sourced Rates Observatory · CDS 历史数据", _ai_credit.SOURCE_URL),
         ("CDS 统计方法", _ai_credit.METHOD_URL),
+        ("NVIDIA 5Y 补充成交 · Sikuli Research", "https://www.sikulicapital.com/feed"),
+        ("NVIDIA 5Y 补充成交 · All of These Words", "https://charts.allofthesewords.com/nvda-cds.html"),
+        ("NVIDIA 5Y 盘中参考 · Bloomberg / ICE", "https://bloomberg.com/news/articles/2026-11-12/nvidia-default-risk-nears-record-high-as-board-weighs-ceo-s-fate"),
         ("ICE Data Indices via FRED · HY OAS (BAMLH0A0HYM2)", _ai_credit.HY_OAS_URL),
         ("ICE Data Indices via FRED · IG OAS (BAMLC0A0CM)", _ai_credit.IG_OAS_URL),
         ("Open-Sourced Rates Observatory · CDX 5Y 数据与方法", _ai_credit.CDX_METHOD_URL),

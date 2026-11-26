@@ -1,6 +1,7 @@
 """Public five-year CDS aggregates and source-identified NVIDIA 1Y quotes."""
 from __future__ import annotations
 
+import csv
 import json
 import math
 from datetime import date
@@ -15,6 +16,7 @@ from macro_platform import spacex_cds
 
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT = ROOT / "data_snapshots/ai_cds_daily.json"
+NVIDIA_5Y_BACKFILL = SNAPSHOT.with_name("nvidia_5y_cds_backfill.csv")
 SOURCE_URL = "https://irates.today/chart_data.json"
 METHOD_URL = "https://irates.today/capex.html#method"
 SPACEX_SOURCE_URL = spacex_cds.SOURCE_URL
@@ -188,6 +190,25 @@ def load_nvidia_1y():
     return quotes.loc[quotes.tenor.eq("1Y")]
 
 
+def _nvidia_5y_backfill(records):
+    """Add attributed trade observations at gaps and return chart references."""
+    if not records:
+        return records, []
+    by_date = {row["observation_date"]: row for row in records}
+    first, last = records[0]["observation_date"], records[-1]["observation_date"]
+    references = []
+    with NVIDIA_5Y_BACKFILL.open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle):
+            day = row["observation_date"]
+            if not first <= day <= last or by_date.get(day, {}).get("spread_bps") is not None:
+                continue
+            reference = {**row, "spread_bps": float(row["spread_bps"])}
+            references.append(reference)
+            if row["quote_basis"] == "trade_reference":
+                by_date[day] = reference
+    return [by_date[day] for day in sorted(by_date)], references
+
+
 def load_infrastructure_cds():
     payload = load_cds_snapshot()
     spacex = spacex_cds.load_snapshot()
@@ -259,6 +280,9 @@ def build_cds_figure(date_range="5Y", payload=None, *, hy_oas=None, ig_oas=None,
         node = payload.get("series", {}).get(key, {})
         records = node.get("records", [])
         records = [r for r in records if cutoff is None or pd.Timestamp(r["observation_date"]) >= cutoff]
+        references = []
+        if key == "sn_nvidia":
+            records, references = _nvidia_5y_backfill(records)
         if not any(row["spread_bps"] is not None for row in records):
             missing.append(label)
             continue
@@ -267,6 +291,19 @@ def build_cds_figure(date_range="5Y", payload=None, *, hy_oas=None, ig_oas=None,
             line=dict(color=color, width=2.1, dash="dash" if node.get("quote_basis") == "upfront_implied" else "solid"),
             marker=dict(size=3.5), connectgaps=False,
             hovertemplate=label + ": %{y:.2f} bp<extra></extra>"))
+        for basis, name, reference_color in (
+            ("trade_reference", "NVIDIA 5Y（补充成交）", "#15803d"),
+            ("intraday_reference", "NVIDIA 5Y（盘中参考）", "#9333ea"),
+        ):
+            points = [row for row in references if row["quote_basis"] == basis]
+            if points:
+                fig.add_trace(go.Scatter(
+                    x=[row["observation_date"] for row in points],
+                    y=[row["spread_bps"] for row in points], mode="markers", name=name,
+                    customdata=[row["source"] for row in points],
+                    line=dict(width=0), marker=dict(size=7, color=reference_color, symbol="diamond"),
+                    hovertemplate=name + ": %{y:.2f} bp · %{customdata}<extra></extra>",
+                ))
     if "sn_nvidia" in series and nvidia_1y is None:
         nvidia_1y = load_nvidia_1y()
     if nvidia_1y is not None and nvidia_1y.empty:
