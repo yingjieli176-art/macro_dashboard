@@ -19,11 +19,11 @@ class JapanCorridorTests(unittest.TestCase):
             'repo': {'records':[{'date':'2024-08-01','value':.23}]}}}
 
     def test_insert_at_japan_start_shifts_every_later_identity(self):
-        self.assertEqual(MACRO_DISPLAY_NUMBER['japan_corridor'],9)
-        self.assertEqual(MACRO_DISPLAY_NUMBER[15],10)
-        self.assertEqual(MACRO_DISPLAY_NUMBER[16],11)
-        self.assertEqual(MACRO_DISPLAY_NUMBER[12],22)
-        self.assertEqual(len(set(MACRO_DISPLAY_ORDER)),22)
+        self.assertEqual(MACRO_DISPLAY_NUMBER['japan_corridor'], 11)
+        self.assertEqual(MACRO_DISPLAY_NUMBER[15], 12)
+        self.assertEqual(MACRO_DISPLAY_NUMBER[16], 13)
+        self.assertEqual(MACRO_DISPLAY_NUMBER[12], 24)
+        self.assertEqual(len(set(MACRO_DISPLAY_ORDER)), 24)
 
     def test_only_policy_settings_extend_to_publisher_verification_date(self):
         p=self.payload()

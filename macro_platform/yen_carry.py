@@ -216,7 +216,8 @@ def build_yen_carry_figure(date_range, *, us, japan, fx, positions=None, topix=N
         common = dict(x=view.observation_date, y=view[column], name=name, yaxis=axis,
                       hovertemplate=f"{name}: %{{y:.2f}}{suffix}<extra></extra>")
         if name == POSITION_NAME:
-            fig.add_trace(go.Bar(**common, marker=dict(color=color, opacity=0.6), width=4*86400000))
+            fig.add_trace(go.Bar(**common, marker=dict(color=color, opacity=0.6), width=4*86400000,
+                                 meta={"observation_cadence": "weekly"}))
         else:
             fig.add_trace(go.Scatter(**common, mode="lines", connectgaps=False,
                                      line=dict(color=color, width=2.3, dash=dash)))

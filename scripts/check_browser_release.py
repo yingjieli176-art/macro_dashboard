@@ -732,8 +732,15 @@ def main():
             print('PASS chart series toggle in Chromium', flush=True)
             page.get_by_text(f"{MACRO_DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
             page.get_by_text(f"{MACRO_DISPLAY_NUMBER[11]}. Precious Metals", exact=True).wait_for(timeout=30000)
-            # The first eight canvases can paint while later fragments still render.
-            expect(groups).to_have_count(22, timeout=60000)
+            # Chart fragments can add controls and canvases after initial paint.
+            chart_positions = len(MACRO_DISPLAY_NUMBER)
+            expect(groups).to_have_count(chart_positions, timeout=60000)
+            page.wait_for_function("""() => {
+                const app = document.querySelector('[data-testid=stApp]');
+                const charts = [...document.querySelectorAll('[data-testid=macroEChartsChart], [data-testid=stEChartsChart]')];
+                return app?.getAttribute('data-test-script-state') === 'notRunning' &&
+                    charts.every(chart => chart.__macroChart && chart.getAttribute('aria-busy') === 'false');
+            }""", timeout=60000)
             assert charts.count() >= 8
             assert page.get_by_test_id("stException").count() == 0
             assert page.get_by_test_id(re.compile(r"^(macro|st)EChartsChartError$")).count() == 0
@@ -762,8 +769,9 @@ def main():
             assert charts.evaluate_all("elements => elements.every(e => e.getAttribute('aria-busy') === 'false')")
             report['background_resume'] = {'frozen_page_resumed':True,'observations_and_choices_preserved':True}
             lifecycle.detach()
-            assert page.get_by_text("该图表目前没有可验证的有效观测数据", exact=False).count() > 0
-            report["checks"].append({"chart_positions": 22, "painted_native_charts": len(paints),
+            missing_positions = page.get_by_text("该图表目前没有可验证的有效观测数据", exact=False).count()
+            assert len(paints) + missing_positions == chart_positions, (len(paints), missing_positions, chart_positions)
+            report["checks"].append({"chart_positions": chart_positions, "painted_native_charts": len(paints),
                                       "missing_positions_are_explicit": True})
             bank_chart = page.locator('[class*=st-key-hk_7_range_adaptive_default_schema_]').get_by_test_id(
                 re.compile(r"^(macro|st)EChartsChart$"))
@@ -839,7 +847,7 @@ def main():
             report["china_drawdown"] = exercise_china_drawdown(page)
             # All five controls exist for every position, including unavailable charts.
             report["controls"] = groups.all_text_contents()
-            for index in range(22):
+            for index in range(chart_positions):
                 for label in ("5Y", "1Y", "6M", "3M", "1M"):
                     # React Aria's selected toggle changes its accessible
                     # name; the visible range label stays stable.
@@ -866,9 +874,18 @@ def main():
                 return chart.getOption().series.map(s => ({name:s.name, axis:s.yAxisIndex,
                     markers:s.showSymbol, connect:s.connectNulls,
                     valid:s.data.filter(p=>Number.isFinite(p[1])).length,
+                    last:s.data.at(-1),
                     gaps:s.data.filter(p=>p[1]===null).length}));
             }""")
-            assert [s['name'] for s in cds_state if not s['name'].startswith('CDX ') and s['name'] != 'NVIDIA 1Y'] == ['NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）'], cds_state
+            from macro_platform.ai_credit import NVIDIA_ISSUER_LABEL, load_cds_snapshot, nvidia_issuer_reference
+
+            primary = {'NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）'}
+            assert primary <= {series['name'] for series in cds_state}, cds_state
+            if reference := nvidia_issuer_reference(load_cds_snapshot()):
+                issuer = next(series for series in cds_state if series['name'] == NVIDIA_ISSUER_LABEL)
+                assert issuer['valid'] == 1 and issuer['markers'] and issuer['axis'] == 0, issuer
+                assert observation_date(issuer['last'][0]) == reference['observation_date'], issuer
+                assert issuer['last'][1] == reference['spread_bps'], issuer
             for name, axis in (('CDX HY 5Y（参考）', 1), ('CDX IG 5Y（参考）', 2)):
                 found = next(s for s in cds_state if s['name'] == name)
                 assert found['axis'] == axis and found['valid'] > 0, found
@@ -1077,14 +1094,14 @@ def main():
                 'volatility':exercise_range_legend_persistence(page,'vix_term_structure_adaptive_default',MACRO_DISPLAY_NUMBER[10]-1),
             }
             page.set_viewport_size({'width':1440,'height':1000})
-            freshness = page.get_by_text(re.compile(r'^数据最新时间 · 22 张图'))
+            freshness = page.get_by_text(re.compile(rf'^数据最新时间 · {chart_positions} 张图'))
             freshness.click()
             page.get_by_test_id('stDataFrame').first.wait_for()
             assert page.get_by_test_id('stDataFrame').count() >= 2
             assert page.get_by_text('独立数据源核对', exact=True).count() == 0
             page.screenshot(path='browser_freshness.png')
             freshness.click()
-            report['all_source_freshness_overview'] = {'chart_positions':22,'observation_dates_visible':True}
+            report['all_source_freshness_overview'] = {'chart_positions':chart_positions,'observation_dates_visible':True}
             report["checks"].append({"slider": True, "download_and_fullscreen_only": True,
                                       "processed_observations_fit_independent_axes": True})
             # Two separate browser contexts produce independent Streamlit

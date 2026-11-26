@@ -161,7 +161,7 @@ from macro_platform import parameter_guide as _parameter_guide
 if not getattr(_parameter_guide, "EXPLICIT_TREASURY_YIELD_LABELS", False):
     _parameter_guide = importlib.reload(_parameter_guide)
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.7.3_ah_h_discount"
+CHART_BUILD = "V1.7.3_nvidia_cds_backfill"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -3197,15 +3197,14 @@ def _cache_safe_figure(figure):
 def _cached_macro_figure(chart_number, snapshot_revision, build_revision):
     """Reuse successful construction; callers receive isolated figure copies."""
     if isinstance(chart_number, str):
-        builders = {
-            'yen_volatility': build_yen_volatility,
-            'yen_implied': _jpy_iv.build_figure,
-            'yen_iv_history': _jpy_history.build_figure,
-            'yen_rr': _jpy_rr.build_figure,
-            'japan_holdings': build_japan_holdings,
-            'cross_asset_vol': build_cross_asset_vol_figure,
-        }
-        builder = builders[chart_number]
+        builder = {
+            'yen_volatility': lambda: build_yen_volatility,
+            'yen_implied': lambda: _jpy_iv.build_figure,
+            'yen_iv_history': lambda: _jpy_history.build_figure,
+            'yen_rr': lambda: _jpy_rr.build_figure,
+            'japan_holdings': lambda: build_japan_holdings,
+            'cross_asset_vol': lambda: build_cross_asset_vol_figure,
+        }[chart_number]()
     elif chart_number != 4:
         builder = globals()[f"build_fig{chart_number}"]
     if chart_number == 4:

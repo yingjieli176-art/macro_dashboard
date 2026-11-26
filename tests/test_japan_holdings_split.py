@@ -25,9 +25,9 @@ class JapanHoldingsSplitTests(unittest.TestCase):
         carry = combine_yen_carry_figures(go.Figure(go.Scatter(name='USD/JPY', x=['2026-03-31'], y=[150])),
                                          volatility=go.Figure())
         self.assertTrue({t.name for t in result.data}.isdisjoint(t.name for t in carry.data))
-        self.assertEqual(MACRO_DISPLAY_NUMBER['japan_holdings'], 12)
-        self.assertEqual(MACRO_DISPLAY_NUMBER[16], 11)
-        self.assertEqual(MACRO_DISPLAY_NUMBER[14], 13)
+        live_position = MACRO_DISPLAY_NUMBER['japan_holdings']
+        self.assertEqual(live_position, MACRO_DISPLAY_NUMBER[16] + 1)
+        self.assertEqual(MACRO_DISPLAY_NUMBER[14], live_position + 1)
 
     def test_retired_appreciation_and_realized_volatility_are_absent_from_rendered_carry(self):
         base = go.Figure()

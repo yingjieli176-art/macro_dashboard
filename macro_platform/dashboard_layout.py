@@ -8,7 +8,9 @@ MACRO_DISPLAY_ORDER = (
 )
 MACRO_DISPLAY_NUMBER = {key: index for index, key in enumerate(MACRO_DISPLAY_ORDER, 1)}
 DISPLAY_US_CROSSASSET_23_ORDER = tuple(key for key in MACRO_DISPLAY_ORDER if key != "infrastructure_cds")
-DISPLAY_US_CREDIT_JP_CORRIDOR_CN_21_ORDER = tuple(key for key in DISPLAY_US_CROSSASSET_23_ORDER if key != "japan_holdings")
+DISPLAY_US_CREDIT_JP_CORRIDOR_CN_21_ORDER = tuple(
+    key for key in DISPLAY_US_CROSSASSET_23_ORDER if key not in {"cross_asset_vol", "japan_holdings"}
+)
 PREVIOUS_DISPLAY_ORDER = tuple(key for key in DISPLAY_US_CREDIT_JP_CORRIDOR_CN_21_ORDER if key != "japan_corridor")
 CHART_NUMBERING = "display_us_crossasset_vol_two_credit_jp_holdings_cn_24"
 
