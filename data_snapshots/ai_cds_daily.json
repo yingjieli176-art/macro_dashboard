@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "built": "2026-11-25",
-  "source_asof": "2026-11-24",
-  "source_calendar_count": 656,
+  "built": "2026-11-26",
+  "source_asof": "2026-11-25",
+  "source_calendar_count": 657,
   "source": "Open-Sourced Rates Observatory, irates.today",
   "source_url": "https://irates.today/chart_data.json",
   "methodology_url": "https://irates.today/capex.html#method",
@@ -2638,6 +2638,10 @@
         {
           "observation_date": "2026-11-24",
           "spread_bps": 143.0
+        },
+        {
+          "observation_date": "2026-11-25",
+          "spread_bps": 148.0
         }
       ]
     },
@@ -5271,6 +5275,10 @@
         {
           "observation_date": "2026-11-24",
           "spread_bps": 152.0
+        },
+        {
+          "observation_date": "2026-11-25",
+          "spread_bps": 157.5
         }
       ]
     },
@@ -7904,6 +7912,10 @@
         {
           "observation_date": "2026-11-24",
           "spread_bps": 96.5
+        },
+        {
+          "observation_date": "2026-11-25",
+          "spread_bps": null
         }
       ]
     },
@@ -10537,6 +10549,10 @@
         {
           "observation_date": "2026-11-24",
           "spread_bps": 51.5
+        },
+        {
+          "observation_date": "2026-11-25",
+          "spread_bps": null
         }
       ]
     },
@@ -13170,6 +13186,10 @@
         {
           "observation_date": "2026-11-24",
           "spread_bps": 365.0
+        },
+        {
+          "observation_date": "2026-11-25",
+          "spread_bps": null
         }
       ]
     },
@@ -15803,6 +15823,10 @@
         {
           "observation_date": "2026-11-24",
           "spread_bps": 190.0
+        },
+        {
+          "observation_date": "2026-11-25",
+          "spread_bps": null
         }
       ]
     },
@@ -18436,14 +18460,13 @@
         {
           "observation_date": "2026-11-24",
           "spread_bps": 1319.9
+        },
+        {
+          "observation_date": "2026-11-25",
+          "spread_bps": null
         }
       ]
     }
   },
-  "nvidia_issuer_observation": {
-    "observation_date": "2026-11-25",
-    "spread_bps": 148,
-    "reported_trade_count": 5
-  },
-  "retrieved_at": "2026-11-26T06:37:45.446641+00:00"
+  "retrieved_at": "2026-11-26T12:57:51.964128+00:00"
 }
