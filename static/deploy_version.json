@@ -1,5 +1,5 @@
 {
-  "release": "V1.7.3_nvidia_cds_backfill",
+  "release": "V1.7.4_minkabu_fx_volatility",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
@@ -89,6 +89,7 @@
     "fx_one_month_historical_reference_curves",
     "same_primary_publisher_for_live_and_scheduled_feed",
     "actual_source_endpoint_and_expanded_freshness_audit",
-    "nvidia_5y_cds_attributed_historical_backfill"
+    "nvidia_5y_cds_attributed_historical_backfill",
+    "minkabu_single_source_fx_one_month_volatility"
   ]
 }

@@ -602,16 +602,22 @@ def jobs():
                        snapshot(f"fred_cache/{symbol}.json", "date", "value"),
                        lambda symbol=symbol: fred(symbol)))
     from macro_platform.jpy_implied_vol import SOURCE_URL as SAXO_URL, parse_quote
+    from scripts.update_eurusd_1m_atm import collect_observations
     volatility_chart = MACRO_DISPLAY_NUMBER["cross_asset_vol"]
     yen_carry = MACRO_DISPLAY_NUMBER[16]
-    for pair, filename, charts in (
-        ("EURUSD", "eurusd_1m_atm_saxo.json", [volatility_chart]),
-        ("USDJPY", "usdjpy_1m_atm_saxo.json", [volatility_chart, yen_carry]),
-    ):
-        output.append((pair + "_1M_ATM_SAXO", charts, "daily",
-            snapshot(filename, "observation_date", "value"),
-            lambda pair=pair: (parse_quote(get(SAXO_URL).text, tenor="1m", pair=pair)["observation_date"],
-                               SAXO_URL)))
+
+    @shared_fetch
+    def minkabu_observations():
+        return collect_observations(get=get)
+
+    def minkabu_latest(pair):
+        row = minkabu_observations()[pair][-1]
+        return row["observation_date"], row["source_url"]
+
+    for pair, charts in (("EURUSD", [volatility_chart]), ("USDJPY", [volatility_chart, yen_carry])):
+        output.append((pair + "_1M_MINKABU", charts, "daily",
+            snapshot(f"{pair.lower()}_1m_minkabu.json", "observation_date", "value"),
+            lambda pair=pair: minkabu_latest(pair)))
     for symbol in ("DCOILBRENTEU", "DCOILWTICO"):
         output.append((symbol, [volatility_chart], "daily",
                        snapshot(f"fred_cache/{symbol}.json", "date", "value"),

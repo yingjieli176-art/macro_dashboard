@@ -16,7 +16,7 @@ FAMILIES = {
     "update_dealer_gamma.py": {"SPX_GEX"},
     "update_dxy_snapshot.py": {"DX-Y.NYB"},
     "update_jpy_implied_vol.py": {"USDJPY_3M_ATM_SAXO"},
-    "update_eurusd_1m_atm.py": {"EURUSD_1M_ATM_SAXO", "USDJPY_1M_ATM_SAXO"},
+    "update_eurusd_1m_atm.py": {"EURUSD_1M_MINKABU", "USDJPY_1M_MINKABU"},
     "update_topix_snapshot.py": {"TOPIX"},
     "update_japan_3m.py": {"MOF_TBILL_3M_AVERAGE_AUCTION"},
     "update_jpy_risk_reversal.py": {"USDJPY_1M_25D_RR_SAXO"},
