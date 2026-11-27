@@ -1,5 +1,5 @@
 {
-  "release": "V1.7.9_legend_symbol_refresh",
+  "release": "V1.7.10_hourly_source_check",
   "repository": "yingjieli176-art/macro_dashboard",
   "branch": "main",
   "entrypoint": "app.py",
