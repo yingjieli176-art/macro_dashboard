@@ -272,7 +272,7 @@ def exercise_price_historical_window(page, chart):
 def exercise_price_path_legend(page, chart):
     """Daily drawdown is an independent named parameter in the same plot."""
     before = chart_state(chart)['zoom']
-    names = chart.evaluate("element => element.__macroChart.getOption().legend[0].data.filter(name=>name!=='\\n')")
+    names = chart.evaluate("element => element.__macroChart.getOption().legend[0].data.map(item=>typeof item==='string'?item:item.name).filter(name=>name!=='\\n')")
     for name in names + names:
         point = chart.evaluate("""(element,name) => {
             const chart=element.__macroChart, legend=chart.getModel().getComponent('legend');
@@ -289,10 +289,14 @@ def exercise_price_path_legend(page, chart):
         state=chart.evaluate("""element => {
             const chart=element.__macroChart, option=chart.getOption(), visible=[];
             chart.getModel().eachSeries(series=>visible.push({name:series.name,kind:series.id.startsWith('macro-peak-drawdown-')?'drawdown':'price'}));
-            return {selected:option.legend[0].selected, visible,
+            const legend=option.legend[0];
+            const weights=Object.fromEntries(legend.data.filter(item=>typeof item === 'object')
+                .map(item=>[item.name,item.textStyle.fontWeight]));
+            return {selected:legend.selected, visible, weights,
                 panel_show:option.yAxis.at(-1).show};
         }""")
         for asset in names:
+            assert state['weights'][asset] == (400 if state['selected'].get(asset) is False else 600), state
             assert [s['kind'] for s in state['visible'] if s['name']==asset] == (
                 [] if state['selected'].get(asset) is False else ['drawdown' if asset.endswith(' 回撤比例') else 'price']), state
         assert state['panel_show'] == any(s['kind']=='drawdown' for s in state['visible']), state
@@ -413,7 +417,7 @@ def check_mobile_layout(page):
             show: axis.get('show'), name: axis.get('name'),
             scale: axis.get('scale'), offset: axis.get('offset')}));
         return {width:chart.getWidth(), grid:{x:grid.x,y:grid.y,width:grid.width,height:grid.height},
-            legend_type:legend.get('type'), legend_data:legend.get('data').filter(x => x !== '\\n'),
+            legend_type:legend.get('type'), legend_data:legend.get('data').map(item => typeof item === 'string' ? item : item.name).filter(x => x !== '\\n'),
             legend_bounds:{x:rect.x,y:rect.y,width:rect.width,height:rect.height}, axes,
             series:chart.getOption().series.map(s => ({name:s.name,axis:s.yAxisIndex,type:s.type,data:s.data})),
             zoom:model.getComponent('dataZoom').getPercentRange()};

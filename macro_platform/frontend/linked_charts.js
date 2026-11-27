@@ -130,7 +130,7 @@ export function dailyPriceTooltip(params, labels) {
     return `${labels[index]} ${ratio ? '回撤比例' : '收盘'}：${text}`;
   })].join('\n');
 }
-export function compactLegend(option, labels, width) {
+export function compactLegend(option, labels, width, selected = option.legend?.selected || {}) {
   const names = [...new Set(option.series.map(series => series.name))];
   const prior = option.legend || {};
   const fontSize = prior.textStyle?.fontSize || 12;
@@ -155,13 +155,13 @@ export function compactLegend(option, labels, width) {
       packed.push('\n'); height += rowHeight + itemGap;
       used = 0; rowHeight = lineHeight;
     }
-    packed.push(name);
+    packed.push({name, textStyle:{fontWeight:selected[name] === false ? 400 : 600}});
     used += (used ? itemGap : 0) + size;
     rowHeight = Math.max(rowHeight, lines.length * lineHeight);
   }
   height += rowHeight;
   option.legend = {...prior, type:'plain', orient:'horizontal', top:26,
-    left:8, right:8, padding:0, itemWidth, itemGap, data:packed,
+    left:8, right:8, padding:0, itemWidth, itemGap, data:packed, selected,
     formatter:name => displays[name] || labels[name] || name,
     textStyle:{...prior.textStyle, fontSize, lineHeight}};
   option.grid.top = Math.max(Number(option.grid.top) || 0, 26 + height + 36);
@@ -523,13 +523,13 @@ export default function({data, parentElement}) {
     updateSeriesToggle();
     refreshPriceGuides(chart.getOption().dataZoom);
     const zooms = chart.getOption().dataZoom;
-    const option = sizeBars(compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth), zooms);
+    const option = sizeBars(compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth, selected), zooms);
     fitChartHeight(option);
     if (option.toolbox) option.toolbox.right = 54;
     // Price observations stay intact. Only derived paths and annotations
     // change with the selection; the live dataZoom bounds are preserved.
     if (!hasPriceGuides) option.tooltip = {...option.tooltip, formatter:params => compactTooltip(params, labels, observationNotes)};
-    const patch = {legend: {...option.legend, selected}, grid: option.grid,
+    const patch = {legend: option.legend, grid: option.grid,
       yAxis: option.yAxis, xAxis: option.xAxis, toolbox: option.toolbox, tooltip:option.tooltip};
     if (hasPriceGuides) {
       patch.series = option.series.map((series, index) => index < base.series.length ?
@@ -561,8 +561,7 @@ export default function({data, parentElement}) {
         })
       : base.dataZoom.map(zoom=>({...zoom,startValue:presetStart(last,activePeriod),endValue:last}));
     if (hasPriceGuides) refreshPriceGuides(initialZoom);
-    const option = compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth);
-    option.legend.selected = selected;
+    const option = compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth, selected);
     option.series.forEach(series => {series.clip = true;});
     option.aria = {enabled:true};
     option.tooltip = {...option.tooltip, renderMode:'richText',
