@@ -303,7 +303,7 @@ class AiCreditTests(unittest.TestCase):
             fig = cds.build_cds_figure(window, payload, hy_oas=hy_oas)
             for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
                 option = adapter(fig, window)
-                self.assertEqual(len(option["series"]), 5)
+                self.assertEqual(len(option["series"]), len(cds.CREDIT_SERIES) + 1)
                 *companies, oas = option["series"]
                 self.assertTrue(all(series["yAxisIndex"] == 0 for series in companies))
                 self.assertEqual(oas["name"], cds.HY_OAS_NAME)
