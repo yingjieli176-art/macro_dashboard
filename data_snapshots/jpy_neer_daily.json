@@ -4,12 +4,8 @@
   "api_url": "https://stats.bis.org/api/v2/data/dataflow/BIS/WS_EER/1.0/D.N.B.JP",
   "unit": "Index, 2020=100",
   "frequency": "daily",
-  "fetched_at": "2026-11-26T01:50:59.967074+00:00",
+  "fetched_at": "2026-11-27T01:48:38.331962+00:00",
   "records": [
-    {
-      "date": "2021-11-12",
-      "value": 90.64
-    },
     {
       "date": "2021-11-15",
       "value": 90.71
@@ -5237,6 +5233,26 @@
     {
       "date": "2026-11-17",
       "value": 69.08
+    },
+    {
+      "date": "2026-11-18",
+      "value": 69.11
+    },
+    {
+      "date": "2026-11-19",
+      "value": 68.84
+    },
+    {
+      "date": "2026-11-20",
+      "value": 69.53
+    },
+    {
+      "date": "2026-11-23",
+      "value": 69.41
+    },
+    {
+      "date": "2026-11-24",
+      "value": 69.34
     }
   ]
 }
