@@ -288,14 +288,16 @@ def exercise_price_path_legend(page, chart):
         page.wait_for_timeout(100)
         state=chart.evaluate("""element => {
             const chart=element.__macroChart, option=chart.getOption(), visible=[];
-            chart.getModel().eachSeries(series=>visible.push({name:series.name,kind:series.id.startsWith('macro-peak-drawdown-')?'drawdown':'price'}));
-            return {selected:option.legend[0].selected, visible,
+            chart.getModel().eachSeries(series=>visible.push({name:series.name,
+                focused:series.get('lineStyle.opacity') !== 0.45,
+                kind:series.id.startsWith('macro-peak-drawdown-')?'drawdown':'price'}));
+            return {selected:Object.fromEntries(option.series.map(s=>[s.name,s.lineStyle?.opacity !== 0.45])), visible,
                 panel_show:option.yAxis.at(-1).show};
         }""")
         for asset in names:
-            assert [s['kind'] for s in state['visible'] if s['name']==asset] == (
-                [] if state['selected'].get(asset) is False else ['drawdown' if asset.endswith(' 回撤比例') else 'price']), state
-        assert state['panel_show'] == any(s['kind']=='drawdown' for s in state['visible']), state
+            series, = [s for s in state['visible'] if s['name'] == asset]
+            assert series['focused'] == state['selected'][asset], state
+        assert state['panel_show'] == any(s['kind']=='drawdown' and s['focused'] for s in state['visible']), state
         assert chart_state(chart)['zoom'] == before
     assert_price_guides_follow_viewport(chart)
     tooltip = chart.evaluate("""element => {
@@ -328,8 +330,8 @@ def exercise_equity_drawdown(page):
             chart.evaluate("""element => {
                 const chart = element.__macroChart;
                 for (const series of chart.getOption().series.slice(0, 2)) {
-                    if (chart.getOption().legend[0].selected[series.name] !== false)
-                        throw new Error('SPX/RSP prices must start hidden');
+                    if (series.lineStyle.opacity !== 0.45)
+                        throw new Error('SPX/RSP prices must start muted');
                     chart.dispatchAction({type:'legendSelect', name:series.name});
                 }
             }""")
@@ -477,7 +479,7 @@ def exercise_legend_axes(page, chart):
         const model = chart.getModel();
         const rect = model.getComponent('grid').coordinateSystem.getRect();
         return {axes:option.yAxis.map(a=>({show:a.show,offset:a.offset,inverse:a.inverse})),
-            selected:option.legend[0].selected, width:rect.width,
+            selected:Object.fromEntries(option.series.map(s=>[s.name,s.lineStyle?.opacity !== 0.45])), width:rect.width,
             series:option.series.map(s=>({name:s.name,axis:s.yAxisIndex,data:s.data})),
             zoom:model.getComponent('dataZoom').getPercentRange()};
     }"""
@@ -614,7 +616,7 @@ def exercise_range_legend_persistence(page, prefix, group_index):
     """Real legend clicks survive remounts while each requested period changes X."""
     inspect = """element => {
         const chart=element.__macroChart, option=chart.getOption();
-        return {selected:option.legend[0].selected,
+        return {selected:Object.fromEntries(option.series.map(s=>[s.name,s.lineStyle?.opacity !== 0.45])),
             axes:option.yAxis.map(a=>({show:a.show,offset:a.offset,scale:a.scale})),
             series:option.series.map(s=>({name:s.name,axis:s.yAxisIndex||0,type:s.type,data:s.data})),
             zoom:chart.getModel().getComponent('dataZoom').getPercentRange()};
@@ -733,20 +735,22 @@ def main():
             get_selection = """element => {
                 const option = (""" + INSTANCE_JS + """)(element).getOption();
                 return {names:option.series.map(s=>s.name),
-                    selected:option.legend[0].selected,
+                    selected:Object.fromEntries(option.series.map(s=>[s.name,s.lineStyle?.opacity !== 0.45])),
+                    legend:option.legend[0].selected,
                     zoom:option.dataZoom[0]};
             }"""
             original = treasury_chart.evaluate(get_selection)
             toggle.click()
-            expect(toggle).to_have_text('显示全部参数')
+            expect(toggle).to_have_text('突出全部参数')
             hidden = treasury_chart.evaluate(get_selection)
             assert all(hidden['selected'][name] is False for name in original['names']), hidden
+            assert all(hidden['legend'][name] for name in original['names']), hidden
             assert hidden['zoom'] == original['zoom'], hidden
             toggle.click()
-            expect(toggle).to_have_text('隐藏全部参数')
+            expect(toggle).to_have_text('淡化全部参数')
             restored = treasury_chart.evaluate(get_selection)
             assert all(restored['selected'][name] is True for name in original['names']), restored
-            report['treasury_series_toggle'] = 'hide and restore all with the same zoom'
+            report['treasury_series_toggle'] = 'dim and restore all with the same zoom'
             print('PASS chart series toggle in Chromium', flush=True)
             page.get_by_text(f"{MACRO_DISPLAY_NUMBER[10]}. VIX & VIX3M Term Structure", exact=True).wait_for(timeout=30000)
             page.get_by_text(f"{MACRO_DISPLAY_NUMBER[11]}. Precious Metals", exact=True).wait_for(timeout=30000)
@@ -776,13 +780,13 @@ def main():
             # Freeze/resume the actual test page like a discarded background
             # tab, then verify immediate recovery preserves every observation
             # and saved legend/period choice. No production dashboard is opened.
-            before_resume = charts.evaluate_all("elements => elements.map(e => {const o=e.__macroChart.getOption(); return [o.series.map(s=>s.data.length),o.legend[0].selected,e.dataset.period];})")
+            before_resume = charts.evaluate_all("elements => elements.map(e => {const o=e.__macroChart.getOption(); return [o.series.map(s=>s.data.length),o.series.map(s=>s.lineStyle?.opacity),e.dataset.period];})")
             lifecycle = page.context.new_cdp_session(page)
             lifecycle.send('Page.setWebLifecycleState', {'state':'frozen'})
             page.wait_for_timeout(1200)
             lifecycle.send('Page.setWebLifecycleState', {'state':'active'})
             page.evaluate("window.dispatchEvent(new Event('pageshow')); document.dispatchEvent(new Event('visibilitychange'))")
-            after_resume = charts.evaluate_all("elements => elements.map(e => {const o=e.__macroChart.getOption(); return [o.series.map(s=>s.data.length),o.legend[0].selected,e.dataset.period];})")
+            after_resume = charts.evaluate_all("elements => elements.map(e => {const o=e.__macroChart.getOption(); return [o.series.map(s=>s.data.length),o.series.map(s=>s.lineStyle?.opacity),e.dataset.period];})")
             assert after_resume == before_resume, {'before':before_resume,'after':after_resume}
             assert charts.evaluate_all("elements => elements.every(e => e.getAttribute('aria-busy') === 'false')")
             report['background_resume'] = {'frozen_page_resumed':True,'observations_and_choices_preserved':True}
