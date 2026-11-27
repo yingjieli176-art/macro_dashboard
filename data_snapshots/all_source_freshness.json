@@ -373,16 +373,16 @@
       "status": "live_only"
     },
     {
-      "id": "EURUSD_1M_ATM_SAXO",
+      "id": "EURUSD_1M_MINKABU",
       "charts": [
         5
       ],
       "cadence": "daily",
       "repository_latest": "2026-11-26",
-      "checked_at": "2026-11-27T00:36:54.876733+00:00",
+      "checked_at": "2026-11-27T00:37:20.997Z",
       "verification_method": "live",
       "source_latest": "2026-11-26",
-      "source_url": "https://fxowebtools.saxobank.com/otc.html",
+      "source_url": "https://fx.minkabu.jp/news/385519",
       "status": "at_source_latest"
     },
     {
@@ -918,17 +918,17 @@
       "status": "at_source_latest"
     },
     {
-      "id": "USDJPY_1M_ATM_SAXO",
+      "id": "USDJPY_1M_MINKABU",
       "charts": [
         5,
         13
       ],
       "cadence": "daily",
       "repository_latest": "2026-11-26",
-      "checked_at": "2026-11-27T00:36:55.229746+00:00",
+      "checked_at": "2026-11-27T00:37:20.997Z",
       "verification_method": "live",
       "source_latest": "2026-11-26",
-      "source_url": "https://fxowebtools.saxobank.com/otc.html",
+      "source_url": "https://fx.minkabu.jp/news/385519",
       "status": "at_source_latest"
     },
     {

@@ -2,16 +2,11 @@
 
 OVX: Cboe daily closes, with FRED OVXCLS as fallback.
 MOVE: existing validated ICE BofA ^MOVE daily-close snapshot.
-EUR/USD and USD/JPY: independently recorded Saxo Bank one-month ATM option
-implied-volatility quotes, alongside independently labelled MINKABU references.
+EUR/USD and USD/JPY: dated one-month implied-volatility references from MINKABU.
 """
-from datetime import datetime, timezone
 import json
-import logging
 import math
-import os
 from pathlib import Path
-import threading
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -21,33 +16,25 @@ from macro_platform import move_index
 from macro_platform.chart_axes import apply_time_axis
 from macro_platform.cboe_history import OVX_HISTORY_URL
 
-SAXO_URL = saxobank.SOURCE_URL
 FRED_URL = "https://fred.stlouisfed.org/series/OVXCLS"
 MOVE_URL = move_index.SOURCE_URL
-CME_REFERENCE_URL = "https://www.cmegroup.com/markets/fx/g10/euro-fx/quotes/options"
-SNAPSHOT = Path(__file__).resolve().parents[1] / "data_snapshots/eurusd_1m_atm_saxo.json"
-IDENTITY = {"symbol": "EURUSD_1M_ATM_SAXO", "source": "Saxo Bank", "pair": "EURUSD",
-            "tenor": "1M", "quote_type": "ATM", "unit": "percent"}
-USDJPY_SNAPSHOT = SNAPSHOT.with_name("usdjpy_1m_atm_saxo.json")
-USDJPY_IDENTITY = {**IDENTITY, "symbol": "USDJPY_1M_ATM_SAXO", "pair": "USDJPY"}
-USDJPY_REFERENCE_SNAPSHOT = SNAPSHOT.with_name("usdjpy_1m_minkabu.json")
-USDJPY_REFERENCE_IDENTITY = {**USDJPY_IDENTITY, "symbol": "USDJPY_1M_MINKABU",
-                            "source": "MINKABU PRESS", "quote_type": "implied_volatility_reference"}
-USDJPY_ATM_NAME = "USD/JPY 1M ATM 隐含波动率（Saxo）"
+SNAPSHOT_DIR = Path(__file__).resolve().parents[1] / "data_snapshots"
+MINKABU_NEWS_URL = "https://fx.minkabu.jp/news"
+USDJPY_REFERENCE_SNAPSHOT = SNAPSHOT_DIR / "usdjpy_1m_minkabu.json"
+EURUSD_REFERENCE_SNAPSHOT = SNAPSHOT_DIR / "eurusd_1m_minkabu.json"
+USDJPY_REFERENCE_IDENTITY = {
+    "symbol": "USDJPY_1M_MINKABU", "source": "MINKABU PRESS", "pair": "USDJPY",
+    "tenor": "1M", "quote_type": "implied_volatility_reference", "unit": "percent",
+}
+EURUSD_REFERENCE_IDENTITY = {**USDJPY_REFERENCE_IDENTITY, "symbol": "EURUSD_1M_MINKABU", "pair": "EURUSD"}
 USDJPY_REFERENCE_NAME = "USD/JPY 1M 隐含波动率（MINKABU 参考）"
-EURUSD_REFERENCE_SNAPSHOT = SNAPSHOT.with_name("eurusd_1m_minkabu.json")
-EURUSD_REFERENCE_IDENTITY = {**USDJPY_REFERENCE_IDENTITY, "symbol": "EURUSD_1M_MINKABU",
-                            "pair": "EURUSD"}
-EURUSD_ATM_NAME = "EUR/USD 1M ATM 隐含波动率（Saxo）"
 EURUSD_REFERENCE_NAME = "EUR/USD 1M 隐含波动率（MINKABU 参考）"
-USDJPY_REFERENCE_URL = "https://fx.minkabu.jp/news/385284"
-LOCK = threading.RLock()
 
 
-def _validate_records(payload, now=None, identity=IDENTITY):
+def _validate_records(payload, identity):
     if any(payload.get(k) != v for k, v in identity.items()):
         raise ValueError("Unexpected 1M ATM snapshot identity")
-    records = [saxobank._validate_record(row, now) for row in payload.get("records", ())]
+    records = [saxobank._validate_record(row) for row in payload.get("records", ())]
     dates = [row["observation_date"] for row in records]
     if dates != sorted(set(dates)):
         raise ValueError("Duplicate or unsorted implied volatility dates")
@@ -62,56 +49,12 @@ def _load_snapshot(path, identity):
         return []
 
 
-def load_eurusd_snapshot(path=SNAPSHOT):
-    return _load_snapshot(path, IDENTITY)
-
-
-def load_usdjpy_snapshot(path=USDJPY_SNAPSHOT):
-    return _load_snapshot(path, USDJPY_IDENTITY)
-
-
 def load_usdjpy_reference(path=USDJPY_REFERENCE_SNAPSHOT):
     return _load_snapshot(path, USDJPY_REFERENCE_IDENTITY)
 
 
 def load_eurusd_reference(path=EURUSD_REFERENCE_SNAPSHOT):
     return _load_snapshot(path, EURUSD_REFERENCE_IDENTITY)
-
-
-def _accept_pair_quote(document, pair, path, identity, now=None):
-    """Persist actual 1M ATM observations with original Saxo timestamps."""
-    quote = saxobank.parse_quote(document, now=now, tenor="1m", pair=pair)
-    with LOCK:
-        path = Path(path)
-        prior = _load_snapshot(path, identity)
-        if prior and quote["observation_timestamp"] < prior[-1]["observation_timestamp"]:
-            return prior
-        combined = {row["observation_date"]: row for row in prior}
-        combined[quote["observation_date"]] = quote
-        records = [combined[key] for key in sorted(combined)]
-        if records == prior:
-            return records
-        path.parent.mkdir(parents=True, exist_ok=True)
-        stamped = pd.Timestamp(now if now is not None else datetime.now(timezone.utc))
-        if stamped.tzinfo is None:
-            stamped = stamped.tz_localize("UTC")
-        payload = dict(identity, source_url=SAXO_URL,
-                       updated_at=stamped.isoformat(), records=records)
-        temp = path.with_suffix(".tmp")
-        try:
-            temp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-            os.replace(temp, path)
-        finally:
-            temp.unlink(missing_ok=True)
-        return records
-
-
-def accept_saxo_report(document, path=SNAPSHOT, now=None):
-    return _accept_pair_quote(document, "EURUSD", path, IDENTITY, now)
-
-
-def accept_usdjpy_report(document, path=USDJPY_SNAPSHOT, now=None):
-    return _accept_pair_quote(document, "USDJPY", path, USDJPY_IDENTITY, now)
 
 
 def _valid_series(frame, column, minimum=0, maximum=10000):
@@ -164,25 +107,6 @@ def twenty_day_realized_volatility(frame, column, *, yield_basis_points=False):
     return series[["observation_date", "rv20"]].dropna().reset_index(drop=True)
 
 
-def _saxo_atm_trace(name, rows, identity, axis, color):
-    try:
-        validated = _validate_records(dict(identity, records=rows), identity=identity)
-    except (ValueError, KeyError, TypeError, OverflowError):
-        return None
-    validated = [row for row in validated if row["observation_date"] >= HISTORY_START.date().isoformat()]
-    if not validated:
-        return None
-    return go.Scatter(
-        x=[row["observation_date"] for row in validated],
-        y=[row["value"] for row in validated],
-        customdata=[row["observation_timestamp"] for row in validated],
-        name=name, yaxis=axis, mode="lines+markers", connectgaps=False,
-        marker={"size": 5}, line={"color": color, "width": 2.6},
-        meta={"observation_cadence": "daily"},
-        hovertemplate=name + ": %{y:.2f}%<br>Saxo: %{customdata}<extra></extra>",
-    )
-
-
 def _historical_iv_trace(name, rows, axis, color):
     reference = _valid_series(pd.DataFrame(rows), "value", maximum=100)
     reference = reference.loc[reference.observation_date.ge(HISTORY_START)]
@@ -203,26 +127,19 @@ def _historical_iv_trace(name, rows, axis, color):
     )
 
 
-def build_usdjpy_1m_figure(saxo_records=None, reference_records=None, *, axis="y"):
-    """Share the same dated Saxo and MINKABU traces across dashboard charts."""
-    rows = load_usdjpy_snapshot() if saxo_records is None else saxo_records
-    saxo = _saxo_atm_trace(USDJPY_ATM_NAME, rows, USDJPY_IDENTITY, axis, "#16a34a")
-    fig = go.Figure()
-    missing = []
-    if saxo is None:
-        missing.append(USDJPY_ATM_NAME)
-    else:
-        fig.add_trace(saxo)
+def build_usdjpy_1m_figure(reference_records=None, *, axis="y"):
+    """Share the same dated MINKABU history across dashboard charts."""
     rows = load_usdjpy_reference() if reference_records is None else reference_records
     reference = _historical_iv_trace(USDJPY_REFERENCE_NAME, rows, axis, "#047857")
+    fig = go.Figure()
     if reference is not None:
         fig.add_trace(reference)
-    fig.update_layout(meta={"missing_series": missing})
+    fig.update_layout(meta={"missing_series": [] if reference is not None else [USDJPY_REFERENCE_NAME]})
     return fig
 
 
-def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, usdjpy_records=None,
-                 usdjpy_reference=None, eurusd_reference=None, treasury10y=None, brent=None, wti=None):
+def build_figure(date_range="5Y", *, ovx=None, move=None, usdjpy_reference=None,
+                 eurusd_reference=None, treasury10y=None, brent=None, wti=None):
     fig = go.Figure()
     sources = (
         ("OVXCLS", ovx, "OVX · 原油30天隐含波动率", "#ea580c", "y", "%"),
@@ -240,18 +157,13 @@ def build_figure(date_range="5Y", *, ovx=None, move=None, eurusd_records=None, u
             line={"color":color,"width":2.8},
             meta={"observation_cadence":"daily"},
             hovertemplate="%{x|%Y-%m-%d}<br>"+label+": %{y:.2f} "+unit+"<extra></extra>"))
-    eurusd = _saxo_atm_trace(EURUSD_ATM_NAME,
-                            load_eurusd_snapshot() if eurusd_records is None else eurusd_records,
-                            IDENTITY, "y3", "#7c3aed")
-    if eurusd is None:
-        missing.append(EURUSD_ATM_NAME)
+    rows = load_eurusd_reference() if eurusd_reference is None else eurusd_reference
+    euro_history = _historical_iv_trace(EURUSD_REFERENCE_NAME, rows, "y3", "#6d28d9")
+    if euro_history is None:
+        missing.append(EURUSD_REFERENCE_NAME)
     else:
-        fig.add_trace(eurusd)
-    euro_history = _historical_iv_trace(
-        EURUSD_REFERENCE_NAME, eurusd_reference or [], "y3", "#6d28d9")
-    if euro_history is not None:
         fig.add_trace(euro_history)
-    yen = build_usdjpy_1m_figure(usdjpy_records, usdjpy_reference or [], axis="y4")
+    yen = build_usdjpy_1m_figure(usdjpy_reference, axis="y4")
     fig.add_traces(yen.data)
     missing.extend(yen.layout.meta["missing_series"])
     realized_inputs = (

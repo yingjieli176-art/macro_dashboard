@@ -29,17 +29,17 @@ class AutomaticRecoveryTests(unittest.TestCase):
         mapped = {key: charts for key, charts, *_ in jobs()}
         chart5 = MACRO_DISPLAY_NUMBER["cross_asset_vol"]
         carry = MACRO_DISPLAY_NUMBER[16]
-        self.assertEqual(mapped["EURUSD_1M_ATM_SAXO"], [chart5])
-        self.assertEqual(mapped["USDJPY_1M_ATM_SAXO"], [chart5, carry])
+        self.assertEqual(mapped["EURUSD_1M_MINKABU"], [chart5])
+        self.assertEqual(mapped["USDJPY_1M_MINKABU"], [chart5, carry])
         self.assertEqual(mapped["TOPIX"], [carry])
         self.assertEqual(mapped["MOF_TBILL_3M_AVERAGE_AUCTION"], [carry])
         for key in ("OVXCLS", "DCOILBRENTEU", "DCOILWTICO", "MOVE", "DGS10"):
             self.assertIn(chart5, mapped[key])
         report = {"sources": [{"id": key, "status": "pipeline_lag"}
-                             for key in ("EURUSD_1M_ATM_SAXO", "USDJPY_1M_ATM_SAXO", "OVXCLS")]}
+                             for key in ("EURUSD_1M_MINKABU", "USDJPY_1M_MINKABU", "OVXCLS")]}
         planned, unhandled = recovery.recovery_plan(report)
         self.assertEqual(dict(planned), {"update_eurusd_1m_atm.py": [
-            "EURUSD_1M_ATM_SAXO", "USDJPY_1M_ATM_SAXO"], "sync_fred_verified_cache.py": ["OVXCLS"]})
+            "EURUSD_1M_MINKABU", "USDJPY_1M_MINKABU"], "sync_fred_verified_cache.py": ["OVXCLS"]})
         self.assertEqual(unhandled, [])
 
     def test_lag_missing_and_unverified_retry_but_current_and_live_only_feeds_do_not(self):

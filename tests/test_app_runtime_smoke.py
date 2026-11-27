@@ -192,17 +192,19 @@ class DashboardBootSmoke(unittest.TestCase):
         self.assertEqual([series["yAxisIndex"] for series in carry["series"][:8]], [0, 1, 2, 3, 4, 0, 0, 0])
         self.assertIn("阳轴", carry["yAxis"][1]["name"])
         self.assertFalse(carry["yAxis"][1]["inverse"])
-        self.assertEqual(len(carry["series"]), 14)
-        self.assertEqual(len(carry["series"]) + len(yen_tic["series"]), 23)
+        self.assertEqual(len(carry["series"]), 13)
+        self.assertEqual(len(carry["series"]) + len(yen_tic["series"]), 22)
         cross_asset = next(option for option in options
                            if any(s["name"].startswith("OVX ·") for s in option["series"]))
-        from macro_platform.cross_asset_volatility import USDJPY_ATM_NAME, USDJPY_REFERENCE_NAME
-        for name in (USDJPY_ATM_NAME, USDJPY_REFERENCE_NAME):
-            from_cross_asset = next(s for s in cross_asset["series"] if s["name"] == name)
-            from_carry = next(s for s in carry["series"] if s["name"] == name)
-            self.assertEqual(from_cross_asset["data"], from_carry["data"])
-            self.assertEqual(from_cross_asset["yAxisIndex"], 3)
-            self.assertEqual(from_carry["yAxisIndex"], 5)
+        from macro_platform.cross_asset_volatility import EURUSD_REFERENCE_NAME, USDJPY_REFERENCE_NAME
+        cross_fx = {series["name"]: series for series in cross_asset["series"] if "1M" in series["name"]}
+        carry_fx = {series["name"]: series for series in carry["series"] if "1M" in series["name"] and "隐含波动率" in series["name"]}
+        self.assertEqual(set(cross_fx), {EURUSD_REFERENCE_NAME, USDJPY_REFERENCE_NAME})
+        self.assertEqual(set(carry_fx), {USDJPY_REFERENCE_NAME})
+        self.assertEqual(cross_fx[USDJPY_REFERENCE_NAME]["data"], carry_fx[USDJPY_REFERENCE_NAME]["data"])
+        self.assertEqual(cross_fx[EURUSD_REFERENCE_NAME]["yAxisIndex"], 2)
+        self.assertEqual(cross_fx[USDJPY_REFERENCE_NAME]["yAxisIndex"], 3)
+        self.assertEqual(carry_fx[USDJPY_REFERENCE_NAME]["yAxisIndex"], 5)
         iv = next(s for s in carry["series"] if s["name"] == "USD/JPY 3M ATM 隐含波动率（Saxo，R5）")
         self.assertEqual(iv["yAxisIndex"], 5)
         self.assertTrue(iv["showSymbol"])

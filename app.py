@@ -40,7 +40,7 @@ from macro_platform import chart_axes as _chart_axes
 from macro_platform import dealer_gamma as _dealer_gamma
 from macro_platform import move_index as _move_index
 from macro_platform import cross_asset_volatility as _cross_asset_vol
-if not hasattr(_cross_asset_vol, "load_eurusd_reference"):
+if not hasattr(_cross_asset_vol, "MINKABU_NEWS_URL"):
     _cross_asset_vol = importlib.reload(_cross_asset_vol)
 RANGE_OFFSETS = _chart_axes.RANGE_OFFSETS
 apply_time_axis = _chart_axes.apply_time_axis
@@ -161,7 +161,7 @@ from macro_platform import parameter_guide as _parameter_guide
 if not getattr(_parameter_guide, "EXPLICIT_TREASURY_YIELD_LABELS", False):
     _parameter_guide = importlib.reload(_parameter_guide)
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.7.3_nvidia_cds_backfill"
+CHART_BUILD = "V1.7.4_minkabu_fx_volatility"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -2592,37 +2592,12 @@ def render_macro_chart_4(prebuilt_fig=None):
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
 
-@st.cache_data(ttl=300, show_spinner=False)
-def _load_fx_1m_atm():
-    """Return one shared snapshot of dated Saxo quotes for both FX charts."""
-    try:
-        response = http_get(_cross_asset_vol.SAXO_URL, timeout=8)
-        response.raise_for_status()
-    except Exception:
-        logging.info("FX 1M ATM refresh unavailable; retaining verified history",
-                     exc_info=True)
-    else:
-        for accept in (_cross_asset_vol.accept_saxo_report, _cross_asset_vol.accept_usdjpy_report):
-            try:
-                accept(response.text)
-            except (ValueError, TypeError, KeyError, OSError):
-                logging.info("Saxo 1M ATM quote unavailable for %s", accept.__name__, exc_info=True)
-    return _cross_asset_vol.load_eurusd_snapshot(), _cross_asset_vol.load_usdjpy_snapshot()
-
-
 def build_cross_asset_vol_figure(date_range="5Y"):
-    """Load independently dated commodity, Treasury and FX option vols."""
-    eurusd, usdjpy = _load_fx_1m_atm()
-    load_eur_reference = getattr(_cross_asset_vol, "load_eurusd_reference", None)
-    # The previous module can still be available while Cloud updates files.
-    eur_reference = ({"eurusd_reference": load_eur_reference()}
-                     if callable(load_eur_reference) else {})
+    """Load separately dated commodity, Treasury and FX option volatility."""
     return _cross_asset_vol.build_figure(
         date_range, ovx=get_fred_series("OVXCLS"), move=_move_index.load_move_snapshot(),
         treasury10y=get_fred_series("DGS10"), brent=get_fred_series("DCOILBRENTEU"),
-        wti=get_fred_series("DCOILWTICO"), eurusd_records=eurusd, usdjpy_records=usdjpy,
-        usdjpy_reference=_cross_asset_vol.load_usdjpy_reference(),
-        **eur_reference,
+        wti=get_fred_series("DCOILWTICO"),
     )
 
 
@@ -2638,8 +2613,7 @@ def _show_fx_1m_coverage(fig, names):
             summaries.append(f"{name} {dates[0]} 至 {dates[-1]}（{len(dates)} 个报价）")
     if summaries:
         st.caption("；".join(summaries))
-        st.caption("Saxo 实线为平值期权报价。MINKABU 虚线为不定期发布的同期限市场参考，"
-                   "每个圆点对应一笔原始观测，超过 45 天的空档断线。")
+        st.caption("MINKABU 1 个月波动率为市场参考。圆点对应原始观测，超过 45 天的空档断线。")
 
 
 @st.fragment(key="cross_asset_vol_viewport")
@@ -2648,7 +2622,7 @@ def render_cross_asset_vol(prebuilt_fig=None):
         f'<div class="section-title">{MACRO_DISPLAY_NUMBER["cross_asset_vol"]}. '
         '跨资产波动率 · 原油 / 美债 / 欧元 / 日元</div>'
         '<div class="section-description">OVX（Cboe原油30天隐含波动率）'
-        ' / MOVE（ICE美银美债波动率） / EUR/USD 1M ATM / USD/JPY 1M ATM（Saxo）'
+        ' / MOVE（ICE美银美债波动率） / EUR/USD、USD/JPY 1M 隐含波动率（MINKABU）'
         ' / 美国10年期国债收益率（DGS10）20D实现波动率（年化bp） / Brent、WTI 20D历史波动率（%） · 六条动态Y轴</div>',
         unsafe_allow_html=True,
     )
@@ -2656,12 +2630,7 @@ def render_cross_asset_vol(prebuilt_fig=None):
         "Cross-asset volatility", lambda: _cached_macro_figure(
             "cross_asset_vol", _macro_snapshot_revision(), CHART_BUILD))
     _render_adaptive_macro_figure(fig, "cross_asset_vol", standard=True)
-    _show_fx_1m_coverage(fig, (
-        getattr(_cross_asset_vol, "EURUSD_ATM_NAME", "EUR/USD 1M ATM 隐含波动率（Saxo）"),
-        getattr(_cross_asset_vol, "EURUSD_REFERENCE_NAME",
-                "EUR/USD 1M 隐含波动率（MINKABU 参考）"),
-        _cross_asset_vol.USDJPY_ATM_NAME, _cross_asset_vol.USDJPY_REFERENCE_NAME,
-    ))
+    _show_fx_1m_coverage(fig, (_cross_asset_vol.EURUSD_REFERENCE_NAME, _cross_asset_vol.USDJPY_REFERENCE_NAME))
     st.caption("20D历史/实现波动率：美国10年期国债收益率直接使用DGS10的每日收益率变化（bp），"
                "Brent/WTI按日对数价格收益率计算；均使用20个有效交易日变化，"
                "样本标准差×√252年化。DGS10不是债券价格或债券投资回报率；油价采用FRED现货基准价格，并非期货连续合约。")
@@ -2672,9 +2641,7 @@ def render_cross_asset_vol(prebuilt_fig=None):
         ("FRED · 美国10年国债收益率 (DGS10)", _cross_asset_vol.TEN_YEAR_YIELD_URL),
         ("FRED · Brent Europe现货油价 (DCOILBRENTEU)", _cross_asset_vol.BRENT_URL),
         ("FRED · WTI Cushing现货油价 (DCOILWTICO)", _cross_asset_vol.WTI_URL),
-        ("Saxo Bank · EUR/USD 与 USD/JPY 1M ATM options", _cross_asset_vol.SAXO_URL),
-        ("MINKABU PRESS · EUR/USD 与 USD/JPY 1M 历史参考", _cross_asset_vol.USDJPY_REFERENCE_URL),
-        ("CME EUR/USD 30-day CVOL · 交叉参考", _cross_asset_vol.CME_REFERENCE_URL),
+        ("MINKABU PRESS · EUR/USD 与 USD/JPY 1M 市场参考", _cross_asset_vol.MINKABU_NEWS_URL),
     ], "cross_asset_vol")
     st.markdown('<div class="chart-divider"></div>', unsafe_allow_html=True)
 
@@ -3021,8 +2988,7 @@ def _yen_carry_implied_volatility():
         "yen_implied", revision, CHART_BUILD))
     history = _safe_macro_build("JPY implied history", lambda: _cached_macro_figure(
         "yen_iv_history", revision, CHART_BUILD))
-    _, usdjpy = _load_fx_1m_atm()
-    one_month = _cross_asset_vol.build_usdjpy_1m_figure(saxo_records=usdjpy)
+    one_month = _cross_asset_vol.build_usdjpy_1m_figure()
     implied.add_traces(history.data)
     implied.add_traces(one_month.data)
     meta = dict(implied.layout.meta or {})
@@ -3049,9 +3015,7 @@ def render_macro_chart_16(prebuilt_fig=None):
         "yen_rr", _macro_snapshot_revision(), CHART_BUILD))
     combined = _yen_carry.combine_yen_carry_figures(base_fig, volatility=volatility, implied=implied, risk_reversal=rr)
     _render_adaptive_macro_figure(combined, "yen_carry")
-    _show_fx_1m_coverage(combined, (
-        _cross_asset_vol.USDJPY_ATM_NAME, _cross_asset_vol.USDJPY_REFERENCE_NAME,
-    ))
+    _show_fx_1m_coverage(combined, (_cross_asset_vol.USDJPY_REFERENCE_NAME,))
     st.caption("全部曲线共用时间轴，可点击图例隐藏或显示。JPY 3M 为财务省周度拍卖收益率，"
                "10Y−3M 只按同日观测计算。BOJ利率按生效日阶梯显示。"
                f"收益率为%，利差为百分点；美债持仓、机构外债及对冲率另见图 {MACRO_DISPLAY_NUMBER['japan_holdings']}。")
@@ -3069,8 +3033,8 @@ def render_macro_chart_16(prebuilt_fig=None):
                "负值表示日元看涨保护更贵，正值表示美元看涨更贵。差值为波动率百分点，R6以%显示。"
                "Saxo RR历史从已核实报价起累计，较短历史不补造。")
     add_sources([
-        ("Saxo Bank · USD/JPY 1M / 3M ATM", _jpy_iv.SOURCE_URL),
-        ("MINKABU PRESS · USD/JPY 1M 历史参考", _cross_asset_vol.USDJPY_REFERENCE_URL),
+        ("Saxo Bank · USD/JPY 3M ATM", _jpy_iv.SOURCE_URL),
+        ("MINKABU PRESS · USD/JPY 1M 市场参考", _cross_asset_vol.MINKABU_NEWS_URL),
         ("QCAM · 月报原始隐含波动率表", _jpy_history.SOURCE_URL),
         ("Saxo Bank · 1M 25-delta risk reversal", _jpy_rr.SOURCE_URL),
         ("FRED · 美国10年期国债收益率（DGS10）", "https://fred.stlouisfed.org/series/DGS10"),
