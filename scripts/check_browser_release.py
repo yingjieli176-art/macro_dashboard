@@ -292,13 +292,17 @@ def exercise_price_path_legend(page, chart):
             const legend=option.legend[0];
             const muted=Object.fromEntries(legend.data.filter(item=>typeof item === 'object')
                 .map(item=>[item.name,[item.itemStyle.opacity,item.lineStyle.opacity]]));
-            return {selected:legend.selected, visible, muted,
+            const weights=Object.fromEntries(legend.data.filter(item=>typeof item === 'object')
+                .map(item=>[item.name,item.textStyle.fontWeight]));
+            return {selected:legend.selected, visible, muted, weights,
                 same_label_color:legend.inactiveColor === legend.textStyle.color,
                 label_weight:legend.textStyle.fontWeight,
                 panel_show:option.yAxis.at(-1).show};
         }""")
         assert state['same_label_color'] and state['label_weight'] == 600, state
         for asset in names:
+            assert state['weights'].get(asset, state['label_weight']) == (
+                400 if state['selected'].get(asset) is False else 600), state
             assert state['muted'].get(asset) == (
                 [0.45, 0.45] if state['selected'].get(asset) is False else None), state
             assert [s['kind'] for s in state['visible'] if s['name']==asset] == (

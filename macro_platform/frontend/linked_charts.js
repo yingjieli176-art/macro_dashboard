@@ -157,7 +157,7 @@ export function compactLegend(option, labels, width, selected = option.legend?.s
       used = 0; rowHeight = lineHeight;
     }
     packed.push(selected[name] === false
-      ? {name, itemStyle:{opacity:0.45}, lineStyle:{opacity:0.45}}
+      ? {name, textStyle:{fontWeight:400}, itemStyle:{opacity:0.45}, lineStyle:{opacity:0.45}}
       : name);
     used += (used ? itemGap : 0) + size;
     rowHeight = Math.max(rowHeight, lines.length * lineHeight);
