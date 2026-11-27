@@ -18,7 +18,7 @@ class AppFixtureIsolationTests(unittest.TestCase):
         self.assertTrue(callable(plain['_poll_source_completion']))
         fragment = Mock(return_value=lambda function: function)
         decorated = load_functions({'_poll_source_completion'}, {'st':SimpleNamespace(fragment=fragment)})
-        fragment.assert_called_once_with(run_every=2, key='source_completion')
+        fragment.assert_called_once_with(run_every=3600, key='source_completion')
         self.assertTrue(callable(decorated['_poll_source_completion']))
 
 
