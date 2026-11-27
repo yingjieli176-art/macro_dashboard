@@ -608,7 +608,7 @@ def jobs():
 
     @shared_fetch
     def minkabu_observations():
-        return collect_observations(get=get)
+        return collect_observations()
 
     def minkabu_latest(pair):
         row = minkabu_observations()[pair][-1]
