@@ -326,7 +326,17 @@ export default function({data, parentElement}) {
         itemStyle:opacity(series.markPoint.itemStyle)}} : {})};
   }
   function readableLegend(legend) {
-    return {...legend, selected:legendSelection,
+    const color = '#000000';
+    const data = legend.data?.map(entry => {
+      const name = typeof entry === 'string' ? entry : entry.name;
+      if (selected[name] !== false) return entry;
+      const options = typeof entry === 'string' ? {name} : entry;
+      return {...options,
+        textStyle:{...options.textStyle, color},
+        itemStyle:{...options.itemStyle, color, borderColor:color, opacity:1},
+        lineStyle:{...options.lineStyle, color, opacity:1}};
+    });
+    return {...legend, data, selected:legendSelection,
       itemStyle:{...legend.itemStyle, opacity:1},
       lineStyle:{...legend.lineStyle, opacity:1}};
   }

@@ -119,7 +119,7 @@ def _responsive_chart_layout(option, fig, axis_map):
     """
     option = _price_reference_annotations(option, fig)
     # Keep disabled legend labels and symbols readable on the white canvas.
-    inactive_color = "#64748b"
+    inactive_color = "#000000"
     option["legend"].update({"inactiveColor": inactive_color, "inactiveBorderColor": inactive_color})
     option["legend"].setdefault("lineStyle", {})["inactiveColor"] = inactive_color
     explicit_titles = (fig.layout.meta or {}).get("preserve_axis_titles", ())
