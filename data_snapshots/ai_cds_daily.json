@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "built": "2026-11-26",
-  "source_asof": "2026-11-25",
-  "source_calendar_count": 657,
+  "built": "2026-11-27",
+  "source_asof": "2026-11-26",
+  "source_calendar_count": 658,
   "source": "Open-Sourced Rates Observatory, irates.today",
   "source_url": "https://irates.today/chart_data.json",
   "methodology_url": "https://irates.today/capex.html#method",
@@ -2642,6 +2642,10 @@
         {
           "observation_date": "2026-11-25",
           "spread_bps": 148.0
+        },
+        {
+          "observation_date": "2026-11-26",
+          "spread_bps": null
         }
       ]
     },
@@ -5279,6 +5283,10 @@
         {
           "observation_date": "2026-11-25",
           "spread_bps": 157.5
+        },
+        {
+          "observation_date": "2026-11-26",
+          "spread_bps": null
         }
       ]
     },
@@ -7915,6 +7923,10 @@
         },
         {
           "observation_date": "2026-11-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-26",
           "spread_bps": null
         }
       ]
@@ -10553,6 +10565,10 @@
         {
           "observation_date": "2026-11-25",
           "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-26",
+          "spread_bps": null
         }
       ]
     },
@@ -13190,6 +13206,10 @@
         {
           "observation_date": "2026-11-25",
           "spread_bps": 99.0
+        },
+        {
+          "observation_date": "2026-11-26",
+          "spread_bps": null
         }
       ]
     },
@@ -15826,6 +15846,10 @@
         },
         {
           "observation_date": "2026-11-25",
+          "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-26",
           "spread_bps": null
         }
       ]
@@ -18464,6 +18488,10 @@
         {
           "observation_date": "2026-11-25",
           "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-26",
+          "spread_bps": null
         }
       ]
     },
@@ -21101,9 +21129,13 @@
         {
           "observation_date": "2026-11-25",
           "spread_bps": null
+        },
+        {
+          "observation_date": "2026-11-26",
+          "spread_bps": null
         }
       ]
     }
   },
-  "retrieved_at": "2026-11-27T05:05:51.634467+00:00"
+  "retrieved_at": "2026-11-27T19:29:45.658664+00:00"
 }
