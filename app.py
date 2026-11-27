@@ -161,7 +161,7 @@ from macro_platform import parameter_guide as _parameter_guide
 if not getattr(_parameter_guide, "EXPLICIT_TREASURY_YIELD_LABELS", False):
     _parameter_guide = importlib.reload(_parameter_guide)
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.7.8_legend_weight"
+CHART_BUILD = "V1.7.9_legend_symbol_refresh"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -3498,7 +3498,7 @@ def _publish_late_dashboard_result(key, value):
     return True
 
 
-@st.fragment(run_every=2, key="source_completion")
+@st.fragment(run_every=10, key="source_completion")
 def _poll_source_completion():
     if time.monotonic() > st.session_state.get("_source_watch_until", 0):
         # A long-open page still needs to notice new repository snapshots.
@@ -3529,8 +3529,9 @@ def _poll_source_completion():
 
 _poll_source_completion()
 
-@st.fragment(run_every=60, key="all_source_freshness")
+@st.fragment(run_every=300, key="all_source_freshness")
 def _render_all_source_freshness(figures):
+    revision = _macro_snapshot_revision()
     rows = []
     def add(module, symbol, row):
         _, quote_ts = _quote_session_context(row, _symbol_market(symbol))
@@ -3544,11 +3545,11 @@ def _render_all_source_freshness(figures):
     implied = _yen_carry_implied_volatility()
     display_figures[MACRO_DISPLAY_NUMBER[16]] = _yen_carry.combine_yen_carry_figures(
         figures[16], volatility=_safe_macro_build("yen_volatility", lambda: _cached_macro_figure(
-            "yen_volatility", _macro_snapshot_revision(), CHART_BUILD)),
+            "yen_volatility", revision, CHART_BUILD)),
         implied=implied, risk_reversal=_safe_macro_build("JPY risk reversal", lambda: _cached_macro_figure(
-            "yen_rr", _macro_snapshot_revision(), CHART_BUILD)))
+            "yen_rr", revision, CHART_BUILD)))
     display_figures[MACRO_DISPLAY_NUMBER["japan_holdings"]] = _safe_macro_build(
-        "Japan holdings", lambda: _cached_macro_figure("japan_holdings", _macro_snapshot_revision(), CHART_BUILD))
+        "Japan holdings", lambda: _cached_macro_figure("japan_holdings", revision, CHART_BUILD))
     display_figures[MACRO_DISPLAY_NUMBER["japan_corridor"]] = _japan_corridor.build_corridor_figure("5Y")
     display_figures[MACRO_DISPLAY_NUMBER["us_drawdown"]] = _build_equity_drawdown()
     display_figures[MACRO_DISPLAY_NUMBER["cn_drawdown"]] = _build_china_drawdown()
