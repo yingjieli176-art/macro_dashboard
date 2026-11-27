@@ -22,7 +22,7 @@ NVIDIA_5Y_BACKFILL = SNAPSHOT.with_name("nvidia_5y_cds_backfill.csv")
 SOURCE_URL = "https://irates.today/chart_data.json"
 METHOD_URL = "https://irates.today/capex.html#method"
 NVIDIA_ISSUER_URL = "https://irates.today/name/nvidia.html"
-NVIDIA_ISSUER_LABEL = "NVIDIA 5Y（发行人页面成交参考）"
+AMAZON_ISSUER_URL = "https://irates.today/name/amazon.html"
 SPACEX_SOURCE_URL = spacex_cds.SOURCE_URL
 ATTRIBUTION = "Open-Sourced Rates Observatory, irates.today"
 NVIDIA_1Y_NAME = "NVIDIA 1Y"
@@ -41,6 +41,7 @@ CREDIT_SERIES = {
     "sn_amd": ("AMD 5Y", "#785db0"),
     "sn_alphabet": ("Alphabet 5Y（谷歌）", "#0891b2"),
     "sn_microsoft": ("Microsoft 5Y（微软）", "#d97706"),
+    "sn_amazon": ("Amazon 5Y（亚马逊）", "#c02675"),
 }
 INFRASTRUCTURE_SERIES = {
     "sn_oracle": ("Oracle 5Y（甲骨文）", "#5070dd"),
@@ -164,6 +165,8 @@ def parse_source(payload, today=None):
     for key, (label, _) in SERIES.items():
         entry = catalogue.get(key, {})
         values = payload.get("series", {}).get(key)
+        if key == "sn_amazon" and not entry and values is None:
+            continue
         # IDs alone do not establish the measure or units.
         expected = "5y CDS"
         if entry.get("unit") != "bp" or expected not in entry.get("label", ""):
@@ -234,23 +237,24 @@ def load_nvidia_1y():
     return quotes.loc[quotes.tenor.eq("1Y")]
 
 
-def _nvidia_5y_backfill(records):
-    """Add attributed trade observations at gaps and return chart references."""
-    if not records:
-        return records, []
+def _nvidia_chart_records(records, issuer):
+    """Prefer publisher aggregates and use attributed references for missing dates."""
     by_date = {row["observation_date"]: row for row in records}
-    first, last = records[0]["observation_date"], records[-1]["observation_date"]
-    references = []
-    with NVIDIA_5Y_BACKFILL.open(encoding="utf-8", newline="") as handle:
-        for row in csv.DictReader(handle):
-            day = row["observation_date"]
-            if not first <= day <= last or by_date.get(day, {}).get("spread_bps") is not None:
-                continue
-            reference = {**row, "spread_bps": float(row["spread_bps"])}
-            references.append(reference)
-            if row["quote_basis"] == "trade_reference":
-                by_date[day] = reference
-    return [by_date[day] for day in sorted(by_date)], references
+    if records and NVIDIA_5Y_BACKFILL.is_file():
+        first, last = records[0]["observation_date"], records[-1]["observation_date"]
+        with NVIDIA_5Y_BACKFILL.open(encoding="utf-8", newline="") as handle:
+            for row in csv.DictReader(handle):
+                day = row["observation_date"]
+                if not first <= day <= last or by_date.get(day, {}).get("spread_bps") is not None:
+                    continue
+                basis = "盘中参考" if row["quote_basis"] == "intraday_reference" else "补充成交"
+                by_date[day] = {**row, "spread_bps": float(row["spread_bps"]),
+                                "observation_note": f"{basis} · {row['source']}"}
+    if issuer:
+        day = issuer["observation_date"]
+        count = issuer["reported_trade_count"]
+        by_date[day] = {**issuer, "observation_note": f"公开成交参考 · irates.today · {count} 笔 5Y 成交"}
+    return [by_date[day] for day in sorted(by_date)]
 
 
 def load_infrastructure_cds():
@@ -327,38 +331,22 @@ def build_cds_figure(date_range="5Y", payload=None, *, hy_oas=None, ig_oas=None,
         node = payload.get("series", {}).get(key, {})
         records = node.get("records", [])
         records = [r for r in records if cutoff is None or pd.Timestamp(r["observation_date"]) >= cutoff]
-        references = []
         if key == "sn_nvidia":
-            records, references = _nvidia_5y_backfill(records)
+            records = _nvidia_chart_records(records, nvidia_issuer_reference(payload))
         if not any(row["spread_bps"] is not None for row in records):
             missing.append(label)
             continue
-        fig.add_trace(go.Scatter(x=[r["observation_date"] for r in records],
-            y=[r["spread_bps"] if r["spread_bps"] is not None else float("nan") for r in records], mode="lines+markers", name=label,
-            line=dict(color=color, width=2.1, dash="dash" if node.get("quote_basis") == "upfront_implied" else "solid"),
-            marker=dict(size=3.5), connectgaps=False,
-            hovertemplate=label + ": %{y:.2f} bp<extra></extra>"))
-        for basis, name, reference_color in (
-            ("trade_reference", "NVIDIA 5Y（补充成交）", "#15803d"),
-            ("intraday_reference", "NVIDIA 5Y（盘中参考）", "#9333ea"),
-        ):
-            points = [row for row in references if row["quote_basis"] == basis]
-            if points:
-                fig.add_trace(go.Scatter(
-                    x=[row["observation_date"] for row in points],
-                    y=[row["spread_bps"] for row in points], mode="markers", name=name,
-                    customdata=[row["source"] for row in points],
-                    line=dict(width=0), marker=dict(size=7, color=reference_color, symbol="diamond"),
-                    hovertemplate=name + ": %{y:.2f} bp · %{customdata}<extra></extra>",
-                ))
-    reference = nvidia_issuer_reference(payload) if "sn_nvidia" in series else None
-    if reference:
-        count = reference["reported_trade_count"]
+        notes = {row["observation_date"]: row["observation_note"]
+                 for row in records if row.get("observation_note")}
         fig.add_trace(go.Scatter(
-            x=[reference["observation_date"]], y=[reference["spread_bps"]],
-            mode="markers", name=NVIDIA_ISSUER_LABEL, customdata=[f"irates.today · {count} 笔 5Y 成交"],
-            marker=dict(size=8, color="#15803d", symbol="diamond-open"),
-            hovertemplate=NVIDIA_ISSUER_LABEL + ": %{y:.2f} bp · %{customdata}<extra></extra>",
+            x=[row["observation_date"] for row in records],
+            y=[row["spread_bps"] if row["spread_bps"] is not None else float("nan") for row in records],
+            mode="lines+markers", name=label, connectgaps=False,
+            line=dict(color=color, width=2.1, dash="dash" if node.get("quote_basis") == "upfront_implied" else "solid"),
+            marker=dict(size=3.5),
+            meta={"observation_notes": notes} if notes else None,
+            customdata=[notes.get(row["observation_date"], "") for row in records] if notes else None,
+            hovertemplate=label + ": %{y:.2f} bp" + ("<br>%{customdata}" if notes else "") + "<extra></extra>",
         ))
     if "sn_nvidia" in series and nvidia_1y is None:
         nvidia_1y = load_nvidia_1y()

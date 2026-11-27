@@ -30,15 +30,16 @@ ISSUER_HTML = ("<p>Nvidia&#39;s five-year credit default swap last traded at "
 
 
 class AiCreditTests(unittest.TestCase):
-    def test_newer_issuer_trade_has_separate_marker_and_summary(self):
+    def test_newer_issuer_trade_uses_the_single_series_and_summary(self):
         payload = cds.parse_source(source())
         payload["nvidia_issuer_observation"] = cds.parse_nvidia_issuer_reference(ISSUER_HTML)
         self.assertEqual(payload["source_asof"], "2026-10-28")
         fig = cds.build_cds_figure(payload=payload, nvidia_1y=pd.DataFrame())
         traces = {trace.name: trace for trace in fig.data}
-        self.assertEqual(list(traces[cds.NVIDIA_ISSUER_LABEL].x), ["2026-11-25"])
-        self.assertEqual(list(traces[cds.NVIDIA_ISSUER_LABEL].y), [148])
-        self.assertNotIn("2026-11-25", traces["NVIDIA 5Y"].x)
+        self.assertEqual([name for name in traces if name.startswith("NVIDIA 5Y")], ["NVIDIA 5Y"])
+        self.assertEqual(traces["NVIDIA 5Y"].x[-1], "2026-11-25")
+        self.assertEqual(traces["NVIDIA 5Y"].y[-1], 148)
+        self.assertIn("5 笔", traces["NVIDIA 5Y"].meta["observation_notes"]["2026-11-25"])
         summary = cds.cds_summary(payload, nvidia_1y=pd.DataFrame()).iloc[0]
         self.assertEqual(summary["实际观测日"], "2026-11-25")
         self.assertEqual(summary["最新CDS（bp）"], 148)
@@ -69,7 +70,7 @@ class AiCreditTests(unittest.TestCase):
             self.assertNotIn("nvidia_issuer_observation", result)
             self.assertIsNone(refresh_nvidia_issuer(ISSUER_HTML, path))
 
-    def test_nvidia_backfill_preserves_primary_values_and_marks_intraday_separately(self):
+    def test_nvidia_backfill_preserves_primary_values_and_attribution_in_one_series(self):
         payload = cds.parse_source(source())
         payload["source_asof"] = "2026-11-19"
         payload["series"]["sn_nvidia"]["records"] = [
@@ -84,14 +85,12 @@ class AiCreditTests(unittest.TestCase):
         for adapter in (build_adaptive_echarts_option, build_safe_echarts_option):
             traces = {trace["name"]: trace for trace in adapter(fig, "1M")["series"]}
             main = traces["NVIDIA 5Y"]
-            self.assertEqual([point[1] for point in main["data"]], [135., None, 134., None, 121., 124.])
+            self.assertEqual([point[1] for point in main["data"]], [135., None, 134., 139., 121., 124.])
             self.assertFalse(main["connectNulls"])
-            trades = traces["NVIDIA 5Y（补充成交）"]
-            self.assertEqual(trades["type"], "scatter")
-            self.assertEqual([point[1] for point in trades["data"]], [134., 121., 124.])
-            intraday = traces["NVIDIA 5Y（盘中参考）"]
-            self.assertEqual(intraday["type"], "scatter")
-            self.assertEqual(intraday["data"], [["2026-11-12T00:00:00", 139.]])
+            self.assertEqual([name for name in traces if name.startswith("NVIDIA 5Y")], ["NVIDIA 5Y"])
+            self.assertIn("补充成交", main["observationNotes"]["2026-11-09"])
+            self.assertIn("盘中参考", main["observationNotes"]["2026-11-12"])
+            self.assertNotIn("2026-11-02", main["observationNotes"])
 
     def test_oas_uses_newer_same_series_vintage_even_if_fred_csv_succeeds(self):
         import data
@@ -214,7 +213,7 @@ class AiCreditTests(unittest.TestCase):
         raw["series"]["sn_nebius"] = [200., 210., 220.]
         raw["catalogue"].append({"id": "sn_nebius", "label": "Nebius 5y CDS", "unit": "bp"})
         payload = cds.parse_source(raw)
-        expected = ["NVIDIA 5Y", "AMD 5Y", "Alphabet 5Y（谷歌）", "Microsoft 5Y（微软）"]
+        expected = ["NVIDIA 5Y", "AMD 5Y", "Alphabet 5Y（谷歌）", "Microsoft 5Y（微软）", "Amazon 5Y（亚马逊）"]
         self.assertEqual(cds.cds_summary(payload)["公司 / 指数"].tolist(), [*expected, cds.NVIDIA_1Y_NAME])
         fig = cds.build_cds_figure(payload=payload)
         self.assertEqual([trace.name for trace in fig.data], expected)

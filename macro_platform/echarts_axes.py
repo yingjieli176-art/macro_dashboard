@@ -235,6 +235,9 @@ SRF_JPY_BAR_WIDTH = 8
 
 
 def _trace_geometry(series, trace):
+    metadata = getattr(trace, "meta", None)
+    if isinstance(metadata, dict) and metadata.get("observation_notes"):
+        series["observationNotes"] = metadata["observation_notes"]
     shape = getattr(getattr(trace, "line", None), "shape", None)
     if shape == "hv":
         series["step"] = "end"

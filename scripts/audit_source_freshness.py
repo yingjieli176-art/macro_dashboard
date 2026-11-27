@@ -92,6 +92,7 @@ def attach_live_source_evidence(reports, evidence, now=None):
         ('ai_cds_daily.json', 'AMD 5Y'): 'SN_AMD_CDS_5Y',
         ('ai_cds_daily.json', 'Alphabet 5Y（谷歌）'): 'SN_ALPHABET_CDS_5Y',
         ('ai_cds_daily.json', 'Microsoft 5Y（微软）'): 'SN_MICROSOFT_CDS_5Y',
+        ('ai_cds_daily.json', 'Amazon 5Y（亚马逊）'): 'SN_AMAZON_CDS_5Y',
         ('ai_cds_daily.json', 'Oracle 5Y（甲骨文）'): 'SN_ORACLE_CDS_5Y',
         ('ai_cds_daily.json', 'Broadcom 5Y（博通）'): 'SN_BROADCOM_CDS_5Y',
         ('ai_cds_daily.json', 'CoreWeave 5Y（预付款推算）'): 'SN_COREWEAVE_CDS_5Y',

@@ -25,6 +25,10 @@ def refresh(payload, path=SNAPSHOT):
         if candidate["source_asof"] < old["source_asof"]:
             raise ValueError("CDS source calendar moved backwards")
         for key in SERIES:
+            if key not in candidate["series"]:
+                if key in old["series"]:
+                    candidate["series"][key] = old["series"][key]
+                continue
             previous = {r["observation_date"]: r for r in old["series"].get(key, {}).get("records", [])}
             current = {r["observation_date"]: r for r in candidate["series"][key]["records"]}
             valid_old = {d: r for d, r in previous.items() if r["spread_bps"] is not None}
