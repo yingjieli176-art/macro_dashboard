@@ -6,7 +6,7 @@
   "quote_type": "ATM",
   "unit": "percent",
   "source_url": "https://fxowebtools.saxobank.com/otc.html",
-  "updated_at": "2026-11-27T09:43:20.569049+00:00",
+  "updated_at": "2026-11-27T18:12:18.031009+00:00",
   "coverage_start": "2026-11-11",
   "coverage_end": "2026-11-27",
   "record_count": 13,
@@ -73,8 +73,8 @@
     },
     {
       "observation_date": "2026-11-27",
-      "observation_timestamp": "2026-11-27T07:00:00+00:00",
-      "value": 7.41
+      "observation_timestamp": "2026-11-27T12:30:00+00:00",
+      "value": 7.39
     }
   ]
 }
