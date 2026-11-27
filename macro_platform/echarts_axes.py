@@ -118,6 +118,10 @@ def _responsive_chart_layout(option, fig, axis_map):
     geometry when a phone rotates or a browser window grows again.
     """
     option = _price_reference_annotations(option, fig)
+    # Keep disabled legend labels and symbols readable on the white canvas.
+    inactive_color = "#64748b"
+    option["legend"].update({"inactiveColor": inactive_color, "inactiveBorderColor": inactive_color})
+    option["legend"].setdefault("lineStyle", {})["inactiveColor"] = inactive_color
     explicit_titles = (fig.layout.meta or {}).get("preserve_axis_titles", ())
     compact_titles = []
     for ref, index in sorted(axis_map.items(), key=lambda pair: pair[1]):
