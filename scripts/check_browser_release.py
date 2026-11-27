@@ -895,19 +895,22 @@ def main():
                     last:s.data.at(-1),
                     gaps:s.data.filter(p=>p[1]===null).length}));
             }""")
-            from macro_platform.ai_credit import NVIDIA_ISSUER_LABEL, load_cds_snapshot, nvidia_issuer_reference
-
-            primary = {'NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）'}
+            primary = {'NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）', 'Amazon 5Y（亚马逊）'}
             assert primary <= {series['name'] for series in cds_state}, cds_state
-            if reference := nvidia_issuer_reference(load_cds_snapshot()):
-                issuer = next(series for series in cds_state if series['name'] == NVIDIA_ISSUER_LABEL)
-                assert issuer['valid'] == 1 and issuer['markers'] and issuer['axis'] == 0, issuer
-                assert observation_date(issuer['last'][0]) == reference['observation_date'], issuer
-                assert issuer['last'][1] == reference['spread_bps'], issuer
+            assert [series['name'] for series in cds_state if series['name'].startswith('NVIDIA 5Y')] == ['NVIDIA 5Y'], cds_state
+            nvidia = cds_chart.evaluate("""element => {
+                const option = element.__macroChart.getOption();
+                const series = option.series.find(s => s.name === 'NVIDIA 5Y');
+                const date = '2026-11-12';
+                const point = series.data.find(p => new Date(p[0]).toISOString().slice(0,10) === date);
+                return {note: series.observationNotes?.[date], tooltip: option.tooltip[0].formatter(
+                    [{seriesName: series.name, value: point}])};
+            }""")
+            assert '盘中参考' in nvidia['note'] and '盘中参考' in nvidia['tooltip'], nvidia
             for name, axis in (('CDX HY 5Y（参考）', 1), ('CDX IG 5Y（参考）', 2)):
                 found = next(s for s in cds_state if s['name'] == name)
                 assert found['axis'] == axis and found['valid'] > 0, found
-            for name in ('NVIDIA 5Y', 'AMD 5Y', 'Alphabet 5Y（谷歌）', 'Microsoft 5Y（微软）'):
+            for name in sorted(primary):
                 found = next(s for s in cds_state if s['name'] == name)
                 assert found['valid'] > 10 and found['markers'] and not found['connect'], found
                 assert found['axis'] == 0, found

@@ -168,14 +168,15 @@ export function compactLegend(option, labels, width) {
   return option;
 }
 
-export function compactTooltip(params, labels) {
+export function compactTooltip(params, labels, observationNotes = {}) {
   const rows = (Array.isArray(params) ? params : [params]).filter(Boolean);
   if (!rows.length) return '';
   const first = rows[0], day = Array.isArray(first.value) ? first.value[0] : first.axisValue;
   const when = typeof day === 'number' ? new Date(day).toISOString().slice(0,10) : String(day || first.axisValueLabel || '').slice(0,10);
   return [when, ...rows.map(row => {
     const value = Array.isArray(row.value) ? row.value[1] : row.value;
-    return `${labels[row.seriesName] || row.seriesName}：${Number.isFinite(value) ? value.toLocaleString('en-US', {maximumFractionDigits:4}) : '暂无观测'}`;
+    const note = observationNotes[row.seriesName]?.[when];
+    return `${labels[row.seriesName] || row.seriesName}：${Number.isFinite(value) ? value.toLocaleString('en-US', {maximumFractionDigits:4}) : '暂无观测'}${note ? ' · ' + note : ''}`;
   })].join('\n');
 }
 
@@ -243,6 +244,8 @@ export default function({data, parentElement}) {
     for (const key of ['startValue', 'endValue']) if (zoom[key] != null) zoom[key] = asTime(zoom[key]);
   }
   const base = copy(source);
+  const observationNotes = Object.fromEntries(base.series.filter(series => series.observationNotes)
+    .map(series => [series.name, series.observationNotes]));
   delete base.media;
   // Legend filtering must not change the time domain, especially when every
   // series is hidden. Bounds come only from existing observation dates.
@@ -525,7 +528,7 @@ export default function({data, parentElement}) {
     if (option.toolbox) option.toolbox.right = 54;
     // Price observations stay intact. Only derived paths and annotations
     // change with the selection; the live dataZoom bounds are preserved.
-    if (!hasPriceGuides) option.tooltip = {...option.tooltip, formatter:params => compactTooltip(params, labels)};
+    if (!hasPriceGuides) option.tooltip = {...option.tooltip, formatter:params => compactTooltip(params, labels, observationNotes)};
     const patch = {legend: {...option.legend, selected}, grid: option.grid,
       yAxis: option.yAxis, xAxis: option.xAxis, toolbox: option.toolbox, tooltip:option.tooltip};
     if (hasPriceGuides) {
@@ -563,7 +566,7 @@ export default function({data, parentElement}) {
     option.series.forEach(series => {series.clip = true;});
     option.aria = {enabled:true};
     option.tooltip = {...option.tooltip, renderMode:'richText',
-      ...(!hasPriceGuides ? {formatter:params => compactTooltip(params, labels)} : {})};
+      ...(!hasPriceGuides ? {formatter:params => compactTooltip(params, labels, observationNotes)} : {})};
     // A new preset always applies its supplied window; manual zoom only
     // survives updates within that same preset.
     // Keep the presentation's reserved footer space when applying a time window.

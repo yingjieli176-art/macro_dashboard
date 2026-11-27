@@ -161,7 +161,7 @@ from macro_platform import parameter_guide as _parameter_guide
 if not getattr(_parameter_guide, "EXPLICIT_TREASURY_YIELD_LABELS", False):
     _parameter_guide = importlib.reload(_parameter_guide)
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.7.4_minkabu_fx_volatility"
+CHART_BUILD = "V1.7.5_ai_credit_amazon"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -3324,7 +3324,7 @@ def _get_cdx_reference():
 @st.fragment(run_every=60, key="nvidia_cds_viewport")
 def render_nvidia_cds():
     st.markdown(f'<div class="section-title">{MACRO_DISPLAY_NUMBER["nvidia_cds"]}. AI Credit · 公司CDS信用风险</div>'
-                '<div class="section-description">英伟达 NVIDIA 1Y / 5Y · AMD、谷歌 Alphabet、微软 Microsoft 5Y CDS（bp） / HY OAS（R1 · %） · IG OAS（R2 · %）</div>', unsafe_allow_html=True)
+                '<div class="section-description">英伟达 NVIDIA 1Y / 5Y · AMD、谷歌 Alphabet、微软 Microsoft、亚马逊 Amazon 5Y CDS（bp） / HY OAS（R1 · %） · IG OAS（R2 · %）</div>', unsafe_allow_html=True)
     payload = _ai_credit.load_cds_snapshot()
     nvidia_1y = _ai_credit.load_nvidia_1y()
     hy_oas = get_hy_oas()
@@ -3362,6 +3362,7 @@ def render_nvidia_cds():
     ]
     add_sources([
         ("Open-Sourced Rates Observatory · CDS 历史数据", _ai_credit.SOURCE_URL),
+        ("Amazon 5Y · 公开成交记录", _ai_credit.AMAZON_ISSUER_URL),
         ("CDS 统计方法", _ai_credit.METHOD_URL),
         ("NVIDIA 5Y 补充成交 · Sikuli Research", "https://www.sikulicapital.com/feed"),
         ("NVIDIA 5Y 补充成交 · All of These Words", "https://charts.allofthesewords.com/nvda-cds.html"),
