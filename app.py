@@ -161,7 +161,7 @@ from macro_platform import parameter_guide as _parameter_guide
 if not getattr(_parameter_guide, "EXPLICIT_TREASURY_YIELD_LABELS", False):
     _parameter_guide = importlib.reload(_parameter_guide)
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.7.5_ai_credit_amazon"
+CHART_BUILD = "V1.7.6_legend_colors"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
