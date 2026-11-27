@@ -133,6 +133,7 @@ export function dailyPriceTooltip(params, labels) {
 export function compactLegend(option, labels, width, selected = option.legend?.selected || {}) {
   const names = [...new Set(option.series.map(series => series.name))];
   const prior = option.legend || {};
+  const labelColor = prior.textStyle?.color || '#475569';
   const fontSize = prior.textStyle?.fontSize || 12;
   const lineHeight = Math.max(prior.textStyle?.lineHeight || 0, fontSize + 4);
   const itemWidth = prior.itemWidth || 25, itemGap = 10;
@@ -155,7 +156,9 @@ export function compactLegend(option, labels, width, selected = option.legend?.s
       packed.push('\n'); height += rowHeight + itemGap;
       used = 0; rowHeight = lineHeight;
     }
-    packed.push({name, textStyle:{fontWeight:selected[name] === false ? 400 : 600}});
+    packed.push(selected[name] === false
+      ? {name, itemStyle:{opacity:0.45}, lineStyle:{opacity:0.45}}
+      : name);
     used += (used ? itemGap : 0) + size;
     rowHeight = Math.max(rowHeight, lines.length * lineHeight);
   }
@@ -163,7 +166,11 @@ export function compactLegend(option, labels, width, selected = option.legend?.s
   option.legend = {...prior, type:'plain', orient:'horizontal', top:26,
     left:8, right:8, padding:0, itemWidth, itemGap, data:packed, selected,
     formatter:name => displays[name] || labels[name] || name,
-    textStyle:{...prior.textStyle, fontSize, lineHeight}};
+    // ECharts uses inactiveColor for both the label and marker fill.
+    // Only the marker and its line get reduced opacity.
+    inactiveColor:labelColor, inactiveBorderColor:labelColor,
+    lineStyle:{...prior.lineStyle, inactiveColor:labelColor},
+    textStyle:{...prior.textStyle, color:labelColor, fontSize, lineHeight, fontWeight:600}};
   option.grid.top = Math.max(Number(option.grid.top) || 0, 26 + height + 36);
   return option;
 }
