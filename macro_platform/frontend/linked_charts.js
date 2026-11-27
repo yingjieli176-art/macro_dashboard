@@ -304,46 +304,10 @@ export default function({data, parentElement}) {
     ...base.series.map(series => series.name), ...ratioNames,
     ...(hasDifference ? [differenceName] : []),
   ])];
-  // ECharts' native legend deselection removes the series from rendering.
-  // Keep its legend entries active and apply focus through the series styles.
-  const legendSelection = Object.fromEntries(seriesNames.map(name => [name, true]));
-  function focusStyles(series) {
-    const factor = selected[series.name] === false ? 0.45 : 1;
-    const opacity = style => ({...style, opacity:(style?.opacity ?? 1) * factor});
-    const markLine = series.markLine && {
-      ...series.markLine, lineStyle:opacity(series.markLine.lineStyle),
-      label:opacity(series.markLine.label),
-      data:series.markLine.data?.map(line => Array.isArray(line) ? line : ({
-        ...line,
-        ...(line.lineStyle ? {lineStyle:opacity(line.lineStyle)} : {}),
-        ...(line.label ? {label:opacity(line.label)} : {}),
-      })),
-    };
-    return {lineStyle:opacity(series.lineStyle), itemStyle:opacity(series.itemStyle),
-      ...(series.areaStyle ? {areaStyle:opacity(series.areaStyle)} : {}),
-      ...(markLine ? {markLine} : {}),
-      ...(series.markPoint ? {markPoint:{...series.markPoint,
-        itemStyle:opacity(series.markPoint.itemStyle)}} : {})};
-  }
-  function readableLegend(legend) {
-    const color = '#000000';
-    const data = legend.data?.map(entry => {
-      const name = typeof entry === 'string' ? entry : entry.name;
-      if (selected[name] !== false) return entry;
-      const options = typeof entry === 'string' ? {name} : entry;
-      return {...options,
-        textStyle:{...options.textStyle, color},
-        itemStyle:{...options.itemStyle, color, borderColor:color, opacity:1},
-        lineStyle:{...options.lineStyle, color, opacity:1}};
-    });
-    return {...legend, data, selected:legendSelection,
-      itemStyle:{...legend.itemStyle, opacity:1},
-      lineStyle:{...legend.lineStyle, opacity:1}};
-  }
   function updateSeriesToggle() {
     if (!seriesToggle) return;
-    const anyFocused = seriesNames.some(name => selected[name] !== false);
-    seriesToggle.textContent = anyFocused ? '淡化全部参数' : '突出全部参数';
+    const anyVisible = seriesNames.some(name => selected[name] !== false);
+    seriesToggle.textContent = anyVisible ? '隐藏全部参数' : '显示全部参数';
   }
   if (seriesToggle) seriesToggle.disabled = true;
   updateSeriesToggle();
@@ -565,16 +529,16 @@ export default function({data, parentElement}) {
     // Price observations stay intact. Only derived paths and annotations
     // change with the selection; the live dataZoom bounds are preserved.
     if (!hasPriceGuides) option.tooltip = {...option.tooltip, formatter:params => compactTooltip(params, labels, observationNotes)};
-    const patch = {legend: readableLegend(option.legend), grid: option.grid,
-      yAxis: option.yAxis, xAxis: option.xAxis, toolbox: option.toolbox, tooltip:option.tooltip,
-      series:option.series.map((series, index) => ({
-        ...(hasPriceGuides && index >= base.series.length ? series : {
-          id:series.id, name:series.name,
-          ...(series.type === 'bar' ? {barWidth:series.barWidth} : {}),
-        }),
-        ...focusStyles(series), clip:true,
-      }))};
-    if (hasPriceGuides) patch.graphic = priceRatioFooter();
+    const patch = {legend: {...option.legend, selected}, grid: option.grid,
+      yAxis: option.yAxis, xAxis: option.xAxis, toolbox: option.toolbox, tooltip:option.tooltip};
+    if (hasPriceGuides) {
+      patch.series = option.series.map((series, index) => index < base.series.length ?
+        {id:series.id, name:series.name, clip:true, markLine:copy(series.markLine)} : {...series,clip:true});
+      patch.graphic = priceRatioFooter();
+    } else if (hasBars) {
+      patch.series = option.series.map(series => ({name:series.name,
+        ...(series.type === 'bar' ? {barWidth:series.barWidth} : {})}));
+    }
     patch.graphic = [...(patch.graphic || []), ...endpointDate(option, chart.getOption().dataZoom)];
     patch.xAxis = {...patch.xAxis,axisLabel:{...patch.xAxis.axisLabel,show:false},axisTick:{show:false}};
     chart.setOption(patch, {silent:true, replaceMerge:['yAxis']});
@@ -598,8 +562,8 @@ export default function({data, parentElement}) {
       : base.dataZoom.map(zoom=>({...zoom,startValue:presetStart(last,activePeriod),endValue:last}));
     if (hasPriceGuides) refreshPriceGuides(initialZoom);
     const option = compactLegend(withDrawdownOverlay(axisLayout(presentation())), labels, element.clientWidth);
-    option.legend = readableLegend(option.legend);
-    option.series = option.series.map(series => ({...series, ...focusStyles(series), clip:true}));
+    option.legend.selected = selected;
+    option.series.forEach(series => {series.clip = true;});
     option.aria = {enabled:true};
     option.tooltip = {...option.tooltip, renderMode:'richText',
       ...(!hasPriceGuides ? {formatter:params => compactTooltip(params, labels, observationNotes)} : {})};
@@ -621,15 +585,13 @@ export default function({data, parentElement}) {
     option.graphic = endpointDate(option, option.dataZoom);
     chart.setOption(option, {notMerge:true});
     if (hasPriceGuides) updateLayout();
-    else parentElement.__macroChartState = {selected:copy(selected), zoom:chart.getOption().dataZoom,
-      period:activePeriod, manualZoom, lockLatest};
     chart.getZr().flush();
     element.setAttribute('aria-busy', 'false');
     if (seriesToggle) {
       seriesToggle.disabled = false;
       seriesToggle.onclick = () => {
-        const focusAll = seriesNames.every(name => selected[name] === false);
-        selected = Object.fromEntries(seriesNames.map(name => [name, focusAll]));
+        const showAll = seriesNames.every(name => selected[name] === false);
+        selected = Object.fromEntries(seriesNames.map(name => [name, showAll]));
         rememberSelection();
         updateLayout();
       };
@@ -649,15 +611,7 @@ export default function({data, parentElement}) {
     for (const event of ['legendselectchanged','legendselected','legendunselected',
                          'legendselectall','legendinverseselect']) {
       chart.on(event, params => {
-        if (event === 'legendselectchanged' && seriesNames.includes(params.name)) {
-          selected[params.name] = selected[params.name] === false;
-        } else if (event === 'legendselected' || event === 'legendunselected') {
-          if (seriesNames.includes(params.name)) selected[params.name] = event === 'legendselected';
-        } else {
-          for (const name of seriesNames) {
-            selected[name] = event === 'legendselectall' || selected[name] === false;
-          }
-        }
+        selected = {...selected, ...copy(params.selected || {})};
         rememberSelection(); updateLayout();
       });
     }

@@ -23,7 +23,7 @@ def _component():
              'aria-label="锁定最新日期" title="锁定最新日期（默认关闭）" aria-pressed="false">锁定最新日期</button>'
              '<button type="button" aria-label="Download as PNG" title="下载图片">↓</button>'
              '<button type="button" aria-label="Fullscreen" title="全屏">⛶</button>'
-             '<button type="button" class="macro-chart-series-toggle" disabled>淡化全部参数</button>'
+             '<button type="button" class="macro-chart-series-toggle" disabled>隐藏全部参数</button>'
              '</div></div><div data-testid="macroEChartsChart" '
              'aria-busy="true" style="height:465px;width:100%;min-width:0"></div>'
              '<p role="alert" class="macro-chart-error" hidden></p></div>',
