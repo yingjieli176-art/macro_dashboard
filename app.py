@@ -161,7 +161,7 @@ from macro_platform import parameter_guide as _parameter_guide
 if not getattr(_parameter_guide, "EXPLICIT_TREASURY_YIELD_LABELS", False):
     _parameter_guide = importlib.reload(_parameter_guide)
 from macro_platform.parameter_guide import CHART_PARAMETER_GUIDES, readable_display_text
-CHART_BUILD = "V1.7.9_legend_symbol_refresh"
+CHART_BUILD = "V1.7.10_hourly_source_check"
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False, "doubleClick": False, "editable": False, "displaylogo": False, "responsive": True}
 WATCHLIST_PARAM = "watchlist"
 REPO_URL = "https://github.com/yingjieli176-art/macro_dashboard"
@@ -3472,7 +3472,6 @@ for _section in ("market",):
 # Poll only completion/revision metadata; source fetching stays in bounded workers.
 # An app rerun is needed to replace timed-out fragment arguments with ready data.
 st.session_state["_source_watch_revision"] = _macro_snapshot_revision()
-st.session_state["_source_watch_until"] = time.monotonic() + 120
 
 
 def _publish_late_dashboard_result(key, value):
@@ -3498,15 +3497,8 @@ def _publish_late_dashboard_result(key, value):
     return True
 
 
-@st.fragment(run_every=10, key="source_completion")
+@st.fragment(run_every=3600, key="source_completion")
 def _poll_source_completion():
-    if time.monotonic() > st.session_state.get("_source_watch_until", 0):
-        # A long-open page still needs to notice new repository snapshots.
-        # After startup, check only file metadata once per minute.
-        now = time.monotonic()
-        if now - st.session_state.get("_last_source_revision_check", 0) < 60:
-            return
-        st.session_state["_last_source_revision_check"] = now
     pending = st.session_state.get("_late_dashboard_jobs", {})
     ready = False
     for future, key in list(pending.items()):
